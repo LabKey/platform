@@ -20,58 +20,15 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.Date" %>
-<%@ page import="java.util.List" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     StudyController.ImportTypeForm form = (StudyController.ImportTypeForm)HttpView.currentModel();
-    int colsPerRow = 6;
-    String errors = PageFlowUtil.getStrutsError(request, "main");
-    String decimalFormatHelp =
-            "The following table has an abbreviated guide to pattern symbols:<br/>" +
-            "<table class=\"labkey-data-region labkey-show-borders\"><colgroup><col><col><col><col></colgroup>" +
-            "<tr class=\"labkey-frame\"><th align=left>Symbol<th align=left>Location<th align=left>Localized?<th align=left>Meaning</tr>" +
-            "<tr valign=top><td><code>0</code><td>Number<td>Yes<td>Digit</tr>" +
-            "<tr valign=top class=\"labkey-alternate-row\"><td><code>#</code><td>Number<td>Yes<td>Digit, zero shows as absent</tr>" +
-            "<tr valign=top><td><code>.</code><td>Number<td>Yes<td>Decimal separator or monetary decimal separator</tr>" +
-            "<tr valign=top class=\"labkey-alternate-row\"><td><code>-</code><td>Number<td>Yes<td>Minus sign</tr>" +
-            "<tr valign=top><td><code>,</code><td>Number<td>Yes<td>Grouping separator</tr></table>";
-    String dateFormatHelp = 
-            "The following table has a partial guide to pattern symbols:<br/>" +
-            "<table class=\"labkey-data-region labkey-show-borders\"><colgroup><col><col><col></colgroup>" +
-            "<tr class=\"labkey-frame\"><th align=left>Letter<th align=left>Date or Time Component<th align=left>Examples</tr>" +
-            "<tr><td><code>G</code><td>Era designator<td><code>AD</code></tr>" +
-            "<tr class=\"labkey-alternate-row\"><td><code>y</code><td>Year<td><code>1996</code>; <code>96</code></tr>" +
-            "<tr><td><code>M</code><td>Month in year<td><code>July</code>; <code>Jul</code>; <code>07</code></tr>" +
-            "<tr class=\"labkey-alternate-row\"><td><code>w</code><td>Week in year<td><code>27</code></td></tr>" +
-            "<tr><td><code>W</code><td>Week in month<td><code>2</code></td></tr>" +
-            "<tr class=\"labkey-alternate-row\"><td><code>D</code><td>Day in year<td><code>189</code></td></tr>" +
-            "<tr><td><code>d</code><td>Day in month<td><code>10</code></tr>" +
-            "<tr class=\"labkey-alternate-row\"><td><code>F</code><td>Day of week in month<td><code>2</code></tr>" +
-            "<tr><td><code>E</code><td>Day in week<td><code>Tuesday</code>; <code>Tue</code></tr>" +
-            "<tr class=\"labkey-alternate-row\"><td><code>a</code><td>Am/pm marker<td><code>PM</code></tr>" +
-            "<tr><td><code>H</code><td>Hour in day (0-23)<td><code>0</code></tr>" +
-            "<tr class=\"labkey-alternate-row\"><td><code>k</code><td>Hour in day (1-24)<td><code>24</code></tr>" +
-            "<tr><td><code>K</code><td>Hour in am/pm (0-11)<td><code>0</code></tr>" +
-            "<tr class=\"labkey-alternate-row\"><td><code>h</code><td>Hour in am/pm (1-12)<td><code>12</code></tr></table>";
-
-
 %>
-<%=errors%>
-<p>
-Use this form to define the properties of a dataset.
-</p>
-<table>
-<%
-    for (ObjectError e : (List<ObjectError>) form.getErrors().getAllErrors())
-    {
-        %><tr><td colspan=3><font class="labkey-error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
-    }
-%>
-</table>
+
+<labkey:errors />
 
 <form id="typeDefForm" name=typeDefForm action="defineDatasetType.post" method="POST" enctype="multipart/form-data">
-    <input type=hidden name=create value="<%=form.isCreate()%>">
     <table id=typeDefTable width="100%">
         <tr>
             <td >
@@ -81,9 +38,13 @@ Use this form to define the properties of a dataset.
                     <td><input name="typeName" style="width:100%" value="<%=h(form.getTypeName())%>"></td>
                 </tr>
                 <tr>
-                    <td class=labkey-form-label >Dataset Id <%=PageFlowUtil.helpPopup("Dataset Id", "The dataset id is an integer number that must be unique for all datasets in a study.")%></td>
+                    <td class=labkey-form-label>Dataset Id <%=PageFlowUtil.helpPopup("Dataset Id", "The dataset id is an integer number that must be unique for all datasets in a study.")%></td>
                     <td><input id=datasetId type=text name=dataSetIdStr value="" <%=form.isAutoDatasetId() ? "disabled" : "" %> size=6>
-                        <input type=checkbox name="autoDatasetId" <%=form.isAutoDatasetId() ? "checked" : "" %> value="true" onclick="toggleAutoDatasetId(this)">Define Dataset Id Automatically</td>
+                        <input type=checkbox name="autoDatasetId" <%=form.isAutoDatasetId() ? "checked" : "" %>>Define Dataset Id Automatically</td>
+                </tr>
+                <tr>
+                    <td class=labkey-form-label>Import from File <%=PageFlowUtil.helpPopup("Import from File", "Use this option if you have a spreadsheet that you would like uploaded as a dataset.")%></td>
+                    <td><input type="checkbox" name="fileImport" <%=form.isFileImport() ? "checked" : "" %>></td>
                 </tr>
             </table>
             </td>
@@ -93,193 +54,3 @@ Use this form to define the properties of a dataset.
         </tr>
     </table>
 </form>
-
-<script type="text/javascript">
-var lastFieldNum = -1;
-var typeDropDown;
-
-function showTSV(src)
-{
-    document.getElementById("textAreaSpan").style.display = src.checked ? "" : "none";
-//    document.getElementById("typeEditorTable").style.display = src.checked ? "none" : "";
-}
-        
-function addField(src)
-{
-	var table = document.getElementById("typeDefTable");
-	var rows = table.getElementsByTagName("TR");
-	var newRow = createRow(++lastFieldNum);
-    while (src.tagName.toLowerCase() != "tr")
-        src = src.parentNode;
-
-    src.parentNode.insertBefore(newRow, src);
-	newRow.getElementsByTagName("INPUT")[0].focus();
-    return false;
-}
-
-function createRow(fieldNum)
-{
-	var row = document.createElement("TR");
-	row.appendChild(cell("[<a href='#' onclick='deleteRow(this)'>delete</a>]"));
-	row.appendChild(cell(nameInput(fieldNum)));
-	row.appendChild(cell(labelInput(fieldNum)));
-	row.appendChild(cell(typeSelect(fieldNum)));
-    row.appendChild(cell(requiredCheckbox(fieldNum)));
-    row.appendChild(cell(descInput(fieldNum)));
-
-    return row;
-}
-
-function deleteRow(src)
-{
-	while(src.tagName.toLowerCase() != "tr")
-		src = src.parentNode;
-
-	src.parentNode.removeChild(src);
-}
-
-function cell(content)
-{
-	var cell = document.createElement("TD");
-    if (typeof content == "string")
-		cell.innerHTML = content;
-	else
-		cell.appendChild(content);
-	return cell;
-}
-
-function text(str)
-{
-	return document.createTextNode(str);
-}
-
-function setLabel(event)
-{
-	if (!event) //For IE
-		event = window.event;
-	var fieldNameElem = event.target;
-	if (!fieldNameElem)
-		fieldNameElem = event.srcElement;
-
-	var fieldLabelElemName = fieldNameElem.name.replace("name", "label");
-	var fieldName = fieldNameElem.value;
-	if (fieldName == null || fieldName == "")
-		return false;
-
-	if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(fieldName))
-	{
-		alert("Field names must start with a letter and contain only letters and numbers");
-		fieldNameElem.focus();
-		return false;
-	}
-
-	var fieldLabelElem = document.typeDefForm[fieldLabelElemName];
-	var fieldLabel = fieldLabelElem.value;
-	if (fieldLabel == null || fieldLabel == "")
-	{
-		fieldLabelElem.value = fieldNameElem.value;
-	}
-    return true;
-}
-
-function nameInput(index)
-{
-	var elem = input(index, "name");
-	elem.onchange = setLabel;
-	return elem;
-}
-
-function labelInput(index)
-{
-	return input(index, "label");
-}
-
-function descInput(index)
-{
-    var elem = input(index, "description");
-    elem.size = 40;
-    return elem;
-}
-
-function requiredCheckbox(index)
-{
-    var elem = input(index, "required");
-    elem.type = "checkbox";
-    return elem;
-}
-
-function input(index, fieldName)
-{
-	var elem = document.createElement("INPUT");
-	elem.name = "fields[" + index +"]." + fieldName;
-	return elem;
-}
-
-function typeSelect(index)
-{
-    if (null == typeDropDown)
-    {
-        typeDropDown = document.createElement("SELECT");
-
-        var options = new Object();
-        options["xsd:string"] = "<%=ColumnInfo.getFriendlyTypeName(String.class)%>";
-        options["xsd:double"] = "<%=ColumnInfo.getFriendlyTypeName(Double.class)%>";
-        options["xsd:int"] = "<%=ColumnInfo.getFriendlyTypeName(Integer.class)%>";
-        options["xsd:dateTime"] = "<%=ColumnInfo.getFriendlyTypeName(Date.class)%>";
-        options["xsd:boolean"] = "<%=ColumnInfo.getFriendlyTypeName(Boolean.class)%>";
-        for (name in options)
-        {
-            var option = document.createElement("OPTION");
-            option.value = name;
-            option.text = options[name];
-            typeDropDown.options[typeDropDown.options.length] = option;
-        }
-    }
-
-    var elem = typeDropDown.cloneNode(true);
-	elem.name = "fields[" + index +"].type";
-	return elem;
-}
-
-function getNameValue(i)
-{
-	var elem = document.typeDefForm["fields[" + i +"].name"];
-	return null == elem ? null : elem.value;
-}
-
-function getLabelValue(i)
-{
-	var elem = document.typeDefForm["fields[" + i +"].label"];
-	return null == elem ? null : elem.value;
-}
-
-function getDescValue(i)
-{
-	var elem = document.typeDefForm["fields[" + i +"].description"];
-	return null == elem ? null : elem.value;
-}
-
-function getRequiredValue(i)
-{
-    var elem = document.typeDefForm["fields[" + i +"].required"];
-    return null == elem ? null : elem.checked;
-
-}
-
-function getTypeValue(i)
-{
-	var elem = document.typeDefForm["fields[" + i +"].type"];
-	if (elem.tagName.toLowerCase() == "select")
-		return null == elem ? null : elem.options[elem.selectedIndex].value;
-	else
-		return elem.value;
-}
-
-function toggleAutoDatasetId(ck)
-{
-    var datasetIdInput = document.getElementById("datasetId");
-    datasetIdInput.value = "";
-    datasetIdInput.disabled = ck.checked;
-}
-
-</script>

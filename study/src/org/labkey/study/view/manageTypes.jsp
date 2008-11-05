@@ -134,7 +134,7 @@
 
     <tr>
         <td>New Datasets can be added to this study at any time.</td>
-        <td><%= textLink("Create New Dataset", "defineDatasetType.view?create=true&autoDatasetId=true")%></td>
+        <td><%= textLink("Create New Dataset", "defineDatasetType.view?autoDatasetId=true")%></td>
     </tr>
 </table>
 <% WebPartView.startTitleFrame(out, "Default Time/Date, Number Formats", null, null, null); %>
@@ -177,5 +177,5 @@
     </tr><%
     }
 %></table>
-<%= textLink("Create New Dataset", "defineDatasetType.view?create=true&autoDatasetId=true")%>
+<%= textLink("Create New Dataset", "defineDatasetType.view?autoDatasetId=true")%>
 <% WebPartView.endTitleFrame(out); %>

@@ -35,6 +35,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
 import org.labkey.common.tools.ColumnDescriptor;
@@ -48,6 +49,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.*;
 import java.util.*;
 
@@ -83,7 +85,6 @@ public class PropertyController extends SpringActionController
             props.put("allowFileLinkProperties", String.valueOf(form.getAllowFileLinkProperties()));
             props.put("allowAttachmentProperties", String.valueOf(form.getAllowAttachmentProperties()));
 
-            // HttpView info = new JspView<ListDefinition>("editType.jsp", def);
             return new GWTView("org.labkey.experiment.property.Designer", props);
         }
 
@@ -131,6 +132,93 @@ public class PropertyController extends SpringActionController
             DomainUtil.updateDomainDescriptor(originalDomain, newDomain, getContainer(), getUser());
 
             return new ApiSimpleResponse();
+        }
+    }
+
+    /**
+     * Stores a file sent by the client in a temp file and puts it in the session
+     * for later use by gwt services
+     */
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class UploadFileForInferencingAction extends ExportAction
+    {
+        private static final String SESSION_ATTR_NAME = "org.labkey.domain.tempFile";
+
+        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
+        {
+            response.reset();
+            response.setContentType("text/html");
+
+            OutputStream out = response.getOutputStream();
+            OutputStreamWriter writer = new OutputStreamWriter(out);
+
+            HttpServletRequest basicRequest = getViewContext().getRequest();
+            if (! (basicRequest instanceof MultipartHttpServletRequest))
+            {
+                error(writer, "No file uploaded");
+                return;
+            }
+
+            MultipartHttpServletRequest request = (MultipartHttpServletRequest)basicRequest;
+
+            //noinspection unchecked
+            Iterator<String> nameIterator = request.getFileNames();
+            String formElementName = nameIterator.next();
+            MultipartFile file = request.getFile(formElementName);
+            String filename = file.getOriginalFilename();
+            int dotIndex = filename.lastIndexOf(".");
+            if (dotIndex < 0)
+            {
+                error(writer, "Unrecognized file type. Please upload a .xls, .tsv, .csv or .txt file");
+                return;
+            }
+            String suffix = filename.substring(dotIndex + 1).toLowerCase();
+            String prefix = filename.substring(0, dotIndex);
+
+            File tempFile = File.createTempFile(prefix, suffix);
+            tempFile.deleteOnExit();
+            InputStream input = file.getInputStream();
+            OutputStream output = new FileOutputStream(tempFile);
+            try
+            {
+                byte[] buffer = new byte[1024];
+                int len;
+                while ((len = input.read(buffer)) > 0)
+                    output.write(buffer, 0, len);
+
+                output.flush();
+                output.close();
+                input.close();
+
+            }
+            catch (IOException ioe)
+            {
+                ExceptionUtil.logExceptionToMothership(request, ioe);
+                error(writer, ioe.getMessage());
+                return;
+            }
+
+            // Store the file in the session, and delete it when the session expires
+            HttpSession session = getViewContext().getSession();
+
+            // If we've already got one in the session, delete the temp file
+            SessionTempFileHolder oldFileHolder =
+                (SessionTempFileHolder)session.getAttribute(SESSION_ATTR_NAME);
+            if (oldFileHolder != null)
+                oldFileHolder.getFile().delete();
+
+            session.setAttribute(SESSION_ATTR_NAME, new SessionTempFileHolder(tempFile));
+
+            writer.write("Success");
+
+            writer.flush();
+            writer.close();
+        }
+        private void error(Writer writer, String message) throws IOException
+        {
+            writer.write(message);
+            writer.flush();
+            writer.close();
         }
     }
 
@@ -196,6 +284,7 @@ public class PropertyController extends SpringActionController
             File tempFile = File.createTempFile(prefix, suffix);
             InputStream input = file.getInputStream();
             OutputStream output = new FileOutputStream(tempFile);
+            DataLoader dataLoader = null;
             try
             {
                 byte[] buffer = new byte[1024];
@@ -207,7 +296,7 @@ public class PropertyController extends SpringActionController
                 output.close();
                 input.close();
 
-                DataLoader dataLoader = getDataLoader(tempFile, suffix);
+                dataLoader = getDataLoader(tempFile, suffix);
                 if (dataLoader == null)
                 {
                     error(writer, "Unrecognized file type. Please upload a .xls, .tsv, .csv or .txt file");
@@ -225,6 +314,8 @@ public class PropertyController extends SpringActionController
             finally
             {
                 tempFile.delete();
+                if (dataLoader != null)
+                    dataLoader.close();
             }
         }
 
@@ -239,7 +330,7 @@ public class PropertyController extends SpringActionController
             for (ColumnDescriptor column : columns)
             {
                 sb.append(getStringValue(column.name)).append("\t");
-                sb.append(getRangeURI(column.clazz)).append("\t\n");
+                sb.append(column.getRangeURI()).append("\t\n");
             }
             sb.setLength(sb.length() - 1); // remove last return char
             return sb.toString();
@@ -250,21 +341,6 @@ public class PropertyController extends SpringActionController
             writer.write(message);
             writer.flush();
             writer.close();
-        }
-
-        private String getRangeURI(Class clazz)
-        {
-            if (clazz == String.class)
-                return "xsd:string";
-            if (clazz == Integer.class)
-                return "xsd:int";
-            if (clazz == Double.class)
-                return "xsd:double";
-            if (clazz == Date.class)
-                return "xsd:dateTime";
-            if (clazz == Boolean.class)
-                return "xsd:boolean";
-            throw new IllegalArgumentException("Unknown class for column: " + clazz);
         }
 
         private String getStringValue(Object o)

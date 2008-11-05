@@ -17,11 +17,14 @@
 package org.labkey.study.controllers;
 
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.property.DomainImporterServiceBase;
+import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
@@ -30,22 +33,20 @@ import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
+import org.labkey.study.StudySchema;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
+import org.labkey.study.dataset.client.DatasetImporter;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.StudySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * User: jgarms
@@ -377,6 +378,65 @@ public class DatasetController extends BaseStudyController
             return new ActionURL(StudyController.ManageTypesAction.class, getContainer());
         }
 
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class DefineAndImportDatasetAction extends SimpleViewAction<DefineAndImportForm>
+    {
+        public ModelAndView getView(DefineAndImportForm form, BindException errors) throws Exception
+        {
+            Map<String,String> props = new HashMap<String,String>();
+
+            Boolean isDateBased = getStudy().isDateBased();
+            props.put("dateBased", isDateBased.toString());
+
+            ActionURL cancelURL = new ActionURL(
+                StudyController.DatasetDetailsAction.class, getContainer()).addParameter("id", form.getDatasetId());
+            props.put("cancelURL", cancelURL.getLocalURIString());
+
+            ActionURL successURL = new ActionURL(
+                StudyController.DatasetAction.class, getContainer()).addParameter("datasetId", form.getDatasetId());
+            props.put("successURL", successURL.getLocalURIString());
+
+            return new GWTView(DatasetImporter.class, props);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            try
+            {
+                Study study = getStudy();
+                root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
+                root.addChild("Study Overview", new ActionURL(StudyController.OverviewAction.class, getContainer()));
+                root.addChild("Define Dataset from File");
+                return root;
+            }
+            catch (ServletException se) {throw UnexpectedException.wrap(se);}
+        }
+    }
+
+    public static class DefineAndImportForm
+    {
+        private int datasetId;
+
+        public int getDatasetId()
+        {
+            return datasetId;
+        }
+
+        public void setDatasetId(int datasetId)
+        {
+            this.datasetId = datasetId;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class DomainImportServiceAction extends GWTServiceAction
+    {
+        protected BaseRemoteService createService()
+        {
+            return new DomainImporterServiceBase(getViewContext());
+        }
     }
 
     public static class DatasetDeleteForm

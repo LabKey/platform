@@ -16,7 +16,6 @@
 
 package org.labkey.study.controllers;
 
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.BooleanConverter;
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.commons.lang.BooleanUtils;
@@ -34,11 +33,11 @@ import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -70,10 +69,10 @@ import org.labkey.study.SampleManager;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
-import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
+import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.importer.VisitMapImporter;
 import org.labkey.study.model.*;
 import org.labkey.study.pipeline.DatasetBatch;
@@ -149,68 +148,54 @@ public class StudyController extends BaseStudyController
         private DataSetDefinition _def;
         public ModelAndView getView(ImportTypeForm form, boolean reshow, BindException errors) throws Exception
         {
-            form.setErrors(errors);
             return new StudyJspView<ImportTypeForm>(getStudy(false), "importDataType.jsp", form, errors);
         }
 
         public void validateCommand(ImportTypeForm form, Errors errors)
         {
-            if (form.isCreate())
+
+            if (null == form.getDataSetId() && !form.isAutoDatasetId())
+                errors.reject("defineDatasetType", "You must supply an integer Dataset Id");
+            if (null != form.getDataSetId())
             {
-                if (null == form.getDataSetId() && !form.isAutoDatasetId())
-                    errors.reject("defineDatasetType", "You must supply an integer Dataset Id");
-                if (null != form.getDataSetId())
+                DataSetDefinition dsd = StudyManager.getInstance().getDataSetDefinition(StudyManager.getInstance().getStudy(getContainer()), form.getDataSetId().intValue());
+                if (null != dsd)
+                    errors.reject("defineDatasetType", "There is already a dataset with id " + form.getDataSetId());
+            }
+            if (null == StringUtils.trimToNull(form.getTypeName()))
+                errors.reject("defineDatasetType", "Dataset must have type name.");
+            else
+            {
+                String typeURI = AssayPublishManager.getInstance().getDomainURIString(StudyManager.getInstance().getStudy(getContainer()), form.getTypeName());
+                DomainDescriptor dd = OntologyManager.getDomainDescriptor(typeURI, getContainer());
+                if (null != dd)
                 {
-                    DataSetDefinition dsd = StudyManager.getInstance().getDataSetDefinition(StudyManager.getInstance().getStudy(getContainer()), form.getDataSetId().intValue());
-                    if (null != dsd)
-                        errors.reject("defineDatasetType", "There is already a dataset with id " + form.getDataSetId());
+                    errors.reject("defineDatasetType", "There is a dataset named " + form.getTypeName() + " already defined in this folder.");
                 }
-                if (null == StringUtils.trimToNull(form.getTypeName()))
-                    errors.reject("defineDatasetType", "Dataset must have type name.");
                 else
                 {
-                    String typeURI = AssayPublishManager.getInstance().getDomainURIString(StudyManager.getInstance().getStudy(getContainer()), form.getTypeName());
-                    DomainDescriptor dd = OntologyManager.getDomainDescriptor(typeURI, getContainer());
-                    if (null != dd)
+                    // Check if a query or table exists with the same name
+                    Study study = StudyManager.getInstance().getStudy(getContainer());
+                    StudyQuerySchema studySchema = new StudyQuerySchema(study, getUser(), true);
+                    if (studySchema.getTableNames().contains(form.getTypeName()) ||
+                        QueryService.get().getQueryDef(getContainer(), "study", form.getTypeName()) != null)
                     {
-                        errors.reject("defineDatasetType", "There is a dataset named " + form.getTypeName() + " already defined in this folder.");
-                    }
-                    else
-                    {
-                        // Check if a query or table exists with the same name
-                        Study study = StudyManager.getInstance().getStudy(getContainer());
-                        StudyQuerySchema studySchema = new StudyQuerySchema(study, getUser(), true);
-                        if (studySchema.getTableNames().contains(form.getTypeName()) ||
-                            QueryService.get().getQueryDef(getContainer(), "study", form.getTypeName()) != null)
-                        {
-                            errors.reject("defineDatasetType", "There is a query named " + form.getTypeName() + " already defined in this folder.");
-                        }
+                        errors.reject("defineDatasetType", "There is a query named " + form.getTypeName() + " already defined in this folder.");
                     }
                 }
             }
-            else if (null != form.getDataSetId())
-            {
-                //It's a bug in the code if this ever happens since editing a dataset
-                DataSetDefinition dsd = StudyManager.getInstance().getDataSetDefinition(StudyManager.getInstance().getStudy(getContainer()), form.getDataSetId().intValue());
-                if (null == dsd)
-                    errors.reject("defineDatasetType", "This dataset appears to have been deleted id=" + form.getDataSetId());
-            }
-            else
-                errors.reject("defineDatasetType", "DataSet ID not supplied.");
+
         }
 
         public boolean handlePost(ImportTypeForm form, BindException derrors) throws Exception
         {
             Integer datasetId = form.getDataSetId();
-            if (form.isCreate())
-            {
-                if (form.autoDatasetId)
-                    _def = AssayPublishManager.getInstance().createAssayDataset(getUser(), getStudy(), form.getTypeName(), null, null, form.isDemographicData());
-                else
-                    _def = AssayPublishManager.getInstance().createAssayDataset(getUser(), getStudy(), form.getTypeName(), null, datasetId, form.isDemographicData());
-            }
+
+            if (form.autoDatasetId)
+                _def = AssayPublishManager.getInstance().createAssayDataset(getUser(), getStudy(), form.getTypeName(), null, null, false);
             else
-                _def = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId.intValue());
+                _def = AssayPublishManager.getInstance().createAssayDataset(getUser(), getStudy(), form.getTypeName(), null, datasetId, false);
+
 
             if (_def != null)
             {
@@ -228,15 +213,22 @@ public class StudyController extends BaseStudyController
                 HttpView.throwNotFound();
                 return null;
             }
-            return new ActionURL(EditTypeAction.class, getContainer()).
-                    addParameter(DataSetDefinition.DATASETKEY, _def.getDataSetId()).
-                    addParameter("create", String.valueOf(form.isCreate()));
+            if (!form.isFileImport())
+            {
+                return new ActionURL(EditTypeAction.class, getContainer()).
+                    addParameter(DataSetDefinition.DATASETKEY, _def.getDataSetId());
+            }
+            else
+            {
+                return new ActionURL(DatasetController.DefineAndImportDatasetAction.class, getContainer()).
+                    addParameter(DataSetDefinition.DATASETKEY, _def.getDataSetId());
+            }
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             _appendNavTrailDatasetAdmin(root);
-            return root.addChild("Define Dataset Properties");
+            return root.addChild("Define Dataset");
         }
     }
 
@@ -2375,16 +2367,9 @@ public class StudyController extends BaseStudyController
     public static class ImportTypeForm
     {
         private String typeName;
-        private String label;
-        private String tsv;
         private Integer dataSetId;
-        private String keyPropertyName;
-        private String category;
         private boolean autoDatasetId;
-        private boolean create;
-        private boolean demographicData;
-        String datasetIdStr;
-        private BindException _errors;
+        private boolean fileImport;
 
         public String getTypeName()
         {
@@ -2394,36 +2379,6 @@ public class StudyController extends BaseStudyController
         public void setTypeName(String typeName)
         {
             this.typeName = typeName;
-        }
-
-        public String getTsv()
-        {
-            return tsv;
-        }
-
-        public void setTsv(String tsv)
-        {
-            this.tsv = tsv;
-        }
-
-        public String getDataSetIdStr()
-        {
-            if (null != datasetIdStr)
-                return datasetIdStr;
-            return null == dataSetId ? null : dataSetId.toString();
-        }
-
-        public void setDataSetIdStr(String strId)
-        {
-            datasetIdStr = strId;
-            try
-            {
-                dataSetId = (Integer) ConvertUtils.convert(strId, Integer.class);
-            }
-            catch (Exception x)
-            {
-                dataSetId = null;
-            }
         }
 
         public Integer getDataSetId()
@@ -2436,36 +2391,6 @@ public class StudyController extends BaseStudyController
             this.dataSetId = dataSetId;
         }
 
-        public String getLabel()
-        {
-            return label;
-        }
-
-        public void setLabel(String label)
-        {
-            this.label = label;
-        }
-
-        public String getKeyPropertyName()
-        {
-            return keyPropertyName;
-        }
-
-        public void setKeyPropertyName(String keyPropertyName)
-        {
-            this.keyPropertyName = keyPropertyName;
-        }
-
-        public String getCategory()
-        {
-            return category;
-        }
-
-        public void setCategory(String category)
-        {
-            this.category = category;
-        }
-
         public boolean isAutoDatasetId()
         {
             return autoDatasetId;
@@ -2476,34 +2401,14 @@ public class StudyController extends BaseStudyController
             this.autoDatasetId = autoDatasetId;
         }
 
-        public boolean isCreate()
+        public boolean isFileImport()
         {
-            return create;
+            return fileImport;
         }
 
-        public void setCreate(boolean create)
+        public void setFileImport(boolean fileImport)
         {
-            this.create = create;
-        }
-
-        public boolean isDemographicData()
-        {
-            return demographicData;
-        }
-
-        public void setDemographicData(boolean demographicData)
-        {
-            this.demographicData = demographicData;
-        }
-
-        public BindException getErrors()
-        {
-            return _errors;
-        }
-
-        public void setErrors(BindException errors)
-        {
-            _errors = errors;
+            this.fileImport = fileImport;
         }
     }
 

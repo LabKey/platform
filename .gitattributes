@@ -1542,7 +1542,9 @@ study/gwtsrc/org/labkey/study/chart/client/StudyChartDesigner.java -text
 study/gwtsrc/org/labkey/study/chart/client/StudyChartService.java -text
 study/gwtsrc/org/labkey/study/chart/client/StudyChartServiceAsync.java -text
 study/gwtsrc/org/labkey/study/chart/client/model/GWTPair.java -text
+study/gwtsrc/org/labkey/study/dataset/DatasetImporter.gwt.xml -text
 study/gwtsrc/org/labkey/study/dataset/Designer.gwt.xml -text
+study/gwtsrc/org/labkey/study/dataset/client/DatasetImporter.java -text
 study/gwtsrc/org/labkey/study/dataset/client/DatasetService.java -text
 study/gwtsrc/org/labkey/study/dataset/client/DatasetServiceAsync.java -text
 study/gwtsrc/org/labkey/study/dataset/client/Designer.java -text
