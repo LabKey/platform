@@ -121,7 +121,7 @@ public class ParticipantVisitTable extends FilteredTable
     }
 
 
-    private class PVForeignKey implements ForeignKey
+    private class PVForeignKey extends AbstractForeignKey
     {
         private final DataSetDefinition dsd;
 

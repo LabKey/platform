@@ -78,7 +78,7 @@ public class BtSchema extends UserSchema
                     return createEntitiesTable(alias);
             }
         }
-        return super.getTable(name, alias);    //To change body of overridden methods use File | Settings | File Templates.
+        return super.getTable(name, alias);
     }
 
     public TableInfo createTasksTable(String alias)
@@ -127,7 +127,7 @@ public class BtSchema extends UserSchema
         ret.addColumn(ret.wrapColumn("Name", ret.getRealTable().getColumn("BioTrue_Name")));
         ret.addWrapColumn(ret.getRealTable().getColumn("PhysicalName"));
         ColumnInfo parentColumn = ret.wrapColumn("Parent", ret.getRealTable().getColumn("ParentId"));
-        parentColumn.setFk(new LookupForeignKey("RowId")
+        parentColumn.setFk(new LookupForeignKey("Entities", "RowId", null)
         {
             public TableInfo getLookupTableInfo()
             {

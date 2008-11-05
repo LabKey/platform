@@ -60,7 +60,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 {
                     public TableInfo getLookupTableInfo()
                     {
-                        ExpSampleSetTable sampleSetTable = ExperimentService.get().createSampleSetTable("sampleSetLookup");
+                        ExpSampleSetTable sampleSetTable = ExperimentService.get().createSampleSetTable("SampleSets");
                         sampleSetTable.populate(_schema instanceof ExpSchema ? (ExpSchema)_schema : new ExpSchema(_schema.getUser(), _schema.getContainer()));
                         return sampleSetTable;
                     }

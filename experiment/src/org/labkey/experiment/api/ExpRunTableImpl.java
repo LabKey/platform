@@ -538,6 +538,16 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return null;
         }
 
+        public String getLookupTableName()
+        {
+            return "Experiments";
+        }
+
+        public String getLookupColumnName()
+        {
+            return null; // XXX: NYI
+        }
+
         public TableInfo getLookupTableInfo()
         {
             VirtualTable result = new VirtualTable(ExperimentServiceImpl.get().getSchema());

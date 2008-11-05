@@ -16,17 +16,18 @@
 
 package org.labkey.study.query;
 
-import org.labkey.api.query.*;
+import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.*;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
 
-import java.util.Map;
 import java.util.Collections;
+import java.util.Map;
 
 public class ParticipantTable extends FilteredTable
 {
@@ -43,7 +44,7 @@ public class ParticipantTable extends FilteredTable
         ColumnInfo datasetColumn = new AliasedColumn(this, "DataSet", _rootTable.getColumn("ParticipantId"));
         datasetColumn.setIsUnselectable(true);
         datasetColumn.setCaption("DataSet");
-        datasetColumn.setFk(new ForeignKey()
+        datasetColumn.setFk(new AbstractForeignKey()
         {
             public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
             {

@@ -167,7 +167,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
         {
             ret = new AliasedColumn(name, _colParticipantId);
         }
-        ret.setFk(new ForeignKey() {
+        ret.setFk(new AbstractForeignKey() {
             public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
             {
                 TableInfo table = getLookupTableInfo();

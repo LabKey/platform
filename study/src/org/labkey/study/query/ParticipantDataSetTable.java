@@ -28,7 +28,7 @@ public class ParticipantDataSetTable extends VirtualTable
 {
     StudyQuerySchema _schema;
     ColumnInfo _colParticipantId;
-    
+
     public ParticipantDataSetTable(StudyQuerySchema schema, ColumnInfo colParticipantId)
     {
         super(StudySchema.getInstance().getSchema());
@@ -65,7 +65,7 @@ public class ParticipantDataSetTable extends VirtualTable
 
         if (def.isDemographicData()) // If it's demographic, there are no visits, so we can add the dataset fields directly
         {
-            column.setFk(new ForeignKey() {
+            column.setFk(new AbstractForeignKey() {
                 public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
                 {
                     TableInfo table = getLookupTableInfo();
@@ -103,7 +103,7 @@ public class ParticipantDataSetTable extends VirtualTable
         }
         else
         {
-            column.setFk(new ForeignKey()
+            column.setFk(new AbstractForeignKey()
             {
                 public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
                 {

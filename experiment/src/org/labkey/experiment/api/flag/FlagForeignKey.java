@@ -16,14 +16,14 @@
 
 package org.labkey.experiment.api.flag;
 
-import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.exp.api.ExperimentService;
 
-public class FlagForeignKey implements ForeignKey
+public class FlagForeignKey extends AbstractForeignKey
 {
     public static final String DISPLAYFIELD_NAME = "Comment";
     String _urlFlagged;
@@ -48,6 +48,7 @@ public class FlagForeignKey implements ForeignKey
     public TableInfo getLookupTableInfo()
     {
         VirtualTable ret = new VirtualTable(ExperimentService.get().getSchema());
+        ret.setName("FlagComment");
         ColumnInfo colComment = new ColumnInfo("Comment", ret);
         colComment.setSqlTypeName("VARCHAR");
         ret.addColumn(colComment);

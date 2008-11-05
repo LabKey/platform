@@ -354,7 +354,7 @@ public class DomainImpl implements Domain
         final DomainKind type = getDomainKind();
         if (type == null)
             return;
-        columnInfo.setFk(new ForeignKey()
+        columnInfo.setFk(new AbstractForeignKey()
         {
             public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
             {

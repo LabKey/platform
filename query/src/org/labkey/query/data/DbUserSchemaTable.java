@@ -62,11 +62,7 @@ public class DbUserSchemaTable extends FilteredTable
                 //get the column name in the target FK table that it would have joined against
                 //the existing fks should be of type SchemaForeignKey, so try to downcast to that
                 //so that we can get the declared lookup column
-                //TODO: we really should add a method to ForeignKey that returns the name of the
-                //join column in the FK table. Not for 8.1 though
-                String pkColName = null;
-                if(col.getFk() instanceof ColumnInfo.SchemaForeignKey)
-                    pkColName = ((ColumnInfo.SchemaForeignKey)col.getFk()).getColumnName();
+                String pkColName = col.getFk().getLookupColumnName();
                 if(null == pkColName && col.getFkTableInfo().getPkColumnNames().size() == 1)
                     pkColName = col.getFkTableInfo().getPkColumnNames().get(0);
 
