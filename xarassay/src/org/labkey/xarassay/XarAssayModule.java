@@ -34,21 +34,13 @@ import java.util.Set;
  * Date: Sep 17, 2007
  * Time: 12:30:55 AM
  */
-public class XarAssayModule extends DefaultModule implements ContainerManager.ContainerListener
+public class XarAssayModule extends DefaultModule
 {
 
     public XarAssayModule()
     {
         super("XarAssay", 8.30, null, false);
         addController("xarassay", XarAssayController.class);
-    }
-
-    public void containerCreated(Container c)
-    {
-    }
-
-    public void containerDeleted(Container c, User user)
-    {
     }
 
     public Collection<String> getSummary(Container c)
@@ -61,15 +53,9 @@ public class XarAssayModule extends DefaultModule implements ContainerManager.Co
         return TabDisplayMode.DISPLAY_NEVER;
     }
 
-    public void propertyChange(PropertyChangeEvent evt)
-    {
-    }
-
     public void startup(ModuleContext moduleContext)
     {
         super.startup(moduleContext);
-        // add a container listener so we'll know when our container is deleted:
-        ContainerManager.addContainerListener(this);
 
         AssayService.get().registerAssayProvider(new XarAssayProvider());
 //        AssayService.get().registerAssayProvider(new MsFractionAssayProvider());
@@ -82,5 +68,4 @@ public class XarAssayModule extends DefaultModule implements ContainerManager.Co
     {
         return Collections.emptySet();
     }
-
 }

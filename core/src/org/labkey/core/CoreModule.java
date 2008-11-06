@@ -16,10 +16,8 @@
 package org.labkey.core;
 
 import junit.framework.TestCase;
-import org.apache.log4j.Logger;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.PropertyManager.PropertyMap;
@@ -51,8 +49,6 @@ import org.labkey.core.user.UserController;
 import org.labkey.core.webdav.FileSystemAuditViewFactory;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -64,10 +60,8 @@ import java.util.*;
  * Date: Jul 25, 2005
  * Time: 2:54:30 PM
  */
-public class CoreModule extends SpringModule implements ContainerManager.ContainerListener, FirstRequestHandler.FirstRequestListener
+public class CoreModule extends SpringModule
 {
-    private static Logger _log = Logger.getLogger(CoreModule.class);
-
     public String getName()
     {
         return CORE_MODULE_NAME;
@@ -76,6 +70,12 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
     public double getVersion()
     {
         return 8.30;
+    }
+
+    @Override
+    public boolean hasScripts()
+    {
+        return true;
     }
 
     protected void init()
@@ -96,7 +96,7 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
         AuthenticationManager.registerProvider(new DbLoginAuthenticationProvider(), Priority.Low);
         AttachmentService.register(new AttachmentServiceImpl());
         AnalyticsServiceImpl.register();
-        FirstRequestHandler.addFirstRequestListener(this);
+        FirstRequestHandler.addFirstRequestListener(new CoreFirstRequestHandler());
 
         DefaultSchema.registerProvider("core", new DefaultSchema.SchemaProvider()
         {
@@ -363,7 +363,7 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
     {
         super.startup(moduleContext);
 
-        ContainerManager.addContainerListener(this);
+        ContainerManager.addContainerListener(new CoreContainerListener());
         org.labkey.api.security.SecurityManager.init();
         ModuleLoader.getInstance().registerFolderType(FolderType.NONE);
         AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
@@ -420,63 +420,6 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
     }
 
 
-    public void containerCreated(Container c)
-    {
-        User user = UserManager.getGuestUser();
-        try {
-            ViewContext context = HttpView.currentContext();
-            if (context != null)
-            {
-                user = context.getUser();
-            }
-        }
-        catch (RuntimeException e){}
-        String message = c.isProject() ? "Project " + c.getName() + " was created" :
-                "Folder " + c.getName() + " was created";
-        addAuditEvent(user, c, message);
-    }
-
-    private void addAuditEvent(User user, Container c, String comment)
-    {
-        if (user != null)
-        {
-            AuditLogEvent event = new AuditLogEvent();
-
-            event.setCreatedBy(user);
-            event.setEventType(ContainerManager.CONTAINER_AUDIT_EVENT);
-            event.setContainerId(c.getId());
-            event.setComment(comment);
-
-            if (c.getProject() != null)
-                event.setProjectId(c.getProject().getId());
-
-            AuditLogService.get().addEvent(event);
-        }
-    }
-
-    public void containerDeleted(Container c, User user)
-    {
-        try
-        {
-            PropertyManager.purgeObjectProperties(c.getId());
-            // Let containerManager delete ACLs, we want that to happen last
-
-            String message = c.isProject() ? "Project " + c.getName() + " was deleted" :
-                    "Folder " + c.getName() + " was deleted";
-            addAuditEvent(user, c, message);
-        }
-        catch (SQLException e)
-        {
-            _log.error("Failed to delete Properties for container '" + c.getPath() + "'.", e);
-        }
-    }
-
-
-    public void propertyChange(PropertyChangeEvent evt)
-    {
-    }
-
-
     @Override
     public Set<Class<? extends TestCase>> getJUnitTests()
     {
@@ -529,20 +472,6 @@ public class CoreModule extends SpringModule implements ContainerManager.Contain
                     PropertyManager.getSchemaName(),                // prop
                     TestSchema.getInstance().getSchemaName()        // test
                 );
-    }
-
-    public void handleFirstRequest(HttpServletRequest request)
-    {
-        ViewServlet.initialize();
-        ModuleLoader.getInstance().initPageFlowToModule();        
-        AuthenticationManager.initialize();
-    }
-
-
-    @Override
-    public boolean hasScripts()
-    {
-        return true;
     }
 
     public List<String> getAttributions()

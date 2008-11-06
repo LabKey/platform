@@ -23,6 +23,8 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Container;
 import org.labkey.wiki.WikiModule;
+import org.labkey.wiki.WikiWebPartFactory;
+import org.labkey.wiki.WikiTOCFactory;
 
 import java.util.Arrays;
 
@@ -40,8 +42,8 @@ public class CollaborationFolderType extends DefaultFolderType
                 "Build a web site for publishing and exchanging information. " +
                         "Your tools include Message Boards, Issue Trackers and Wikis. Share information within your own group, across groups or with the public by configuring user permissions.",
               null,
-              Arrays.asList(new WikiModule.WikiWebPartFactory().createWebPart(),
-                      new WikiModule.WikiTOCFactory().createWebPart(),
+              Arrays.asList(new WikiWebPartFactory().createWebPart(),
+                      new WikiTOCFactory().createWebPart(),
                       Portal.getPortalPart("Messages").createWebPart()),
                       getDefaultModuleSet(), null);
     }

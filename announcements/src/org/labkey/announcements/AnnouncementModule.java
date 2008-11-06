@@ -25,14 +25,14 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Search;
 import org.labkey.api.view.*;
 
 import javax.servlet.ServletException;
-import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -46,10 +46,8 @@ import java.util.*;
  * <p/>
  * TODO: merge announcement & wiki into one module?
  */
-public class AnnouncementModule extends DefaultModule implements ContainerManager.ContainerListener, UserManager.UserListener, SecurityManager.GroupListener
+public class AnnouncementModule extends DefaultModule
 {
-    public static final String NAME = "Announcements";
-
     public static final String WEB_PART_NAME = "Messages";
 
     private static Logger _log = Logger.getLogger(AnnouncementModule.class);
@@ -123,9 +121,10 @@ public class AnnouncementModule extends DefaultModule implements ContainerManage
         Search.register(new MessageSearch());
         DiscussionService.register(new DiscussionServiceImpl());
 
-        ContainerManager.addContainerListener(this);
-        UserManager.addUserListener(this);
-        SecurityManager.addGroupListener(this);
+        AnnouncementListener listener = new AnnouncementListener();
+        ContainerManager.addContainerListener(listener);
+        UserManager.addUserListener(listener);
+        SecurityManager.addGroupListener(listener);
 
         if (_newInstall)
         {
@@ -156,89 +155,6 @@ public class AnnouncementModule extends DefaultModule implements ContainerManage
         {
             _newInstall = true;
             _installerUser = viewContext.getUser();
-        }
-    }
-
-    public void containerCreated(Container c)
-    {
-    }
-
-    public void propertyChange(PropertyChangeEvent evt)
-    {
-    }
-
-    // Note: Attachments are purged by AttachmentServiceImpl.containerDeleted()
-    public void containerDeleted(Container c, User user)
-    {
-        try
-        {
-            AnnouncementManager.purgeContainer(c);
-        }
-        catch (Throwable t)
-        {
-            _log.error(t);
-        }
-    }
-
-
-    public void userAddedToSite(User user)
-    {
-    }
-
-    public void userDeletedFromSite(User user)
-    {
-        //when user is deleted from site, remove any corresponding record from EmailPrefs table.
-        try
-        {
-            AnnouncementManager.deleteUserEmailPref(user, null);
-            AnnouncementManager.deleteUserFromAllMemberLists(user);
-        }
-        catch (SQLException e)
-        {
-            _log.error(e);
-        }
-    }
-
-    public void userAccountDisabled(User user)
-    {
-        //TODO: what should go here?
-    }
-
-    public void userAccountEnabled(User user)
-    {
-        //TODO: what should go here?
-    }
-
-    public void principalAddedToGroup(Group group, UserPrincipal user)
-    {
-    }
-
-    public void principalDeletedFromGroup(Group g, UserPrincipal p)
-    {
-        if (g.isProjectGroup() && p instanceof User)
-        {
-            User user = (User)p;
-            Container cProject = ContainerManager.getForId(g.getContainer());
-            List<User> memberList = SecurityManager.getProjectMembers(cProject, false);
-
-            //if user is no longer a member of any project group, delete any EmailPrefs records
-            if (!memberList.contains(user))
-            {
-                //find all containers for which this user could have an entry in EmailPrefs
-                List<Container> containerList = cProject.getChildren();
-                //add project container to list
-                containerList.add(cProject);
-                try
-                {
-
-                    AnnouncementManager.deleteUserEmailPref(user, containerList);
-                }
-                catch (SQLException e)
-                {
-                    //is this the preferred way to handle any such errors?
-                    _log.error(e);
-                }
-            }
         }
     }
 

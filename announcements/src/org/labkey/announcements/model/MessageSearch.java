@@ -93,7 +93,4 @@ public class MessageSearch implements Searchable
     {
         return SEARCH_DOMAIN;
     }
-
-
-
 }

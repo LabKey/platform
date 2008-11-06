@@ -421,7 +421,7 @@ public class WikiManager
                 ActionURL url = new ActionURL(WikiController.PageAction.class, c);
                 url.addParameter("name", rs.getString(3));
 
-                SimpleSearchHit hit = new SimpleSearchHit(WikiModule.SEARCH_DOMAIN, c.getPath(),
+                SimpleSearchHit hit = new SimpleSearchHit(WikiSearchable.SEARCH_DOMAIN, c.getPath(),
                         rs.getString(2), url.getLocalURIString(), SEARCH_HIT_TYPE, SEARCH_HIT_TYPE_PAGE);
 
                 hits.add(hit);

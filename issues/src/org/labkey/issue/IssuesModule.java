@@ -23,8 +23,9 @@ import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.issue.model.IssueManager;
@@ -32,8 +33,6 @@ import org.labkey.issue.model.IssueSearch;
 import org.labkey.issue.query.IssuesQuerySchema;
 
 import javax.servlet.http.HttpServletResponse;
-import java.beans.PropertyChangeEvent;
-import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -42,7 +41,7 @@ import java.util.*;
  * Date: Jul 18, 2005
  * Time: 3:48:21 PM
  */
-public class IssuesModule extends DefaultModule implements ContainerManager.ContainerListener, SecurityManager.GroupListener, UserManager.UserListener
+public class IssuesModule extends DefaultModule
 {
     private static final Logger _log = Logger.getLogger(IssuesModule.class);
 
@@ -74,68 +73,17 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
         return true;
     }
 
-    private static class IssuesWebPartFactory extends AlwaysAvailableWebPartFactory
-    {
-        public IssuesWebPartFactory()
-        {
-            this(NAME, null);
-        }
-
-        public IssuesWebPartFactory(String name, String location)
-        {
-            super(name, location, true, false);
-        }
-
-        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
-        {
-            WebPartView v = new IssuesController.SummaryWebPart();
-            populateProperties(v, webPart.getPropertyMap());
-            return v;
-        }
-
-        @Override
-        public HttpView getEditView(Portal.WebPart webPart)
-        {
-            WebPartView v = new IssuesController.CustomizeIssuesPartView();
-            v.addObject("webPart", webPart);
-            return v;
-        }
-    }
-
     @Override
     public void startup(ModuleContext moduleContext)
     {
         super.startup(moduleContext);
-        ContainerManager.addContainerListener(this);
-        SecurityManager.addGroupListener(this);
-        UserManager.addUserListener(this);
+
+        ContainerManager.addContainerListener(new IssueContainerListener());
+        SecurityManager.addGroupListener(new IssueGroupListener());
+        UserManager.addUserListener(new IssueUserListener());
 
         Search.register(IssueSearch.getInstance());
     }
-
-    public void containerCreated(Container c)
-    {
-    }
-
-    public void containerDeleted(Container c, User user)
-    {
-        IssueManager.purgeContainer(c);
-    }
-
-    public void propertyChange(PropertyChangeEvent event)
-    {
-    }
-
-    public void principalAddedToGroup(Group g, UserPrincipal user)
-    {
-        IssueManager.uncache(ContainerManager.getForId(g.getContainer()));
-    }
-
-    public void principalDeletedFromGroup(Group g, UserPrincipal user)
-    {
-        IssueManager.uncache(ContainerManager.getForId(g.getContainer()));
-    }
-
 
     @Override
     public Collection<String> getSummary(Container c)
@@ -154,11 +102,13 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
         return list;
     }
 
+    @Override
     public TabDisplayMode getTabDisplayMode()
     {
         return Module.TabDisplayMode.DISPLAY_USER_PREFERENCE;
     }
 
+    @Override
     public ActionURL getTabURL(Container c, User user)
     {
         ActionURL url = new ActionURL(getName().toLowerCase(), "list", c == null ? null : c.getPath());
@@ -183,37 +133,13 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
         return PageFlowUtil.set(IssuesSchema.getInstance().getSchemaName());
     }
 
-    public void userAddedToSite(User user)
-    {
-    }
-
-    public void userDeletedFromSite(User user)
-    {
-        try {
-            IssueManager.deleteUserEmailPreferences(user);
-        }
-        catch (SQLException e)
-        {
-            _log.error(e);            
-        }
-    }
-
-    public void userAccountDisabled(User user)
-    {
-        IssueManager.uncache(null);
-    }
-
-    public void userAccountEnabled(User user)
-    {
-        IssueManager.uncache(null);
-    }
-
     public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
     {
         double version = moduleContext.getInstalledVersion();
         if (version > 0 && version < 8.11)
         {
-            try {
+            try
+            {
                 doPopulateCommentEntityIds();
             }
             catch (Exception e)
@@ -234,7 +160,8 @@ public class IssuesModule extends DefaultModule implements ContainerManager.Cont
         Table.TableResultSet rs = Table.select(tinfo, tinfo.getColumns(), null, null);
         String sql = "UPDATE " + tinfo + " SET EntityId = ? WHERE CommentId = ? AND IssueId = ?";
 
-        try {
+        try
+        {
             while (rs.next())
             {
                 Map<String, Object> row = rs.getRowMap();

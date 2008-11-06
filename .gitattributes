@@ -52,6 +52,7 @@ announcements/src/META-INF/announcements/scripts/sql[!!-~]server/obsolete/cpas-0
 announcements/src/META-INF/announcements/scripts/sql[!!-~]server/obsolete/cpas-0.00-0.70.sql -text
 announcements/src/META-INF/announcements/scripts/sql[!!-~]server/obsolete/cpas-0.58-0.59.sql -text
 announcements/src/META-INF/comm.xml -text
+announcements/src/org/labkey/announcements/AnnouncementListener.java -text
 announcements/src/org/labkey/announcements/AnnouncementModule.java -text
 announcements/src/org/labkey/announcements/DailyDigestPage.java -text
 announcements/src/org/labkey/announcements/EmailNotificationPage.java -text
@@ -344,7 +345,9 @@ core/src/META-INF/executables.txt -text
 core/src/META-INF/jars.txt -text
 core/src/META-INF/scripts.txt -text
 core/src/RootController.java -text
+core/src/org/labkey/core/CoreContainerListener.java -text
 core/src/org/labkey/core/CoreController.java -text
+core/src/org/labkey/core/CoreFirstRequestHandler.java -text
 core/src/org/labkey/core/CoreModule.java -text
 core/src/org/labkey/core/SqlDialectPostgreSQL.java -text
 core/src/org/labkey/core/admin/AdminController.java -text
@@ -830,8 +833,12 @@ issues/src/META-INF/issues/scripts/sql[!!-~]server/obsolete/cpas-0.00-0.81.sql -
 issues/src/META-INF/issues/scripts/sql[!!-~]server/obsolete/cpas-0.69-0.70.sql -text
 issues/src/META-INF/issues/scripts/sql[!!-~]server/obsolete/issues-1.60-1.61.sql -text
 issues/src/META-INF/issues/scripts/sql[!!-~]server/obsolete/issues-1.70-1.71.sql -text
+issues/src/org/labkey/issue/IssueContainerListener.java -text
+issues/src/org/labkey/issue/IssueGroupListener.java -text
 issues/src/org/labkey/issue/IssuePage.java -text
+issues/src/org/labkey/issue/IssueUserListener.java -text
 issues/src/org/labkey/issue/IssuesModule.java -text
+issues/src/org/labkey/issue/IssuesWebPartFactory.java -text
 issues/src/org/labkey/issue/detailList.jsp -text
 issues/src/org/labkey/issue/detailView.jsp -text
 issues/src/org/labkey/issue/emailPreferences.jsp -text
@@ -2216,8 +2223,12 @@ wiki/module.properties -text
 wiki/src/org/labkey/wiki/BaseWikiPermissions.java -text
 wiki/src/org/labkey/wiki/ServiceImpl.java -text
 wiki/src/org/labkey/wiki/WikiCache.java -text
+wiki/src/org/labkey/wiki/WikiContainerListener.java -text
 wiki/src/org/labkey/wiki/WikiManager.java -text
 wiki/src/org/labkey/wiki/WikiModule.java -text
+wiki/src/org/labkey/wiki/WikiSearchable.java -text
+wiki/src/org/labkey/wiki/WikiTOCFactory.java -text
+wiki/src/org/labkey/wiki/WikiWebPartFactory.java -text
 wiki/src/org/labkey/wiki/WikiWebdavProvider.java -text
 wiki/src/org/labkey/wiki/model/BaseWikiView.java -text
 wiki/src/org/labkey/wiki/model/CollaborationFolderType.java -text
