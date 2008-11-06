@@ -19,11 +19,12 @@ import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.client.ui.FileUploadWithListeners;
 import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * GWT Class for defining a domain from a file,
@@ -39,14 +40,20 @@ public class DomainImporter
     /**
      * Contains the list of columns from the data file that must be mapped
      * to columns in the new domain. E.g. "ParticipantID" or "SequenceNum".
+     *
+     * The mapped columns will not be created in the domain. Subclasses will
+     * handle that if anything needs to be done. The expectation is that these
+     * mapped columns probably come from columns in the hard table,
+     * and thus do not need ontology manager columns created.
      */
     private List<String> columnsToMap;
 
     private VerticalPanel mainPanel;
 
-    FileUpload fileUpload;
+    FileUploadWithListeners fileUpload;
 
-    private Label statusLabel;
+    private HTML uploadStatusLabel;
+    private Label importStatusLabel;
 
     List<InferencedColumn> columns;
 
@@ -56,8 +63,7 @@ public class DomainImporter
 
     private String cancelURL;
     private String successURL;
-    private GWTDomain domain;
-
+    private String typeURI;
 
     public DomainImporter(DomainImporterServiceAsync service, List<String> columnsToMap)
     {
@@ -66,6 +72,7 @@ public class DomainImporter
 
         successURL = PropertyUtil.getServerProperty("successURL");
         cancelURL = PropertyUtil.getServerProperty("cancelURL");
+        typeURI = PropertyUtil.getServerProperty("typeURI");
 
         VerticalPanel panel = new VerticalPanel();
 
@@ -81,25 +88,20 @@ public class DomainImporter
         
         form.setWidget(panel);
 
-        fileUpload = new FileUpload();
+        fileUpload = new FileUploadWithListeners();
         fileUpload.setName("uploadFormElement");
-        panel.add(fileUpload);
-
-        statusLabel = new HTML("&nbsp;");
-
-        final ImageButton submitButton = new ImageButton("Update", new ClickListener()
+        fileUpload.addChangeListener(new ChangeListener()
         {
-            public void onClick(Widget sender)
+            public void onChange(Widget sender)
             {
                 form.submit();
             }
         });
+        panel.add(fileUpload);
 
-        HorizontalPanel buttonPanel = new HorizontalPanel();
-        buttonPanel.add(submitButton);
-        buttonPanel.add(statusLabel);
+        uploadStatusLabel = new HTML("&nbsp;");
 
-        panel.add(buttonPanel);
+        panel.add(uploadStatusLabel);
 
         mainPanel = new VerticalPanel();
         mainPanel.add(form);
@@ -110,10 +112,103 @@ public class DomainImporter
         return mainPanel;
     }
 
-    private void finish()
+    public void finish()
     {
-        Window.alert("Not yet implemented");
         navigate(successURL);
+    }
+
+    private void importData()
+    {
+        importStatusLabel.setText("Creating columns...");
+        service.getDomainDescriptor(typeURI, new AsyncCallback<GWTDomain>()
+        {
+            public void onFailure(Throwable caught)
+            {
+                importStatusLabel.setText("");
+                Window.alert(caught.getMessage());
+            }
+
+            public void onSuccess(GWTDomain result)
+            {
+                createColumnsOnServer(result);
+            }
+        });
+    }
+
+    protected void createColumnsOnServer(GWTDomain domain)
+    {
+        final GWTDomain newDomain = new GWTDomain(domain);
+        Set<String> ignoredColumns = columnMapper.getMappedColumnNames();
+        List<GWTPropertyDescriptor> newProps = newDomain.getPropertyDescriptors();
+        for (InferencedColumn column : columns)
+        {
+            GWTPropertyDescriptor prop = column.getPropertyDescriptor();
+            if (ignoredColumns.contains(prop.getName()))
+                continue;
+
+            newProps.add(prop);
+        }
+
+        service.updateDomainDescriptor(domain, newDomain, new AsyncCallback<List<String>>()
+        {
+            public void onFailure(Throwable caught)
+            {
+                handleServerFailure(caught);
+            }
+
+            public void onSuccess(List<String> errors)
+            {
+                if (errors == null || errors.isEmpty())
+                {
+                    importStatusLabel.setText("Importing data...");
+                    importData(newDomain);
+                }
+                else
+                {
+                    handleServerFailure(errors);
+                }
+            }
+        });
+    }
+
+    protected void importData(GWTDomain domain)
+    {
+        service.importData(domain, columnMapper.getColumnMap(), new AsyncCallback<List<String>>()
+        {
+            public void onFailure(Throwable caught)
+            {
+                handleServerFailure(caught);
+            }
+
+            public void onSuccess(List<String> errors)
+            {
+                if (errors == null || errors.isEmpty())
+                {
+                    finish();
+                }
+                else
+                {
+                    handleServerFailure(errors);
+                }
+            }
+        });
+    }
+
+    private void handleServerFailure(List<String> errors)
+    {
+        StringBuilder sb = new StringBuilder();
+        for (String error : errors)
+        {
+            sb.append(error).append("\n");
+        }
+        importStatusLabel.setText("");
+        Window.alert(sb.toString());
+    }
+
+    private void handleServerFailure(Throwable caught)
+    {
+        importStatusLabel.setText("");
+        Window.alert(caught.getMessage());
     }
 
     private void cancel()
@@ -133,7 +228,7 @@ public class DomainImporter
         $wnd.history.back();
     }-*/;
 
-    private class UploadFormHandler implements FormHandler
+    private class UploadFormHandler implements FormHandler, AsyncCallback<List<InferencedColumn>>
     {
         public void onSubmit(FormSubmitEvent event)
         {
@@ -145,64 +240,64 @@ public class DomainImporter
                 return;
             }
 
-            statusLabel.setText("Uploading...");
+            uploadStatusLabel.setText("Uploading...");
         }
 
         public void onSubmitComplete(FormSubmitCompleteEvent event)
         {
-            statusLabel.setText("Processing...");
+            uploadStatusLabel.setText("Processing...");
 
-            service.inferenceColumns(new AsyncCallback()
+            service.inferenceColumns(this);
+        }
+
+        public void onFailure(Throwable caught)
+        {
+            uploadStatusLabel.setHTML("&nsbp;");
+            Window.alert("Failure:\n" + caught.getMessage());
+        }
+
+        public void onSuccess(List<InferencedColumn> result)
+        {
+            uploadStatusLabel.setHTML("&nbsp;");
+            columns = result;
+            boolean needGridAndButtons = false;
+            if (grid == null)
             {
-                public void onFailure(Throwable caught)
+                needGridAndButtons = true;
+                grid = new DomainImportGrid();
+                mainPanel.add(grid);
+            }
+            grid.setColumns(columns);
+            if (!needGridAndButtons)
+            {
+                // We've already been through here once, remove our old mapper
+                mainPanel.remove(columnMapper);
+            }
+            columnMapper = new ColumnMapper();
+            mainPanel.insert(columnMapper, 2);
+
+            if (needGridAndButtons)
+            {
+                HorizontalPanel buttons = new HorizontalPanel();
+                buttons.add(new ImageButton("Import", new ClickListener()
                 {
-                    statusLabel.setText("");
-                    Window.alert("Failure:\n" + caught.getMessage());
-                }
-
-                public void onSuccess(Object result)
+                    public void onClick(Widget sender)
+                    {
+                        importData();
+                    }
+                }));
+                buttons.add(new ImageButton("Cancel", new ClickListener()
                 {
-                    //noinspection unchecked
-                    columns = (List)result;
-                    statusLabel.setText("");
-                    boolean needGridAndButtons = false;
-                    if (grid == null)
+                    public void onClick(Widget sender)
                     {
-                        needGridAndButtons = true;
-                        grid = new DomainImportGrid();
-                        mainPanel.add(grid);
+                        cancel();
                     }
-                    grid.setColumns(columns);
-                    if (!needGridAndButtons)
-                    {
-                        // We've already been through here once, remove our old mapper
-                        mainPanel.remove(columnMapper);
-                    }
-                    columnMapper = new ColumnMapper();
-                    mainPanel.insert(columnMapper, 2);
+                }));
+                importStatusLabel = new HTML("&nbsp;");
+                buttons.add(importStatusLabel);
 
-                    if (needGridAndButtons)
-                    {
-                        HorizontalPanel buttons = new HorizontalPanel();
-                        buttons.add(new ImageButton("Import", new ClickListener()
-                        {
-                            public void onClick(Widget sender)
-                            {
-                                finish();
-                            }
-                        }));
-                        buttons.add(new ImageButton("Cancel", new ClickListener()
-                        {
-                            public void onClick(Widget sender)
-                            {
-                                cancel();
-                            }
-                        }));
-
-                        mainPanel.add(buttons);
-                    }
-                }
-            });
+                mainPanel.add(buttons);
+            }
         }
     }
 
@@ -238,6 +333,33 @@ public class DomainImporter
 
                 row++;
             }
+        }
+
+        public Set<String> getMappedColumnNames()
+        {
+            Set<String> columnNames = new HashSet<String>();
+            for (ListBox listBox : columnSelectors)
+            {
+                columnNames.add(listBox.getItemText(listBox.getSelectedIndex()));
+            }
+            return columnNames;
+        }
+
+        /**
+         * Map of column in the file -> column in the underlying data
+         */
+        public Map<String,String> getColumnMap()
+        {
+            Map<String,String> result = new HashMap<String,String>();
+            for(int i=0; i<columnsToMap.size(); i++)
+            {
+                String dataColumn = columnsToMap.get(i);
+                ListBox selector = columnSelectors.get(i);
+                String fileColumn = selector.getItemText(selector.getSelectedIndex());
+
+                result.put(dataColumn, fileColumn);
+            }
+            return result;
         }
     }
 

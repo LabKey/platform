@@ -16,8 +16,10 @@
 package org.labkey.api.gwt.client.ui.domain;
 
 import com.google.gwt.user.client.rpc.RemoteService;
+import org.labkey.api.gwt.client.model.GWTDomain;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: jgarms
@@ -26,4 +28,7 @@ import java.util.List;
 public interface DomainImporterService extends RemoteService
 {
     public List<InferencedColumn> inferenceColumns() throws ImportException;
+    public List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain dd);
+    public GWTDomain getDomainDescriptor(String typeURI);
+    public List<String> importData(GWTDomain domain, Map<String,String> mappedColumnNames) throws ImportException;
 }

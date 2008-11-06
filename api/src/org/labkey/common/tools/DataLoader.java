@@ -69,6 +69,25 @@ public abstract class DataLoader
         return _columns;
     }
 
+    public void setColumns(ColumnDescriptor[] columns)
+    {
+        this._columns = columns;
+    }
+
+    public void ensureColumn(ColumnDescriptor column) throws IOException
+    {
+        ColumnDescriptor[] existingColumns = getColumns();
+        for (ColumnDescriptor existing : existingColumns)
+        {
+            if (existing.name.equalsIgnoreCase(column.name))
+                return;
+        }
+        ColumnDescriptor[] newColumns = new ColumnDescriptor[existingColumns.length + 1];
+        System.arraycopy(existingColumns, 0, newColumns, 0, existingColumns.length);
+        newColumns[newColumns.length - 1] = column;
+        setColumns(newColumns);
+    }
+
     private void initializeColumns() throws IOException
     {
         //Take our best guess since some columns won't map

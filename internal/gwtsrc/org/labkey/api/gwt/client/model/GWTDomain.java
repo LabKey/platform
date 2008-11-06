@@ -56,7 +56,7 @@ public class GWTDomain implements IsSerializable
         if (src.getPropertyDescriptors() == null)
             return;
         for (int i=0 ; i<src.getPropertyDescriptors().size() ; i++)
-            this.propertyDescriptors.add(new GWTPropertyDescriptor((GWTPropertyDescriptor)src.getPropertyDescriptors().get(i)));
+            this.propertyDescriptors.add(new GWTPropertyDescriptor(src.getPropertyDescriptors().get(i)));
 
         if (src.getMandatoryPropertyDescriptorNames() != null)
         {

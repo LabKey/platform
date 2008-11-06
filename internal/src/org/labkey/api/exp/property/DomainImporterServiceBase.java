@@ -15,6 +15,9 @@
  */
 package org.labkey.api.exp.property;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.domain.DomainImporterService;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
@@ -31,13 +34,15 @@ import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: jgarms
  * Date: Nov 4, 2008
  */
-public class DomainImporterServiceBase extends BaseRemoteService implements DomainImporterService
+public abstract class DomainImporterServiceBase extends BaseRemoteService implements DomainImporterService
 {
     /** The number of sample data rows to return **/
     private static final int NUM_SAMPLE_ROWS = 5;
@@ -49,14 +54,7 @@ public class DomainImporterServiceBase extends BaseRemoteService implements Doma
 
     public List<InferencedColumn> inferenceColumns() throws ImportException
     {
-        HttpSession session = getViewContext().getSession();
-        SessionTempFileHolder fileHolder = (SessionTempFileHolder)session.getAttribute("org.labkey.domain.tempFile");
-
-        if (fileHolder == null)
-            throw new ImportException("No temp file uploaded");
-
-        File file = fileHolder.getFile();
-        DataLoader loader = getDataLoader(file);
+        DataLoader loader = getDataLoader();
 
         try
         {
@@ -66,11 +64,37 @@ public class DomainImporterServiceBase extends BaseRemoteService implements Doma
         {
             loader.close();
         }
-        
     }
 
-    private DataLoader getDataLoader(File file) throws ImportException
+    @NotNull
+    private File getImportFile() throws ImportException
     {
+        HttpSession session = getViewContext().getSession();
+        SessionTempFileHolder fileHolder = (SessionTempFileHolder)session.getAttribute("org.labkey.domain.tempFile");
+
+        if (fileHolder == null)
+            throw new ImportException("No temp file uploaded");
+
+        return fileHolder.getFile();
+    }
+
+    protected void deleteImportFile()
+    {
+        try
+        {
+            //noinspection ResultOfMethodCallIgnored
+            getImportFile().delete();
+        }
+        catch (ImportException ie)
+        {
+            // Nothing to do here -- we don't care if we couldn't find the file
+        }
+    }
+
+    @NotNull
+    protected DataLoader getDataLoader() throws ImportException
+    {
+        File file = getImportFile();
         String filename = file.getName();
         try
         {
@@ -135,5 +159,24 @@ public class DomainImporterServiceBase extends BaseRemoteService implements Doma
         }
 
         return result;
+    }
+
+    public GWTDomain getDomainDescriptor(String typeURI)
+    {
+        return DomainUtil.getDomainDescriptor(typeURI, getContainer());
+    }
+
+    public abstract List<String> importData(GWTDomain domain, Map<String, String> mappedColumnNames) throws ImportException;
+
+    public List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain update)
+    {
+        try
+        {
+            return DomainUtil.updateDomainDescriptor(orig, update, getContainer(), getUser());
+        }
+        catch (ChangePropertyDescriptorException e)
+        {
+            return Collections.singletonList(e.getMessage());
+        }
     }
 }

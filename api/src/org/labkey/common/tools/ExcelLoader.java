@@ -137,7 +137,8 @@ public class ExcelLoader extends DataLoader
         private boolean returnMaps;
         private int rowIndex;
         private Sheet sheet;
-        private int numRows;
+        private final int numRows;
+        private final int numCols;
 
         public ExcelIterator()
         {
@@ -154,6 +155,7 @@ public class ExcelLoader extends DataLoader
 
             sheet = getSheet();
             numRows = sheet.getRows();
+            numCols = sheet.getColumns();
 
             rowIndex = _skipLines == -1 ? 1 : _skipLines;
         }
@@ -172,8 +174,16 @@ public class ExcelLoader extends DataLoader
             for (int columnIndex = 0; columnIndex < _columns.length; columnIndex++)
             {
                 ColumnDescriptor column = _columns[columnIndex];
-                Cell cell = sheet.getCell(columnIndex, rowIndex);
-                String contents = cell.getContents();
+                String contents;
+                if (columnIndex < numCols) // We can get asked for more data than we contain, as extra columns can exist
+                {
+                    Cell cell = sheet.getCell(columnIndex, rowIndex);
+                    contents = cell.getContents();
+                }
+                else
+                {
+                    contents = "";
+                }
                 Object value = "".equals(contents) ?
                     column.missingValues :
                     column.converter.convert(column.clazz, contents);

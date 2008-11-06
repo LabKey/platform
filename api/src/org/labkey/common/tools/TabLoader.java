@@ -486,26 +486,6 @@ public class TabLoader extends DataLoader
     }
 
 
-    public void setColumns(ColumnDescriptor[] columns)
-    {
-        this._columns = columns;
-    }
-
-    public void ensureColumn(ColumnDescriptor column) throws IOException
-    {
-        ColumnDescriptor[] existingColumns = getColumns();
-        for (ColumnDescriptor existing : existingColumns)
-        {
-            if (existing.name.equalsIgnoreCase(column.name))
-                return;
-        }
-        ColumnDescriptor[] newColumns = new ColumnDescriptor[existingColumns.length + 1];
-        System.arraycopy(existingColumns, 0, newColumns, 0, existingColumns.length);
-        newColumns[newColumns.length - 1] = column;
-        setColumns(newColumns);
-    }
-
-
     public void parseAsCSV()
     {
         _chDelimiter = ',';

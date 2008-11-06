@@ -16,25 +16,26 @@
 package org.labkey.api.gwt.client.ui;
 
 import com.google.gwt.dom.client.Element;
-import com.google.gwt.user.client.ui.ClickListenerCollection;
-import com.google.gwt.user.client.ui.FileUpload;
-import com.google.gwt.user.client.ui.SourcesClickEvents;
-import com.google.gwt.user.client.ui.ClickListener;
-import com.google.gwt.user.client.Event;
 import com.google.gwt.user.client.DOM;
+import com.google.gwt.user.client.Event;
+import com.google.gwt.user.client.ui.*;
 
 /**
  * User: jgarms
  * Date: Oct 30, 2008
  */
-public class FileUploadWithListeners extends FileUpload implements SourcesClickEvents
+public class FileUploadWithListeners extends FileUpload implements SourcesClickEvents, SourcesChangeEvents
 {
     @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
     private ClickListenerCollection clickListeners;
 
+    @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
+    private ChangeListenerCollection changeListeners;
+
     public FileUploadWithListeners()
     {
         super();
+        sinkEvents(Event.ONCLICK | Event.ONCHANGE);
     }
 
     protected FileUploadWithListeners(Element element)
@@ -60,12 +61,33 @@ public class FileUploadWithListeners extends FileUpload implements SourcesClickE
         }
     }
 
+    public void addChangeListener(ChangeListener listener)
+    {
+        if (changeListeners == null)
+        {
+            changeListeners = new ChangeListenerCollection();
+            sinkEvents(Event.ONCHANGE);
+        }
+        changeListeners.add(listener);
+    }
+
+    public void removeChangeListener(ChangeListener listener)
+    {
+        if (changeListeners != null)
+                changeListeners.remove(listener);
+    }
+
     public void onBrowserEvent(Event event)
     {
         if (DOM.eventGetType(event) == Event.ONCLICK)
         {
             if (clickListeners != null)
                 clickListeners.fireClick(this);
+        }
+        else if (DOM.eventGetType(event) == Event.ONCHANGE)
+        {
+            if (changeListeners != null)
+                    changeListeners.fireChange(this);
         }
     }
 
