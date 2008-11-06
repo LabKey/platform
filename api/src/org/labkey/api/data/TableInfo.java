@@ -120,4 +120,6 @@ public interface TableInfo
     public String getPublicName();
 
     public String getPublicSchemaName();
+
+    public boolean isContainerFilterNeeded();
 }

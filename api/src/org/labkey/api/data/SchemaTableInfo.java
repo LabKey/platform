@@ -693,4 +693,9 @@ public class SchemaTableInfo implements TableInfo
     {
         return null;
     }
+
+    public boolean isContainerFilterNeeded()
+    {
+        return true;
+    }
 }

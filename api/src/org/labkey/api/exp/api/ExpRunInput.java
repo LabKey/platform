@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2008 LabKey Corporation
+ * Copyright (c) 2008 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.labkey.api.exp.api;
 
-import org.labkey.api.exp.PropertyDescriptor;
-
-public interface ExpMaterialInput
+/**
+ * User: jeckels
+ * Date: Oct 31, 2008
+ */
+public interface ExpRunInput
 {
-    ExpMaterial getMaterial();
     ExpProtocolApplication getTargetApplication();
-    PropertyDescriptor getPropertyDescriptor();
+    String getRole();
 }

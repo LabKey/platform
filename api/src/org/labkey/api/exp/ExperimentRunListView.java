@@ -144,7 +144,7 @@ public class ExperimentRunListView extends QueryView
                     view.getDataRegion().getJavascriptFormReference(false) + ".submit();";
             addToExperimentButton.addMenuItem("Create new run group...", javascript);
 
-            ExpExperiment[] experiments = ExperimentService.get().getExperiments(c);
+            ExpExperiment[] experiments = ExperimentService.get().getExperiments(c, getViewContext().getUser(), true);
             if (experiments.length > 0)
             {
                 addToExperimentButton.addSeparator();

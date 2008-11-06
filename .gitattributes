@@ -186,16 +186,17 @@ api/src/org/labkey/api/exp/XarContext.java -text
 api/src/org/labkey/api/exp/XarFormatException.java -text
 api/src/org/labkey/api/exp/XarSource.java -text
 api/src/org/labkey/api/exp/api/AbstractExperimentDataHandler.java -text
+api/src/org/labkey/api/exp/api/ContainerFilter.java -text
 api/src/org/labkey/api/exp/api/DataType.java -text
 api/src/org/labkey/api/exp/api/DefaultExperimentDataHandler.java -text
 api/src/org/labkey/api/exp/api/ExpChildObject.java -text
 api/src/org/labkey/api/exp/api/ExpData.java -text
-api/src/org/labkey/api/exp/api/ExpDataInput.java -text
+api/src/org/labkey/api/exp/api/ExpDataRunInput.java -text
 api/src/org/labkey/api/exp/api/ExpDataTable.java -text
 api/src/org/labkey/api/exp/api/ExpExperiment.java -text
 api/src/org/labkey/api/exp/api/ExpExperimentTable.java -text
 api/src/org/labkey/api/exp/api/ExpMaterial.java -text
-api/src/org/labkey/api/exp/api/ExpMaterialInput.java -text
+api/src/org/labkey/api/exp/api/ExpMaterialRunInput.java -text
 api/src/org/labkey/api/exp/api/ExpMaterialTable.java -text
 api/src/org/labkey/api/exp/api/ExpObject.java -text
 api/src/org/labkey/api/exp/api/ExpProtocol.java -text
@@ -205,6 +206,7 @@ api/src/org/labkey/api/exp/api/ExpProtocolApplicationTable.java -text
 api/src/org/labkey/api/exp/api/ExpProtocolOutput.java -text
 api/src/org/labkey/api/exp/api/ExpProtocolTable.java -text
 api/src/org/labkey/api/exp/api/ExpRun.java -text
+api/src/org/labkey/api/exp/api/ExpRunInput.java -text
 api/src/org/labkey/api/exp/api/ExpRunTable.java -text
 api/src/org/labkey/api/exp/api/ExpSampleSet.java -text
 api/src/org/labkey/api/exp/api/ExpSampleSetTable.java -text

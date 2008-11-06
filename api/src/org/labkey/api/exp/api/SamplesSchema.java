@@ -33,10 +33,10 @@ public class SamplesSchema extends UserSchema
 {
     public static final String SCHEMA_NAME = "Samples";
 
-    static private Map<String, ExpSampleSet> getSampleSetMap(Container container)
+    static private Map<String, ExpSampleSet> getSampleSetMap(Container container, User user)
     {
-        Map<String, ExpSampleSet> map = new TreeMap();
-        for (ExpSampleSet ss : ExperimentService.get().getSampleSets(container, false))
+        Map<String, ExpSampleSet> map = new TreeMap<String, ExpSampleSet>();
+        for (ExpSampleSet ss : ExperimentService.get().getSampleSets(container, user, false))
         {
             map.put(ss.getName(), ss);
         }
@@ -45,34 +45,41 @@ public class SamplesSchema extends UserSchema
 
     static public void register()
     {
-        DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider() {
+        DefaultSchema.registerProvider("Samples", new DefaultSchema.SchemaProvider() {
             public QuerySchema getSchema(DefaultSchema schema)
             {
-                Map<String, ExpSampleSet> map = getSampleSetMap(schema.getContainer());
+                Map<String, ExpSampleSet> map = getSampleSetMap(schema.getContainer(), schema.getUser());
                 if (map.isEmpty())
                     return null;
-                return new SamplesSchema(schema.getUser(), schema.getContainer(), map); 
+                return new SamplesSchema(schema.getUser(), schema.getContainer(), map);
             }
         });
     }
 
     public SamplesSchema(User user, Container container)
     {
-        this(user, container, null);        
+        this(user, container, null);
     }
 
     private Map<String, ExpSampleSet> _sampleSetMap;
+    private ContainerFilter _containerFilter = ContainerFilter.CURRENT;
+
     private SamplesSchema(User user, Container container, Map<String, ExpSampleSet> sampleSetMap)
     {
-        super(SCHEMA_NAME, user, container, ExperimentService.get().getSchema());
+        super("Samples", user, container, ExperimentService.get().getSchema());
         _sampleSetMap = sampleSetMap;
+    }
+
+    public void setContainerFilter(ContainerFilter containerFilter)
+    {
+        _containerFilter = containerFilter;
     }
 
     protected Map<String, ExpSampleSet> getSampleSets()
     {
         if (_sampleSetMap == null)
         {
-            _sampleSetMap = getSampleSetMap(getContainer());
+            _sampleSetMap = getSampleSetMap(getContainer(), getUser());
         }
         return _sampleSetMap;
     }
@@ -93,7 +100,8 @@ public class SamplesSchema extends UserSchema
     public ExpMaterialTable getSampleTable(String alias, ExpSampleSet ss)
     {
         ExpMaterialTable ret = ExperimentService.get().createMaterialTable(alias, this);
-        ret.populate(this, ss, true);
+        ret.setContainerFilter(_containerFilter);
+        ret.populate(ss, true);
         return ret;
     }
 
@@ -104,7 +112,7 @@ public class SamplesSchema extends UserSchema
             public TableInfo getLookupTableInfo()
             {
                 ExpMaterialTable ret = ExperimentService.get().createMaterialTable("lookup", SamplesSchema.this);
-                ret.populate(SamplesSchema.this, ss, false);
+                ret.populate(ss, false);
                 return ret;
             }
         };

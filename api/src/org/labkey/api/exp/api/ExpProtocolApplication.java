@@ -24,10 +24,10 @@ import java.util.List;
 
 public interface ExpProtocolApplication extends ExpObject
 {
-    public ExpDataInput[] getDataInputs();
+    public ExpDataRunInput[] getDataInputs();
     public List<ExpData> getInputDatas();
     public List<ExpData> getOutputDatas();
-    public ExpMaterialInput[] getMaterialInputs();
+    public ExpMaterialRunInput[] getMaterialInputs();
     public List<ExpMaterial> getInputMaterials();
 
     List<ExpMaterial> getOutputMaterials();
@@ -38,15 +38,12 @@ public interface ExpProtocolApplication extends ExpObject
      * Add a data input
      * @param user
      * @param input
-     * @param inputRole optional argument specifying the input role name.  Will be ignored if pd is not null
-     * @param pd optional property descriptor identifying the input role.
-     * @return The property descriptor corresponding to the input role.  Will be null if inputRole is null
-     * @throws Exception
+     * @param inputRole optional argument specifying the input role name
      */
-    public PropertyDescriptor addDataInput(User user, ExpData input, String inputRole, PropertyDescriptor pd);
-    public void removeDataInput(User user, ExpData data) throws Exception;
-    public PropertyDescriptor addMaterialInput(User user, ExpMaterial material, String inputRole, PropertyDescriptor pd);
-    public void removeMaterialInput(User user, ExpMaterial material) throws Exception;
+    public void addDataInput(User user, ExpData input, String inputRole);
+    public void removeDataInput(User user, ExpData data);
+    public void addMaterialInput(User user, ExpMaterial material, String inputRole);
+    public void removeMaterialInput(User user, ExpMaterial material);
 
     public ExpRun getRun();
     public int getActionSequence();

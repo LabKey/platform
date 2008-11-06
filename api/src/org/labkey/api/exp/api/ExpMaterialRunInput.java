@@ -16,18 +16,9 @@
 
 package org.labkey.api.exp.api;
 
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.exp.PropertyDescriptor;
-
-public interface ExpProtocolApplicationTable extends ExpTable<ExpProtocolApplicationTable.Column>
+public interface ExpMaterialRunInput extends ExpRunInput
 {
-    enum Column
-    {
-        RowId,
-        DataCount,
-        MaterialCount,
-    }
+    public static final String DEFAULT_ROLE = "Material";
 
-    public ColumnInfo createMaterialInputColumn(String alias, SamplesSchema schema, ExpSampleSet sampleSet, String... roleNames);
-    public ColumnInfo createDataInputColumn(String alias, ExpSchema schema, String... roleNames);
+    ExpMaterial getMaterial();
 }

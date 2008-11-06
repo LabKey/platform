@@ -26,6 +26,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.apache.log4j.Logger;
 
 import java.util.Map;
@@ -78,13 +79,15 @@ public class ExperimentService
         ExpMaterial getExpMaterial(int rowid);
         ExpMaterial getExpMaterial(String lsid);
 
+        ExpSampleSet[] getSampleSetsForRole(Container container, String role);
+
         ExpSampleSet getSampleSet(int rowid);
         ExpSampleSet getSampleSet(String lsid);
 
         /**
          * @param includeOtherContainers whether sample sets from the shared container or the container's project should be included
          */
-        ExpSampleSet[] getSampleSets(Container container, boolean includeOtherContainers);
+        ExpSampleSet[] getSampleSets(Container container, User user, boolean includeOtherContainers);
         ExpSampleSet getSampleSet(Container container, String name);
         ExpSampleSet lookupActiveSampleSet(Container container);
         void setActiveSampleSet(Container container, ExpSampleSet sampleSet);
@@ -92,7 +95,7 @@ public class ExperimentService
         ExpExperiment createExpExperiment(Container container, String name);
         ExpExperiment getExpExperiment(int rowid);
         ExpExperiment getExpExperiment(String lsid);
-        ExpExperiment[] getExperiments(Container container);
+        ExpExperiment[] getExperiments(Container container, User user, boolean includeOtherContainers);
         ExpExperiment[] getExpExperimentsForRun(String lsid);
 
         ExpProtocol getExpProtocol(int rowid);
@@ -101,11 +104,14 @@ public class ExperimentService
         ExpProtocol createExpProtocol(Container container, ExpProtocol.ApplicationType type, String name);
         ExpProtocol createExpProtocol(Container container, ExpProtocol.ApplicationType type, String name, String lsid);
 
-        Map<String, PropertyDescriptor> getDataInputRoles(Container container);
-        Map<String, PropertyDescriptor> getMaterialInputRoles(Container container);
-        String getDataInputRolePropertyURI(Container container, String roleName);
-        PropertyDescriptor ensureDataInputRole(User user, Container container, String roleName, ExpData data) throws SQLException;
-        PropertyDescriptor ensureMaterialInputRole(Container container, String roleName, ExpMaterial material) throws SQLException;
+        /**
+         * @param type may be null. If non-null, only return roles that are used for that type of application (input, output, or intermediate)
+         */
+        Set<String> getDataInputRoles(Container container, ExpProtocol.ApplicationType type);
+        /**
+         * @param type may be null. If non-null, only return roles that are used for that type of application (input, output, or intermediate) 
+         */
+        Set<String> getMaterialInputRoles(Container container, ExpProtocol.ApplicationType type);
 
 
         /**
@@ -113,13 +119,13 @@ public class ExperimentService
          * These TableInfo's initially have no columns, but have methods to
          * add particular columns as needed by the client.
          */
-        ExpRunTable createRunTable(String alias);
-        ExpDataTable createDataTable(String alias);
-        ExpSampleSetTable createSampleSetTable(String alias);
-        ExpProtocolTable createProtocolTable(String alias);
-        ExpExperimentTable createExperimentTable(String alias);
+        ExpRunTable createRunTable(String alias, QuerySchema schema);
+        ExpDataTable createDataTable(String alias, QuerySchema schema);
+        ExpSampleSetTable createSampleSetTable(String alias, QuerySchema schema);
+        ExpProtocolTable createProtocolTable(String alias, QuerySchema schema);
+        ExpExperimentTable createExperimentTable(String alias, QuerySchema schema);
         ExpMaterialTable createMaterialTable(String alias, QuerySchema schema);
-        ExpProtocolApplicationTable createProtocolApplicationTable(String alias);
+        ExpProtocolApplicationTable createProtocolApplicationTable(String alias, QuerySchema schema);
 
         String generateLSID(Container container, Class<? extends ExpObject> clazz, String name);
         String generateGuidLSID(Container container, Class<? extends ExpObject> clazz);

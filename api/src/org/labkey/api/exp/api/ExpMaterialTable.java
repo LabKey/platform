@@ -34,6 +34,6 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>
         Property,
         Container,
     }
-    void populate(SamplesSchema schema, ExpSampleSet ss, boolean filterSampleSet);
+    void populate(ExpSampleSet ss, boolean filterSampleSet);
     void setSampleSet(ExpSampleSet ss, boolean filter);
 }

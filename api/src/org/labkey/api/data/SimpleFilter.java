@@ -290,6 +290,18 @@ public class SimpleFilter implements Filter
             }
             return in;
         }
+
+        public void addInValue(Object... values)
+        {
+            addInValues(Arrays.asList(values));
+        }
+
+        public void addInValues(Collection<?> newValues)
+        {
+            Set<Object> values = new HashSet<Object>(Arrays.asList(getParamVals()));
+            values.addAll(newValues);
+            setParamVals(values.toArray());
+        }
     }
 
     private ArrayList<FilterClause> _clauses = new ArrayList<FilterClause>();
@@ -299,6 +311,10 @@ public class SimpleFilter implements Filter
     {
     }
 
+    public SimpleFilter(FilterClause... clauses)
+    {
+        _clauses = new ArrayList<FilterClause>(Arrays.asList(clauses));
+    }
 
     public SimpleFilter(Filter filter)
     {
@@ -548,7 +564,6 @@ public class SimpleFilter implements Filter
         return Collections.unmodifiableList(_clauses);
     }
 
-
     public String getWhereSQL(SqlDialect dialect)
     {
         SQLFragment frag = getSQLFragment(dialect);
@@ -595,6 +610,15 @@ public class SimpleFilter implements Filter
                         compClause.getColumnNames().size() == 1 &&
                         "container".equalsIgnoreCase(compClause.getColumnNames().get(0)))
                     return true;
+            }
+            if (clause instanceof InClause)
+            {
+                InClause inClause = (InClause)clause;
+                if (inClause.getColumnNames().size() == 1 &&
+                        "container".equalsIgnoreCase(inClause.getColumnNames().get(0)))
+                {
+                    return true;
+                }
             }
         }
         return false;

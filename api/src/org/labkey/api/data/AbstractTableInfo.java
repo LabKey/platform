@@ -461,4 +461,9 @@ abstract public class AbstractTableInfo implements TableInfo
     {
         return getSchema().getName();
     }
+
+    public boolean isContainerFilterNeeded()
+    {
+        return true;
+    }
 }

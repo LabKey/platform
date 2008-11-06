@@ -56,7 +56,7 @@ public class PropertiesEditor implements LookupListener
     private HorizontalPanel _addButtonPanelProps;
     private String _mode;
     private LookupServiceAsync _lookupService;
-    private List _listeners = new ArrayList();
+    private List<ChangeListener> _listeners = new ArrayList<ChangeListener>();
 
     private GWTPropertyDescriptor _selectedPD;
 
@@ -68,7 +68,7 @@ public class PropertiesEditor implements LookupListener
             edit.setRangeURI("http://www.w3.org/2001/XMLSchema#string");
             edit.setRequired(false);
         }
-        
+
         Row(GWTPropertyDescriptor p)
         {
             orig = p;
@@ -86,7 +86,7 @@ public class PropertiesEditor implements LookupListener
     }
 
     GWTDomain _domain;
-    ArrayList _rows;
+    ArrayList<Row> _rows;
 
     public PropertiesEditor(LookupServiceAsync service)
     {
@@ -96,7 +96,7 @@ public class PropertiesEditor implements LookupListener
     public PropertiesEditor(LookupServiceAsync service, boolean includeImportExportButtons)
     {
         _includeImportExportButtons = includeImportExportButtons;
-        _rows = new ArrayList();
+        _rows = new ArrayList<Row>();
 
         _lookupService = service;
 
@@ -225,7 +225,7 @@ public class PropertiesEditor implements LookupListener
     public void init(GWTDomain domain)
     {
         _domain = domain;
-        _rows = new ArrayList();
+        _rows = new ArrayList<Row>();
 
         List l = domain.getPropertyDescriptors();
         if (null != l)
@@ -257,7 +257,7 @@ public class PropertiesEditor implements LookupListener
         return newRow.edit;
     }
 
-    public void setPropertyDescriptors(List descriptors)
+    public void setPropertyDescriptors(List<GWTPropertyDescriptor> descriptors)
     {
         _selectedPD = null;
         _domain.setPropertyDescriptors(descriptors);
@@ -274,9 +274,8 @@ public class PropertiesEditor implements LookupListener
         _table.setVisible(!_rows.isEmpty());
         _noColumnsPanel.setVisible(_rows.isEmpty());
 
-        for (int index=0 ; index < _rows.size() ; index++)
+        for (Row row : _rows)
         {
-            Row row = (Row)_rows.get(index);
             refreshRow(row.edit);
         }
 
@@ -312,7 +311,7 @@ public class PropertiesEditor implements LookupListener
             RadioButton radioButton = (RadioButton) _table.getWidget(tableRow, 2);
 
             _propertiesPane.showPropertyDescriptor(pd, !locked && !readOnly, radioButton.getAbsoluteTop());
-            
+
             radioButton.setChecked(true);
             Element e = _table.getRowFormatter().getElement(tableRow);
             DOM.setStyleAttribute(e, "backgroundColor", "#eeeeee");
@@ -335,8 +334,8 @@ public class PropertiesEditor implements LookupListener
         {
             return;
         }
-        
-        final Row rowObject = (Row)_rows.get(index);
+
+        final Row rowObject = _rows.get(index);
         final int tableRow = index + 1;
         int col = 0;
 
@@ -518,7 +517,7 @@ public class PropertiesEditor implements LookupListener
 
     Row getRow(int i)
     {
-        return (Row)(_rows.get(i));
+        return _rows.get(i);
     }
 
 
@@ -599,16 +598,15 @@ public class PropertiesEditor implements LookupListener
     public List validate()
     {
         GWTDomain d = getDomainUpdates();
-        Set names = new HashSet();
-        List l = d.getPropertyDescriptors();
-        Set errors = new HashSet();
-        Set lowerCaseReservedNames = new HashSet();
-        for (Iterator it = d.getReservedPropertyNames().iterator(); it.hasNext(); )
-            lowerCaseReservedNames.add(((String) it.next()).toLowerCase());
+        Set<String> names = new HashSet<String>();
+        List<GWTPropertyDescriptor> l = d.getPropertyDescriptors();
+        Set<String> errors = new HashSet<String>();
+        Set<String> lowerCaseReservedNames = new HashSet<String>();
+        for (String name : d.getReservedPropertyNames())
+            lowerCaseReservedNames.add(name.toLowerCase());
 
-        for (int i=0 ; i<l.size() ; i++)
+        for (GWTPropertyDescriptor p : l)
         {
-            GWTPropertyDescriptor p = (GWTPropertyDescriptor)l.get(i);
             String name = p.getName();
             if (null == name || name.length() == 0)
             {
@@ -633,18 +631,18 @@ public class PropertiesEditor implements LookupListener
                 errors.add("Name must only contain letters numbers and underscore (_)");
                 continue;
             }
-            
+
             names.add(name);
         }
-        return errors.size() > 0 ? new ArrayList(errors) : null;
+        return errors.size() > 0 ? new ArrayList<String>(errors) : null;
     }
-    
+
 
     public GWTDomain getDomainUpdates()
     {
         _propertiesPane.copyValuesToPropertyDescriptor();
         GWTDomain d = _domain; // UNDONE COPY
-        ArrayList l = new ArrayList();
+        ArrayList<GWTPropertyDescriptor> l = new ArrayList<GWTPropertyDescriptor>();
         for (int i=0 ; i<_rows.size() ; i++)
         {
             Row r = getRow(i);
@@ -670,7 +668,7 @@ public class PropertiesEditor implements LookupListener
         }
         return -1;
     }
-    
+
     public GWTPropertyDescriptor getPropertyDescriptor(int i)
     {
         return getRow(i).edit;
@@ -711,7 +709,7 @@ public class PropertiesEditor implements LookupListener
         t.setHTML(row, col, "<b>" + text + "</b>");
     }
 
-    
+
     public String getMode()
     {
         return _mode;
@@ -737,7 +735,7 @@ public class PropertiesEditor implements LookupListener
     {
         if (null == _rows)
             return false;
-        
+
         for (int i=0 ; i<_rows.size() ; i++)
         {
             if (!getRow(i).edit.equals(getRow(i).orig))
@@ -779,8 +777,8 @@ public class PropertiesEditor implements LookupListener
 
     private void fireChangeEvent()
     {
-        for (int i = 0; i < _listeners.size(); i++)
-            ((ChangeListener) _listeners.get(i)).onChange(null);
+        for (ChangeListener listener : _listeners)
+            listener.onChange(null);
     }
 
     private class BoundTextBox extends TextBox implements ChangeListener, FocusListener

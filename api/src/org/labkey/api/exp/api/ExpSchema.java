@@ -26,7 +26,7 @@ import java.util.*;
 
 public class ExpSchema extends UserSchema
 {
-    private boolean _restrictContainer = true;
+    private ContainerFilter _containerFilter = ContainerFilter.CURRENT;
 
     public static final String EXPERIMENTS_NARROW_WEB_PART_TABLE_NAME = ExpSchema.TableType.Experiments + "NarrowWebPart";
     public static final String EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME = ExpSchema.TableType.Experiments + "MembershipForRun";
@@ -82,15 +82,16 @@ public class ExpSchema extends UserSchema
 
     public ExpExperimentTable createExperimentsTable(String alias)
     {
-        ExpExperimentTable ret = ExperimentService.get().createExperimentTable(alias);
-        ret.setContainer(getContainer());
-        ret.populate(this);
-        return ret;
+        ExpExperimentTable result = ExperimentService.get().createExperimentTable(alias, this);
+        result.setContainerFilter(_containerFilter);
+        result.populate();
+        return result;
     }
     
     public ExpExperimentTable createExperimentsTableWithRunMemberships(String alias, ExpRun run)
     {
         ExpExperimentTable ret = createExperimentsTable(alias);
+        ret.setContainerFilter(_containerFilter);
         ret.getColumn(ExpExperimentTable.Column.RunCount).setIsHidden(true);
 
         ret.addExperimentMembershipColumn(run);
@@ -128,7 +129,9 @@ public class ExpSchema extends UserSchema
 
     public SamplesSchema getSamplesSchema()
     {
-        return new SamplesSchema(getUser(), getContainer());
+        SamplesSchema schema = new SamplesSchema(getUser(), getContainer());
+        schema.setContainerFilter(_containerFilter);
+        return schema;
     }
 
     public ExpSchema(User user, Container container)
@@ -168,14 +171,16 @@ public class ExpSchema extends UserSchema
 
     public ExpDataTable createDatasTable(String alias)
     {
-        ExpDataTable ret = ExperimentService.get().createDataTable(alias);
-        ret.populate(this);
+        ExpDataTable ret = ExperimentService.get().createDataTable(alias, this);
+        ret.setContainerFilter(_containerFilter);
+        ret.populate();
         return ret;
     }
 
     public ExpSampleSetTable createSampleSetTable(String alias)
     {
-        ExpSampleSetTable ret = ExperimentService.get().createSampleSetTable(alias);
+        ExpSampleSetTable ret = ExperimentService.get().createSampleSetTable(alias, this);
+        ret.setContainerFilter(_containerFilter);
         ret.populate(this);
         return ret;
     }
@@ -187,14 +192,15 @@ public class ExpSchema extends UserSchema
 
     public ExpRunTable createRunsTable(String alias)
     {
-        ExpRunTable ret = ExperimentService.get().createRunTable(alias);
+        ExpRunTable ret = ExperimentService.get().createRunTable(alias, this);
+        ret.setContainerFilter(_containerFilter);
         ret.populate(this);
         return ret;
     }
 
     public ExpProtocolTable createProtocolsTable(String alias)
     {
-        ExpProtocolTable ret = ExperimentService.get().createProtocolTable(alias);
+        ExpProtocolTable ret = ExperimentService.get().createProtocolTable(alias, this);
         ret.populate(this);
         return ret;
     }
@@ -205,10 +211,8 @@ public class ExpSchema extends UserSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                boolean restrictContainer = isRestrictContainer();
-                setRestrictContainer(false);
                 ExpProtocolTable protocolTable = createProtocolsTable("Protocols");
-                setRestrictContainer(restrictContainer);
+                protocolTable.setContainerFilter(ContainerFilter.EVERYTHING);
                 return protocolTable;
             }
         };
@@ -259,13 +263,8 @@ public class ExpSchema extends UserSchema
     }
 
 
-    public boolean isRestrictContainer()
+    public void setContainerFilter(ContainerFilter filter)
     {
-        return _restrictContainer;
-    }
-
-    public void setRestrictContainer(boolean restrictContainer)
-    {
-        _restrictContainer = restrictContainer;
+        _containerFilter = filter;
     }
 }

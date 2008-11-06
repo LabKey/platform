@@ -27,9 +27,8 @@ import java.util.List;
 abstract public interface ExpTable<C extends Enum> extends TableInfo
 {
     static public final String COLUMN_DATAINPUT_DATAID = "exp.datainput.dataid";
-    public void setContainer(Container container);
     public Container getContainer();
-
+    public void setContainerFilter(ContainerFilter filter);
 
     public ColumnInfo addColumn(C column);
     public ColumnInfo addColumn(String alias, C column);
