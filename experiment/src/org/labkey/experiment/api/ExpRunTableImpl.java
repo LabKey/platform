@@ -24,7 +24,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.common.util.Pair;
+import org.labkey.api.security.ACL;
 import org.labkey.experiment.controllers.exp.ExperimentMembershipDisplayColumnFactory;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
@@ -41,12 +41,11 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
     private ExpMaterial _inputMaterial;
     private ExpData _inputData;
-    private ExpSchema _schema;
     private List<ExpRun> _runs;
 
-    public ExpRunTableImpl(String alias)
+    public ExpRunTableImpl(String alias, QuerySchema schema)
     {
-        super(alias, ExperimentServiceImpl.get().getTinfoExperimentRun());
+        super(alias, ExperimentServiceImpl.get().getTinfoExperimentRun(), schema);
     }
 
     public ExpProtocol getProtocol()
@@ -63,16 +62,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         {
             addCondition(_rootTable.getColumn("ProtocolLSID"), protocol.getLSID());
         }
-    }
-
-    public void clearContainer()
-    {
-        if (_container != null)
-        {
-            _container = null;
-            clearConditions(_rootTable.getColumn("container"));
-        }
-        _schema.setRestrictContainer(false);
     }
 
     public void setProtocolPatterns(String... patterns)
@@ -175,6 +164,17 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         _experiment = experiment;
         addCondition(new SQLFragment(" " + ExperimentServiceImpl.get().getTinfoExperimentRun() + ".RowId IN ( SELECT ExperimentRunId FROM " + ExperimentServiceImpl.get().getTinfoRunList() + " "
                     +  " WHERE ExperimentId = " +  experiment.getRowId() + " ) "));
+
+        if (_schema.getContainer().equals(ContainerManager.getSharedContainer()))
+        {
+            // If we're in the /Shared project, look everywhere
+            setContainerFilter(ContainerFilter.ALL_IN_SITE);
+        }
+        else if (getContainer().isProject())
+        {
+            // If we're in a project, look in subfolders
+            setContainerFilter(ContainerFilter.CURRENT_AND_SUBFOLDERS);
+        }
     }
 
     public ColumnInfo createColumn(String alias, Column column)
@@ -251,7 +251,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
     }
 
-    public ColumnInfo addDataInputColumn(String alias, PropertyDescriptor pd)
+    public ColumnInfo addDataInputColumn(String alias, String role)
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.datainput.dataid)" +
                 "\nFROM exp.datainput" +
@@ -259,54 +259,56 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 "\nWHERE exp.protocolapplication.cpastype = '" + ExpProtocol.ApplicationType.ExperimentRun + "'" +
                 "\nAND exp.protocolapplication.runid = " + ExprColumn.STR_TABLE_ALIAS + ".rowid" +
                 "\nAND ");
-        if (pd == null)
+        if (role == null)
         {
             sql.append("1 = 0");
         }
         else
         {
-            sql.append("exp.datainput.propertyid = " + pd.getPropertyId());
+            sql.append("exp.datainput.role = ?");
+            sql.add(role);
         }
         sql.append(")");
         return doAdd(new ExprColumn(this, alias, sql, Types.INTEGER));
     }
 
-    public ColumnInfo addDataCountColumn(String alias, PropertyDescriptor pd)
+    public ColumnInfo addDataCountColumn(String alias, String roleName)
     {
         SQLFragment sql = new SQLFragment("(SELECT COUNT(DISTINCT exp.DataInput.DataId) FROM exp.DataInput " +
                 "\nINNER JOIN exp.ProtocolApplication ON exp.ProtocolApplication.RowId = exp.DataInput.TargetApplicationId" +
                 "\nWHERE exp.ProtocolApplication.RunId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId" +
                 "\nAND ");
-        if (pd == null)
+        if (roleName == null)
         {
             sql.append("1 = 0");
         }
         else
         {
-            sql.append("exp.DataInput.PropertyId = " + pd.getPropertyId());
+            sql.append("exp.DataInput.Role = ?");
+            sql.add(roleName);
         }
         sql.append(")");
         return doAdd(new ExprColumn(this, alias, sql, Types.INTEGER));
     }
 
-    public ColumnInfo createInputLookupColumn(String alias, ExpSchema schema, Collection<Map.Entry<String, PropertyDescriptor>> dataInputs, Collection<Map.Entry<String, PropertyDescriptor>> materialInputs)
+    public ColumnInfo createInputLookupColumn(String alias, ExpSchema schema)
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.ProtocolApplication.RowId) FROM exp.ProtocolApplication " +
                 "\nWHERE exp.ProtocolApplication.RunId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId" +
                 "\nAND exp.ProtocolApplication.CpasType = '" + ExpProtocol.ApplicationType.ExperimentRun + "')");
         ColumnInfo ret = new ExprColumn(this, alias, sql, Types.INTEGER);
-        ret.setFk(new InputForeignKey(schema, dataInputs, materialInputs));
+        ret.setFk(new InputForeignKey(schema, ExpProtocol.ApplicationType.ExperimentRun, createLazyContainerFilter()));
         ret.setIsUnselectable(true);
         return ret;
     }
 
-    public ColumnInfo createOutputLookupColumn(String alias, ExpSchema schema, Collection<Map.Entry<String, PropertyDescriptor>> dataOutputs, Collection<Map.Entry<String, PropertyDescriptor>> materialOutputs)
+    public ColumnInfo createOutputLookupColumn(String alias, ExpSchema schema)
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.ProtocolApplication.RowId) FROM exp.ProtocolApplication " +
                 "\nWHERE exp.ProtocolApplication.RunId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId" +
                 "\nAND exp.ProtocolApplication.CpasType = '" + ExpProtocol.ApplicationType.ExperimentRunOutput + "')");
         ColumnInfo ret = new ExprColumn(this, alias, sql, Types.INTEGER);
-        ret.setFk(new InputForeignKey(schema, dataOutputs, materialOutputs));
+        ret.setFk(new InputForeignKey(schema, ExpProtocol.ApplicationType.ExperimentRunOutput, createLazyContainerFilter()));
         ret.setIsUnselectable(true);
         return ret;
     }
@@ -319,10 +321,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
     public void populate(ExpSchema schema)
     {
-        _schema = schema;
-        //FIX: ExpDataTableImpl did this, but runs did not for some reason. Needed for ms1 search results
-        if(schema.isRestrictContainer())
-            setContainer(schema.getContainer());
         addColumn(Column.RowId);
         addColumn(Column.Flag);
         addColumn(Column.Links);
@@ -335,15 +333,9 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addColumn(Column.LSID).setIsHidden(true);
         addColumn(Column.Protocol).setFk(schema.getProtocolLSIDForeignKey());
         addColumn(Column.RunGroups);
-        List<Map.Entry<String, PropertyDescriptor>> dataInputRoles = new ArrayList<Map.Entry<String, PropertyDescriptor>>();
-        dataInputRoles.add(new Pair<String, PropertyDescriptor>("Data", null));
-        dataInputRoles.addAll(ExperimentService.get().getDataInputRoles(schema.getContainer()).entrySet());
-        List<Map.Entry<String, PropertyDescriptor>> materialInputRoles = new ArrayList<Map.Entry<String, PropertyDescriptor>>();
-        materialInputRoles.add(new Pair<String, PropertyDescriptor>("Material", null));
-        materialInputRoles.addAll(ExperimentService.get().getMaterialInputRoles(schema.getContainer()).entrySet());
 
-        addColumn(createInputLookupColumn("Input", schema, dataInputRoles, materialInputRoles));
-        addColumn(createOutputLookupColumn("Output", schema, dataInputRoles, materialInputRoles));
+        addColumn(createInputLookupColumn("Input", schema));
+        addColumn(createOutputLookupColumn("Output", schema));
         ActionURL urlDetails = new ActionURL(ExperimentController.ShowRunTextAction.class, schema.getContainer());
         setDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("rowId", "RowId")));
         addDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("LSID", "LSID")));
@@ -381,7 +373,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             String separator = "";
             if (_experiments == null)
             {
-                _experiments = ExperimentService.get().getExperiments(ctx.getContainer());
+                _experiments = ExperimentService.get().getExperiments(ctx.getContainer(), ctx.getViewContext().getUser(), true);
             }
             for (ColumnInfo runGroupColumn : _runGroupColumns)
             {
@@ -498,12 +490,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         {
             if (_experiments == null)
             {
-                Container c = getContainer();
-                if (c == null)
-                {
-                    c = _schema.getContainer();
-                }
-                _experiments = ExperimentServiceImpl.get().getExperiments(c);
+                _experiments = ExperimentServiceImpl.get().getExperiments(getContainer(), _schema.getUser(), true);
             }
             return _experiments;
         }
@@ -557,6 +544,14 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             }
             return result;
         }
+    }
 
+    public boolean isContainerFilterNeeded()
+    {
+        if (!super.isContainerFilterNeeded())
+        {
+            return false;
+        }
+        return _experiment == null;
     }
 }

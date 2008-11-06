@@ -175,9 +175,9 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException("Could not find an experiment with RowId " + rowId);
             }
 
-            if (!_experiment.getContainer().hasPermission(getUser(), ACL.PERM_READ))
+            if (!_experiment.getContainer().equals(getViewContext().getContainer()))
             {
-                HttpView.throwUnauthorized();
+                HttpView.throwRedirect(getViewContext().cloneActionURL().setExtraPath(_experiment.getContainer().getPath()));
             }
 
             form.setBean(_experiment.getDataObject());
@@ -506,7 +506,7 @@ public class ExperimentController extends SpringActionController
 
             ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), ExperimentRunFilter.ALL_RUNS_FILTER, true);
             runListView.getRunTable().setRuns(successorRuns);
-            runListView.getRunTable().clearContainer();
+            runListView.getRunTable().setContainerFilter(ContainerFilter.ALL_IN_SITE);
             runListView.setTitle("Runs using this material or a derived material");
             vbox.addView(runListView);
 
@@ -521,7 +521,7 @@ public class ExperimentController extends SpringActionController
                 {
                     ExpMaterialTable table = ExperimentServiceImpl.get().createMaterialTable("materials", getSchema());
                     table.setMaterials(predecessorMaterials);
-                    table.populate(new SamplesSchema(getUser(), getContainer()), null, false);
+                    table.populate(null, false);
                     return table;
                 }
             };
@@ -811,7 +811,7 @@ public class ExperimentController extends SpringActionController
 
             ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), ExperimentRunFilter.ALL_RUNS_FILTER, true);
             runListView.getRunTable().setInputData(_data);
-            runListView.getRunTable().clearContainer();
+            runListView.getRunTable().setContainerFilter(ContainerFilter.ALL_IN_SITE);
             runListView.setTitle("Runs using this data as an input");
             VBox vbox = new VBox(new StandardAndCustomPropertiesView(detailsView, cpv), runListView);
 
@@ -2324,7 +2324,7 @@ public class ExperimentController extends SpringActionController
             else
             {
                 Set<String> materialInputRoles = new TreeSet<String>();
-                materialInputRoles.addAll(ExperimentService.get().getMaterialInputRoles(getContainer()).keySet());
+                materialInputRoles.addAll(ExperimentService.get().getMaterialInputRoles(getContainer(), null));
                 Map<ExpMaterial, String> materialsWithRoles = new LinkedHashMap<ExpMaterial, String>();
                 for (ExpMaterial material : materials)
                 {
@@ -2387,7 +2387,7 @@ public class ExperimentController extends SpringActionController
 
     private List<ExpSampleSet> getUploadableSampleSets()
     {
-        List<ExpSampleSet> sampleSets = new ArrayList<ExpSampleSet>(Arrays.asList(ExperimentService.get().getSampleSets(getContainer(), true)));
+        List<ExpSampleSet> sampleSets = new ArrayList<ExpSampleSet>(Arrays.asList(ExperimentService.get().getSampleSets(getContainer(), getViewContext().getUser(), true)));
         Iterator<ExpSampleSet> iter = sampleSets.iterator();
         while (iter.hasNext())
         {

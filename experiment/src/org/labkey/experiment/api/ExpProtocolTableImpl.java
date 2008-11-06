@@ -21,15 +21,16 @@ import org.labkey.api.exp.api.ExpSchema;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Collections;
 
 public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> implements ExpProtocolTable
 {
-    public ExpProtocolTableImpl(String alias)
+    public ExpProtocolTableImpl(String alias, QuerySchema schema)
     {
-        super(alias, ExperimentServiceImpl.get().getTinfoProtocol());
+        super(alias, ExperimentServiceImpl.get().getTinfoProtocol(), schema);
         setTitleColumn("Name");
     }
     public ColumnInfo createColumn(String alias, Column column)
@@ -58,10 +59,6 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
         setTitleColumn(colName.getName());
         ColumnInfo colLSID = addColumn(Column.LSID);
         colLSID.setIsHidden(true);
-        if (schema.isRestrictContainer())
-        {
-            setContainer(schema.getContainer());
-        }
         addContainerColumn(Column.Container);
         ActionURL urlDetails = new ActionURL("Experiment", "protocolDetails", schema.getContainer().getPath());
         setDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("rowId", "RowId")));

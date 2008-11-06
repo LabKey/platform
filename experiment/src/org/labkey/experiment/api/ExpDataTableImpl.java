@@ -17,18 +17,19 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.*;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.QuerySchema;
 
 import java.sql.Types;
 import java.util.Collections;
 
 import org.labkey.api.exp.api.SamplesSchema;
 import org.labkey.api.view.ActionURL;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 
 public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implements ExpDataTable
 {
@@ -36,26 +37,23 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
     protected boolean _runSpecified;
     protected ExpRun _run;
     protected DataType _type;
-    public ExpDataTableImpl(String alias)
+    public ExpDataTableImpl(String alias, QuerySchema schema)
     {
-        super(alias, ExperimentServiceImpl.get().getTinfoData());
+        super(alias, ExperimentServiceImpl.get().getTinfoData(), schema);
     }
 
-    public void populate(ExpSchema schema)
+    public void populate()
     {
-        if (schema.isRestrictContainer())
-        {
-            setContainer(schema.getContainer());
-        }
         addColumn(Column.RowId).setIsHidden(true);
         addColumn(Column.Name);
+        ExpSchema schema = getExpSchema();
         addColumn(Column.Run).setFk(schema.getRunIdForeignKey());
         addColumn(Column.LSID).setIsHidden(true);
         addColumn(Column.DataFileUrl);
         addColumn(Column.Protocol).setIsHidden(true);
         addContainerColumn(Column.Container);
         setTitleColumn("Name");
-        ActionURL detailsURL = new ActionURL("Experiment", "showData", schema.getContainer().getPath());
+        ActionURL detailsURL = new ActionURL(ExperimentController.ShowDataAction.class, _schema.getContainer());
         setDetailsURL(new DetailsURL(detailsURL, Collections.singletonMap("rowId", "RowId")));
         addDetailsURL(new DetailsURL(detailsURL, Collections.singletonMap("LSID", "LSID")));
     }
@@ -132,26 +130,27 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         return _run;
     }
 
-    public ColumnInfo addDataInputColumn(String alias, PropertyDescriptor pd)
+    public ColumnInfo addDataInputColumn(String alias, String role)
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.datainput.dataid)" +
                 "\nFROM exp.datainput" +
                 "\nWHERE " + ExprColumn.STR_TABLE_ALIAS +  ".SourceApplicationId = exp.datainput.TargetApplicationId" +
                 "\nAND ");
-        if (pd == null)
+        if (role == null)
         {
             sql.append("1 = 0");
         }
         else
         {
-            sql.append("exp.datainput.propertyid = " + pd.getPropertyId());
+            sql.append("exp.datainput.role = ?");
+            sql.add(role);
         }
         sql.append(")");
         ExprColumn ret = new ExprColumn(this, alias, sql, Types.INTEGER);
         return doAdd(ret);
     }
 
-    public ColumnInfo addMaterialInputColumn(String alias, SamplesSchema schema, PropertyDescriptor pdRole, final ExpSampleSet ss)
+    public ColumnInfo addMaterialInputColumn(String alias, SamplesSchema schema, String pdRole, final ExpSampleSet ss)
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(InputMaterial.RowId)" +
             "\nFROM exp.materialInput" +

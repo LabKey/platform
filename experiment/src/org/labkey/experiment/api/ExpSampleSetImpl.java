@@ -32,6 +32,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -48,7 +49,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableBaseImpl<MaterialSource> im
 
     public URLHelper detailsURL()
     {
-        ActionURL ret = new ActionURL("Experiment", "showMaterialSource", getContainer());
+        ActionURL ret = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer());
         ret.addParameter("rowId", Integer.toString(getRowId()));
         return ret;
     }
@@ -260,5 +261,15 @@ public class ExpSampleSetImpl extends ExpIdentifiableBaseImpl<MaterialSource> im
     public void setContainerId(String containerId)
     {
         _object.setContainer(containerId);
+    }
+
+    public static ExpSampleSetImpl[] fromMaterialSources(MaterialSource[] sources)
+    {
+        ExpSampleSetImpl[] ret = new ExpSampleSetImpl[sources.length];
+        for (int i = 0; i < sources.length; i ++)
+        {
+            ret[i] = new ExpSampleSetImpl(sources[i]);
+        }
+        return ret;
     }
 }

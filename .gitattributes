@@ -476,6 +476,7 @@ experiment/src/META-INF/experiment/scripts/postgresql/exp-8.20-8.21.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-8.20-8.30.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-8.21-8.22.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-8.23-8.24.sql -text
+experiment/src/META-INF/experiment/scripts/postgresql/exp-8.30-8.31.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-create.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-drop.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/obsolete/deleteOrphans.sql -text
@@ -549,6 +550,7 @@ experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.20-8.21.sql -te
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.20-8.30.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.21-8.22.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.23-8.24.sql -text
+experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.30-8.31.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-create.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-drop.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/deleteOrphans.sql -text
@@ -646,17 +648,18 @@ experiment/src/org/labkey/experiment/XarExporter.java -text
 experiment/src/org/labkey/experiment/XarReader.java -text
 experiment/src/org/labkey/experiment/addXarFile.jsp -text
 experiment/src/org/labkey/experiment/api/AbstractProtocolOutputImpl.java -text
+experiment/src/org/labkey/experiment/api/AbstractRunInput.java -text
 experiment/src/org/labkey/experiment/api/Data.java -text
 experiment/src/org/labkey/experiment/api/DataInput.java -text
 experiment/src/org/labkey/experiment/api/ExpChildObjectImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpDataImpl.java -text
-experiment/src/org/labkey/experiment/api/ExpDataInputImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpDataRunInputImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpDataTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpExperimentImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpExperimentTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpIdentifiableBaseImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpMaterialImpl.java -text
-experiment/src/org/labkey/experiment/api/ExpMaterialInputImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpMaterialRunInputImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpMaterialTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpObjectImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpPropertyCache.java -text
@@ -666,6 +669,7 @@ experiment/src/org/labkey/experiment/api/ExpProtocolApplicationTableImpl.java -t
 experiment/src/org/labkey/experiment/api/ExpProtocolImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpProtocolTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpRunImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpRunInputImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpRunTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpSampleSetImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpSampleSetTableImpl.java -text

@@ -17,23 +17,28 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.ExpMaterialRunInput;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExperimentService;
 
-public class MaterialInput extends AbstractRunInput
+public class ExpMaterialRunInputImpl extends ExpRunInputImpl<MaterialInput> implements ExpMaterialRunInput
 {
-    private int _materialId;
-
-    public MaterialInput()
+    static public ExpMaterialRunInputImpl[] fromInputs(MaterialInput[] inputs)
     {
-        super(ExpMaterialRunInput.DEFAULT_ROLE);
+        ExpMaterialRunInputImpl[] ret = new ExpMaterialRunInputImpl[inputs.length];
+        for (int i = 0; i < inputs.length; i ++)
+        {
+            ret[i] = new ExpMaterialRunInputImpl(inputs[i]);
+        }
+        return ret;
     }
 
-    public int getMaterialId()
+    public ExpMaterialRunInputImpl(MaterialInput input)
     {
-        return _materialId;
+        super(input);
     }
-
-    public void setMaterialId(int materialId)
+    
+    public ExpMaterial getMaterial()
     {
-        _materialId = materialId;
+        return ExperimentService.get().getExpMaterial(_input.getMaterialId());
     }
 }

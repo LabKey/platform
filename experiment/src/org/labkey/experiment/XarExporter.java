@@ -188,16 +188,13 @@ public class XarExporter
         ExpProtocolApplication[] applications = ExperimentService.get().getExpProtocolApplicationsForRun(run.getRowId());
         ExperimentRunType.ProtocolApplications xApplications = xRun.addNewProtocolApplications();
 
-        Map<String, PropertyDescriptor> dataInputRoles = ExperimentService.get().getDataInputRoles(run.getContainer());
-        Map<String, PropertyDescriptor> materialInputRoles = ExperimentService.get().getMaterialInputRoles(run.getContainer());
-
         for (ExpProtocolApplication application : applications)
         {
-            addProtocolApplication(application, run, xApplications, dataInputRoles, materialInputRoles);
+            addProtocolApplication(application, run, xApplications);
         }
     }
 
-    private void addProtocolApplication(ExpProtocolApplication application, ExpRunImpl run, ExperimentRunType.ProtocolApplications xApplications, Map<String, PropertyDescriptor> dataInputRoles, Map<String, PropertyDescriptor> materialInputRoles)
+    private void addProtocolApplication(ExpProtocolApplication application, ExpRunImpl run, ExperimentRunType.ProtocolApplications xApplications)
         throws ExperimentException
     {
         ProtocolApplicationBaseType xApplication = xApplications.addNewProtocolApplication();
@@ -239,15 +236,10 @@ public class XarExporter
             String roleName = null;
             for (DataInput dataInput : dataInputs)
             {
-                if (dataInput.getDataId() == data.getRowId() && dataInput.getPropertyId() != null)
+                if (dataInput.getDataId() == data.getRowId())
                 {
-                    for (PropertyDescriptor descriptor : dataInputRoles.values())
-                    {
-                        if (descriptor.getPropertyId() == dataInput.getPropertyId().intValue())
-                        {
-                            roleName = descriptor.getName();
-                        }
-                    }
+                    roleName = dataInput.getRole();
+                    break;
                 }
             }
             if (roleName != null)
@@ -270,15 +262,10 @@ public class XarExporter
             String roleName = null;
             for (MaterialInput materialInput : materialInputs)
             {
-                if (materialInput.getMaterialId() == material.getRowId() && materialInput.getPropertyId() != null)
+                if (materialInput.getMaterialId() == material.getRowId())
                 {
-                    for (PropertyDescriptor descriptor : materialInputRoles.values())
-                    {
-                        if (descriptor.getPropertyId() == materialInput.getPropertyId().intValue())
-                        {
-                            roleName = descriptor.getName();
-                        }
-                    }
+                    roleName = material.getName();
+                    break;
                 }
             }
             if (roleName != null)

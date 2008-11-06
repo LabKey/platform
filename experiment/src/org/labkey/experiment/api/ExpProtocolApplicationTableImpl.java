@@ -17,24 +17,23 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.*;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QuerySchema;
 
 import java.sql.Types;
-import java.util.Set;
-import java.util.HashSet;
 
 import org.labkey.api.exp.api.SamplesSchema;
 
 public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApplicationTable.Column> implements ExpProtocolApplicationTable
 {
-    public ExpProtocolApplicationTableImpl(String alias)
+    public ExpProtocolApplicationTableImpl(String alias, QuerySchema schema)
     {
-        super(alias, ExperimentServiceImpl.get().getTinfoProtocolApplication());
+        super(alias, ExperimentServiceImpl.get().getTinfoProtocolApplication(), schema);
     }
-
 
     public ColumnInfo createColumn(String alias, ExpProtocolApplicationTable.Column column)
     {
@@ -46,27 +45,21 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         throw new IllegalArgumentException("Unknown column " + column);
     }
 
-    public ColumnInfo createMaterialInputColumn(String alias, SamplesSchema schema, ExpSampleSet sampleSet, PropertyDescriptor... pds)
+    public ColumnInfo createMaterialInputColumn(String alias, SamplesSchema schema, ExpSampleSet sampleSet, String... roleNames)
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.MaterialInput.MaterialId) FROM exp.MaterialInput\nWHERE ");
 
         sql.append(ExprColumn.STR_TABLE_ALIAS + ".RowId = exp.MaterialInput.TargetApplicationId");
-        if (pds.length != 0)
+        if (roleNames.length != 0)
         {
             sql.append("\nAND (");
             String strOr = "";
-            for (PropertyDescriptor pd : pds)
+            for (String roleName : roleNames)
             {
                 sql.append(strOr);
                 strOr = " OR ";
-                if (pd == null)
-                {
-                    sql.append("exp.MaterialInput.PropertyId IS NULL");
-                }
-                else
-                {
-                    sql.append("exp.MaterialInput.PropertyId = " + pd.getPropertyId());
-                }
+                sql.append("exp.MaterialInput.Role = ?");
+                sql.add(roleName);
             }
             sql.append(")");
         }
@@ -77,32 +70,35 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         return ret;
     }
 
-    public ColumnInfo createDataInputColumn(String alias, ExpSchema schema, PropertyDescriptor... pds)
+    public ColumnInfo createDataInputColumn(String alias, final ExpSchema schema, String... roleNames)
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.DataInput.DataId) FROM exp.DataInput\nWHERE ");
         sql.append(ExprColumn.STR_TABLE_ALIAS +".RowId = exp.DataInput.TargetApplicationId");
-        if (pds.length != 0)
+        if (roleNames.length != 0)
         {
             sql.append("\nAND (");
             String strOr = "";
-            for (PropertyDescriptor pd : pds)
+            for (String roleName : roleNames)
             {
                 sql.append(strOr);
                 strOr = " OR ";
-                if (pd == null)
-                {
-                    sql.append("\nexp.DataInput.PropertyId IS NULL");
-                }
-                else
-                {
-                    sql.append("\nexp.DataInput.PropertyId = " + pd.getPropertyId());
-                }
+                sql.append("\nexp.DataInput.Role = ?");
+                sql.add(roleName);
             }
             sql.append(")");
         }
         sql.append(")");
         ColumnInfo ret = new ExprColumn(this, alias, sql, Types.INTEGER);
-        ret.setFk(schema.getDataIdForeignKey());
+
+        ret.setFk(new LookupForeignKey("RowId")
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                ExpDataTable expDataTable = schema.createDatasTable("lookup");
+                expDataTable.setContainerFilter(getContainerFilter());
+                return expDataTable;
+            }
+        });
         return ret;
     }
 }

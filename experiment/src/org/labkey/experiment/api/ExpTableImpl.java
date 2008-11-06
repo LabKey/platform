@@ -19,6 +19,8 @@ package org.labkey.experiment.api;
 import org.labkey.api.query.*;
 import org.labkey.api.exp.api.ExpTable;
 import org.labkey.api.exp.api.TableEditHelper;
+import org.labkey.api.exp.api.ContainerFilter;
+import org.labkey.api.exp.api.ExpSchema;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.data.*;
@@ -29,19 +31,24 @@ import org.labkey.api.audit.query.ContainerForeignKey;
 import java.sql.Types;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.Collection;
 
 import org.labkey.experiment.api.flag.FlagForeignKey;
 import org.labkey.experiment.api.flag.FlagColumnRenderer;
 
 abstract public class ExpTableImpl<C extends Enum> extends FilteredTable implements ExpTable<C>
 {
-    protected Container _container;
     protected TableEditHelper _editHelper;
-    public ExpTableImpl(String alias, TableInfo rootTable)
+    protected final QuerySchema _schema;
+    private ContainerFilter _containerFilter;
+
+    public ExpTableImpl(String alias, TableInfo rootTable, QuerySchema schema)
     {
         super(rootTable);
         setName(alias);
         setAlias(alias);
+        _schema = schema;
+        setContainerFilter(ContainerFilter.CURRENT);
     }
 
 
@@ -53,22 +60,40 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
         return result;
     }
 
-    public void setContainer(Container container)
+    public void setContainerFilter(ContainerFilter filter)
     {
-        if (_container != null)
+        _containerFilter = filter;
+        ColumnInfo containerColumn = _rootTable.getColumn("container");
+        if (containerColumn != null)
         {
-            throw new IllegalStateException("Container already set");
+            clearConditions(containerColumn);
+            Collection<String> ids = filter.getIds(getContainer(), _schema.getUser());
+            if (ids != null)
+            {
+                addCondition(new SimpleFilter(new SimpleFilter.InClause("Container", ids)));
+            }
         }
-        if (container != null)
+    }
+
+    protected ContainerFilter createLazyContainerFilter()
+    {
+        return new ContainerFilter()
         {
-            _container = container;
-            addCondition(_rootTable.getColumn("container"), container.getId());
-        }
+            public Collection<String> getIds(Container currentContainer, User user)
+            {
+                return _containerFilter.getIds(currentContainer, user);
+            }
+        };
+    }
+
+    public ContainerFilter getContainerFilter()
+    {
+        return _containerFilter;
     }
 
     public Container getContainer()
     {
-        return _container;
+        return _schema.getContainer();
     }
 
     final public ColumnInfo addColumn(C column)
@@ -199,5 +224,21 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
         addColumn(colProperty);
 
         return colProperty;
+    }
+
+    public boolean isContainerFilterNeeded()
+    {
+        return _containerFilter == null;
+    }
+
+    public ExpSchema getExpSchema()
+    {
+        if (_schema instanceof ExpSchema)
+        {
+            return (ExpSchema)_schema;
+        }
+        ExpSchema schema = new ExpSchema(_schema.getUser(), _schema.getContainer());
+        schema.setContainerFilter(_containerFilter);
+        return schema;
     }
 }

@@ -101,7 +101,7 @@ CREATE VIEW cabig.data AS
         LEFT OUTER JOIN exp.object o ON d.lsid = o.objecturi;
 
 CREATE VIEW cabig.datainput AS
-    SELECT dataid, targetapplicationid, propertyid
+    SELECT dataid, targetapplicationid, CAST(NULL AS INT) as propertyid
     FROM exp.datainput;
 
 CREATE VIEW cabig.experiment AS
@@ -120,7 +120,7 @@ CREATE VIEW cabig.material AS
         LEFT OUTER JOIN exp.materialsource ms ON m.cpastype = ms.lsid;
 
 CREATE VIEW cabig.materialinput AS
-    SELECT materialid, targetapplicationid, propertyid
+    SELECT materialid, targetapplicationid, CAST(NULL AS INT) as propertyid
     FROM exp.materialinput;
 
 CREATE VIEW cabig.protocolapplication AS
@@ -159,7 +159,7 @@ CREATE VIEW cabig.runlist AS
     FROM exp.runlist;
 
 CREATE VIEW cabig.dataruninputs AS
-    SELECT di.dataid, di.propertyid, pa.runid
+    SELECT di.dataid, CAST(NULL AS INT) as propertyid, pa.runid
     FROM exp.data d
         INNER JOIN exp.datainput di ON (d.rowid = di.dataid)
         INNER JOIN exp.protocolapplication pa ON (di.targetapplicationid = pa.rowid)
@@ -167,7 +167,7 @@ CREATE VIEW cabig.dataruninputs AS
     WHERE pa.cpastype ='ExperimentRun';
 
 CREATE VIEW cabig.datarunoutputs AS
-    SELECT di.dataid, di.propertyid, pa.runid
+    SELECT di.dataid, CAST(NULL AS INT) as propertyid, pa.runid
     FROM exp.data d
         INNER JOIN exp.datainput di ON (d.rowid = di.dataid)
         INNER JOIN exp.protocolapplication pa ON (di.targetapplicationid = pa.rowid)
@@ -175,7 +175,7 @@ CREATE VIEW cabig.datarunoutputs AS
     WHERE pa.cpastype ='ExperimentRunOutput';
 
 CREATE VIEW cabig.materialruninputs AS
-    SELECT mi.materialid, mi.propertyid, pa.runid
+    SELECT mi.materialid, CAST(NULL AS INT) as propertyid, pa.runid
     FROM exp.material m
         INNER JOIN exp.materialinput mi ON (m.rowid = mi.materialid)
         INNER JOIN exp.protocolapplication pa ON (mi.targetapplicationid = pa.rowid)
@@ -183,7 +183,7 @@ CREATE VIEW cabig.materialruninputs AS
     WHERE pa.cpastype ='ExperimentRun';
 
 CREATE VIEW cabig.materialrunoutputs AS
-    SELECT mi.materialid, mi.propertyid, pa.runid
+    SELECT mi.materialid, CAST(NULL AS INT) as propertyid, pa.runid
     FROM exp.material m
         INNER JOIN exp.materialinput mi ON (m.rowid = mi.materialid)
         INNER JOIN exp.protocolapplication pa ON (mi.targetapplicationid = pa.rowid)

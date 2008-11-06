@@ -228,7 +228,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
      * 1. Start a transaction.
      * 2. Create a protocol and a run and insert them into the database, not loading the data files.
      * 3. Export the run and protocol to a temporary XAR on the file system.
-     * 4. Commit the transaction/
+     * 4. Commit the transaction.
      * 5. Import the temporary XAR (not reloading the runs it references), which causes its referenced data files to load.
      * 6. Rename the temporary XAR to its permanent name.
      *
@@ -400,7 +400,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
             URI uri = runInput.getKey();
             String role = runInput.getValue();
             ExpData data = addData(datas, uri, source);
-            inputApp.addDataInput(getJob().getUser(), data, role, null);
+            inputApp.addDataInput(getJob().getUser(), data, role);
         }
 
         // Set up the inputs and outputs for the individual actions
@@ -434,7 +434,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
             for (RecordedAction.DataFile dd : action.getInputs())
             {
                 ExpData data = addData(datas, dd.getURI(), source);
-                app.addDataInput(getJob().getUser(), data, dd.getRole(), null);
+                app.addDataInput(getJob().getUser(), data, dd.getRole());
             }
 
             // Set up the outputs
@@ -468,7 +468,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
             {
                 URI uri = entry.getKey();
                 String role = entry.getValue();
-                outputApp.addDataInput(getJob().getUser(), datas.get(uri), role, null);
+                outputApp.addDataInput(getJob().getUser(), datas.get(uri), role);
             }
         }
         return run;

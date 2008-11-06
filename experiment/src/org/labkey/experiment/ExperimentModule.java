@@ -83,7 +83,7 @@ public class ExperimentModule extends SpringModule
 
     public double getVersion()
     {
-        return 8.30;
+        return 8.31;
     }
 
     protected void init()
@@ -118,7 +118,7 @@ public class ExperimentModule extends SpringModule
     protected Collection<? extends WebPartFactory> createWebPartFactories()
     {
         List<BaseWebPartFactory> result = new ArrayList<BaseWebPartFactory>();
-        
+
         BaseWebPartFactory runGroupsFactory = new BaseWebPartFactory(RunGroupWebPart.WEB_PART_NAME)
         {
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
@@ -261,7 +261,7 @@ public class ExperimentModule extends SpringModule
     public Collection<String> getSummary(Container c)
     {
         Collection<String> list = new LinkedList<String>();
-        int count = ExperimentService.get().getExperiments(c).length;
+        int count = ExperimentService.get().getExperiments(c, null, false).length;
         if (count > 0)
             list.add("" + count + " Run Group" + (count > 1 ? "s" : ""));
         return list;

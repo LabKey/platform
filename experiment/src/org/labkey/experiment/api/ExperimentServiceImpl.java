@@ -257,34 +257,37 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new ExpSampleSetImpl(ms);
     }
 
-    public ExpSampleSet[] getSampleSets(Container container, boolean includeOtherContainers)
+    public ExpSampleSet[] getSampleSetsForRole(Container container, String role)
     {
-        MaterialSource[] result;
         try
         {
-            SimpleFilter filter = new SimpleFilter();
-            if (includeOtherContainers)
-            {
-                filter.addClause(new SimpleFilter.SQLClause("Container = ? OR Container = ? OR Container = ?", new Object[] {container.getId(), container.getProject().getId(), ContainerManager.getSharedContainer().getId()}, "Container"));
-            }
-            else
-            {
-                filter.addCondition("Container", container.getId());
-            }
+            SQLFragment sql = new SQLFragment();
+            sql.append("SELECT * FROM " + getTinfoMaterialSource() + " WHERE LSID IN (SELECT m.CpasType FROM " +
+                    getTinfoMaterial() + " m, " + getTinfoMaterialInput() + " mi, " + getTinfoProtocolApplication() + " pa, " +
+                    getTinfoExperimentRun() + " r WHERE m.RowId = mi.MaterialId AND mi.TargetApplicationId = pa.RowId AND " +
+                    "pa.RunId = r.RowId AND r.Container = ?)");
+            sql.add(container.getId());
+            MaterialSource[] matches = Table.executeQuery(getSchema(), sql.toString(), sql.getParamsArray(), MaterialSource.class);
+            return ExpSampleSetImpl.fromMaterialSources(matches);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
 
-            result = Table.select(getTinfoMaterialSource(), Table.ALL_COLUMNS, filter, new Sort("Name"), MaterialSource.class);
+    public ExpSampleSetImpl[] getSampleSets(Container container, User user, boolean includeOtherContainers)
+    {
+        try
+        {
+            SimpleFilter filter = createContainerFilter(container, user, includeOtherContainers);
+            MaterialSource[] result = Table.select(getTinfoMaterialSource(), Table.ALL_COLUMNS, filter, new Sort("Name"), MaterialSource.class);
+            return ExpSampleSetImpl.fromMaterialSources(result);
         }
         catch (SQLException x)
         {
             throw new RuntimeSQLException(x);
         }
-        MaterialSource[] sources = result;
-        ExpSampleSet[] ret = new ExpSampleSet[sources.length];
-        for (int i = 0; i < sources.length; i ++)
-        {
-            ret[i] = new ExpSampleSetImpl(sources[i]);
-        }
-        return ret;
     }
 
     public ExpExperimentImpl getExpExperiment(int rowid)
@@ -391,29 +394,29 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new ExpProtocolImpl(protocol);
     }
 
-    public ExpRunTable createRunTable(String alias)
+    public ExpRunTable createRunTable(String alias, QuerySchema schema)
     {
-        return new ExpRunTableImpl(alias);
+        return new ExpRunTableImpl(alias, schema);
     }
 
-    public ExpDataTable createDataTable(String alias)
+    public ExpDataTable createDataTable(String alias, QuerySchema schema)
     {
-        return new ExpDataTableImpl(alias);
+        return new ExpDataTableImpl(alias, schema);
     }
 
-    public ExpSampleSetTable createSampleSetTable(String alias)
+    public ExpSampleSetTable createSampleSetTable(String alias, QuerySchema schema)
     {
-        return new ExpSampleSetTableImpl(alias);
+        return new ExpSampleSetTableImpl(alias, schema);
     }
 
-    public ExpProtocolTableImpl createProtocolTable(String alias)
+    public ExpProtocolTableImpl createProtocolTable(String alias, QuerySchema schema)
     {
-        return new ExpProtocolTableImpl(alias);
+        return new ExpProtocolTableImpl(alias, schema);
     }
 
-    public ExpExperimentTable createExperimentTable(String alias)
+    public ExpExperimentTableImpl createExperimentTable(String alias, QuerySchema schema)
     {
-        return new ExpExperimentTableImpl(alias);
+        return new ExpExperimentTableImpl(alias, schema);
     }
 
     public ExpMaterialTable createMaterialTable(String alias, QuerySchema schema)
@@ -421,11 +424,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new ExpMaterialTableImpl(alias, schema);
     }
 
-    public ExpProtocolApplicationTable createProtocolApplicationTable(String alias)
+    public ExpProtocolApplicationTable createProtocolApplicationTable(String alias, QuerySchema schema)
     {
-        return new ExpProtocolApplicationTableImpl(alias);
+        return new ExpProtocolApplicationTableImpl(alias, schema);
     }
-
 
     private String getNamespacePrefix(Class<? extends ExpObject> clazz)
     {
@@ -537,13 +539,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     Table.execute(getExpSchema(), sql, new Object[] { materialSourceLSID, container.getId() });
                 }
             }
-
-            PropertyDescriptor prop = ensureMaterialInputRole(container, "Material", materialSourceLSID);
-            if (materialSourceLSID != null && !materialSourceLSID.equals(prop.getRangeURI()))
-            {
-                prop.setRangeURI(materialSourceLSID);
-                OntologyManager.updatePropertyDescriptor(prop);
-            }
         }
         catch (SQLException e)
         {
@@ -602,98 +597,48 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return reader.getExperimentRuns();
     }
 
-    public Map<String, PropertyDescriptor> getDataInputRoles(Container container)
+    public Set<String> getDataInputRoles(Container container, ExpProtocol.ApplicationType type)
     {
-        LinkedHashMap<String, PropertyDescriptor> ret = new LinkedHashMap<String, PropertyDescriptor>();
-        PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(getDataInputRoleDomainURI(container), container);
-        for (PropertyDescriptor pd : pds)
-        {
-            ret.put(pd.getName(), pd);
-        }
-        return ret;
+        return getInputRoles(container, getTinfoDataInput(), type);
     }
 
-    public Map<String, PropertyDescriptor> getMaterialInputRoles(Container container)
+    public Set<String> getMaterialInputRoles(Container container, ExpProtocol.ApplicationType type)
     {
-        return getDomainProperties(container, getMaterialInputRoleDomainURI(container));
+        return getInputRoles(container, getTinfoMaterialInput(), type);
     }
 
-    public String getDataInputRolePropertyURI(Container container, String role)
+    private Set<String> getInputRoles(Container container, TableInfo table, ExpProtocol.ApplicationType type)
     {
-        return getDataInputRoleDomainURI(container) + "#" + role;
-    }
-
-    private Map<String, PropertyDescriptor> getDomainProperties(Container container, String domainURI)
-    {
-        TreeMap<String, PropertyDescriptor> ret = new TreeMap<String, PropertyDescriptor>();
-        for (PropertyDescriptor pd : OntologyManager.getPropertiesForType(domainURI, container))
+        try
         {
-            ret.put(pd.getName(), pd);
-        }
-        return ret;
-    }
-
-    private PropertyDescriptor ensureInputRole(Container container, String domainURI, String roleName, String typeURI) throws SQLException
-    {
-        if (roleName == null)
-            return null;
-        if (typeURI == null)
-        {
-            typeURI = PropertyType.STRING.getTypeUri();
-        }
-        Map<String, PropertyDescriptor> map = getDomainProperties(container, domainURI);
-        PropertyDescriptor ret = map.get(roleName);
-        if (ret != null)
-            return ret;
-        DomainDescriptor dd = OntologyManager.getDomainDescriptor(domainURI, container);
-        if (dd == null)
-        {
-            dd = new DomainDescriptor(domainURI, container);
-            OntologyManager.insertOrUpdateDomainDescriptor(dd);
-        }
-        String propertyURI = domainURI + "#" + roleName;
-        PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propertyURI, container);
-        if (pd == null)
-        {
-            pd = new PropertyDescriptor(propertyURI, typeURI, roleName, container);
-            pd = OntologyManager.insertPropertyDescriptor(pd);
-        }
-        return OntologyManager.insertOrUpdatePropertyDescriptor(pd, dd);
-    }
-
-
-    public PropertyDescriptor ensureDataInputRole(User user, Container container, String roleName, ExpData data) throws SQLException
-    {
-        return ensureInputRole(container, getDataInputRoleDomainURI(container), roleName, null);
-    }
-
-    public PropertyDescriptor ensureMaterialInputRole(Container container, String roleName, ExpMaterial material) throws SQLException
-    {
-        String typeURI = null;
-        if (material != null)
-        {
-            ExpSampleSet ss = material.getSampleSet();
-            if (ss != null)
+            SQLFragment sql = new SQLFragment("SELECT role FROM ");
+            sql.append(table);
+            sql.append(" WHERE targetapplicationid IN (SELECT pa.rowid FROM ");
+            sql.append(getTinfoProtocolApplication());
+            sql.append(" pa ");
+            if (type != null)
             {
-                typeURI = ss.getLSID();
+                sql.append(", ");
+                sql.append(getTinfoProtocol());
+                sql.append(" p WHERE p.lsid = pa.protocollsid AND p.applicationtype = ? AND ");
+                sql.add(type.toString());
             }
+            else
+            {
+                sql.append( "WHERE ");
+            }
+            sql.append(" pa.runid IN (SELECT rowid FROM ");
+            sql.append(getTinfoExperimentRun());
+            sql.append(" WHERE Container = ?)");
+            sql.add(container.getId());
+            sql.append(")");
+            String[] result = Table.executeArray(getSchema(), sql, String.class);
+            return new TreeSet<String>(Arrays.asList(result));
         }
-        return ensureMaterialInputRole(container, roleName, typeURI);
-    }
-
-    public PropertyDescriptor ensureMaterialInputRole(Container container, String roleName, String typeURI) throws SQLException
-    {
-        return ensureInputRole(container, getMaterialInputRoleDomainURI(container), roleName, typeURI);
-    }
-
-    public String getDataInputRoleDomainURI(Container container)
-    {
-        return generateLSID(container, "Domain", "DataInputRole");
-    }
-
-    public String getMaterialInputRoleDomainURI(Container container)
-    {
-        return generateLSID(container, "Domain", "MaterialInputRole");
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public ExpDataImpl[] deleteExperimentRunForMove(int runId, Container container, User user) throws SQLException, ExperimentException
@@ -937,12 +882,37 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public ExpExperiment[] getExperiments(Container container)
+    public SimpleFilter createContainerFilter(Container container, User user, boolean includeProjectAndShared)
+    {
+        List<String> containerIds = new ArrayList<String>();
+        containerIds.add(container.getId());
+        if (includeProjectAndShared && user == null)
+        {
+            throw new IllegalArgumentException("Can't include data from other containers without a user to check permissions on");
+        }
+        if (includeProjectAndShared)
+        {
+            if (container.getProject() != null && container.getProject().hasPermission(user, ACL.PERM_READ))
+            {
+                containerIds.add(container.getProject().getId());
+            }
+            Container shared = ContainerManager.getSharedContainer();
+            if (shared.hasPermission(user, ACL.PERM_READ))
+            {
+                containerIds.add(shared.getId());
+            }
+        }
+        SimpleFilter filter = new SimpleFilter();
+        filter.addClause(new SimpleFilter.InClause("Container", containerIds));
+        return filter;
+    }
+
+    public ExpExperiment[] getExperiments(Container container, User user, boolean includeOtherContainers)
     {
         Experiment[] experiments;
         try
         {
-            SimpleFilter filter = new SimpleFilter("Container", container.getId());
+            SimpleFilter filter = createContainerFilter(container, user, includeOtherContainers);
             Sort sort = new Sort("Name");
             sort.insertSort(new Sort("RowId"));
             experiments = Table.select(getTinfoExperiment(), Table.ALL_COLUMNS, filter, sort, Experiment.class);
@@ -2122,16 +2092,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             {
                 startingMaterialMap.put(mat.getRowId(), mat);
                 MaterialInput input = materialInputs[index++];
-                String roleName = null;
-                if (input != null && input.getPropertyId() != null)
-                {
-                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(input.getPropertyId().intValue());
-                    if (pd != null)
-                    {
-                        roleName = pd.getName();
-                    }
-                }
-                expRun.getMaterialInputs().put(mat, roleName);
+                expRun.getMaterialInputs().put(mat, input.getRole());
                 mat.setSuccessorAppList(new ArrayList<ExpProtocolApplication>());
             }
 
@@ -2158,16 +2119,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             {
                 startingDataMap.put(dat.getRowId(), dat);
                 DataInput input = dataInputs[index++];
-                String roleName = null;
-                if (input != null && input.getPropertyId() != null)
-                {
-                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(input.getPropertyId().intValue());
-                    if (pd != null)
-                    {
-                        roleName = pd.getName();
-                    }
-                }
-                expRun.getDataInputs().put(dat, roleName);
+                expRun.getDataInputs().put(dat, input.getRole());
                 dat.markSuccessorAppsAsPopulated();
             }
 
@@ -2711,7 +2663,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
                 protApp1 = Table.insert(user, getTinfoProtocolApplication(), protApp1);
 
-                addDataInputs(inputDatas, runContainer, protApp1, user);
+                addDataInputs(inputDatas, protApp1, user);
                 addMaterialInputs(inputMaterials, runContainer, protApp1, user);
 
                 ProtocolAction action2 = actions[1];
@@ -2735,7 +2687,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
                 protApp2 = Table.insert(user, getTinfoProtocolApplication(), protApp2);
 
-                addDataInputs(inputDatas, runContainer, protApp2, user);
+                addDataInputs(inputDatas, protApp2, user);
                 addMaterialInputs(inputMaterials, runContainer, protApp2, user);
 
                 for (ExpMaterial outputMaterial : outputMaterials.keySet())
@@ -2800,7 +2752,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 protApp3.setName(outputNameTemplateParam.getStringValue());
                 protApp3 = Table.insert(user, getTinfoProtocolApplication(), protApp3);
 
-                addDataInputs(outputDatas, runContainer, protApp3, user);
+                addDataInputs(outputDatas, protApp3, user);
                 addMaterialInputs(outputMaterials, runContainer, protApp3, user);
 
                 if (transactionOwner)
@@ -2984,22 +2936,20 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         for (Map.Entry<ExpMaterial, String> entry : inputMaterials.entrySet())
         {
             MaterialInput input = new MaterialInput();
-            PropertyDescriptor pd = ensureMaterialInputRole(c, entry.getValue(), getExpMaterial(entry.getKey().getRowId()));
-            input.setPropertyId(pd != null ? pd.getPropertyId() : null);
+            input.setRole(entry.getValue());
             input.setMaterialId(entry.getKey().getRowId());
             input.setTargetApplicationId(protApp1.getRowId());
             Table.insert(user, getTinfoMaterialInput(), input);
         }
     }
 
-    private void addDataInputs(Map<ExpData, String> inputDatas, Container c, ProtocolApplication protApp1, User user)
+    private void addDataInputs(Map<ExpData, String> inputDatas, ProtocolApplication protApp1, User user)
             throws SQLException
     {
         for (Map.Entry<ExpData, String> entry : inputDatas.entrySet())
         {
             DataInput input = new DataInput();
-            PropertyDescriptor pd = ensureDataInputRole(user, c, entry.getValue(), getExpData(entry.getKey().getRowId()));
-            input.setPropertyId(pd.getPropertyId());
+            input.setRole(entry.getValue());
             input.setDataId(entry.getKey().getRowId());
             input.setTargetApplicationId(protApp1.getRowId());
             Table.insert(user, getTinfoDataInput(), input);

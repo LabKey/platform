@@ -17,23 +17,29 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.ExpDataRunInput;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExperimentService;
 
-public class DataInput extends AbstractRunInput
+public class ExpDataRunInputImpl extends ExpRunInputImpl<DataInput> implements ExpDataRunInput
 {
-    private int _dataId;
-
-    public DataInput()
+    static public ExpDataRunInput[] fromInputs(DataInput[] inputs)
     {
-        super(ExpDataRunInput.DEFAULT_ROLE);
+        ExpDataRunInput[] ret = new ExpDataRunInput[inputs.length];
+        for (int i = 0; i < inputs.length; i ++)
+        {
+            ret[i] = new ExpDataRunInputImpl(inputs[i]);
+        }
+        return ret;
     }
 
-    public int getDataId()
+    public ExpDataRunInputImpl(DataInput input)
     {
-        return _dataId;
+        super(input);
     }
 
-    public void setDataId(int id)
+    public ExpData getData()
     {
-        _dataId = id;
+        return ExperimentService.get().getExpData(_input.getDataId());
     }
 }

@@ -99,7 +99,12 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
 
     var onUpdateFailure = function(response)
     {
-        nextUpdate(_iDelay + 1);
+        // Don't show an error message if the request was canceled, as would happen if the user clicked on a link
+        // while we were trying up refresh
+        if (response.status != 0)
+        {
+            nextUpdate(_iDelay + 1);
+        }
     }
 
     // public methods:

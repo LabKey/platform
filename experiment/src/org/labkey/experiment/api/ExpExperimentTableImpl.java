@@ -16,18 +16,13 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.api.ExpExperimentTable;
-import org.labkey.api.exp.api.ExpSchema;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.*;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.query.RowIdForeignKey;
-import org.labkey.api.query.ExprColumn;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentMembershipDisplayColumnFactory;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.sql.Types;
 import java.util.List;
@@ -36,9 +31,9 @@ import java.util.Collections;
 
 public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Column> implements ExpExperimentTable
 {
-    public ExpExperimentTableImpl(String alias)
+    public ExpExperimentTableImpl(String alias, QuerySchema schema)
     {
-        super(alias, ExperimentServiceImpl.get().getTinfoExperiment());
+        super(alias, ExperimentServiceImpl.get().getTinfoExperiment(), schema);
     }
 
     public ColumnInfo createColumn(String alias, Column column)
@@ -96,7 +91,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         addColumn(result);
     }
 
-    public void populate(ExpSchema schema)
+    public void populate()
     {
         ColumnInfo colRowId = addColumn(Column.RowId);
         colRowId.setIsHidden(true);
@@ -110,6 +105,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         addColumn(Column.Modified);
         addColumn(Column.ModifiedBy);
         addColumn(Column.RunCount);
+        addContainerColumn(Column.Container);
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
         defaultCols.add(FieldKey.fromParts(Column.Name.toString()));
         defaultCols.add(FieldKey.fromParts(Column.Hypothesis.toString()));
@@ -119,7 +115,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         addColumn(Column.LSID).setIsHidden(true);
         setTitleColumn("Name");
 
-        ActionURL detailsURL = new ActionURL("Experiment", "details", schema.getContainer().getPath());
+        ActionURL detailsURL = new ActionURL(ExperimentController.DetailsAction.class, _schema.getContainer());
         setDetailsURL(new DetailsURL(detailsURL, Collections.singletonMap("rowId", "RowId")));
     }
 

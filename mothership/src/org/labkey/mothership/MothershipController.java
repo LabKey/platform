@@ -32,6 +32,7 @@ import org.jfree.data.xy.XYDataset;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.LabkeyError;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.FilteredTable;

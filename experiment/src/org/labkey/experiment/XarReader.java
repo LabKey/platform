@@ -55,8 +55,6 @@ public class XarReader extends AbstractXarImporter
 {
     private Set<String> _experimentLSIDs = new HashSet<String>();
     private Map<String, Integer> _propertyIdMap = new HashMap<String, Integer>();
-    private Map<String, PropertyDescriptor> _dataInputRoleMap = new HashMap<String, PropertyDescriptor>();
-    private Map<String, PropertyDescriptor> _materialInputRoleMap = new HashMap<String, PropertyDescriptor>();
 
     private List<DeferredDataLoad> _deferredDataLoads = new ArrayList<DeferredDataLoad>();
 
@@ -875,31 +873,8 @@ public class XarReader extends AbstractXarImporter
                 MaterialInput mi = new MaterialInput();
                 mi.setMaterialId(inputRow.getRowId());
                 mi.setTargetApplicationId(protAppId);
-                PropertyDescriptor pdRole = null;
                 String roleName = inputMaterialLSID.getRoleName();
-                if (roleName != null)
-                {
-                    pdRole = _materialInputRoleMap.get(inputMaterialLSID.getRoleName());
-                    if (pdRole == null)
-                    {
-                        try
-                        {
-                            // Consider (nicksh): we're passing null for the material here.
-                            // Should we pass something so that the property descriptor gets created with the right
-                            // rangeURI, or should it just be the active sample set?
-                            pdRole = ExperimentService.get().ensureMaterialInputRole(getContainer(), roleName, null);
-                            _materialInputRoleMap.put(roleName, pdRole);
-                        }
-                        catch (SQLException e)
-                        {
-                            throw new ExperimentException(e);
-                        }
-                    }
-                }
-                if (pdRole != null)
-                {
-                    mi.setPropertyId(pdRole.getPropertyId());
-                }
+                mi.setRole(roleName);
                 Table.insert(getUser(), tiMaterialInput, mi);
             }
         }
@@ -924,27 +899,8 @@ public class XarReader extends AbstractXarImporter
                 input.setDataId(data.getRowId());
                 input.setTargetApplicationId(protAppId);
                 String roleName = inputDataLSID.getRoleName();
-                PropertyDescriptor pdRole = null;
-                if (roleName != null)
-                {
-                    pdRole = _dataInputRoleMap.get(roleName);
-                    if (pdRole == null)
-                    {
-                        try
-                        {
-                            pdRole = ExperimentService.get().ensureDataInputRole(getUser(), getContainer(), roleName, null);
-                            _dataInputRoleMap.put(roleName, pdRole);
-                        }
-                        catch (SQLException e)
-                        {
-                            throw new ExperimentException(e);
-                        }
-                    }
-                }
-                if (pdRole != null)
-                {
-                    input.setPropertyId(pdRole.getPropertyId());
-                }
+                input.setRole(roleName);
+
                 Table.insert(getUser(), tiDataInput, input);
             }
         }

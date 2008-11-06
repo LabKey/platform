@@ -81,7 +81,6 @@ public class RunGroupWebPart extends QueryView
         setTitleHref(ExperimentController.ExperimentUrlsImpl.get().getExperimentListURL(getViewContext().getContainer()));
     }
 
-
     private QuerySettings createQuerySettings(ViewContext portalCtx, String dataRegionName)
     {
         QuerySettings settings = new QuerySettings(portalCtx, dataRegionName);
@@ -91,13 +90,20 @@ public class RunGroupWebPart extends QueryView
         return settings;
     }
 
-    protected TableInfo createTable()
+    protected ExpExperimentTable createTable()
     {
-        ExpExperimentTable result = (ExpExperimentTable)super.createTable();
+        ExpSchema schema = (ExpSchema) getSchema();
+        ExpExperimentTable result = schema.createExperimentsTable("alias");
         if (_narrow)
         {
             List<FieldKey> fieldKeys = new ArrayList<FieldKey>();
             fieldKeys.add(FieldKey.fromParts(ExpExperimentTable.Column.Name.toString()));
+            result.setDefaultVisibleColumns(fieldKeys);
+        }
+        else
+        {
+            List<FieldKey> fieldKeys = new ArrayList<FieldKey>(result.getDefaultVisibleColumns());
+            fieldKeys.add(FieldKey.fromParts(ExpExperimentTable.Column.Container.toString()));
             result.setDefaultVisibleColumns(fieldKeys);
         }
         return result;

@@ -35,7 +35,7 @@
     <ns:columns>
       <ns:column columnName="DataId"/>
       <ns:column columnName="TargetApplicationId"/>
-      <ns:column columnName="PropertyId" />
+      <ns:column columnName="Role" />
     </ns:columns>
   </ns:table>
   <ns:table tableName="Experiment" tableDbType="TABLE">
@@ -167,7 +167,7 @@
     <ns:columns>
       <ns:column columnName="MaterialId"/>
       <ns:column columnName="TargetApplicationId"/>
-      <ns:column columnName="PropertyId" />
+      <ns:column columnName="Role" />
     </ns:columns>
   </ns:table>
   <ns:table tableName="MaterialSource" tableDbType="TABLE">

@@ -16,7 +16,6 @@
 
 package org.labkey.experiment.api;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
@@ -102,7 +101,7 @@ public class ExpRunImpl extends ExpIdentifiableBaseImpl<ExperimentRun> implement
         }
     }
 
-    public ExpData[] getInputDatas(PropertyDescriptor inputRole, ExpProtocol.ApplicationType applicationType)
+    public ExpData[] getInputDatas(String inputRole, ExpProtocol.ApplicationType applicationType)
     {
         try
         {
@@ -114,8 +113,8 @@ public class ExpRunImpl extends ExpIdentifiableBaseImpl<ExperimentRun> implement
             sql.add(getRowId());
             if (inputRole != null)
             {
-                sql.append("\nAND exp.DataInput.PropertyId = ? ");
-                sql.add(inputRole.getPropertyId());
+                sql.append("\nAND exp.DataInput.Role = ? ");
+                sql.add(inputRole);
             }
             if (applicationType != null)
             {

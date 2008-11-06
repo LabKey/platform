@@ -17,7 +17,6 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -30,63 +29,41 @@ import java.util.*;
 public class InputForeignKey extends LookupForeignKey
 {
     ExpSchema _schema;
-    Map<String, PropertyDescriptor[]> _dataInputs;
-    Map<String, PropertyDescriptor[]> _materialInputs;
-    public InputForeignKey(ExpSchema schema, Map<String, PropertyDescriptor> dataInputs, Map<String, PropertyDescriptor> materialInputs)
-    {
-        this(schema, dataInputs.entrySet(), materialInputs.entrySet());
-    }
+    private final ContainerFilter _filter;
+    Set<String> _dataInputs;
+    Set<String> _materialInputs;
 
-    public InputForeignKey(ExpSchema schema, Collection<Map.Entry<String, PropertyDescriptor>> dataInputs, Collection<Map.Entry<String, PropertyDescriptor>> materialInputs)
+    public InputForeignKey(ExpSchema schema, ExpProtocol.ApplicationType type, ContainerFilter filter)
     {
         super(null);
         _schema = schema;
-        _dataInputs = inputMap(dataInputs);
-        _materialInputs = inputMap(materialInputs);
-    }
-
-    private Map<String, PropertyDescriptor[]> inputMap(Collection<Map.Entry<String, PropertyDescriptor>> inputs)
-    {
-        Map<String, PropertyDescriptor[]> ret = new TreeMap<String, PropertyDescriptor[]>(String.CASE_INSENSITIVE_ORDER);
-        for (Map.Entry<String, PropertyDescriptor> entry : inputs)
-        {
-            PropertyDescriptor[] existing = ret.get(entry.getKey());
-            if (existing == null)
-            {
-                ret.put(entry.getKey(), new PropertyDescriptor[] { entry.getValue() });
-            }
-            else
-            {
-                PropertyDescriptor[] newValue = new PropertyDescriptor[existing.length + 1];
-                System.arraycopy(existing, 0, newValue, 0, existing.length);
-                newValue[existing.length] = entry.getValue();
-                ret.put(entry.getKey(), newValue);
-            }
-        }
-        return ret;
+        _filter = filter;
+        _dataInputs = ExperimentService.get().getDataInputRoles(schema.getContainer(), type);
+        _materialInputs = ExperimentService.get().getMaterialInputRoles(schema.getContainer(), type);
     }
 
     public TableInfo getLookupTableInfo()
     {
-        ExpProtocolApplicationTable ret = ExperimentService.get().createProtocolApplicationTable("InputLookup");
+        ExpProtocolApplicationTable ret = ExperimentService.get().createProtocolApplicationTable("InputLookup", _schema);
+        ret.setContainerFilter(_filter);
         SamplesSchema samplesSchema = _schema.getSamplesSchema();
-        for (Map.Entry<String, PropertyDescriptor[]> entry : _dataInputs.entrySet())
+        for (String role : _dataInputs)
         {
-            ret.safeAddColumn(ret.createDataInputColumn(entry.getKey(), _schema, entry.getValue()));
+            ret.safeAddColumn(ret.createDataInputColumn(role, _schema, role));
         }
-        for (Map.Entry<String, PropertyDescriptor[]> entry : _materialInputs.entrySet())
+        for (String role : _materialInputs)
         {
-            ExpSampleSet ss = null;
-            if (entry.getValue().length == 1 && entry.getValue()[0] != null)
+            ExpSampleSet[] matchingSets = ExperimentService.get().getSampleSetsForRole(_schema.getContainer(), role);
+            ExpSampleSet ss;
+            if (matchingSets.length == 1)
             {
-                ss = ExperimentService.get().getSampleSet(entry.getValue()[0].getRangeURI());
+                ss = matchingSets[0];
             }
-
-            if (ss == null)
+            else
             {
                 ss = ExperimentService.get().lookupActiveSampleSet(_schema.getContainer());
             }
-            ret.safeAddColumn(ret.createMaterialInputColumn(entry.getKey(), samplesSchema, ss, entry.getValue()));
+            ret.safeAddColumn(ret.createMaterialInputColumn(role, samplesSchema, ss, role));
         }
         return ret;
     }

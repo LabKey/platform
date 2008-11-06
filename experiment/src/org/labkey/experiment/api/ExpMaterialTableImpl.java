@@ -23,8 +23,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.*;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.security.ACL;
-import org.labkey.experiment.list.ListSchema;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.util.Collections;
 import java.util.List;
@@ -34,12 +33,10 @@ import java.util.Set;
 public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
     ExpSampleSet _ss;
-    private final QuerySchema _schema;
 
     public ExpMaterialTableImpl(String alias, QuerySchema schema)
     {
-        super(alias, ExperimentServiceImpl.get().getTinfoMaterial());
-        _schema = schema;
+        super(alias, ExperimentServiceImpl.get().getTinfoMaterial(), schema);
         setName(ExpSchema.TableType.Materials.name());
     }
 
@@ -60,7 +57,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 {
                     public TableInfo getLookupTableInfo()
                     {
-                        ExpSampleSetTable sampleSetTable = ExperimentService.get().createSampleSetTable("SampleSets");
+                        ExpSampleSetTable sampleSetTable = ExperimentService.get().createSampleSetTable("SampleSets", _schema);
                         sampleSetTable.populate(_schema instanceof ExpSchema ? (ExpSchema)_schema : new ExpSchema(_schema.getUser(), _schema.getContainer()));
                         return sampleSetTable;
                     }
@@ -68,7 +65,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 return columnInfo;
             }
             case SourceProtocolLSID:
-                // Todo - hook up foreign key 
+                // Todo - hook up foreign key
                 return wrapColumn(alias, _rootTable.getColumn("SourceProtocolLSID"));//.setFk(new QueryForeignKey(this, PROTOCOLS_TABLE_NAME, "LSID", "Name"));
             case Run:
                 return wrapColumn(alias, _rootTable.getColumn("RunId"));
@@ -127,26 +124,18 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         }
     }
 
-    public void populate(SamplesSchema schema, ExpSampleSet ss, boolean filter)
+    public void populate(ExpSampleSet ss, boolean filter)
     {
-        if (ss != null && !ss.getContainer().equals(schema.getContainer()) && ss.getContainer().hasPermission(schema.getUser(), ACL.PERM_READ))
+        if (ss != null && !ss.getContainer().equals(getContainer()))
         {
-            SQLFragment condition = new SQLFragment("container IN (");
-            condition.appendStringLiteral(ss.getContainer().getId());
-            condition.append(",");
-            condition.appendStringLiteral(schema.getContainer().getId());
-            condition.append(")");
-        }
-        else
-        {
-            setContainer(schema.getContainer());
+            setContainerFilter(new ContainerFilter.CurrentPlusExtras(ss.getContainer()));
         }
 
         addColumn(ExpMaterialTable.Column.RowId);
         addColumn(ExpMaterialTable.Column.Name);
         addColumn(ExpMaterialTable.Column.CpasType);
         addContainerColumn(ExpMaterialTable.Column.Container);
-        addColumn(ExpMaterialTable.Column.Run).setFk(new ExpSchema(schema.getUser(), schema.getContainer()).getRunIdForeignKey());
+        addColumn(ExpMaterialTable.Column.Run).setFk(new ExpSchema(_schema.getUser(), getContainer()).getRunIdForeignKey());
         ColumnInfo colLSID = addColumn(ExpMaterialTable.Column.LSID);
         colLSID.setIsHidden(true);
         if (ss != null)
@@ -170,7 +159,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             setName(_ss.getName());
         }
 
-        ActionURL url = new ActionURL("Experiment", "showMaterial", schema.getContainer().getPath());
+        ActionURL url = new ActionURL(ExperimentController.ShowMaterialAction.class, getContainer());
         setDetailsURL(new DetailsURL(url, Collections.singletonMap("rowId", "RowId")));
         setTitleColumn(Column.Name.toString());
     }

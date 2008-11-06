@@ -21,6 +21,7 @@ import org.labkey.api.exp.api.ExpSchema;
 import org.labkey.api.exp.api.ExpDataTable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.QuerySchema;
 
 /**
  * User: jeckels
@@ -28,9 +29,9 @@ import org.labkey.api.data.TableInfo;
  */
 public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column> implements ExpSampleSetTable
 {
-    public ExpSampleSetTableImpl(String alias)
+    public ExpSampleSetTableImpl(String alias, QuerySchema schema)
     {
-        super(alias, ExperimentServiceImpl.get().getTinfoMaterialSource());
+        super(alias, ExperimentServiceImpl.get().getTinfoMaterialSource(), schema);
     }
 
     public ColumnInfo createColumn(String alias, Column column)
@@ -53,10 +54,6 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
 
     public void populate(ExpSchema schema)
     {
-        if (schema.isRestrictContainer())
-        {
-            setContainer(schema.getContainer());
-        }
         addColumn(ExpSampleSetTable.Column.RowId).setIsHidden(true);
         addColumn(ExpSampleSetTable.Column.Name);
         addColumn(ExpSampleSetTable.Column.Description);

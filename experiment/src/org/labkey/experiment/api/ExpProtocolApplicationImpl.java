@@ -19,7 +19,6 @@ package org.labkey.experiment.api;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
@@ -60,18 +59,18 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         throw new UnsupportedOperationException();
     }
 
-    public ExpDataInput[] getDataInputs()
+    public ExpDataRunInput[] getDataInputs()
     {
-        return ExpDataInputImpl.fromInputs(ExperimentServiceImpl.get().getDataInputsForApplication(getRowId()));
+        return ExpDataRunInputImpl.fromInputs(ExperimentServiceImpl.get().getDataInputsForApplication(getRowId()));
     }
 
     public List<ExpData> getInputDatas()
     {
         if (_inputDatas == null)
         {
-            ExpDataInput[] inputs = getDataInputs();
+            ExpDataRunInput[] inputs = getDataInputs();
             _inputDatas= new ArrayList<ExpData>(inputs.length);
-            for (ExpDataInput input : inputs)
+            for (ExpDataRunInput input : inputs)
             {
                 _inputDatas.add(input.getData());
             }
@@ -84,9 +83,9 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     {
         if (_inputMaterials == null)
         {
-            ExpMaterialInput[] inputs = getMaterialInputs();
+            ExpMaterialRunInput[] inputs = getMaterialInputs();
             _inputMaterials = new ArrayList<ExpMaterial>(inputs.length);
-            for (ExpMaterialInput input : inputs)
+            for (ExpMaterialRunInput input : inputs)
             {
                 _inputMaterials.add(input.getMaterial());
             }
@@ -105,9 +104,9 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         return _outputDatas;
     }
 
-    public ExpMaterialInput[] getMaterialInputs()
+    public ExpMaterialRunInput[] getMaterialInputs()
     {
-        return ExpMaterialInputImpl.fromInputs(ExperimentServiceImpl.get().getMaterialInputsForApplication(getRowId()));
+        return ExpMaterialRunInputImpl.fromInputs(ExperimentServiceImpl.get().getMaterialInputsForApplication(getRowId()));
     }
 
     public List<ExpMaterial> getOutputMaterials()
@@ -195,24 +194,16 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         _outputDatas = outputDataList;
     }
     
-    public PropertyDescriptor addDataInput(User user, ExpData data, String roleName, PropertyDescriptor pd)
+    public void addDataInput(User user, ExpData data, String roleName)
     {
         try
         {
-            if (pd == null)
-            {
-                pd = ExperimentService.get().ensureDataInputRole(user, getContainer(), roleName, data);
-            }
             DataInput obj = new DataInput();
             obj.setDataId(data.getRowId());
             obj.setTargetApplicationId(getRowId());
-            if (pd != null)
-            {
-                obj.setPropertyId(pd.getPropertyId());
-            }
+            obj.setRole(roleName);
 
             Table.insert(user, ExperimentServiceImpl.get().getTinfoDataInput(), obj);
-            return pd;
         }
         catch (SQLException e)
         {
@@ -220,23 +211,15 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         }
     }
 
-    public PropertyDescriptor addMaterialInput(User user, ExpMaterial material, String roleName, PropertyDescriptor pd)
+    public void addMaterialInput(User user, ExpMaterial material, String roleName)
     {
         try
         {
-            if (pd == null)
-            {
-                pd = ExperimentService.get().ensureMaterialInputRole(getContainer(), roleName, material);
-            }
             MaterialInput obj = new MaterialInput();
             obj.setMaterialId(material.getRowId());
             obj.setTargetApplicationId(getRowId());
-            if (pd != null)
-            {
-                obj.setPropertyId(pd.getPropertyId());
-            }
+            obj.setRole(roleName);
             Table.insert(user, ExperimentServiceImpl.get().getTinfoMaterialInput(), obj);
-            return pd;
         }
         catch (SQLException e)
         {
@@ -244,20 +227,34 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         }
     }
 
-    public void removeDataInput(User user, ExpData data) throws Exception
+    public void removeDataInput(User user, ExpData data)
     {
-        SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("TargetApplicationId", getRowId());
-        filter.addCondition("DataId", data.getRowId());
-        Table.delete(ExperimentServiceImpl.get().getTinfoDataInput(), filter);
+        try
+        {
+            SimpleFilter filter = new SimpleFilter();
+            filter.addCondition("TargetApplicationId", getRowId());
+            filter.addCondition("DataId", data.getRowId());
+            Table.delete(ExperimentServiceImpl.get().getTinfoDataInput(), filter);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
-    public void removeMaterialInput(User user, ExpMaterial material) throws Exception
+    public void removeMaterialInput(User user, ExpMaterial material)
     {
-        SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("TargetApplicationId", getRowId());
-        filter.addCondition("MaterialId", material.getRowId());
-        Table.delete(ExperimentServiceImpl.get().getTinfoMaterialInput(), filter);
+        try
+        {
+            SimpleFilter filter = new SimpleFilter();
+            filter.addCondition("TargetApplicationId", getRowId());
+            filter.addCondition("MaterialId", material.getRowId());
+            Table.delete(ExperimentServiceImpl.get().getTinfoMaterialInput(), filter);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public static ExpProtocolApplicationImpl[] fromProtocolApplications(ProtocolApplication[] apps)

@@ -115,7 +115,7 @@ CREATE VIEW cabig.data AS
 GO
 
 CREATE VIEW cabig.datainput AS
-    SELECT dataid, targetapplicationid, propertyid
+    SELECT dataid, targetapplicationid, CAST(NULL AS INT) as propertyid
     FROM exp.datainput
 GO
 
@@ -138,7 +138,7 @@ CREATE VIEW cabig.material AS
 GO
 
 CREATE VIEW cabig.materialinput AS
-    SELECT materialid, targetapplicationid, propertyid
+    SELECT materialid, targetapplicationid, CAST(NULL AS INT) as propertyid
     FROM exp.materialinput
 GO
 
@@ -182,7 +182,7 @@ CREATE VIEW cabig.runlist AS
 GO
 
 CREATE VIEW cabig.dataruninputs AS
-    SELECT di.dataid, di.propertyid, pa.runid
+    SELECT di.dataid, CAST(NULL AS INT) as propertyid, pa.runid
     FROM exp.data d
         INNER JOIN exp.datainput di ON (d.rowid = di.dataid)
         INNER JOIN exp.protocolapplication pa ON (di.targetapplicationid = pa.rowid)
@@ -191,7 +191,7 @@ CREATE VIEW cabig.dataruninputs AS
 GO
 
 CREATE VIEW cabig.datarunoutputs AS
-    SELECT di.dataid, di.propertyid, pa.runid
+    SELECT di.dataid, CAST(NULL AS INT) as propertyid, pa.runid
     FROM exp.data d
         INNER JOIN exp.datainput di ON (d.rowid = di.dataid)
         INNER JOIN exp.protocolapplication pa ON (di.targetapplicationid = pa.rowid)
@@ -200,7 +200,7 @@ CREATE VIEW cabig.datarunoutputs AS
 GO
 
 CREATE VIEW cabig.materialruninputs AS
-    SELECT mi.materialid, mi.propertyid, pa.runid
+    SELECT mi.materialid, CAST(NULL AS INT) as propertyid, pa.runid
     FROM exp.material m
         INNER JOIN exp.materialinput mi ON (m.rowid = mi.materialid)
         INNER JOIN exp.protocolapplication pa ON (mi.targetapplicationid = pa.rowid)
@@ -209,7 +209,7 @@ CREATE VIEW cabig.materialruninputs AS
 GO
 
 CREATE VIEW cabig.materialrunoutputs AS
-    SELECT mi.materialid, mi.propertyid, pa.runid
+    SELECT mi.materialid, CAST(NULL AS INT) as propertyid, pa.runid
     FROM exp.material m
         INNER JOIN exp.materialinput mi ON (m.rowid = mi.materialid)
         INNER JOIN exp.protocolapplication pa ON (mi.targetapplicationid = pa.rowid)
