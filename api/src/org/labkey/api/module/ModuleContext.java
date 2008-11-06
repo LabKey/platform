@@ -136,18 +136,7 @@ public class ModuleContext implements Cloneable
         return PageFlowUtil.urlProvider(AdminUrls.class).getModuleUpgradeURL(getName(), getInstalledVersion(), newVersion, ModuleLoader.ModuleState.Installing, false);
     }
 
-    /*
-    TODO: Allow modules to be disabled. Requires knowledge of controllers so URLs can be turned off.
-    public boolean isEnabled()
-        {
-        return enabled;
-        }
-
-    public void setEnabled(boolean enabled)
-        {
-        this.enabled = enabled;
-        }
-        */
+    @Deprecated
     public Map<String, Object> getProperties()
     {
         return properties;
