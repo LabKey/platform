@@ -23,7 +23,6 @@ import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.property.DomainImporterServiceBase;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.security.ACL;
@@ -184,6 +183,7 @@ public class DatasetController extends BaseStudyController
 
             TableInfo datasetTable = ds.getTableInfo(getUser());
             QueryUpdateForm updateForm = new QueryUpdateForm(datasetTable, getViewContext().getRequest());
+            //noinspection ThrowableResultOfMethodCallIgnored
             updateForm.populateValues(errors);
 
             if (errors.hasErrors())
@@ -387,6 +387,11 @@ public class DatasetController extends BaseStudyController
         {
             Map<String,String> props = new HashMap<String,String>();
 
+            Study study = getStudy();
+            DataSetDefinition def = study.getDataSet(form.getDatasetId());
+
+            props.put("typeURI", def.getTypeURI());
+
             Boolean isDateBased = getStudy().isDateBased();
             props.put("dateBased", isDateBased.toString());
 
@@ -435,7 +440,7 @@ public class DatasetController extends BaseStudyController
     {
         protected BaseRemoteService createService()
         {
-            return new DomainImporterServiceBase(getViewContext());
+            return new DatasetImportServiceImpl(getViewContext());
         }
     }
 

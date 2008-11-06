@@ -1816,6 +1816,7 @@ study/src/org/labkey/study/controllers/BaseController.java -text
 study/src/org/labkey/study/controllers/BaseStudyController.java -text
 study/src/org/labkey/study/controllers/CohortController.java -text
 study/src/org/labkey/study/controllers/DatasetController.java -text
+study/src/org/labkey/study/controllers/DatasetImportServiceImpl.java -text
 study/src/org/labkey/study/controllers/DatasetServiceImpl.java -text
 study/src/org/labkey/study/controllers/StudyController.java -text
 study/src/org/labkey/study/controllers/StudyDefinitionController.java -text

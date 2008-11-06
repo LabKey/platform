@@ -28,7 +28,7 @@ import java.util.Map;
  * Date: Apr 26, 2007
  * Time: 1:34:56 PM
  */
-public interface PropertyService extends RemoteService //, PropertiesEditorService
+public interface PropertyService extends RemoteService
 {
     public List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain dd);
     public GWTDomain getDomainDescriptor(String typeURI);

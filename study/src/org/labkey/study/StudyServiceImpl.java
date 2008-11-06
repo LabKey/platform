@@ -237,10 +237,7 @@ public class StudyServiceImpl implements StudyService.Service
         Study study = StudyManager.getInstance().getStudy(c);
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
 
-        Integer defaultQcStateId = study.getDefaultDirectEntryQCState();
-        QCState defaultQCState = null;
-        if (defaultQcStateId != null)
-            defaultQCState = StudyManager.getInstance().getQCStateForRowId(c, defaultQcStateId.intValue());
+        QCState defaultQCState = StudyManager.getInstance().getDefaultQCState(study);
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         boolean transactionOwner = !scope.isTransactionActive();

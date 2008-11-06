@@ -46,8 +46,9 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
-import org.labkey.common.tools.TabLoader;
 import org.labkey.common.tools.ColumnDescriptor;
+import org.labkey.common.tools.DataLoader;
+import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.CPUTimer;
 import org.labkey.study.QueryHelper;
 import org.labkey.study.SampleManager;
@@ -564,6 +565,17 @@ public class StudyManager
         if (preDeleteStates.length == 1)
             clearCaches(state.getContainer(), true);
 
+    }
+
+    @Nullable
+    public QCState getDefaultQCState(Study study)
+    {
+        Integer defaultQcStateId = study.getDefaultDirectEntryQCState();
+        QCState defaultQCState = null;
+        if (defaultQcStateId != null)
+            defaultQCState = StudyManager.getInstance().getQCStateForRowId(
+                study.getContainer(), defaultQcStateId.intValue());
+        return defaultQCState;
     }
 
     public QCState getQCStateForRowId(Container container, int rowId)
@@ -1826,8 +1838,8 @@ public class StudyManager
 
     private static final String CONVERSION_ERROR = "Conversion Error";
 
-    private Map<String, Object>[] parseTSV(DataSetDefinition def,
-                                   String tsv,
+    private Map<String, Object>[] parseData(DataSetDefinition def,
+                                   DataLoader loader,
                                    Map<String, String> columnMap,
                                    List<String> errors)
             throws ServletException, IOException
@@ -1853,9 +1865,6 @@ public class StudyManager
             if (null != label && !propName2Col.containsKey(label))
                 propName2Col.put(label, col);
         }
-
-        TabLoader loader = new TabLoader(tsv, true);
-//        loader.setParseQuotes(true);  UNDONE: slightly broken with tabs
 
         //
         // create columns to properties map
@@ -1978,13 +1987,24 @@ public class StudyManager
         return null;
     }
 
+    public String[] importDatasetData(Study study, User user, DataSetDefinition def,
+                                      DataLoader loader, long lastModified,
+                                      Map<String,String> columnMap, List<String> errors,
+                                      boolean checkDuplicates,
+                                      QCState defaultQCState)
+        throws IOException, ServletException, SQLException
+    {
+        Map<String, Object>[] dataMaps = parseData(def, loader, columnMap, errors);
+        return importDatasetData(study, user, def, dataMaps, lastModified, errors, checkDuplicates, defaultQCState);
+    }
+
 
     public String[] importDatasetTSV(Study study, User user, DataSetDefinition def, String tsv, long lastModified,
                                      Map<String, String> columnMap, List<String> errors, boolean checkDuplicates, QCState defaultQCState)
             throws IOException, ServletException, SQLException
     {
-        Map<String, Object>[] dataMaps = parseTSV(def, tsv, columnMap, errors);
-        return importDatasetData(study, user, def, dataMaps, lastModified, errors, checkDuplicates, defaultQCState);
+        DataLoader loader = new TabLoader(tsv, true);
+        return importDatasetData(study, user, def, loader, lastModified, columnMap, errors, checkDuplicates, defaultQCState);
     }
 
     /**
