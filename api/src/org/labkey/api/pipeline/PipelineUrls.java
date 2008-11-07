@@ -25,6 +25,7 @@ import org.labkey.api.view.ActionURL;
 public interface PipelineUrls extends UrlProvider
 {
     ActionURL urlBrowse(Container container, String referer);
+    ActionURL urlBrowse(Container container, String referer, String path);
 
     ActionURL urlReferer(Container container);
 

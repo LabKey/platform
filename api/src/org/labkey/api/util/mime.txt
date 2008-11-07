@@ -487,6 +487,7 @@ wsc	text/scriptlet
 sgm	text/sgml
 sgml	text/sgml
 tsv	text/tab-separated-values
+csv	text/comma-separated-values
 uni	text/uri-list
 unis	text/uri-list
 uri	text/uri-list

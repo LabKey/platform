@@ -288,13 +288,15 @@ function showHelpDiv(elem, titleText, bodyText, width)
     div.style.zIndex = "25";
 
     if (width)
-        div.style.width =  width;
+        document.getElementById("helpDivTable").style.width =  width;
     else
-        div.style.width =  "250px";
+        document.getElementById("helpDivTable").style.width =  "250px";
 
-    if (viewportWidth + leftScroll < div.offsetWidth + posLeft)
+    var maxWidth = document.getElementById("helpDivTable").offsetWidth
+
+    if (viewportWidth + leftScroll < maxWidth + posLeft)
     {
-        posLeft = viewportWidth + leftScroll - div.offsetWidth - 10;
+        posLeft = viewportWidth + leftScroll - maxWidth - 10;
         div.style.left = posLeft;
     }
 
@@ -400,7 +402,7 @@ function isTrueOrUndefined(obj)
 LABKEY.addMarkup(
 '<div id="helpDiv" onMouseOver="mouseEnteredHelpDiv()" onMouseOut="mouseExitedHelpDiv()"' +
 '   style="display:none;">'+
-'  <table>'+
+'  <table id="helpDivTable">'+
 '    <tr class="labkey-wp-header" width="100%">'+
 '      <td title="Help" class="labkey-wp-title-left" nowrap>'+
 '        <div><span id="helpDivTitle" class="labkey-wp-title">Title</span></div>'+

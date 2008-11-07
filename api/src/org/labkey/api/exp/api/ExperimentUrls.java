@@ -33,7 +33,7 @@ public interface ExperimentUrls extends UrlProvider
     ActionURL getRunTextURL(ExpRun run);
 
     ActionURL getDeleteDatasURL(Container container, ActionURL returnURL);
-    
+
     ActionURL getExperimentDetailsURL(Container c, ExpExperiment expExperiment);
 
     ActionURL getRemoveSelectedExpRunsURL(Container container, ActionURL returnURL, ExpExperiment expExperiment);
@@ -52,6 +52,5 @@ public interface ExperimentUrls extends UrlProvider
 
     ActionURL getDomainEditorURL(Container container, int domainId);
 
-    ActionURL getShowFileURL(Container container, ExpData run);
-
+    ActionURL getShowFileURL(Container container, ExpData data, boolean inline);
 }

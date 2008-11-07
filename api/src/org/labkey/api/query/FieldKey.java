@@ -86,6 +86,16 @@ public class FieldKey implements Comparable
         return fromParts(Arrays.asList(parts));
     }
 
+    static public FieldKey fromParts(Enum... parts)
+    {
+        List<String> strings = new ArrayList<String>(parts.length);
+        for (Enum part : parts)
+        {
+            strings.add(part.toString());
+        }
+        return fromParts(strings);
+    }
+
     static public FieldKey fromParts(FieldKey ... parts)
     {
         FieldKey cur = null;

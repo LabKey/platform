@@ -34,6 +34,10 @@ public interface ExpDataTable extends ExpTable<ExpDataTable.Column>
         Created,
         Container,
         Flag,
+        DownloadLink,
+        ContentLink,
+        ViewFileLink,
+        Thumbnail,
     }
 
     void populate();

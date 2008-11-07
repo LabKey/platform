@@ -20,10 +20,10 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ActionURL;
 import org.apache.log4j.Logger;
 
 import java.io.File;
@@ -39,7 +39,7 @@ public class DefaultExperimentDataHandler extends AbstractExperimentDataHandler
         log.info("No ExperimentDataHandler registered for data file " + data.getDataFileURI() + ", no special loading will be done on this file.");
     }
 
-    public URLHelper getContentURL(Container container, ExpData data)
+    public ActionURL getContentURL(Container container, ExpData data)
     {
         return null;
     }

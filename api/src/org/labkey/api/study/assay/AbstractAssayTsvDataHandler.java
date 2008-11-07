@@ -26,8 +26,8 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.util.CaseInsensitiveHashMap;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ActionURL;
 
 import java.io.File;
 import java.io.IOException;
@@ -374,7 +374,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         throw new UnsupportedOperationException("Not Yet Implemented");
     }
 
-    public URLHelper getContentURL(Container container, ExpData data)
+    public ActionURL getContentURL(Container container, ExpData data)
     {
         ExpRun run = data.getRun();
         if (run != null)

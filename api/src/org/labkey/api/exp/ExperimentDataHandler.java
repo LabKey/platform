@@ -21,6 +21,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ActionURL;
 
 import java.io.File;
 import java.io.OutputStream;
@@ -36,7 +37,7 @@ public interface ExperimentDataHandler extends Handler<ExpData>
 
     public void exportFile(ExpData data, File dataFile, OutputStream out) throws ExperimentException;
 
-    public URLHelper getContentURL(Container container, ExpData data);
+    public ActionURL getContentURL(Container container, ExpData data);
 
     public void beforeDeleteData(List<ExpData> datas) throws ExperimentException;
 
