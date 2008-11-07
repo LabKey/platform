@@ -791,11 +791,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return uriForName("VisitDate");
     }
 
-    public static String getDateURI()
-    {
-        return uriForName("Date");
-    }
-
     public static String getSiteIdURI()
     {
         return uriForName("SiteId");

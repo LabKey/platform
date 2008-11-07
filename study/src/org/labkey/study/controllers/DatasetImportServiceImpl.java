@@ -30,7 +30,6 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -45,7 +44,7 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
         super(context);
     }
 
-    public List<String> importData(GWTDomain domain, Map<String, String> mappedColumnNames) throws ImportException
+    public List<String> importData(GWTDomain domain, Map<String, String> columnMap) throws ImportException
     {
         Container container = getContainer();
         Study study = StudyManager.getInstance().getStudy(container);
@@ -55,23 +54,25 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
         if (def == null)
             throw new IllegalStateException("Could not find dataset: " + domain.getName());
 
-        DataLoader loader = getDataLoader();
-
-        // Need to map from our mapped column names to URIs
-        Map<String,String> columnMap = new HashMap<String,String>();
-        columnMap.put(mappedColumnNames.get("Participant ID"), DataSetDefinition.getParticipantIdURI());
 
         if (study.isDateBased())
         {
-            columnMap.put(mappedColumnNames.get("Date"), DataSetDefinition.getDateURI());
-        }
-        else
-        {
-            columnMap.put(mappedColumnNames.get("Sequence Num"), DataSetDefinition.getSequenceNumURI());
+            // We've told the user to select their "Visit Date",
+            // but it's really called "Date" in the database.
+            String dateColName = null;
+            for (Map.Entry<String,String> entry : columnMap.entrySet())
+            {
+                if (entry.getValue().equals("Visit Date"))
+                {
+                    dateColName = entry.getKey();
+                }
+            }
+            columnMap.put(dateColName, "Date");
         }
 
         List<String> errors = new ArrayList<String>();
 
+        DataLoader loader = getDataLoader();
         try
         {
             StudyManager.getInstance().importDatasetData(
@@ -98,7 +99,12 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
         {
             throw UnexpectedException.wrap(e);
         }
+        finally
+        {
+            loader.close();
+        }
 
+        // On success, delete the import file
         if (errors.isEmpty())
             deleteImportFile();
 

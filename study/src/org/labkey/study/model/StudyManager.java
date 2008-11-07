@@ -1846,6 +1846,13 @@ public class StudyManager
     {
         TableInfo tinfo = def.getTableInfo(null, false, false);
 
+        // We're going to lower-case the keys ourselves later,
+        // so this needs to be case-insensitive
+        if (!(columnMap instanceof CaseInsensitiveHashMap))
+        {
+            columnMap = new CaseInsensitiveHashMap<String>(columnMap);
+        }
+
         Map<String,ColumnInfo> propName2Col = new CaseInsensitiveHashMap<ColumnInfo>();
         for (ColumnInfo col : tinfo.getColumns())
         {

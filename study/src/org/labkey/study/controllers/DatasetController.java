@@ -403,6 +403,20 @@ public class DatasetController extends BaseStudyController
                 StudyController.DatasetAction.class, getContainer()).addParameter("datasetId", form.getDatasetId());
             props.put("successURL", successURL.getLocalURIString());
 
+            // need a comma-separated list of base columns
+            Set<String> baseColumnNames = def.getDefaultFieldNames();
+            StringBuilder sb = new StringBuilder();
+            boolean needComma = false;
+            for (String baseColumnName : baseColumnNames)
+            {
+                if (needComma)
+                    sb.append(",");
+                else
+                    needComma = true;
+                sb.append(baseColumnName);
+            }
+            props.put("baseColumnNames", sb.toString());
+
             return new GWTView(DatasetImporter.class, props);
         }
 

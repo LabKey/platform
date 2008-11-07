@@ -26,7 +26,9 @@ import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.ServiceUtil;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * User: jgarms
@@ -44,18 +46,23 @@ public class DatasetImporter implements EntryPoint
         VerticalPanel vPanel = new VerticalPanel();
         root.add(vPanel);
 
-        // TODO: determine if we're date or visit-based
         List<String> columnsToMap = new ArrayList<String>();
         columnsToMap.add("Participant ID");
 
         String dateBasedString = PropertyUtil.getServerProperty("dateBased");
         boolean isDateBased = Boolean.parseBoolean(dateBasedString);
         if (isDateBased)
-            columnsToMap.add("Date");
+            columnsToMap.add("Visit Date");
         else
             columnsToMap.add("Sequence Num");
 
-        domainImporter = new DomainImporter(getService(), columnsToMap);
+        Set<String> baseColumnNames = new HashSet<String>();
+        String baseColNamesString = PropertyUtil.getServerProperty("baseColumnNames");
+        String[] baseColArray = baseColNamesString.split(",");
+        for (String s : baseColArray)
+            baseColumnNames.add(s);
+
+        domainImporter = new DomainImporter(getService(), columnsToMap, baseColumnNames);
         vPanel.add(domainImporter.getMainPanel());
     }
 
