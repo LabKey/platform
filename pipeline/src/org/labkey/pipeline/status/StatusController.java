@@ -861,7 +861,7 @@ public class StatusController extends SpringActionController
 
         if (c.hasPermission(user, ACL.PERM_INSERT) && uriRoot != null)
         {
-            ActionURL url = PipelineController.urlBrowse(c, referer);
+            ActionURL url = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c, referer);
             ActionButton button = new ActionButton(url, "Process and Import Data");
             button.setActionType(ActionButton.Action.GET);
             bb.add(button);
@@ -927,7 +927,7 @@ public class StatusController extends SpringActionController
         {
             ActionButton button = new ActionButton("browse.view", "Process and Import Data");
             button.setActionType(ActionButton.Action.LINK);
-            button.setURL(PipelineController.urlBrowse(c, PipelineController.RefererValues.pipeline.toString()));
+            button.setURL(PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c, PipelineController.RefererValues.pipeline.toString()));
             bb.add(button);
         }
 

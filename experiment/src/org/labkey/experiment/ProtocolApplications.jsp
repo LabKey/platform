@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.exp.ExperimentDataHandler" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -47,7 +48,7 @@
                     <a href="showData.view?rowId=<%= data.getRowId() %>"><%= h(data.getName()) %></a>
                 <%
                     ExperimentDataHandler handler = data.findDataHandler();
-                    URLHelper url = handler == null ? null : handler.getContentURL(HttpView.currentContext().getContainer(), data);
+                    ActionURL url = handler == null ? null : handler.getContentURL(HttpView.currentContext().getContainer(), data);
                     if (url != null) { %>[<a href="<%= url %>">view</a>]<% } %><br/>
                 <% } %>
             </td>
@@ -59,7 +60,7 @@
                     <a href="showData.view?rowId=<%= data.getRowId() %>"><%= h(data.getName()) %></a>
                 <%
                     ExperimentDataHandler handler = data.findDataHandler();
-                    URLHelper url = handler == null ? null : handler.getContentURL(HttpView.currentContext().getContainer(), data);
+                    ActionURL url = handler == null ? null : handler.getContentURL(HttpView.currentContext().getContainer(), data);
                     if (url != null) { %>[<a href="<%= url %>">view</a>]<% } %><br/>
                 <% } %>
             </td>

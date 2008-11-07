@@ -49,10 +49,12 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
+import javax.imageio.ImageIO;
 import java.io.*;
 import java.net.URI;
 import java.sql.SQLException;
 import java.util.*;
+import java.awt.image.BufferedImage;
 
 /**
  * User: jeckels
@@ -797,14 +799,34 @@ public class ExperimentController extends SpringActionController
             DataRegion dr = new DataRegion();
             dr.addColumns(ExperimentServiceImpl.get().getTinfoData().getUserEditableColumns());
             dr.removeColumns("DataFileUrl", "RowId", "RunId", "SourceProtocolLSID", "SourceApplicationId");
-            dr.addDisplayColumn(new DataFileURLDisplayColumn(_data, relativePath));
+            dr.addDisplayColumn(new DataFileURLDisplayColumn(_data));
             dr.addDisplayColumn(new ExperimentRunDisplayColumn(run, "Source Experiment Run"));
             dr.addDisplayColumn(new ProtocolDisplayColumn(sourceProtocol, "Source Protocol"));
             dr.addDisplayColumn(new ProtocolApplicationDisplayColumn(sourceProtocolApplication, "Source Protocol Application"));
             dr.addDisplayColumn(new LineageGraphDisplayColumn(_data, run));
             DetailsView detailsView = new DetailsView(dr, _data.getRowId());
             detailsView.setTitle("Standard Properties");
-            dr.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
+            ButtonBar bb = new ButtonBar();
+
+            ActionURL viewDataURL = _data.findDataHandler().getContentURL(getContainer(), _data);
+            if (viewDataURL != null)
+            {
+                bb.add(new ActionButton("View data", viewDataURL));
+            }
+
+            if (_data.isFileOnDisk())
+            {
+                bb.add(new ActionButton("View file", ExperimentUrlsImpl.get().getShowFileURL(c, _data, true)));
+                bb.add(new ActionButton("Download file", ExperimentUrlsImpl.get().getShowFileURL(c, _data, false)));
+
+                if (getContainer().hasPermission(getUser(), ACL.PERM_INSERT))
+                {
+                    ActionURL browseURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(getContainer(), getViewContext().getActionURL().toString(), relativePath);
+                    bb.add(new ActionButton("Browse in pipeline", browseURL));
+                }
+            }
+            dr.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTTOM);
+            dr.setButtonBar(bb);
 
             CustomPropertiesView cpv = new CustomPropertiesView(_data.getLSID(), getViewContext().cloneActionURL(), c);
 
@@ -841,6 +863,19 @@ public class ExperimentController extends SpringActionController
             try
             {
                 boolean inline = _data.isInlineImage() || form.isInline();
+                if (_data.isInlineImage() && form.getMaxDimension() != null && _data.isFileOnDisk())
+                {
+                    ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+                    BufferedImage image = ImageIO.read(_data.getDataFile());
+                    int imageMax = Math.max(image.getHeight(), image.getWidth());
+                    if (imageMax > form.getMaxDimension())
+                    {
+                        double scale = (double)form.getMaxDimension().intValue() / (double)imageMax;
+                        ImageUtil.resizeImage(image, bOut, scale, 1);
+                        PageFlowUtil.streamFileBytes(getViewContext().getResponse(), realContent.getName(), bOut.toByteArray(), !inline);
+                        return null;
+                    }
+                }
                 PageFlowUtil.streamFile(getViewContext().getResponse(), realContent.getAbsolutePath(), !inline);
             }
             catch (IOException e)
@@ -1036,6 +1071,7 @@ public class ExperimentController extends SpringActionController
         private boolean _inline;
         private int _rowId;
         private String _lsid;
+        private Integer _maxDimension;
 
         public boolean isInline()
         {
@@ -1075,6 +1111,16 @@ public class ExperimentController extends SpringActionController
                 result = ExperimentServiceImpl.get().getExpData(getLsid());
             }
             return result;
+        }
+
+        public Integer getMaxDimension()
+        {
+            return _maxDimension;
+        }
+
+        public void setMaxDimension(Integer maxDimension)
+        {
+            _maxDimension = maxDimension;
         }
     }
 
@@ -1528,7 +1574,6 @@ public class ExperimentController extends SpringActionController
         {
             if (isPost())
             {
-                boolean hasErrors = false;
                 if (StringUtils.isEmpty(form.getName()) || form.getName() == null)
                 {
                     errors.reject(ERROR_MSG, "You must supply a name for the sample set");
@@ -1991,7 +2036,7 @@ public class ExperimentController extends SpringActionController
             errorURL.addParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY, form.getDataRegionSelectionKey());
             if (form.getProtocolId() != null)
             {
-                errorURL.addParameter("protocolId", form.getProtocolId());
+                errorURL.addParameter("protocolId", form.getProtocolId().intValue());
             }
             _resultURL = exportXAR(selection, form.getLsidOutputType(), form.getExportType(), form.getFileName(), errorURL);
             if (_resultURL != errorURL && form.getDataRegionSelectionKey() != null)
@@ -2057,7 +2102,7 @@ public class ExperimentController extends SpringActionController
                 XarExportSelection selection = new XarExportSelection();
                 if (form.getExpRowId() != null)
                 {
-                    ExpExperiment experiment = ExperimentService.get().getExpExperiment(form.getExpRowId());
+                    ExpExperiment experiment = ExperimentService.get().getExpExperiment(form.getExpRowId().intValue());
                     if (experiment != null && !experiment.getContainer().equals(getContainer()))
                     {
                         HttpView.throwNotFound("Experiment " + form.getExpRowId());
@@ -2110,7 +2155,7 @@ public class ExperimentController extends SpringActionController
 
         public ExpExperiment lookupExperiment()
         {
-            return getExpRowId() == null ? null : ExperimentService.get().getExpExperiment(getExpRowId());
+            return getExpRowId() == null ? null : ExperimentService.get().getExpExperiment(getExpRowId().intValue());
         }
     }
 
@@ -3339,9 +3384,14 @@ public class ExperimentController extends SpringActionController
             return url;
         }
 
-        public ActionURL getShowFileURL(Container c, ExpData data)
+        public ActionURL getShowFileURL(Container c, ExpData data, boolean inline)
         {
-            return new ActionURL(ShowFileAction.class, c).addParameter("rowId", data.getRowId());
+            ActionURL result = new ActionURL(ShowFileAction.class, c).addParameter("rowId", data.getRowId());
+            if (inline)
+            {
+                result.addParameter("inline", inline);
+            }
+            return result;
         }
 
     }

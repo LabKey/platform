@@ -58,7 +58,7 @@ public class PipelineController extends SpringActionController
 
     public enum RefererValues { protal, pipeline }
 
-    public enum Params { referer, rootset, overrideRoot }
+    public enum Params { referer, path, rootset, overrideRoot }
 
     private void saveReferer()
     {
@@ -422,13 +422,6 @@ public class PipelineController extends SpringActionController
         {
             return root.addChild("Data Pipeline Setup");
         }        
-    }
-
-    public static ActionURL urlBrowse(Container container, String referer)
-    {
-        ActionURL url = new ActionURL(BrowseAction.class, container);
-        url.addParameter(Params.referer, referer);
-        return url;
     }
 
     @RequiresPermission(ACL.PERM_READ)
@@ -1428,7 +1421,18 @@ public class PipelineController extends SpringActionController
     {
         public ActionURL urlBrowse(Container container, String referer)
         {
-            return PipelineController.urlBrowse(container, referer);
+            return urlBrowse(container, referer, null);
+        }
+
+        public ActionURL urlBrowse(Container container, String referer, String path)
+        {
+            ActionURL url = new ActionURL(BrowseAction.class, container);
+            url.addParameter(Params.referer, referer);
+            if (path != null)
+            {
+                url.addParameter(Params.path, path);
+            }
+            return url;
         }
 
         public ActionURL urlReferer(Container container)

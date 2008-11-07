@@ -654,6 +654,7 @@ experiment/src/org/labkey/experiment/api/AbstractProtocolOutputImpl.java -text
 experiment/src/org/labkey/experiment/api/AbstractRunInput.java -text
 experiment/src/org/labkey/experiment/api/Data.java -text
 experiment/src/org/labkey/experiment/api/DataInput.java -text
+experiment/src/org/labkey/experiment/api/DataLinkColumn.java -text
 experiment/src/org/labkey/experiment/api/ExpChildObjectImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpDataImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpDataRunInputImpl.java -text

@@ -17,18 +17,19 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.*;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.query.ExprColumn;
-import org.labkey.api.query.RowIdForeignKey;
-import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.QuerySchema;
+import org.labkey.api.data.*;
+import org.labkey.api.query.*;
 
 import java.sql.Types;
 import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
+import java.io.Writer;
+import java.io.IOException;
 
 import org.labkey.api.exp.api.SamplesSchema;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implements ExpDataTable
@@ -50,8 +51,19 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         addColumn(Column.Run).setFk(schema.getRunIdForeignKey());
         addColumn(Column.LSID).setIsHidden(true);
         addColumn(Column.DataFileUrl);
+        addColumn(Column.DownloadLink);
+        addColumn(Column.ViewFileLink);
+        addColumn(Column.ContentLink);
+        addColumn(Column.Thumbnail);
         addColumn(Column.Protocol).setIsHidden(true);
         addContainerColumn(Column.Container);
+
+        List<FieldKey> defaultCols = new ArrayList<FieldKey>();
+        defaultCols.add(FieldKey.fromParts(Column.Name));
+        defaultCols.add(FieldKey.fromParts(Column.Run));
+        defaultCols.add(FieldKey.fromParts(Column.DataFileUrl));
+        setDefaultVisibleColumns(defaultCols);
+
         setTitleColumn("Name");
         ActionURL detailsURL = new ActionURL(ExperimentController.ShowDataAction.class, _schema.getContainer());
         setDetailsURL(new DetailsURL(detailsURL, Collections.singletonMap("rowId", "RowId")));
@@ -85,6 +97,55 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                 return wrapColumn(alias, _rootTable.getColumn("RunId"));
             case Flag:
                 return createFlagColumn(alias);
+            case DownloadLink:
+            {
+                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                result.setDisplayColumnFactory(new DisplayColumnFactory()
+                {
+                    public DisplayColumn createRenderer(ColumnInfo colInfo)
+                    {
+                        return new DownloadFileDataLinkColumn(colInfo);
+                    }
+                });
+                return result;
+            }
+            case ViewFileLink:
+            {
+                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                result.setDisplayColumnFactory(new DisplayColumnFactory()
+                {
+                    public DisplayColumn createRenderer(ColumnInfo colInfo)
+                    {
+                        return new ViewFileDataLinkColumn(colInfo);
+                    }
+                });
+                return result;
+            }
+            case ContentLink:
+            {
+                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                result.setDisplayColumnFactory(new DisplayColumnFactory()
+                {
+                    public DisplayColumn createRenderer(ColumnInfo colInfo)
+                    {
+                        return new ViewContentDataLinkColumn(colInfo);
+                    }
+                });
+                return result;
+            }
+            case Thumbnail:
+            {
+                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                result.setDisplayColumnFactory(new DisplayColumnFactory()
+                {
+                    public DisplayColumn createRenderer(ColumnInfo colInfo)
+                    {
+                        return new ThumbnailDataLinkColumn(colInfo);
+                    }
+                });
+                return result;
+
+            }
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -196,5 +257,83 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                 "WHERE Exp.DataInput.DataId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId)");
         ColumnInfo ret = new ExprColumn(this, alias, sql, Types.INTEGER);
         return doAdd(ret);
+    }
+
+    private class ThumbnailDataLinkColumn extends ViewFileDataLinkColumn
+    {
+        public ThumbnailDataLinkColumn(ColumnInfo colInfo)
+        {
+            super(colInfo);
+        }
+
+        @Override
+        protected void renderData(Writer out, ExpData data) throws IOException
+        {
+            if (data.isInlineImage() && data.isFileOnDisk())
+            {
+                ActionURL thumbnailURL = ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data.getContainer(), data, true);
+                thumbnailURL.addParameter("maxDimension", 300);
+                StringBuilder html = new StringBuilder();
+                ActionURL url = getURL(data);
+                if (url != null)
+                {
+                    html.append("<a href=\"");
+                    html.append(url);
+                    html.append("\">");
+                }
+
+                html.append("<img src=\"");
+                html.append(thumbnailURL);
+                html.append("\" />");
+
+                if (url != null)
+                {
+                    html.append("</a>");
+                }
+
+                out.write("[");
+                out.write(PageFlowUtil.helpPopup(data.getFile().getName(), html.toString(), true, "thumbnail", 310));
+                out.write("] ");
+            }
+        }
+    }
+
+    private class DownloadFileDataLinkColumn extends DataLinkColumn
+    {
+        public DownloadFileDataLinkColumn(ColumnInfo colInfo)
+        {
+            super(colInfo);
+        }
+
+        protected ActionURL getURL(ExpData data)
+        {
+            return ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(getContainer(), data, false);
+        }
+    }
+
+    private class ViewFileDataLinkColumn extends DataLinkColumn
+    {
+        public ViewFileDataLinkColumn(ColumnInfo colInfo)
+        {
+            super(colInfo);
+        }
+
+        protected ActionURL getURL(ExpData data)
+        {
+            return ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(getContainer(), data, true);
+        }
+    }
+
+    private class ViewContentDataLinkColumn extends DataLinkColumn
+    {
+        public ViewContentDataLinkColumn(ColumnInfo colInfo)
+        {
+            super(colInfo);
+        }
+
+        protected ActionURL getURL(ExpData data)
+        {
+            return data.findDataHandler().getContentURL(getContainer(), data);
+        }
     }
 }

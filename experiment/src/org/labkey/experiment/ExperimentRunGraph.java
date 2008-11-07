@@ -21,6 +21,7 @@ import org.labkey.api.exp.api.*;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.ImageUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.data.Container;
@@ -33,7 +34,6 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.Lock;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 
 /**
@@ -206,7 +206,25 @@ public class ExperimentRunGraph
                 mapFile.deleteOnExit();
                 imageFile.deleteOnExit();
 
-                resizeFiles(imageFile, mapFile);
+                FileOutputStream fOut = null;
+                try
+                {
+                    BufferedImage originalImage = ImageIO.read(imageFile);
+
+                    // Write it back out to disk
+                    fOut = new FileOutputStream(imageFile);
+                    double scale = ImageUtil.resizeImage(originalImage, fOut, .85, 6);
+
+                    // Need to rewrite the image map to change the coordinates according to the scaling factor
+                    resizeImageMap(mapFile, scale);
+
+                    fOut.close();
+                }
+                finally
+                {
+                    if (fOut != null) { try { fOut.close(); } catch (IOException e) {} }
+                }
+
                 // Start the procedure of downgrade our lock from write to read so that the caller can use the files 
                 readLock.lock();
                 return new RunGraphFiles(mapFile, imageFile, readLock);
@@ -283,56 +301,6 @@ public class ExperimentRunGraph
         {
             if (mapOut != null) { try { mapOut.close(); } catch (IOException e) {} }
         }
-    }
-
-    /** Rewrite the output files so that they look nice and antialiased */
-    private static void resizeFiles(File imageFile, File imageMapFile) throws IOException
-    {
-        double finalScale = 1;
-
-        BufferedImage originalImage = ImageIO.read(imageFile);
-        BufferedImage bufferedResizedImage = null;
-
-        // Unfortunately these images don't anti-alias well in a single resize using Java's default
-        // algorithm, but they look fine if you do it in incremental steps
-        double incrementalScale = .85;
-        for (int i = 0; i < 6; i++)
-        {
-            finalScale *= incrementalScale;
-            int width = (int) (originalImage.getWidth() * incrementalScale);
-            int height = (int) (originalImage.getHeight() * incrementalScale);
-
-            // Create a new empty image buffer to render into
-            bufferedResizedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-            Graphics2D g2d = bufferedResizedImage.createGraphics();
-
-            // Set up the hints to make it look decent
-            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-            g2d.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
-            g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-
-            // Draw the resized image
-            g2d.drawImage(originalImage, 0, 0, width, height, null);
-            g2d.dispose();
-            originalImage = bufferedResizedImage;
-        }
-
-        FileOutputStream fOut = null;
-        try
-        {
-            // Write it back out to disk
-            fOut = new FileOutputStream(imageFile);
-            ImageIO.write(bufferedResizedImage, "png", fOut);
-            fOut.close();
-        }
-        finally
-        {
-            if (fOut != null) { try { fOut.close(); } catch (IOException e) {} }
-        }
-
-        // Need to rewrite the image map to change the coordinates according to the scaling factor
-        resizeImageMap(imageMapFile, finalScale);
     }
 
     private static ProcessResult executeProcess(ProcessBuilder pb, String stdIn) throws IOException, InterruptedException

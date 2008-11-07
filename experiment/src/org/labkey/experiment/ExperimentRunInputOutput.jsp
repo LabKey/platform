@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.experiment.controllers.exp.RunInputOutputBean" %>
 <%@ page import="org.labkey.api.exp.ExperimentDataHandler" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<RunInputOutputBean> me = (JspView<RunInputOutputBean>) HttpView.currentView();
@@ -41,7 +42,7 @@
     for (Map.Entry<ExpData, String> entry : bean.getDatas().entrySet()) {
         ExpData d = entry.getKey();
         ExperimentDataHandler handler = d.findDataHandler();
-        URLHelper url = handler == null ? null : handler.getContentURL(HttpView.currentContext().getContainer(), d);
+        ActionURL url = handler == null ? null : handler.getContentURL(HttpView.currentContext().getContainer(), d);
     %>
         <tr>
             <td>Data</td>

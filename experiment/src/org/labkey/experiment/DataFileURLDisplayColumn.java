@@ -19,16 +19,13 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 /**
  * User: jeckels
@@ -37,17 +34,13 @@ import java.net.URISyntaxException;
 public class DataFileURLDisplayColumn extends SimpleDisplayColumn
 {
     private ExpData _data;
-    private final String _relativePipelinePath;
 
-    public DataFileURLDisplayColumn(ExpData data, String relativePipelinePath)
+    public DataFileURLDisplayColumn(ExpData data)
     {
         super();
         setCaption("Data File");
         _data = data;
-        _relativePipelinePath = relativePipelinePath;
     }
-
-
 
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
@@ -57,54 +50,25 @@ public class DataFileURLDisplayColumn extends SimpleDisplayColumn
             out.write("(Unknown)<br>\n");
             return;
         }
-        try
+
+        ActionURL contentURL = _data.findDataHandler().getContentURL(ctx.getContainer(), _data);
+        if (contentURL == null && _data.isFileOnDisk())
         {
-            File dataFile = new File(new URI(dataFileURL));
-            String viewURL = null;
-            ExperimentDataHandler handler = _data.findDataHandler();
-
-            URLHelper urlHelper = handler.getContentURL(ctx.getContainer(), _data);
-            if (urlHelper != null)
-            {
-                viewURL = urlHelper.toString();
-            }
-
-            ActionURL downloadURL = new ActionURL(ExperimentController.ShowFileAction.class, ctx.getContainer()).addParameter("rowId", _data.getRowId());
-
-            if (_data.isFileOnDisk())
-            {
-                MimeMap mimeMap = new MimeMap();
-                if (mimeMap.isInlineImageFor(dataFile.getName()))
-                {
-                    out.write(dataFileURL + " (See image below)"); // The image will be rendered on the page itself later
-                }
-                else
-                {
-                    out.write(dataFileURL + " [<a href=\"" + downloadURL + "\">download</a>]\n");
-                }
-                if (viewURL != null)
-                {
-                    out.write(" [<a href=\"" + viewURL + "\">view</a>]");
-                }
-                if (_relativePipelinePath != null)
-                {
-                    ActionURL url = ctx.getViewContext().cloneActionURL();
-                    url.setPageFlow("Pipeline");
-                    url.setAction("browse.view");
-                    url.deleteParameters();
-                    url.addParameter("path", _relativePipelinePath);
-                    out.write(" [<a href=\"" + url + "\">browse in pipeline</a>]");
-                }
-                out.write("<br>");
-            }
-            else
-            {
-                out.write(dataFileURL + " (Not available on disk)\n");
-            }
+            contentURL = ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(ctx.getContainer(), _data, false);
         }
-        catch (URISyntaxException e)
+
+        if (contentURL != null)
         {
-            out.write(dataFileURL + " (Not available on disk)\n");
+            out.write("<a href=\"");
+            out.write(contentURL.toString());
+            out.write("\">");
+        }
+        out.write(PageFlowUtil.filter(dataFileURL));
+        out.write("</a>");
+
+        if (!_data.isFileOnDisk())
+        {
+            out.write(" (Not available on disk)\n");
         }
     }
 }
