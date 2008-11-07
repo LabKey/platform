@@ -48,6 +48,12 @@ public class DomainImporter
      */
     private List<String> columnsToMap;
 
+    /**
+     * Contains a set of columns that already exist in an underlying hard table.
+     * E.g. "modified", etc.
+     */
+    private Set<String> baseColumnNames;
+
     private VerticalPanel mainPanel;
 
     FileUploadWithListeners fileUpload;
@@ -65,10 +71,11 @@ public class DomainImporter
     private String successURL;
     private String typeURI;
 
-    public DomainImporter(DomainImporterServiceAsync service, List<String> columnsToMap)
+    public DomainImporter(DomainImporterServiceAsync service, List<String> columnsToMap, Set<String> baseColumnNames)
     {
         this.service = service;
         this.columnsToMap = columnsToMap;
+        this.baseColumnNames = baseColumnNames;
 
         successURL = PropertyUtil.getServerProperty("successURL");
         cancelURL = PropertyUtil.getServerProperty("cancelURL");
@@ -142,8 +149,10 @@ public class DomainImporter
         List<GWTPropertyDescriptor> newProps = newDomain.getPropertyDescriptors();
         for (InferencedColumn column : columns)
         {
+            // Don't create properties for columns we're mapping, or that are already in the base table
             GWTPropertyDescriptor prop = column.getPropertyDescriptor();
-            if (ignoredColumns.contains(prop.getName()))
+            String propName = prop.getName();
+            if (ignoredColumns.contains(propName) || baseColumnNames.contains(propName))
                 continue;
 
             newProps.add(prop);
@@ -319,6 +328,7 @@ public class DomainImporter
             for (String destinationColumn : columnsToMap)
             {
                 ListBox selector = new ListBox();
+                selector.setName(destinationColumn);
                 for (InferencedColumn column : columns)
                 {
                     selector.addItem(column.getPropertyDescriptor().getName());
@@ -346,7 +356,7 @@ public class DomainImporter
         }
 
         /**
-         * Map of column in the file -> column in the underlying data
+         * Map of column in the file -> column in the database
          */
         public Map<String,String> getColumnMap()
         {
@@ -357,7 +367,7 @@ public class DomainImporter
                 ListBox selector = columnSelectors.get(i);
                 String fileColumn = selector.getItemText(selector.getSelectedIndex());
 
-                result.put(dataColumn, fileColumn);
+                result.put(fileColumn, dataColumn);
             }
             return result;
         }

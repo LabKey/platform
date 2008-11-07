@@ -22,6 +22,7 @@ import jxl.Cell;
 import jxl.Sheet;
 import jxl.Workbook;
 import jxl.read.biff.BiffException;
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections.Transformer;
 import org.labkey.api.data.ObjectFactory;
@@ -184,9 +185,18 @@ public class ExcelLoader extends DataLoader
                 {
                     contents = "";
                 }
-                Object value = "".equals(contents) ?
-                    column.missingValues :
-                    column.converter.convert(column.clazz, contents);
+                Object value = column.missingValues;
+                if (!"".equals(contents))
+                {
+                    try
+                    {
+                        value = column.converter.convert(column.clazz, contents);
+                    }
+                    catch (ConversionException ce)
+                    {
+                        // Couldn't convert. Leave it as a missing value.
+                    }
+                }
 
                 row.put(column.name, value);
             }

@@ -50,7 +50,6 @@ public class GWTPropertyDescriptor implements IsSerializable
     private StringProperty lookupContainer = new StringProperty();
     private StringProperty lookupSchema = new StringProperty();
     private StringProperty lookupQuery = new StringProperty();
-    private StringProperty originalColumnName = new StringProperty();
 
     private List<GWTPropertyValidator> validators = new ArrayList<GWTPropertyValidator>();
 
@@ -229,16 +228,6 @@ public class GWTPropertyDescriptor implements IsSerializable
         this.format.set(format);
     }
 
-    public String getOriginalColumnName()
-    {
-        return originalColumnName.getString();
-    }
-
-    public void setOriginalColumnName(String columnName)
-    {
-        this.originalColumnName.set(columnName);
-    }
-
     public boolean isRequired()
     {
         return required.getBool();
@@ -281,8 +270,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (getRangeURI() != null ? !getRangeURI().equals(that.getRangeURI()) : that.getRangeURI() != null) return false;
         if (getSearchTerms() != null ? !getSearchTerms().equals(that.getSearchTerms()) : that.getSearchTerms() != null) return false;
         if (getSemanticType() != null ? !getSemanticType().equals(that.getSemanticType()) : that.getSemanticType() != null) return false;
-        if (getOriginalColumnName() != null ? !getOriginalColumnName().equals(that.getOriginalColumnName()) : that.getOriginalColumnName() != null) return false;
-
+        
         if (getPropertyValidators().size() != that.getPropertyValidators().size()) return false;
         GWTPropertyValidator[] cur = getPropertyValidators().toArray(new GWTPropertyValidator[getPropertyValidators().size()]);
         GWTPropertyValidator[] prev = that.getPropertyValidators().toArray(new GWTPropertyValidator[that.getPropertyValidators().size()]);

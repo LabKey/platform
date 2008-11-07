@@ -84,6 +84,8 @@ public abstract class DomainImporterServiceBase extends BaseRemoteService implem
         {
             //noinspection ResultOfMethodCallIgnored
             getImportFile().delete();
+            HttpSession session = getViewContext().getSession();
+            session.removeAttribute("org.labkey.domain.tempFile");
         }
         catch (ImportException ie)
         {
