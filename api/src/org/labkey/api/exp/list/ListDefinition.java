@@ -22,8 +22,11 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.common.tools.DataLoader;
 
+import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 
 public interface ListDefinition
 {
@@ -164,6 +167,7 @@ public interface ListDefinition
     ListItem getListItemForEntityId(String entityId);
 
     int getRowCount();
+    List<String> insertListItems(User user, DataLoader loader) throws IOException;
 
     TableInfo getTable(User user, String alias);
 

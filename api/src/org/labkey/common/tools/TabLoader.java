@@ -107,6 +107,8 @@ public class TabLoader extends DataLoader
 
     public TabLoader(String src, boolean hasColumnHeaders)
     {
+        if (src == null)
+            throw new IllegalArgumentException("src cannot be null");
         _skipLines = hasColumnHeaders ? 1 : 0;
         setSource(src);
     }

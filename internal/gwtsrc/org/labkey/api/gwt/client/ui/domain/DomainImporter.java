@@ -48,6 +48,8 @@ public class DomainImporter
      */
     private List<String> columnsToMap;
 
+    private final boolean needToMapColumns;
+
     /**
      * Contains a set of columns that already exist in an underlying hard table.
      * E.g. "modified", etc.
@@ -64,6 +66,7 @@ public class DomainImporter
     List<InferencedColumn> columns;
 
     private DomainImportGrid grid;
+
     private ColumnMapper columnMapper;
 
 
@@ -75,6 +78,7 @@ public class DomainImporter
     {
         this.service = service;
         this.columnsToMap = columnsToMap;
+        this.needToMapColumns = columnsToMap.size() > 0;
         this.baseColumnNames = baseColumnNames;
 
         successURL = PropertyUtil.getServerProperty("successURL");
@@ -131,8 +135,7 @@ public class DomainImporter
         {
             public void onFailure(Throwable caught)
             {
-                importStatusLabel.setText("");
-                Window.alert(caught.getMessage());
+                handleServerFailure(caught);
             }
 
             public void onSuccess(GWTDomain result)
@@ -145,7 +148,11 @@ public class DomainImporter
     protected void createColumnsOnServer(GWTDomain domain)
     {
         final GWTDomain newDomain = new GWTDomain(domain);
-        Set<String> ignoredColumns = columnMapper.getMappedColumnNames();
+        Set<String> ignoredColumns;
+        if (columnMapper != null)
+            ignoredColumns = columnMapper.getMappedColumnNames();
+        else
+            ignoredColumns = new HashSet<String>(); // emptySet is not serializable
         List<GWTPropertyDescriptor> newProps = newDomain.getPropertyDescriptors();
         for (InferencedColumn column : columns)
         {
@@ -182,7 +189,12 @@ public class DomainImporter
 
     protected void importData(GWTDomain domain)
     {
-        service.importData(domain, columnMapper.getColumnMap(), new AsyncCallback<List<String>>()
+        Map<String,String> columnMap;
+        if (columnMapper != null)
+            columnMap = columnMapper.getColumnMap();
+        else
+            columnMap = new HashMap<String,String>(); // emptyMap() is not serializable
+        service.importData(domain, columnMap, new AsyncCallback<List<String>>()
         {
             public void onFailure(Throwable caught)
             {
@@ -277,13 +289,16 @@ public class DomainImporter
                 mainPanel.add(grid);
             }
             grid.setColumns(columns);
-            if (!needGridAndButtons)
+            if (!needGridAndButtons && needToMapColumns)
             {
                 // We've already been through here once, remove our old mapper
                 mainPanel.remove(columnMapper);
             }
-            columnMapper = new ColumnMapper();
-            mainPanel.insert(columnMapper, 2);
+            if (needToMapColumns)
+            {
+                columnMapper = new ColumnMapper();
+                mainPanel.insert(columnMapper, 2);
+            }
 
             if (needGridAndButtons)
             {
