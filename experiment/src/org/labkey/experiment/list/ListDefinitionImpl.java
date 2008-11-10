@@ -20,18 +20,29 @@ import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.view.ActionURL;
+import org.labkey.common.tools.ColumnDescriptor;
+import org.labkey.common.tools.DataLoader;
 import org.labkey.experiment.controllers.list.ListController;
+import org.labkey.experiment.controllers.list.ListImportHelper;
 
+import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Collection;
+import java.util.*;
 
 public class ListDefinitionImpl implements ListDefinition
 {
@@ -296,6 +307,192 @@ public class ListDefinitionImpl implements ListDefinition
                 ExperimentService.get().rollbackTransaction();
             }
         }
+    }
+
+    public List<String> insertListItems(User user, DataLoader loader) throws IOException
+    {
+        List<String> errors = new ArrayList<String>();
+        ArrayList<PropertyDescriptor> pds = new ArrayList<PropertyDescriptor>();
+        for (DomainProperty property : getDomain().getProperties())
+            pds.add(property.getPropertyDescriptor());
+        Map<String, PropertyDescriptor> propertiesByName = OntologyManager.createImportPropertyMap(pds.toArray(new PropertyDescriptor[pds.size()]));
+        Map<String, PropertyDescriptor> properties = new CaseInsensitiveHashMap<PropertyDescriptor>();
+        ColumnDescriptor cdKey = null;
+
+        Object errorValue = new Object();
+
+        for (ColumnDescriptor cd : loader.getColumns())
+        {
+            PropertyDescriptor property = propertiesByName.get(cd.name);
+            cd.errorValues = errorValue;
+
+            if (property != null)
+            {
+                cd.clazz = property.getPropertyType().getJavaType();
+
+                if (properties.containsKey(cd.name))
+                {
+                    errors.add("The field '" + property.getName() + "' appears more than once.");
+                }
+                if (properties.containsValue(property))
+                {
+                    errors.add("The fields '" + property.getName() + "' and '" + property.getLabel() + "' refer to the same property.");
+                }
+                properties.put(cd.name, property);
+                cd.name = property.getPropertyURI();
+            }
+            else if (!getKeyName().equalsIgnoreCase(cd.name))
+            {
+                errors.add("The field '" + cd.name + "' could not be matched to an existing field in this list.");
+            }
+            if (getKeyName().equalsIgnoreCase(cd.name))
+            {
+                if (cdKey != null)
+                {
+                    errors.add("The field '" + getKeyName() + "' appears more than once.");
+                }
+                else
+                {
+                    cdKey = cd;
+                }
+            }
+        }
+        if (cdKey == null && getKeyType() != ListDefinition.KeyType.AutoIncrementInteger)
+        {
+            errors.add("There must be a field with the name '" + getKeyName() + "'");
+        }
+
+        if (errors.size() > 0)
+            return errors;
+
+        Map[] rows = (Map[]) loader.load();
+
+        switch (getKeyType())
+        {
+            // All cdKey.clazz values are okay
+            case Varchar:
+                break;
+
+            // Fine if it's misisng, otherwise fall through
+            case AutoIncrementInteger:
+                if (null == cdKey)
+                    break;
+
+                // cdKey must be class Integer if autoincrement key exists or normal Integer key column
+            case Integer:
+                if (Integer.class.equals(cdKey.clazz))
+                    break;
+
+            default:
+                errors.add("Expected key field \"" + cdKey.name + "\" to all be of type Integer but they are of type " + cdKey.clazz.getSimpleName());
+                return errors;
+        }
+
+        Set<Object> keyValues = new HashSet<Object>();
+        Set<String> missingValues = new HashSet<String>();
+        Set<String> wrongTypes = new HashSet<String>();
+        Set<String> noUpload = new HashSet<String>();
+
+        for (Map row : rows)
+        {
+            row = new CaseInsensitiveHashMap<Object>(row);
+            for (DomainProperty domainProperty : getDomain().getProperties())
+            {
+                Object o = row.get(domainProperty.getPropertyURI());
+                String value = o == null ? null : o.toString();
+                boolean valueMissing = (value == null || value.length() == 0);
+                if (domainProperty.isRequired() && valueMissing && !missingValues.contains(domainProperty.getName()))
+                {
+                    missingValues.add(domainProperty.getName());
+                    errors.add(domainProperty.getName() + " is required.");
+                }
+                else if (!valueMissing && domainProperty.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT && !noUpload.contains(domainProperty.getName()))   // TODO: Change to allowUpload() getter on property
+                {
+                    noUpload.add(domainProperty.getName());
+                    errors.add("Can't upload to field " + domainProperty.getName() + " with type " + domainProperty.getType().getLabel() + ".");
+                }
+                else if (!valueMissing && o == errorValue && !wrongTypes.contains(domainProperty.getName()))
+                {
+                    wrongTypes.add(domainProperty.getName());
+                    errors.add(domainProperty.getName() + " must be of type " + domainProperty.getType().getLabel() + ".");
+                }
+            }
+
+            if (cdKey != null)
+            {
+                Object key = row.get(cdKey.name);
+                if (null == key)
+                {
+                    errors.add("Blank values are not allowed in field " + cdKey.name);
+                    return errors;
+                }
+                else if (!getKeyType().isValidKey(key))
+                {
+                    errors.add("Could not convert value \"" + key + "\" in key field \"" + cdKey.name + "\" to type " + getKeyType().getLabel());
+                    return errors;
+                }
+                else if (!keyValues.add(key))
+                {
+                    errors.add("There are multiple rows with key value " + row.get(cdKey.name));
+                    return errors;
+                }
+            }
+        }
+
+        if (errors.size() > 0)
+            return errors;
+
+        doBulkInsert(user, cdKey, getDomain(), properties, rows, errors);
+
+        return errors;
+    }
+
+    private void doBulkInsert(User user, ColumnDescriptor cdKey, Domain domain, Map<String, PropertyDescriptor> properties, Map[] rows, List<String> errors)
+    {
+        boolean transaction = false;
+
+        try
+        {
+            if (!ExperimentService.get().isTransactionActive())
+            {
+                ExperimentService.get().beginTransaction();
+                transaction = true;
+            }
+
+            // There's a disconnect here between the PropertyService api and OntologyManager...
+            ArrayList<DomainProperty> used = new ArrayList<DomainProperty>(properties.size());
+            for (DomainProperty dp : domain.getProperties())
+                if (properties.containsKey(dp.getPropertyURI()))
+                    used.add(dp);
+            ListImportHelper helper = new ListImportHelper(user, this, used.toArray(new DomainProperty[used.size()]), cdKey);
+
+            PropertyDescriptor[] pds = properties.values().toArray(new PropertyDescriptor[properties.size()]);
+            OntologyManager.insertTabDelimited(getContainer(), null, helper, pds, rows, true);
+            if (transaction)
+            {
+                ExperimentService.get().commitTransaction();
+                transaction = false;
+            }
+        }
+        catch (ValidationException ve)
+        {
+            for (ValidationError error : ve.getErrors())
+                errors.add(error.getMessage());
+            return;
+        }
+        catch (SQLException se)
+        {
+            errors.add(se.getMessage());
+            return;
+        }
+        finally
+        {
+            if (transaction)
+            {
+                ExperimentService.get().rollbackTransaction();
+            }
+        }
+        return;
     }
 
     private void addAuditEvent(User user, String comment) throws Exception

@@ -449,6 +449,8 @@ demo/src/org/labkey/demo/view/DemoWebPart.java -text
 demo/src/org/labkey/demo/view/bindTest.jsp -text
 demo/src/org/labkey/demo/view/bulkUpdate.jsp -text
 demo/src/org/labkey/demo/view/demoWebPart.jsp -text
+experiment/gwtsrc/org/labkey/experiment/list/ListImporter.gwt.xml -text
+experiment/gwtsrc/org/labkey/experiment/list/client/ListImporter.java -text
 experiment/gwtsrc/org/labkey/experiment/property/Designer.gwt.xml -text
 experiment/gwtsrc/org/labkey/experiment/property/client/Designer.java -text
 experiment/gwtsrc/org/labkey/experiment/property/client/PropertyService.java -text
@@ -726,6 +728,7 @@ experiment/src/org/labkey/experiment/controllers/list/ListController.java -text
 experiment/src/org/labkey/experiment/controllers/list/ListDefinitionForm.java -text
 experiment/src/org/labkey/experiment/controllers/list/ListDetailsView.java -text
 experiment/src/org/labkey/experiment/controllers/list/ListImportHelper.java -text
+experiment/src/org/labkey/experiment/controllers/list/ListImportServiceImpl.java -text
 experiment/src/org/labkey/experiment/controllers/list/ListItemAttachmentParent.java -text
 experiment/src/org/labkey/experiment/controllers/list/ListQueryForm.java -text
 experiment/src/org/labkey/experiment/controllers/list/ListQueryView.java -text

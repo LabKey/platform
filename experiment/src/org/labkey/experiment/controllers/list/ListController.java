@@ -18,39 +18,34 @@ package org.labkey.experiment.controllers.list;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.SimpleRedirectAction;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.*;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.jsp.FormPage;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.common.tools.TabLoader;
-import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.common.util.Pair;
 import org.labkey.experiment.list.ListAuditViewFactory;
 import org.labkey.experiment.list.ListManager;
+import org.labkey.experiment.list.client.ListImporter;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -60,7 +55,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.util.*;
-import java.sql.SQLException;
 
 /**
  * User: adam
@@ -70,7 +64,7 @@ import java.sql.SQLException;
 public class ListController extends SpringActionController
 {
     private static DefaultActionResolver _actionResolver = new DefaultActionResolver(ListController.class);
-    private static final Object ERROR_VALUE = new Object();
+    //private static final Object ERROR_VALUE = new Object();
 
     public ListController()
     {
@@ -163,12 +157,66 @@ public class ListController extends SpringActionController
 
         public ActionURL getSuccessURL(NewListForm form)
         {
-            return _list.urlShowDefinition();
+            if (!form.isFileImport())
+                return _list.urlShowDefinition();
+            else
+                return _list.urlFor(Action.defineAndImportList);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             return appendRootNavTrail(root);
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class DefineAndImportListAction extends SimpleViewAction<ListDefinitionForm>
+    {
+        private ListDefinition _list;
+
+        public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
+        {
+            _list = form.getList();
+            Map<String,String> props = new HashMap<String,String>();
+
+            props.put("typeURI", _list.getDomain().getTypeURI());
+
+            ActionURL cancelURL = new ActionURL(BeginAction.class, getContainer());
+            props.put("cancelURL", cancelURL.getLocalURIString());
+
+            ActionURL successURL = _list.urlShowData();
+            props.put("successURL", successURL.getLocalURIString());
+
+            // need a comma-separated list of base columns
+            TableInfo tInfo = _list.getTable(getUser(), null);
+
+            StringBuilder sb = new StringBuilder();
+            boolean needComma = false;
+            for (String baseColumnName : tInfo.getColumnNameSet())
+            {
+                if (needComma)
+                    sb.append(",");
+                else
+                    needComma = true;
+                sb.append(baseColumnName);
+            }
+            props.put("baseColumnNames", sb.toString());
+
+            return new GWTView(ListImporter.class, props);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendListNavTrail(root, _list, null);
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class DomainImportServiceAction extends GWTServiceAction
+    {
+        protected BaseRemoteService createService()
+        {
+            return new ListImportServiceImpl(getViewContext());
         }
     }
 
@@ -663,182 +711,25 @@ public class ListController extends SpringActionController
 
         public boolean handlePost(UploadListItemsForm form, BindException errors) throws Exception
         {
-            boolean hasError = false;
+            if (form.ff_data == null)
+            {
+                errors.reject(ERROR_MSG, "Form contains no data");
+                return false;
+            }
+
             TabLoader tl = new TabLoader(form.ff_data, true);
             _list = form.getList();
-            ArrayList<PropertyDescriptor> pds = new ArrayList<PropertyDescriptor>();
-            for (DomainProperty property : _list.getDomain().getProperties())
-                pds.add(property.getPropertyDescriptor());
-            Map<String, PropertyDescriptor> propertiesByName = OntologyManager.createImportPropertyMap(pds.toArray(new PropertyDescriptor[pds.size()]));
-            Map<String, PropertyDescriptor> properties = new CaseInsensitiveHashMap<PropertyDescriptor>();
-            ColumnDescriptor cdKey = null;
-            if (form.ff_data == null)
-                hasError = hasError || addError(errors, "Form contains no data");
-            else
+
+            List<String> errorList = _list.insertListItems(getUser(), tl);
+
+            if (errorList.isEmpty())
+                return true;
+
+            for (String error : errorList)
             {
-                for (ColumnDescriptor cd : tl.getColumns())
-                {
-                    PropertyDescriptor property = propertiesByName.get(cd.name);
-                    cd.errorValues = ERROR_VALUE;
-
-                    if (property != null)
-                    {
-                        cd.clazz = property.getPropertyType().getJavaType();
-
-                        if (properties.containsKey(cd.name))
-                        {
-                            hasError = hasError || addError(errors, "The field '" + property.getName() + "' appears more than once.");
-                        }
-                        if (properties.containsValue(property))
-                        {
-                            hasError = hasError || addError(errors, "The fields '" + property.getName() + "' and '" + property.getLabel() + "' refer to the same property.");
-                        }
-                        properties.put(cd.name, property);
-                        cd.name = property.getPropertyURI();
-                    }
-                    else if (!_list.getKeyName().equalsIgnoreCase(cd.name))
-                    {
-                        hasError = hasError || addError(errors, "The field '" + cd.name + "' could not be matched to an existing field in this list.");
-                    }
-                    if (_list.getKeyName().equalsIgnoreCase(cd.name))
-                    {
-                        if (cdKey != null)
-                        {
-                            hasError = hasError || addError(errors, "The field '" + _list.getKeyName() + "' appears more than once.");
-                        }
-                        else
-                        {
-                            cdKey = cd;
-                        }
-                    }
-                }
-                if (cdKey == null && _list.getKeyType() != ListDefinition.KeyType.AutoIncrementInteger)
-                {
-                    hasError = hasError || addError(errors, "There must be a field with the name '" + _list.getKeyName() + "'");
-                }
+                errors.reject(ERROR_MSG, error);
             }
-            if (hasError)
-                return false;
-            Map[] rows = (Map[]) tl.load();
-
-            switch (_list.getKeyType())
-            {
-                // All cdKey.clazz values are okay
-                case Varchar:
-                    break;
-
-                // Fine if it's misisng, otherwise fall through
-                case AutoIncrementInteger:
-                    if (null == cdKey)
-                        break;
-
-                // cdKey must be class Integer if autoincrement key exists or normal Integer key column
-                case Integer:
-                    if (Integer.class.equals(cdKey.clazz))
-                        break;
-
-                default:
-                    errors.reject(ERROR_MSG, "Expected key field \"" + cdKey.name + "\" to all be of type Integer but they are of type " + cdKey.clazz.getSimpleName());
-            }
-
-            Set<Object> keyValues = new HashSet<Object>();
-            Set<String> missingValues = new HashSet<String>();
-            Set<String> wrongTypes = new HashSet<String>();
-            Set<String> noUpload = new HashSet<String>();
-
-            for (Map row : rows)
-            {
-                row = new CaseInsensitiveHashMap<Object>(row);
-                for (DomainProperty domainProperty : _list.getDomain().getProperties())
-                {
-                    Object o = row.get(domainProperty.getPropertyURI());
-                    String value = o == null ? null : o.toString();
-                    boolean valueMissing = (value == null || value.length() == 0);
-                    if (domainProperty.isRequired() && valueMissing && !missingValues.contains(domainProperty.getName()))
-                    {
-                        missingValues.add(domainProperty.getName());
-                        errors.reject(ERROR_MSG, domainProperty.getName() + " is required.");
-                    }
-                    else if (!valueMissing && domainProperty.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT && !noUpload.contains(domainProperty.getName()))   // TODO: Change to allowUpload() getter on property 
-                    {
-                        noUpload.add(domainProperty.getName());
-                        errors.reject(ERROR_MSG, "Can't upload to field " + domainProperty.getName() + " with type " + domainProperty.getType().getLabel() + ".");
-                    }
-                    else if (!valueMissing && o == ERROR_VALUE && !wrongTypes.contains(domainProperty.getName()))
-                    {
-                        wrongTypes.add(domainProperty.getName());
-                        errors.reject(ERROR_MSG, domainProperty.getName() + " must be of type " + domainProperty.getType().getLabel() + ".");
-                    }
-                }
-
-                if (cdKey != null)
-                {
-                    Object key = row.get(cdKey.name);
-                    if (null == key)
-                    {
-                        errors.reject(ERROR_MSG, "Blank values are not allowed in field " + cdKey.name);
-                        return false;
-                    }
-                    else if (!_list.getKeyType().isValidKey(key))
-                    {
-                        errors.reject(ERROR_MSG, "Could not convert value \"" + key + "\" in key field \"" + cdKey.name + "\" to type " + _list.getKeyType().getLabel());
-                        return false;
-                    }
-                    else if (!keyValues.add(key))
-                    {
-                        errors.reject(ERROR_MSG, "There are multiple rows with key value " + row.get(cdKey.name));
-                        return false;
-                    }
-                }
-            }
-
-            if (errors.hasErrors())
-                return false;
-
-            return doBulkInsert(cdKey, _list.getDomain(), properties, rows, errors);
-        }
-
-        private boolean doBulkInsert(ColumnDescriptor cdKey, Domain domain, Map<String, PropertyDescriptor> properties, Map[] rows, BindException errors) throws SQLException
-        {
-            boolean transaction = false;
-            
-            try
-            {
-                if (!ExperimentService.get().isTransactionActive())
-                {
-                    ExperimentService.get().beginTransaction();
-                    transaction = true;
-                }
-
-                // There's a disconnect here between the PropertyService api and OntologyManager...
-                ArrayList<DomainProperty> used = new ArrayList<DomainProperty>(properties.size());
-                for (DomainProperty dp : domain.getProperties())
-                    if (properties.containsKey(dp.getPropertyURI()))
-                        used.add(dp);
-                ListImportHelper helper = new ListImportHelper(getUser(), _list, used.toArray(new DomainProperty[used.size()]), cdKey);
-
-                PropertyDescriptor[] pds = properties.values().toArray(new PropertyDescriptor[properties.size()]);
-                OntologyManager.insertTabDelimited(getContainer(), null, helper, pds, rows, true);
-                if (transaction)
-                {
-                    ExperimentService.get().commitTransaction();
-                    transaction = false;
-                }
-            }
-            catch (ValidationException ve)
-            {
-                for (ValidationError error : ve.getErrors())
-                    errors.reject(ERROR_MSG, PageFlowUtil.filter(error.getMessage()));
-                return false;
-            }
-            finally
-            {
-                if (transaction)
-                {
-                    ExperimentService.get().rollbackTransaction();
-                }
-            }
-            return true;
+            return false;
         }
 
         public ActionURL getSuccessURL(UploadListItemsForm form)
@@ -851,14 +742,6 @@ public class ListController extends SpringActionController
             return appendListNavTrail(root, _list, "Import Data");
         }
     }
-
-
-    private boolean addError(BindException errors, String message)
-    {
-        errors.reject(ERROR_MSG, message);
-        return true;
-    }
-
 
     @RequiresPermission(ACL.PERM_READ)
     public class HistoryAction extends SimpleViewAction<ListQueryForm>
@@ -1094,6 +977,7 @@ public class ListController extends SpringActionController
     {
         begin,
         newListDefinition,
+        defineAndImportList,
         deleteListDefinition,
         showListDefinition,
         editListDefinition,

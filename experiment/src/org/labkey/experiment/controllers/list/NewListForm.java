@@ -25,6 +25,7 @@ public class NewListForm extends ViewForm
     public String ff_keyType = ListDefinition.KeyType.AutoIncrementInteger.toString();
     public String ff_keyName = "Key";
     public String ff_description;
+    private boolean fileImport;
 
     public void setFf_name(String ff_name)
     {
@@ -44,5 +45,15 @@ public class NewListForm extends ViewForm
     public void setFf_description(String ff_description)
     {
         this.ff_description = ff_description;
+    }
+
+    public boolean isFileImport()
+    {
+        return fileImport;
+    }
+
+    public void setFileImport(boolean fileImport)
+    {
+        this.fileImport = fileImport;
     }
 }

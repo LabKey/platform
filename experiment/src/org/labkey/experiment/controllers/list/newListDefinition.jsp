@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.exp.list.ListDefinition" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.experiment.controllers.list.ListController" %>
 <%@ page import="org.labkey.experiment.controllers.list.NewListForm" %>
 <%@ page import="java.util.Map" %>
@@ -44,6 +45,10 @@
     <p>
         What is the name of the key in your list?<br>
         <input type="text" name="ff_keyName" value="<%=h(form.ff_keyName)%>"/>
+    </p>
+    <p>
+        Import from file <%=PageFlowUtil.helpPopup("Import from File", "Use this option if you have a spreadsheet that you would like uploaded as a list.")%>:
+        <input type="checkbox" name="fileImport" <%=form.isFileImport() ? "checked" : "" %>>
     </p>
     <labkey:button text="Create List" />
     <labkey:button text="Cancel" href="<%=urlFor(ListController.BeginAction.class)%>"/>
