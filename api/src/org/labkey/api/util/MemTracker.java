@@ -17,11 +17,16 @@
 package org.labkey.api.util;
 
 import org.apache.log4j.Logger;
+import org.apache.commons.collections15.map.ReferenceIdentityMap;
+import org.apache.commons.collections15.map.AbstractReferenceMap;
 import org.labkey.api.settings.AppProps;
 
 import java.util.*;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
+
+import junit.framework.Test;
+import junit.framework.TestSuite;
 
 /**
  * User: brittp
@@ -30,8 +35,8 @@ import java.lang.management.MemoryPoolMXBean;
  */
 public class MemTracker
 {
+    private static MemTracker _instance = new MemTracker();
     private static final Logger _log = Logger.getLogger(MemTracker.class);
-
     private static long _lastLog = 0;
     private static final Object LOGGER_LOCK_OBJECT = new Object();
 
@@ -46,23 +51,10 @@ public class MemTracker
         long _threadId;
         long _allocTime;
         Exception _exception;
-    }
 
-    public static class HeldReference
-    {
-        private Object  _reference;
-        private long _threadId;
-        private long _allocTime;
-        private String _htmlStack;
-
-
-        private HeldReference(Object held, AllocationInfo allocationInfo)
+        public String getHtmlStack()
         {
-            _reference = held;
-            _threadId = allocationInfo._threadId;
-            _allocTime = allocationInfo._allocTime;
-
-            StackTraceElement[] stack = allocationInfo._exception.getStackTrace();
+            StackTraceElement[] stack = _exception.getStackTrace();
             StringBuilder builder = new StringBuilder();
             for (int i = 3; i < stack.length; i++)
             {
@@ -71,7 +63,31 @@ public class MemTracker
                 if (line.contains("org.labkey.api.view.ViewServlet.service"))
                     break;
             }
-            _htmlStack = builder.toString();
+            return builder.toString();
+        }
+
+        public long getThreadId()
+        {
+            return _threadId;
+        }
+
+        public long getAllocationTime()
+        {
+            return _allocTime;
+        }
+    }
+
+
+    public static class HeldReference extends AllocationInfo
+    {
+        private Object  _reference;
+
+        private HeldReference(Object held, AllocationInfo allocationInfo)
+        {
+            _reference = held;
+            _threadId = allocationInfo._threadId;
+            _allocTime = allocationInfo._allocTime;
+            _exception = allocationInfo._exception;
         }
         
 
@@ -105,52 +121,27 @@ public class MemTracker
             }
             catch (Throwable e)
             {
-                return "toString() failed: " + e.getClass().getName() + e.getMessage() == null ? "" : (" - " + e.getMessage());
+                return "toString() failed: " + e.getClass().getName() + (e.getMessage() == null ? "" : (" - " + e.getMessage()));
             }
-        }
-
-        public String getHtmlStack()
-        {
-            return _htmlStack;
-        }
-
-        public long getThreadId()
-        {
-            return _threadId;
-        }
-
-        public long getAllocationTime()
-        {
-            return _allocTime;
         }
     }
 
-    private static Map<Object, AllocationInfo> _references = new WeakHashMap<Object, AllocationInfo>();
 
     public static synchronized boolean put(Object object)
     {
-        assert putInternal(object);
+        assert _instance._put(object);
         return true;
     }
 
     public static synchronized boolean remove(Object object)
     {
-        assert removeInternal(object);
+        assert  _instance._remove(object);
         return true;
     }
 
-    private static synchronized boolean putInternal(Object object)
+    public static List<HeldReference> getReferences()
     {
-        if (object != null)
-            _references.put(object, new AllocationInfo());
-        return true;
-    }
-
-    private static synchronized boolean removeInternal(Object object)
-    {
-        if (object != null)
-            _references.remove(object);
-        return true;
+        return _instance._getReferences();
     }
 
     private static class MemoryLogger implements Runnable
@@ -224,20 +215,27 @@ public class MemTracker
         }
     }
 
-    private static long getMemoryUsed(String poolName)
+    //
+    // reference tracking impl
+    //
+
+    private Map<Object, AllocationInfo> _references = new ReferenceIdentityMap<Object, AllocationInfo>(AbstractReferenceMap.WEAK, AbstractReferenceMap.HARD, true);
+
+    private synchronized boolean _put(Object object)
     {
-        List<MemoryPoolMXBean> pools = ManagementFactory.getMemoryPoolMXBeans();
-        for (MemoryPoolMXBean pool : pools)
-        {
-            if (poolName.equals(pool.getName()))
-            {
-                return pool.getUsage().getUsed();
-            }
-        }
-        return -1;
+        if (object != null)
+            _references.put(object, new AllocationInfo());
+        return true;
     }
 
-    public static synchronized List<HeldReference> getReferences()
+    private synchronized boolean _remove(Object object)
+    {
+        if (object != null)
+            _references.remove(object);
+        return true;
+    }
+
+    private synchronized List<HeldReference> _getReferences()
     {
         List<HeldReference> refs = new ArrayList<HeldReference>(_references.size());
         for (Map.Entry<Object, AllocationInfo> entry : _references.entrySet())
@@ -257,5 +255,51 @@ public class MemTracker
             }
         });
         return refs;
+    }
+
+
+    public static class TestCase extends junit.framework.TestCase
+    {
+        public TestCase()
+        {
+            super();
+        }
+
+        public TestCase(String name)
+        {
+            super(name);
+        }
+
+        public void testIdentity()
+        {
+            MemTracker t = new MemTracker();
+
+            // test identity
+            Object a = "I'm me";
+            t._put(a);
+            assertTrue(t._getReferences().size() == 1);
+            t._put(a);
+            assertTrue(t._getReferences().size() == 1);
+
+            Object b = new Integer(1);
+            Object c = new Integer(1);
+            assertFalse(b == c);
+            assertTrue(b.equals(c));
+            t._put(b);
+            assertTrue(t._getReferences().size() == 2);
+            t._put(c);
+            assertTrue(t._getReferences().size() == 3);
+
+            List<HeldReference> list = t._getReferences();
+            for (HeldReference o : list)
+            {
+                assertTrue(o._reference == a || o._reference == b || o._reference == c);
+            }
+        }
+
+        public static Test suite()
+        {
+            return new TestSuite(TestCase.class);
+        }
     }
 }
