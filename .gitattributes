@@ -2254,7 +2254,6 @@ wiki/src/org/labkey/wiki/view/wikiHtmlHelp.jsp -text
 wiki/src/org/labkey/wiki/view/wikiPrint.jsp -text
 wiki/src/org/labkey/wiki/view/wikiRadeoxHelp.jsp -text
 wiki/src/org/labkey/wiki/view/wikiSearch.jsp -text
-wiki/src/org/labkey/wiki/view/wiki_attachments.gm -text
 wiki/src/org/labkey/wiki/view/wiki_copy.gm -text
 wiki/src/org/labkey/wiki/view/wiki_customize.gm -text
 wiki/src/org/labkey/wiki/view/wiki_customizetoc.gm -text
