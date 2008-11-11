@@ -39,15 +39,19 @@ LABKEY.ext.LongTextField = Ext.extend(Ext.form.TriggerField, {
                 closable: true,
                 modal: true,
                 animateTarget: this.getEl(),
+                align: "tl-bl",
                 title: "Edit " + this.columnName || "Edit"
             });
         }
 
-        this.setDisabled(true);
-        this.suspendEvents();
         this.popup.getComponent(0).setValue(this.getValue());
         this.popup.show();
+
+        this.hide();
+        this.suspendEvents();
+
         this.popup.getComponent(0).getEl().focus();
+
     },
 
     onSaveChanges : function() {
@@ -61,8 +65,8 @@ LABKEY.ext.LongTextField = Ext.extend(Ext.form.TriggerField, {
 
     hidePopup : function() {
         this.popup.hide();
+        this.show();
         this.resumeEvents();
-        this.setDisabled(false);
         this.getEl().focus();
     },
 
