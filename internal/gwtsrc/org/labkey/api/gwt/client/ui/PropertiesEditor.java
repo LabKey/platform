@@ -52,8 +52,7 @@ public class PropertiesEditor implements LookupListener
     private PropertyPane _propertiesPane;
     private VerticalPanel _noColumnsPanel;
     private FlexTable _table;
-    private ImageButton _addButtonNoProps;
-    private HorizontalPanel _addButtonPanelProps;
+    private HorizontalPanel _buttonPanel;
     private String _mode;
     private LookupServiceAsync _lookupService;
     private List<ChangeListener> _listeners = new ArrayList<ChangeListener>();
@@ -109,6 +108,9 @@ public class PropertiesEditor implements LookupListener
         _table.setWidth("100%");
         _table.setVisible(false);
 
+        _noColumnsPanel = new VerticalPanel();
+        _noColumnsPanel.add(new HTML("<br/>No fields have been defined.<br/>&nbsp;"));
+
         ClickListener addListener = new ClickListener()
         {
             public void onClick(Widget sender)
@@ -117,19 +119,16 @@ public class PropertiesEditor implements LookupListener
             }
         };
 
-        _addButtonNoProps = new ImageButton("Add Field", addListener);
-        ImageButton addButtonProps = new ImageButton("Add Field", addListener);
-        _addButtonPanelProps = new HorizontalPanel();
-        _addButtonPanelProps.add(addButtonProps);
+        _buttonPanel = new HorizontalPanel();
 
-        _noColumnsPanel = new VerticalPanel();
-        _noColumnsPanel.add(new HTML("<br/>No fields have been defined.<br/>&nbsp;"));
-        _noColumnsPanel.add(_addButtonNoProps);
+        ImageButton addFieldButton = new ImageButton("Add Field", addListener);
+        _buttonPanel.add(addFieldButton);
 
         VerticalPanel propertiesListPanel = new VerticalPanel();
+
         if (_includeImportExportButtons)
         {
-            ImageButton importSchemaButton = new ImageButton("Import Schema", new ClickListener()
+            ClickListener importSchemaListener = new ClickListener()
             {
                 public void onClick(Widget sender)
                 {
@@ -137,9 +136,9 @@ public class PropertiesEditor implements LookupListener
                     popup.setText("Import Schema");
                     popup.center();
                 }
-            });
+            };
 
-            ImageButton exportSchemaButton = new ImageButton("Export Schema", new ClickListener()
+            ClickListener exportSchemaListener = new ClickListener()
             {
                 public void onClick(Widget sender)
                 {
@@ -147,9 +146,9 @@ public class PropertiesEditor implements LookupListener
                     popup.setText("Export Schema");
                     popup.center();
                 }
-            });
+            };
 
-            ImageButton inferSchemaButton = new ImageButton("Infer Schema from File", new ClickListener()
+            ClickListener inferSchemaListener = new ClickListener()
             {
                 public void onClick(Widget sender)
                 {
@@ -157,17 +156,21 @@ public class PropertiesEditor implements LookupListener
                     popup.setText("Infer Schema");
                     popup.center();
                 }
-            });
+            };
 
-            HorizontalPanel importExportButtonPanel = new HorizontalPanel();
-            importExportButtonPanel.add(importSchemaButton);
-            importExportButtonPanel.add(exportSchemaButton);
-            importExportButtonPanel.add(inferSchemaButton);
+            ImageButton importSchemaButton = new ImageButton("Import Schema", importSchemaListener);
+            ImageButton exportSchemaButton = new ImageButton("Export Schema", exportSchemaListener);
+            ImageButton inferSchemaButton = new ImageButton("Infer Schema from File", inferSchemaListener);
 
-            propertiesListPanel.add(importExportButtonPanel);
+            _buttonPanel.add(importSchemaButton);
+            _buttonPanel.add(exportSchemaButton);
+            _buttonPanel.add(inferSchemaButton);
+
         }
+        
         propertiesListPanel.add(_noColumnsPanel);
         propertiesListPanel.add(_table);
+        propertiesListPanel.add(_buttonPanel);
 
         DockPanel propertyDock = new DockPanel();
 
@@ -278,8 +281,6 @@ public class PropertiesEditor implements LookupListener
         {
             refreshRow(row.edit);
         }
-
-        _table.setWidget(_table.getRowCount(), 3, _addButtonPanelProps);
 
         select(_selectedPD);
     }
@@ -721,8 +722,7 @@ public class PropertiesEditor implements LookupListener
         if (mode.equals(_mode))
             return;
         _mode = mode;
-        _addButtonPanelProps.setVisible(!_mode.equals(modeRead));
-        _addButtonNoProps.setVisible(!_mode.equals(modeRead));
+        _buttonPanel.setVisible(!_mode.equals(modeRead));
         refresh();
     }
 
