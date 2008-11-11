@@ -102,8 +102,8 @@ function loadPages(wikiPageList)
 function enableSubmit()
 {
     var btn = document.getElementById("btnSubmit");
-    btn.parentNode.className = "labkey-button";
-    btn.parentNode.href = "";
+    btn.className = "labkey-button";
+    btn.href = "";
     btn.disabled = false;
 }
 
@@ -111,8 +111,8 @@ function disableSubmit()
 {
     var btn = document.getElementById("btnSubmit");
     btn.disabled = true;
-    btn.parentNode.className = "labkey-disabled-button";
-    btn.parentNode.href = "javascript:return false;";
+    btn.className = "labkey-disabled-button";
+    btn.href = "javascript:return false;";
 }
 
 function onSuccess(response, config)
