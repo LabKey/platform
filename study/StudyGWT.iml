@@ -3,17 +3,19 @@
   <component name="FacetManager">
     <facet type="gwt" name="GWT">
       <configuration>
-        <setting name="gwtSdkUrl" value="file://$GWT_15_HOME$" />
-        <setting name="gwtScriptOutputStyle" value="DETAILED" />
-        <setting name="runGwtCompilerOnMake" value="false" />
+        <setting name="additionalCompilerParameters" value="" />
         <setting name="compilerMaxHeapSize" value="128" />
+        <setting name="compilerOutputPath" value="" />
+        <setting name="gwtScriptOutputStyle" value="DETAILED" />
+        <setting name="gwtSdkUrl" value="file://$GWT_15_HOME$" />
+        <setting name="runGwtCompilerOnMake" value="false" />
         <packaging>
-          <module name="org.labkey.plate.designer.TemplateDesigner" path="/org.labkey.plate.designer.TemplateDesigner" />
-          <module name="org.labkey.study.designer.Designer" path="/org.labkey.study.designer.Designer" />
-          <module name="org.labkey.study.chart.StudyChartDesigner" path="/org.labkey.study.chart.StudyChartDesigner" />
-          <module name="org.labkey.study.dataset.Designer" path="/org.labkey.study.dataset.Designer" />
           <module name="org.labkey.assay.designer.AssayDesigner" path="/org.labkey.assay.designer.AssayDesigner" />
           <module name="org.labkey.assay.upload.ListChooser" path="/org.labkey.assay.upload.ListChooser" />
+          <module name="org.labkey.plate.designer.TemplateDesigner" path="/org.labkey.plate.designer.TemplateDesigner" />
+          <module name="org.labkey.study.chart.StudyChartDesigner" path="/org.labkey.study.chart.StudyChartDesigner" />
+          <module name="org.labkey.study.dataset.Designer" path="/org.labkey.study.dataset.Designer" />
+          <module name="org.labkey.study.designer.Designer" path="/org.labkey.study.designer.Designer" />
         </packaging>
       </configuration>
     </facet>
@@ -27,7 +29,6 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="InternalGWT" />
-    <orderEntryProperties />
   </component>
 </module>
 

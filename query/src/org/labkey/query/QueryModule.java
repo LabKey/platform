@@ -93,7 +93,6 @@ public class QueryModule extends DefaultModule
     {
         PipelineService.get().registerPipelineProvider(new ReportsPipelineProvider());
         ReportsController.registerAdminConsoleLinks();
-        super.startup(moduleContext);
     }
 
     public Set<String> getSchemaNames()

@@ -73,7 +73,6 @@ public class WikiController extends SpringActionController
 
     public WikiController()
     {
-        super();
         setActionResolver(_actionResolver);
     }
 

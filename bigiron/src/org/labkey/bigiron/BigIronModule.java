@@ -20,6 +20,7 @@ import org.labkey.api.data.SqlDialect;
 import org.labkey.api.data.SqlDialectMicrosoftSQLServer;
 import org.labkey.api.data.SqlDialectMicrosoftSQLServer9;
 import org.labkey.api.module.DefaultModule;
+import org.labkey.api.module.ModuleContext;
 import org.labkey.api.view.WebPartFactory;
 
 import java.util.Collection;
@@ -53,5 +54,9 @@ public class BigIronModule extends DefaultModule
     {
         SqlDialect.register(new SqlDialectMicrosoftSQLServer());
         SqlDialect.register(new SqlDialectMicrosoftSQLServer9());
+    }
+
+    public void startup(ModuleContext moduleContext)
+    {
     }
 }

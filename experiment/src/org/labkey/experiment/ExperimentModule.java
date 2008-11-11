@@ -294,7 +294,7 @@ public class ExperimentModule extends SpringModule
 
     @SuppressWarnings("ThrowableInstanceNeverThrown")
     @Override
-    public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
+    public void afterSchemaUpdate(ModuleContext moduleContext)
     {
         double version = moduleContext.getInstalledVersion();
         if (version > 0 && version < 8.23)
@@ -307,7 +307,7 @@ public class ExperimentModule extends SpringModule
             {
                 String msg = "Error running afterSchemaUpdate doVersion_132Update on ExperimentModule, upgrade from version " + String.valueOf(version);
                 _log.error(msg, e);
-                ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg, e, viewContext.getRequest(), false, false);
+                ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg, e, null, false, false);
             }
         }
 
@@ -321,11 +321,11 @@ public class ExperimentModule extends SpringModule
             {
                 String msg = "Error running afterSchemaUpdate doPopulateListEntityIds on ExperimentModule, upgrade from version " + String.valueOf(version);
                 _log.error(msg, e);
-                ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg, e, viewContext.getRequest(), false, false);
+                ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg, e, null, false, false);
             }
         }
 
-        super.afterSchemaUpdate(moduleContext, viewContext);
+        super.afterSchemaUpdate(moduleContext);
     }
 
     private void doVersion_132Update() throws SQLException, NamingException, ServletException

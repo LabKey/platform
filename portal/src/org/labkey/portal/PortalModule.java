@@ -105,7 +105,6 @@ public class PortalModule extends DefaultModule
     }
 
 
-    @Override
     public void startup(ModuleContext context)
     {
         ContainerManager.addContainerListener(new ContainerManager.ContainerListener()
@@ -130,6 +129,5 @@ public class PortalModule extends DefaultModule
             {
             }
         });
-        super.startup(context);
     }
 }

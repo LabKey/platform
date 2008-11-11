@@ -21,8 +21,6 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.PropertyManager.PropertyMap;
-import org.labkey.api.data.SqlScriptRunner.SqlScript;
-import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.module.*;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
@@ -158,75 +156,8 @@ public class CoreModule extends SpringModule
     }
 
 
-    // Note: Core module is special -- versionUpdate gets called during Tomcat startup so we don't hit the Logins, ACLs,
-    // Members, UsersData, etc. tables before they're created (bootstrap time) or modified (upgrade time).  This code
-    // is not thread-safe -- it is called once at startup.
-    @Override
-    public ActionURL versionUpdate(ModuleContext moduleContext, ViewContext viewContext)
+    private void versionUpdate2() throws Exception
     {
-        // TODO: PageFlowUtil.getContentsAsString()
-        // TODO: Break up PG scripts into multiple executes
-
-        beforeSchemaUpdate(moduleContext, viewContext);
-
-        try
-        {
-            // This provider retrieves scripts in the core schema
-            SqlScriptProvider coreProvider = new FileSqlScriptProvider(this) {
-                @Override
-                protected boolean shouldInclude(SqlScript script)
-                {
-                    return script.getSchemaName().equals("core");
-                }
-            };
-
-            // This provider retrieves scripts in the other schemas (portal, prop, test)
-            SqlScriptProvider nonCoreProvider = new FileSqlScriptProvider(this) {
-                @Override
-                protected boolean shouldInclude(SqlScript script)
-                {
-                    return !script.getSchemaName().equals("core");
-                }
-            };
-
-            List<SqlScript> scripts = new ArrayList<SqlScript>();
-
-            if (0.0 != moduleContext.getInstalledVersion())
-            {
-                scripts.addAll(coreProvider.getDropScripts());
-                scripts.addAll(nonCoreProvider.getDropScripts());
-            }
-
-            // Must run all the core schema scripts first followed by the other schemas
-            scripts.addAll(SqlScriptRunner.getRecommendedScripts(coreProvider, null, moduleContext.getInstalledVersion(), getVersion()));
-            scripts.addAll(SqlScriptRunner.getRecommendedScripts(nonCoreProvider, null, moduleContext.getInstalledVersion(), getVersion()));
-            scripts.addAll(coreProvider.getCreateScripts());
-            scripts.addAll(nonCoreProvider.getCreateScripts());
-
-            SqlScriptRunner.runScripts(null, scripts, coreProvider);
-            SqlScriptRunner.waitForScriptsToFinish();
-
-            DbSchema.invalidateSchemas();
-        }
-        catch(SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        catch (InterruptedException e)
-        {
-            throw(new RuntimeException(e));
-        }
-        catch (SqlScriptRunner.SqlScriptException e)
-        {
-            throw new RuntimeException(e);
-        }
-
-        Exception se = SqlScriptRunner.getException();
-        if (null != se)
-            throw new RuntimeException(se);
-
-        afterSchemaUpdate(moduleContext, viewContext);
-
         try
         {
             // Increment on every core module upgrade to defeat browser caching of static resources. 
@@ -236,19 +167,11 @@ public class CoreModule extends SpringModule
         {
             throw new RuntimeSQLException(e);
         }
-
-        return null;
     }
 
 
     @Override
-    public void beforeUpdate()
-    {
-        // Do nothing
-    }
-
-    @Override
-    public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
+    public void afterSchemaUpdate(ModuleContext moduleContext)
     {
         double installedVersion = moduleContext.getInstalledVersion();
 
@@ -272,11 +195,6 @@ public class CoreModule extends SpringModule
             migrateLdapSettings();
         if (installedVersion > 0 && installedVersion < 8.22)
             migrateLookAndFeelSettings();
-    }
-
-    @Override
-    public void afterUpdate()
-    {
     }
 
     private void migrateLdapSettings()

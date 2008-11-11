@@ -25,7 +25,6 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.*;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.authentication.opensso.OpenSSOController;
 import org.labkey.authentication.opensso.OpenSSOProvider;
@@ -68,12 +67,16 @@ public class AuthenticationModule extends DefaultModule
         AuthenticationManager.registerProvider(new LdapAuthenticationProvider(), Priority.High);
     }
 
+    public void startup(ModuleContext moduleContext)
+    {
+    }
+
     public TabDisplayMode getTabDisplayMode()
     {
         return TabDisplayMode.DISPLAY_NEVER;
     }
 
-    public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
+    public void afterSchemaUpdate(ModuleContext moduleContext)
     {
         double installedVersion = moduleContext.getInstalledVersion();
 
@@ -87,7 +90,7 @@ public class AuthenticationModule extends DefaultModule
 
                 if (null != oldLogo)
                 {
-                    AttachmentService.get().copyAttachment(viewContext.getUser(), parent, oldLogo, AuthenticationManager.HEADER_LOGO_PREFIX + "OpenSSO");
+                    AttachmentService.get().copyAttachment(moduleContext.getUpgradeUser(), parent, oldLogo, AuthenticationManager.HEADER_LOGO_PREFIX + "OpenSSO");
                     AttachmentService.get().renameAttachment(parent, oldLogo.getName(), AuthenticationManager.LOGIN_PAGE_LOGO_PREFIX + "OpenSSO");
                 }
             }
@@ -98,6 +101,6 @@ public class AuthenticationModule extends DefaultModule
             }
         }
 
-        super.afterSchemaUpdate(moduleContext, viewContext);
+        super.afterSchemaUpdate(moduleContext);
     }
 }

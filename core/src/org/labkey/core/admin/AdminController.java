@@ -50,6 +50,7 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.common.util.Pair;
 import org.labkey.core.login.LoginController;
+import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.data.xml.TablesDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -208,7 +209,7 @@ public class AdminController extends SpringActionController
 
         public ActionURL getModuleStatusURL()
         {
-            return AdminController.getModuleStatusURL(false);
+            return AdminController.getModuleStatusURL();
         }
 
         public ActionURL getCustomizeSiteURL()
@@ -248,16 +249,13 @@ public class AdminController extends SpringActionController
             return new ActionURL(MaintenanceAction.class, ContainerManager.getRoot());
         }
 
-        public ActionURL getModuleUpgradeURL(String moduleName, double oldVersion, double newVersion, ModuleLoader.ModuleState state, boolean express)
+        public ActionURL getModuleUpgradeURL(String moduleName, double oldVersion, double newVersion, ModuleLoader.ModuleState state)
         {
             ActionURL url = new ActionURL(ModuleUpgradeAction.class, ContainerManager.getRoot());
             url.addParameter("moduleName", moduleName);
             url.addParameter("oldVersion", String.valueOf(oldVersion));
             url.addParameter("newVersion", String.valueOf(newVersion));
             url.addParameter("state", state.toString());
-
-            if (express)
-                url.addParameter("express", "1");
 
             return url;
         }
@@ -3296,17 +3294,9 @@ public class AdminController extends SpringActionController
     }
 
 
-    private static ActionURL getModuleUpgradeURL(boolean express, boolean force)
+    private static ActionURL getModuleUpgradeURL()
     {
-        ActionURL url = new ActionURL(ModuleUpgradeAction.class, ContainerManager.getRoot());
-
-        if (express)
-            url.addParameter("express", "1");
-
-        if (force)
-            url.addParameter("force", "1");
-
-        return url;
+        return new ActionURL(ModuleUpgradeAction.class, ContainerManager.getRoot());
     }
 
 
@@ -3315,55 +3305,15 @@ public class AdminController extends SpringActionController
     {
         public ActionURL getRedirectURL(UpgradeStatusForm form) throws Exception
         {
-            User u = getViewContext().getUser();
-
-            if (form.getExpress())
-                ModuleLoader.getInstance().setExpress(true);
-
-            //Make sure we are the upgrade user before upgrading...
-            User upgradeUser = ModuleLoader.getInstance().setUpgradeUser(u, form.getForce());
-            if (u.equals(upgradeUser))
-            {
-                Module module;
-                String moduleName = form.getModuleName();
-                //Already have a module to upgrade
-                if (null != moduleName)
-                {
-                    module = ModuleLoader.getInstance().getModule(moduleName);
-                    ModuleLoader.ModuleState state = ModuleLoader.ModuleState.valueOf(form.getState());
-                    ModuleContext ctx = ModuleLoader.getInstance().getModuleContext(module);
-                    if (state.equals(ModuleLoader.ModuleState.InstallComplete))
-                        ctx.upgradeComplete(form.getNewVersion());
-                    else //Continue calling until we're done
-                        return module.versionUpdate(ctx, getViewContext());
-                }
-                else
-                {
-                    //Get next available
-                    module = ModuleLoader.getInstance().getNextUpgrade();
-                    if (null != module)
-                    {
-                        ModuleContext ctx = ModuleLoader.getInstance().getModuleContext(module);
-                        ctx.setExpress(ModuleLoader.getInstance().getExpress());
-                        //Make sure we haven't started. If so, just reshow module status again
-                        return module.versionUpdate(ctx, getViewContext());
-                    }
-                }
-            }
-
-            return getModuleStatusURL(false);
+            ModuleLoader.getInstance().startNonCoreUpgrade(getUser());
+            return getModuleStatusURL();
         }
     }
 
 
-    private static ActionURL getModuleStatusURL(boolean force)
+    private static ActionURL getModuleStatusURL()
     {
-        ActionURL url = new ActionURL(ModuleStatusAction.class, ContainerManager.getRoot());
-
-        if (force)
-            url.addParameter("force", "1");
-
-        return url;
+        return new ActionURL(ModuleStatusAction.class, ContainerManager.getRoot());
     }
 
 
@@ -3385,12 +3335,12 @@ public class AdminController extends SpringActionController
 
             if (loader.isUpgradeRequired())
             {
-                vbox.addView(new UpgradeView(loader.getUpgradeUser(), form.getForce(), form.getExpress(), loader.isNewInstall()));
+                vbox.addView(new UpgradeView());
             }
             else
             {
                 ActionURL url = new AdminUrlsImpl().getCustomizeSiteURL(true);
-                vbox.addView(new HtmlView("All modules are up-to-date.<br><br>" + PageFlowUtil.generateButton("Next", url)));
+                vbox.addView(new HtmlView("All modules are up-to-date.<br><br>" + PageFlowUtil.generateButton("Next", url) + PageFlowUtil.generateRedirectOnEnter(url)));
             }
 
             getPageConfig().setTemplate(Template.Dialog);
@@ -3412,21 +3362,6 @@ public class AdminController extends SpringActionController
         private double newVersion;
         private String moduleName = null;
         private String state = ModuleLoader.ModuleState.InstallRequired.name();
-        boolean force = false;
-        boolean express = false;
-
-        /**
-         * Should we force current user to become the upgrader
-         */
-        public boolean getForce()
-        {
-            return force;
-        }
-
-        public void setForce(boolean force)
-        {
-            this.force = force;
-        }
 
         public double getOldVersion()
         {
@@ -3467,16 +3402,6 @@ public class AdminController extends SpringActionController
         {
             return state;
         }
-
-        public boolean getExpress()
-        {
-            return express;
-        }
-
-        public void setExpress(boolean express)
-        {
-            this.express = express;
-        }
     }
 
 
@@ -3503,37 +3428,36 @@ public class AdminController extends SpringActionController
 
     public static class UpgradeView extends HttpView
     {
-        User _user;
-        boolean _force;
-        boolean _express;
-        boolean _newInstall;
-
-        public UpgradeView(User currentUser, boolean force, boolean express, boolean newInstall)
-        {
-            _force = force;
-            _express = express;
-            _user = currentUser;
-            _newInstall = newInstall;
-        }
-
         @Override
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
-            User upgradeUser = ModuleLoader.getInstance().getUpgradeUser();
-            String action = _newInstall ? "Install" : "Upgrade";
-            String ing = _newInstall ? "Installing" : "Upgrading";
+            ModuleLoader loader = ModuleLoader.getInstance();
 
-            //Upgrade is not started
-            if (null == upgradeUser || _force)
+            String action;
+            String ing;
+
+            if (loader.isNewInstall())
             {
-                out.write(PageFlowUtil.generateButton("Express " + action, getModuleUpgradeURL(true, _force).getLocalURIString()) + "&nbsp;");
-                out.write(PageFlowUtil.generateButton("Advanced " + action, getModuleUpgradeURL(false, _force).getLocalURIString()));
+                action = "Install";
+                ing = "Installing";
             }
-            //I'm already upgrading -- upgrade next module after showing status
-            else if (getViewContext().getUser().equals(upgradeUser))
+            else
             {
-                ActionURL continueURL = getModuleUpgradeURL(_express, _force);
+                action = "Upgrade";
+                ing = "Upgrading";
+            }
 
+            ActionURL continueURL = getContinueURL();
+
+            // Upgrade is not started
+            if (!loader.isUpgradeInProgress())
+            {
+                out.write(PageFlowUtil.generateButton(action, continueURL));
+                out.write(PageFlowUtil.generateRedirectOnEnter(continueURL));
+            }
+            //I'm already upgrading
+            else
+            {
                 out.write("<script type=\"text/javascript\">var timeout = window.setTimeout(\"doRefresh()\", 1000);" +
                         "function doRefresh() {\n" +
                         "   window.clearTimeout(timeout);\n" +
@@ -3545,21 +3469,18 @@ public class AdminController extends SpringActionController
                 out.write(continueURL.getEncodedLocalURIString());
                 out.write("\">Click Here</a>");
             }
-            //Somebody else is installing/upgrading
-            else
-            {
-                ActionURL url = getModuleStatusURL(true);
-
-                out.print("<p>");
-                out.print(_user.getEmail());
-                out.print(" is already " + ing.toLowerCase() + ". <p>");
-
-                out.print("Refresh this page to see " + action.toLowerCase() + " progress.<p>");
-                out.print("If " + action.toLowerCase() + " was cancelled, <a href='");
-                out.print(url.getEncodedLocalURIString());
-                out.print("'>Try Again</a>");
-            }
         }
+    }
+
+
+    private static ActionURL getContinueURL()
+    {
+        String moduleName = SqlScriptRunner.getCurrentModuleName();
+
+        if (null == moduleName)
+            return getModuleUpgradeURL();
+        else
+            return SqlScriptController.getShowRunningScriptsURL(moduleName);
     }
 
 
@@ -4653,7 +4574,7 @@ public class AdminController extends SpringActionController
         {
             getPageConfig().setIncludeHeader(false);
             getPageConfig().setTitle("Recreate Views?");
-            return new HtmlView("Are you sure you want to drop and recreate all non-core module views?");
+            return new HtmlView("Are you sure you want to drop and recreate all module views?");
         }
 
         public boolean handlePost(Object o, BindException errors) throws Exception

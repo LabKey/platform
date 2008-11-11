@@ -52,9 +52,6 @@ public class AnnouncementModule extends DefaultModule
 
     private static Logger _log = Logger.getLogger(AnnouncementModule.class);
 
-    private boolean _newInstall = false;
-    private User _installerUser = null;
-
     public String getName()
     {
         return "Announcements";
@@ -101,7 +98,6 @@ public class AnnouncementModule extends DefaultModule
                 }
             },
             new DiscussionWebPartFactory());
-
     }
 
     public boolean hasScripts()
@@ -114,10 +110,8 @@ public class AnnouncementModule extends DefaultModule
         return "Messages";
     }
 
-    @Override
     public void startup(ModuleContext moduleContext)
     {
-        super.startup(moduleContext);
         Search.register(new MessageSearch());
         DiscussionService.register(new DiscussionServiceImpl());
 
@@ -126,36 +120,25 @@ public class AnnouncementModule extends DefaultModule
         UserManager.addUserListener(listener);
         SecurityManager.addGroupListener(listener);
 
-        if (_newInstall)
+        if (moduleContext.isNewInstall())
         {
             try
             {
                 Container supportContainer = ContainerManager.getDefaultSupportContainer();
                 addWebPart(WEB_PART_NAME, supportContainer, null);
 
-                if (_installerUser != null && !_installerUser.isGuest())
-                    AnnouncementManager.saveEmailPreference(_installerUser, supportContainer, AnnouncementManager.EMAIL_PREFERENCE_ALL);
+                User installerUser = moduleContext.getUpgradeUser();
+
+                if (installerUser != null && !installerUser.isGuest())
+                    AnnouncementManager.saveEmailPreference(installerUser, supportContainer, AnnouncementManager.EMAIL_PREFERENCE_ALL);
             }
             catch (SQLException e)
             {
                 _log.error("Unable to set up support folder", e);
             }
-
-            _newInstall = false;
-            _installerUser = null;
         }
 
         DailyDigest.setTimer();
-    }
-
-    @Override
-    public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
-    {
-        if (moduleContext.getInstalledVersion() == 0.0)
-        {
-            _newInstall = true;
-            _installerUser = viewContext.getUser();
-        }
     }
 
     @Override

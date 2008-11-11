@@ -19,7 +19,6 @@ package org.labkey.mothership;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.Module;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.security.*;
@@ -68,7 +67,7 @@ public class MothershipModule extends DefaultModule
         return true;
     }
 
-    public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
+    public void afterSchemaUpdate(ModuleContext moduleContext)
     {
         try
         {
@@ -91,14 +90,14 @@ public class MothershipModule extends DefaultModule
                 acl.setPermission(Group.groupAdministrators, ACL.PERM_ALLOWALL);
                 acl.setPermission(mothershipGroup, ACL.PERM_ALLOWALL);
                 SecurityManager.updateACL(c, acl);
-                SecurityManager.addMember(mothershipGroup, viewContext.getUser());
+                SecurityManager.addMember(mothershipGroup, moduleContext.getUpgradeUser());
             }
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
         }
-        super.afterSchemaUpdate(moduleContext, viewContext);
+        super.afterSchemaUpdate(moduleContext);
     }
 
     public Set<String> getSchemaNames()
@@ -144,7 +143,5 @@ public class MothershipModule extends DefaultModule
             {
             }
         });
-
-        super.startup(moduleContext);
     }
 }

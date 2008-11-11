@@ -73,15 +73,11 @@ public class IssuesModule extends DefaultModule
         return true;
     }
 
-    @Override
     public void startup(ModuleContext moduleContext)
     {
-        super.startup(moduleContext);
-
         ContainerManager.addContainerListener(new IssueContainerListener());
         SecurityManager.addGroupListener(new IssueGroupListener());
         UserManager.addUserListener(new IssueUserListener());
-
         Search.register(IssueSearch.getInstance());
     }
 
@@ -133,7 +129,7 @@ public class IssuesModule extends DefaultModule
         return PageFlowUtil.set(IssuesSchema.getInstance().getSchemaName());
     }
 
-    public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
+    public void afterSchemaUpdate(ModuleContext moduleContext)
     {
         double version = moduleContext.getInstalledVersion();
         if (version > 0 && version < 8.11)
@@ -148,10 +144,10 @@ public class IssuesModule extends DefaultModule
                 _log.error(msg + " \n Caused by " + e);
                 ExperimentException ex = new ExperimentException(msg, e);
                 //following sends an exception report to mothership if site is configured to do so, but doesn't abort schema upgrade
-                ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg, ex, viewContext.getRequest(), false, false);
+                ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg, ex, null, false, false);
             }
         }
-        super.afterSchemaUpdate(moduleContext, viewContext);
+        super.afterSchemaUpdate(moduleContext);
     }
 
     private void doPopulateCommentEntityIds() throws SQLException

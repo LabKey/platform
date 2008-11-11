@@ -21,7 +21,6 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
-import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -398,15 +397,6 @@ public class ReportManager implements StudyManager.UnmaterializeListener
 
     public static class UpgradeReport_22_23
     {
-        private ModuleContext _moduleContext;
-        private ViewContext _viewContext;
-
-        public UpgradeReport_22_23(ModuleContext moduleContext, ViewContext viewContext)
-        {
-            _moduleContext = moduleContext;
-            _viewContext = viewContext;
-        }
-
         public void upgradeStudyReports()
         {
             try {

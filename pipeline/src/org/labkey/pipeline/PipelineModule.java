@@ -140,9 +140,9 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         WebdavService.addProvider(new PipelineWebdavProvider());
     }
 
-    public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
+    public void afterSchemaUpdate(ModuleContext moduleContext)
     {
-        super.afterSchemaUpdate(moduleContext, viewContext);
+        super.afterSchemaUpdate(moduleContext);
 
         if (moduleContext.getInstalledVersion() < 8.261)
         {

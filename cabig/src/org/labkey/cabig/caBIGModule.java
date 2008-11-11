@@ -59,7 +59,6 @@ public class caBIGModule extends DefaultModule
 
     public void startup(ModuleContext moduleContext)
     {
-        super.startup(moduleContext);
         SecurityManager.addViewFactory(new caBIGController.caBIGPermissionsViewFactory());
     }
 

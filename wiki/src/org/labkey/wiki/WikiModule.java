@@ -27,7 +27,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Search;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.wiki.WikiRendererType;
@@ -49,9 +48,6 @@ import java.util.*;
 public class WikiModule extends DefaultModule
 {
     public static final String WEB_PART_NAME = "Wiki";
-
-    private boolean _newInstall = false;
-    private User _installerUser = null;
 
     private static final Logger _log = Logger.getLogger(WikiModule.class);
 
@@ -84,24 +80,22 @@ public class WikiModule extends DefaultModule
         return false;
     }
 
-    @Override
     public void startup(ModuleContext moduleContext)
     {
-        super.startup(moduleContext);
         ContainerManager.addContainerListener(new WikiContainerListener());
         Search.register(new WikiSearchable());
         ModuleLoader.getInstance().registerFolderType(new CollaborationFolderType(this));
         WebdavService.addProvider(new WikiWebdavProvider());
 
-        if (_newInstall)
+        if (moduleContext.isNewInstall())
         {
             Container supportContainer = ContainerManager.getDefaultSupportContainer();
             Container homeContainer = ContainerManager.getHomeContainer();
 
             String defaultPageName = "default";
 
-            loadWikiContent(homeContainer, _installerUser, defaultPageName, "Welcome to LabKey Server", "/org/labkey/wiki/welcomeWiki.txt", WikiRendererType.HTML);
-            loadWikiContent(supportContainer, _installerUser, defaultPageName, "Welcome to LabKey support", "/org/labkey/wiki/supportWiki.txt", WikiRendererType.RADEOX);
+            loadWikiContent(homeContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Server", "/org/labkey/wiki/welcomeWiki.txt", WikiRendererType.HTML);
+            loadWikiContent(supportContainer,  moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey support", "/org/labkey/wiki/supportWiki.txt", WikiRendererType.RADEOX);
 
             try
             {
@@ -119,9 +113,6 @@ public class WikiModule extends DefaultModule
             {
                 _log.error("Unable to set up support folder", e);
             }
-
-            _newInstall = false;
-            _installerUser = null;
         }
     }
 
@@ -139,15 +130,6 @@ public class WikiModule extends DefaultModule
             list.add(x.toString());
         }
         return list;
-    }
-
-    public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
-    {
-        if (moduleContext.getInstalledVersion() == 0.0)
-        {
-            _newInstall = true;
-            _installerUser = viewContext.getUser();
-        }
     }
 
     private void loadWikiContent(Container c, User user, String name, String title, String resource, WikiRendererType renderAs)

@@ -26,7 +26,6 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.audit.model.LogManager;
 import org.labkey.audit.query.AuditQuerySchema;
@@ -73,9 +72,6 @@ public class AuditModule extends DefaultModule
 
     public void startup(ModuleContext moduleContext)
     {
-        super.startup(moduleContext);
-        // add a container listener so we'll know when our container is deleted:
-
         AuditQuerySchema.register();
         AuditLogService.get().addAuditViewFactory(new SiteSettingsAuditViewFactory());
         AuditController.registerAdminConsoleLinks();
@@ -94,7 +90,7 @@ public class AuditModule extends DefaultModule
         return PageFlowUtil.set(AuditSchema.getInstance().getSchema());
     }
 
-    public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext context)
+    public void afterSchemaUpdate(ModuleContext moduleContext)
     {
         if (moduleContext.getInstalledVersion() < 8.24)
         {

@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.module.DefaultModule;
+import org.labkey.api.module.ModuleContext;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.timeline.view.TimelineView;
@@ -46,6 +47,10 @@ public class TimelineModule extends DefaultModule
     protected void init()
     {
         addController("timeline", TimelineController.class);
+    }
+
+    public void startup(ModuleContext moduleContext)
+    {
     }
 
     protected Collection<? extends WebPartFactory> createWebPartFactories()

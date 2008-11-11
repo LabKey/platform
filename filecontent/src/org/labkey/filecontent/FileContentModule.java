@@ -64,10 +64,8 @@ public class FileContentModule extends DefaultModule
         return Collections.emptyList();
     }
 
-    @Override
     public void startup(ModuleContext moduleContext)
     {
-        super.startup(moduleContext);
         WebdavService.addProvider(new FileWebdavProvider());
     }
 }

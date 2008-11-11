@@ -163,7 +163,6 @@ public class StudyModule extends DefaultModule
 
     public void startup(ModuleContext moduleContext)
     {
-        super.startup(moduleContext);
         PipelineService.get().registerPipelineProvider(new StudyPipeline());
         ContainerManager.addContainerListener(new StudyContainerListener());
         AssayPublishService.register(new AssayPublishManager());
@@ -213,7 +212,7 @@ public class StudyModule extends DefaultModule
         ModuleLoader.getInstance().registerFolderType(new StudyFolderType(this));
     }
 
-    public void beforeSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
+    public void beforeSchemaUpdate(ModuleContext moduleContext)
     {
         if (moduleContext.getInstalledVersion() >= 2.1 && moduleContext.getInstalledVersion() < 8.29)
         {
@@ -278,7 +277,7 @@ public class StudyModule extends DefaultModule
         }
     }
 
-    public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
+    public void afterSchemaUpdate(ModuleContext moduleContext)
     {
         if (moduleContext.getInstalledVersion() >= 1.3 && moduleContext.getInstalledVersion() < 2.11)
         {
@@ -294,7 +293,7 @@ public class StudyModule extends DefaultModule
 
         if (moduleContext.getInstalledVersion() >= 1.74 && moduleContext.getInstalledVersion() < 2.21)
         {
-            ReportManager.UpgradeReport_22_23 upgrade = new ReportManager.UpgradeReport_22_23(moduleContext, viewContext);
+            ReportManager.UpgradeReport_22_23 upgrade = new ReportManager.UpgradeReport_22_23();
             upgrade.upgradeStudyReports();
         }
 
@@ -302,7 +301,7 @@ public class StudyModule extends DefaultModule
         {
             try
             {
-                SpecimenImporter.updateAllCalculatedSpecimenData(viewContext.getUser());
+                SpecimenImporter.updateAllCalculatedSpecimenData(moduleContext.getUpgradeUser());
             }
             catch (SQLException e)
             {
@@ -314,7 +313,7 @@ public class StudyModule extends DefaultModule
         {
             try
             {
-                StudyUpgrader.upgradeExtensibleTables_83(viewContext.getUser());
+                StudyUpgrader.upgradeExtensibleTables_83(moduleContext.getUpgradeUser());
             }
             catch (SQLException se)
             {
@@ -326,7 +325,7 @@ public class StudyModule extends DefaultModule
         {
             try
             {
-                SpecimenImporter.updateAllCalculatedSpecimenData(viewContext.getUser());
+                SpecimenImporter.updateAllCalculatedSpecimenData(moduleContext.getUpgradeUser());
             }
             catch (SQLException e)
             {

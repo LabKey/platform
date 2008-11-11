@@ -76,7 +76,5 @@ public class BtModule extends DefaultModule
     {
         BtThreadPool.get();
         ScheduledTask.startTimer();
-
-        super.startup(moduleContext);
     }
 }

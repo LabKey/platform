@@ -93,7 +93,7 @@ function callback()
                    curr_sec = "0" + curr_sec;
                 }
 
-                 var curr_time = curr_hour + ":" + curr_min + ":" + curr_sec + " " + a_p;
+                var curr_time = curr_hour + ":" + curr_min + ":" + curr_sec + " " + a_p;
 
                 document.getElementById('statusDiv').innerHTML = 'Status checked at ' + curr_time + ', SQL script(s) still running';  
                 makeRequest();
@@ -108,7 +108,7 @@ function callback()
 
 </script>
 
-<h2>Running SQL Scripts for <%= getProvider().getProviderName()%>:</h2>
+<h2>Running the following SQL Scripts:</h2>
 <%
     for (SqlScriptRunner.SqlScript script : getScripts())
     {
