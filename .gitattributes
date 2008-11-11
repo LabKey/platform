@@ -2265,6 +2265,7 @@ wiki/src/org/labkey/wiki/view/wiki_printraw.gm -text
 wiki/src/org/labkey/wiki/view/wiki_version.gm -text
 wiki/src/org/labkey/wiki/welcomeWiki.txt -text
 wiki/webapp/_images/page.png -text
+wiki/webapp/wiki/js/wikiEdit.js -text
 xarassay/ListTableData.xls -text
 xarassay/build.xml -text
 xarassay/module.properties -text
