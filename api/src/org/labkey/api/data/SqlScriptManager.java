@@ -16,14 +16,16 @@
 
 package org.labkey.api.data;
 
-import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.security.User;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 
 /**
@@ -33,12 +35,7 @@ import java.util.*;
  */
 public class SqlScriptManager
 {
-    private static CoreSchema _core = CoreSchema.getInstance();
-
-    public static TableInfo getTableInfo()
-    {
-        return _core.getTableInfoSqlScripts();
-    }
+    private static final CoreSchema _core = CoreSchema.getInstance();
 
     // Return sql scripts that have been run by this provider
     public static Set<SqlScript> getRunScripts(SqlScriptProvider provider) throws SQLException
@@ -63,21 +60,7 @@ public class SqlScriptManager
     }
 
 
-    public static void deleteAllScripts(SqlScriptProvider provider) throws SQLException
-    {
-        Table.execute(_core.getSchema(), "DELETE FROM " + _core.getTableInfoSqlScripts() + " WHERE ModuleName = ?", new Object[]{provider.getProviderName()});
-    }
-
-
-    public static void deleteSelectedScripts(SqlScriptProvider provider, List list) throws SQLException
-    {
-        String fileNames = "'" + StringUtils.join(list.iterator(), "','") + "'";
-
-        Table.execute(_core.getSchema(), "DELETE FROM " + _core.getTableInfoSqlScripts() + " WHERE ModuleName = ? AND FileName IN (" + fileNames + ")", new Object[]{provider.getProviderName()});
-    }
-
-
-    public static SqlScriptBean loadScriptBean(SqlScriptProvider provider, String fileName)
+    private static SqlScriptBean loadScriptBean(SqlScriptProvider provider, String fileName)
     {
         // Make sure DbSchema thinks SqlScript table is in the database.  If not, we're bootstrapping and it's either just before or just after the first
         // script is run.  In either case, invalidate to force reloading schema from database meta data.
@@ -97,13 +80,13 @@ public class SqlScriptManager
     }
 
 
-    public static void insert(User user, SqlScript script) throws SQLException
+    private static void insert(User user, SqlScript script) throws SQLException
     {
         insert(user, script.getProvider(), script.getDescription());
     }
 
 
-    public static void insert(User user, SqlScriptProvider provider, String fileName) throws SQLException
+    private static void insert(User user, SqlScriptProvider provider, String fileName) throws SQLException
     {
         SqlScriptBean ss = new SqlScriptBean(provider.getProviderName(), fileName);
 
@@ -111,7 +94,7 @@ public class SqlScriptManager
     }
 
 
-    public static void update(User user, SqlScript script) throws SQLException
+    private static void update(User user, SqlScript script) throws SQLException
     {
         Object[] pk = new Object[]{script.getProvider().getProviderName(), script.getDescription()};
 

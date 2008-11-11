@@ -66,10 +66,9 @@ public abstract class SpringModule extends DefaultModule implements ServletConte
      */
     public enum ContextType { none, context, config }
     
+    // Overrides must call super.startup()
     public void startup(ModuleContext moduleContext)
     {
-        super.startup(moduleContext);
-
         // each module has its own WebApplicationContext();
         initWebApplicationContext();
     }

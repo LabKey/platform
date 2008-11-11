@@ -50,7 +50,7 @@ public class FirstRequestHandler
         // - Before any startup() methods are called
         //
         // This is a good place to do any last minute handling before the first page appears, e.g., initializing
-        // server properties based on the incoming request, registering the login URL, initializing authentication
+        // server properties based on the incoming request, registering URLs, initializing authentication
         // providers, etc.
         public void handleFirstRequest(HttpServletRequest request);
     }

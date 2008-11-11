@@ -18,21 +18,20 @@ package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.util.*;
-import javax.servlet.ServletException;
-import javax.servlet.ServletContextEvent;
+
 import javax.servlet.ServletContext;
+import javax.servlet.ServletContextEvent;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**

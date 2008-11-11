@@ -58,10 +58,7 @@ public class ModuleLoader implements Filter
 {
     private static ModuleLoader _instance = null;
     private static Logger _log = Logger.getLogger(ModuleLoader.class);
-    private boolean upgradeComplete = false;
     private boolean _deferUsageReport = false;
-    private User upgradeUser = null;
-    private boolean express = false;
     private static Throwable _startupFailure = null;
     private static Map<String, Throwable> _moduleFailures = new HashMap<String, Throwable>();
     private static boolean _newInstall = false;
@@ -75,9 +72,10 @@ public class ModuleLoader implements Filter
 
     private File _webappDir;
 
+    private enum UpgradeState {UpgradeRequired, UpgradeInProgress, UpgradeComplete}
     private static final Object UPGRADE_LOCK = new Object();
-    private boolean _beforeUpgradeComplete = false;
-    private boolean _afterUpgradeComplete = false;
+    private UpgradeState _upgradeState;
+    private User upgradeUser = null;
 
     private static final Object STARTUP_LOCK = new Object();
     private boolean _startupComplete = false;
@@ -124,12 +122,13 @@ public class ModuleLoader implements Filter
     private Map<String, Module> moduleMap = new HashMap<String, Module>();
 
     private List<Module> _modules;
-    private SortedMap<String,FolderType> _folderTypes = new TreeMap<String,FolderType>(new FolderTypeComparator());
+    private final SortedMap<String, FolderType> _folderTypes = new TreeMap<String, FolderType>(new FolderTypeComparator());
     private static class FolderTypeComparator implements Comparator<String>
     {
         //Sort NONE to the bottom and Collaboration to the top
         static final String noneStr = FolderType.NONE.getName();
         static final String collabStr = "Collaboration"; //Cheating
+
         public int compare(String s, String s1)
         {
             if (s.equals(s1))
@@ -171,7 +170,7 @@ public class ModuleLoader implements Filter
         }
         catch (Throwable t)
         {
-            _startupFailure = t;
+            setStartupFailure(t);
             _log.error("Failure occurred during ModuleLoader init.", t);
         }
     }
@@ -180,7 +179,7 @@ public class ModuleLoader implements Filter
     
     public static ServletContext getServletContext()
     {
-        return _instance._servletContext;
+        return getInstance()._servletContext;
     }
 
     private void doInit(ServletContext servletCtx) throws Exception
@@ -302,6 +301,28 @@ public class ModuleLoader implements Filter
         // Core module should be upgraded and ready-to-run
         ModuleContext coreCtx = contextMap.get(DefaultModule.CORE_MODULE_NAME);
         assert (ModuleState.ReadyToRun == coreCtx.getModuleState());
+
+        boolean upgradeRequired = false;
+
+        for (Module m : _modules)
+        {
+            ModuleContext ctx = getModuleContext(m);
+            if (ctx.getInstalledVersion() != m.getVersion())
+            {
+                upgradeRequired = true;
+                break;
+            }
+        }
+
+        if (upgradeRequired)
+        {
+            setUpgradeState(UpgradeState.UpgradeRequired);
+            _log.info("Module upgrade is required");
+        }
+        else
+        {
+            setUpgradeState(UpgradeState.UpgradeComplete);
+        }
 
         _log.info("LabKey Server startup is complete");
     }
@@ -660,14 +681,29 @@ public class ModuleLoader implements Filter
             _log.debug("Upgrading core module from " + ModuleContext.formatVersion(coreContext.getInstalledVersion()) + " to " + coreModule.getFormattedVersion());
         }
 
-        coreModule.versionUpdate(coreContext, null);
-        coreContext.upgradeComplete(coreModule.getVersion());
+        contextMap.put(coreModule.getName(), coreContext);
+
+        try
+        {
+            ModuleUpgrader coreUpgrader = new ModuleUpgrader(Collections.singletonList(coreModule));
+            coreUpgrader.upgrade();
+        }
+        catch (Exception e)
+        {
+            throw new ServletException(e);
+        }
     }
 
 
     public Throwable getStartupFailure()
     {
         return _startupFailure;
+    }
+
+    public void setStartupFailure(Throwable t)
+    {
+        if (null == _startupFailure)
+            _startupFailure = t;
     }
 
     public void setModuleFailure(String moduleName, Throwable t)
@@ -767,57 +803,46 @@ public class ModuleLoader implements Filter
         return PageFlowUtil.urlProvider(AdminUrls.class).getModuleStatusURL();
     }
 
-    public void ensureBeforeUpdateComplete()
+    public void runBeforeUpdates()
     {
         synchronized (UPGRADE_LOCK)
         {
-            if (!_beforeUpgradeComplete)
+            List<Module> modules = getModules();
+            ListIterator<Module> iter = modules.listIterator(modules.size());
+
+            while (iter.hasPrevious())
             {
-                List<Module> modules = getModules();
-                ListIterator<Module> iter = modules.listIterator(modules.size());
-
-                while (iter.hasPrevious())
-                {
-                    Module module = iter.previous();
-                    module.beforeUpdate();
-                }
-
-                _beforeUpgradeComplete = true;
+                Module module = iter.previous();
+                module.beforeUpdate();
             }
         }
     }
 
-    public void ensureAfterUpdateComplete()
+    public void runAfterUpdates()
     {
         synchronized (UPGRADE_LOCK)
         {
-            if (!_afterUpgradeComplete)
-            {
-                for (Module module : getModules())
-                    module.afterUpdate();
-
-                SqlScriptRunner.stopBackgroundThread();
-
-                _afterUpgradeComplete = true;
-            }
+            for (Module module : getModules())
+                module.afterUpdate();
         }
     }
 
-    // Runs the drop view and create view scripts in every module except for core 
+    // Runs the drop view and create view scripts in every module
     public void recreateViews()
     {
         synchronized (UPGRADE_LOCK)
         {
-            _beforeUpgradeComplete = false;
-            ensureBeforeUpdateComplete();
-            _afterUpgradeComplete = false;
-            ensureAfterUpdateComplete();
+            runBeforeUpdates();
+            runAfterUpdates();
         }
     }
 
     public boolean isStartupComplete()
     {
-        return _startupComplete;
+        synchronized (STARTUP_LOCK)
+        {
+            return _startupComplete;
+        }
     }
 
     private void ensureStartupComplete()
@@ -834,12 +859,13 @@ public class ModuleLoader implements Filter
             {
                 try
                 {
-                    m.startup(getModuleContext(m));
+                    ModuleContext ctx = getModuleContext(m);
+                    m.startup(ctx);
+                    ctx.setModuleState(ModuleLoader.ModuleState.Running);
                 }
                 catch (Throwable x)
                 {
-                    if (_startupFailure == null)
-                        _startupFailure = x;
+                    setStartupFailure(x);
                     _log.error("Failure starting module: " + m.getName(), x);
                 }
             }
@@ -856,71 +882,85 @@ public class ModuleLoader implements Filter
         return uri.matches(".*admin.*") || uri.matches(".*login.*") || uri.matches(".*\\Qthemestylesheet.view\\E");
     }
 
-    ModuleContext saveModuleContext(ModuleContext context)
+    void saveModuleContext(ModuleContext context)
     {
         try
         {
             ModuleContext stored = Table.selectObject(getTableInfoModules(), context.getName(), ModuleContext.class);
             if (null == stored)
-                context = Table.insert(null, getTableInfoModules(), context);
+                Table.insert(null, getTableInfoModules(), context);
             else
-                context = Table.update(null, getTableInfoModules(), context, context.getName(), null);
+                Table.update(null, getTableInfoModules(), context, context.getName(), null);
         }
         catch (SQLException x)
         {
             _log.error("Couldn't save module context.", x);
         }
-        return context;
     }
 
 
-    /**
-     * Set the current user to the user upgrading. if another
-     * user is already upgrading that User will be returned.
-     * <p/>
-     * UpgradeUser must be set before attempting to upgrade modules
-     * <p/>
-     * Clients should check to makes sure that the current user
-     * equals the returned user. If not then someone has already started upgrading.
-     *
-     * @param user  Current user who wants to start upgrade
-     * @param force Force current user to take over upgrade even if someone else started it
-     * @return user who is actually upgrading. If force==false may not be requested user
-     */
-    synchronized public User setUpgradeUser(User user, boolean force)
+    public void startNonCoreUpgrade(User user) throws Exception
     {
-        if (null == upgradeUser || force)
-            upgradeUser = user;
+        synchronized(UPGRADE_LOCK)
+        {
+            if (_upgradeState == UpgradeState.UpgradeRequired)
+            {
+                List<Module> modules = new ArrayList<Module>(getModules());
+                modules.remove(ModuleLoader.getInstance().getCoreModule());
+                setUpgradeState(UpgradeState.UpgradeInProgress);
+                setUpgradeUser(user);
 
-        return upgradeUser;
+                ModuleUpgrader upgrader = new ModuleUpgrader(modules);
+                upgrader.upgradeInBackground(new Runnable(){
+                    public void run()
+                    {
+                        ModuleLoader.getInstance().setUpgradeState(UpgradeState.UpgradeComplete);
+                    }
+                });
+            }
+        }
+    }
+
+
+    public void setUpgradeUser(User user)
+    {
+        synchronized(UPGRADE_LOCK)
+        {
+            assert null == upgradeUser;
+            upgradeUser = user;
+        }
     }
 
     public User getUpgradeUser()
     {
-        return upgradeUser;
+        synchronized(UPGRADE_LOCK)
+        {
+            return upgradeUser;
+        }
+    }
+
+    public void setUpgradeState(UpgradeState state)
+    {
+        synchronized(UPGRADE_LOCK)
+        {
+            _upgradeState = state;
+        }
     }
 
     public boolean isUpgradeRequired()
     {
-        if (upgradeComplete)
-            return false;
-
-        for (Module m : _modules)
+        synchronized(UPGRADE_LOCK)
         {
-            ModuleContext ctx = getModuleContext(m);
-            if (ctx.getInstalledVersion() != m.getVersion())
-            {
-                ensureBeforeUpdateComplete();
-                return true;
-            }
+            return UpgradeState.UpgradeComplete != _upgradeState;
         }
+    }
 
-        if (isUpgrading())
-            ensureAfterUpdateComplete();
-
-        upgradeComplete = true;
-        upgradeUser = null;
-        return false;
+    public boolean isUpgradeInProgress()
+    {
+        synchronized(UPGRADE_LOCK)
+        {
+            return UpgradeState.UpgradeInProgress == _upgradeState;
+        }
     }
 
     // Did this server start up with no modules installed?  If so, it's a new install.  This lets us tailor the
@@ -928,35 +968,6 @@ public class ModuleLoader implements Filter
     public boolean isNewInstall()
     {
         return _newInstall;
-    }
-
-    public boolean isUpgrading()
-    {
-        return !upgradeComplete && null != upgradeUser;
-    }
-
-    /**
-     * Get the next module that requires upgrading.
-     * <p/>
-     * Must call setUpgradeUser before doing this.
-     *
-     * @return Next upgradeable module. Or null if no module to upgrade
-     */
-    public Module getNextUpgrade()
-    {
-        if (upgradeUser == null)
-            throw new IllegalStateException("Must set upgrade user before starting upgrade");
-
-        for (Module m : _modules)
-        {
-            ModuleContext ctx = getModuleContext(m);
-            if (ctx.getInstalledVersion() != m.getVersion())
-                return m;
-        }
-
-        upgradeComplete = true;
-        upgradeUser = null;
-        return null;
     }
 
     public void destroy()
@@ -986,16 +997,6 @@ public class ModuleLoader implements Filter
     public List<Module> getModules()
     {
         return _modules;
-    }
-
-    public boolean getExpress()
-    {
-        return express;
-    }
-
-    public void setExpress(boolean express)
-    {
-        this.express = express;
     }
 
     public boolean isAdminOnlyMode()
@@ -1191,7 +1192,7 @@ public class ModuleLoader implements Filter
 
     public Module getModuleForResourcePath(String path)
     {
-            for (Map.Entry<String, Module> e : _resourcePrefixToModule.entrySet())
+        for (Map.Entry<String, Module> e : _resourcePrefixToModule.entrySet())
             if (path.startsWith(e.getKey()))
                 return e.getValue();
 
@@ -1206,17 +1207,26 @@ public class ModuleLoader implements Filter
 
     public FolderType getFolderType(String name)
     {
-        return _folderTypes.get(name);
+        synchronized (_folderTypes)
+        {
+            return _folderTypes.get(name);
+        }
     }
 
-    synchronized public void registerFolderType(FolderType folderType)
+    public void registerFolderType(FolderType folderType)
     {
-        _folderTypes.put(folderType.getName(), folderType);
+        synchronized (_folderTypes)
+        {
+            _folderTypes.put(folderType.getName(), folderType);
+        }
     }
 
     public Collection<FolderType> getFolderTypes()
     {
-        return _folderTypes.values();
+        synchronized (_folderTypes)
+        {
+            return Collections.unmodifiableCollection(_folderTypes.values());
+        }
     }
 
     public static File searchModuleSourceForFile(String rootPath, String filepath)

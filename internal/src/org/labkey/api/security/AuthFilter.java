@@ -16,25 +16,27 @@
 
 package org.labkey.api.security;
 
-import java.io.IOException;
-import java.security.Principal;
-import java.net.URL;
-import java.util.concurrent.atomic.AtomicBoolean;
-import javax.servlet.*;
-import javax.servlet.http.*;
-
 import org.apache.log4j.Logger;
+import org.labkey.api.module.FirstRequestHandler;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.SafeFlushResponseWrapper;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.FirstRequestHandler;
-import org.labkey.api.module.SafeFlushResponseWrapper;
+
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URL;
+import java.security.Principal;
 
 
 public class AuthFilter implements Filter
 {
-    private static Logger _log = Logger.getLogger(AuthFilter.class);
-    private static AtomicBoolean _firstRequestHandled = new AtomicBoolean(false);
+    private static final Logger _log = Logger.getLogger(AuthFilter.class);
+    private static final Object FIRST_REQUEST_LOCK = new Object();
+    private static boolean _firstRequestHandled = false;
 
 
     public void init(FilterConfig filterConfig) throws ServletException
@@ -82,6 +84,8 @@ public class AuthFilter implements Filter
             return;
         }
 
+        // Must be done early so init exceptions get logged to mothership, authentication gets initialized before
+        // basic auth is attempted in this filter, etc.
         ensureFirstRequestHandled(req);
 
         User user = (User) req.getUserPrincipal();
@@ -121,13 +125,15 @@ public class AuthFilter implements Filter
 
     private void ensureFirstRequestHandled(HttpServletRequest request)
     {
-        // Must be done early so init exceptions get logged to mothership, authentication gets initialized before
-        // basic auth is attempted in this filter, etc.
-        if (_firstRequestHandled.compareAndSet(false, true))
+        synchronized(FIRST_REQUEST_LOCK)
         {
+            if (_firstRequestHandled)
+                return;
+
             AppProps.getInstance().initializeBaseServerUrl(request);
             AppProps.getInstance().setContextPath(request);
             FirstRequestHandler.handleFirstRequest(request);
+            _firstRequestHandled = true;
         }
     }
 }

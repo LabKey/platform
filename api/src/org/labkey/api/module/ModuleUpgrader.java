@@ -15,7 +15,10 @@
  */
 package org.labkey.api.module;
 
-import java.util.Collection;
+import org.apache.log4j.Logger;
+
+import java.util.List;
+import java.util.ListIterator;
 
 /**
  * User: adam
@@ -24,8 +27,54 @@ import java.util.Collection;
  */
 public class ModuleUpgrader
 {
-    public static void upgradeModules(Collection<Module> modules)
-    {
+    private static final Logger _log = Logger.getLogger(ModuleUpgrader.class);
+    private List<Module> _modules;
 
+    ModuleUpgrader(List<Module> modules)
+    {
+        _modules = modules;
+    }
+
+
+    void upgrade() throws Exception
+    {
+        ListIterator<Module> iter = _modules.listIterator(_modules.size());
+
+        while (iter.hasPrevious())
+        {
+            Module module = iter.previous();
+            module.beforeUpdate();
+        }
+
+        for (Module module : _modules)
+        {
+            ModuleContext ctx = ModuleLoader.getInstance().getModuleContext(module);
+            module.versionUpdate(ctx);
+            module.afterUpdate();
+            ctx.upgradeComplete(module.getVersion());
+        }
+    }
+
+
+    void upgradeInBackground(final Runnable afterUpgrade)
+    {
+        Thread thread = new Thread("Module Upgrade")
+        {
+            @Override
+            public void run()
+            {
+                try
+                {
+                    upgrade();
+                    afterUpgrade.run();
+                }
+                catch (Throwable t)
+                {
+                    ModuleLoader.getInstance().setStartupFailure(t);
+                    _log.error("Failure during module upgrade", t);
+                }
+            }
+        };
+        thread.start();
     }
 }

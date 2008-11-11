@@ -1045,6 +1045,29 @@ public class PageFlowUtil
         return sb.toString();
     }
 
+
+    // Generates JavaScript that redirects to a new location when Enter is pressed.  Use this on pages that have
+    // button links but don't submit a form.
+    public static String generateRedirectOnEnter(ActionURL url)
+    {
+        return "\n<script type=\"text/javascript\">\n" +
+                "document.onkeydown = keyListener;\n" +
+                "function keyListener(e)" +
+                "{\n" +
+                "   if (!e)\n" +
+                "   {\n" +
+                "      //for IE\n" +
+                "      e = window.event;\n" +
+                "   }\n" +
+                "   if (13 == e.keyCode)\n" +
+                "   {\n" +
+                "      document.location = \"" + PageFlowUtil.filter(url) + "\";\n" +
+                "   }\n" +
+                "}\n" +
+                "</script>\n";
+    }
+
+
     /*
      * Renders a span wrapped in a link (<a>)
      * Consider: is there any way to name this method in such a way as to

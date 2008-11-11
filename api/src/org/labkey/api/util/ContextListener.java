@@ -16,6 +16,7 @@
 package org.labkey.api.util;
 
 import org.apache.log4j.Logger;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.web.context.ContextLoaderListener;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -59,6 +60,7 @@ public class ContextListener implements ServletContextListener
         org.apache.commons.beanutils.PropertyUtils.clearDescriptors();
         org.apache.commons.beanutils.ConvertUtils.deregister();
         java.beans.Introspector.flushCaches();
+        LogFactory.releaseAll();       // Might help with PermGen.  See 8/02/07 post at http://raibledesigns.com/rd/entry/why_i_like_tomcat_5
     }
 
     public static void addShutdownListener(ShutdownListener listener)

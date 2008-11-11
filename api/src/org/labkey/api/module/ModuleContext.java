@@ -16,14 +16,12 @@
 package org.labkey.api.module;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.security.User;
 
 import java.text.DecimalFormat;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * User: migra
@@ -32,12 +30,12 @@ import java.util.Map;
  */
 public class ModuleContext implements Cloneable
 {
-    private double installedVersion;
-    private String className;
-    private boolean express = false;
-    private String name;
-    private Map<String, Object> properties = Collections.synchronizedMap(new HashMap<String, Object>());
-    private ModuleLoader.ModuleState moduleState = ModuleLoader.ModuleState.Loading;
+    private double _installedVersion;
+    private String _className;
+    private String _name;
+    private ModuleLoader.ModuleState _moduleState = ModuleLoader.ModuleState.Loading;
+    private boolean _newInstall = false;
+
     private static Logger _log = Logger.getLogger(ModuleContext.class);
 
     public ModuleContext()
@@ -46,45 +44,42 @@ public class ModuleContext implements Cloneable
 
     public ModuleContext(Module module)
     {
-        className = module.getClass().getName();
-        this.setName(module.getName());
+        _className = module.getClass().getName();
+        setName(module.getName());
+        assert _installedVersion == 0.00;
+        _newInstall = true;
     }
 
-
-    public boolean getExpress()
-    {
-        return express;
-    }
-
-    public void setExpress(boolean express)
-    {
-        this.express = express;
-    }
 
     public double getInstalledVersion()
     {
-        return installedVersion;
+        return _installedVersion;
     }
 
     public void setInstalledVersion(double installedVersion)
     {
-        this.installedVersion = installedVersion;
+        _installedVersion = installedVersion;
+    }
+
+    public boolean isNewInstall()
+    {
+        return _newInstall;
     }
 
     public String getClassName()
     {
-        return className;
+        return _className;
     }
 
     public void setClassName(String name)
     {
-        this.className = name;
+        _className = name;
     }
 
     public String getMessage()
     {
-        double targetVersion = ModuleLoader.getInstance().getModule(name).getVersion();
-        return getModuleState().describeModuleState(installedVersion, targetVersion);
+        double targetVersion = ModuleLoader.getInstance().getModule(_name).getVersion();
+        return getModuleState().describeModuleState(_installedVersion, targetVersion);
     }
 
     private static DecimalFormat df2 = new DecimalFormat("0.00#");
@@ -101,44 +96,33 @@ public class ModuleContext implements Cloneable
 
     public ModuleLoader.ModuleState getModuleState()
     {
-        return moduleState;
+        return _moduleState;
     }
 
     public void setModuleState(ModuleLoader.ModuleState moduleState)
     {
-        this.moduleState = moduleState;
+        _moduleState = moduleState;
     }
 
     public void upgradeComplete(double version)
     {
-        installedVersion = version;
+        _installedVersion = version;
         setModuleState(ModuleLoader.ModuleState.ReadyToRun);
         ModuleLoader.getInstance().saveModuleContext(this);
     }
 
     public String getName()
     {
-        return name;
+        return _name;
     }
 
     public void setName(String name)
     {
-        this.name = name;
+        _name = name;
     }
 
-    public ActionURL getUpgradeCompleteURL(double newVersion)
+    public User getUpgradeUser()
     {
-        return PageFlowUtil.urlProvider(AdminUrls.class).getModuleUpgradeURL(getName(), getInstalledVersion(), newVersion, ModuleLoader.ModuleState.InstallComplete, getExpress());
-    }
-
-    public ActionURL getContinueUpgradeURL(double newVersion)
-    {
-        return PageFlowUtil.urlProvider(AdminUrls.class).getModuleUpgradeURL(getName(), getInstalledVersion(), newVersion, ModuleLoader.ModuleState.Installing, false);
-    }
-
-    @Deprecated
-    public Map<String, Object> getProperties()
-    {
-        return properties;
+        return ModuleLoader.getInstance().getUpgradeUser();
     }
 }

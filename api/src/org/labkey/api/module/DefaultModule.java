@@ -16,7 +16,6 @@
 package org.labkey.api.module;
 
 import junit.framework.TestCase;
-import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.FileSqlScriptProvider;
@@ -25,7 +24,6 @@ import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.common.util.Pair;
@@ -47,15 +45,10 @@ public abstract class DefaultModule implements Module
 {
     public static final String CORE_MODULE_NAME = "Core";
     private static final Set<Class> INSTANTIATED_MODULES = new HashSet<Class>();
-    private static final Object SCHEMA_UPDATE_LOCK = new Object();
 
     private final Map<String, Class> _pageFlowNameToClass = new LinkedHashMap<String, Class>();
     private final Map<Class, String> _pageFlowClassToName = new HashMap<Class, String>();
     private final Collection<? extends WebPartFactory> _webPartFactories;
-
-    private boolean _beforeSchemaUpdateComplete = false;
-    private UpdateState _afterSchemaUpdateState = UpdateState.NotStarted;
-    private enum UpdateState { NotStarted, InProgress, Complete }
 
     private ModuleMetaData _metaData;
     private boolean _loadFromSource;
@@ -83,13 +76,6 @@ public abstract class DefaultModule implements Module
         abstract List<SqlScript> getScripts(SqlScriptProvider provider) throws SqlScriptRunner.SqlScriptException;
     }
 
-/*    protected DefaultModule(String name, double version, String resourcePath, boolean shouldRunScripts, WebPartFactory... webParts)
-    {
-        _name = name;
-        _version = version;
-        _shouldRunScripts = shouldRunScripts;
-    }
-*/
     protected DefaultModule()
     {
         _webPartFactories = createWebPartFactories();
@@ -181,83 +167,36 @@ public abstract class DefaultModule implements Module
             runScripts(SchemaUpdateType.Before);
     }
 
-    public void beforeSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
-    {
-    }
-
     /**
      * Upgrade this module to the latest version.
-     *
-     * If this module has scripts to run, redirect to the SqlScriptController.  The status page will eventually
-     * redirect back to the moduleUpgrade action which will call this method again and cause afterSchemaUpdate()
-     * to complete.
-     *
-     * This will get called multiple times before scripts are done running, e.g., if the admin user attempts to
-     * hit the home page during upgrade.  We need to synchronize afterSchemaUpdate here.  SqlScriptRunner will
-     * run and synchronize the actual scripts.
      */
-    public ActionURL versionUpdate(final ModuleContext moduleContext, final ViewContext viewContext)
+    public void versionUpdate(ModuleContext moduleContext) throws Exception
     {
-        synchronized(SCHEMA_UPDATE_LOCK)
-        {
-            if (!_beforeSchemaUpdateComplete)
-                beforeSchemaUpdate(moduleContext, viewContext);
-            _beforeSchemaUpdateComplete = true;
-        }
+        beforeSchemaUpdate(moduleContext);
 
         if (hasScripts())
         {
-            Map m = moduleContext.getProperties();
-            Boolean scriptsRun = (Boolean) m.get(SqlScriptRunner.SCRIPTS_RUN_KEY);
+            SqlScriptProvider provider = new FileSqlScriptProvider(this);
+            List<SqlScript> scripts = SqlScriptRunner.getRecommendedScripts(provider, null, moduleContext.getInstalledVersion(), getVersion());
 
-            if (null == scriptsRun)
-            {
-                ActionURL returnURL = moduleContext.getContinueUpgradeURL(getVersion());
-                return PageFlowUtil.urlProvider(SqlScriptRunner.SqlScriptUrls.class).getDefaultURL(returnURL, getName(), moduleContext.getInstalledVersion(), getVersion(), moduleContext.getExpress());
-            }
+            if (!scripts.isEmpty())
+                SqlScriptRunner.runScripts(this, moduleContext.getUpgradeUser(), scripts);
         }
 
-        synchronized(SCHEMA_UPDATE_LOCK)
-        {
-            if (UpdateState.Complete != _afterSchemaUpdateState)
-            {
-                if (UpdateState.NotStarted == _afterSchemaUpdateState)
-                {
-                    _afterSchemaUpdateState = UpdateState.InProgress;
-                    Thread afterSchemaUpdateThread = new Thread()
-                    {
-                        public void run()
-                        {
-                            try
-                            {
-                                afterSchemaUpdate(moduleContext, viewContext);
-                            }
-                            catch (Exception e)
-                            {
-                                ExceptionUtil.logExceptionToMothership(viewContext.getRequest(), e);
-                            }
-                            finally
-                            {
-                                _afterSchemaUpdateState = UpdateState.Complete;
-                            }
-                        }
-                    };
-                    afterSchemaUpdateThread.start();
-                }
-                return PageFlowUtil.urlProvider(AdminUrls.class).getModuleStatusURL();
-            }
-        }
+        afterSchemaUpdate(moduleContext);
+    }
 
-        return moduleContext.getUpgradeCompleteURL(getVersion());
+    public void beforeSchemaUpdate(ModuleContext moduleContext)
+    {
+    }
+
+    public void afterSchemaUpdate(ModuleContext moduleContext)
+    {
     }
 
     public void afterUpdate()
     {
         runScripts(SchemaUpdateType.After);
-    }
-
-    public void afterSchemaUpdate(ModuleContext moduleContext, ViewContext viewContext)
-    {
     }
 
     private void runScripts(SchemaUpdateType type)
@@ -271,8 +210,7 @@ public abstract class DefaultModule implements Module
 
                 if (!scripts.isEmpty())
                 {
-                    SqlScriptRunner.runScripts(null, scripts, provider, true);
-                    SqlScriptRunner.waitForScriptsToFinish();
+                    SqlScriptRunner.runScripts(this, null, scripts);
                     DbSchema.invalidateSchemas();
                 }
             }
@@ -281,21 +219,6 @@ public abstract class DefaultModule implements Module
         {
             throw new RuntimeException("Error running scripts in module " + getName(), e);
         }
-    }
-
-
-    /**
-     * Start the module. Default implementation does nothing except setModuleState(Running).
-     * Overrides must call super.startup(moduleContext) to set module state correctly. 
-     */
-    public void startup(ModuleContext moduleContext)
-    {
-        moduleContext.setModuleState(ModuleLoader.ModuleState.Running);
-    }
-
-    public WebPartFactory[] getModuleWebParts()
-    {
-        throw new IllegalStateException("This method is dead");
     }
 
 

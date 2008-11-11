@@ -19,11 +19,7 @@
           <setting name="EXPLODED_ENABLED" value="false" />
           <setting name="JAR_URL" value="file://" />
           <setting name="JAR_ENABLED" value="false" />
-          <setting name="BUILD_MODULE_ON_FRAME_DEACTIVATION" value="false" />
-          <setting name="BUILD_EXTERNAL_DEPENDENCIES" value="false" />
           <setting name="EXCLUDE_EXPLODED_DIRECTORY" value="true" />
-          <setting name="RUN_JASPER_VALIDATION" value="true" />
-          <setting name="BUILD_ONLY_WEB_RESOURCES" value="false" />
         </building>
         <packaging>
           <containerElement type="module" name="API">
@@ -343,13 +339,7 @@
       </configuration>
     </facet>
     <facet type="Spring" name="Spring">
-      <configuration>
-        <options>
-          <option name="enableValidation" value="false" />
-          <option name="reportErrorsAsWarnings" value="true" />
-        </options>
-        <customNs />
-      </configuration>
+      <configuration />
     </facet>
   </component>
   <component name="NewModuleRootManager" inherit-compiler-output="false">
@@ -886,7 +876,7 @@
           <root url="jar://$MODULE_DIR$/../../external/lib/server/spring-2.5.5.jar!/" />
         </CLASSES>
         <JAVADOC>
-          <root url="http://static.springframework.org/spring/docs/2.5.5/api/" />
+          <root url="http://static.springframework.org/spring/docs/2.5.5/api" />
         </JAVADOC>
         <SOURCES />
       </library>
@@ -931,7 +921,6 @@
         </SOURCES>
       </library>
     </orderEntry>
-    <orderEntryProperties />
   </component>
 </module>
 

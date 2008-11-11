@@ -19,9 +19,8 @@ package org.labkey.api.data;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.log4j.Logger;
-import org.labkey.api.action.UrlProvider;
 import org.labkey.api.security.User;
-import org.labkey.api.view.ActionURL;
+import org.labkey.api.module.Module;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -33,65 +32,79 @@ import java.util.*;
  */
 public class SqlScriptRunner
 {
-    /**
-     * Key modules can use in moduleContext properties to indicate whether scripts were run.
-     */
-    public static String SCRIPTS_RUN_KEY = "scriptsRun";
     private static Logger _log = Logger.getLogger(SqlScriptRunner.class);
 
-    private static BackgroundScriptRunner WORKER;
-    private static final List<SqlScript> _scriptsToRun = new ArrayList<SqlScript>();
-    private static final Set<String> _previousProviders = new HashSet<String>();
+//    private static final Map<String, List<SqlScript>> _remainingScripts = new HashMap<String, List<SqlScript>>();
+    private static final List<SqlScript> _remainingScripts = new ArrayList<SqlScript>();
+    private static String _currentModuleName = null;
     private static final Object SCRIPT_LOCK = new Object();
 
 
     // Wait for a single script to finish or timeout, whichever comes first
     // Specify 0 to wait indefinitely until current script finishes
-    public static boolean waitForScriptToFinish(int timeout) throws InterruptedException
+    public static boolean waitForScriptToFinish(String moduleName, int timeout) throws InterruptedException
     {
         synchronized (SCRIPT_LOCK)
         {
-            if (_scriptsToRun.isEmpty())
+            if (!moduleName.equals(_currentModuleName) || _remainingScripts.isEmpty())
             {
                 return true;
             }
             SCRIPT_LOCK.wait(timeout);
 
-            return _scriptsToRun.isEmpty();
+            return _remainingScripts.isEmpty();
         }
     }
 
 
-    // Wait indefinitely until all scripts finish running
-    public static void waitForScriptsToFinish() throws InterruptedException
-    {
-        //noinspection StatementWithEmptyBody
-        while (!waitForScriptToFinish(0));
-    }
-
-
-    public static List<SqlScript> getRunningScripts()
+    public static List<SqlScript> getRunningScripts(String moduleName)
     {
         synchronized (SCRIPT_LOCK)
         {
-            return new ArrayList<SqlScript>(_scriptsToRun);
+            if (moduleName.equals(_currentModuleName))
+                return new ArrayList<SqlScript>(_remainingScripts);
+            else
+                return Collections.emptyList();
         }
     }
 
-    public static Exception getException()
+
+    public static String getCurrentModuleName()
     {
-        if (null != WORKER)
-            return WORKER.getException();
-        else
-            return null;
+        synchronized (SCRIPT_LOCK)
+        {
+            return _currentModuleName;
+        }
     }
 
 
-    public interface SqlScriptUrls extends UrlProvider
+    // Throws SQLException only if getRunScripts() fails -- script failures are handled more gracefully
+    public static void runScripts(Module module, User user, List<SqlScript> scripts) throws SQLException, SqlScriptException
     {
-        public ActionURL getDefaultURL(ActionURL returnURL, String moduleName, double fromVersion, double toVersion, boolean express);
-        public ActionURL getRunRecommended(ActionURL returnURL, String moduleName, String schemaName, double fromVersion, double toVersion);
-        public ActionURL getShowList(ActionURL returnURL, String moduleName, String schemaName, double fromVersion, double toVersion);
+        _log.info("Running " + scripts.toString());
+
+        synchronized(SCRIPT_LOCK)
+        {
+            assert _remainingScripts.isEmpty();
+            _remainingScripts.addAll(scripts);
+            _currentModuleName = module.getName();
+        }
+
+        for (SqlScript script : scripts)
+        {
+            SqlScriptManager.runScript(user, script);
+
+            synchronized(SCRIPT_LOCK)
+            {
+                _remainingScripts.remove(script);
+                SCRIPT_LOCK.notifyAll();
+            }
+        }
+
+        synchronized(SCRIPT_LOCK)
+        {
+            _currentModuleName = null;
+        }
     }
 
 
@@ -190,165 +203,6 @@ public class SqlScriptRunner
         }
 
         return nearest;
-    }
-
-
-    public static void runScripts(User user, List<SqlScript> scripts, SqlScriptProvider provider) throws SQLException
-    {
-        runScripts(user, scripts, provider, false);
-    }
-
-
-    // Throws SQLException only if getRunScripts() fails -- script failures are handled more gracefully
-    public static void runScripts(User user, List<SqlScript> scripts, SqlScriptProvider provider, boolean allowMultipleProviderSubmits) throws SQLException
-    {
-        synchronized (SCRIPT_LOCK)
-        {
-            // No real synchronization before this point -- multiple requests/users will attempt to run conflicting
-            // or duplicate scripts.  Check three conditions and reject the submission if any is true.  A rejection
-            // will redirect the user to the status page.  See issue #4792 for more details.
-
-            // Reject the submission if scripts are already running.
-            if (!_scriptsToRun.isEmpty())
-                return;
-
-            // Reject the submission if any requested script has been run before on this server installation.
-            Set<SqlScript> previouslyRunScripts = SqlScriptManager.getRunScripts(provider);
-            for (SqlScript script : scripts)
-                if (previouslyRunScripts.contains(script))
-                    return;
-
-            // Reject the submission if this provider has already run scripts during this server session (but allow
-            // manual upgrade page and create/drop view scripts to override this check).
-            if (!allowMultipleProviderSubmits)
-            {
-                if (_previousProviders.contains(provider.getProviderName()))
-                    return;
-                _previousProviders.add(provider.getProviderName());
-            }
-
-            _log.info("Added " + scripts.toString());
-            _scriptsToRun.addAll(scripts);
-            if (WORKER == null)
-            {
-                WORKER = new BackgroundScriptRunner(user);
-                WORKER.start();
-            }
-            else
-            {
-                WORKER.setUser(user);    // Need to change from null to user in bootstrap case; at some point, we might support different admins doing parts of the upgrade
-                WORKER.setException(null);
-            }
-
-            SCRIPT_LOCK.notifyAll();
-        }
-    }
-
-    public static void stopBackgroundThread()
-    {
-        synchronized (SCRIPT_LOCK)
-        {
-            assert _scriptsToRun.isEmpty() : "There are still scripts to run!";
-            if (WORKER != null)
-            {
-                WORKER.finish();
-                WORKER = null;
-            }
-        }
-    }
-
-    private static class BackgroundScriptRunner extends Thread
-    {
-        private User _user;
-        private Exception _scriptException = null;
-        private volatile boolean _keepRunning = true;
-
-        public BackgroundScriptRunner(User user)
-        {
-            super("Background SQL Script Runner");
-            _user = user;
-            setDaemon(true);
-        }
-
-        public void run()
-        {
-            while (_keepRunning)
-            {
-                SqlScript currentScript = null;
-                synchronized(SCRIPT_LOCK)
-                {
-                    if (_scriptsToRun.isEmpty())
-                    {
-                        try
-                        {
-                            SCRIPT_LOCK.wait();
-                        }
-                        catch (InterruptedException e)
-                        {
-                            return;
-                        }
-                    }
-                    if (!_scriptsToRun.isEmpty())
-                    {
-                        currentScript = _scriptsToRun.get(0);
-                    }
-                }
-
-                if (currentScript != null)
-                {
-                    try
-                    {
-                        _log.info("Started running " + currentScript.getDescription());
-                        SqlScriptManager.runScript(_user, currentScript);
-                        _log.info("Finished running " + currentScript.getDescription());
-                    }
-                    catch(Exception e)
-                    {
-                        // Stash any exception that occurs while running the script
-                        _scriptException = e;
-                    }
-                    currentScript.afterScriptRuns();
-
-                    synchronized(SCRIPT_LOCK)
-                    {
-                        // If we encounter an exception, stop running scripts
-                        if (null != _scriptException)
-                            _scriptsToRun.clear();
-                        else
-                            _scriptsToRun.remove(0);
-
-                        SCRIPT_LOCK.notifyAll();
-                    }
-                }
-            }
-        }
-
-        public User getUser()
-        {
-            return _user;
-        }
-
-        public void setUser(User user)
-        {
-            _user = user;
-        }
-
-        public Exception getException()
-        {
-            return _scriptException;
-        }
-
-        public void setException(Exception e)
-        {
-            _scriptException = e;
-        }
-
-        public void finish()
-        {
-            _keepRunning = false;
-            interrupt();
-            SCRIPT_LOCK.notifyAll();
-        }
     }
 
 

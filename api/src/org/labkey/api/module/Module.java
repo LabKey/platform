@@ -96,7 +96,7 @@ public interface Module
      * Note that if the module wishes to set up its own upgrade UI it should redirect to that
      * UI and then when complete call this method.
      */
-    public ActionURL versionUpdate(ModuleContext moduleContext, ViewContext viewContext);
+    public void versionUpdate(ModuleContext moduleContext) throws Exception;
 
     // Called on every module in dependency order after versionUpdate(), as long as at least one module requires
     // updating.  This is a fine place to create views and other dependent objects.
