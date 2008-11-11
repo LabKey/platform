@@ -363,7 +363,8 @@ public class CoreModule extends SpringModule
             XMLWriterTest.TestCase.class,
             WebdavResolverImpl.TestCase.class,
             org.labkey.api.exp.Lsid.TestCase.class,
-            MimeMap.TestCase.class
+            MimeMap.TestCase.class,
+            MemTracker.TestCase.class
         )
         );
     }
