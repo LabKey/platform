@@ -579,24 +579,6 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_UPDATE)
-    public class ShowAddAttachmentAction extends AttachmentAction
-    {
-        public ModelAndView getAttachmentView(AttachmentForm form, Wiki wiki)
-        {
-            return AttachmentService.get().getAddAttachmentView(getContainer(), wiki);
-        }
-    }
-
-    @RequiresPermission(ACL.PERM_UPDATE)
-    public class AddAttachmentAction extends AttachmentAction
-    {
-        public ModelAndView getAttachmentView(AttachmentForm form, Wiki wiki) throws Exception
-        {
-            return AttachmentService.get().add(getUser(), wiki, getAttachmentFileList());
-        }
-    }
-
     @RequiresPermission(ACL.PERM_READ)
     public class DownloadAction extends AttachmentAction
     {
@@ -620,22 +602,6 @@ public class WikiController extends SpringActionController
             return AttachmentService.get().getConfirmDeleteView(getContainer(), getViewContext().getActionURL(), wiki, form.getName());
         }
     }
-
-    @RequiresPermission(ACL.PERM_READ) //will check programmatically
-    public class DeleteAttachmentAction extends AttachmentAction
-    {
-        public ModelAndView getAttachmentView(AttachmentForm form, Wiki wiki) throws Exception
-        {
-            BaseWikiPermissions perms = getPermissions();
-            if(!perms.allowUpdate(wiki))
-                HttpView.throwUnauthorized("You do not have sufficient permissions to delete this attachment");
-
-            ModelAndView ret = AttachmentService.get().delete(getUser(), wiki, form.getName());
-            WikiCache.uncache(getContainer());
-            return ret;
-        }
-    }
-
 
     @RequiresPermission(ACL.PERM_READ)
     public class PrintAllAction extends SimpleViewAction
@@ -1079,47 +1045,6 @@ public class WikiController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
-        }
-    }
-
-
-    @RequiresPermission(ACL.PERM_UPDATE)
-    public class ShowUpdateAttachmentsAction extends SimpleViewAction<WikiDataForm>
-    {
-        Wiki _wiki;
-
-        public ModelAndView getView(WikiDataForm form, BindException errors) throws Exception
-        {
-            String name = form.getName();
-            String redirect = StringUtils.trimToEmpty(form.getRedirect());
-
-            _wiki = WikiManager.getWiki(getContainer(), form.getName(), true);
-            if (null == _wiki)
-                HttpView.throwNotFound("Wiki page not found");
-
-            GroovyView updateView = new GroovyView("/org/labkey/wiki/view/wiki_attachments.gm");
-            updateView.setTitle("Update Attachments -- " + name);
-            updateView.addObject("wiki", _wiki);
-
-            DownloadURL attachmentURL = new DownloadURL("Wiki", getContainer().getPath(), _wiki.getEntityId(), null);
-            if (redirect == null || redirect.length() == 0)
-            {
-                ActionURL pageView = getViewContext().cloneActionURL();
-                pageView.setAction("page");
-                redirect = pageView.getLocalURIString();
-            }
-            updateView.addObject("redirect", redirect);
-            attachmentURL.setAction("showAddAttachment.view");
-            updateView.addObject("addAttachmentURL", attachmentURL.getLocalURIString());
-            attachmentURL.setAction("showConfirmDelete.view");
-            updateView.addObject("deleteURLHelper", attachmentURL);
-            return updateView;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return (new ManageAction(_wiki)).appendNavTrail(root)
-                    .addChild("update page " + _wiki.getName());
         }
     }
 
