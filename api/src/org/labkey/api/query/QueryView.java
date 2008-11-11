@@ -106,7 +106,8 @@ public class QueryView extends WebPartView<Object>
     public QueryView(UserSchema schema, QuerySettings settings)
     {
         setSchema(schema);
-        setSettings(settings);
+        if (null != settings)
+            setSettings(settings);
     }
 
     public QuerySettings getSettings()

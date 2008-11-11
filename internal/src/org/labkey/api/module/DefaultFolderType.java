@@ -35,12 +35,18 @@ import java.util.*;
  */
 public class DefaultFolderType implements FolderType
 {
-    List<WebPart> requiredParts;
-    List<WebPart> preferredParts;
-    Set<Module> activeModules;
-    String description;
-    String name;
-    Module defaultModule;
+    protected List<WebPart> requiredParts;
+    protected List<WebPart> preferredParts;
+    protected Set<Module> activeModules;
+    protected String description;
+    protected String name;
+    protected  Module defaultModule;
+
+    public DefaultFolderType(String name, String description)
+    {
+        this.name = name;
+        this.description = description;
+    }
 
     public DefaultFolderType(String name, String description, List<Portal.WebPart> requiredParts, List<Portal.WebPart> preferredParts, Set<Module> activeModules)
     {
@@ -232,9 +238,9 @@ public class DefaultFolderType implements FolderType
             defaultModules.add(getModule("Issues"));
             s_defaultModules = defaultModules;
         }
+        
         Set<Module> modules = new HashSet<Module>(s_defaultModules);
-        for (Module m: additionalModules)
-            modules.add(m);
+        modules.addAll(Arrays.asList(additionalModules));
 
         return modules;
     }

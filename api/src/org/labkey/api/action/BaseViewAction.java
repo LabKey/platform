@@ -241,8 +241,14 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
     // don't assume parameters always come from a request, use PropertyValues interface
     //
 
-
     public BindException defaultBindParameters(FORM form, PropertyValues params)
+    {
+        String command = getCommandName();
+        return defaultBindParameters(form, getCommandName(), params);
+    }
+
+
+    public static BindException defaultBindParameters(Object form, String commandName, PropertyValues params)
     {
         /* check for do-it-myself forms */
         if (form instanceof HasBindParameters)
@@ -250,7 +256,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
             return ((HasBindParameters)form).bindParameters(params);
         }
         
-        /* 'regular' command handling */
+        /* 'regular' commandName handling */
         if (null != params.getPropertyValue(".oldValues"))
         {
             try
@@ -266,11 +272,11 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
         if (form instanceof DynaBean)
         {
-            return simpleBindParameters(getCommandName(), form, params);
+            return simpleBindParameters(form, commandName, params);
         }
         else
         {
-            return springBindParameters(form, params);
+            return springBindParameters(form, commandName, params);
         }
     }
 
@@ -329,7 +335,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
      * This binder doesn't have much to offer over the standard spring data binding except that it will
      * handle DynaBeans.
      */
-    public static BindException simpleBindParameters(String commandName, Object command, PropertyValues params)
+    public static BindException simpleBindParameters(Object command, String commandName, PropertyValues params)
     {
         //params = _fixupPropertyMap(params);
 
