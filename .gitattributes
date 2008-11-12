@@ -2249,6 +2249,7 @@ wiki/src/org/labkey/wiki/renderer/PlainTextRenderer.java -text
 wiki/src/org/labkey/wiki/renderer/WebPartSubstitutionHandler.java -text
 wiki/src/org/labkey/wiki/supportWiki.txt -text
 wiki/src/org/labkey/wiki/view/wiki.gm -text
+wiki/src/org/labkey/wiki/view/wikiDelete.jsp -text
 wiki/src/org/labkey/wiki/view/wikiEdit.jsp -text
 wiki/src/org/labkey/wiki/view/wikiHtmlHelp.jsp -text
 wiki/src/org/labkey/wiki/view/wikiPrint.jsp -text
@@ -2257,7 +2258,6 @@ wiki/src/org/labkey/wiki/view/wikiSearch.jsp -text
 wiki/src/org/labkey/wiki/view/wiki_copy.gm -text
 wiki/src/org/labkey/wiki/view/wiki_customize.gm -text
 wiki/src/org/labkey/wiki/view/wiki_customizetoc.gm -text
-wiki/src/org/labkey/wiki/view/wiki_delete.gm -text
 wiki/src/org/labkey/wiki/view/wiki_manage.gm -text
 wiki/src/org/labkey/wiki/view/wiki_printall.gm -text
 wiki/src/org/labkey/wiki/view/wiki_printraw.gm -text

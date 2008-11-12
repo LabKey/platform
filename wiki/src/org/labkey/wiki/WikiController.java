@@ -301,9 +301,7 @@ public class WikiController extends SpringActionController
             if(!perms.allowDelete(_wiki))
                 HttpView.throwUnauthorized("You do not have permissions to delete this wiki page");
 
-            HttpView v = new GroovyView("/org/labkey/wiki/view/wiki_delete.gm");
-            v.addObject("wiki", _wiki);
-            return v;
+            return new JspView<Wiki>("/org/labkey/wiki/view/wikiDelete.jsp", _wiki);
         }
 
         public boolean handlePost(WikiNameForm form, BindException errors) throws Exception
