@@ -952,6 +952,161 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_READ)
+    public class ManageViewsSummaryAction extends ApiAction
+    {
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            ManageReportsBean bean = new ManageReportsBean(getViewContext());
+            List<Map<String, String>> views = new ArrayList<Map<String, String>>();
+
+            for (Map.Entry<String, List<ManageReportsBean.ReportRecord>> entry : bean.getViews().entrySet())
+            {
+                if (entry.getValue().isEmpty())
+                    continue;
+
+                for (ManageReportsBean.ReportRecord r : entry.getValue())
+                {
+                    ReportDescriptor descriptor = r.getReport().getDescriptor();
+                    Map<String, String> record = new HashMap<String, String>();
+
+                    record.put("name", r.getName());
+                    record.put("displayName", "<a href=\"" + r.getDisplayURL() + "\">" + r.getName() + "</a>");
+                    record.put("reportId", String.valueOf(descriptor.getReportId()));
+                    record.put("query", descriptor.getProperty(ReportDescriptor.Prop.queryName));
+                    record.put("schema", descriptor.getProperty(ReportDescriptor.Prop.schemaName));
+                    record.put("owner", r.getCreatedBy().getDisplayName(getViewContext()));
+                    record.put("public", String.valueOf(r.isShared()));
+                    record.put("type", r.getReport().getTypeDescription());
+                    record.put("editable", String.valueOf(descriptor.canEdit(getViewContext())));
+                    record.put("editUrl", r.getEditURL());
+                    record.put("description", descriptor.getReportDescription());
+
+                    String iconPath = ReportService.get().getReportIcon(getViewContext(), r.getReport().getType());
+                    if (!StringUtils.isEmpty(iconPath))
+                        record.put("type", "<img src=\"" + iconPath + "\">&nbsp;" + r.getReport().getTypeDescription());
+                    else
+                    record.put("type", r.getReport().getTypeDescription());
+
+                    views.add(record);
+                }
+            }
+            return new ApiSimpleResponse("views", views);
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class ManageViewsDeleteReportsAction extends ApiAction<DeleteViewsForm>
+    {
+        public ApiResponse execute(DeleteViewsForm form, BindException errors) throws Exception
+        {
+            for (int id : form.getReportId())
+            {
+                Report report = ReportService.get().getReport(id);
+
+                if (report != null)
+                {
+                    if (!report.getDescriptor().canEdit(getViewContext()))
+                        HttpView.throwUnauthorized();
+                    ReportService.get().deleteReport(getViewContext(), report);
+                }
+            }
+            return new ApiSimpleResponse("success", true);
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class ManageViewsEditReportsAction extends ApiAction<EditViewsForm>
+    {
+        public ApiResponse execute(EditViewsForm form, BindException errors) throws Exception
+        {
+            Report report = ReportService.get().getReport(form.getReportId());
+
+            if (report != null)
+            {
+                if (!report.getDescriptor().canEdit(getViewContext()))
+                    HttpView.throwUnauthorized();
+
+                boolean doSave = false;
+
+                if (!StringUtils.equals(report.getDescriptor().getReportName(), form.getViewName()))
+                {
+                    if (reportNameExists(getViewContext(), form.getViewName(), report.getDescriptor().getReportKey()))
+                        throw new IllegalArgumentException("There is already a view with the name of: " + form.getViewName() +
+                                ". Please specify a different name.");
+
+                    else
+                    {
+                        report.getDescriptor().setReportName(form.getViewName());
+                        doSave = true;
+                    }
+                }
+
+                if (!StringUtils.equals(report.getDescriptor().getReportDescription(), form.getDescription()))
+                {
+                    report.getDescriptor().setReportDescription(StringUtils.trimToNull(form.getDescription()));
+                    doSave = true;
+                }
+
+                if (doSave)
+                    ReportService.get().saveReport(getViewContext(), report.getDescriptor().getReportKey(), report);
+            }
+            return new ApiSimpleResponse("success", true);
+        }
+    }
+
+    static class EditViewsForm
+    {
+        int _reportId;
+        String _viewName;
+        String _description;
+
+        public int getReportId()
+        {
+            return _reportId;
+        }
+
+        public void setReportId(int reportId)
+        {
+            _reportId = reportId;
+        }
+
+        public String getViewName()
+        {
+            return _viewName;
+        }
+
+        public void setViewName(String viewName)
+        {
+            _viewName = viewName;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public void setDescription(String description)
+        {
+            _description = description;
+        }
+    }
+
+    static class DeleteViewsForm
+    {
+        int[] _reportId;
+
+        public int[] getReportId()
+        {
+            return _reportId;
+        }
+
+        public void setReportId(int[] reportId)
+        {
+            _reportId = reportId;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
     public class RenameReportAction extends FormViewAction<ReportDesignBean>
     {
         private String _newReportName;

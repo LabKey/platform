@@ -15,165 +15,257 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.reports.report.view.ManageReportsBean" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.springframework.validation.ObjectError" %>
-<%@ page import="java.io.Writer" %>
-<%@ page import="java.util.List" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.query.reports.ReportsController" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/_yui/build/container/assets/container.css" type="text/css"/>
-<link rel="stylesheet" href="<%=request.getContextPath()%>/utils/dialogBox.css" type="text/css"/>
-<script type="text/javascript">LABKEY.requiresYahoo("yahoo");</script>
-<script type="text/javascript">LABKEY.requiresYahoo("event");</script>
-<script type="text/javascript">LABKEY.requiresYahoo("dom");</script>
-<script type="text/javascript">LABKEY.requiresYahoo("dragdrop");</script>
-<script type="text/javascript">LABKEY.requiresYahoo("animation");</script>
-<script type="text/javascript">LABKEY.requiresYahoo("container");</script>
-<script type="text/javascript">LABKEY.requiresScript("utils/dialogBox.js");</script>
-<script type="text/javascript">
-    var dialogHelper;
-    var descriptionDialogHelper;
-
-    function init()
-    {
-        dialogHelper = new LABKEY.widget.DialogBox("renameDialog",{width:"300px", height:"100px"});
-        descriptionDialogHelper = new LABKEY.widget.DialogBox("descriptionDialog",{width:"400px", height:"200px"});
-    }
-    YAHOO.util.Event.addListener(window, "load", init);
-
-    function renameReport(id, name)
-    {
-        var renameDiv = YAHOO.util.Dom.get('renameDialog');
-        renameDiv.style.display = "";
-
-        var reportId = YAHOO.util.Dom.get('renameReportId');
-        var reportName = YAHOO.util.Dom.get('renameReportName');
-
-        reportId.value = id;
-        reportName.value = name;
-
-        dialogHelper.render();
-        dialogHelper.center();
-        dialogHelper.show();
-    }
-
-    function editDescription(id, description)
-    {
-        var reportId = YAHOO.util.Dom.get('descReportId');
-        var reportDescription = YAHOO.util.Dom.get('descReportDescription');
-
-        var descriptionDiv = YAHOO.util.Dom.get('descriptionDialog');
-        descriptionDiv.style.display = "";
-
-        reportId.value = id;
-        reportDescription.value = description;
-
-        descriptionDialogHelper.render();
-        descriptionDialogHelper.center();
-        descriptionDialogHelper.show();
-    }
-</script>
-
-
 <%
-    JspView<ManageReportsBean> me = (JspView<ManageReportsBean>) HttpView.currentView();
-    ManageReportsBean bean = me.getModelBean();
     ViewContext context = HttpView.currentContext();
+
 %>
+
+<script type="text/javascript">
+    LABKEY.requiresExtJs(true);
+
+    function showViews()
+    {
+        var con = new Ext.data.HttpProxy(new Ext.data.Connection({
+                url: LABKEY.ActionURL.buildURL("reports", "manageViewsSummary", '<%=context.getContainer().getPath()%>'),
+                method: 'GET'
+            }));
+
+        var store = new Ext.data.GroupingStore({
+            reader: new Ext.data.JsonReader({root:'views',id:'reportId'},
+                    [
+                        {name:'query'},
+                        {name:'schema'},
+                        {name:'name'},
+                        {name:'owner'},
+                        {name:'public'},
+                        {name:'displayName'},
+                        {name:'description'},
+                        {name:'editable'},
+                        {name:'editUrl'},
+                        {name:'type'}]),
+            proxy: con,
+            autoLoad: true,
+            sortInfo: {field:'query', direction:"ASC"},
+            listeners: {
+                load: function(store, records) {
+                    if (records.length == 0)
+                        Ext.Msg.alert("Manage Views", "You have no views in this container.");
+                }
+            },
+            groupField:'query'});
+
+        var cbs = new Ext.grid.CheckboxSelectionModel();
+        var grid = new Ext.grid.GridPanel({
+            el:'viewsGrid',
+            autoScroll:false,
+            autoHeight:true,
+            width:800,
+            store: store,
+            selModel: cbs,
+/*
+            listeners: {
+                rowcontextmenu: function(g, rowIndex, event) {
+                    event.stopEvent();
+                    var menu = new Ext.menu.Menu({items:[{text:'rename'},{text:'edit description'},{text:'edit view...',disabled:'true'}]});
+                    menu.showAt(event.getXY());
+                }
+            },
+*/
+            columns:[
+                cbs,                    
+                {header:'Type', dataIndex:'type'},
+                {header:'Title', dataIndex:'displayName', width:200},
+                {header:'Description', dataIndex:'description', hidden:true},
+                {header:'Created By', dataIndex:'owner'},
+                {header:'Shared', dataIndex:'public'},
+                {header:'Schema', dataIndex:'schema', hidden:true},
+                {header:'Query', dataIndex:'query'}
+
+            ],
+            view: new Ext.grid.GroupingView({
+                startCollapsed:false,
+                hideGroupedColumn:true,
+                forceFit:true,
+                groupTextTpl: '{values.group}'
+            }),
+            buttons: [
+                {text:'Expand All', listeners:{click:function(button, event) {grid.view.expandAllGroups();}}},
+                {text:'Collapse All', listeners:{click:function(button, event) {grid.view.collapseAllGroups();}}},
+                {text:'Delete Selected', listeners:{click:function(button, event) {deleteSelected(grid);}}},
+                {text:'Edit Selected', listeners:{click:function(button, event) {editSelected(button, grid);}}}
+            ],
+            buttonAlign:'center'
+        });
+
+        grid.render();
+    }
+
+    function deleteSelected(grid)
+    {
+        var selections = grid.selModel.getSelections();
+
+        if (selections.length == 0)
+        {
+            Ext.Msg.alert("Delete Views", "There are no views selected");
+            return false;
+        }
+        else
+        {
+            var msg = "Delete Selected Views:<br/>";
+            var params = [];
+
+            for (var i=0; i < selections.length; i++)
+            {
+                msg = msg.concat(selections[i].data.name);
+                msg = msg.concat('<br/>');
+
+                params.push("reportId=" + selections[i].id);
+            }
+            
+            Ext.Msg.confirm('Delete Views', msg, function(btn, text) {
+                if (btn == 'yes')
+                {
+                    Ext.Ajax.request({
+
+                        url: LABKEY.ActionURL.buildURL("reports", "manageViewsDeleteReports") + '?' + params.join('&'),
+                        method: "POST",
+                        success: function(){grid.store.load();},
+                        failure: function(){Ext.Msg.alert("Delete Views", "Deletion Failed");}
+                    });
+                }
+            });
+        }
+    }
+
+    function editSelected(button, grid)
+    {
+        var selections = grid.selModel.getSelections();
+
+        if (selections.length == 0)
+        {
+            Ext.Msg.alert("Edit Views", "There are no views selected");
+            return false;
+        }
+
+        var tabPanel = new Ext.TabPanel({
+            activeTab: 0,
+            plain: true,
+            enableTabScroll: true,
+            defaults: {autoHeight:true, bodyStyle:'padding:10px'}
+        });
+        var win = new Ext.Window({
+            title: 'Edit Views',
+            layout:'form',
+            border: false,
+            width: 650,
+            height: 300,
+            closeAction:'close',
+            //plain: true,
+            modal: false,
+            items: tabPanel,
+            buttons: [{
+                text: 'Submit',
+                handler: function(){submitForm(win, tabPanel, grid);}
+            },{
+                text: 'Finished',
+                handler: function(){win.close();}
+            }]
+        });
+
+        for (var i=0; i < selections.length; i++)
+        {
+            tabPanel.add(new Ext.FormPanel({
+                title: selections[i].data.name,
+                layout:'form',
+                autoHeight: 'true',
+                defaults: {width: 230},
+                defaultType: 'textfield',
+
+                items: [{
+                    fieldLabel: 'View Name',
+                    name: 'viewName',
+                    allowBlank:false,
+                    value: selections[i].data.name
+                },{
+                    fieldLabel: 'Description',
+                    name: 'description',
+                    xtype: 'textarea',
+                    value: selections[i].data.description
+                },{
+                    name: 'reportId',
+                    xtype: 'hidden',
+                    value: selections[i].id
+                },{
+                    name: 'editUrl',
+                    xtype: 'button',
+                    text: 'Edit Source...',
+                    dest: selections[i].data.editUrl,
+                    disabled: selections[i].data.editUrl ? false : true,
+                    handler: function(){doAdvancedEdit(this);}
+                }]
+            }));
+        }
+        win.show(button);
+    }
+
+    function doAdvancedEdit(config)
+    {
+        Ext.Msg.confirm('Edit Source', "Do you want to navigate away from your current view to the advanced editor?", function(btn, text) {
+            if (btn == 'yes')
+            {
+                window.location = config.dest;
+            }
+        });
+    }
+
+    function submitForm(win, tabPanel, grid)
+    {
+        var items = tabPanel.items;
+
+        // client side validation
+        for (var i=0; i < items.getCount(); i++)
+        {
+            var form = items.get(i).getForm();
+            if (form && !form.isValid())
+            {
+                Ext.Msg.alert('Edit Views', 'Invalid Form Parameter(s)');
+                tabPanel.setActiveTab(items.get(i).getId());
+                return false;
+            }
+        }
+
+        Ext.Msg.confirm('Edit Views', 'Are you sure you wish to update the selected views?', function(btn, text) {
+            if (btn == 'yes')
+            {
+                for (var i=0; i < items.getCount(); i++)
+                {
+                    var form = items.get(i).getForm();
+                    if (form && form.getEl())
+                    {
+                        form.submit({
+                            url: LABKEY.ActionURL.buildURL("reports", "manageViewsEditReports"),
+                            waitMsg:'Submiting Form...',
+                            method: 'POST',
+                            success: function(){grid.store.load();},
+                            failure: function(form, action){LABKEY.Utils.displayAjaxErrorResponse(action.response);}
+                        });
+                    }
+                }
+            }
+        });
+    }
+
+    Ext.onReady(function()
+    {
+        showViews();
+    });
+</script>
 
 <labkey:errors/>
 
-<div style="display:none;" id="renameDialog">
-    <div class="hd">Rename View</div>
-    <div class="bd">
-        <form action="<%=new ActionURL(ReportsController.RenameReportAction.class, context.getContainer())%>" method="post" onsubmit="dialogHelper.hide();">
-            <input type="hidden" id="renameReportId" name="reportId" value=""/>
-            <table>
-                <tr><td>View name:</td></tr>
-                <tr><td width="275"><input id="renameReportName" name="reportName" width="100%" value=""></td></tr>
-                <tr><td><%=PageFlowUtil.generateSubmitButton("Rename")%></td></tr>
-            </table>
-        </form>
-    </div>
-</div>
-
-<div  style="display:none;" id="descriptionDialog">
-    <div class="hd">View Description</div>
-    <div class="bd">
-        <form action="<%=new ActionURL(ReportsController.ReportDescriptionAction.class, context.getContainer())%>" method="post" onsubmit="descriptionDialogHelper.hide();">
-            <input type="hidden" id="descReportId" name="reportId" value=""/>
-            <table>
-                <tr><td>View Description:</td></tr>
-                <tr><td width="370"><textarea id="descReportDescription" name="reportDescription" style="width: 100%;" rows="6"></textarea></td></tr>
-                <tr><td><%=PageFlowUtil.generateSubmitButton("Update")%></td></tr>
-            </table>
-        </form>
-    </div>
-</div>
-
-<table>
-<%
-    Map<String, List<ManageReportsBean.ReportRecord>> live = bean.getViews();
-    boolean hasViews = false;
-    for (Map.Entry<String, List<ManageReportsBean.ReportRecord>> entry : live.entrySet()) {
-
-        if (entry.getValue().isEmpty())
-            continue;
-        hasViews = true;
-        startReportSection(out, entry.getKey());
-        for (ManageReportsBean.ReportRecord r : entry.getValue())
-        {
-%>
-            <tr>
-<%          if (r.getDisplayURL() != null) { %>
-                <td><a href="<%=h(r.getDisplayURL())%>" <%=r.getTooltip() != null ? "title='" + h(r.getTooltip()) + "'" : ""%>><%=h(r.getName())%></a></td>
-<%          } else { %>
-                <td><%=h(r.getName())%></td>
-<%          } %>
-                <td>&nbsp;&nbsp;<%=r.getCreatedBy() != null ? r.getCreatedBy().getDisplayName(context) : ""%></td>
-                <td>&nbsp;&nbsp;<%=r.isShared() ? "yes" : "no"%></td>
-<%
-            if (r.getReport().getDescriptor().canEdit(context))
-            {
-%>
-            <td>&nbsp;<%="[<a href=\"" + h(r.getDeleteURL()) + "\" onclick=\"return confirm('Permanently delete the selected view?');\">delete</a>]"%></td>
-            <td>&nbsp;<%="[<a href=\"javascript:renameReport(" + r.getReport().getDescriptor().getReportId() + "," + hq(r.getName()) + ");\">rename</a>]"%></td>
-            <td>&nbsp;<%="[<a href=\"javascript:editDescription(" + r.getReport().getDescriptor().getReportId() + "," + hq(StringUtils.trimToEmpty(r.getReport().getDescriptor().getReportDescription())) + ");\">edit description</a>]"%></td>
-<%
-            } else {
-%>
-            <td/><td/><td/>
-<%          }
-
-            if (r.getEditURL() != null) { %>
-                <td>&nbsp;<%="[<a href=\"" + r.getEditURL() + "\">edit</a>]"%></td>
-<%          } %>
-            </tr>
-<%
-        }
-    }
-    if (!hasViews)
-        out.println("You have no views in this folder");
-%>
-</table>
-
-<%!
-    void startReportSection(Writer out, String title) throws Exception
-    {
-        out.write("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-announcement-title\" align=left><span>");
-        out.write(PageFlowUtil.filter(title));
-        out.write("</span></td></tr>");
-        out.write("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-title-area-line\"><img height=\"1\" width=\"1\" src=\"" + AppProps.getInstance().getContextPath() + "/_.gif\"></td></tr>");
-        out.write("<tr><td align=\"center\" class=\"labkey-form-label\">title</td><td align=\"center\" class=\"labkey-form-label\">created by</td><td align=\"center\" class=\"labkey-form-label\">public</td></tr>");
-    }
-%>
+<div id="viewsGrid" class="extContainer"></div>
