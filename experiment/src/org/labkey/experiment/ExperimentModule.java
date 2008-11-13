@@ -193,7 +193,6 @@ public class ExperimentModule extends SpringModule
     }
 
 
-    @Override
     public void startup(ModuleContext context)
     {
         PipelineService.get().registerPipelineProvider(new ExperimentPipelineProvider());
@@ -255,7 +254,7 @@ public class ExperimentModule extends SpringModule
         PropertyService.get().registerValidatorKind(new RegExValidator());
         PropertyService.get().registerValidatorKind(new RangeValidator());
 
-        super.startup(context);
+        initWebApplicationContext();
     }
 
     public Collection<String> getSummary(Container c)

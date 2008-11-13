@@ -734,6 +734,7 @@ public class AdminController extends SpringActionController
 
 
     @RequiresPermission(ACL.PERM_NONE)
+    @AllowedDuringUpgrade
     public class MaintenanceAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -3302,6 +3303,7 @@ public class AdminController extends SpringActionController
 
 
     @RequiresSiteAdmin
+    @AllowedDuringUpgrade
     public class ModuleUpgradeAction extends SimpleRedirectAction<UpgradeStatusForm>
     {
         public ActionURL getRedirectURL(UpgradeStatusForm form) throws Exception
@@ -3319,6 +3321,7 @@ public class AdminController extends SpringActionController
 
 
     @RequiresPermission(ACL.PERM_NONE)
+    @AllowedDuringUpgrade
     public class ModuleStatusAction extends SimpleViewAction<UpgradeStatusForm>
     {
         public ModelAndView getView(UpgradeStatusForm form, BindException errors) throws Exception

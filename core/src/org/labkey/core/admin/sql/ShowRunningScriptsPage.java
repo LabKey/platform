@@ -18,7 +18,6 @@ package org.labkey.core.admin.sql;
 
 import org.labkey.api.jsp.JspBase;
 import org.labkey.api.data.SqlScriptRunner;
-import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.view.ActionURL;
 
 import java.util.List;
@@ -30,9 +29,8 @@ import java.util.List;
 public abstract class ShowRunningScriptsPage extends JspBase
 {
     private List<SqlScriptRunner.SqlScript> _runningScripts;
-    private ActionURL _waitForScriptsUrl;
-    private SqlScriptProvider _provider;
-    private ActionURL _currentUrl;
+    private ActionURL _waitForScriptsURL;
+    private ActionURL _currentURL;
 
     public void setScripts(List<SqlScriptRunner.SqlScript> runningScripts)
     {
@@ -44,33 +42,23 @@ public abstract class ShowRunningScriptsPage extends JspBase
         return _runningScripts;
     }
 
-    public void setWaitForScriptsUrl(ActionURL waitForScriptsUrl)
+    public void setWaitForScriptsURL(ActionURL waitForScriptsURL)
     {
-        _waitForScriptsUrl = waitForScriptsUrl;
+        _waitForScriptsURL = waitForScriptsURL;
     }
 
-    public ActionURL getWaitForScriptsUrl()
+    public ActionURL getWaitForScriptsURL()
     {
-        return _waitForScriptsUrl;
+        return _waitForScriptsURL;
     }
 
-    public void setProvider(SqlScriptProvider provider)
+    public ActionURL getCurrentURL()
     {
-        _provider = provider;
+        return _currentURL;
     }
 
-    public SqlScriptProvider getProvider()
+    public void setCurrentURL(ActionURL currentURL)
     {
-        return _provider;
-    }
-
-    public ActionURL getCurrentUrl()
-    {
-        return _currentUrl;
-    }
-
-    public void setCurrentUrl(ActionURL currentUrl)
-    {
-        _currentUrl = currentUrl;
+        _currentURL = currentURL;
     }
 }

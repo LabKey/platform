@@ -276,10 +276,9 @@ public class CoreModule extends SpringModule
     }
 
 
-    @Override
     public void startup(ModuleContext moduleContext)
     {
-        super.startup(moduleContext);
+        initWebApplicationContext();
 
         ContainerManager.addContainerListener(new CoreContainerListener());
         org.labkey.api.security.SecurityManager.init();

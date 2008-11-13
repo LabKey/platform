@@ -33,5 +33,4 @@ public class BtOverviewWebPart extends HtmlView
         super(new BtOverview(portalCtx.getUser(), portalCtx.getContainer()).toString());
         setTitle("Server Management");
     }
-
 }

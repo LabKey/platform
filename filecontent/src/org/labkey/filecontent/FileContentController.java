@@ -37,12 +37,10 @@ import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
-import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.PrintWriter;
@@ -73,11 +71,6 @@ public class FileContentController extends SpringActionController
    }
 
 
-   public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws MultipartException
-   {
-       return super.handleRequest(request, response);
-   }
-
    // UNDONE: need better way to set right pane
    protected ModelAndView getTemplate(ViewContext context, ModelAndView mv, Controller action, PageConfig page)
    {
@@ -89,12 +82,6 @@ public class FileContentController extends SpringActionController
        }
        return t;
    }
-
-   private ActionURL actionURL(String action)
-   {
-       return new ActionURL("filecontent", action, getContainer());
-   }
-
 
    @RequiresPermission(ACL.PERM_READ)
    public class SendFileAction extends SimpleViewAction<SendFileForm>
@@ -259,7 +246,7 @@ public class FileContentController extends SpringActionController
 
        public NavTree appendNavTrail(NavTree root)
        {
-           root.addChild("Manage Files", actionURL("begin"));
+           root.addChild("Manage Files", new ActionURL(BeginAction.class, getContainer()));
            return root;
        }
    }

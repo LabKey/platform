@@ -16,22 +16,17 @@
 
 package org.labkey.core.admin.sql;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.SqlScriptRunner;
-import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.jsp.JspLoader;
-import org.labkey.api.module.DefaultModule;
-import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.module.AllowedDuringUpgrade;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -39,9 +34,7 @@ import java.util.List;
 
 public class SqlScriptController extends SpringActionController
 {
-    private static Logger _log = Logger.getLogger(SqlScriptController.class);
-
-    private static DefaultActionResolver _actionResolver = new DefaultActionResolver(SqlScriptController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(SqlScriptController.class);
 
     public SqlScriptController() throws Exception
     {
@@ -67,6 +60,7 @@ public class SqlScriptController extends SpringActionController
 
 
     @RequiresSiteAdmin
+    @AllowedDuringUpgrade
     public class ShowRunningScriptsAction extends SimpleViewAction<SqlScriptForm>
     {
         public ModelAndView getView(SqlScriptForm form, BindException errors) throws Exception
@@ -77,9 +71,8 @@ public class SqlScriptController extends SpringActionController
                 HttpView.throwRedirect(PageFlowUtil.urlProvider(AdminUrls.class).getModuleStatusURL());
 
             ShowRunningScriptsPage page = (ShowRunningScriptsPage) JspLoader.createPage(getViewContext().getRequest(), SqlScriptController.class, "showRunningScripts.jsp");
-            page.setWaitForScriptsUrl(getWaitForScriptsURL(form.getModuleName()));
-            page.setProvider(form.getProvider());
-            page.setCurrentUrl(getViewContext().cloneActionURL());
+            page.setWaitForScriptsURL(getWaitForScriptsURL(form.getModuleName()));
+            page.setCurrentURL(getViewContext().cloneActionURL());
             page.setScripts(scripts);
 
             return new JspView(page);
@@ -101,6 +94,7 @@ public class SqlScriptController extends SpringActionController
 
 
     @RequiresSiteAdmin
+    @AllowedDuringUpgrade
     public class WaitForScriptsAction extends SimpleViewAction<SqlScriptForm>
     {
         public ModelAndView getView(SqlScriptForm form, BindException errors) throws Exception
@@ -139,108 +133,16 @@ public class SqlScriptController extends SpringActionController
 
     public static class SqlScriptForm
     {
-        private String fileName;
-        private String moduleName;
-        private String schemaName;
-        private String to;
-        private String from;
-        private boolean recommend = true;
-        private boolean finish;
-        private boolean allowMultipleSubmits = false;
-
-        public String getFrom()
-        {
-            return from;
-        }
-
-        public String getFormattedFrom()
-        {
-            return ModuleContext.formatVersion(from);
-        }
-
-        public void setFrom(String from)
-        {
-            this.from = from;
-        }
-
-        public String getTo()
-        {
-            return to;
-        }
-
-        public String getFormattedTo()
-        {
-            return ModuleContext.formatVersion(to);
-        }
-
-        public void setTo(String to)
-        {
-            this.to = to;
-        }
-
-        public String getFileName()
-        {
-            return fileName;
-        }
-
-        public void setFileName(String fileName)
-        {
-            this.fileName = fileName;
-        }
-
-        public String getSchemaName()
-        {
-            return schemaName;
-        }
-
-        public void setSchemaName(String schemaName)
-        {
-            this.schemaName = schemaName;
-        }
+        private String _moduleName;
 
         public String getModuleName()
         {
-            return moduleName;
+            return _moduleName;
         }
 
         public void setModuleName(String moduleName)
         {
-            this.moduleName = moduleName;
-        }
-
-        public SqlScriptProvider getProvider()
-        {
-            return new FileSqlScriptProvider((DefaultModule)ModuleLoader.getInstance().getModule(moduleName));
-        }
-
-        public boolean shouldRecommend()
-        {
-            return recommend;
-        }
-
-        public void setRecommend(boolean recommend)
-        {
-            this.recommend = recommend;
-        }
-
-        public boolean shouldFinish()
-        {
-            return finish;
-        }
-
-        public void setFinish(boolean finish)
-        {
-            this.finish = finish;
-        }
-
-        public boolean getAllowMultipleSubmits()
-        {
-            return allowMultipleSubmits;
-        }
-
-        public void setAllowMultipleSubmits(boolean allowMultipleSubmits)
-        {
-            this.allowMultipleSubmits = allowMultipleSubmits;
+            _moduleName = moduleName;
         }
     }
 }

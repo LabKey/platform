@@ -17,38 +17,41 @@
 package org.labkey.core;
 
 import org.apache.commons.lang.StringUtils;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.ContainerManager.ContainerParent;
+import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.IgnoresTermsOfUse;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil.Content;
 import org.labkey.api.util.PageFlowUtil.NoContent;
 import org.labkey.api.view.*;
-import org.labkey.api.module.ModuleLoader;
 import org.springframework.validation.BindException;
-import org.springframework.web.servlet.mvc.Controller;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.ServletException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.io.*;
 
 /**
  * User: jeckels
@@ -159,6 +162,7 @@ public class CoreController extends SpringActionController
 
     @RequiresPermission(ACL.PERM_NONE)
     @IgnoresTermsOfUse
+    @AllowedDuringUpgrade
     public class ThemeStylesheetAction extends BaseStylesheetAction
     {
         Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception

@@ -204,7 +204,7 @@ public class IssuesController extends SpringActionController
 
     private static ActionURL getListUrl(Container c)
     {
-        ActionURL url = new ActionURL("issues", "list", c);
+        ActionURL url = new ActionURL(ListAction.class, c);
         url.addParameter(DataRegion.LAST_FILTER_PARAM, "true");
         return url;
     }
@@ -1721,47 +1721,35 @@ public class IssuesController extends SpringActionController
     }
 
 
-    public static class SummaryWebPart extends GroovyView
+    public static class SummaryWebPart extends JspView<SummaryBean>
     {
         public SummaryWebPart()
         {
-            super("/org/labkey/issue/summary_webpart.gm");
-            addObject("isGuest", Boolean.TRUE);
-            addObject("hasPermission", Boolean.TRUE);
-            addObject("title", null);
-        }
+            super("/org/labkey/issue/summaryWebpart.jsp", new SummaryBean());
 
+            SummaryBean bean = getModelBean();
 
-        @Override
-        protected void prepareWebPart(Object model) throws ServletException
-        {
             ViewContext context = getViewContext();
-            // TODO: parameterize container
             Container c = context.getContainer();
 
-            //set specified web part ti tle
+            //set specified web part title
             Object title = context.get("title");
-            if(title == null)
+            if (title == null)
                 title = "Issues Summary";
             setTitle(title.toString());
 
             User u = context.getUser();
-            boolean hasPermission = c.hasPermission(u, ACL.PERM_READ);
-            context.put("hasPermission", hasPermission);
-            context.put("isGuest", u.isGuest());
-            if (!hasPermission)
+            bean.hasPermission = c.hasPermission(u, ACL.PERM_READ);
+            if (!bean.hasPermission)
                 return;
 
-            ActionURL url = getListUrl(c);
-            setTitleHref(url.getLocalURIString());
+            setTitleHref(getListUrl(c));
 
-            url.deleteParameters();
-            context.put("url", url);
+            bean.listURL = getListUrl(c).deleteParameters();
 
             try
             {
-                Map[] bugs = IssueManager.getSummary(c);
-                context.put("bugs", bugs);
+                bean.bugs = IssueManager.getSummary(c);
             }
             catch (SQLException x)
             {
@@ -1771,11 +1759,19 @@ public class IssuesController extends SpringActionController
     }
 
 
+    public static class SummaryBean
+    {
+        public boolean hasPermission;
+        public Map[] bugs;
+        public ActionURL listURL;
+    }
+
+
     public static class TestCase extends junit.framework.TestCase
     {
         public TestCase()
         {
-            super("IssueController.jpf");
+            super("IssueController");
         }
 
 

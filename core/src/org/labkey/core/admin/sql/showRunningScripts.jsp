@@ -25,7 +25,7 @@ makeRequest();
 
 function makeRequest()
 {
-   var url = "<%= getWaitForScriptsUrl() %>";
+   var url = "<%= getWaitForScriptsURL() %>";
    if (window.XMLHttpRequest)
    {
        req = new XMLHttpRequest();
@@ -118,5 +118,5 @@ function callback()
 }
 %>
 <p>This page should refresh automatically when the scripts have finished running.
-If the page does not refresh <a href="<%= getCurrentUrl() %>">Click Here</a>.</p>
+If the page does not refresh <a href="<%= getCurrentURL() %>">Click Here</a>.</p>
 <div id="statusDiv" />

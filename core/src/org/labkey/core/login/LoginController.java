@@ -24,6 +24,7 @@ import org.labkey.api.data.Project;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
@@ -200,6 +201,7 @@ public class LoginController extends SpringActionController
 
     @RequiresPermission(ACL.PERM_NONE) @ActionNames("login, showLogin")
     @IgnoresTermsOfUse
+    @AllowedDuringUpgrade
     public class LoginAction extends FormViewAction<LoginForm>
     {
         private User _user = null;
@@ -663,6 +665,7 @@ public class LoginController extends SpringActionController
 
     @RequiresPermission(ACL.PERM_NONE)
     @IgnoresTermsOfUse
+    @AllowedDuringUpgrade
     public class LogoutAction extends RedirectAction
     {
         @Override
@@ -698,6 +701,7 @@ public class LoginController extends SpringActionController
 
 
     @RequiresPermission(ACL.PERM_NONE)
+    @AllowedDuringUpgrade
     public class SetPasswordAction extends FormViewAction<VerifyForm>
     {
         String _error = null;
@@ -898,6 +902,7 @@ public class LoginController extends SpringActionController
 
 
     @RequiresPermission(ACL.PERM_NONE)
+    @AllowedDuringUpgrade
     public class ResetPasswordAction extends FormViewAction<LoginForm>
     {
         private ValidEmail _email = null;
@@ -1030,6 +1035,7 @@ public class LoginController extends SpringActionController
 
 
     @RequiresPermission(ACL.PERM_NONE)
+    @AllowedDuringUpgrade
     public class InitialUserAction extends FormViewAction<InitialUserForm>
     {
         private ActionURL _verificationURL = null;
