@@ -187,7 +187,7 @@ function restoreDefaultPage()
             for (container in containerList)
             {
                 //if there's no property setting for container, select the current container.
-                if(container.getId() == currentContainer.getId() && webPart.propertyMap.webPartContainer == null)
+                if(null != currentContainer && container.getId() == currentContainer.getId() && webPart.propertyMap.webPartContainer == null)
                 {%>
                     <option selected value="<%=container.getId()%>"><%=filter(container.getPath())%></option>
                 <%}

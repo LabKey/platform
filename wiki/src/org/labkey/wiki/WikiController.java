@@ -201,14 +201,15 @@ public class WikiController extends SpringActionController
             for (Container cChild : arrCont)
             {
                 //does user have permissions to read this container?
-                if (cChild.hasPermission(context.getUser(), ACL.PERM_READ))
+                //add this container if it contains any wiki pages or if it's the current container
+                if (cChild.hasPermission(context.getUser(), ACL.PERM_READ) &&
+                        (cChild.getId().equals(context.getContainer().getId()) || WikiManager.getPageList(cChild).size() > 0))
                 {
-                    //add this container if it contains any wiki pages or if it's the current container
-                    if (cChild.getId().equals(context.getContainer().getId()) || WikiManager.getPageList(cChild).size() > 0)
-                        children.add(cChild);
-                    //check container's children
-                    populateWikiContainerListRecursive(context, cChild, children, mm);
+                    children.add(cChild);
                 }
+
+                //check container's children
+                populateWikiContainerListRecursive(context, cChild, children, mm);
             }
         }
     }
