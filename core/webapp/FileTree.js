@@ -18,6 +18,28 @@
  * <p/>
  */
 
+function _concatPaths(a,b)
+{
+    var c = 0;
+    if (a.length > 0 && a.charAt(a.length-1) == '/') c++;
+    if (b.length > 0 && b.charAt(0) == '/') c++;
+    switch (c)
+    {
+        case 1: return a + b;
+        case 2: return a + b.substr(1);
+        default: return a + "/" + b;
+    }
+}
+
+function _pathParts(path)
+{
+    if (path.charAt(0) != '/')
+        path = '/' + path;
+    if (path.charAt(path.length-1) == '/')
+        path = path.substring(0, path.length-1);
+    return path.split('/');
+}
+
 Ext.namespace('LABKEY', 'LABKEY.ext');
 
 LABKEY.ext.WebDavTreeLoader = function (config)
@@ -65,7 +87,7 @@ Ext.extend(LABKEY.ext.WebDavTreeLoader, Ext.tree.TreeLoader, {
             this.transId = Ext.Ajax.request({
                 method: "POST",
                 headers: {"Method" : "PROPFIND", "Depth" : "1,noroot"},
-                url : this.url + "/" + node.id, //(this.dataUrl || this.url) + node.getPath(),
+                url : _concatPaths(this.url,node.id),
                 success: this.handleResponse,
                 failure: this.handleFailure,
                 scope: this,
@@ -159,6 +181,9 @@ LABKEY.ext.FileTree = function (config)
 {
     Ext.apply(this, config);
 
+    this.path = config.path || _concatPaths(LABKEY.ActionURL.getContainer(),(this.browsePipeline ? "/%40pipeline" : ""));
+    this.baseURL = config.baseURL || _concatPaths(LABKEY.ActionURL.getContextPath(), "_webdav");
+
     if (this.multiSelect)
     {
         this.selModel = new LABKEY.ext.FileTreeMultiSelectionModel();
@@ -167,7 +192,7 @@ LABKEY.ext.FileTree = function (config)
     if (!this.root)
     {
         this.root = new Ext.tree.AsyncTreeNode({
-            id: LABKEY.ActionURL.getContainer() + (this.browsePipeline ? "/%40pipeline" : ""),
+            id: this.path,
             text:'<root>',
             listeners: {
                 'load': function (node) {
@@ -189,7 +214,7 @@ LABKEY.ext.FileTree = function (config)
     if (!this.loader)
     {
         this.loader = new LABKEY.ext.WebDavTreeLoader({
-            url : LABKEY.ActionURL.getContextPath() + "/webdav",
+            url : this.baseURL,
             baseAttrs:{uiProvider:'col'},
             uiProviders:{'col': LABKEY.ext.FileTreeNodeUI},
             fileFilter : this.fileFilter
@@ -239,16 +264,12 @@ LABKEY.ext.FileTree = function (config)
     var sel = this.initialSelection;
     if (sel && sel.length > 0)
     {
-        if (sel.charAt(0) != '/')
-            sel = '/' + sel;
-        if (sel.charAt(sel.length-1) == '/')
-            sel = sel.substring(0, sel.length-1);
-        var keys = sel.split('/');
+        var keys = _pathParts(sel);
         for (var i = 0; i < keys.length; i++)
         {
             keys[i] = decodeURIComponent(keys[i]);
         }
-        this.selectPath('/<root>' + keys.join('/'), 'text');
+        this.selectPath(_concatPaths('/<root>',keys.join('/')), 'text');
     }
 };
 

@@ -31,6 +31,7 @@ import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.HttpView;
+import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -44,6 +45,7 @@ public class PipeRootImpl implements PipeRoot
     private static final String SYSTEM_DIRECTORY_NAME = ".labkey";
     private static final String SYSTEM_DIRECTORY_LEGACY = "system";
 
+    @NotNull
     public static File ensureSystemDirectory(URI uriRoot)
     {
         File root = ensureRoot(uriRoot);

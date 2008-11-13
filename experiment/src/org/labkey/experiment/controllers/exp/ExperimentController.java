@@ -2859,16 +2859,7 @@ public class ExperimentController extends SpringActionController
             {
                 protected void renderCellContents(StringBuilder html, Container c, ActionURL url)
                 {
-                    boolean hasRoot = false;
-                    try
-                    {
-                        hasRoot = PipelineService.get().findPipelineRoot(c) != null;
-                    }
-                    catch (SQLException e)
-                    {
-                        _log.error("Unable to determine pipeline root", e);
-                    }
-
+                    boolean hasRoot = PipelineService.get().findPipelineRoot(c) != null;
                     if (hasRoot && !c.equals(getContainer()))
                     {
                         html.append("<a href=\"javascript:moveTo('");

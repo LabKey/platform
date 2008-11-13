@@ -377,19 +377,10 @@ public class AssayPublishManager implements AssayPublishService.Service
     static final String DIR_NAME = "assaydata";
     public UploadLog saveUploadData(User user, DataSetDefinition dsd, String tsv) throws IOException
     {
-        File rootFile = null;
-        try
-        {
-            PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(dsd.getContainer());
-            if (null == pipelineRoot)
-                throw new IOException("Please have your administrator set up a pipeline root for this folder.");
-
-            rootFile = pipelineRoot.getRootPath();
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(dsd.getContainer());
+        if (null == pipelineRoot)
+            throw new IOException("Please have your administrator set up a pipeline root for this folder.");
+        File rootFile = pipelineRoot.getRootPath();
 
         if (!NetworkDrive.exists(rootFile))
             throw new IOException("Pipeline directory: " + rootFile + " does not exist. Please see your administrator.");
@@ -406,7 +397,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         Date dateCreated = new Date();
         String dateString = DateUtil.formatDateTime(dateCreated, "yyy-MM-dd-HHmm");
         int id = 0;
-        File file = null;
+        File file;
         do
         {
             String extra = id++ == 0 ? "" : String.valueOf(id);

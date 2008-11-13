@@ -71,18 +71,25 @@ public class PipelineManager
         }
     }
 
-    protected static PipelineRoot getPipelineRootObject(Container container, String type) throws SQLException
+    protected static PipelineRoot getPipelineRootObject(Container container, String type)
     {
         SimpleFilter filter = new SimpleFilter("Container", container.getId());
         filter.addCondition("Type", type);
-        PipelineRoot[] roots = Table.select(pipeline.getTableInfoPipelineRoots(), Table.ALL_COLUMNS, filter, null, PipelineRoot.class);
-        if (roots.length > 0)
-            return roots[0];
-        return null;
+        try
+        {
+            PipelineRoot[] roots = Table.select(pipeline.getTableInfoPipelineRoots(), Table.ALL_COLUMNS, filter, null, PipelineRoot.class);
+            if (roots.length > 0)
+                return roots[0];
+            return null;
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
     }
 
 
-    public static PipelineRoot findPipelineRoot(Container container) throws SQLException
+    public static PipelineRoot findPipelineRoot(Container container)
     {
         while (container != null && !container.isRoot())
         {
@@ -98,7 +105,8 @@ public class PipelineManager
     static public PipelineRoot[] getPipelineRoots(String type) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter("Type", type);
-        PipelineRoot[] roots = Table.select(pipeline.getTableInfoPipelineRoots(), Table.ALL_COLUMNS, filter, null, PipelineRoot.class);
+        PipelineRoot[] roots;
+        roots = Table.select(pipeline.getTableInfoPipelineRoots(), Table.ALL_COLUMNS, filter, null, PipelineRoot.class);
         return roots;
     }
 
@@ -234,7 +242,7 @@ public class PipelineManager
 
     public static void sendNotificationEmail(PipelineStatusFileImpl statusFile, Container c)
     {
-        PipelineMessage message = null;
+        PipelineMessage message;
         if (statusFile.getStatus().equals(PipelineJob.COMPLETE_STATUS))
         {
             String interval = PipelineEmailPreferences.get().getSuccessNotificationInterval(c);
@@ -367,7 +375,7 @@ public class PipelineManager
                 PipelineDigestMessage message = new PipelineDigestMessage(c, template, statusFiles, min, max, sb.toString());
                 messages.add(message);
             }
-            return messages.toArray(new PipelineDigestMessage[0]);
+            return messages.toArray(new PipelineDigestMessage[messages.size()]);
         }
         return null;
     }
@@ -572,10 +580,10 @@ public class PipelineManager
                 {
                     ActionURL url = StatusController.urlDetails(sf);
                     sb.append("<tr>");
-                    sb.append("<td>" + PageFlowUtil.filter(sf.getDescription()) + "</td>");
-                    sb.append("<td>" + PageFlowUtil.filter(sf.getCreated()) + "</td>");
-                    sb.append("<td>" + PageFlowUtil.filter(sf.getStatus()) + "</td>");
-                    sb.append("<td><a href=\"" + url.getURIString() + "\">" + url.getURIString() + "</a></td>");
+                    sb.append("<td>").append(PageFlowUtil.filter(sf.getDescription())).append("</td>");
+                    sb.append("<td>").append(PageFlowUtil.filter(sf.getCreated())).append("</td>");
+                    sb.append("<td>").append(PageFlowUtil.filter(sf.getStatus())).append("</td>");
+                    sb.append("<td><a href=\"").append(url.getURIString()).append("\">").append(url.getURIString()).append("</a></td>");
                     sb.append("</tr>");
                     sb.append("<tr><td colspan=4><hr/></td></tr>");
                 }

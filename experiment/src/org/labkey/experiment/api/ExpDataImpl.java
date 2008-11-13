@@ -269,25 +269,18 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
                 return;
             }
 
-            try
+            // Check that the file is under the pipeline root to prevent users from referencing a file that they
+            // don't have permission to import
+            PipeRoot pr = PipelineService.get().findPipelineRoot(job.getContainer());
+            if (!xarSource.allowImport(pr, job.getContainer(), file))
             {
-                // Check that the file is under the pipeline root to prevent users from referencing a file that they
-                // don't have permission to import
-                PipeRoot pr = PipelineService.get().findPipelineRoot(job.getContainer());
-                if (!xarSource.allowImport(pr, job.getContainer(), file))
+                if (pr == null)
                 {
-                    if (pr == null)
-                    {
-                        job.warn("No pipeline root was set, skipping load of file " + file.getPath());
-                        return;
-                    }
-                    job.warn("The data file " + file.getAbsolutePath() + " is not under the folder's pipeline root, " + pr.getUri() + ". It will not be loaded directly, but may be loaded if referenced from other files that are under the pipeline root.");
+                    job.warn("No pipeline root was set, skipping load of file " + file.getPath());
                     return;
                 }
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
+                job.warn("The data file " + file.getAbsolutePath() + " is not under the folder's pipeline root, " + pr.getUri() + ". It will not be loaded directly, but may be loaded if referenced from other files that are under the pipeline root.");
+                return;
             }
 
             ExperimentDataHandler handler = findDataHandler();

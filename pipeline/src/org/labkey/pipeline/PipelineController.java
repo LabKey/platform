@@ -20,7 +20,6 @@ import org.apache.log4j.Logger;
 import org.labkey.api.action.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.*;
@@ -47,7 +46,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.security.GeneralSecurityException;
-import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.*;
 
@@ -1252,16 +1250,9 @@ public class PipelineController extends SpringActionController
 
     protected PipeRoot getPipelineRoot(Container c)
     {
-        try
-        {
-            PipeRoot p = PipelineService.get().findPipelineRoot(c);
-            if (p != null && p.getContainer() != null && p.getContainer().getId().equals(c.getId()))
-                return p;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        PipeRoot p = PipelineService.get().findPipelineRoot(c);
+        if (p != null && p.getContainer() != null && p.getContainer().getId().equals(c.getId()))
+            return p;
         return null;
     }
 

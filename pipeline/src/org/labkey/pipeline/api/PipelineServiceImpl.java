@@ -36,6 +36,8 @@ import org.mule.umo.model.UMOModel;
 import org.mule.umo.UMODescriptor;
 import org.mule.umo.UMOException;
 import org.mule.MuleManager;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -83,7 +85,7 @@ public class PipelineServiceImpl extends PipelineService
     }
 
 
-    public PipeRoot findPipelineRoot(Container container) throws SQLException
+    public PipeRoot findPipelineRoot(Container container)
     {
         PipelineRoot pipelineRoot = PipelineManager.findPipelineRoot(container);
         if (null != pipelineRoot)
@@ -101,6 +103,7 @@ public class PipelineServiceImpl extends PipelineService
     }
 
 
+    @NotNull
     public PipeRoot[] getAllPipelineRoots()
     {
         PipelineRoot[] pipelines;
@@ -163,6 +166,7 @@ public class PipelineServiceImpl extends PipelineService
         }
     }
 
+    @NotNull
     public PipeRoot[] getOverlappingRoots(Container c) throws SQLException
     {
         PipelineRoot[] roots = PipelineManager.getOverlappingRoots(c, PipelineRoot.PRIMARY_ROOT);
@@ -205,18 +209,21 @@ public class PipelineServiceImpl extends PipelineService
         PipeRoot pr = findPipelineRoot(container);
         return pr != null && pr.isPerlPipeline();
     }
-
+                                   
+    @NotNull
     public File ensureSystemDirectory(URI root)
     {
         return PipeRootImpl.ensureSystemDirectory(root);
     }
 
+    @NotNull
     public List<PipelineProvider> getPipelineProviders()
     {
         // Get a list of unique providers
         return new ArrayList<PipelineProvider>(new HashSet<PipelineProvider>(_mapPipelineProviders.values()));
     }
 
+    @Nullable
     public PipelineProvider getPipelineProvider(String name)
     {
         if (name == null)
@@ -234,6 +241,7 @@ public class PipelineServiceImpl extends PipelineService
         return (getPipelineQueue() instanceof EPipelineQueueImpl);
     }
 
+    @NotNull
     public synchronized PipelineQueue getPipelineQueue()
     {
         if (_queue == null)
@@ -333,8 +341,8 @@ public class PipelineServiceImpl extends PipelineService
     {
         if (user.isGuest())
             return;
-        if(sequenceDbPath == null) sequenceDbPath = "";
-        if(sequenceDbPath == null || sequenceDbPath.equals("/")) sequenceDbPath = "";
+        if (sequenceDbPath == null || sequenceDbPath.equals("/")) 
+            sequenceDbPath = "";
         String fullPath = sequenceDbPath + sequenceDb;
         PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(user.getUserId(), container.getId(),
                 PipelineServiceImpl.KEY_PREFERENCES, true);

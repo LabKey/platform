@@ -21,14 +21,12 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.jsp.FormPage;
 import org.labkey.common.util.Pair;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.sql.SQLException;
 import java.io.File;
 import java.util.*;
 
@@ -45,15 +43,7 @@ public class BrowseViewImpl extends BrowseView
         {
             super.setForm(viewForm);
             BrowseForm form = getForm();
-            PipeRoot pipeRoot;
-            try
-            {
-                pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
-            }
-            catch (SQLException e)
-            {
-                throw UnexpectedException.wrap(e);
-            }
+            PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
             FileFilter fileFilter = form.getFileFilterObject();
             File browsePath = null;
             if (form.getPath() == null)
@@ -76,7 +66,7 @@ public class BrowseViewImpl extends BrowseView
             {
                 browsePath = pipeRoot.getRootPath();
             }
-            parents = new ArrayList();
+            parents = new ArrayList<Map.Entry<String, BrowseFile>>();
             File currentPath = browsePath;
             while(true)
             {
@@ -132,7 +122,7 @@ public class BrowseViewImpl extends BrowseView
 
         protected BrowseForm getForm()
         {
-            return (BrowseForm) __form;
+            return __form;
         }
 
         public ActionURL getUrlBrowsePath()

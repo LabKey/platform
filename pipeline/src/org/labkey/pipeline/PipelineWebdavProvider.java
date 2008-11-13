@@ -18,17 +18,14 @@ package org.labkey.pipeline;
 import org.labkey.api.webdav.*;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.security.User;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
-import org.apache.log4j.Logger;
 
 import java.util.Set;
-import java.sql.SQLException;
 import java.net.URI;
 
 /**
@@ -50,15 +47,8 @@ public class PipelineWebdavProvider implements WebdavService.Provider
         WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) target;
         Container c = folder.getContainer();
         
-        try
-        {
-            PipeRoot root = PipelineService.get().findPipelineRoot(c);
-            return null != root ? PageFlowUtil.set(PIPELINE_LINK) : null;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        PipeRoot root = PipelineService.get().findPipelineRoot(c);
+        return null != root ? PageFlowUtil.set(PIPELINE_LINK) : null;
     }
 
     public WebdavResolver.Resource resolve(@NotNull WebdavResolver.Resource parent, @NotNull String name)
@@ -69,18 +59,10 @@ public class PipelineWebdavProvider implements WebdavService.Provider
             return null;
         WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) parent;
         Container c = folder.getContainer();
-        try
-        {
-            PipeRoot root = PipelineService.get().findPipelineRoot(c);
-            if (null == root)
-                return null;
-            return new PipelineFolderResource(c, root);
-        }
-        catch (SQLException x)
-        {
-            Logger.getLogger(WebdavResolverImpl.class).error("unexpected exception", x);
-            throw new RuntimeSQLException(x);
-        }
+        PipeRoot root = PipelineService.get().findPipelineRoot(c);
+        if (null == root)
+            return null;
+        return new PipelineFolderResource(c, root);
     }
 
     private class PipelineFolderResource extends FileSystemResource

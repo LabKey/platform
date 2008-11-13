@@ -23,7 +23,6 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.*" %>
 <%@ page import="org.springframework.validation.BindException" %>
-<%@ page import="java.sql.SQLException" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.study.visitmanager.VisitManager" %>
@@ -37,14 +36,7 @@
     Study study = StudyManager.getInstance().getStudy(context.getContainer());
     VisitManager visitManager = StudyManager.getInstance().getVisitManager(study);
     String contextPath = AppProps.getInstance().getContextPath();
-    boolean pipelineSet = false;
-    try
-    {
-        pipelineSet = null != PipelineService.get().findPipelineRoot(HttpView.currentContext().getContainer());
-    }
-    catch (SQLException x)
-    {
-    }
+    boolean pipelineSet = null != PipelineService.get().findPipelineRoot(HttpView.currentContext().getContainer());
 %>
 <table>
     <tr><td class=labkey-form-label>Name</td><th align=left><%= h(dataset.getName()) %></th></tr>

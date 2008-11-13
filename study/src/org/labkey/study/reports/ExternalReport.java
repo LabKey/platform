@@ -354,23 +354,15 @@ public class ExternalReport extends AbstractReport
 
     private File getReportDir(ViewContext viewContext)
     {
-        PipeRoot pipelineRoot = null;
-        try
-        {
-            pipelineRoot = PipelineService.get().findPipelineRoot(viewContext.getContainer());
-            if (null == pipelineRoot)
-                throw new IllegalStateException("Pipeline root has not been set. Please ask an administrator to set one up for you");
+        PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(viewContext.getContainer());
+        if (null == pipelineRoot)
+            throw new IllegalStateException("Pipeline root has not been set. Please ask an administrator to set one up for you");
 
-            File reportDir = pipelineRoot.resolvePath(REPORT_DIR);
-            if (!reportDir.exists())
-                reportDir.mkdirs();
+        File reportDir = pipelineRoot.resolvePath(REPORT_DIR);
+        if (!reportDir.exists())
+            reportDir.mkdirs();
 
-            return reportDir;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return reportDir;
     }
 
     public File getOutputFile(ViewContext viewContext)
