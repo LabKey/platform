@@ -78,7 +78,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
     }
 
     // path -> containerid
-    public List getContainers()
+    public List<String> getContainers()
     {
         return super.getContainers();
     }
@@ -239,7 +239,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                     XarContext context = new XarContext("Domains", getContainer(), getUser());
                     context.addSubstitution("AssayName", assay.getName());
                     Set<String> domainURIs = new HashSet<String>();
-                    for (GWTDomain domain : (List<GWTDomain>)assay.getDomains())
+                    for (GWTDomain domain : assay.getDomains())
                     {
                         domain.setDomainURI(LsidUtils.resolveLsidFromTemplate(domain.getDomainURI(), context));
                         domain.setName(assay.getName() + " " + domain.getName());
@@ -266,7 +266,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                 }
 
                 Map<String, ProtocolParameter> newParams = new HashMap<String, ProtocolParameter>(protocol.getProtocolParameters());
-                for (Map.Entry<String, String> entry : ((Map<String, String>)assay.getProtocolParameters()).entrySet())
+                for (Map.Entry<String, String> entry : assay.getProtocolParameters().entrySet())
                 {
                     ProtocolParameter param = new ProtocolParameter();
                     String uri = entry.getKey();
@@ -290,7 +290,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                 protocol.save(getUser());
 
                 StringBuilder errors = new StringBuilder();
-                for (GWTDomain domain : (List<GWTDomain>)assay.getDomains())
+                for (GWTDomain domain : assay.getDomains())
                 {
                     List<String> domainErrors = updateDomainDescriptor(domain, protocol.getName(), getContainer());
                     if (domainErrors != null)
@@ -335,7 +335,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
     private List<String> updateDomainDescriptor(GWTDomain domain, String protocolName, Container protocolContainer)
     {
         GWTDomain previous = getDomainDescriptor(domain.getDomainURI(), protocolContainer);
-        for (GWTPropertyDescriptor prop : (List<GWTPropertyDescriptor>)domain.getPropertyDescriptors())
+        for (GWTPropertyDescriptor prop : domain.getPropertyDescriptors())
         {
             if (prop.getLookupQuery() != null)
             {

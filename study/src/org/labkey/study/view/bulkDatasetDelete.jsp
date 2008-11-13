@@ -28,7 +28,7 @@
 <form action="bulkDatasetDelete.post" name="bulkDatasetDelete" method="POST">
 <table class="labkey-data-region labkey-show-borders">
     <tr>
-        <th>&nbsp;</th>
+        <th><input type="checkbox" onchange="toggleAllRows(this);"></th>
         <th>ID</th>
         <th>Label</th>
         <th>Category</th>
@@ -66,3 +66,17 @@
 <%=PageFlowUtil.generateButton("Cancel", cancelURL)%>    
 
 </form>
+
+<script type="text/javascript">
+    function toggleAllRows(checkbox)
+    {
+        var i;
+        var checked = checkbox.checked;
+        var elements = document.getElementsByName("datasetIds");
+        for (i in elements)
+        {
+            var e = elements[i];
+            e.checked = checked;
+        }
+    }
+</script>

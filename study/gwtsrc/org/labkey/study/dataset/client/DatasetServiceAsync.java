@@ -20,6 +20,9 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.study.dataset.client.model.GWTDataset;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * Created by IntelliJ IDEA.
  * User: matthewb
@@ -28,19 +31,19 @@ import org.labkey.study.dataset.client.model.GWTDataset;
  */
 public interface DatasetServiceAsync // extends PropertiesEditorServiceAsync
 {
-    void getDataset(int id, AsyncCallback async);
+    void getDataset(int id, AsyncCallback<GWTDataset> async);
 
-    void getDomainDescriptor(String typeURI, String domainContainerId, AsyncCallback async);
+    void getDomainDescriptor(String typeURI, String domainContainerId, AsyncCallback<GWTDomain> async);
 
-    void getDomainDescriptor(String typeURI, AsyncCallback async);
+    void getDomainDescriptor(String typeURI, AsyncCallback<GWTDomain> async);
 
-    void updateDatasetDefinition(GWTDataset ds, GWTDomain orig, GWTDomain dd, AsyncCallback async);
+    void updateDatasetDefinition(GWTDataset ds, GWTDomain orig, GWTDomain dd, AsyncCallback<List<String>> async);
 
-    void getContainers(AsyncCallback async);
+    void getContainers(AsyncCallback<List<String>> async);
 
-    void getSchemas(String containerId, AsyncCallback async);
+    void getSchemas(String containerId, AsyncCallback<List<String>> async);
 
-    void getTablesForLookup(String containerId, String schemaName, AsyncCallback async);
+    void getTablesForLookup(String containerId, String schemaName, AsyncCallback<Map<String, String>> async);
 
-    void updateDatasetDefinition(GWTDataset ds, GWTDomain orig, String schema, AsyncCallback async);
+    void updateDatasetDefinition(GWTDataset ds, GWTDomain orig, String schema, AsyncCallback<List<String>> async);
 }

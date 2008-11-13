@@ -43,6 +43,8 @@ public class GWTDataset implements IsSerializable
     private IntegerProperty _cohortId = new IntegerProperty(0);
     private BooleanProperty _showByDefault = new BooleanProperty();
     private StringProperty _description = new StringProperty();
+    private StringProperty _sourceAssayName = new StringProperty();
+    private StringProperty _sourceAssayURL = new StringProperty();
 
     private Map<String, String> _cohortMap;
 
@@ -191,5 +193,25 @@ public class GWTDataset implements IsSerializable
     public void setVisitDateMap(Map<String, String> visitDateMap)
     {
         _visitDateMap = visitDateMap;
+    }
+
+    public String getSourceAssayName()
+    {
+        return _sourceAssayName.getString();
+    }
+
+    public void setSourceAssayName(String assayName)
+    {
+        _sourceAssayName.set(assayName);
+    }
+
+    public String getSourceAssayURL()
+    {
+        return _sourceAssayURL.getString();
+    }
+
+    public void setSourceAssayURL(String assayURL)
+    {
+        _sourceAssayURL.set(assayURL);
     }
 }

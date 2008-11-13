@@ -23,6 +23,8 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainProperty;
@@ -30,7 +32,9 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.security.ACL;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.study.dataset.client.DatasetService;
@@ -98,6 +102,21 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
                 visitDateMap.put(col.getName(), col.getName());
             }
             ds.setVisitDateMap(visitDateMap);
+
+
+            Integer protocolRowId = dd.getProtocolId();
+            if (protocolRowId != null)
+            {
+                ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolRowId.intValue());
+                if (protocol != null)
+                {
+                    ds.setSourceAssayName(protocol.getName());
+                    ActionURL url = AssayService.get().getAssayDataURL(protocol.getContainer(), protocol);
+                    ds.setSourceAssayURL(url.getLocalURIString());
+                }
+            }
+
+
             return ds;
         }
         catch (Exception x)

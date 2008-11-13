@@ -18,17 +18,20 @@ package org.labkey.assay.upload.client;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.user.client.ui.*;
-import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Window;
-import org.labkey.api.gwt.client.ui.*;
-import org.labkey.api.gwt.client.util.ServiceUtil;
-import org.labkey.api.gwt.client.util.PropertyUtil;
-import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.client.assay.AssayServiceAsync;
+import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.assay.AssayService;
+import org.labkey.api.gwt.client.assay.AssayServiceAsync;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.client.ui.*;
+import org.labkey.api.gwt.client.util.PropertyUtil;
+import org.labkey.api.gwt.client.util.ServiceUtil;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -89,7 +92,7 @@ public class ListChooser implements EntryPoint, LookupListener
         FormUtil.setValueInForm(pd.getLookupSchema(), getSchemaElement());
         FormUtil.setValueInForm(pd.getLookupQuery(), getQueryElement());
 
-        String description = "";
+        String description;
         if (pd.getLookupSchema() != null && pd.getLookupQuery() != null)
         {
             description = pd.getLookupSchema() + "." + pd.getLookupQuery();
@@ -129,17 +132,17 @@ public class ListChooser implements EntryPoint, LookupListener
     {
         return new LookupServiceAsync()
         {
-            public void getContainers(AsyncCallback async)
+            public void getContainers(AsyncCallback<List<String>> async)
             {
                 getService().getContainers(async);
             }
 
-            public void getSchemas(String containerId, AsyncCallback async)
+            public void getSchemas(String containerId, AsyncCallback<List<String>> async)
             {
                 getService().getSchemas(containerId, async);
             }
 
-            public void getTablesForLookup(String containerId, String schemaName, AsyncCallback async)
+            public void getTablesForLookup(String containerId, String schemaName, AsyncCallback<Map<String,String>> async)
             {
                 getService().getTablesForLookup(containerId, schemaName, async);
             }

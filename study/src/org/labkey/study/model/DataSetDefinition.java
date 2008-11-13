@@ -58,6 +58,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private boolean _demographicData; //demographic information, sequenceNum
     private transient TableInfo _tableInfoProperties;
     private Integer _cohortId;
+    private Integer _protocolId; // indicates that dataset came from an assay. Null indicates no source assay
 
     private static final String[] BASE_DEFAULT_FIELD_NAMES_ARRAY = new String[]
     {
@@ -837,5 +838,15 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (_cohortId == null)
             return null;
         return Table.selectObject(StudySchema.getInstance().getTableInfoCohort(), _cohortId, Cohort.class);
+    }
+
+    public Integer getProtocolId()
+    {
+        return _protocolId;
+    }
+
+    public void setProtocolId(Integer protocolId)
+    {
+        _protocolId = protocolId;
     }
 }

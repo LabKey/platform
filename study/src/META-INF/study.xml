@@ -94,6 +94,7 @@
       <ns:column columnName="description"/>
       <ns:column columnName="DemographicData"/>
       <ns:column columnName="cohortid"/>
+      <ns:column columnName="protocolid"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SampleRequest" tableDbType="TABLE">

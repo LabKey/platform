@@ -19,6 +19,9 @@ package org.labkey.experiment.property.client;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import org.labkey.api.gwt.client.model.GWTDomain;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * Created by IntelliJ IDEA.
  * User: matthewb
@@ -28,14 +31,14 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 public interface PropertyServiceAsync
 {
 
-    void updateDomainDescriptor(GWTDomain orig, GWTDomain dd, AsyncCallback async);
+    void updateDomainDescriptor(GWTDomain orig, GWTDomain dd, AsyncCallback<List<String>> async);
 
-    void getDomainDescriptor(String typeURI, AsyncCallback async);
+    void getDomainDescriptor(String typeURI, AsyncCallback<GWTDomain> async);
 
     // PropertiesEditor.LookupService
-    void getContainers(AsyncCallback async);
+    void getContainers(AsyncCallback<List<String>> async);
 
-    void getSchemas(String containerId, AsyncCallback async);
+    void getSchemas(String containerId, AsyncCallback<List<String>> async);
 
-    void getTablesForLookup(String containerId, String schemaName, AsyncCallback async);
+    void getTablesForLookup(String containerId, String schemaName, AsyncCallback<Map<String, String>> async);
 }

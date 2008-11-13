@@ -179,7 +179,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                     dataset = datasets[i];
             }
             if (dataset == null)
-                dataset = createAssayDataset(user, targetStudy, assayName, keyPropertyName, null, false);
+                dataset = createAssayDataset(user, targetStudy, assayName, keyPropertyName, null, false, protocol);
 
             types = createTargetPropertyDescriptors(dataset, types, errors);
             if (!errors.isEmpty())
@@ -336,13 +336,8 @@ public class AssayPublishManager implements AssayPublishService.Service
         }
         return propertyNamesToUris;
     }
-
-    public DataSetDefinition createAssayDataset(User user, Study study, String name) throws SQLException
-    {
-        return createAssayDataset(user, study, name, null, null, false);
-    }
     
-    public DataSetDefinition createAssayDataset(User user, Study study, String name, String keyPropertyName, Integer datasetId, boolean isDemographicData) throws SQLException
+    public DataSetDefinition createAssayDataset(User user, Study study, String name, String keyPropertyName, Integer datasetId, boolean isDemographicData, ExpProtocol protocol) throws SQLException
     {
         boolean ownTransaction = false;
         DbSchema schema = StudySchema.getInstance().getSchema();
@@ -361,6 +356,9 @@ public class AssayPublishManager implements AssayPublishService.Service
             if (keyPropertyName != null)
                 newDataSet.setKeyPropertyName(keyPropertyName);
             newDataSet.setDemographicData(isDemographicData);
+            if (protocol != null)
+                newDataSet.setProtocolId(protocol.getRowId());
+
             StudyManager.getInstance().createDataSetDefinition(user, newDataSet);
             if (ownTransaction)
             {

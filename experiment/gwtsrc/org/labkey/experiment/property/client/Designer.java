@@ -18,20 +18,21 @@ package org.labkey.experiment.property.client;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.WindowCloseListener;
 import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.client.ui.PropertiesEditor;
 import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.LookupServiceAsync;
+import org.labkey.api.gwt.client.ui.PropertiesEditor;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.ServiceUtil;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -66,7 +67,6 @@ public class Designer implements EntryPoint
         _loading = new Label("Loading...");
 
         _propTable = new PropertiesEditor(getLookupService());
-        _propTable.setMode(PropertiesEditor.modeEdit);
 
         _buttons = new HorizontalPanel();
         _buttons.add(new SubmitButton());
@@ -180,23 +180,22 @@ public class Designer implements EntryPoint
         if (null != errors && !errors.isEmpty())
         {
             String s = "";
-            for (int i=0 ; i<errors.size() ; i++)
-                s += errors.get(i) + "\n";
+            for (Object error : errors)
+                s += error + "\n";
             Window.alert(s);
             return;
         }
 
         GWTDomain edited = _propTable.getDomainUpdates();
-        getService().updateDomainDescriptor(_domain, edited, new AsyncCallback()
+        getService().updateDomainDescriptor(_domain, edited, new AsyncCallback<List<String>>()
         {
             public void onFailure(Throwable caught)
             {
                 Window.alert(caught.getMessage());
             }
 
-            public void onSuccess(Object result)
+            public void onSuccess(List<String> errors)
             {
-                List errors = (List)result;
                 if (null == errors)
                 {
                     _saved = true;  // avoid popup warning
@@ -205,8 +204,8 @@ public class Designer implements EntryPoint
                 else
                 {
                     String s = "";
-                    for (int i=0 ; i<errors.size() ; i++)
-                        s += errors.get(i) + "\n";
+                    for (String error : errors)
+                        s += error + "\n";
                     Window.alert(s);
                 }
             }
@@ -254,7 +253,7 @@ public class Designer implements EntryPoint
     {
         if (!domainURI.equals("testURI#TYPE"))
         {
-            getService().getDomainDescriptor(domainURI, new AsyncCallback()
+            getService().getDomainDescriptor(domainURI, new AsyncCallback<GWTDomain>()
             {
                     public void onFailure(Throwable caught)
                     {
@@ -262,9 +261,9 @@ public class Designer implements EntryPoint
                         _loading.setText("ERROR: " + caught.getMessage());
                     }
 
-                    public void onSuccess(Object result)
+                    public void onSuccess(GWTDomain domain)
                     {
-                        if (result == null)
+                        if (domain == null)
                         {
                             String message = "Could not find " + domainURI;
                             Window.alert(message);
@@ -272,10 +271,9 @@ public class Designer implements EntryPoint
                             return;
                         }
 
-                        GWTDomain d = (GWTDomain)result;
-                        d.setAllowFileLinkProperties(_allowFileLinkProperties);
-                        d.setAllowAttachmentProperties(_allowAttachmentProperties);
-                        setDomain(d);
+                        domain.setAllowFileLinkProperties(_allowFileLinkProperties);
+                        domain.setAllowAttachmentProperties(_allowAttachmentProperties);
+                        setDomain(domain);
                     }
             });
         }
@@ -286,7 +284,7 @@ public class Designer implements EntryPoint
             domain.setName("DEM");
             domain.setDescription("I'm a description");
 
-            List list = new ArrayList();
+            List<GWTPropertyDescriptor> list = new ArrayList<GWTPropertyDescriptor>();
 
             GWTPropertyDescriptor p = new GWTPropertyDescriptor();
             p.setName("ParticipantID");
@@ -325,17 +323,17 @@ public class Designer implements EntryPoint
     {
         return new LookupServiceAsync()
         {
-            public void getContainers(AsyncCallback async)
+            public void getContainers(AsyncCallback<List<String>> async)
             {
                 getService().getContainers(async);
             }
 
-            public void getSchemas(String containerId, AsyncCallback async)
+            public void getSchemas(String containerId, AsyncCallback<List<String>> async)
             {
                 getService().getSchemas(containerId, async);
             }
 
-            public void getTablesForLookup(String containerId, String schemaName, AsyncCallback async)
+            public void getTablesForLookup(String containerId, String schemaName, AsyncCallback<Map<String,String>> async)
             {
                 getService().getTablesForLookup(containerId, schemaName, async);
             }

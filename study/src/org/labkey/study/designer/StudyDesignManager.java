@@ -344,7 +344,7 @@ public class StudyDesignManager
         }
         List<String> errors = new ArrayList<String>();
 
-        DataSetDefinition subjectDataset = AssayPublishManager.getInstance().createAssayDataset(user, study, "Subjects", null, null, true);
+        DataSetDefinition subjectDataset = AssayPublishManager.getInstance().createAssayDataset(user, study, "Subjects", null, null, true, null);
         study = study.createMutable();
         study.setParticipantCohortDataSetId(subjectDataset.getDataSetId());
         study.setParticipantCohortProperty("Cohort");

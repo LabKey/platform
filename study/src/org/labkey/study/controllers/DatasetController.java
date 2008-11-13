@@ -180,6 +180,10 @@ public class DatasetController extends BaseStudyController
             {
                 throw new UnauthorizedException("User does not have permission to edit this dataset");
             }
+            if (ds.getProtocolId() != null)
+            {
+                throw new UnauthorizedException("This dataset comes from an assay. You cannot update it directly");
+            }
 
             TableInfo datasetTable = ds.getTableInfo(getUser());
             QueryUpdateForm updateForm = new QueryUpdateForm(datasetTable, getViewContext().getRequest());

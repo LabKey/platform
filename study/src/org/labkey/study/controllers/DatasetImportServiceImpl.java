@@ -106,7 +106,11 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
 
         // On success, delete the import file
         if (errors.isEmpty())
+        {
             deleteImportFile();
+            StudyManager.getInstance().recomputeStudyDataVisitDate(study);
+            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(getUser());
+        }
 
         return errors;
     }

@@ -55,8 +55,9 @@ public class Designer implements EntryPoint
 
     private DatasetProperties _propertiesPanel;
     private DatasetSchema _schemaPanel;
-    private boolean _create;
     private boolean _dirty;
+
+    private Integer _protocolId;
 
     private SubmitButton _saveButton;
 
@@ -65,19 +66,21 @@ public class Designer implements EntryPoint
         int datasetId = Integer.parseInt(PropertyUtil.getServerProperty("datasetId"));
         String typeURI = PropertyUtil.getServerProperty("typeURI");
         _returnURL = PropertyUtil.getServerProperty("returnURL");
-        String create = PropertyUtil.getServerProperty("create");
-        if (create != null)
-            _create = Boolean.valueOf(create).booleanValue();
         String dateBased = PropertyUtil.getServerProperty("dateBased");
         if (dateBased != null)
             _isDateBased = Boolean.valueOf(dateBased).booleanValue();
+
+        String protocolIdString = PropertyUtil.getServerProperty("protocolId");
+        if (protocolIdString != null)
+            _protocolId = Integer.parseInt(protocolIdString);
 
         _root = RootPanel.get("org.labkey.study.dataset.Designer-Root");
 
         _loading = new Label("Loading...");
 
         _propTable = new PropertiesEditor(getLookupService());
-        _propTable.setMode(PropertiesEditor.modeEdit);
+        if (_protocolId != null)
+            _propTable.setReadOnly(true);
 
         _buttons = new FlexTable();
 
@@ -92,7 +95,6 @@ public class Designer implements EntryPoint
         // NOTE for now we're displaying dataset info w/ static HTML
         asyncGetDataset(datasetId);
         asyncGetDefinition(typeURI);
-//        asyncGetDefinition("testURI#TYPE");
 
         Window.addWindowCloseListener(new WindowCloseListener()
         {
@@ -150,10 +152,10 @@ public class Designer implements EntryPoint
             _root.remove(_loading);
             _root.add(_buttons);
 
-            _propertiesPanel = new DatasetProperties(_dataset);
+            _propertiesPanel = new DatasetProperties();
             _root.add(new WebPartPanel("Dataset Properties", _propertiesPanel));
 
-            _schemaPanel = new DatasetSchema(_propTable, _create);
+            _schemaPanel = new DatasetSchema(_propTable);
             _root.add(new WebPartPanel("Dataset Schema", _schemaPanel));
         }
     }
@@ -206,17 +208,15 @@ public class Designer implements EntryPoint
             return;
         }
 
-        AsyncCallback callback = new AsyncCallback() {
+        AsyncCallback<List<String>> callback = new AsyncCallback<List<String>>() {
             public void onFailure(Throwable caught)
             {
                 Window.alert(caught.getMessage());
                 _saveButton.setEnabled(true);
             }
 
-            public void onSuccess(Object result)
+            public void onSuccess(List<String> errors)
             {
-                //noinspection unchecked
-                List<String> errors = (List<String>)result;
                 if (null == errors)
                 {
                     _saved = true;  // avoid popup warning
@@ -274,7 +274,7 @@ public class Designer implements EntryPoint
 
     void asyncGetDataset(int id)
     {
-        getService().getDataset(id, new AsyncCallback()
+        getService().getDataset(id, new AsyncCallback<GWTDataset>()
         {
                 public void onFailure(Throwable caught)
                 {
@@ -282,9 +282,9 @@ public class Designer implements EntryPoint
                     _loading.setText("ERROR: " + caught.getMessage());
                 }
 
-                public void onSuccess(Object result)
+                public void onSuccess(GWTDataset result)
                 {
-                    setDataset((GWTDataset)result);
+                    setDataset(result);
                 }
         });
     }
@@ -294,7 +294,7 @@ public class Designer implements EntryPoint
     {
         if (!domainURI.equals("testURI#TYPE"))
         {
-            getService().getDomainDescriptor(domainURI, new AsyncCallback()
+            getService().getDomainDescriptor(domainURI, new AsyncCallback<GWTDomain>()
             {
                     public void onFailure(Throwable caught)
                     {
@@ -302,9 +302,9 @@ public class Designer implements EntryPoint
                         _loading.setText("ERROR: " + caught.getMessage());
                     }
 
-                    public void onSuccess(Object result)
+                    public void onSuccess(GWTDomain result)
                     {
-                        GWTDomain domain = (GWTDomain)result;
+                        GWTDomain domain = result;
                         if (null == domain)
                         {
                             domain = new GWTDomain();
@@ -361,17 +361,17 @@ public class Designer implements EntryPoint
     {
         return new LookupServiceAsync()
         {
-            public void getContainers(AsyncCallback async)
+            public void getContainers(AsyncCallback<List<String>> async)
             {
                 getService().getContainers(async);
             }
 
-            public void getSchemas(String containerId, AsyncCallback async)
+            public void getSchemas(String containerId, AsyncCallback<List<String>> async)
             {
                 getService().getSchemas(containerId, async);
             }
 
-            public void getTablesForLookup(String containerId, String schemaName, AsyncCallback async)
+            public void getTablesForLookup(String containerId, String schemaName, AsyncCallback<Map<String,String>> async)
             {
                 getService().getTablesForLookup(containerId, schemaName, async);
             }
@@ -491,7 +491,7 @@ public class Designer implements EntryPoint
             });
         }
 
-        public BoundListBox(Map columns, String selected, final WidgetUpdatable updatable)
+        public BoundListBox(Map<String,String> columns, String selected, final WidgetUpdatable updatable)
         {
             super();
 
@@ -514,13 +514,12 @@ public class Designer implements EntryPoint
             return getValue(getSelectedIndex());
         }
 
-        public void setColumns(Map columns)
+        public void setColumns(Map<String,String> columns)
         {
             clear();
-            for (Iterator it = columns.entrySet().iterator(); it.hasNext();)
+            for (Map.Entry<String,String> entry : columns.entrySet())
             {
-                Map.Entry entry = (Map.Entry)it.next();
-                addItem((String)entry.getKey(), (String)entry.getValue());
+                addItem(entry.getKey(), entry.getValue());
             }
         }
 
@@ -541,13 +540,11 @@ public class Designer implements EntryPoint
 
     private class DatasetProperties extends FlexTable
     {
-        GWTDataset _dataset;
         RadioButton _noneButton;
 
-        public DatasetProperties(GWTDataset dataset)
+        public DatasetProperties()
         {
             super();
-            _dataset = dataset;
             createPanel();
         }
 
@@ -557,6 +554,13 @@ public class Designer implements EntryPoint
             CellFormatter cellFormatter = getCellFormatter();
 
             int row = 0;
+
+            if (_dataset.getSourceAssayName() != null)
+            {
+                String assaySourceHtml = "This dataset is linked to <a href=\"" + _dataset.getSourceAssayURL() +
+                "\">" + _dataset.getSourceAssayName() + "</a>.";
+                setHTML(row++, 0, assaySourceHtml);
+            }
 
             BoundTextBox dsName = new BoundTextBox("dsName", _dataset.getName(), new WidgetUpdatable()
             {
@@ -907,13 +911,11 @@ public class Designer implements EntryPoint
     private class DatasetSchema extends FlexTable
     {
         private PropertiesEditor _propEdit;
-        private boolean _create;
 
-        public DatasetSchema(PropertiesEditor propEdit, boolean create)
+        public DatasetSchema(PropertiesEditor propEdit)
         {
             super();
             _propEdit = propEdit;
-            _create = create;
             createPanel();
         }
 

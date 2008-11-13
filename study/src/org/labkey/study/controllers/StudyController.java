@@ -59,6 +59,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.DialogTemplate;
@@ -73,6 +74,7 @@ import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
+import org.labkey.study.dataset.client.Designer;
 import org.labkey.study.importer.VisitMapImporter;
 import org.labkey.study.model.*;
 import org.labkey.study.pipeline.DatasetBatch;
@@ -192,9 +194,9 @@ public class StudyController extends BaseStudyController
             Integer datasetId = form.getDataSetId();
 
             if (form.autoDatasetId)
-                _def = AssayPublishManager.getInstance().createAssayDataset(getUser(), getStudy(), form.getTypeName(), null, null, false);
+                _def = AssayPublishManager.getInstance().createAssayDataset(getUser(), getStudy(), form.getTypeName(), null, null, false, null);
             else
-                _def = AssayPublishManager.getInstance().createAssayDataset(getUser(), getStudy(), form.getTypeName(), null, datasetId, false);
+                _def = AssayPublishManager.getInstance().createAssayDataset(getUser(), getStudy(), form.getTypeName(), null, datasetId, false, null);
 
 
             if (_def != null)
@@ -254,16 +256,19 @@ public class StudyController extends BaseStudyController
                 OntologyManager.ensureDomainDescriptor(domainURI, def.getName(), study.getContainer());
                 def.setTypeURI(domainURI);
             }
-            Map props = PageFlowUtil.map(
+            Map<String,String> props = PageFlowUtil.map(
                     "studyId", ""+study.getRowId(),
                     "datasetId", ""+form.getDatasetId(),
                     "typeURI", def.getTypeURI(),
                     "dateBased", ""+study.isDateBased(),
-                    "returnURL", new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", form.getDatasetId()).toString(),
-                    "create", ""+form.isCreate());
+                    "returnURL", new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", form.getDatasetId()).toString());
+
+            Integer protocolId = def.getProtocolId();
+            if (protocolId != null)
+                props.put("protocolId", protocolId.toString());
 
             HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.");
-            HttpView view = new GWTView("org.labkey.study.dataset.Designer", props);
+            HttpView view = new GWTView(Designer.class, props);
 
             // hack for 4404 : Lookup picker performance is terrible when there are many containers
             ContainerManager.getAllChildren(ContainerManager.getRoot());
@@ -524,7 +529,9 @@ public class StudyController extends BaseStudyController
             qs.setQueryName(def.getLabel());
             DataSetQueryView queryView = new DataSetQueryView(_datasetId, querySchema, qs, visit, cohort, qcStateSet);
             queryView.setForExport(export != null);
-            queryView.setShowEditLinks(!QueryService.get().isQuerySnapshot(getContainer(), StudyManager.getSchemaName(), def.getLabel()));
+            boolean showEditLinks = !QueryService.get().isQuerySnapshot(getContainer(), StudyManager.getSchemaName(), def.getLabel()) &&
+                def.getProtocolId() == null;
+            queryView.setShowEditLinks(showEditLinks);
 
             final ActionURL url = context.getActionURL();
             setColumnURL(url, queryView, querySchema, def);
@@ -625,8 +632,9 @@ public class StudyController extends BaseStudyController
             User user = getUser();
             boolean canWrite = def.canWrite(user) && def.getContainer().getAcl().hasPermission(user, ACL.PERM_UPDATE);
             boolean isSnapshot = QueryService.get().isQuerySnapshot(getContainer(), StudyManager.getSchemaName(), def.getLabel());
+            boolean isAssayDataset = def.getProtocolId() != null;
 
-            if (!isSnapshot && canWrite)
+            if (!isSnapshot && canWrite &&!isAssayDataset)
             {
                 // Insert single entry
                 ActionURL insertURL = new ActionURL(DatasetController.InsertAction.class, getContainer());
@@ -638,10 +646,13 @@ public class StudyController extends BaseStudyController
 
             if (!isSnapshot && (user.isAdministrator() || canWrite)) // admins always get the import and delete buttons
             {
-                // bulk import
-                ActionButton uploadButton = new ActionButton("showImportDataset.view?datasetId=" + _datasetId, "Import Data", DataRegion.MODE_GRID, ActionButton.Action.LINK);
-                uploadButton.setDisplayPermission(ACL.PERM_INSERT);
-                buttonBar.add(uploadButton);
+                if (!isAssayDataset)
+                {
+                    // bulk import
+                    ActionButton uploadButton = new ActionButton("showImportDataset.view?datasetId=" + _datasetId, "Import Data", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+                    uploadButton.setDisplayPermission(ACL.PERM_INSERT);
+                    buttonBar.add(uploadButton);
+                }
 
                 ActionButton deleteRows = new ActionButton("button", "Delete Selected");
                 ActionURL deleteRowsURL = new ActionURL(DeleteDatasetRowsAction.class, getContainer());
@@ -667,6 +678,19 @@ public class StudyController extends BaseStudyController
             viewSamples.setActionType(ActionButton.Action.GET);
             viewSamples.setDisplayPermission(ACL.PERM_READ);
             buttonBar.add(viewSamples);
+
+            if (isAssayDataset)
+            {
+                // provide a link to the source assay
+                Integer protocolRowId = def.getProtocolId();
+                ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolRowId.intValue());
+                if (protocol != null)
+                {
+                    ActionURL url = AssayService.get().getAssayDataURL(protocol.getContainer(), protocol);
+                    ActionButton viewAssayButton = new ActionButton(url, "View Source Assay");
+                    buttonBar.add(viewAssayButton);
+                }
+            }
         }
 
         private void createViewButton(List<ActionButton> buttonBar, DataSetQueryView queryView)
@@ -4458,7 +4482,7 @@ public class StudyController extends BaseStudyController
                     }
                 }
                 DataSetDefinition def = AssayPublishManager.getInstance().createAssayDataset(form.getViewContext().getUser(),
-                        study, form.getSnapshotName(), additionalKey, null, isDemographicData);
+                        study, form.getSnapshotName(), additionalKey, null, isDemographicData, null);
                 if (def != null)
                 {
                     form.setSnapshotDatasetId(def.getDataSetId());
