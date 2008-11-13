@@ -44,7 +44,7 @@
     %>
     <tr>
         <td>
-            <%=h(query.getName())%>
+            <a href="<%= h(currentSchema.urlFor(QueryAction.executeQuery, query))%>"><%=h(query.getName())%></a>
         </td>
         <td>
             <labkey:button text="Run" href="<%=currentSchema.urlFor(QueryAction.executeQuery, query)%>"/>

@@ -44,7 +44,7 @@
                 QueryDefinition def = currentSchema.getQueryDefForTable(name);
         %>
         <tr>
-            <td><%=h(name)%></td>
+            <td><a href="<%= h(def.urlFor(QueryAction.executeQuery, context.getContainer()) )%>"><%=h(name)%></a></td>
             <td><labkey:button text="Run" href="<%= def.urlFor(QueryAction.executeQuery, context.getContainer()) %>"/></td>
             <td><labkey:button text="Edit Metadata" href="<%= def.urlFor(QueryAction.sourceQuery, context.getContainer()) %>"/></td>
             <td>
