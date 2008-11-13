@@ -16,10 +16,7 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
 
@@ -56,6 +53,11 @@ abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
         public Set<String> getTableNames()
         {
             return Collections.EMPTY_SET;
+        }
+
+        protected TableInfo createTable(String name, String alias)
+        {
+            return null;
         }
 
         public QuerySchema getSchema(String name)

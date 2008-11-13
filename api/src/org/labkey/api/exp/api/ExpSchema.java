@@ -73,16 +73,23 @@ public class ExpSchema extends UserSchema
         {
             public TableInfo createTable(String alias, ExpSchema expSchema)
             {
-                return expSchema.createExperimentsTable(alias);
+                return expSchema.createExperimentsTable(Experiments.toString(), alias);
+            }
+        },
+        ProtocolApplications
+        {
+            public TableInfo createTable(String alias, ExpSchema expSchema)
+            {
+                return ExperimentService.get().createProtocolApplicationTable(ProtocolApplications.toString(), alias, expSchema);
             }
         };
 
         public abstract TableInfo createTable(String alias, ExpSchema expSchema);
     }
 
-    public ExpExperimentTable createExperimentsTable(String alias)
+    public ExpExperimentTable createExperimentsTable(String name, String alias)
     {
-        ExpExperimentTable result = ExperimentService.get().createExperimentTable(alias, this);
+        ExpExperimentTable result = ExperimentService.get().createExperimentTable(name, alias, this);
         result.setContainerFilter(_containerFilter);
         result.populate();
         return result;
@@ -90,7 +97,7 @@ public class ExpSchema extends UserSchema
     
     public ExpExperimentTable createExperimentsTableWithRunMemberships(String alias, ExpRun run)
     {
-        ExpExperimentTable ret = createExperimentsTable(alias);
+        ExpExperimentTable ret = createExperimentsTable(EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME, alias);
         ret.setContainerFilter(_containerFilter);
         ret.getColumn(ExpExperimentTable.Column.RunCount).setIsHidden(true);
 
@@ -144,7 +151,7 @@ public class ExpSchema extends UserSchema
         return tableNames;
     }
 
-    public TableInfo getTable(String name, String alias)
+    public TableInfo createTable(String name, String alias)
     {
         try
         {
@@ -159,19 +166,19 @@ public class ExpSchema extends UserSchema
         // so this is a hacky way to make sure that customizing one set of views doesn't affect the other.
         if (EXPERIMENTS_NARROW_WEB_PART_TABLE_NAME.equalsIgnoreCase(name) || RUN_GROUPS_TABLE_NAME.equalsIgnoreCase(name))
         {
-            return createExperimentsTable(alias);
+            return createExperimentsTable(name, alias);
         }
         if (EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME.equalsIgnoreCase(name))
         {
             return createExperimentsTableWithRunMemberships(alias, null);
         }
 
-        return super.getTable(name, alias);
+        return null;
     }
 
     public ExpDataTable createDatasTable(String alias)
     {
-        ExpDataTable ret = ExperimentService.get().createDataTable(alias, this);
+        ExpDataTable ret = ExperimentService.get().createDataTable(TableType.Datas.toString(), alias, this);
         ret.setContainerFilter(_containerFilter);
         ret.populate();
         return ret;
@@ -179,7 +186,7 @@ public class ExpSchema extends UserSchema
 
     public ExpSampleSetTable createSampleSetTable(String alias)
     {
-        ExpSampleSetTable ret = ExperimentService.get().createSampleSetTable(alias, this);
+        ExpSampleSetTable ret = ExperimentService.get().createSampleSetTable(TableType.SampleSets.toString(), alias, this);
         ret.setContainerFilter(_containerFilter);
         ret.populate(this);
         return ret;
@@ -192,15 +199,15 @@ public class ExpSchema extends UserSchema
 
     public ExpRunTable createRunsTable(String alias)
     {
-        ExpRunTable ret = ExperimentService.get().createRunTable(alias, this);
+        ExpRunTable ret = ExperimentService.get().createRunTable(TableType.Runs.toString(), alias, this);
         ret.setContainerFilter(_containerFilter);
-        ret.populate(this);
+        ret.populate();
         return ret;
     }
 
     public ExpProtocolTable createProtocolsTable(String alias)
     {
-        ExpProtocolTable ret = ExperimentService.get().createProtocolTable(alias, this);
+        ExpProtocolTable ret = ExperimentService.get().createProtocolTable(TableType.Protocols.toString(), alias, this);
         ret.populate(this);
         return ret;
     }

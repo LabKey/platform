@@ -66,6 +66,11 @@ public class CacheKey<T, C extends Enum<C>> implements Cloneable
         addCondition(column, null, CompareType.ISBLANK);
     }
 
+    public void addIsNotNull(C column)
+    {
+        addCondition(column, null, CompareType.NONBLANK);
+    }
+
     private void addCondition(C column, Object value, CompareType ct)
     {
         _filter.addCondition(column.toString(), value, ct);

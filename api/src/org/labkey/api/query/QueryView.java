@@ -237,7 +237,14 @@ public class QueryView extends WebPartView<Object>
 
         if (_queryDef.canEdit(getUser()) && getContainer().equals(_queryDef.getContainer()))
         {
-            button.addMenuItem("Design Query", getSchema().urlFor(QueryAction.designQuery, _queryDef));
+            if (_queryDef.isTableQueryDefinition())
+            {
+                button.addMenuItem("Design Query", false, true);
+            }
+            else
+            {
+                button.addMenuItem("Design Query", getSchema().urlFor(QueryAction.designQuery, _queryDef));
+            }
             button.addMenuItem("Edit Query", getSchema().urlFor(QueryAction.sourceQuery, _queryDef));
         }
         else

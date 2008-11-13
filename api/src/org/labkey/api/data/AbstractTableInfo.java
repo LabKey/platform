@@ -428,15 +428,31 @@ abstract public class AbstractTableInfo implements TableInfo
         }
         if (xbTable.getColumns() != null)
         {
+            List<ColumnType> wrappedColumns = new ArrayList<ColumnType>();
             for (ColumnType xbColumn : xbTable.getColumns().getColumnArray())
             {
-                ColumnInfo column = getColumn(xbColumn.getColumnName());
-                if (column == null)
+                if (xbColumn.getWrappedColumnName() != null)
                 {
-                    // qpe.add(new MetadataException("Column " + xbColumn.getLookupColumnName() + " not found."));
-                    continue;
+                    wrappedColumns.add(xbColumn);
                 }
-                initColumnFromXml(schema, column, xbColumn, qpe);
+                else
+                {
+                    ColumnInfo column = getColumn(xbColumn.getColumnName());
+                    if (column != null)
+                    {
+                        initColumnFromXml(schema, column, xbColumn, qpe);
+                    }
+                }
+            }
+            for (ColumnType wrappedColumnXb : wrappedColumns)
+            {
+                ColumnInfo column = getColumn(wrappedColumnXb.getWrappedColumnName());
+                if (column != null && getColumn(wrappedColumnXb.getColumnName()) == null)
+                {
+                    ColumnInfo wrappedColumn = new WrappedColumn(column, wrappedColumnXb.getColumnName());
+                    initColumnFromXml(schema, wrappedColumn, wrappedColumnXb, qpe);
+                    addColumn(wrappedColumn);
+                }
             }
         }
     }

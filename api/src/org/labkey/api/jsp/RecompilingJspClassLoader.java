@@ -209,6 +209,11 @@ public class RecompilingJspClassLoader extends JspClassLoader
         if (null == tomcat)
             tomcat = System.getenv("TOMCAT_HOME");
 
+        if (tomcat == null)
+        {
+            _log.warn("Could not find CATALINA_HOME environment variable, unlikely to be successful recompiling JSPs");
+        }
+
         return tomcat + "/common/lib";
     }
 

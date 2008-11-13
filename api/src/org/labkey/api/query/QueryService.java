@@ -76,4 +76,6 @@ abstract public class QueryService
     abstract public Map<String, UserSchema> getDbUserSchemas(DefaultSchema folderSchema);
 
     abstract public List<FieldKey> getDefaultVisibleColumns(List<ColumnInfo> columns);
+
+    abstract public TableInfo overlayMetadata(TableInfo tableInfo, String tableName, UserSchema schema);
 }

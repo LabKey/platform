@@ -19,6 +19,7 @@ package org.labkey.api.audit.query;
 import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.UserSchema;
 
 import java.util.Set;
@@ -39,4 +40,10 @@ public class DefaultAuditSchema extends UserSchema
     public Set<String> getTableNames()
     {
         return Collections.singleton("default");
-    }}
+    }
+
+    protected TableInfo createTable(String name, String alias)
+    {
+        return null;
+    }
+}

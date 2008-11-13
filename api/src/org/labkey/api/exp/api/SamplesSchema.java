@@ -89,17 +89,17 @@ public class SamplesSchema extends UserSchema
         return getSampleSets().keySet();
     }
 
-    public TableInfo getTable(String name, String alias)
+    public TableInfo createTable(String name, String alias)
     {
         ExpSampleSet ss = getSampleSets().get(name);
         if (ss == null)
-            return super.getTable(name, alias);
+            return null;
         return getSampleTable(alias, ss);
     }
 
     public ExpMaterialTable getSampleTable(String alias, ExpSampleSet ss)
     {
-        ExpMaterialTable ret = ExperimentService.get().createMaterialTable(alias, this);
+        ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), alias, this);
         ret.setContainerFilter(_containerFilter);
         ret.populate(ss, true);
         return ret;
@@ -111,7 +111,7 @@ public class SamplesSchema extends UserSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                ExpMaterialTable ret = ExperimentService.get().createMaterialTable("lookup", SamplesSchema.this);
+                ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), "lookup", SamplesSchema.this);
                 ret.populate(ss, false);
                 return ret;
             }

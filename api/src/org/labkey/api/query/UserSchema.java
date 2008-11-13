@@ -19,6 +19,7 @@ package org.labkey.api.query;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
@@ -41,19 +42,23 @@ abstract public class UserSchema extends AbstractSchema
         _name = name;
     }
 
-    public TableInfo getTable(String name, String alias)
+    public final TableInfo getTable(String name, String alias)
     {
         if (name == null)
             return null;
-        if (getTableNames().contains(name))
+        TableInfo table = createTable(name, alias);
+        if (table != null)
         {
-            return null;
+            return QueryService.get().overlayMetadata(table, name, this);
         }
+
         QueryDefinition def = QueryService.get().getQueryDef(getContainer(), getSchemaName(), name);
         if (def == null)
             return null;
         return def.getTable(alias, this, null);
     }
+
+    protected abstract TableInfo createTable(String name, String alias);
 
     abstract public Set<String> getTableNames();
 

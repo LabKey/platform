@@ -22,10 +22,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.api.ExpMaterialTable;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpSampleSet;
-import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.*;
 import org.labkey.api.query.*;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
@@ -52,7 +49,7 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
     public abstract String getInputMaterialPropertyName();
     public abstract String getDataRowLsidPrefix();
 
-    public PlateBasedAssayRunDataTable(final QuerySchema schema, String alias, final ExpProtocol protocol)
+    public PlateBasedAssayRunDataTable(final UserSchema schema, String alias, final ExpProtocol protocol)
     {
         super(OntologyManager.getTinfoObject(), schema.getContainer());
 
@@ -96,7 +93,7 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
                         {
                             public TableInfo getLookupTableInfo()
                             {
-                                ExpMaterialTable materials = ExperimentService.get().createMaterialTable(null, schema);
+                                ExpMaterialTable materials = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), null, schema);
                                 materials.setSampleSet(sampleSet, true);
                                 materials.addColumn(ExpMaterialTable.Column.Property);
                                 materials.addColumn(ExpMaterialTable.Column.LSID).setIsHidden(true);

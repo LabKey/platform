@@ -155,6 +155,7 @@ api/src/org/labkey/api/data/TempTableTracker.java -text
 api/src/org/labkey/api/data/TestSchema.java -text
 api/src/org/labkey/api/data/UrlColumn.java -text
 api/src/org/labkey/api/data/VirtualTable.java -text
+api/src/org/labkey/api/data/WrappedColumn.java -text
 api/src/org/labkey/api/data/collections/CaseInsensitiveMap.java -text
 api/src/org/labkey/api/data/collections/Join.java -text
 api/src/org/labkey/api/exp/AbstractParameter.java -text

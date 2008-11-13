@@ -117,9 +117,4 @@ final public class DefaultSchema extends AbstractSchema
         }
         return ret;
     }
-
-    public Set<String> getTableAndQueryNames()
-    {
-        return Collections.emptySet();
-    }
 }

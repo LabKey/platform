@@ -648,7 +648,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return AssayService.get().getProtocolURL(container, protocol, "uploadWizard");
     }
 
-    public ExpRunTable createRunTable(QuerySchema schema, String alias, ExpProtocol protocol)
+    public ExpRunTable createRunTable(UserSchema schema, String alias, ExpProtocol protocol)
     {
         ExpRunTable runTable = new ExpSchema(schema.getUser(), schema.getContainer()).createRunsTable(alias);
         ColumnInfo dataLinkColumn = runTable.getColumn(ExpRunTable.Column.Name);

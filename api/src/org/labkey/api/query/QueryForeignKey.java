@@ -28,12 +28,13 @@ public class QueryForeignKey implements ForeignKey
     String _tableName;
     String _lookupKey;
     String _displayField;
+    QuerySchema _schema;
 
     public QueryForeignKey(QuerySchema schema, String tableName, String lookupKey, String displayField)
     {
         if (schema instanceof UserSchema)
             _schemaName = ((UserSchema)schema).getSchemaName();
-        _table = schema.getTable(tableName, tableName);
+        _schema = schema;
         _tableName = tableName;
         _lookupKey = lookupKey;
         _displayField = displayField;
@@ -71,6 +72,10 @@ public class QueryForeignKey implements ForeignKey
 
     public TableInfo getLookupTableInfo()
     {
+        if (_table == null && _schema != null)
+        {
+            _table = _schema.getTable(_tableName, _tableName);
+        }
         return _table;
     }
 

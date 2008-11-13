@@ -27,6 +27,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -71,9 +72,9 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     ActionURL getUploadWizardURL(Container container, ExpProtocol protocol);
 
-    TableInfo createDataTable(QuerySchema schema, String alias, ExpProtocol protocol);
+    TableInfo createDataTable(UserSchema schema, String alias, ExpProtocol protocol);
 
-    ExpRunTable createRunTable(QuerySchema schema, String alias, ExpProtocol protocol);
+    ExpRunTable createRunTable(UserSchema schema, String alias, ExpProtocol protocol);
 
     FieldKey getParticipantIDFieldKey();
 
