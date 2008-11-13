@@ -93,7 +93,7 @@ public class RunGroupWebPart extends QueryView
     protected ExpExperimentTable createTable()
     {
         ExpSchema schema = (ExpSchema) getSchema();
-        ExpExperimentTable result = schema.createExperimentsTable("alias");
+        ExpExperimentTable result = schema.createExperimentsTable(ExpSchema.TableType.Experiments.toString(), "alias");
         if (_narrow)
         {
             List<FieldKey> fieldKeys = new ArrayList<FieldKey>();

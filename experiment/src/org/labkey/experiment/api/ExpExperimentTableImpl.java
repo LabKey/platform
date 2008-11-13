@@ -31,9 +31,9 @@ import java.util.Collections;
 
 public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Column> implements ExpExperimentTable
 {
-    public ExpExperimentTableImpl(String alias, QuerySchema schema)
+    public ExpExperimentTableImpl(String name, String alias, UserSchema schema)
     {
-        super(alias, ExperimentServiceImpl.get().getTinfoExperiment(), schema);
+        super(name, alias, ExperimentServiceImpl.get().getTinfoExperiment(), schema);
     }
 
     public ColumnInfo createColumn(String alias, Column column)

@@ -22,15 +22,16 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Collections;
 
 public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> implements ExpProtocolTable
 {
-    public ExpProtocolTableImpl(String alias, QuerySchema schema)
+    public ExpProtocolTableImpl(String name, String alias, UserSchema schema)
     {
-        super(alias, ExperimentServiceImpl.get().getTinfoProtocol(), schema);
+        super(name, alias, ExperimentServiceImpl.get().getTinfoProtocol(), schema);
         setTitleColumn("Name");
     }
     public ColumnInfo createColumn(String alias, Column column)

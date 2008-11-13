@@ -34,9 +34,9 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
 {
     ExpSampleSet _ss;
 
-    public ExpMaterialTableImpl(String alias, QuerySchema schema)
+    public ExpMaterialTableImpl(String name, String alias, UserSchema schema)
     {
-        super(alias, ExperimentServiceImpl.get().getTinfoMaterial(), schema);
+        super(name, alias, ExperimentServiceImpl.get().getTinfoMaterial(), schema);
         setName(ExpSchema.TableType.Materials.name());
     }
 
@@ -57,7 +57,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 {
                     public TableInfo getLookupTableInfo()
                     {
-                        ExpSampleSetTable sampleSetTable = ExperimentService.get().createSampleSetTable("SampleSets", _schema);
+                        ExpSampleSetTable sampleSetTable = ExperimentService.get().createSampleSetTable(ExpSchema.TableType.SampleSets.toString(), "SampleSets", _schema);
                         sampleSetTable.populate(_schema instanceof ExpSchema ? (ExpSchema)_schema : new ExpSchema(_schema.getUser(), _schema.getContainer()));
                         return sampleSetTable;
                     }

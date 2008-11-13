@@ -23,19 +23,24 @@
 <%
     SourceForm form = (SourceForm)HttpView.currentModel();
     boolean canEdit = form.canEdit();
+    boolean editableSQL = canEdit && !form.getQueryDef().isTableQueryDefinition();
 %>
 <labkey:errors />
 <form method="POST" action="<%=form.urlFor(QueryAction.sourceQuery)%>">
     <input type="hidden" name="ff_redirect" id="ff_redirect" value="<%=form.ff_redirect%>">
     <p>SQL:<br>
 <textarea style="width: 100%;" rows="20" cols="80" wrap="off"
-          name="ff_queryText"<%=canEdit ? "" : " READONLY"%>><%=h(form.ff_queryText)%></textarea><br>
+          name="ff_queryText"<%=editableSQL ? "" : " READONLY"%>><%=h(form.ff_queryText)%></textarea><br>
 </p><%
 if (canEdit)
 {
     %><labkey:button text="Save" onclick="submit_onclick('sourceQuery')" />&nbsp;<%
 }
-    %><labkey:button text="Design View" onclick="submit_onclick('designQuery')" />&nbsp;<labkey:button text="Run Query" onclick="submit_onclick('executeQuery')" />
+if (!form.getQueryDef().isTableQueryDefinition())
+{
+    %><labkey:button text="Design View" onclick="submit_onclick('designQuery')" />&nbsp;<%
+} %>
+    <labkey:button text="Run Query" onclick="submit_onclick('executeQuery')" />
 <p>Metadata XML:<br>
     <textarea style="width: 100%;" rows="20" cols="80" wrap="off" name="ff_metadataText"<%=canEdit ? "" : " READONLY"%>><%=h(form.ff_metadataText)%></textarea>
 </p>

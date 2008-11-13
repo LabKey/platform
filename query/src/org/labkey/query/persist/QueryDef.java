@@ -26,6 +26,7 @@ public class QueryDef extends Entity implements Cloneable
     public enum Column
     {
         container,
+        sql,
         schema,
         name,
         queryDefId,
@@ -33,9 +34,18 @@ public class QueryDef extends Entity implements Cloneable
 
     static public class Key extends CacheKey<QueryDef, Column>
     {
-        public Key(Container container)
+        public Key(Container container, boolean customQuery)
         {
             super(QueryManager.get().getTableInfoQueryDef(), QueryDef.class, container);
+
+            if (customQuery)
+            {
+                addIsNotNull(Column.sql);
+            }
+            else
+            {
+                addIsNull(Column.sql);
+            }
         }
 
         public void setSchema(String schema)

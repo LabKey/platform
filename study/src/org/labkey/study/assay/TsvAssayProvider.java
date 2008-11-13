@@ -28,8 +28,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.security.User;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.TimepointType;
@@ -220,7 +220,7 @@ public class TsvAssayProvider extends AbstractAssayProvider
         return Arrays.asList(new StudyParticipantVisitResolverType(), new ThawListResolverType());
     }
 
-    public TableInfo createDataTable(QuerySchema schema, String alias, ExpProtocol protocol)
+    public TableInfo createDataTable(UserSchema schema, String alias, ExpProtocol protocol)
     {
         return new RunDataTable(schema, alias, protocol);
     }

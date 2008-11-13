@@ -64,7 +64,7 @@ public class BtSchema extends UserSchema
         return tableNames;
     }
 
-    public TableInfo getTable(String name, String alias)
+    public TableInfo createTable(String name, String alias)
     {
         if (tableNames.contains(name))
         {
@@ -78,7 +78,7 @@ public class BtSchema extends UserSchema
                     return createEntitiesTable(alias);
             }
         }
-        return super.getTable(name, alias);
+        return null;
     }
 
     public TableInfo createTasksTable(String alias)

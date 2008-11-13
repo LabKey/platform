@@ -65,7 +65,7 @@ public class MothershipSchema extends UserSchema
     }
 
 
-    public TableInfo getTable(String name, String alias)
+    public TableInfo createTable(String name, String alias)
     {
         if (name.equalsIgnoreCase(SERVER_INSTALLATIONS_TABLE_NAME))
         {
@@ -81,7 +81,7 @@ public class MothershipSchema extends UserSchema
             result.setAlias(alias);
             return result;
         }
-        return super.getTable(name, alias);
+        return null;
     }
 
     public FilteredTable createServerSessionTable(String alias)

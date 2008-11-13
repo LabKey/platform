@@ -26,11 +26,9 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
 import org.labkey.common.util.Pair;
-import org.labkey.query.persist.DbUserSchemaDef;
-import org.labkey.query.persist.QueryDef;
-import org.labkey.query.persist.QueryManager;
-import org.labkey.query.persist.QuerySnapshotDef;
+import org.labkey.query.persist.*;
 import org.labkey.query.view.DbUserSchema;
+import org.labkey.data.xml.TablesDocument;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -51,7 +49,7 @@ public class QueryServiceImpl extends QueryService
 
     public QueryDefinition createQueryDef(Container container, String schema, String name)
     {
-        return new QueryDefinitionImpl(container, schema, name);
+        return new CustomQueryDefinitionImpl(container, schema, name);
     }
 
     public ActionURL urlQueryDesigner(Container container, String schema)
@@ -96,10 +94,10 @@ public class QueryServiceImpl extends QueryService
     private Map<Map.Entry<String, String>, QueryDefinition> getAllQueryDefs(Container container, String schemaName, boolean inheritable, boolean includeSnapshots)
     {
         Map<Map.Entry<String, String>, QueryDefinition> ret = new LinkedHashMap<Map.Entry<String, String>, QueryDefinition>();
-        for (QueryDef queryDef : QueryManager.get().getQueryDefs(container, schemaName, false, includeSnapshots))
+        for (QueryDef queryDef : QueryManager.get().getQueryDefs(container, schemaName, false, includeSnapshots, true))
         {
             Map.Entry<String, String> key = new Pair<String,String>(queryDef.getSchema(), queryDef.getName());
-            ret.put(key, new QueryDefinitionImpl(queryDef));
+            ret.put(key, new CustomQueryDefinitionImpl(queryDef));
         }
         if (!inheritable)
             return ret;
@@ -107,23 +105,23 @@ public class QueryServiceImpl extends QueryService
         while (!containerCur.isRoot())
         {
             containerCur = containerCur.getParent();
-            for (QueryDef queryDef : QueryManager.get().getQueryDefs(containerCur, schemaName, true, includeSnapshots))
+            for (QueryDef queryDef : QueryManager.get().getQueryDefs(containerCur, schemaName, true, includeSnapshots, true))
             {
                 Map.Entry<String, String> key = new Pair<String,String>(queryDef.getSchema(), queryDef.getName());
                 if (!ret.containsKey(key))
                 {
-                    ret.put(key, new QueryDefinitionImpl(queryDef));
+                    ret.put(key, new CustomQueryDefinitionImpl(queryDef));
                 }
             }
         }
 
         // look in the Shared project
-        for (QueryDef queryDef : QueryManager.get().getQueryDefs(ContainerManager.getSharedContainer(), schemaName, true, includeSnapshots))
+        for (QueryDef queryDef : QueryManager.get().getQueryDefs(ContainerManager.getSharedContainer(), schemaName, true, includeSnapshots, true))
         {
             Map.Entry<String, String> key = new Pair<String,String>(queryDef.getSchema(), queryDef.getName());
             if (!ret.containsKey(key))
             {
-                ret.put(key, new QueryDefinitionImpl(queryDef));
+                ret.put(key, new CustomQueryDefinitionImpl(queryDef));
             }
         }
 
@@ -175,7 +173,7 @@ public class QueryServiceImpl extends QueryService
         }
         else
         {
-            QueryDefinitionImpl qd = new QueryDefinitionImpl(queryDef.getContainer(), queryDef.getSchemaName(), queryDef.getName() + "_" + name);
+            QueryDefinitionImpl qd = new CustomQueryDefinitionImpl(queryDef.getContainer(), queryDef.getSchemaName(), queryDef.getName() + "_" + name);
 
             qd.setMetadataXml(queryDef.getMetadataXml());
             qd.setSql(queryDef.getSql());
@@ -186,16 +184,6 @@ public class QueryServiceImpl extends QueryService
             return new QuerySnapshotDefImpl(qd.getQueryDef(), name);
         }
     }
-
-/*public Pair<ColumnInfo[], ResultSet> select(TableInfo table, FieldKey[] fields)
-{
-    QueryTableInfo queryTable = new QueryTableInfo(table, "query", "query");
-    Map<FieldKey, ColumnInfo> columnMap = new HashMap();
-    for (int i = 0; i < fields.length; i ++)
-    {
-
-    }
-}*/
 
     private ColumnInfo getColumn(AliasManager manager, TableInfo table, Map<FieldKey, ColumnInfo> columnMap, FieldKey key)
     {
@@ -383,6 +371,30 @@ public class QueryServiceImpl extends QueryService
             ret.add(FieldKey.fromParts(column.getName()));
         }
         return ret;
+    }
+
+    @Override
+    public TableInfo overlayMetadata(TableInfo tableInfo, String tableName, UserSchema schema)
+    {
+        if (tableInfo instanceof AbstractTableInfo)
+        {
+            QueryDef queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), tableName, false);
+            if (queryDef != null)
+            {
+                try
+                {
+                    TablesDocument doc = TablesDocument.Factory.parse(queryDef.getMetaData());
+
+                    List<QueryException> errors = new ArrayList<QueryException>();
+                    ((AbstractTableInfo)tableInfo).loadFromXML(schema, doc.getTables().getTableArray(0), errors);
+                }
+                catch (org.apache.xmlbeans.XmlException e)
+                {
+                    // throw new RuntimeException(e);
+                }
+            }
+        }
+        return tableInfo;
     }
 
     public ResultSet select(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort) throws SQLException

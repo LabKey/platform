@@ -47,7 +47,7 @@ public class CoreQuerySchema extends UserSchema
     }
 
 
-    public TableInfo getTable(String name, String alias)
+    public TableInfo createTable(String name, String alias)
     {
         if (name.toLowerCase().equals("users"))
             return getUsers(alias);

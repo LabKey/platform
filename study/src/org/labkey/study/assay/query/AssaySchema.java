@@ -78,7 +78,7 @@ public class AssaySchema extends UserSchema
     }
 
     @Override
-    public TableInfo getTable(String name, String alias)
+    public TableInfo createTable(String name, String alias)
     {
         if (name.equals("AssayList"))
             return new AssayListTable(this, alias);
@@ -100,7 +100,7 @@ public class AssaySchema extends UserSchema
                 }
             }
         }
-        return super.getTable(name, alias);
+        return null;
     }
 
     public TableInfo createRunTable(String alias, final ExpProtocol protocol, final AssayProvider provider)

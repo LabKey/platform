@@ -41,23 +41,18 @@ import javax.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 import java.util.*;
 
-public class QueryDefinitionImpl implements QueryDefinition
+public abstract class QueryDefinitionImpl implements QueryDefinition
 {
     final static private QueryManager mgr = QueryManager.get();
     final static private Logger log = Logger.getLogger(QueryDefinitionImpl.class);
-    private UserSchema _schema = null;
-    private QueryDef _queryDef;
+    protected UserSchema _schema = null;
+    protected QueryDef _queryDef;
     private boolean _dirty;
 
     public QueryDefinitionImpl(QueryDef queryDef)
     {
         _queryDef = queryDef;
-    }
-
-    public QueryDefinitionImpl(UserSchema schema, String name)
-    {
-        this(schema.getContainer(), schema.getSchemaName(), name);
-        _schema = schema;
+        _dirty = queryDef.getQueryDefId() == 0;
     }
 
     public QueryDefinitionImpl(Container container, String schema, String name)
@@ -232,16 +227,9 @@ public class QueryDefinitionImpl implements QueryDefinition
         return _schema;
     }
 
-
     public String getSchemaName()
     {
         return _queryDef.getSchema();
-    }
-
-
-    public String getSql()
-    {
-        return _queryDef.getSql();
     }
 
     public TableInfo getTable(String name, QuerySchema schema, List<QueryException> errors)
@@ -345,11 +333,6 @@ public class QueryDefinitionImpl implements QueryDefinition
     public void setIsSnapshot(boolean f)
     {
         edit().setFlags(mgr.setIsSnapshot(_queryDef.getFlags(), f));
-    }
-
-    public void setSql(String sql)
-    {
-        edit().setSql(sql);
     }
 
     public void setMetadataXml(String xml)

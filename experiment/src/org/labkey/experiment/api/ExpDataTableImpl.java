@@ -38,9 +38,9 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
     protected boolean _runSpecified;
     protected ExpRun _run;
     protected DataType _type;
-    public ExpDataTableImpl(String alias, QuerySchema schema)
+    public ExpDataTableImpl(String name, String alias, UserSchema schema)
     {
-        super(alias, ExperimentServiceImpl.get().getTinfoData(), schema);
+        super(name, alias, ExperimentServiceImpl.get().getTinfoData(), schema);
     }
 
     public void populate()

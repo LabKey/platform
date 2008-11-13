@@ -18,10 +18,9 @@ package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.ExpSampleSetTable;
 import org.labkey.api.exp.api.ExpSchema;
-import org.labkey.api.exp.api.ExpDataTable;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.UserSchema;
 
 /**
  * User: jeckels
@@ -29,9 +28,9 @@ import org.labkey.api.query.QuerySchema;
  */
 public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column> implements ExpSampleSetTable
 {
-    public ExpSampleSetTableImpl(String alias, QuerySchema schema)
+    public ExpSampleSetTableImpl(String name, String alias, UserSchema schema)
     {
-        super(alias, ExperimentServiceImpl.get().getTinfoMaterialSource(), schema);
+        super(name, alias, ExperimentServiceImpl.get().getTinfoMaterialSource(), schema);
     }
 
     public ColumnInfo createColumn(String alias, Column column)

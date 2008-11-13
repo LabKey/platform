@@ -53,11 +53,11 @@ public class ListSchema extends UserSchema
         return ListService.get().getLists(getContainer()).keySet();
     }
 
-    public TableInfo getTable(String name, String alias)
+    public TableInfo createTable(String name, String alias)
     {
         ListDefinition def = ListService.get().getLists(getContainer()).get(name);
         if (def != null)
             return def.getTable(getUser(), alias);
-        return super.getTable(name, alias);
+        return null;
     }
 }

@@ -39,13 +39,13 @@ import org.labkey.experiment.api.flag.FlagColumnRenderer;
 abstract public class ExpTableImpl<C extends Enum> extends FilteredTable implements ExpTable<C>
 {
     protected TableEditHelper _editHelper;
-    protected final QuerySchema _schema;
+    protected final UserSchema _schema;
     private ContainerFilter _containerFilter;
 
-    public ExpTableImpl(String alias, TableInfo rootTable, QuerySchema schema)
+    public ExpTableImpl(String name, String alias, TableInfo rootTable, UserSchema schema)
     {
         super(rootTable);
-        setName(alias);
+        setName(name);
         setAlias(alias);
         _schema = schema;
         setContainerFilter(ContainerFilter.CURRENT);
@@ -240,5 +240,11 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
         ExpSchema schema = new ExpSchema(_schema.getUser(), _schema.getContainer());
         schema.setContainerFilter(_containerFilter);
         return schema;
+    }
+
+    @Override
+    public String getPublicSchemaName()
+    {
+        return _schema.getSchemaName();
     }
 }

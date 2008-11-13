@@ -110,7 +110,7 @@ public class StudyQuerySchema extends UserSchema
 
 
     @Override
-    public TableInfo getTable(String name, String alias)
+    public TableInfo createTable(String name, String alias)
     {
         if ("StudyProperties".equals(name))
         {
@@ -224,7 +224,7 @@ public class StudyQuerySchema extends UserSchema
         DataSetDefinition dsd = getDataSetDefinitions().get(name);
         if (dsd == null)
         {
-            return super.getTable(name, alias);
+            return null;
         }
         return getDataSetTable(dsd, alias);
     }

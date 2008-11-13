@@ -166,6 +166,7 @@ public class AdminController extends SpringActionController
         public String javaVersion = System.getProperty("java.version");
         public String javaHome = System.getProperty("java.home");
         public String userName = System.getProperty("user.name");
+        public String userHomeDir = System.getProperty("user.home");
         public String osName = System.getProperty("os.name");
         public String mode = AppProps.getInstance().isDevMode() ? "Development" : "Production";
         public String servletContainer = ModuleLoader.getServletContext().getServerInfo();

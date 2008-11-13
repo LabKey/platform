@@ -20,13 +20,10 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.query.view.DbUserSchema;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.ArrayList;
 
 
 public class QueryManager
@@ -52,9 +49,9 @@ public class QueryManager
         return def;
     }
 
-    public QueryDef getQueryDef(Container container, String schema, String name)
+    public QueryDef getQueryDef(Container container, String schema, String name, boolean customQuery)
     {
-        QueryDef.Key key = new QueryDef.Key(container);
+        QueryDef.Key key = new QueryDef.Key(container, customQuery);
         key.setSchema(schema);
         key.setQueryName(name);
         try
@@ -67,11 +64,11 @@ public class QueryManager
         }
     }
 
-    public QueryDef[] getQueryDefs(Container container, String schema, boolean inheritableOnly, boolean includeSnapshots)
+    public QueryDef[] getQueryDefs(Container container, String schema, boolean inheritableOnly, boolean includeSnapshots, boolean customQuery)
     {
         try
         {
-            QueryDef.Key key = new QueryDef.Key(container);
+            QueryDef.Key key = new QueryDef.Key(container, customQuery);
             if (schema != null)
             {
                 key.setSchema(schema);
@@ -321,6 +318,11 @@ public class QueryManager
     public TableInfo getTableInfoQueryDef()
     {
         return getDbSchema().getTable("QueryDef");
+    }
+
+    public TableInfo getTableInfoSupplementalMetadata()
+    {
+        return getDbSchema().getTable("SupplementalMetadata");
     }
 
     public TableInfo getTableInfoQuerySnapshotDef()

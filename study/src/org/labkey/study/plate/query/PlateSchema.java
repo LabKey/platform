@@ -103,7 +103,7 @@ public class PlateSchema extends UserSchema
     }
 
     @Override
-    public TableInfo getTable(String name, String alias)
+    public TableInfo createTable(String name, String alias)
     {
         if (name.equals("Plate"))
             return new PlateTable(this);
@@ -114,8 +114,8 @@ public class PlateSchema extends UserSchema
             String typeName = name.substring("WellGroup_".length());
             return new WellGroupTable(this, WellGroup.Type.valueOf(typeName));
         }
-        else
-            return super.getTable(name, alias);
+
+        return null;
     }
 
 }

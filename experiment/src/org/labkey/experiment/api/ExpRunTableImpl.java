@@ -17,14 +17,12 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.*;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.security.ACL;
 import org.labkey.experiment.controllers.exp.ExperimentMembershipDisplayColumnFactory;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
@@ -43,9 +41,9 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     private ExpData _inputData;
     private List<ExpRun> _runs;
 
-    public ExpRunTableImpl(String alias, QuerySchema schema)
+    public ExpRunTableImpl(String name, String alias, UserSchema schema)
     {
-        super(alias, ExperimentServiceImpl.get().getTinfoExperimentRun(), schema);
+        super(name, alias, ExperimentServiceImpl.get().getTinfoExperimentRun(), schema);
     }
 
     public ExpProtocol getProtocol()
@@ -235,12 +233,13 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             }
             case RunGroups:
                 ColumnInfo col = wrapColumn(alias, _rootTable.getColumn("RowId"));
-                col.setFk(new ExperimentsForeignKey());
+                final ExperimentsForeignKey fk = new ExperimentsForeignKey();
+                col.setFk(fk);
                 col.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
                     {
-                        return new RunGroupListDisplayColumn(colInfo);
+                        return new RunGroupListDisplayColumn(colInfo, fk);
                     }
                 });
 
@@ -319,8 +318,9 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         return flagged ? ExpRunImpl.s_urlFlagRun : ExpRunImpl.s_urlUnflagRun;
     }
 
-    public void populate(ExpSchema schema)
+    public void populate()
     {
+        ExpSchema schema = getExpSchema();
         addColumn(Column.RowId);
         addColumn(Column.Flag);
         addColumn(Column.Links);
@@ -349,10 +349,12 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     {
         private Set<ColumnInfo> _runGroupColumns;
         private ExpExperiment[] _experiments;
+        private final ExperimentsForeignKey _fk;
 
-        public RunGroupListDisplayColumn(ColumnInfo col)
+        public RunGroupListDisplayColumn(ColumnInfo col, ExpRunTableImpl.ExperimentsForeignKey fk)
         {
             super(col);
+            _fk = fk;
             col.setWidth(null);
             setWidth("200");
         }
@@ -430,9 +432,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         public void addQueryColumns(Set<ColumnInfo> columns)
         {
             FieldKey key = FieldKey.fromString(getBoundColumn().getName());
-            ExperimentsForeignKey fk = (ExperimentsForeignKey)getBoundColumn().getFk();
             List<FieldKey> runGroupFieldKeys = new ArrayList<FieldKey>();
-            for (ExpExperiment exp : fk.getExperiments())
+            for (ExpExperiment exp : _fk.getExperiments())
             {
                 runGroupFieldKeys.add(new FieldKey(key, exp.getName()));
             }

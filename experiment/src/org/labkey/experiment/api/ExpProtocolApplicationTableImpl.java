@@ -23,6 +23,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.UserSchema;
 
 import java.sql.Types;
 
@@ -30,9 +31,9 @@ import org.labkey.api.exp.api.SamplesSchema;
 
 public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApplicationTable.Column> implements ExpProtocolApplicationTable
 {
-    public ExpProtocolApplicationTableImpl(String alias, QuerySchema schema)
+    public ExpProtocolApplicationTableImpl(String name, String alias, UserSchema schema)
     {
-        super(alias, ExperimentServiceImpl.get().getTinfoProtocolApplication(), schema);
+        super(name, alias, ExperimentServiceImpl.get().getTinfoProtocolApplication(), schema);
     }
 
     public ColumnInfo createColumn(String alias, ExpProtocolApplicationTable.Column column)

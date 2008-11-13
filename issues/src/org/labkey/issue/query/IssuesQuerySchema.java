@@ -66,7 +66,7 @@ public class IssuesQuerySchema extends UserSchema
         return tableNames;
     }
 
-    public TableInfo getTable(String name, String alias)
+    public TableInfo createTable(String name, String alias)
     {
         if (name != null)
         {
@@ -80,7 +80,7 @@ public class IssuesQuerySchema extends UserSchema
             }
             catch (IllegalArgumentException e){}
         }
-        return super.getTable(name, alias);
+        return null;
     }
 
     public TableInfo createIssuesTable(String alias)

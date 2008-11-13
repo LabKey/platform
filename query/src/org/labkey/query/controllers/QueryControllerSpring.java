@@ -39,7 +39,6 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.CustomViewImpl;
 import org.labkey.query.QueryDefinitionImpl;
 import org.labkey.query.TableXML;
-import org.labkey.query.TableQueryDefinition;
 import org.labkey.query.data.Query;
 import org.labkey.query.data.DbUserSchemaUpdateService;
 import org.labkey.query.design.DgMessage;
@@ -146,14 +145,21 @@ public class QueryControllerSpring extends SpringActionController
             _form = form;
             if (null == form.getSchemaName())
                 return HttpView.redirect(actionURL(QueryAction.begin));
-            return new JspView<QueryForm>(QueryControllerSpring.class, "schema.jsp", form, errors);
+
+            JspView<QueryForm> customQueriesView = new JspView<QueryForm>(QueryControllerSpring.class, "customQueriesList.jsp", form, errors);
+            customQueriesView.setTitle("User Defined Queries");
+            customQueriesView.setFrame(WebPartView.FrameType.PORTAL);
+            JspView<QueryForm> builtInTablesView = new JspView<QueryForm>(QueryControllerSpring.class, "builtInTablesList.jsp", form, errors);
+            builtInTablesView.setTitle("Built-In Tables");
+            builtInTablesView.setFrame(WebPartView.FrameType.PORTAL);
+            return new VBox(customQueriesView, builtInTablesView);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             String schemaName = _form.getSchemaName();
             (new QueryControllerSpring.BeginAction()).appendNavTrail(root)
-                .addChild(schemaName, actionURL(QueryAction.schema, QueryParam.schemaName, schemaName));
+                .addChild(schemaName + " Schema", actionURL(QueryAction.schema, QueryParam.schemaName, schemaName));
             return root;
         }
     }
@@ -201,7 +207,7 @@ public class QueryControllerSpring extends SpringActionController
 
                 UserSchema schema = form.getSchema();
                 String newQueryName = form.ff_newQueryName;
-                QueryDef existing = QueryManager.get().getQueryDef(getContainer(), form.getSchemaName(), newQueryName);
+                QueryDef existing = QueryManager.get().getQueryDef(getContainer(), form.getSchemaName(), newQueryName, true);
                 if (existing != null)
                 {
                     errors.reject(ERROR_MSG, "The query '" + newQueryName + "' already exists.");
@@ -2394,14 +2400,12 @@ public class QueryControllerSpring extends SpringActionController
 
             if(!(qschema instanceof UserSchema))
                 throw new NotFoundException("The schema name '" + form.getSchemaName() + "'  cannot be accessed by these APIs!");
-
-            TableInfo table = qschema.getTable(form.getQueryName(), form.getQueryName());
-            if(null == table)
+            
+            QueryDefinition querydef = QueryService.get().createQueryDefForTable((UserSchema)qschema, form.getQueryName());
+            if(null == querydef)
                 throw new NotFoundException("The query '" + form.getQueryName() + "' was not found within the '"
                         + form.getSchemaName() + "' schema in the container '"
                         + getViewContext().getContainer().getPath() + "'!");
-
-            TableQueryDefinition querydef = new TableQueryDefinition((UserSchema)qschema, form.getQueryName(), table);
 
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("schemaName", form.getSchemaName());

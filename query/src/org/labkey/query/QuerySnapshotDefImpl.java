@@ -105,7 +105,7 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
             if (_queryDef == null)
             {
                 try {
-                    QueryDef.Key key = new QueryDef.Key(getContainer());
+                    QueryDef.Key key = new QueryDef.Key(getContainer(), true);
                     key.setQueryDefId(_snapshotDef.getQueryDefId());
                     _queryDef = key.selectObject();
                 }
@@ -114,7 +114,7 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
                     throw new RuntimeException(e);
                 }
             }
-            return _queryDef == null ? null : new QueryDefinitionImpl(_queryDef);
+            return _queryDef == null ? null : new CustomQueryDefinitionImpl(_queryDef);
         }
         else if (_snapshotDef.getQueryTableName() != null)
         {

@@ -92,12 +92,12 @@ public class DbUserSchema extends UserSchema
         return _tables.keySet();
     }
 
-    public TableInfo getTable(String name, String alias)
+    public TableInfo createTable(String name, String alias)
     {
         SchemaTableInfo baseTable = _tables.get(name);
         if (baseTable == null)
         {
-            return super.getTable(name, alias);
+            return null;
         }
         DbUserSchemaTable ret = new DbUserSchemaTable(this, baseTable, getXbTable(name));
         ret.setContainer(_def.getDbContainer());

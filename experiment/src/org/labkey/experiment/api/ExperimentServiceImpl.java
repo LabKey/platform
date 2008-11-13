@@ -30,8 +30,8 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
@@ -394,39 +394,39 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new ExpProtocolImpl(protocol);
     }
 
-    public ExpRunTable createRunTable(String alias, QuerySchema schema)
+    public ExpRunTable createRunTable(String name, String alias, UserSchema schema)
     {
-        return new ExpRunTableImpl(alias, schema);
+        return new ExpRunTableImpl(name, alias, schema);
     }
 
-    public ExpDataTable createDataTable(String alias, QuerySchema schema)
+    public ExpDataTable createDataTable(String name, String alias, UserSchema schema)
     {
-        return new ExpDataTableImpl(alias, schema);
+        return new ExpDataTableImpl(name, alias, schema);
     }
 
-    public ExpSampleSetTable createSampleSetTable(String alias, QuerySchema schema)
+    public ExpSampleSetTable createSampleSetTable(String name, String alias, UserSchema schema)
     {
-        return new ExpSampleSetTableImpl(alias, schema);
+        return new ExpSampleSetTableImpl(name, alias, schema);
     }
 
-    public ExpProtocolTableImpl createProtocolTable(String alias, QuerySchema schema)
+    public ExpProtocolTableImpl createProtocolTable(String name, String alias, UserSchema schema)
     {
-        return new ExpProtocolTableImpl(alias, schema);
+        return new ExpProtocolTableImpl(name, alias, schema);
     }
 
-    public ExpExperimentTableImpl createExperimentTable(String alias, QuerySchema schema)
+    public ExpExperimentTableImpl createExperimentTable(String name, String alias, UserSchema schema)
     {
-        return new ExpExperimentTableImpl(alias, schema);
+        return new ExpExperimentTableImpl(name, alias, schema);
     }
 
-    public ExpMaterialTable createMaterialTable(String alias, QuerySchema schema)
+    public ExpMaterialTable createMaterialTable(String name, String alias, UserSchema schema)
     {
-        return new ExpMaterialTableImpl(alias, schema);
+        return new ExpMaterialTableImpl(name, alias, schema);
     }
 
-    public ExpProtocolApplicationTable createProtocolApplicationTable(String alias, QuerySchema schema)
+    public ExpProtocolApplicationTable createProtocolApplicationTable(String name, String alias, UserSchema schema)
     {
-        return new ExpProtocolApplicationTableImpl(alias, schema);
+        return new ExpProtocolApplicationTableImpl(name, alias, schema);
     }
 
     private String getNamespacePrefix(Class<? extends ExpObject> clazz)

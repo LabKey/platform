@@ -23,20 +23,37 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.query.data.Query;
+import org.labkey.query.persist.QueryManager;
+import org.labkey.query.persist.QueryDef;
 
 import java.util.List;
 
 public class TableQueryDefinition extends QueryDefinitionImpl
 {
     TableInfo _table;
+    private String _sql;
 
     public TableQueryDefinition(UserSchema schema, String tableName, TableInfo table)
     {
-        super(schema, tableName);
+        super(getQueryDef(schema, tableName));
+        _schema = schema;
         _table = table;
         Query query = new Query(schema);
         query.setRootTable(FieldKey.fromParts(tableName));
-        setSql(query.getQueryText());
+        _sql = query.getQueryText();
+    }
+
+    private static QueryDef getQueryDef(UserSchema schema, String tableName)
+    {
+        QueryDef result = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), tableName, false);
+        if (result == null)
+        {
+            result = new QueryDef();
+            result.setName(tableName);
+            result.setContainer(schema.getContainer().getId());
+            result.setSchema(schema.getSchemaName());
+        }
+        return result;
     }
 
     public TableInfo getTable(String name, QuerySchema schema, List<QueryException> errors)
@@ -48,9 +65,14 @@ public class TableQueryDefinition extends QueryDefinitionImpl
         return super.getTable(name, schema, errors);
     }
 
-    public boolean canEdit(User user)
+    public String getSql()
     {
-        return false;
+        return _sql;
+    }
+
+    public void setSql(String sql)
+    {
+        // Can't change the SQL
     }
 
     public boolean isTableQueryDefinition()

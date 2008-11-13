@@ -18,10 +18,7 @@
 <%@ page import="org.labkey.api.query.*" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="java.util.Set" %>
 <%@ page import="java.util.TreeMap" %>
-<%@ page import="java.util.TreeSet" %>
-<%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -32,12 +29,10 @@
     QueryService svc = QueryService.get();
     UserSchema currentSchema = form.getSchema();
 
-    Map<String, QueryDefinition> queries = new TreeMap<String, QueryDefinition>(svc.getQueryDefs(context.getContainer(), currentSchema.getSchemaName()));
+    Map<String, QueryDefinition> queries = new TreeMap<String, QueryDefinition>(String.CASE_INSENSITIVE_ORDER);
+    queries.putAll(svc.getQueryDefs(context.getContainer(), currentSchema.getSchemaName()));
 %>
 <table>
-    <tr>
-        <th colspan="7">User-defined queries in the schema:</th>
-    </tr>
     <%
     if (queries.size() == 0)
     {
@@ -111,35 +106,3 @@
 <% if (form.getSchema().getTableAndQueryNames(false).size() > 0) { %>
     <labkey:button text="Create New Query" href="<%=currentSchema.urlFor(QueryAction.newQuery)%>"/>
 <%  } %>
-
-
-<p>
-    <table>
-        <tr><th colspan="2">Built-in tables</th></tr>
-        <%
-            Set<String> tableNames = new TreeSet<String>(currentSchema.getTableNames());
-            if (tableNames.size() == 0)
-            {
-                %><tr><td colspan="2"><i>No tables defined.</i></td></tr><%
-            }
-
-            for (String name : tableNames)
-            {
-                QueryDefinition def = currentSchema.getQueryDefForTable(name);
-        %>
-        <tr><td>
-        <a href="<%=h(def.urlFor(QueryAction.executeQuery, context.getContainer()))%>"><%=h(name)%></a></td>
-        <td>
-        <% if (def.getDescription() != null) { %>
-        <i><%=h(def.getDescription())%></i>
-        <% } %>
-        </td></tr>
-        <%}%>
-
-    </table>
-</p>
-
-<% if (context.getContainer().hasPermission(context.getUser(), ACL.PERM_ADMIN))
-{%>
-    <labkey:link href="<%=new ActionURL("query", "admin", context.getContainer())%>" text="Schema Administration" />
-<% } %>
