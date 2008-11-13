@@ -46,7 +46,7 @@ public class WebdavService
 
     public static String getServletPath()
     {
-        return "webdav";
+        return "_webdav";
     }
 
     public interface Provider

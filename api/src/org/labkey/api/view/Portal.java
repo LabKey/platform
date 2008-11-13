@@ -482,9 +482,17 @@ public class Portal
 
                Properties VARCHAR(4000),	-- url encoded properties	*/
 
+    @Deprecated
     public static void populatePortalView(ViewContext context, String id, HttpView template, String contextPath)
             throws Exception
     {
+        populatePortalView(context, id, template);
+    }
+
+    public static void populatePortalView(ViewContext context, String id, HttpView template)
+            throws Exception
+    {
+        String contextPath = context.getContextPath();
         WebPart[] parts = getParts(id, false);
         Container c = context.getContainer();
         User u = context.getUser();

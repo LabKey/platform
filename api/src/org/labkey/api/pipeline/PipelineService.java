@@ -21,6 +21,9 @@ import org.labkey.api.pipeline.browse.BrowseView;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -50,14 +53,19 @@ abstract public class PipelineService
 
     abstract public void registerPipelineProvider(PipelineProvider provider, String... aliases);
 
-    abstract public PipeRoot findPipelineRoot(Container container) throws SQLException;
+    @Nullable
+    abstract public PipeRoot findPipelineRoot(Container container);
 
+    @NotNull
     abstract public PipeRoot[] getAllPipelineRoots();
 
+    @Nullable
     abstract public PipeRoot getPipelineRootSetting(Container container) throws SQLException;
 
+    @Nullable
     abstract public URI getPipelineRootSetting(Container container, String type) throws SQLException;
 
+    @NotNull
     abstract public PipeRoot[] getOverlappingRoots(Container c) throws SQLException;
 
     abstract public void setPipelineRoot(User user, Container container, URI root, String type,
@@ -67,16 +75,20 @@ abstract public class PipelineService
 
     abstract public boolean usePerlPipeline(Container container) throws SQLException;
 
+    @NotNull    
     abstract public File ensureSystemDirectory(URI root);
 
+    @NotNull
     abstract public List<PipelineProvider> getPipelineProviders();
 
+    @Nullable
     abstract public PipelineProvider getPipelineProvider(String name);
 
     abstract public String getButtonHtml(String text, ActionURL href);
 
     abstract public boolean isEnterprisePipeline();
 
+    @NotNull
     abstract public PipelineQueue getPipelineQueue();
 
     abstract public void queueJob(PipelineJob job) throws IOException;

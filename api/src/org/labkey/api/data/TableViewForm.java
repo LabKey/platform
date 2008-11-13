@@ -637,6 +637,13 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         if (null != checkboxes)
             for (String checkbox : checkboxes)
                 set(checkbox, "0");
+        // handle Spring style markers as well
+        for (Enumeration e = request.getParameterNames(); e.hasMoreElements() ; )
+        {
+            String name = (String)e.nextElement();
+            if (name.startsWith(SpringActionController.FIELD_MARKER))
+                set(name.substring(SpringActionController.FIELD_MARKER.length()), "0");
+        }
 
         _selectedRows = request.getParameterValues(DataRegion.SELECT_CHECKBOX_NAME);
 

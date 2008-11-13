@@ -16,7 +16,8 @@
 
 package org.labkey.api.view;
 
-import org.labkey.api.util.PageFlowUtil;
+import org.springframework.web.servlet.ModelAndView;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.List;
 
@@ -29,12 +30,25 @@ public abstract class TabStripView extends JspView<TabStripView>
     public static final String TAB_PARAM = "tabId";
 
     public String _prefix = "";
+    protected List<NavTree> _tabs;
+    protected String _selectedTabId = null;
 
     public TabStripView()
     {
         super("/org/labkey/api/view/tabstrip.jsp");
         setFrame(WebPartView.FrameType.NONE);
         setModelBean(this);
+    }
+
+    /** You can use this constructor, if you know which tab is selected and you don't want to subclass TabStripView */
+    public TabStripView(List<NavTree> tabs, ModelAndView selectedView)
+    {
+        super("/org/labkey/api/view/tabstrip.jsp");
+        setFrame(WebPartView.FrameType.NONE);
+        setModelBean(this);
+
+        _tabs = tabs;
+        setBody(selectedView);
     }
 
     /** set prefix for tab id's and content div */
@@ -44,14 +58,45 @@ public abstract class TabStripView extends JspView<TabStripView>
         _prefix = prefix + "_";
     }
 
-    public abstract List<NavTree> getTabList();
-    public abstract HttpView getTabView(String tabId) throws Exception;
+    /** Subclasses may override this method */
+    public List<NavTree> getTabList()
+    {
+        return _tabs;
+    }
+
+
+    public void setSelectedTabId(String tabId)
+    {
+        _selectedTabId = tabId;
+    }
+
+    public String getSelectedTabId()
+    {
+        if (null != _selectedTabId)
+            return _selectedTabId;
+        
+        String tabId = getViewContext().getActionURL().getParameter(TAB_PARAM);
+        if (StringUtils.isEmpty(tabId))
+        {
+            List<NavTree> tabs = getTabList();
+            if (!tabs.isEmpty())
+                tabId = tabs.get(0).getId();
+        }
+        return tabId;
+    }
+    
+    
+    /** Subclasses may override this method */
+    public ModelAndView getTabView(String tabId) throws Exception
+    {
+        return getBody();
+    }
 
     public static class TabInfo extends NavTree
     {
         public TabInfo(String name, String id, ActionURL url)
         {
-            super(name, url.clone().replaceParameter("tabId", id).getLocalURIString());
+            super(name, url.clone().replaceParameter(TAB_PARAM, id).getLocalURIString());
             setId(id);
         }
     }

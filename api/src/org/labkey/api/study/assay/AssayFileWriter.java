@@ -104,16 +104,9 @@ public class AssayFileWriter
     protected PipeRoot getPipelineRoot(AssayRunUploadContext context)
     {
         PipeRoot pipelineRoot;
-        try
-        {
             pipelineRoot = PipelineService.get().findPipelineRoot(context.getContainer());
             if (null == pipelineRoot)
                 throw new IllegalStateException("Please have your administrator set up a pipeline root for this folder.");
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
         return pipelineRoot;
     }
 

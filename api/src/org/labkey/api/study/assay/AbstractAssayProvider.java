@@ -853,17 +853,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
         URI uriRoot = null;
         if (container != null)
         {
-            try
+            PipeRoot pr = service.findPipelineRoot(container);
+            if (pr != null)
             {
-                PipeRoot pr = service.findPipelineRoot(container);
-                if (pr != null)
-                {
-                    uriRoot = pr.getUri(container);
-                }
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
+                uriRoot = pr.getUri(container);
             }
         }
         return (uriRoot != null);

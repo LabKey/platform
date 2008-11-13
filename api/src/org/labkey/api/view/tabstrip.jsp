@@ -19,15 +19,14 @@
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.springframework.web.servlet.ModelAndView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<TabStripView> me = (JspView<TabStripView>) HttpView.currentView();
     TabStripView view = me.getModelBean();
 
     List<NavTree> tabs = view.getTabList();
-    String tabId = getViewContext().getActionURL().getParameter(view.TAB_PARAM);
-    if (StringUtils.isEmpty(tabId) && !tabs.isEmpty())
-        tabId = tabs.get(0).getId();
+    String tabId = view.getSelectedTabId();
 %>
 <table class="labkey-tab-strip">
     <tr>
@@ -61,7 +60,7 @@
     <tr>
         <td colspan="<%=tabs.size() + 2%>" class="labkey-tab-content" style="border-top:none;text-align:left;" width=100%>
             <div id="<%=view._prefix%>tabContent"><%
-    HttpView tabView = view.getTabView(tabId);
+    ModelAndView tabView = view.getTabView(tabId);
     if (tabView != null)
     {
         include(tabView, out);
@@ -100,6 +99,5 @@ function selectTab(el)
         td.className =  td == tdSelected ? "labkey-tab-selected" : "labkey-tab";
     }
 }
-
 </script>
 

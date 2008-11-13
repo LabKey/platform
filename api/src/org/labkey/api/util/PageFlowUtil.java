@@ -1639,10 +1639,10 @@ public class PageFlowUtil
         String tidy = tidy(html, false, errors);
         //FIX: 4528: old code searched for "<body>" but the body element can have attributes
         //and Word includes some when saving as HTML (even Filtered HTML).
-        int endOpenBodyIndex = tidy.indexOf("<body");
-        int beginCloseBodyIndex = tidy.indexOf("</body>");
-        assert endOpenBodyIndex != -1 && beginCloseBodyIndex != -1: "Tidied HTML did not include a body element!";
-        endOpenBodyIndex = tidy.indexOf('>', endOpenBodyIndex);
+        int beginOpenBodyIndex = tidy.indexOf("<body");
+        int beginCloseBodyIndex = tidy.lastIndexOf("</body>");
+        assert beginOpenBodyIndex != -1 && beginCloseBodyIndex != -1: "Tidied HTML did not include a body element!";
+        int endOpenBodyIndex = tidy.indexOf('>', beginOpenBodyIndex);
         assert endOpenBodyIndex != -1 : "Could not find closing > of open body element!";
 
         tidy = tidy.substring(endOpenBodyIndex + 1, beginCloseBodyIndex).trim();

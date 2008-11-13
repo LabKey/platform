@@ -36,7 +36,6 @@ import org.apache.log4j.spi.HierarchyEventListener;
 import org.apache.log4j.spi.LoggerFactory;
 import org.apache.log4j.spi.LoggerRepository;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -178,17 +177,10 @@ abstract public class PipelineJob extends Job implements Serializable
         if (info.getUrlHelper() != null)
         {
             Container c = info.getContainer();
-            try
-            {
-                PipeRoot pr = PipelineService.get().findPipelineRoot(c);
-                if (pr == null)
-                    throw new IllegalStateException("Failed to find pipeline root for " + c.getPath());
-                _rootURI = pr.getUri();
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            PipeRoot pr = PipelineService.get().findPipelineRoot(c);
+            if (pr == null)
+                throw new IllegalStateException("Failed to find pipeline root for " + c.getPath());
+            _rootURI = pr.getUri();
         }
 
         _actionSet = new RecordedActionSet();
