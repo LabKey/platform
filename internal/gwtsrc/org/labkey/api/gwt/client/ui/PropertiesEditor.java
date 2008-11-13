@@ -44,20 +44,20 @@ public class PropertiesEditor implements LookupListener
     public static final String statusExisting = "EXISTING";
     public static final String statusChanged = "CHANGED";
 
-    public static final String modeEdit = "edit";
-    public static final String modeRead = "read";
-
-    private final boolean _includeImportExportButtons;
     private DockPanel _panel;
     private PropertyPane _propertiesPane;
     private VerticalPanel _noColumnsPanel;
     private FlexTable _table;
     private HorizontalPanel _buttonPanel;
-    private String _mode;
+    private boolean _readOnly;
     private LookupServiceAsync _lookupService;
     private List<ChangeListener> _listeners = new ArrayList<ChangeListener>();
 
     private GWTPropertyDescriptor _selectedPD;
+    private ImageButton _addFieldButton;
+    private ImageButton _importSchemaButton;
+    private ImageButton _exportSchemaButton;
+    private ImageButton _inferSchemaButton;
 
     private class Row
     {
@@ -89,12 +89,6 @@ public class PropertiesEditor implements LookupListener
 
     public PropertiesEditor(LookupServiceAsync service)
     {
-        this(service, true);
-    }
-
-    public PropertiesEditor(LookupServiceAsync service, boolean includeImportExportButtons)
-    {
-        _includeImportExportButtons = includeImportExportButtons;
         _rows = new ArrayList<Row>();
 
         _lookupService = service;
@@ -121,53 +115,48 @@ public class PropertiesEditor implements LookupListener
 
         _buttonPanel = new HorizontalPanel();
 
-        ImageButton addFieldButton = new ImageButton("Add Field", addListener);
-        _buttonPanel.add(addFieldButton);
+        _addFieldButton = new ImageButton("Add Field", addListener);
+
+        ClickListener importSchemaListener = new ClickListener()
+        {
+            public void onClick(Widget sender)
+            {
+                final ImportSchemaWizard popup = new ImportSchemaWizard(PropertiesEditor.this);
+                popup.setText("Import Schema");
+                popup.center();
+            }
+        };
+
+        ClickListener exportSchemaListener = new ClickListener()
+        {
+            public void onClick(Widget sender)
+            {
+                final ExportSchemaWizard popup = new ExportSchemaWizard(PropertiesEditor.this);
+                popup.setText("Export Schema");
+                popup.center();
+            }
+        };
+
+        ClickListener inferSchemaListener = new ClickListener()
+        {
+            public void onClick(Widget sender)
+            {
+                final InferSchemaWizard popup = new InferSchemaWizard(PropertiesEditor.this);
+                popup.setText("Infer Schema");
+                popup.center();
+            }
+        };
+
+        _importSchemaButton = new ImageButton("Import Schema", importSchemaListener);
+        _exportSchemaButton = new ImageButton("Export Schema", exportSchemaListener);
+        _inferSchemaButton = new ImageButton("Infer Schema from File", inferSchemaListener);
+
+        _buttonPanel.add(_addFieldButton);
+        _buttonPanel.add(_importSchemaButton);
+        _buttonPanel.add(_exportSchemaButton);
+        _buttonPanel.add(_inferSchemaButton);
 
         VerticalPanel propertiesListPanel = new VerticalPanel();
-
-        if (_includeImportExportButtons)
-        {
-            ClickListener importSchemaListener = new ClickListener()
-            {
-                public void onClick(Widget sender)
-                {
-                    final ImportSchemaWizard popup = new ImportSchemaWizard(PropertiesEditor.this);
-                    popup.setText("Import Schema");
-                    popup.center();
-                }
-            };
-
-            ClickListener exportSchemaListener = new ClickListener()
-            {
-                public void onClick(Widget sender)
-                {
-                    final ExportSchemaWizard popup = new ExportSchemaWizard(PropertiesEditor.this);
-                    popup.setText("Export Schema");
-                    popup.center();
-                }
-            };
-
-            ClickListener inferSchemaListener = new ClickListener()
-            {
-                public void onClick(Widget sender)
-                {
-                    final InferSchemaWizard popup = new InferSchemaWizard(PropertiesEditor.this);
-                    popup.setText("Infer Schema");
-                    popup.center();
-                }
-            };
-
-            ImageButton importSchemaButton = new ImageButton("Import Schema", importSchemaListener);
-            ImageButton exportSchemaButton = new ImageButton("Export Schema", exportSchemaListener);
-            ImageButton inferSchemaButton = new ImageButton("Infer Schema from File", inferSchemaListener);
-
-            _buttonPanel.add(importSchemaButton);
-            _buttonPanel.add(exportSchemaButton);
-            _buttonPanel.add(inferSchemaButton);
-
-        }
-        
         propertiesListPanel.add(_noColumnsPanel);
         propertiesListPanel.add(_table);
         propertiesListPanel.add(_buttonPanel);
@@ -217,7 +206,7 @@ public class PropertiesEditor implements LookupListener
         setBoldText(_table, 0, col, "Lookup");
         col += 2;
 
-        _mode = modeRead;
+        _readOnly = false;
     }
 
     public Panel getMainPanel()
@@ -285,6 +274,27 @@ public class PropertiesEditor implements LookupListener
         select(_selectedPD);
     }
 
+    void refreshButtons()
+    {
+        if (_readOnly)
+        {
+            if (_buttonPanel.getWidgetCount() == 1)
+                return;
+            _buttonPanel.clear();
+            _buttonPanel.add(_exportSchemaButton);
+        }
+        else
+        {
+            if (_buttonPanel.getWidgetCount() > 1)
+                return;
+            _buttonPanel.clear();
+            _buttonPanel.add(_addFieldButton);
+            _buttonPanel.add(_importSchemaButton);
+            _buttonPanel.add(_exportSchemaButton);
+            _buttonPanel.add(_inferSchemaButton);
+        }
+    }
+
     private void select(GWTPropertyDescriptor pd)
     {
         GWTPropertyDescriptor oldPD = _selectedPD;
@@ -304,8 +314,7 @@ public class PropertiesEditor implements LookupListener
             int index = getRow(pd);
 
             String status = getStatus(pd);
-            boolean readMode = getMode().equals(modeRead);  // control
-            boolean readOnly = readMode || isReadOnly(index) || status.equals(statusDeleted);
+            boolean readOnly = _readOnly || isReadOnly(index) || status.equals(statusDeleted);
             boolean locked = isLocked(index);
 
             int tableRow = index + 1;
@@ -341,8 +350,7 @@ public class PropertiesEditor implements LookupListener
         int col = 0;
 
         String status = getStatus(pd);
-        boolean readMode = getMode().equals(modeRead);  // control
-        boolean readOnly = readMode || isReadOnly(index) || status.equals(statusDeleted);
+        boolean readOnly = _readOnly || isReadOnly(index) || status.equals(statusDeleted);
         boolean locked = isLocked(index);
 
         if (!status.equalsIgnoreCase(statusExisting))
@@ -354,7 +362,7 @@ public class PropertiesEditor implements LookupListener
         _table.setWidget(tableRow, col, statusImage);
         col++;
 
-        if (!locked && !readMode && !isReadOnly(index))
+        if (!locked && !_readOnly && !isReadOnly(index))
         {
             if (status.equals(statusDeleted))
             {
@@ -533,7 +541,7 @@ public class PropertiesEditor implements LookupListener
         if (b != isReadOnly(i))
         {
             getRow(i).readOnly = b;
-            if (!getMode().equals(modeRead))
+            if (!_readOnly)
                 refresh();
         }
     }
@@ -555,7 +563,7 @@ public class PropertiesEditor implements LookupListener
         if (b != isReadOnly(i))
         {
             getRow(i).locked = b;
-            if (!getMode().equals(modeRead))
+            if (!_readOnly)
                 refresh();
         }
     }
@@ -596,7 +604,7 @@ public class PropertiesEditor implements LookupListener
     }
 
 
-    public List validate()
+    public List<String> validate()
     {
         GWTDomain d = getDomainUpdates();
         Set<String> names = new HashSet<String>();
@@ -710,20 +718,15 @@ public class PropertiesEditor implements LookupListener
         t.setHTML(row, col, "<b>" + text + "</b>");
     }
 
-
-    public String getMode()
+    public boolean isReadOnly()
     {
-        return _mode;
+        return _readOnly;
     }
 
-
-    public void setMode(String mode)
+    public void setReadOnly(boolean readOnly)
     {
-        if (mode.equals(_mode))
-            return;
-        _mode = mode;
-        _buttonPanel.setVisible(!_mode.equals(modeRead));
-        refresh();
+        _readOnly = readOnly;
+        refreshButtons();
     }
 
     public void addChangeListener(ChangeListener cl)
@@ -768,7 +771,6 @@ public class PropertiesEditor implements LookupListener
 
         public void onChange(Widget sender)
         {
-            String status = getStatus(_p);
             _p.setRangeURI(getRangeURI());
             _p.setFormat(null);
             refreshRow(_p);

@@ -51,13 +51,13 @@ public class DomainEditorServiceBase extends BaseRemoteService
     }
 
 
-    // path -> containerid
-    public List getContainers()
+    // paths
+    public List<String> getContainers()
     {
         try
         {
             Set<Container> set = ContainerManager.getAllChildren(ContainerManager.getRoot(), getUser(), ACL.PERM_READ);
-            List list = new ArrayList();
+            List<String> list = new ArrayList<String>();
             for (Container c : set)
             {
                 if (c.isRoot())
@@ -75,12 +75,12 @@ public class DomainEditorServiceBase extends BaseRemoteService
     }
 
 
-    public List getSchemas(String containerId)
+    public List<String> getSchemas(String containerId)
     {
         try
         {
             DefaultSchema defSchema = getSchemaForContainer(containerId);
-            List list = new ArrayList();
+            List<String> list = new ArrayList<String>();
             if (null != defSchema.getUserSchemaNames())
                 for (String schemaName : defSchema.getUserSchemaNames())
                     list.add(schemaName);
@@ -94,7 +94,7 @@ public class DomainEditorServiceBase extends BaseRemoteService
     }
 
 
-    public Map getTablesForLookup(String containerId, String schemaName)
+    public Map<String,String> getTablesForLookup(String containerId, String schemaName)
     {
         try
         {

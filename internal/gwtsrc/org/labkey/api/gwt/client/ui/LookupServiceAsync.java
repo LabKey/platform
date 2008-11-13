@@ -18,6 +18,9 @@ package org.labkey.api.gwt.client.ui;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * I couldn't seems to get subclassing interfaces to work,
  * so just have the controller/designer wrap its service for
@@ -25,7 +28,7 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
  */
 public interface LookupServiceAsync
 {
-    public void /*Map*/ getContainers(AsyncCallback async);
-    public void /*List*/ getSchemas(String containerId, AsyncCallback async);
-    public void /*Map*/ getTablesForLookup(String containerId, String schemaName, AsyncCallback async);
+    public void getContainers(AsyncCallback<List<String>> async);
+    public void getSchemas(String containerId, AsyncCallback<List<String>> async);
+    public void getTablesForLookup(String containerId, String schemaName, AsyncCallback<Map<String,String>> async);
 }

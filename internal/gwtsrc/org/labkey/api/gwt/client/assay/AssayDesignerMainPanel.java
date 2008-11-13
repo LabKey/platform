@@ -42,7 +42,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
     private Integer _protocolId;
     protected GWTProtocol _assay;
     private boolean _dirty;
-    private List _domainEditors = new ArrayList();
+    private List<PropertiesEditor> _domainEditors = new ArrayList<PropertiesEditor>();
     private HTML _statusLabel = new HTML("<br/>");
     private String _statusSuccessful = "Save successful.";
     private BoundTextBox _nameBox;
@@ -65,31 +65,31 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
         _rootPanel.add(new Label("Loading..."));
         if (_protocolId != null)
         {
-            getService().getAssayDefinition(_protocolId.intValue(), _copy, new AsyncCallback()
+            getService().getAssayDefinition(_protocolId.intValue(), _copy, new AsyncCallback<GWTProtocol>()
             {
                 public void onFailure(Throwable throwable)
                 {
                     addErrorMessage("Unable to load assay definition: " + throwable.getMessage());
                 }
 
-                public void onSuccess(Object object)
+                public void onSuccess(GWTProtocol assay)
                 {
-                    show((GWTProtocol) object);
+                    show(assay);
                 }
             });
         }
         else
         {
-            getService().getAssayTemplate(_providerName, new AsyncCallback()
+            getService().getAssayTemplate(_providerName, new AsyncCallback<GWTProtocol>()
             {
                 public void onFailure(Throwable throwable)
                 {
                     addErrorMessage("Unable to load assay template: " + throwable.getMessage());
                 }
 
-                public void onSuccess(Object object)
+                public void onSuccess(GWTProtocol assay)
                 {
-                    show((GWTProtocol) object);
+                    show(assay);
                 }
             });
         }
@@ -124,7 +124,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
         {
             _rootPanel.add(new HTML("<br/>"));
 
-            GWTDomain domain = (GWTDomain) _assay.getDomains().get(i);
+            GWTDomain domain = _assay.getDomains().get(i);
 
             PropertiesEditor editor = createPropertiesEditor(domain);
             editor.addChangeListener(new ChangeListener()
@@ -137,7 +137,6 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
 
             editor.init(domain);
             _domainEditors.add(editor);
-            editor.setMode(PropertiesEditor.modeEdit);
 
             VerticalPanel vPanel = new VerticalPanel();
             if (domain.getDescription() != null)
@@ -225,7 +224,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
             int selectedIndex = -1;
             for (int i = 0; i < assay.getAvailablePlateTemplates().size(); i++)
             {
-                String current = (String) assay.getAvailablePlateTemplates().get(i);
+                String current = assay.getAvailablePlateTemplates().get(i);
                 templateList.addItem(current);
                 if (current.equals(assay.getSelectedPlateTemplate()))
                     selectedIndex = i;
@@ -272,7 +271,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
 
     private boolean validate()
     {
-        List errors = new ArrayList();
+        List<String> errors = new ArrayList<String>();
         String error = _nameBox.validate();
         if (error != null)
             errors.add(error);
@@ -280,10 +279,9 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
         int numProps = 0;
 
         // Get the errors for each of the PropertiesEditors
-        for (int i = 0; i < _domainEditors.size(); i++)
+        for (PropertiesEditor propeditor : _domainEditors)
         {
-            PropertiesEditor propeditor = (PropertiesEditor)(_domainEditors.get(i));
-            List domainErrors = propeditor.validate();
+            List<String> domainErrors = propeditor.validate();
             numProps += propeditor.getPropertyCount(false);
             if (domainErrors != null && domainErrors.size() > 0)
                 errors.addAll(domainErrors);
@@ -299,7 +297,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
             {
                 if (i > 0)
                     errorString += "\n";
-                errorString += (String) errors.get(i);
+                errorString += errors.get(i);
             }
             Window.alert(errorString);
             return false;
@@ -310,7 +308,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
 
     public void save()
     {
-        save(new AsyncCallback()
+        save(new AsyncCallback<GWTProtocol>()
         {
             public void onFailure(Throwable caught)
             {
@@ -318,11 +316,11 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
                 setDirty(true);
             }
 
-            public void onSuccess(Object result)
+            public void onSuccess(GWTProtocol result)
             {
                 setDirty(false);
                 _statusLabel.setHTML( _statusSuccessful);
-                _assay = (GWTProtocol) result;
+                _assay = result;
                 _copy = false;
                 show(_assay);
             }
@@ -330,15 +328,15 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
         setAllowSave(false);
     }
 
-    public void save(AsyncCallback callback)
+    public void save(AsyncCallback<GWTProtocol> callback)
     {
         if (validate())
         {
-            List domains = new ArrayList();
+            List<GWTDomain> domains = new ArrayList<GWTDomain>();
 
-            for (int i = 0; i < _domainEditors.size(); i++)
+            for (PropertiesEditor _domainEditor : _domainEditors)
             {
-                domains.add(((PropertiesEditor)_domainEditors.get(i)).getDomainUpdates());
+                domains.add(_domainEditor.getDomainUpdates());
             }
             _assay.setDomains(domains);
 
@@ -371,14 +369,14 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
         }
         else
         {
-            save(new AsyncCallback()
+            save(new AsyncCallback<GWTProtocol>()
             {
                 public void onFailure(Throwable caught)
                 {
                     Window.alert(caught.getMessage());
                 }
 
-                public void onSuccess(Object result)
+                public void onSuccess(GWTProtocol protocol)
                 {
                     // save was successful, so don't prompt when navigating away
                     Window.removeWindowCloseListener(_closeListener);
@@ -393,17 +391,17 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
     {
         return new LookupServiceAsync()
         {
-            public void getContainers(AsyncCallback async)
+            public void getContainers(AsyncCallback<List<String>> async)
             {
                 getService().getContainers(async);
             }
 
-            public void getSchemas(String containerId, AsyncCallback async)
+            public void getSchemas(String containerId, AsyncCallback<List<String>> async)
             {
                 getService().getSchemas(containerId, async);
             }
 
-            public void getTablesForLookup(String containerId, String schemaName, AsyncCallback async)
+            public void getTablesForLookup(String containerId, String schemaName, AsyncCallback<Map<String,String>> async)
             {
                 getService().getTablesForLookup(containerId, schemaName, async);
             }
@@ -421,7 +419,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
             boolean dirty = _dirty;
             for (int i = 0; i < _domainEditors.size() && !dirty; i++)
             {
-                dirty = ((PropertiesEditor)_domainEditors.get(i)).isDirty();
+                dirty = _domainEditors.get(i).isDirty();
             }
             if (dirty)
                 return "Changes have not been saved and will be discarded.";

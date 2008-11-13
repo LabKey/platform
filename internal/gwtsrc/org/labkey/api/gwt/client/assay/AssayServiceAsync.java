@@ -20,6 +20,9 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTDomain;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * User: brittp
  * Date: June 20, 2007
@@ -27,18 +30,18 @@ import org.labkey.api.gwt.client.model.GWTDomain;
  */
 public interface AssayServiceAsync
 {
-    void getAssayDefinition(int rowId, boolean copy, AsyncCallback async);
+    void getAssayDefinition(int rowId, boolean copy, AsyncCallback<GWTProtocol> async);
 
-    void saveChanges(GWTProtocol plate, boolean replaceIfExisting, AsyncCallback async);
+    void saveChanges(GWTProtocol plate, boolean replaceIfExisting, AsyncCallback<GWTProtocol> async);
 
-    void updateDomainDescriptor(GWTDomain orig, GWTDomain update, AsyncCallback async);
+    void updateDomainDescriptor(GWTDomain orig, GWTDomain update, AsyncCallback<List<String>> async);
 
     // PropertiesEditor.LookupService
-    void getContainers(AsyncCallback async);
+    void getContainers(AsyncCallback<List<String>> async);
 
-    void getSchemas(String containerId, AsyncCallback async);
+    void getSchemas(String containerId, AsyncCallback<List<String>> async);
 
-    void getTablesForLookup(String containerId, String schemaName, AsyncCallback async);
+    void getTablesForLookup(String containerId, String schemaName, AsyncCallback<Map<String, String>> async);
 
-    void getAssayTemplate(String providerName, AsyncCallback asyncCallback);
+    void getAssayTemplate(String providerName, AsyncCallback<GWTProtocol> asyncCallback);
 }
