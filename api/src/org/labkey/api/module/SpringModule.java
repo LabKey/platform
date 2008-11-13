@@ -41,7 +41,6 @@ import java.net.URL;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: May 24, 2007
  * Time: 9:00:37 AM
@@ -66,13 +65,6 @@ public abstract class SpringModule extends DefaultModule implements ServletConte
      */
     public enum ContextType { none, context, config }
     
-    // Overrides must call super.startup()
-    public void startup(ModuleContext moduleContext)
-    {
-        // each module has its own WebApplicationContext();
-        initWebApplicationContext();
-    }
-
     public Controller getController(Class<? extends Controller> controllerClass)
     {
         try
@@ -151,7 +143,7 @@ public abstract class SpringModule extends DefaultModule implements ServletConte
     ContextLoader _contextLoader;
     WebApplicationContext _wac;
 
-    void initWebApplicationContext()
+    protected void initWebApplicationContext()
     {
         _parentContext = ModuleLoader.getServletContext();
         final WebApplicationContext rootWebApplicationContext = WebApplicationContextUtils.getWebApplicationContext(ModuleLoader.getServletContext());

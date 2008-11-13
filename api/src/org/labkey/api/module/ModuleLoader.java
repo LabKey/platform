@@ -772,12 +772,8 @@ public class ModuleLoader implements Filter
         if (isUpgradeRequired())
         {
             _deferUsageReport = true;
-            //Let admin pages through. Otherwise go back to upgrade URL
-            if (isAdminURL(request))
-                filterChain.doFilter(servletRequest, servletResponse);
-            else
-                response.sendRedirect(getMainUpgradeURL().toString());
-
+            // Let everything through -- controllers will redirect to upgrade page if necessary
+            filterChain.doFilter(servletRequest, servletResponse);
             return;
         }
 
@@ -796,11 +792,6 @@ public class ModuleLoader implements Filter
     public void setDeferUsageReport(boolean defer)
     {
         _deferUsageReport = defer;
-    }
-
-    public ActionURL getMainUpgradeURL()
-    {
-        return PageFlowUtil.urlProvider(AdminUrls.class).getModuleStatusURL();
     }
 
     public void runBeforeUpdates()

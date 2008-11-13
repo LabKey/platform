@@ -29,6 +29,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.common.util.Pair;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -186,6 +188,18 @@ public class ViewServlet extends HttpServlet
                 _log.debug("<< " + request.getMethod());
             }
         }
+    }
+
+
+    public static ActionURL getModuleUpgradeURL()
+    {
+        return PageFlowUtil.urlProvider(AdminUrls.class).getModuleStatusURL();
+    }
+
+
+    public static void redirectToModuleUpgrade(HttpServletResponse response) throws IOException
+    {
+        response.sendRedirect(getModuleUpgradeURL().toString());
     }
 
 
@@ -350,6 +364,13 @@ public class ViewServlet extends HttpServlet
             request.setAttribute(ViewServlet.ORIGINAL_URL, helper.getURIString());
         }
         request.setAttribute(REQUEST_URL, url);
+
+        // No Beehive actions allowed during upgrade
+        if (ModuleLoader.getInstance().isUpgradeRequired())
+        {
+            redirectToModuleUpgrade(response);
+            return;
+        }
 
         RequestDispatcher r = request.getRequestDispatcher(dispatchUrl);
         r.forward(request, response);

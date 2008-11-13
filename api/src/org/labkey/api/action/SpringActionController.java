@@ -20,6 +20,8 @@ import org.apache.beehive.netui.pageflow.Forward;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
+import org.labkey.api.module.AllowedDuringUpgrade;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
@@ -295,6 +297,16 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 return null;
             }
 
+            // During upgrade, only actions marked with @AllowedDuringUpgrade are allowed -- redirect everything else
+            if (ModuleLoader.getInstance().isUpgradeRequired())
+            {
+                if (!action.getClass().isAnnotationPresent(AllowedDuringUpgrade.class))
+                {
+                    ViewServlet.redirectToModuleUpgrade(response);
+                    return null;
+                }
+            }
+
             PageConfig pageConfig = defaultPageConfig();
 
             if (action instanceof HasViewContext)
@@ -542,8 +554,8 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
         private class DefaultActionDescriptor implements ActionDescriptor
         {
-            private Class<? extends Controller> _actionClass;
-            private Constructor _con;
+            private final Class<? extends Controller> _actionClass;
+            private final Constructor _con;
             private String _primaryName;
             private List<String> _allNames;
             private long _count = 0;
@@ -565,11 +577,13 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 else
                     initializeNames(getDefaultActionName());
 
+                Constructor con = null;
+
                 if (_outerClass != null)
                 {
                     try
                     {
-                        _con = actionClass.getConstructor(_outerClass);
+                        con = actionClass.getConstructor(_outerClass);
                     }
                     catch (NoSuchMethodException x)
                     {
@@ -579,8 +593,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
                 try
                 {
-                    if (null == _con)
-                        _con = actionClass.getConstructor();
+                    _con = (null != con ? con : actionClass.getConstructor());
                 }
                 catch (NoSuchMethodException x)
                 {
@@ -662,7 +675,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
 
         // Returns the live values.  No synchronization is needed on the map itself (it's completely initialized when
-        // the controller class loads) but callers will want to synchronize on each ActionDescriptor before inspecting
+        // the controller class loads) but callers need to synchronize on each ActionDescriptor before inspecting
         // or displaying statistics
         public Set<ActionDescriptor> getActionDescriptors()
         {

@@ -40,7 +40,6 @@ import javax.servlet.http.HttpSession;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Mar 20, 2005
  * Time: 12:26:38 PM

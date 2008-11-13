@@ -22,34 +22,35 @@ import java.io.PrintWriter;
 
 public class HtmlView extends WebPartView
 {
-    private String contentType = null;
-    private Object[] printfParams;
+    private String _contentType = null;
+    private Object[] _printfParams;
+    private String _html = null;
 
     public HtmlView(String html)
     {
-        addObject("html", html);
+        setHtml(html);
     }
 
     public HtmlView(String title, String html)
     {
+        this(html);
         setTitle(title);
-        addObject("html", html);
     }
 
     public HtmlView(String title, String html, Object... params)
     {
         this(title, html);
-        this.printfParams = params;
+        _printfParams = params;
     }
 
     public void setHtml(String html)
     {
-        addObject("html", html);
+        _html = html;
     }
 
     public void setPrintfParameters(Object... params)
     {
-        printfParams = params;
+        _printfParams = params;
     }
 
     /**
@@ -57,19 +58,19 @@ public class HtmlView extends WebPartView
      */
     public void setContentType(String contentType)
     {
-        this.contentType = contentType;
+        _contentType = contentType;
     }
 
     @Override
     public void renderView(Object model, PrintWriter out) throws IOException, ServletException
     {
-        assert null == contentType || getFrame() == FrameType.NONE;
-        if (null != contentType)
-            getViewContext().getResponse().setContentType(contentType);
+        assert null == _contentType || getFrame() == FrameType.NONE;
+        if (null != _contentType)
+            getViewContext().getResponse().setContentType(_contentType);
 
-        if (null != printfParams)
-            out.printf((String) getViewContext().get("html"), printfParams);
+        if (null != _printfParams)
+            out.printf(_html, _printfParams);
         else
-            out.print(getViewContext().get("html"));
+            out.print(_html);
     }
 }

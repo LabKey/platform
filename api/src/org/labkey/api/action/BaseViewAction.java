@@ -542,15 +542,15 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
             }
         }
 
-        RequiresSiteAdmin requiresSiteAdmin = actionClass.getAnnotation(RequiresSiteAdmin.class);
-        if (null != requiresSiteAdmin && !user.isAdministrator())
+        boolean requiresSiteAdmin = actionClass.isAnnotationPresent(RequiresSiteAdmin.class);
+        if (requiresSiteAdmin && !user.isAdministrator())
             HttpView.throwUnauthorized();
 
-        RequiresLogin requiresLogin = actionClass.getAnnotation(RequiresLogin.class);
-        if (null != requiresLogin && user.isGuest())
+        boolean requiresLogin = actionClass.isAnnotationPresent(RequiresLogin.class);
+        if (requiresLogin && user.isGuest())
             HttpView.throwUnauthorized();
 
-        if (null == requiresPermission && null == requiresSiteAdmin && null == requiresLogin)
+        if (null == requiresPermission && requiresSiteAdmin && requiresLogin)
             throw new IllegalStateException("@RequiresPermission, @RequiresSiteAdmin, or @RequiresLogin annotation is required");
     }
 
@@ -559,8 +559,8 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
     {
         checkActionPermissions(actionClass, context.getContainer(), context.getUser());
 
-        IgnoresTermsOfUse ignoresTermsOfUse = actionClass.getAnnotation(IgnoresTermsOfUse.class);
-        if (null == ignoresTermsOfUse && !context.hasAgreedToTermsOfUse())
+        boolean requiresTermsOfUse = !actionClass.isAnnotationPresent(IgnoresTermsOfUse.class);
+        if (requiresTermsOfUse && !context.hasAgreedToTermsOfUse())
             throw new TermsOfUseException();
     }
 }
