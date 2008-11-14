@@ -40,9 +40,9 @@ public class PropertyPane extends FlexTable implements ValidatorDialog.UpdateLis
 
     private TextArea _descriptionTextArea = new TextArea();
     private CheckBox _requiredCheckBox = new CheckBox();
-    private List _validators = new ArrayList();
+    private List<GWTPropertyValidator> _validators = new ArrayList<GWTPropertyValidator>();
     private FlexTable _validatorTable;
-    private ImageButton _rangeButton;
+    private ImageButton _addRangeButton;
     private boolean _validatorChanged;
 
     private GWTPropertyDescriptor _currentPD;
@@ -76,11 +76,12 @@ public class PropertyPane extends FlexTable implements ValidatorDialog.UpdateLis
             "<tr class=\"labkey-alternate-row\"><td><code>h</code><td>Hour in am/pm (1-12)<td><code>12</code></tr></table>";
     private final Element _backgroundElement;
     private PropertiesEditor _propertiesEditor;
-    private List _changeListeners = new ArrayList();
+    private List<ChangeListener> _changeListeners = new ArrayList<ChangeListener>();
     private boolean _editable;
 
     private Image _spacerImage;
     private int _spacerHeight;
+    private RegexButton _addRegexButton;
 
     public PropertyPane(Element backgroundElement, PropertiesEditor propertiesEditor)
     {
@@ -176,9 +177,10 @@ public class PropertyPane extends FlexTable implements ValidatorDialog.UpdateLis
 
         row++;
 
-        setWidget(row++, 1, new RegexButton("Add New Regular Expression"));
-        _rangeButton = new RangeButton("Add New Range");
-        setWidget(row++, 1, _rangeButton);
+        _addRegexButton = new RegexButton("Add New Regular Expression");
+        setWidget(row++, 1, _addRegexButton);
+        _addRangeButton = new RangeButton("Add New Range");
+        setWidget(row++, 1, _addRangeButton);
 
         _validatorTable = new FlexTable();
         int col = 1;
@@ -202,30 +204,32 @@ public class PropertyPane extends FlexTable implements ValidatorDialog.UpdateLis
         while (rowCount > 0)
             _validatorTable.removeRow(rowCount--);
 
-        for (Iterator it = _validators.iterator(); it.hasNext(); row++)
+        for (final GWTPropertyValidator pv : _validators)
         {
-            final GWTPropertyValidator pv = (GWTPropertyValidator)it.next();
             HorizontalPanel panel = new HorizontalPanel();
 
-            String src = PropertyUtil.getContextPath() + "/_images/partdelete.gif";
-            Image i = new Image(src);
-            i.addClickListener(new ClickListener(){
-                public void onClick(Widget sender)
-                {
-                    _validators.remove(pv);
-                    _validatorChanged = true;
-                    copyValuesToPropertyDescriptor();
-                    refreshValidators();
-                }
-            });
+            if (_editable)
+            {
+                String src = PropertyUtil.getContextPath() + "/_images/partdelete.gif";
+                Image i = new Image(src);
+                i.addClickListener(new ClickListener(){
+                    public void onClick(Widget sender)
+                    {
+                        _validators.remove(pv);
+                        _validatorChanged = true;
+                        copyValuesToPropertyDescriptor();
+                        refreshValidators();
+                    }
+                });
 
-            panel.add(i);
-            panel.add(new HTML("&nbsp;"));
-            if (pv.getType().equals(GWTPropertyValidator.TYPE_RANGE))
-                panel.add(new RangeButton("...", pv));
-            else if (pv.getType().equals(GWTPropertyValidator.TYPE_REGEX))
-                panel.add(new RegexButton("...", pv));
-
+                panel.add(i);
+                panel.add(new HTML("&nbsp;"));
+                if (pv.getType().equals(GWTPropertyValidator.TYPE_RANGE))
+                    panel.add(new RangeButton("...", pv));
+                else if (pv.getType().equals(GWTPropertyValidator.TYPE_REGEX))
+                    panel.add(new RegexButton("...", pv));
+            }
+            
             _validatorTable.setWidget(row, 0, panel);
             _validatorTable.setWidget(row, 1, new HTML(StringUtils.filter(pv.getName(), true)));
             _validatorTable.setWidget(row, 2, new HTML(StringUtils.filter(pv.getDescription(), true)));
@@ -282,9 +286,9 @@ public class PropertyPane extends FlexTable implements ValidatorDialog.UpdateLis
 
     private void fireChangeListeners()
     {
-        for (int i = 0; i < _changeListeners.size(); i++)
+        for (ChangeListener changeListener : _changeListeners)
         {
-            ((ChangeListener)_changeListeners.get(i)).onChange(this);
+            changeListener.onChange(this);
         }
     }
 
@@ -326,6 +330,8 @@ public class PropertyPane extends FlexTable implements ValidatorDialog.UpdateLis
         _formatTextBox.setEnabled(enabled);
         _descriptionTextArea.setEnabled(enabled);
         _requiredCheckBox.setEnabled(enabled);
+        _addRegexButton.setEnabled(enabled);
+        _addRangeButton.setEnabled(enabled);
     }
 
     public void showPropertyDescriptor(GWTPropertyDescriptor newPD, boolean editable)
@@ -379,14 +385,14 @@ public class PropertyPane extends FlexTable implements ValidatorDialog.UpdateLis
             _formatTextBox.setEnabled(false);
             _formatTextBox.setText("<no format set>");
             _formatHelpPopup.setVisible(false);
-            _rangeButton.setVisible(false);
+            _addRangeButton.setVisible(false);
         }
         else
         {
             _formatTextBox.setEnabled(_editable);
             _formatHelpPopup.setVisible(true);
             _formatHelpPopup.setBody(newPD.getRangeURI().equals(TypePicker.xsdDateTime) ? FORMAT_HELP_DATE : FORMAT_HELP_NUMBER);
-            _rangeButton.setVisible(true);
+            _addRangeButton.setVisible(true);
         }
     }
 

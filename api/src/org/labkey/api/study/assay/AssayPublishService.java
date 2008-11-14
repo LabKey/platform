@@ -29,8 +29,6 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.LinkedHashMap;
 
 /**
  * User: brittp
@@ -49,10 +47,6 @@ public class AssayPublishService
 
         ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, ExpProtocol protocol,
                                        Map<String, Object>[] dataMaps, Map<String, PropertyType> propertyTypes, String keyPropertyName, List<String> errors)
-                throws SQLException, IOException, ServletException;
-
-        ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, ExpProtocol protocol,
-                                       Map<String, Object>[] dataMaps, List<PropertyDescriptor> propertyTypes, List<String> errors)
                 throws SQLException, IOException, ServletException;
 
         ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, ExpProtocol protocol,

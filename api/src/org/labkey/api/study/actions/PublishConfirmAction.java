@@ -33,7 +33,6 @@ import org.labkey.api.study.assay.AssayPublishKey;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.query.PublishRunDataQueryView;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
@@ -266,16 +265,22 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         {
             returnURL = getSummaryLink(_protocol).addParameter("clearDataRegionSelectionKey", publishConfirmForm.getDataRegionSelectionKey()).toString();
         }
-        ActionButton cancelButton = new ActionButton("Cancel");
-        cancelButton.setURL(returnURL);
-        buttons.add(cancelButton);
+
         ActionURL publishURL = getPublishHandlerURL(_protocol, provider);
-        publishURL.replaceParameter("validate", "true");
-        ActionButton validateButton = new ActionButton(publishURL.getLocalURIString(), "Validate");
-        buttons.add(validateButton);
+        
         publishURL.replaceParameter("validate", "false");
         ActionButton publishButton = new ActionButton(publishURL.getLocalURIString(), "Copy to Study");
         buttons.add(publishButton);
+
+        publishURL.replaceParameter("validate", "true");
+        ActionButton validateButton = new ActionButton(publishURL.getLocalURIString(), "Validate");
+        buttons.add(validateButton);
+
+
+        ActionButton cancelButton = new ActionButton("Cancel");
+        cancelButton.setURL(returnURL);
+        buttons.add(cancelButton);
+
         queryView.setButtons(buttons);
         return new VBox(new JspView<PublishConfirmBean>("/org/labkey/api/study/actions/publishHeader.jsp",
                 new PublishConfirmBean(dateBased), errors), queryView);
