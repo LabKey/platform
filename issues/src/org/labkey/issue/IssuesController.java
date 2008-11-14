@@ -18,7 +18,6 @@ package org.labkey.issue;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import org.apache.beehive.netui.pageflow.FormData;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -961,7 +960,7 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    public static class CompleteUserForm extends FormData
+    public static class CompleteUserForm
     {
         private String _prefix;
         private String _issueId;
@@ -1896,7 +1895,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    public static class ListForm extends FormData
+    public static class ListForm
     {
         private QuerySettings _settings;
         private boolean _export;

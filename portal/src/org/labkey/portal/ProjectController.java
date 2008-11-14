@@ -613,23 +613,6 @@ public class ProjectController extends SpringActionController
         }
     }
 
-    public static class ButtonForm extends FormData
-    {
-        private String text;
-
-        public String getText()
-        {
-            return text;
-        }
-
-
-        public void setText(String text)
-        {
-            this.text = text;
-        }
-    }
-
-
 
     @RequiresPermission(ACL.PERM_NONE)
     public static class ExpandCollapseAction extends SimpleViewAction<CollapseExpandForm>

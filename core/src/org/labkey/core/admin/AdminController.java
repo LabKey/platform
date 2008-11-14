@@ -49,7 +49,6 @@ import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.common.util.Pair;
-import org.labkey.core.login.LoginController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.data.xml.TablesDocument;
 import org.springframework.validation.BindException;
@@ -58,11 +57,11 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
+import javax.mail.MessagingException;
 import javax.net.ssl.HttpsURLConnection;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.mail.MessagingException;
 import java.beans.Introspector;
 import java.io.*;
 import java.lang.management.*;
@@ -248,17 +247,6 @@ public class AdminController extends SpringActionController
         public ActionURL getMaintenanceURL()
         {
             return new ActionURL(MaintenanceAction.class, ContainerManager.getRoot());
-        }
-
-        public ActionURL getModuleUpgradeURL(String moduleName, double oldVersion, double newVersion, ModuleLoader.ModuleState state)
-        {
-            ActionURL url = new ActionURL(ModuleUpgradeAction.class, ContainerManager.getRoot());
-            url.addParameter("moduleName", moduleName);
-            url.addParameter("oldVersion", String.valueOf(oldVersion));
-            url.addParameter("newVersion", String.valueOf(newVersion));
-            url.addParameter("state", state.toString());
-
-            return url;
         }
 
         public ActionURL getManageFoldersURL(Container c)
@@ -3320,19 +3308,12 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_NONE)
+    @RequiresSiteAdmin
     @AllowedDuringUpgrade
     public class ModuleStatusAction extends SimpleViewAction<UpgradeStatusForm>
     {
         public ModelAndView getView(UpgradeStatusForm form, BindException errors) throws Exception
         {
-            //This is first UI at startup.  Create first admin account, if necessary.
-            if (UserManager.hasNoUsers())
-                HttpView.throwRedirect(LoginController.getInitialUserURL());
-
-            if (!getUser().isAdministrator())
-                HttpView.throwUnauthorized();
-
             VBox vbox = new VBox();
             vbox.addView(new ModuleStatusView());
             ModuleLoader loader = ModuleLoader.getInstance();

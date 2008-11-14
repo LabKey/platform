@@ -72,7 +72,6 @@ public class LoginController extends SpringActionController
 
     public LoginController()
     {
-        super();
         setActionResolver(_actionResolver);
     }
 
@@ -88,6 +87,11 @@ public class LoginController extends SpringActionController
         public ActionURL getConfigureURL()
         {
             return new ActionURL(ConfigureAction.class, ContainerManager.getRoot());
+        }
+
+        public ActionURL getInitialUserURL()
+        {
+            return new ActionURL(InitialUserAction.class, ContainerManager.getRoot());
         }
 
         public ActionURL getVerificationURL(Container c, String email, String verification, Pair<String, String>[] extraParameters)
@@ -1025,12 +1029,6 @@ public class LoginController extends SpringActionController
         {
             return null;
         }
-    }
-
-
-    public static ActionURL getInitialUserURL()
-    {
-        return new ActionURL(InitialUserAction.class, ContainerManager.getRoot());
     }
 
 
