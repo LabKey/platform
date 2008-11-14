@@ -18,24 +18,18 @@ package org.labkey.api.module;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.UrlProvider;
-import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.*;
-import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 
 import javax.naming.*;
 import javax.servlet.Filter;
 import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
@@ -735,51 +729,16 @@ public class ModuleLoader implements Filter
 
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException
     {
-        HttpServletResponse response = (HttpServletResponse) servletResponse;
-        HttpServletRequest request = (HttpServletRequest) servletRequest;
-
-        User user = (User)request.getUserPrincipal();
-        if (isAdminOnlyMode())
-        {
-            if (user.isGuest() && !isAdminURL(request))
-            {
-                String current = request.getRequestURL().toString();
-                ActionURL currentURL = (null == current ? null : new ActionURL(current));
-                ActionURL redirectURL = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(currentURL);
-                response.sendRedirect(redirectURL.toString());
-                return;
-            }
-            else if (!user.isAdministrator() && !isAdminURL(request))
-            {
-                int stackSize = HttpView.getStackSize();
-                try
-                {
-                    ActionURL url = PageFlowUtil.urlProvider(AdminUrls.class).getMaintenanceURL();
-                    response.sendRedirect(url.toString());
-                    return;
-                }
-                catch (Exception x)
-                {
-                    throw new ServletException(x);
-                }
-                finally
-                {
-                    HttpView.resetStackSize(stackSize);
-                }
-            }
-        }
-
         if (isUpgradeRequired())
         {
-            _deferUsageReport = true;
-            // Let everything through -- controllers will redirect to upgrade page if necessary
-            filterChain.doFilter(servletRequest, servletResponse);
-            return;
+            setDeferUsageReport(true);
+        }
+        else
+        {
+            ensureStartupComplete();
         }
 
-        ensureStartupComplete();
-
-        filterChain.doFilter(servletRequest, response);
+        filterChain.doFilter(servletRequest, servletResponse);
 
         ConnectionWrapper.dumpLeaksForThread(Thread.currentThread());
     }
@@ -865,12 +824,6 @@ public class ModuleLoader implements Filter
 
             _startupComplete = true;
         }
-    }
-
-    private boolean isAdminURL(HttpServletRequest request)
-    {
-        String uri = request.getRequestURI().toLowerCase();
-        return uri.matches(".*admin.*") || uri.matches(".*login.*") || uri.matches(".*\\Qthemestylesheet.view\\E");
     }
 
     void saveModuleContext(ModuleContext context)
@@ -990,6 +943,7 @@ public class ModuleLoader implements Filter
         return _modules;
     }
 
+    // TODO: Move to LoginController, only place that uses this now
     public boolean isAdminOnlyMode()
     {
         return AppProps.getInstance().isUserRequestedAdminOnlyMode() || (isUpgradeRequired() && !UserManager.hasNoUsers());

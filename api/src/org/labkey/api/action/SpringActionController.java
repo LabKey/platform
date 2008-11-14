@@ -20,16 +20,22 @@ import org.apache.beehive.netui.pageflow.Forward;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.User;
+import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
+import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.settings.AppProps;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.multipart.MultipartException;
@@ -297,14 +303,12 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 return null;
             }
 
-            // During upgrade, only actions marked with @AllowedDuringUpgrade are allowed -- redirect everything else
-            if (ModuleLoader.getInstance().isUpgradeRequired())
+            ActionURL redirectURL = getUpgradeMaintenanceRedirect(request, action);
+
+            if (null != redirectURL)
             {
-                if (!action.getClass().isAnnotationPresent(AllowedDuringUpgrade.class))
-                {
-                    ViewServlet.redirectToModuleUpgrade(response);
-                    return null;
-                }
+                response.sendRedirect(redirectURL.toString());
+                return null;
             }
 
             PageConfig pageConfig = defaultPageConfig();
@@ -354,6 +358,48 @@ public abstract class SpringActionController implements Controller, HasViewConte
             if (null != action)
                 _actionResolver.addTime(action, System.currentTimeMillis() - startTime);
         }
+        return null;
+    }
+
+
+    public static ActionURL getUpgradeMaintenanceRedirect(HttpServletRequest request, Controller action)
+    {
+        if (UserManager.hasNoUsers())
+        {
+            // Let the "initial user" view & post through... otherwise redirect to initial user action
+            if (request.getRequestURL().toString().contains("/login/initialUser."))
+                return null;
+            else
+                return PageFlowUtil.urlProvider(LoginUrls.class).getInitialUserURL();
+        }
+
+        boolean upgradeRequired = ModuleLoader.getInstance().isUpgradeRequired();
+        boolean maintenanceMode = AppProps.getInstance().isUserRequestedAdminOnlyMode();
+
+        if (upgradeRequired || maintenanceMode)
+        {
+            boolean actionIsAllowed = (null != action && action.getClass().isAnnotationPresent(AllowedDuringUpgrade.class));
+
+            if (!actionIsAllowed)
+            {
+                User user = (User)request.getUserPrincipal();
+
+                if (user.isGuest())
+                {
+                    String requested = request.getRequestURL().toString();
+                    return PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(ContainerManager.getRoot(), requested);
+                }
+                else if (!user.isAdministrator())
+                {
+                    return PageFlowUtil.urlProvider(AdminUrls.class).getMaintenanceURL();
+                }
+                else if (upgradeRequired)
+                {
+                    return PageFlowUtil.urlProvider(AdminUrls.class).getModuleStatusURL();
+                }
+            }
+        }
+
         return null;
     }
 

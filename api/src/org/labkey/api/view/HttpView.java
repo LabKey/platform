@@ -53,7 +53,6 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
 
     private static ThreadLocal<ViewStack> _viewContexts = new ThreadLocal<ViewStack>()
     {
-
         protected ViewStack initialValue()
         {
             return new ViewStack();
