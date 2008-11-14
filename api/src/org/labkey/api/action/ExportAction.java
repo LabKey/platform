@@ -36,7 +36,14 @@ public abstract class ExportAction<FORM> extends SimpleViewAction<FORM>
 
     public final ModelAndView getView(FORM form, BindException errors) throws Exception
     {
-        export(form, getViewContext().getResponse(), errors);
+        try
+        {
+            export(form, getViewContext().getResponse(), errors);
+        }
+        catch (ExportException e)
+        {
+            return e.getErrorView();
+        }
         return null;
     }
 

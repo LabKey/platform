@@ -156,7 +156,7 @@ public class ActionURL extends URLHelper implements Cloneable
     @Deprecated
     public ActionURL(String pageFlow, String actionName, Container container)
     {
-        this(pageFlow, actionName, container.getPath());
+        this(pageFlow, actionName, container == null ? null : container.getPath());
     }
 
     /**

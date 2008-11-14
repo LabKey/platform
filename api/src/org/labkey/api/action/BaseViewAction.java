@@ -523,14 +523,15 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
     public static void checkActionPermissions(Class<? extends Controller> actionClass, Container c, User user) throws UnauthorizedException
     {
+        if (null == c)
+        {
+            HttpView.throwNotFound();
+            return;
+        }
+
         RequiresPermission requiresPermission = actionClass.getAnnotation(RequiresPermission.class);
         if (null != requiresPermission)
         {
-            if (null == c)
-            {
-                HttpView.throwNotFound();
-                return;
-            }
             if (!c.hasPermission(user, requiresPermission.value()))
             {
                 if (c.isForbiddenProject(user))
