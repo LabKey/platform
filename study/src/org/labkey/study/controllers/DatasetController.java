@@ -385,9 +385,9 @@ public class DatasetController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class DefineAndImportDatasetAction extends SimpleViewAction<DefineAndImportForm>
+    public class DefineAndImportDatasetAction extends SimpleViewAction<DatasetIdForm>
     {
-        public ModelAndView getView(DefineAndImportForm form, BindException errors) throws Exception
+        public ModelAndView getView(DatasetIdForm form, BindException errors) throws Exception
         {
             Map<String,String> props = new HashMap<String,String>();
 
@@ -438,7 +438,7 @@ public class DatasetController extends BaseStudyController
         }
     }
 
-    public static class DefineAndImportForm
+    public static class DatasetIdForm
     {
         private int datasetId;
 
@@ -450,6 +450,31 @@ public class DatasetController extends BaseStudyController
         public void setDatasetId(int datasetId)
         {
             this.datasetId = datasetId;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class UnlinkAssayAction extends SimpleViewAction<DatasetIdForm>
+    {
+        public ModelAndView getView(DatasetIdForm datasetIdForm, BindException errors) throws Exception
+        {
+            Study study = getStudy();
+            DataSetDefinition def = study.getDataSet(datasetIdForm.getDatasetId());
+            if (def == null)
+                throw new IllegalArgumentException("No dataset found with id of " + datasetIdForm.getDatasetId());
+            def.setProtocolId(null);
+            StudyManager.getInstance().updateDataSetDefinition(getUser(), def);
+
+            ActionURL returnURL = new ActionURL(StudyController.EditTypeAction.class, getContainer()).
+                    addParameter("datasetId", datasetIdForm.getDatasetId());
+            HttpView.throwRedirect(returnURL);
+
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
         }
     }
 

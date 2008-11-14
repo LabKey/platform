@@ -16,6 +16,7 @@
 
 package org.labkey.study.assay;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
@@ -25,7 +26,6 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.TimepointType;
-import org.labkey.study.model.QCState;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.DateUtil;
@@ -35,8 +35,8 @@ import org.labkey.api.view.HttpView;
 import org.labkey.common.util.Pair;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
-import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.BaseStudyController;
+import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.*;
 
 import javax.servlet.ServletException;
@@ -89,13 +89,6 @@ public class AssayPublishManager implements AssayPublishService.Service
                 studyContainers.put(container, study.getLabel());
         }
         return studyContainers;
-    }
-
-    public ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, ExpProtocol protocol,
-                                          Map<String, Object>[] dataMaps, List<PropertyDescriptor> types, List<String> errors)
-            throws SQLException, IOException, ServletException
-    {
-        return publishAssayData(user, sourceContainer, targetContainer, assayName, protocol, dataMaps, types, null, errors);
     }
 
     public ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, ExpProtocol protocol,
@@ -157,7 +150,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         return targetPds;
     }
 
-    public ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, ExpProtocol protocol,
+    public ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, @Nullable ExpProtocol protocol,
                                           Map<String, Object>[] dataMaps, List<PropertyDescriptor> types, String keyPropertyName, List<String> errors)
             throws SQLException, IOException, ServletException
     {
@@ -180,6 +173,20 @@ public class AssayPublishManager implements AssayPublishService.Service
             }
             if (dataset == null)
                 dataset = createAssayDataset(user, targetStudy, assayName, keyPropertyName, null, false, protocol);
+            else if (protocol != null)
+            {
+                Integer datasetProtocolId = dataset.getProtocolId();
+                if (datasetProtocolId == null)
+                {
+                    dataset.setProtocolId(protocol.getRowId());
+                    StudyManager.getInstance().updateDataSetDefinition(user, dataset);
+                }
+                else if (!datasetProtocolId.equals(protocol.getRowId()))
+                {
+                    errors.add("The destination dataset belongs to a different assay protocol");
+                    return null;
+                }
+            }
 
             types = createTargetPropertyDescriptors(dataset, types, errors);
             if (!errors.isEmpty())

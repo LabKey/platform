@@ -57,8 +57,6 @@ public class Designer implements EntryPoint
     private DatasetSchema _schemaPanel;
     private boolean _dirty;
 
-    private Integer _protocolId;
-
     private SubmitButton _saveButton;
 
     public void onModuleLoad()
@@ -70,17 +68,11 @@ public class Designer implements EntryPoint
         if (dateBased != null)
             _isDateBased = Boolean.valueOf(dateBased).booleanValue();
 
-        String protocolIdString = PropertyUtil.getServerProperty("protocolId");
-        if (protocolIdString != null)
-            _protocolId = Integer.parseInt(protocolIdString);
-
         _root = RootPanel.get("org.labkey.study.dataset.Designer-Root");
 
         _loading = new Label("Loading...");
 
         _propTable = new PropertiesEditor(getLookupService());
-        if (_protocolId != null)
-            _propTable.setReadOnly(true);
 
         _buttons = new FlexTable();
 
@@ -125,6 +117,9 @@ public class Designer implements EntryPoint
     public void setDataset(GWTDataset ds)
     {
         _dataset = ds;
+
+        if (_dataset != null && _dataset.getSourceAssayName() != null)
+            _propTable.setReadOnly(true);
 
         showUI();
     }
@@ -414,6 +409,11 @@ public class Designer implements EntryPoint
             });
             add(_box);
         }
+
+        public void setEnabled(boolean enabled)
+        {
+            _box.setEnabled(enabled);
+        }
     }
 
     private class BoundCheckBox extends CheckBox
@@ -550,6 +550,8 @@ public class Designer implements EntryPoint
 
         private void createPanel()
         {
+            boolean fromAssay = _dataset.getSourceAssayName() != null;
+
             String labelStyleName="labkey-form-label"; // Pretty yellow background for labels
             CellFormatter cellFormatter = getCellFormatter();
 
@@ -559,7 +561,15 @@ public class Designer implements EntryPoint
             {
                 String assaySourceHtml = "This dataset is linked to <a href=\"" + _dataset.getSourceAssayURL() +
                 "\">" + _dataset.getSourceAssayName() + "</a>.";
-                setHTML(row++, 0, assaySourceHtml);
+                setHTML(row, 0, assaySourceHtml);
+                ImageButton unlinkButton = new ImageButton("Unlink", new ClickListener()
+                {
+                    public void onClick(Widget sender)
+                    {
+                        navigate(_dataset.getUnlinkAssayURL());
+                    }
+                });
+                setWidget(row++, 1, unlinkButton);
             }
 
             BoundTextBox dsName = new BoundTextBox("dsName", _dataset.getName(), new WidgetUpdatable()
@@ -569,6 +579,8 @@ public class Designer implements EntryPoint
                     _dataset.setName(((TextBox)widget).getText());
                 }
             });
+            if (fromAssay)
+                dsName.setEnabled(false);
             DOM.setElementAttribute(dsName._box.getElement(), "id", "DatasetDesignerName");
             HorizontalPanel panel = new HorizontalPanel();
             panel.add(new Label("Dataset Name"));
@@ -687,6 +699,10 @@ public class Designer implements EntryPoint
             _noneButton = new RadioButton("additionalKey", "None");
             _noneButton.setChecked(_dataset.getKeyPropertyName() == null);
             DOM.setElementAttribute(_noneButton.getElement(), "id", "button_none");
+
+            if (fromAssay)
+                _noneButton.setEnabled(false);
+
             panel.add(_noneButton);
             vPanel.add(panel);
 
@@ -696,6 +712,8 @@ public class Designer implements EntryPoint
             panel.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
             final RadioButton dataFieldButton = new RadioButton("additionalKey", "Data Field ");
             DOM.setElementAttribute(dataFieldButton.getElement(), "id", "button_dataField");
+            if (fromAssay)
+                dataFieldButton.setEnabled(false);
             dataFieldButton.setChecked(_dataset.getKeyPropertyName() != null && !_dataset.getKeyPropertyManaged());
             panel.add(dataFieldButton);
 
@@ -708,7 +726,7 @@ public class Designer implements EntryPoint
                 }
             });
             DOM.setElementAttribute(dataFieldsBox.getElement(), "id", "list_dataField");
-            dataFieldsBox.setEnabled(!_dataset.getKeyPropertyManaged() && _dataset.getKeyPropertyName() != null);
+            dataFieldsBox.setEnabled(!fromAssay && !_dataset.getKeyPropertyManaged() && _dataset.getKeyPropertyName() != null);
 
             panel.add(dataFieldsBox);
             vPanel.add(panel);
@@ -717,6 +735,8 @@ public class Designer implements EntryPoint
             panel.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
             final RadioButton managedButton = new RadioButton("additionalKey", "Managed Field");
             DOM.setElementAttribute(managedButton.getElement(), "id", "button_managedField");
+            if (fromAssay)
+                managedButton.setEnabled(false);
             managedButton.setChecked(_dataset.getKeyPropertyManaged());
             panel.add(managedButton);
 
@@ -729,7 +749,7 @@ public class Designer implements EntryPoint
                 }
             });
             DOM.setElementAttribute(managedFieldsBox.getElement(), "id", "list_managedField");
-            managedFieldsBox.setEnabled(_dataset.getKeyPropertyManaged());
+            managedFieldsBox.setEnabled(_dataset.getKeyPropertyManaged() && !fromAssay);
 
             panel.add(managedFieldsBox);
             vPanel.add(panel);
@@ -772,9 +792,12 @@ public class Designer implements EntryPoint
                     }
                 }
             };
-            _noneButton.addClickListener(buttonListener);
-            dataFieldButton.addClickListener(buttonListener);
-            managedButton.addClickListener(buttonListener);
+            if (!fromAssay)
+            {
+                _noneButton.addClickListener(buttonListener);
+                dataFieldButton.addClickListener(buttonListener);
+                managedButton.addClickListener(buttonListener);
+            }
 
             resetKeyListBoxes(dataFieldsBox, managedFieldsBox);
 
@@ -786,6 +809,8 @@ public class Designer implements EntryPoint
                     _dataset.setDemographicData(((CheckBox)widget).isChecked());
                 }
             });
+            if (fromAssay)
+                demographicData.setEnabled(false);
             panel = new HorizontalPanel();
             panel.add(new Label("Demographic Data"));
             panel.add(new HelpPopup("Demographic Data", "Demographic data appears only once for each participant in the study."));

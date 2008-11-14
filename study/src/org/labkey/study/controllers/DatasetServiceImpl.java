@@ -111,8 +111,13 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
                 if (protocol != null)
                 {
                     ds.setSourceAssayName(protocol.getName());
-                    ActionURL url = AssayService.get().getAssayDataURL(protocol.getContainer(), protocol);
-                    ds.setSourceAssayURL(url.getLocalURIString());
+
+                    ActionURL assayURL = AssayService.get().getAssayDataURL(protocol.getContainer(), protocol);
+                    ds.setSourceAssayURL(assayURL.getLocalURIString());
+
+                    ActionURL unlinkAssayURL = new ActionURL(DatasetController.UnlinkAssayAction.class, getContainer());
+                    unlinkAssayURL.addParameter("datasetId", dd.getDataSetId());
+                    ds.setUnlinkAssayURL(unlinkAssayURL.getLocalURIString());
                 }
             }
 

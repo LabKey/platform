@@ -263,10 +263,6 @@ public class StudyController extends BaseStudyController
                     "dateBased", ""+study.isDateBased(),
                     "returnURL", new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", form.getDatasetId()).toString());
 
-            Integer protocolId = def.getProtocolId();
-            if (protocolId != null)
-                props.put("protocolId", protocolId.toString());
-
             HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.");
             HttpView view = new GWTView(Designer.class, props);
 
