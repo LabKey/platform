@@ -596,7 +596,8 @@ primaryExpression
 	|   constant
 	|   COLON^ identifier
 	// TODO: Add parens to the tree so the user can control the operator evaluation order.
-	|   OPEN! (expressionOrVector | subQuery) CLOSE!
+	// TODO LABKEY: 'expressionOrVector' is not supported, just use 'expression'
+	|   OPEN! (expression | subQuery) CLOSE!
 	|   PARAM^ (NUM_INT)?
 	;
 

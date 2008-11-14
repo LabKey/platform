@@ -23,9 +23,9 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.TableType;
 import org.labkey.query.controllers.dbuserschema.DbUserSchemaController;
 import org.labkey.query.view.DbUserSchema;
+import org.apache.commons.beanutils.ConvertUtils;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class DbUserSchemaTable extends FilteredTable
 {
@@ -122,18 +122,28 @@ public class DbUserSchemaTable extends FilteredTable
 
     public ActionURL delete(User user, ActionURL srcURL, QueryUpdateForm form) throws Exception
     {
-        String[] ids = form.getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME);
+        Set<String> ids = DataRegionSelection.getSelected(form.getViewContext(), true);
         List<ColumnInfo> pk = getPkColumns();
         if (pk.size() != 1)
             throw new IllegalStateException("Primary key must have 1 column in it, found: " + pk.size());
-
+        ColumnInfo pkColumn = pk.get(0);
+        Collection pkValues = ids;
+        if (pkColumn.getJavaClass() != String.class)
+        {
+            pkValues = new LinkedList();
+            for (String id : ids)
+            {
+                Object value = ConvertUtils.convert(id, pkColumn.getJavaClass());
+                pkValues.add(value);
+            }
+        }
 
         SimpleFilter filter = new SimpleFilter();
         if (_containerId != null)
         {
             filter.addCondition("container", _containerId);
         }
-        filter.addInClause(pk.get(0).getName(), Arrays.asList(ids));
+        filter.addInClause(pk.get(0).getName(), pkValues);
         Table.delete(getRealTable(), filter);
         return srcURL;
     }

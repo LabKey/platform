@@ -130,6 +130,7 @@ public class DefaultQueryUpdateService implements QueryUpdateService
                 {
                     case java.sql.Types.DATE:
                     case java.sql.Types.TIME:
+                    case java.sql.Types.TIMESTAMP:
                         row.put(col.getName(), value instanceof Date ? value : ConvertUtils.convert(value.toString(), Date.class));
                 }
             }

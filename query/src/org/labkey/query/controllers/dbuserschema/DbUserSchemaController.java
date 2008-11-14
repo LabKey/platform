@@ -31,6 +31,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.beans.PropertyValues;
+import org.apache.commons.beanutils.ConvertUtils;
 
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -187,9 +188,15 @@ public class DbUserSchemaController extends SpringActionController
             }
             else
             {
+                Object pkVal = form.getPkVal();
+                if (pkVal instanceof String)
+                {
+                    ColumnInfo col = table.getRealTable().getPkColumns().get(0);
+                    pkVal = ConvertUtils.convert((String)pkVal, col.getJavaClass());
+                }
                 if (table.getContainerId() != null)
                 {
-                    Map<String, Object> oldValues = Table.selectObject(table.getRealTable(), form.getPkVal(), Map.class);
+                    Map<String, Object> oldValues = Table.selectObject(table.getRealTable(), pkVal, Map.class);
                     if (oldValues == null)
                     {
                         errors.reject(ERROR_MSG, "The existing row was not found.");
@@ -202,7 +209,7 @@ public class DbUserSchemaController extends SpringActionController
                         return;
                     }
                 }
-                Table.update(getUser(), table.getRealTable(), values, form.getPkVal(), null);
+                Table.update(getUser(), table.getRealTable(), values, pkVal, null);
             }
         }
         catch (SQLException x)

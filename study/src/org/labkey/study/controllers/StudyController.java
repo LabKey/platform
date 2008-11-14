@@ -2221,7 +2221,6 @@ public class StudyController extends BaseStudyController
 
                 ActionButton deleteRows = new ActionButton("button", "Recall Selected Rows");
                 ActionURL deleteURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
-                deleteURL.addParameter(DataSetDefinition.DATASETKEY, datasetId);
                 deleteURL.addParameter("protocolId", protocolId);
                 deleteURL.addParameter("sourceLsid", sourceLsid);
 

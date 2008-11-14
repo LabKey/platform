@@ -51,7 +51,7 @@ public class DiscussionWebPartFactory extends BaseWebPartFactory
         String entityId = webPart.getPropertyMap().get("entityId");
 
         String pageUrlString = props.get("pageURL");
-        ActionURL pageURL = null != pageUrlString ? new ActionURL(pageUrlString) : null;
+        ActionURL pageURL = null != pageUrlString ? new ActionURL(pageUrlString) : portalCtx.getActionURL();
 
         String currentUrlString = props.get("currentURL");
         URLHelper currentURL = (null != currentUrlString ? new URLHelper(currentUrlString) : portalCtx.getActionURL());
