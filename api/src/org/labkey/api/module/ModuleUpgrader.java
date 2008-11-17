@@ -43,14 +43,15 @@ public class ModuleUpgrader
         while (iter.hasPrevious())
         {
             Module module = iter.previous();
-            module.beforeUpdate();
+            ModuleContext ctx = ModuleLoader.getInstance().getModuleContext(module);
+            module.beforeUpdate(ctx);
         }
 
         for (Module module : _modules)
         {
             ModuleContext ctx = ModuleLoader.getInstance().getModuleContext(module);
             module.versionUpdate(ctx);
-            module.afterUpdate();
+            module.afterUpdate(ctx);
             ctx.upgradeComplete(module.getVersion());
         }
     }

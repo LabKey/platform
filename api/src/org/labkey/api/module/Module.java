@@ -71,17 +71,9 @@ public interface Module
     // Formatted version number for display purposes.
     String getFormattedVersion();
 
-    /**
-     * Module has never been run before. Module should do anything that
-     * it needs to do before controller gets called. This may be nothing,
-     * but may involve setting up databases.
-     * <p/>
-     */
-    public void bootstrap();
-
     // Called on every module in REVERSE dependency order before versionUpdate(), as long as at least one module
     // requires updating.  This is a fine place to drop views and other dependent objects.
-    public void beforeUpdate();
+    public void beforeUpdate(ModuleContext moduleContext);
 
     /**
      * Do any version updating module needs to do. If module
@@ -100,7 +92,7 @@ public interface Module
 
     // Called on every module in dependency order after versionUpdate(), as long as at least one module requires
     // updating.  This is a fine place to create views and other dependent objects.
-    public void afterUpdate();
+    public void afterUpdate(ModuleContext moduleContext);
 
     //TODO: Spring ApplicationContext might be good here
 

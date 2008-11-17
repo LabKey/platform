@@ -42,8 +42,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
     private static final String JSP_PATH = "/jspTempDir/classes";
     private static final String JSP_PACKAGE_PATH = JSP_PACKAGE.replaceAll("\\.", "/");
     private static final Map<ResourceFinder, ClassLoader> _classLoaders = new HashMap<ResourceFinder, ClassLoader>();
-
-    private static boolean TEST = false;          // Set to true to force a re-compile of each JSP the first time it's encountered
+    private static final boolean TEST = false;          // Set to true to force a re-compile of each JSP the first time it's encountered
     private static final Set<String> _compiledJsps = new HashSet<String>();    // Used during test mode
 
     @Override
@@ -124,21 +123,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
 
                     // Compile the _jsp.java file
                     String stagingJava = classFile.getAbsolutePath().replaceFirst("\\.class", ".java");
-
-/*
-                    This is the code I want to execute now:
-
-                        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-                        compiler.run(null, null, null, stagingJava, "-cp", cp.getPath());
-
-                    ...but these are Java 1.6 specific classes and we still need to compile on Java 1.5, so use reflection instead.
-*/
-
-                    Class<?> clazz = Class.forName("javax.tools.ToolProvider");
-                    Method getSystemJavaCompilerMethod = clazz.getMethod("getSystemJavaCompiler");
-                    Object javaCompiler = getSystemJavaCompilerMethod.invoke(null);
-                    Method compileJavaMethod = javaCompiler.getClass().getMethod("run", InputStream.class, OutputStream.class, OutputStream.class, String[].class);
-                    compileJavaMethod.invoke(javaCompiler, null, null, null, new String[]{stagingJava, "-cp", cp.getPath()});
+                    compileJavaFile(stagingJava, cp.getPath());
 
                     _classLoaders.remove(finder);
 
@@ -164,6 +149,26 @@ public class RecompilingJspClassLoader extends JspClassLoader
            throw new RuntimeException(e);
        }
     }
+
+
+    private void compileJavaFile(String filePath, String classPath) throws Exception
+    {
+        /*
+            This is the code I want to execute here:
+
+                JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+                compiler.run(null, null, null, stagingJava, "-cp", cp.getPath());
+
+            ...but these are Java 1.6 specific classes and we still need to compile on Java 1.5, so use reflection instead.
+        */
+
+        Class<?> clazz = Class.forName("javax.tools.ToolProvider");
+        Method getSystemJavaCompilerMethod = clazz.getMethod("getSystemJavaCompiler");
+        Object javaCompiler = getSystemJavaCompilerMethod.invoke(null);
+        Method compileJavaMethod = javaCompiler.getClass().getMethod("run", InputStream.class, OutputStream.class, OutputStream.class, String[].class);
+        compileJavaMethod.invoke(javaCompiler, null, null, null, new String[]{filePath, "-cp", classPath});
+    }
+
 
     private static class ClassPath
     {

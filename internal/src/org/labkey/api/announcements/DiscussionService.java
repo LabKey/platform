@@ -23,8 +23,6 @@ import org.labkey.api.util.URLHelper;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
- * Created by IntelliJ IDEA.
- *
  * Discussion service is a wrapper for the Announcements controller used as a forum for discussing objects/pages
  *
  * CONSIDER: ideas for future extensions

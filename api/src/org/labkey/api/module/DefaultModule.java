@@ -154,16 +154,9 @@ public abstract class DefaultModule implements Module
     }
 
 
-    public void bootstrap()
+    public void beforeUpdate(ModuleContext moduleContext)
     {
-        //By default do nothing...
-    }
-
-    public void beforeUpdate()
-    {
-        ModuleContext moduleContext = ModuleLoader.getInstance().getModuleContext(this);
-
-        if (0.0 != moduleContext.getInstalledVersion())
+        if (!moduleContext.isNewInstall())
             runScripts(SchemaUpdateType.Before);
     }
 
@@ -194,7 +187,7 @@ public abstract class DefaultModule implements Module
     {
     }
 
-    public void afterUpdate()
+    public void afterUpdate(ModuleContext moduleContext)
     {
         runScripts(SchemaUpdateType.After);
     }

@@ -22,8 +22,6 @@ import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.labkey.api.action.HasViewContext;
-import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.StrutsAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.common.util.Pair;
@@ -31,7 +29,6 @@ import org.labkey.common.util.Pair;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
 
 
 public class ViewForm extends FormData implements HasViewContext
@@ -184,10 +181,5 @@ public class ViewForm extends FormData implements HasViewContext
     final public void reset(ActionMapping actionMapping, ServletRequest request)
     {
         super.reset(actionMapping, request);
-    }
-
-    public List<AttachmentFile> getAttachmentFileList()
-    {
-        return StrutsAttachmentFile.createList(getMultipartRequestHandler().getFileElements());
     }
 }

@@ -30,6 +30,7 @@ import java.util.Map;
  * Date: Sep 10, 2007
  * Time: 9:14:24 PM
  */
+@Deprecated
 public class StrutsAttachmentFile implements AttachmentFile
 {
     private FormFile _file;

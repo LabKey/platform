@@ -662,10 +662,9 @@ public class ModuleLoader implements Filter
         if (coreContext.getInstalledVersion() == coreModule.getVersion())
             return;
 
-        if (coreContext.getInstalledVersion() == 0.0)
+        if (coreContext.isNewInstall())
         {
             _log.debug("Initializing core module to " + coreModule.getFormattedVersion());
-            coreModule.bootstrap();
         }
         else
         {
@@ -763,7 +762,7 @@ public class ModuleLoader implements Filter
             while (iter.hasPrevious())
             {
                 Module module = iter.previous();
-                module.beforeUpdate();
+                module.beforeUpdate(getModuleContext(module));
             }
         }
     }
@@ -773,7 +772,7 @@ public class ModuleLoader implements Filter
         synchronized (UPGRADE_LOCK)
         {
             for (Module module : getModules())
-                module.afterUpdate();
+                module.afterUpdate(getModuleContext(module));
         }
     }
 
