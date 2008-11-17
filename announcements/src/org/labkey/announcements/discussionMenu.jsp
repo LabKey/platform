@@ -100,7 +100,7 @@ var discussionMenu = {};
     {
         YAHOO.util.Event.stopPropagation(event);
         discussionMenu.menu.show();
-    }
+    };
 
     discussionMenu.init = function()
     {
@@ -109,7 +109,7 @@ var discussionMenu = {};
         discussionMenu.menu.addItems(discussionMenu.model);
         discussionMenu.menu.render(document.body);
         YAHOO.util.Event.addListener("discussionMenuToggle", "mousedown", discussionMenu.showEvent);
-    }
+    };
 })();
 
     if (LABKEY.isDocumentClosed)

@@ -45,6 +45,7 @@ import org.labkey.core.security.SecurityController;
 import org.labkey.core.test.TestController;
 import org.labkey.core.user.UserController;
 import org.labkey.core.webdav.FileSystemAuditViewFactory;
+import org.labkey.core.webdav.DavController;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -138,26 +139,47 @@ public class CoreModule extends SpringModule
             });
     }
 
+
     @Override
-    public void bootstrap()
+    public void beforeUpdate(ModuleContext moduleContext)
     {
-        CoreSchema core = CoreSchema.getInstance();
-
-        try
+        if (moduleContext.isNewInstall())
         {
-            core.getSqlDialect().prepareNewDatabase(core.getSchema());
-        }
-        catch(ServletException e)
-        {
-            throw new RuntimeException(e);
+            CoreSchema core = CoreSchema.getInstance();
+
+            try
+            {
+                core.getSqlDialect().prepareNewDatabase(core.getSchema());
+            }
+            catch(ServletException e)
+            {
+                throw new RuntimeException(e);
+            }
         }
 
-        super.bootstrap();
+        super.beforeUpdate(moduleContext);
     }
 
 
-    private void versionUpdate2() throws Exception
+    @Override
+    public void afterUpdate(ModuleContext moduleContext)
     {
+        super.afterUpdate(moduleContext);
+
+        if (moduleContext.isNewInstall())
+        {
+            // Other containers inherit permissions from root; admins get all permisssions, users & guests none
+            ContainerManager.bootstrapContainer("/", ACL.PERM_ALLOWALL, 0, 0);
+
+            // Users & guests can read from /home
+            ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, ACL.PERM_ALLOWALL, ACL.PERM_READ, ACL.PERM_READ);
+
+            // Create the initial groups
+            GroupManager.bootstrapGroup(Group.groupAdministrators, "Administrators");
+            GroupManager.bootstrapGroup(Group.groupUsers, "Users");
+            GroupManager.bootstrapGroup(Group.groupGuests, "Guests");
+        }
+
         try
         {
             // Increment on every core module upgrade to defeat browser caching of static resources. 
@@ -174,20 +196,6 @@ public class CoreModule extends SpringModule
     public void afterSchemaUpdate(ModuleContext moduleContext)
     {
         double installedVersion = moduleContext.getInstalledVersion();
-
-        if (installedVersion == 0.0)
-        {
-            // Other containers inherit permissions from root; admins get all permisssions, users & guests none
-            ContainerManager.bootstrapContainer("/", ACL.PERM_ALLOWALL, 0, 0);
-
-            // Users & guests can read from /home
-            ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, ACL.PERM_ALLOWALL, ACL.PERM_READ, ACL.PERM_READ);
-
-            // Create the initial groups
-            GroupManager.bootstrapGroup(Group.groupAdministrators, "Administrators");
-            GroupManager.bootstrapGroup(Group.groupUsers, "Users");
-            GroupManager.bootstrapGroup(Group.groupGuests, "Guests");
-        }
 
         if (installedVersion < 8.11)
             GroupManager.bootstrapGroup(Group.groupDevelopers, "Developers", GroupManager.PrincipalType.ROLE);
@@ -294,7 +302,7 @@ public class CoreModule extends SpringModule
 
         ContextListener.addStartupListener(TempTableTracker.getStartupListener());
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());
-        ContextListener.addShutdownListener(org.labkey.core.webdav.DavController.getShutdownListener());
+        ContextListener.addShutdownListener(DavController.getShutdownListener());
 
         AdminController.registerAdminConsoleLinks();
         AnalyticsController.registerAdminConsoleLinks();

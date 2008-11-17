@@ -66,8 +66,8 @@ import java.util.ArrayList;
  */
 public class LoginController extends SpringActionController
 {
-    private static Logger _log = Logger.getLogger(LoginController.class);
-    private static ActionResolver _actionResolver = new DefaultActionResolver(LoginController.class);
+    private static final Logger _log = Logger.getLogger(LoginController.class);
+    private static final ActionResolver _actionResolver = new DefaultActionResolver(LoginController.class);
     private static final int secondsPerYear = 60 * 60 * 24 * 365;
 
     public LoginController()

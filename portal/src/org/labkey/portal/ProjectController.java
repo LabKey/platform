@@ -16,7 +16,6 @@
 
 package org.labkey.portal;
 
-import org.apache.beehive.netui.pageflow.FormData;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.*;
 import org.labkey.api.data.ColumnInfo;
@@ -430,7 +429,7 @@ public class ProjectController extends SpringActionController
 
     }
 
-    public static class CustomizePortletForm extends ViewForm
+    public static class CustomizePortletForm
     {
         private int index;
         private String pageId;

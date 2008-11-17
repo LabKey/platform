@@ -71,7 +71,7 @@ public class IssuesController extends SpringActionController
     public static final int ISSUE_RESOLUTION = 7;
 
 
-    static DefaultActionResolver _actionResolver = new DefaultActionResolver(IssuesController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(IssuesController.class);
 
     public IssuesController() throws Exception
     {
@@ -214,7 +214,6 @@ public class IssuesController extends SpringActionController
     {
         UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
         QuerySettings settings = schema.getSettings(getViewContext(), ISSUES_QUERY, ISSUES_QUERY);
-        form.setQuerySettings(settings);
         IssuesQueryView queryView = new IssuesQueryView(getViewContext(), schema, settings);
 
         // add the header for buttons and views
@@ -224,13 +223,9 @@ public class IssuesController extends SpringActionController
         if (views.containsKey(null))
             views.remove(null);
 
-        form.setCustomizeURL(queryView.getCustomizeURL());
-        form.setViews(views);
-        form.setReports(queryView.getReports());
-        
         VBox box = new VBox();
 
-        box.addView(new JspView<IssuesController.ListForm>("/org/labkey/issue/list.jsp", form));
+        box.addView(new JspView("/org/labkey/issue/list.jsp"));
         box.addView(queryView);
         return box;
     }

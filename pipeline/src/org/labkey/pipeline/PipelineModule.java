@@ -193,6 +193,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             PipelineQueueImpl.TestCase.class, PathMapperImpl.TestCase.class));
     }
 
+    @Override
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set(PipelineSchema.getInstance().getSchemaName());
@@ -262,5 +263,4 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         }
         return Arrays.asList("<a href=\"http://www.mulesource.com\" target=\"top\"><img src=\"http://www.mulesource.com/images/mulesource_license_logo.gif\" alt=\"MuleSource\" width=\"252\" height=\"52\"></a>");
     }
-
 }

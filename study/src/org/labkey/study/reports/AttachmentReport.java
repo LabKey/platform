@@ -23,7 +23,6 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.StrutsAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;

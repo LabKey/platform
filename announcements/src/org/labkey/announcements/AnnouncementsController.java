@@ -983,8 +983,8 @@ public class AnnouncementsController extends SpringActionController
             if (!perm.allowInsert())
                 HttpView.throwUnauthorized();
 
-            User u = form.getUser();
-            Container c = form.getContainer();
+            User u = getUser();
+            Container c = getContainer();
 
             List<AttachmentFile> files = getAttachmentFileList();
 
