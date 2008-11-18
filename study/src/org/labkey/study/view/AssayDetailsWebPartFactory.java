@@ -30,6 +30,7 @@ public class AssayDetailsWebPartFactory extends BaseWebPartFactory
 {
     public static final String PREFERENCE_KEY = "viewProtocolId";
     public static final String SHOW_BUTTONS_KEY = "showButtons";
+    public static final String INCLUDE_SUBFOLDERS = "includeSubfolders";
 
     public AssayDetailsWebPartFactory()
     {
@@ -40,6 +41,7 @@ public class AssayDetailsWebPartFactory extends BaseWebPartFactory
     {
         String viewSetting = webPart.getPropertyMap().get(PREFERENCE_KEY);
         boolean showButtons = Boolean.parseBoolean(webPart.getPropertyMap().get(SHOW_BUTTONS_KEY));
+        boolean includeSubfolders = Boolean.parseBoolean(webPart.getPropertyMap().get(INCLUDE_SUBFOLDERS));
         ExpProtocol protocol = null;
         if (viewSetting != null)
         {
@@ -61,7 +63,7 @@ public class AssayDetailsWebPartFactory extends BaseWebPartFactory
         }
         else
         {
-            view = new AssayRunsView(protocol, !showButtons);
+            view = new AssayRunsView(protocol, !showButtons, includeSubfolders);
             view.setTitleHref(AssayService.get().getAssayRunsURL(portalCtx.getContainer(), protocol).getLocalURIString());
             view.setTitle(protocol.getName() + " Runs");
         }

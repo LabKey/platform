@@ -682,7 +682,8 @@ public class StudyController extends BaseStudyController
                 ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolRowId.intValue());
                 if (protocol != null)
                 {
-                    ActionURL url = AssayService.get().getAssayDataURL(protocol.getContainer(), protocol);
+                    ActionURL url = AssayService.get().getAssayRunsURL(protocol.getContainer(), protocol);
+                    url.addParameter("includeSubfolders", "true");
                     ActionButton viewAssayButton = new ActionButton(url, "View Source Assay");
                     buttonBar.add(viewAssayButton);
                 }

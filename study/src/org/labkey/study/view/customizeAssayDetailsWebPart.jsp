@@ -42,8 +42,12 @@
 
     // show buttons should be checked by default for a new assay details webpart.  Otherwise, we preserve the persisted setting:
     boolean showButtons = true;
+    boolean includeSubfolders = true;
     if (viewProtocolId >= 0)
+    {
         showButtons = Boolean.parseBoolean(bean.getPropertyMap().get(AssayDetailsWebPartFactory.SHOW_BUTTONS_KEY));
+        includeSubfolders = Boolean.parseBoolean(bean.getPropertyMap().get(AssayDetailsWebPartFactory.INCLUDE_SUBFOLDERS));
+    }
 
     Map<String, Integer> nameToId = new TreeMap<String, Integer>();
     for (ExpProtocol protocol : AssayService.get().getAssayProtocols(ctx.getContainer()))
@@ -68,9 +72,10 @@
 <%
     }
 %>
-    </select></p>
+    </select>
 <p>
-    <input type="checkbox" name="<%= AssayDetailsWebPartFactory.SHOW_BUTTONS_KEY%>" value="true" <%= showButtons ? "CHECKED" : "" %>> Show buttons in web part
+    <input type="checkbox" name="<%= AssayDetailsWebPartFactory.SHOW_BUTTONS_KEY%>" value="true" <%= showButtons ? "CHECKED" : "" %>> Show buttons in web part<br>
+    <input type="checkbox" name="<%= AssayDetailsWebPartFactory.INCLUDE_SUBFOLDERS%>" value="true" <%= includeSubfolders ? "CHECKED" : "" %>> Include subfolders in web part
 </p>
     <%=generateSubmitButton("Submit")%> <%=generateButton("Cancel", "begin.view")%>
 
