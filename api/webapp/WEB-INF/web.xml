@@ -112,7 +112,7 @@
     </filter-mapping>
     <filter-mapping>
         <filter-name>Module Loader</filter-name>
-        <url-pattern>/webdav/*</url-pattern>
+        <url-pattern>/_webdav/*</url-pattern>
     </filter-mapping>
 
     <filter-mapping>
@@ -296,7 +296,7 @@
 
     <servlet-mapping>
         <servlet-name>webdav</servlet-name>
-        <url-pattern>/webdav/*</url-pattern>
+        <url-pattern>/_webdav/*</url-pattern>
     </servlet-mapping>
 
     <welcome-file-list>
