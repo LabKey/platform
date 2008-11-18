@@ -31,11 +31,12 @@ import org.springframework.validation.BindException;
 * Time: 7:30:05 PM
 */
 @RequiresPermission(ACL.PERM_READ)
-public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.ClearSelectionForm>
+public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsForm>
 {
-    public static class ClearSelectionForm extends ProtocolIdForm
+    public static class AssayRunsForm extends ProtocolIdForm
     {
         private String _clearDataRegionSelectionKey;
+        private boolean _includeSubfolders;
 
         public String getClearDataRegionSelectionKey()
         {
@@ -46,16 +47,26 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.ClearSelect
         {
             _clearDataRegionSelectionKey = clearDataRegionSelectionKey;
         }
+
+        public boolean isIncludeSubfolders()
+        {
+            return _includeSubfolders;
+        }
+
+        public void setIncludeSubfolders(boolean includeSubfolders)
+        {
+            _includeSubfolders = includeSubfolders;
+        }
     }
 
     private ExpProtocol _protocol;
 
-    public ModelAndView getView(ClearSelectionForm summaryForm, BindException errors) throws Exception
+    public ModelAndView getView(AssayRunsForm summaryForm, BindException errors) throws Exception
     {
         if (summaryForm.getClearDataRegionSelectionKey() != null)
             DataRegionSelection.clearAll(getViewContext(), summaryForm.getClearDataRegionSelectionKey());
         _protocol = getProtocol(summaryForm);
-        return new AssayRunsView(_protocol, false);
+        return new AssayRunsView(_protocol, false, summaryForm.isIncludeSubfolders());
     }
 
     public NavTree appendNavTrail(NavTree root)

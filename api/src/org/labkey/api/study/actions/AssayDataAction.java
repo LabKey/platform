@@ -16,15 +16,17 @@
 
 package org.labkey.api.study.actions;
 
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.ACL;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.view.*;
-import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.query.QueryView;
-import org.springframework.web.servlet.ModelAndView;
+import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.query.RunDataQueryView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
+import org.springframework.web.servlet.ModelAndView;
 
 /**
  * User: brittp
@@ -50,7 +52,7 @@ public class AssayDataAction extends BaseAssayAction<ProtocolIdForm>
         if (!provider.allowUpload(context.getUser(), context.getContainer(), _protocol))
             fullView.addView(provider.getDisallowedUploadMessageView(context.getUser(), context.getContainer(), _protocol));
 
-        QueryView dataView = provider.createRunDataView(context, _protocol);
+        RunDataQueryView dataView = provider.createRunDataView(context, _protocol);
         fullView.addView(dataView);
         return fullView;
     }

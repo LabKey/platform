@@ -923,12 +923,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return true;
     }
 
-    public QueryView createRunView(ViewContext context, ExpProtocol protocol)
+    public RunListQueryView createRunView(ViewContext context, ExpProtocol protocol)
     {
         return new RunListQueryView(protocol, context);
     }
 
-    public QueryView createRunDataView(ViewContext context, ExpProtocol protocol)
+    public RunDataQueryView createRunDataView(ViewContext context, ExpProtocol protocol)
     {
         String name = getRunDataTableName(protocol);
         QuerySettings settings = new QuerySettings(context, name);

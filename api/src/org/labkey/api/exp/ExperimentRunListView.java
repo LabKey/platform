@@ -16,15 +16,12 @@
 
 package org.labkey.api.exp;
 
-import org.labkey.api.query.*;
-import org.labkey.api.view.*;
-import org.labkey.api.exp.api.ExpExperiment;
-import org.labkey.api.exp.api.ExperimentUrls;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExpRunTable;
 import org.labkey.api.data.*;
+import org.labkey.api.exp.api.*;
+import org.labkey.api.query.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.*;
 
 /**
  * User: jeckels
@@ -39,6 +36,7 @@ public class ExperimentRunListView extends QueryView
     private boolean _showRemoveFromExperimentButton = false;
     private boolean _showExportXARButton = false;
     private boolean _showMoveRunsButton = false;
+    private boolean _includeSubfolders = false;
 
     private final ExperimentRunFilter _selectedFilter;
 
@@ -95,6 +93,16 @@ public class ExperimentRunListView extends QueryView
     public void setShowRemoveFromExperimentButton(boolean showRemoveFromExperimentButton)
     {
         _showRemoveFromExperimentButton = showRemoveFromExperimentButton;
+    }
+
+    public boolean isIncludeSubfolders()
+    {
+        return _includeSubfolders;
+    }
+
+    public void setIncludeSubfolders(boolean includeSubfolders)
+    {
+        _includeSubfolders = includeSubfolders;
     }
 
     private ExpExperiment getExperiment()
@@ -220,6 +228,15 @@ public class ExperimentRunListView extends QueryView
     public ExpRunTable getRunTable()
     {
         return (ExpRunTable)getTable();
+    }
+
+    @Override
+    protected TableInfo createTable()
+    {
+        ExpRunTable table = (ExpRunTable)super.createTable();
+        if (_includeSubfolders)
+            table.setContainerFilter(ContainerFilter.CURRENT_AND_SUBFOLDERS);
+        return table;
     }
 
     public void setShowExportXARButton(boolean showExportXARButton)

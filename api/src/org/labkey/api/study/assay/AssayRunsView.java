@@ -16,12 +16,12 @@
 
 package org.labkey.api.study.assay;
 
-import org.labkey.api.view.*;
-import org.labkey.api.study.actions.AssayHeaderView;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.data.*;
+import org.labkey.api.study.actions.AssayHeaderView;
+import org.labkey.api.study.query.RunListQueryView;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
 
 /**
  * User: brittp
@@ -30,12 +30,14 @@ import org.labkey.api.data.*;
  */
 public class AssayRunsView extends VBox
 {
-    public AssayRunsView(ExpProtocol protocol, boolean minimizeLinks)
+    public AssayRunsView(ExpProtocol protocol, boolean minimizeLinks, boolean includeSubfolders)
     {
         AssayHeaderView headerView = new AssayHeaderView(protocol, AssayService.get().getProvider(protocol), minimizeLinks);
         ViewContext context = getViewContext();
         AssayProvider provider = AssayService.get().getProvider(protocol);
-        QueryView runsView = provider.createRunView(context, protocol);
+        RunListQueryView runsView = provider.createRunView(context, protocol);
+        if (includeSubfolders)
+            runsView.setIncludeSubfolders(true);
         if (minimizeLinks)
         {
             runsView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
