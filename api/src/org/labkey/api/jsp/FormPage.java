@@ -16,10 +16,9 @@
 
 package org.labkey.api.jsp;
 
-import org.labkey.api.view.*;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.ViewForm;
 import org.springframework.validation.BindException;
-import org.springframework.web.servlet.mvc.Controller;
 
 abstract public class FormPage<FROM extends ViewForm> extends ContextPage
 {
@@ -61,15 +60,5 @@ abstract public class FormPage<FROM extends ViewForm> extends ContextPage
     protected FROM getForm()
     {
         return __form;
-    }
-
-    /**
-     * Use &lt;labkey:errors/> instead.
-     * @return formatted error string
-     */
-    @Deprecated
-    public String errors()
-    {
-        return PageFlowUtil.getStrutsError(__form.getRequest(), null);
     }
 }
