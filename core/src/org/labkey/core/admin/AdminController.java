@@ -3648,7 +3648,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    public static class FolderAliasesForm extends ViewForm
+    public static class FolderAliasesForm
     {
         private String _aliases;
 

@@ -16,21 +16,16 @@
 
 package org.labkey.study.reports;
 
-import org.apache.struts.upload.FormFile;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.StrutsAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
@@ -151,21 +146,6 @@ public class AttachmentReport extends RedirectReport implements AttachmentParent
 
         attachments = AttachmentService.get().getAttachments(this);
         return attachments;
-    }
-
-    // TODO: Delete?  Not used...
-    public void postNewVersion(User user, FormFile formFile, Date reportDate) throws SQLException, IOException, AttachmentService.DuplicateFilenameException
-    {
-        //try to unique-ify file dates since same file name might get uploaded many times
-        //But if same file is uploaded with same date, this is probably user error.
-        formFile.setFileName(DateUtil.toISO(reportDate) + " " + formFile.getFileName());
-
-        AttachmentService.get().addAttachments(user, this, StrutsAttachmentFile.createList(formFile));
-
-        setModified(reportDate);
-        //ReportManager.get().updateReport(user, this);
-
-        getAttachments(true);
     }
 
     public void setFilePath(String filePath)

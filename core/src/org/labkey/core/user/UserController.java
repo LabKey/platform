@@ -751,7 +751,7 @@ public class UserController extends SpringActionController
         public String getRequiredFields(){return _requiredFields;}
     }
 
-    public static class UserPreferenceForm extends ViewForm
+    public static class UserPreferenceForm
     {
         private String[] _requiredFields = new String[0];
 
