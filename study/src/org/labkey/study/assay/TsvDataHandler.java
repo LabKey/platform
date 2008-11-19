@@ -16,22 +16,26 @@
 
 package org.labkey.study.assay;
 
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.exp.*;
-import org.labkey.api.exp.api.*;
-import org.labkey.api.study.assay.*;
-import org.labkey.common.tools.TabLoader;
-import org.labkey.common.tools.ColumnDescriptor;
+import jxl.Cell;
+import jxl.Sheet;
+import jxl.Workbook;
+import jxl.WorkbookSettings;
+import jxl.read.biff.BiffException;
 import org.apache.commons.beanutils.ConversionException;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.DataType;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.study.assay.AbstractAssayTsvDataHandler;
+import org.labkey.api.study.assay.ParticipantVisitResolver;
+import org.labkey.common.tools.ColumnDescriptor;
+import org.labkey.common.tools.TabLoader;
 
 import java.io.*;
 import java.util.*;
-
-import jxl.Workbook;
-import jxl.Sheet;
-import jxl.Cell;
-import jxl.WorkbookSettings;
-import jxl.read.biff.BiffException;
 
 /**
  * User: brittp
@@ -212,6 +216,11 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler
     private Map<String, Object>[] loadTsv(PropertyDescriptor[] columns, File inputFile) throws IOException, ExperimentException
     {
         Map<String, Class> expectedColumns = new HashMap<String, Class>(columns.length);
+        for (PropertyDescriptor col : columns)
+        {
+            if (col.getLabel() != null)
+                expectedColumns.put(col.getLabel().toLowerCase(), col.getPropertyType().getJavaType());
+        }
         for (PropertyDescriptor col : columns)
             expectedColumns.put(col.getName().toLowerCase(), col.getPropertyType().getJavaType());
         Reader fileReader = new FileReader(inputFile);
