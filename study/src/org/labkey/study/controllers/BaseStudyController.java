@@ -16,13 +16,15 @@
 
 package org.labkey.study.controllers;
 
-import org.labkey.api.action.*;
+import org.labkey.api.action.BaseViewAction;
+import org.labkey.api.action.HasPageConfig;
+import org.labkey.api.action.NavTrailAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
+import static org.labkey.api.util.PageFlowUtil.jsString;
 import org.labkey.api.view.*;
-import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.HomeTemplate;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.ACL;
+import org.labkey.api.view.template.PageConfig;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
@@ -34,9 +36,8 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
-import java.util.Collection;
 import java.io.PrintWriter;
-import static org.labkey.api.util.PageFlowUtil.jsString;
+import java.util.Collection;
 
 /**
  * Created by IntelliJ IDEA.
@@ -261,7 +262,7 @@ public abstract class BaseStudyController extends SpringActionController
 
     protected void redirectTypeNotFound(int datasetId) throws RedirectException
     {
-        HttpView.throwRedirect(new ActionURL(TypeNotFoundAction.class, getContainer()).addParameter("id", datasetId));
+        HttpView.throwRedirect(new ActionURL(StudyController.TypeNotFoundAction.class, getContainer()).addParameter("id", datasetId));
     }
 
     public static class StudyJspView<T> extends JspView<T>
@@ -331,20 +332,6 @@ public abstract class BaseStudyController extends SpringActionController
         public void setId(int id)
         {
             _id = id;
-        }
-    }
-
-    @RequiresPermission(ACL.PERM_READ)
-    public class TypeNotFoundAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            return new StudyJspView<Study>(getStudy(), "typeNotFound.jsp", null, errors);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Type Not Found");
         }
     }
 }

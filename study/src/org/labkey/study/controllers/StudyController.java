@@ -3809,6 +3809,20 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    @RequiresPermission(ACL.PERM_READ)
+    public class TypeNotFoundAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new StudyJspView<Study>(getStudy(), "typeNotFound.jsp", null, errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Type Not Found");
+        }
+    }
+
     @RequiresPermission(ACL.PERM_ADMIN)
     public class UpdateParticipantVisitsAction extends SimpleViewAction
     {
