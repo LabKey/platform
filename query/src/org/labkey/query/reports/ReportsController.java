@@ -972,7 +972,7 @@ public class ReportsController extends SpringActionController
                     record.put("name", r.getName());
                     record.put("displayName", "<a href=\"" + r.getDisplayURL() + "\">" + r.getName() + "</a>");
                     record.put("reportId", String.valueOf(descriptor.getReportId()));
-                    record.put("query", descriptor.getProperty(ReportDescriptor.Prop.queryName));
+                    record.put("query", StringUtils.defaultIfEmpty(descriptor.getProperty(ReportDescriptor.Prop.queryName), "Unknown"));
                     record.put("schema", descriptor.getProperty(ReportDescriptor.Prop.schemaName));
                     record.put("owner", r.getCreatedBy().getDisplayName(getViewContext()));
                     record.put("public", String.valueOf(r.isShared()));

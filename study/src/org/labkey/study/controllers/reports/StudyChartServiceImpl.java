@@ -134,33 +134,25 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
 
     private String saveDatasetChart(GWTChart chart, Report report) throws Exception
     {
-        ChartReportView reportView = new ChartReportView();
         for (Map.Entry<String, String> param : (Set<Map.Entry<String, String>>)chart.getProperties().entrySet())
         {
-            reportView.getDescriptor().setProperty(param.getKey(), param.getValue());
             report.getDescriptor().setProperty(param.getKey(), param.getValue());
         }
 
         final String key = getReportKey(report.getDescriptor());
         if (!reportNameExists(_context, chart.getReportName(), key))
         {
-            // A chart report view has the ability to render multiple 'child' reports
             if (!chart.isShared())
-                reportView.getDescriptor().setOwner(_context.getUser().getUserId());
+                report.getDescriptor().setOwner(_context.getUser().getUserId());
 
-            reportView.getDescriptor().setReportName(report.getDescriptor().getReportName());
-            reportView.getDescriptor().setReportDescription(report.getDescriptor().getReportDescription());
-            report.getDescriptor().setReportName(null);
-            reportView.setReports(new Report[]{report});
-
-            int reportId = ReportService.get().saveReport(_context, key, reportView);
-            int showWithDataset = NumberUtils.toInt(reportView.getDescriptor().getProperty("showWithDataset"));
+            int reportId = ReportService.get().saveReport(_context, key, report);
+            int showWithDataset = NumberUtils.toInt(report.getDescriptor().getProperty("showWithDataset"));
             if (showWithDataset != 0)
             {
                 ActionURL url = new ActionURL(StudyController.DatasetReportAction.class, _context.getContainer());
                 url.addParameter("Dataset.reportId", String.valueOf(reportId));
                 if (showWithDataset == ReportManager.ALL_DATASETS)
-                    url.addParameter(DataSetDefinition.DATASETKEY,  reportView.getDescriptor().getProperty("datasetId"));
+                    url.addParameter(DataSetDefinition.DATASETKEY,  report.getDescriptor().getProperty("datasetId"));
                 else
                     url.replaceParameter(DataSetDefinition.DATASETKEY,  String.valueOf(showWithDataset));
                 return url.toString();

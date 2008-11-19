@@ -48,6 +48,8 @@ import java.util.List;
  * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Nov 17, 2006
+ *
+ * @deprecated : multiple embedded charts is no longer supported directly, instead use : StudyChartQueryReport 
  */
 public class ChartReportView extends AbstractReportView
 {

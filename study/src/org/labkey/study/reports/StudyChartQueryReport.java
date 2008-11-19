@@ -23,6 +23,9 @@ import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.reports.report.view.RunChartReportView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ActionURL;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.controllers.StudyController;
 
 /**
  * Created by IntelliJ IDEA.
@@ -49,6 +52,18 @@ public class StudyChartQueryReport extends ChartQueryReport
         final String viewName = descriptor.getProperty(QueryParam.viewName.toString());
 
         return ReportQueryViewFactory.get().generateQueryView(context, descriptor, queryName, viewName);
+    }
+
+    public ActionURL getRunReportURL(ViewContext context)
+    {
+        String datasetId = getDescriptor().getProperty(DataSetDefinition.DATASETKEY);
+        if (datasetId != null)
+        {
+            return new ActionURL(StudyController.DatasetReportAction.class, context.getContainer()).
+                        addParameter(DataSetDefinition.DATASETKEY, datasetId).
+                        addParameter("Dataset.reportId", getDescriptor().getReportId());
+        }
+        return super.getRunReportURL(context);
     }
 
     public HttpView getRunReportView(ViewContext context) throws Exception
