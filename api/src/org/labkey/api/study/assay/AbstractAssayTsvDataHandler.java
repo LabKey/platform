@@ -189,23 +189,27 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
     private void filterColumns(PropertyDescriptor[] expected, Set<String> actual, Map<String, Object>[] rawData)
     {
-        List<String> presentAndExpectedKeys = new ArrayList<String>();
-        for (PropertyDescriptor col : expected)
+        Map<String,String> expectedKey2ActualKey = new HashMap<String,String>();
+        for (PropertyDescriptor expectedCol : expected)
         {
-            for (String key : actual)
+            for (String actualKey : actual)
             {
-                if (key.equalsIgnoreCase(col.getName()))
+                if (actualKey.equalsIgnoreCase(expectedCol.getName()))
                 {
-                    presentAndExpectedKeys.add(key);
+                    expectedKey2ActualKey.put(actualKey, actualKey);
+                }
+                else if (actualKey.equalsIgnoreCase(expectedCol.getLabel()))
+                {
+                    expectedKey2ActualKey.put(expectedCol.getName(), actualKey);
                 }
             }
         }
         for (int i = 0; i < rawData.length; i++)
         {
             Map<String, Object> filteredMap = new HashMap<String, Object>();
-            for (String key : presentAndExpectedKeys)
+            for (Map.Entry<String,String> expectedAndActualKeys : expectedKey2ActualKey.entrySet())
             {
-                filteredMap.put(key, rawData[i].get(key));
+                filteredMap.put(expectedAndActualKeys.getKey(), rawData[i].get(expectedAndActualKeys.getValue()));
             }
             rawData[i] = filteredMap;
         }

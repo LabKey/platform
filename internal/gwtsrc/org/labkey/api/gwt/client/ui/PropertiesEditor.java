@@ -942,7 +942,7 @@ public class PropertiesEditor implements LookupListener
     }
 
 
-    private static boolean isLegalNameChar(char ch, boolean first)
+    public static boolean isLegalNameChar(char ch, boolean first)
     {
         if (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z' || ch == '_')
             return true;
@@ -961,6 +961,30 @@ public class PropertiesEditor implements LookupListener
                 return false;
         }
         return true;
+    }
+
+    /**
+     * Transform an illegal name into a safe version. All non-letter characters
+     * become underscores, and the first character must be a letter
+     */
+    public static String sanitizeName(String originalName)
+    {
+        StringBuilder sb = new StringBuilder();
+        boolean first = true; // first character is special
+        for (int i=0; i<originalName.length(); i++)
+        {
+            char c = originalName.charAt(i);
+            if (isLegalNameChar(c, first))
+            {
+                sb.append(c);
+                first = false;
+            }
+            else if (!first)
+            {
+                sb.append('_');
+            }
+        }
+        return sb.toString();
     }
 
 }
