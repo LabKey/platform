@@ -91,12 +91,20 @@ public class ExcelLoader extends DataLoader
         for (int row = 0; row < numRows; row++)
         {
             String[] rowData = new String[numCols];
+
+            // Excel can report back more rows than exist. If we find no data at all,
+            // we should not add a row.
+            boolean foundData = false;
             for (int column = 0; column < numCols; column++)
             {
                 Cell cell = sheet.getCell(column, row);
+                String data = cell.getContents();
+                if (data != null && !"".equals(data))
+                    foundData = true;
                 rowData[column] = cell.getContents();
             }
-            cells.add(rowData);
+            if (foundData)
+                cells.add(rowData);
         }
         return cells.toArray(new String[cells.size()][]);
     }
@@ -141,6 +149,8 @@ public class ExcelLoader extends DataLoader
         private final int numRows;
         private final int numCols;
 
+        private Object nextRow;
+
         public ExcelIterator()
         {
             // find a converter for each column type
@@ -159,18 +169,31 @@ public class ExcelLoader extends DataLoader
             numCols = sheet.getColumns();
 
             rowIndex = _skipLines == -1 ? 1 : _skipLines;
+
+            nextRow = getNextRow();
         }
 
         public boolean hasNext()
         {
-            return rowIndex < numRows;
+            return nextRow != null;
         }
 
         public Object next()
         {
-            if (rowIndex >= numRows)
+            if (nextRow == null || rowIndex > numRows)
                 throw new IllegalStateException("Attempt to call next() on a finished iterator");
+            Object row = nextRow;
+            nextRow = getNextRow();
+            return row;
+        }
 
+        public Object getNextRow()
+        {
+            if (rowIndex >= numRows)
+                return null;
+
+            // If this row is blank, keep going until we either find a row or hit the end
+            boolean foundData = false;
             Map<String,Object> row = new HashMap<String,Object>();
             for (int columnIndex = 0; columnIndex < _columns.length; columnIndex++)
             {
@@ -197,6 +220,8 @@ public class ExcelLoader extends DataLoader
                         // Couldn't convert. Leave it as a missing value.
                     }
                 }
+                if (value != null)
+                    foundData = true;
 
                 row.put(column.name, value);
             }
@@ -205,7 +230,10 @@ public class ExcelLoader extends DataLoader
             if (_transformer != null)
                 return _transformer.transform(row);
 
-            return row;
+            if (foundData)
+                return row;
+            else
+                return getNextRow(); // keep going until a valid row or the end of the file
         }
 
         public void remove()

@@ -52,22 +52,31 @@ public class DomainImportGrid extends Grid
         int numDataRows = columns.get(0).getData().size();
         resizeRows(numDataRows + 2); // Need a row for the name and a row for the type
 
-        for(int colNum=0; colNum<columns.size(); colNum++)
+        int numCols = columns.size();
+        for(int columnIndex=0; columnIndex<columns.size(); columnIndex++)
         {
-            InferencedColumn column = columns.get(colNum);
+            InferencedColumn column = columns.get(columnIndex);
             GWTPropertyDescriptor prop = column.getPropertyDescriptor();
-            //setText(0, colNum, prop.getName());
-            setWidget(0, colNum, new HTML("<b>" + prop.getName() + "</b>"));
+
+            setWidget(0, columnIndex, new HTML("<b>" + prop.getName() + "</b>"));
 
             TypeListBox typePicker = new TypeListBox(Type.getTypeByXsdType(prop.getRangeURI()));
-            setWidget(1, colNum, typePicker);
+            setWidget(1, columnIndex, typePicker);
             typePickers.add(typePicker);
 
             List<String> data = column.getData();
             for (int row=0; row<numDataRows; row++)
             {
                 String cellData = data.get(row);
-                setText(row+2, colNum, cellData);
+
+                // In order to suggest that there is more data than is displayed,
+                // we will gray out the last two rows somewhat.
+                if (numDataRows > 3 && row == numDataRows - 2)
+                    cellData = "<font color=\"333333\">" + cellData + "</font>";
+                else if (numDataRows > 3 && row == numDataRows - 1)
+                    cellData = "<font color=\"666666\">" + cellData + "</font>";
+
+                setHTML(row+2, columnIndex, cellData);
             }
         }
     }

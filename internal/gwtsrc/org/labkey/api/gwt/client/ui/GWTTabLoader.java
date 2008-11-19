@@ -47,9 +47,19 @@ public class GWTTabLoader
         List<GWTPropertyDescriptor> properties = new ArrayList<GWTPropertyDescriptor>();
         for (Map<String, String> row : data)
         {
+            // We can't have spaces in property names
+            String name = row.get("property");
+            String label = row.get("label");
+            if (name != null && name.indexOf(' ')  >= 0)
+            {
+                if (label == null)
+                    label = name;
+                name = name.replaceAll(" ", "_");
+            }
+
             GWTPropertyDescriptor prop = new GWTPropertyDescriptor();
-            prop.setName(row.get("property"));
-            prop.setLabel(row.get("label"));
+            prop.setName(name);
+            prop.setLabel(label);
             prop.setDescription(row.get("description"));
             prop.setRequired(isRequired(row));
             prop.setRangeURI(getRangeURI(row));
