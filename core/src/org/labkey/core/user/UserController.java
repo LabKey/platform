@@ -1079,33 +1079,9 @@ public class UserController extends SpringActionController
 
         public boolean handlePost(UpdateForm form, BindException errors) throws Exception
         {
-            //the Active column is on Principals, and since SQL Server can't update
-            //columns from different base tables via a View, we need to strip the Active
-            //form value out of the form and do a separate call under the same transaction
-            Map<String,Object> values = form.getTypedValues();
-            boolean isActive = values.containsKey("Active");
-            values.remove("Active");
-            DbScope userScope = DbSchema.get("core").getScope();
             User user = getUser();
-            try
-            {
-                userScope.beginTransaction();
-
-                //update the user data
-                UserManager.updateUser(user, values, form.getPkVal());
-
-                //update Principals.Active if user is admin and not editing own record
-                boolean isOwnRecord = ((Integer) form.getPkVal()).intValue() == user.getUserId();
-                if(user.isAdministrator() && !isOwnRecord)
-                    UserManager.setUserActive(user, ((Integer)form.getPkVal()).intValue(), isActive);
-
-                userScope.commitTransaction();
-            }
-            finally
-            {
-                if(userScope.isTransactionActive())
-                    userScope.rollbackTransaction();
-            }
+            Map<String,Object> values = form.getTypedValues();
+            UserManager.updateUser(user, values, form.getPkVal());
             return true;
         }
 
