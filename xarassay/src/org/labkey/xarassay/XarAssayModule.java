@@ -23,6 +23,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.view.WebPartFactory;
 
 import java.beans.PropertyChangeEvent;
 import java.util.Collection;
@@ -37,11 +38,39 @@ import java.util.Set;
 public class XarAssayModule extends DefaultModule
 {
 
+    public static final String MODULE_NAME = "XarAssay";
+    public static final double MODULE_VERSION = 8.3;
+
     public XarAssayModule()
     {
-        super("XarAssay", 8.30, null, false);
+        super();
+    }
+
+    public String getName()
+    {
+        return MODULE_NAME ;
+    }
+
+    public double getVersion()
+    {
+        return MODULE_VERSION;
+    }
+
+    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    {
+        return Collections.emptyList();
+    }
+
+    public boolean hasScripts()
+    {
+        return false;
+    }
+
+    protected void init()
+    {
         addController("xarassay", XarAssayController.class);
     }
+
 
     public Collection<String> getSummary(Container c)
     {
@@ -55,10 +84,8 @@ public class XarAssayModule extends DefaultModule
 
     public void startup(ModuleContext moduleContext)
     {
-        super.startup(moduleContext);
-
         AssayService.get().registerAssayProvider(new XarAssayProvider());
-//        AssayService.get().registerAssayProvider(new MsFractionAssayProvider());
+        AssayService.get().registerAssayProvider(new MsFractionAssayProvider());
         AssayService.get().registerAssayProvider(new CptacAssayProvider());
         PipelineService.get().registerPipelineProvider(new XarAssayPipelineProvider());
 

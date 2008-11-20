@@ -34,6 +34,7 @@ import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.assay.*;
@@ -192,16 +193,9 @@ public class XarAssayProvider extends AbstractAssayProvider
     protected PipeRoot getPipelineRoot (AssayRunUploadContext context) throws ExperimentException
     {
         PipeRoot pipeRoot = null;
-        try
-        {
             pipeRoot = PipelineService.get().findPipelineRoot(context.getContainer());
-        }
-        catch (SQLException se)
-        {  }
         if (pipeRoot == null || !NetworkDrive.exists(pipeRoot.getRootPath()))
-        {
             throw new ExperimentException("The target container must have a valid pipeline root");
-        }
         return pipeRoot;
     }
 
@@ -234,6 +228,11 @@ public class XarAssayProvider extends AbstractAssayProvider
         url.addParameter("rowId", protocol.getRowId());
 
         return url;
+    }
+
+    public TableInfo createDataTable(UserSchema schema, String alias, ExpProtocol protocol)
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public Set<FieldKey> getParticipantIDDataKeys()

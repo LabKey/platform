@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipeRoot;
@@ -28,6 +29,7 @@ import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.actions.UploadWizardAction;
+import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.ActionURL;
@@ -65,7 +67,7 @@ public class XarAssayUploadAction extends UploadWizardAction<XarAssayForm>
         if ((null == referer && null==assayRunUploadForm.getUploadStep()))
         {
             // want to redirect the Upload Runs button from the Assay Details list to the pipeline first
-            HttpView.redirect(PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(assayRunUploadForm.getContainer(),null));
+            return HttpView.redirect(PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(assayRunUploadForm.getContainer(),null));
         }
         return super.getView(assayRunUploadForm, errors);
 
@@ -165,7 +167,6 @@ public class XarAssayUploadAction extends UploadWizardAction<XarAssayForm>
     {
         InsertView parent = super.createRunInsertView(form, reshow, errors);
 
-/*
         AssayProvider provider = getProvider(form);
         try
         {
@@ -180,7 +181,5 @@ public class XarAssayUploadAction extends UploadWizardAction<XarAssayForm>
         {
             throw new RuntimeException(e);
         }
-*/
-    return parent;      
     }
 }
