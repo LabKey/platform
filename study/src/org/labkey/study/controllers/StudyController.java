@@ -18,6 +18,8 @@ package org.labkey.study.controllers;
 
 import org.apache.commons.beanutils.converters.BooleanConverter;
 import org.apache.commons.beanutils.converters.IntegerConverter;
+import org.apache.commons.collections15.MultiMap;
+import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -648,24 +650,55 @@ public class StudyController extends BaseStudyController
                     ActionButton uploadButton = new ActionButton("showImportDataset.view?datasetId=" + _datasetId, "Import Data", DataRegion.MODE_GRID, ActionButton.Action.LINK);
                     uploadButton.setDisplayPermission(ACL.PERM_INSERT);
                     buttonBar.add(uploadButton);
+
+                    ActionButton deleteRows = new ActionButton("button", "Delete Selected");
+                    ActionURL deleteRowsURL = new ActionURL(DeleteDatasetRowsAction.class, getContainer());
+
+
+                    deleteRows.setScript("return confirm(\"Delete selected rows of this dataset?\") && verifySelected(this.form, \"" + deleteRowsURL.getLocalURIString() + "\", \"post\", \"rows\")");
+                    deleteRows.setActionType(ActionButton.Action.GET);
+                    deleteRows.setDisplayPermission(ACL.PERM_DELETE);
+                    buttonBar.add(deleteRows);
                 }
+                else
+                {
+                    ActionButton deleteRows = new ActionButton("button", "Recall Selected");
+                    ExpProtocol protocol = ExperimentService.get().getExpProtocol(def.getProtocolId().intValue());
+                    ActionURL deleteRowsURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
+                    deleteRowsURL.addParameter("protocolId", protocol.getRowId());
 
-                ActionButton deleteRows = new ActionButton("button", "Delete Selected");
-                ActionURL deleteRowsURL = new ActionURL(DeleteDatasetRowsAction.class, getContainer());
 
-                deleteRows.setScript("return confirm(\"Delete selected rows of this dataset?\") && verifySelected(this.form, \"" + deleteRowsURL.getLocalURIString() + "\", \"post\", \"rows\")");
-                deleteRows.setActionType(ActionButton.Action.GET);
-                deleteRows.setDisplayPermission(ACL.PERM_DELETE);
-                buttonBar.add(deleteRows);
+                    deleteRows.setScript("return confirm(\"Recall selected rows of this dataset?\") && verifySelected(this.form, \"" + deleteRowsURL.getLocalURIString() + "\", \"post\", \"rows\")");
+                    deleteRows.setActionType(ActionButton.Action.GET);
+                    deleteRows.setDisplayPermission(ACL.PERM_DELETE);
+                    buttonBar.add(deleteRows);
+                }
             }
 
             if (null == visit && !isSnapshot && (user.isAdministrator() || canWrite))
             {
-                ActionButton purgeButton = new ActionButton("purgeDataset.view", "Delete All Rows", DataRegion.MODE_GRID, ActionButton.Action.LINK);
-                purgeButton.setDisplayPermission(ACL.PERM_ADMIN);
-                purgeButton.setScript("if(confirm(\"Delete all rows of this dataset?\")){ form.action=\"purgeDataset.view\";return true;} else return false;");
-                purgeButton.setActionType(ActionButton.Action.GET);
-                buttonBar.add(purgeButton);
+                if (!isAssayDataset)
+                {
+                    ActionButton purgeButton = new ActionButton("purgeDataset.view", "Delete All Rows", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+                    purgeButton.setDisplayPermission(ACL.PERM_ADMIN);
+                    purgeButton.setScript("if(confirm(\"Delete all rows of this dataset?\")){ form.action=\"purgeDataset.view\";return true;} else return false;");
+                    purgeButton.setActionType(ActionButton.Action.GET);
+                    buttonBar.add(purgeButton);
+                }
+                else
+                {
+                    ActionButton purgeButton = new ActionButton("button", "Recall All Rows");
+                    ExpProtocol protocol = ExperimentService.get().getExpProtocol(def.getProtocolId().intValue());
+                    ActionURL deleteAllRowsURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
+                    deleteAllRowsURL.addParameter("protocolId", protocol.getRowId());
+                    deleteAllRowsURL.addParameter("deleteAllData", "true");
+                    purgeButton.setDisplayPermission(ACL.PERM_ADMIN);
+                    purgeButton.setScript("if(confirm(\"Recall all rows of this dataset?\")){ form.action=\"" +
+                        deleteAllRowsURL.getLocalURIString() +
+                        "\";return true;} else return false;");
+                    purgeButton.setActionType(ActionButton.Action.GET);
+                    buttonBar.add(purgeButton);
+                }
             }
 
             ActionButton viewSamples = new ActionButton("button", "View Specimens");
@@ -682,10 +715,14 @@ public class StudyController extends BaseStudyController
                 ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolRowId.intValue());
                 if (protocol != null)
                 {
-                    ActionURL url = AssayService.get().getAssayRunsURL(protocol.getContainer(), protocol);
-                    url.addParameter("includeSubfolders", "true");
-                    ActionButton viewAssayButton = new ActionButton(url, "View Source Assay");
-                    buttonBar.add(viewAssayButton);
+                    Container c = protocol.getContainer();
+                    if (c.hasPermission(getUser(), ACL.PERM_READ))
+                    {
+                        ActionURL url = AssayService.get().getAssayRunsURL(c, protocol);
+                        url.addParameter("includeSubfolders", "true");
+                        ActionButton viewAssayButton = new ActionButton(url, "View Source Assay");
+                        buttonBar.add(viewAssayButton);
+                    }
                 }
             }
         }
@@ -2253,24 +2290,58 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(DeleteDatasetRowsForm form, BindException errors) throws Exception
         {
-            Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), true);
-            String protocolId = (String)getViewContext().get("protocolId");
-            String sourceLsid = (String)getViewContext().get("sourceLsid");
-            Container sourceContainer = getContainer();
-            if (sourceLsid != null)
+            final DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
+            if (def == null)
+                throw new IllegalArgumentException("Could not find a dataset definition for id: " + form.getDatasetId());
+
+            Collection<String> allLsids;
+            if (!form.isDeleteAllData())
             {
-                ExpRun expRun = ExperimentService.get().getExpRun(sourceLsid);
-                if (expRun != null && expRun.getContainer() != null)
-                    sourceContainer = expRun.getContainer();
+                allLsids = DataRegionSelection.getSelected(getViewContext(), true);
+
+                if (allLsids.isEmpty())
+                {
+                    errors.reject("deletePublishedRows", "No rows were selected");
+                    return false;
+                }
+            }
+            else
+            {
+                allLsids = StudyManager.getInstance().getDatasetLSIDs(getUser(), def);
             }
 
-            // log
-            if (!lsids.isEmpty())
-            {
-                final DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
+            String protocolId = (String)getViewContext().get("protocolId");
+            String originalSourceLsid = (String)getViewContext().get("sourceLsid");
 
-                if (protocolId != null)
+            // Need to handle this by groups of source lsids -- each assay container needs logging
+            MultiMap<String,String> sourceLsid2datasetLsid = new MultiHashMap<String,String>();
+
+
+            if (originalSourceLsid != null)
+            {
+                sourceLsid2datasetLsid.putAll(originalSourceLsid, allLsids);
+            }
+            else
+            {
+                Map<String,Object>[] data = StudyService.get().getDatasetRows(getUser(), getContainer(), form.getDatasetId(), allLsids);
+                for (Map<String,Object> row : data)
                 {
+                    sourceLsid2datasetLsid.put(row.get("sourcelsid").toString(), row.get("lsid").toString());
+                }
+            }
+
+            if (protocolId != null)
+            {
+                for (Map.Entry<String,Collection<String>> entry : sourceLsid2datasetLsid.entrySet())
+                {
+                    String sourceLsid = entry.getKey();
+                    Container sourceContainer;
+                    ExpRun expRun = ExperimentService.get().getExpRun(sourceLsid);
+                    if (expRun != null && expRun.getContainer() != null)
+                        sourceContainer = expRun.getContainer();
+                    else
+                        continue; // No logging if we can't find a matching run
+
                     AuditLogEvent event = new AuditLogEvent();
 
                     event.setCreatedBy(getUser());
@@ -2278,13 +2349,16 @@ public class StudyController extends BaseStudyController
                     event.setContainerId(sourceContainer.getId());
                     event.setKey1(getContainer().getId());
 
-                    // TODO: eventually require a protocol instead of an assayname so that we can use a protocol row id to
-                    // uniquely identify an assay.
-                    String assayName = "";
-                    if (def != null)
-                        assayName = def.getLabel();
+                    String assayName = def.getLabel();
+                    if (def.getProtocolId() != null)
+                    {
+                        ExpProtocol protocol = ExperimentService.get().getExpProtocol(def.getProtocolId().intValue());
+                        if (protocol != null)
+                            assayName = protocol.getName();
+                    }
 
                     event.setIntKey1(NumberUtils.toInt(protocolId));
+                    Collection<String> lsids = entry.getValue();
                     event.setComment(lsids.size() + " row(s) were deleted from the assay: " + assayName);
 
                     Map<String,Object> dataMap = Collections.<String,Object>singletonMap(DataSetDefinition.DATASETKEY, form.getDatasetId());
@@ -2292,14 +2366,15 @@ public class StudyController extends BaseStudyController
                     AssayAuditViewFactory.getInstance().ensureDomain(getUser());
                     AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT));
                 }
-                List<String> lsidList = new ArrayList<String>(lsids);
-                StudyManager.getInstance().deleteDatasetRows(getStudy(), def, lsidList);
             }
-
+            StudyManager.getInstance().deleteDatasetRows(getStudy(), def, allLsids);
+            
             ExpProtocol protocol = ExperimentService.get().getExpProtocol(NumberUtils.toInt(protocolId));
-            if (protocol != null)
+            if (protocol != null && originalSourceLsid != null)
             {
-                HttpView.throwRedirect(AssayPublishService.get().getPublishHistory(sourceContainer, protocol));
+                ExpRun expRun = ExperimentService.get().getExpRun(originalSourceLsid);
+                if (expRun != null && expRun.getContainer() != null)
+                    HttpView.throwRedirect(AssayPublishService.get().getPublishHistory(expRun.getContainer(), protocol));
             }
             return true;
         }
@@ -2314,6 +2389,7 @@ public class StudyController extends BaseStudyController
     public static class DeleteDatasetRowsForm
     {
         private int datasetId;
+        private boolean deleteAllData;
 
         public int getDatasetId()
         {
@@ -2323,6 +2399,16 @@ public class StudyController extends BaseStudyController
         public void setDatasetId(int datasetId)
         {
             this.datasetId = datasetId;
+        }
+
+        public boolean isDeleteAllData()
+        {
+            return deleteAllData;
+        }
+
+        public void setDeleteAllData(boolean deleteAllData)
+        {
+            this.deleteAllData = deleteAllData;
         }
     }
 

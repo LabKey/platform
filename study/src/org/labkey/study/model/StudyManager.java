@@ -997,6 +997,22 @@ public class StudyManager
         }
     }
 
+    public List<String> getDatasetLSIDs(User user, DataSetDefinition def) throws ServletException, SQLException
+    {
+        TableInfo tInfo = def.getTableInfo(user, true, false);
+        Set<String> select = Collections.singleton("lsid");
+
+        @SuppressWarnings("unchecked")
+        Map<String,Object>[] data = Table.select(tInfo, select, new SimpleFilter(), null, Map.class);
+        
+        List<String> lsids = new ArrayList<String>(data.length);
+        for (Map<String,Object> row : data)
+        {
+            lsids.add(row.get("lsid").toString());
+        }
+        return lsids;
+    }
+
     public void uncache(DataSetDefinition def)
     {
         _dataSetHelper.clearCache(def);
@@ -1155,7 +1171,7 @@ public class StudyManager
     }
 
 
-    public void deleteDatasetRows(Study study, DataSetDefinition dataset, List<String> rowLSIDs)
+    public void deleteDatasetRows(Study study, DataSetDefinition dataset, Collection<String> rowLSIDs)
     {
         Container c = study.getContainer();
 
@@ -1174,7 +1190,7 @@ public class StudyManager
 
             char sep = ' ';
             StringBuilder sb = new StringBuilder();
-            for (String rowLSID : rowLSIDs)
+            for (int i=0; i<rowLSIDs.size(); i++)
             {
                 sb.append(sep);
                 sb.append('?');
