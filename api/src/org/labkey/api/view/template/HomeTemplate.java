@@ -28,6 +28,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.view.menu.MenuService;
 import org.labkey.api.view.menu.MenuView;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -99,16 +100,10 @@ public class HomeTemplate extends PrintTemplate
         setFrame(FrameType.NONE);
         page.setNavTrail(Arrays.asList(navTrail));
 
+        WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
         WebPartView wikiMenu = null;
-        try
-        {
-            if (null != c && null != c.getProject() && ModuleLoader.getInstance().isStartupComplete())
-                wikiMenu = WikiService.get().getView(c.getProject(), "_navTree", false, true);
-        }
-        catch (WikiService.NoWikiServiceException e)
-        {
-            //drop through
-        }
+        if (null != c && null != c.getProject() && ModuleLoader.getInstance().isStartupComplete() && null != wikiService)
+            wikiMenu = wikiService.getView(c.getProject(), "_navTree", false, true);
 
         if (null != wikiMenu)
             setView("menu", wikiMenu);
@@ -120,14 +115,9 @@ public class HomeTemplate extends PrintTemplate
 
 
         WebPartView header = null;
-        try
-        {
-            if (ModuleLoader.getInstance().isStartupComplete())
-                header = WikiService.get().getView(c.getProject(), "_header", false, true);
-        } catch (WikiService.NoWikiServiceException e)
-        {
-            //Fall through.
-        }
+        if (ModuleLoader.getInstance().isStartupComplete() && null != wikiService && null != c && null != c.getProject())
+            header = wikiService.getView(c.getProject(), "_header", false, true);
+
         if (null != header)
             setView("header", header);
         else

@@ -32,6 +32,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.common.util.Pair;
 
 import javax.mail.Address;
@@ -1522,16 +1523,10 @@ public class SecurityManager
         if (!ModuleLoader.getInstance().isStartupComplete())
             return null;
         
-        WikiService.Service service;
-        try
-        {
-            service = WikiService.get();
-        }
-        catch (IllegalStateException x)
-        {
-            //No wiki service. Must be in weird state. Don't do terms here...
+        WikiService service = ServiceRegistry.get().getService(WikiService.class);
+        //No wiki service. Must be in weird state. Don't do terms here...
+        if(null == service)
             return null;
-        }
 
         return service.getHtml(project.getContainer(), TERMS_OF_USE_WIKI_NAME, false);
     }
