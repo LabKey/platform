@@ -102,7 +102,7 @@ final public class DefaultSchema extends AbstractSchema
 
     public Set<String> getUserSchemaNames()
     {
-        Set<String> ret = new TreeSet<String>();
+        Set<String> ret = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
         for (String schemaName : getSchemaNames())
         {
             QuerySchema schema = getSchema(schemaName);

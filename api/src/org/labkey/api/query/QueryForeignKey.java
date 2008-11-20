@@ -79,6 +79,11 @@ public class QueryForeignKey implements ForeignKey
         return _table;
     }
 
+    public String getLookupSchemaName()
+    {
+        return _schemaName;
+    }
+
     public StringExpressionFactory.StringExpression getURL(ColumnInfo parent)
     {
         TableInfo table = getLookupTableInfo();

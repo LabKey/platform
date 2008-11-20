@@ -38,6 +38,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URI;
 import java.util.*;
 
 /**
@@ -129,10 +130,14 @@ public abstract class SpringModule extends DefaultModule implements ServletConte
             {
                 File dirConfig = new File(configPath);
                 String configRelPath = prefix + "Config.xml";
-                File fileConfig = new File(URIUtil.resolve(dirConfig.toURI(), configRelPath));
-                if (fileConfig.exists())
+                URI uriConfig = URIUtil.resolve(dirConfig.toURI(), configRelPath);
+                if (uriConfig != null)
                 {
-                    result.add(fileConfig.toString());
+                    File fileConfig = new File(uriConfig);
+                    if (fileConfig.exists())
+                    {
+                        result.add(fileConfig.toString());
+                    }
                 }
             }
         }

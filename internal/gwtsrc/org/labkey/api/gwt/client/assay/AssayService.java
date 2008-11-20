@@ -20,6 +20,7 @@ import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.gwt.user.client.rpc.SerializableException;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.ui.LookupService;
 
 import java.util.Map;
 import java.util.List;
@@ -29,7 +30,7 @@ import java.util.List;
 * Date: June 20, 2007
 * Time: 2:37:12 PM
 */
-public interface AssayService extends RemoteService
+public interface AssayService extends LookupService
 {
     GWTProtocol getAssayDefinition(int rowId, boolean copy) throws SerializableException;
 
@@ -42,27 +43,6 @@ public interface AssayService extends RemoteService
      * @param orig Unchanged domain
      * @param update Edited domain
      * @return list of errors
-     * @throws Exception
      */
     List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain update) throws AssayException;
-    
-    // PropertiesEditor.LookupService
-    /**
-     *
-     * @return list of container paths
-     */
-    List<String> getContainers();
-
-    /**
-     * @return list of schema names
-     */
-    List<String> getSchemas(String containerId);
-
-    /**
-     *
-     * @param containerId container
-     * @param schemaName name of schema for query module
-     * @return map table name to pk column name
-     */
-    Map<String, String> getTablesForLookup(String containerId, String schemaName);
 }

@@ -54,6 +54,12 @@ public interface ForeignKey
 
     /**
      * Just for introspection.
+     * @return The name of the foreign user schema table.
+     */
+    String getLookupSchemaName();
+
+    /**
+     * Just for introspection.
      * @return The name of the column in the foreign user schema table.
      */
     String getLookupColumnName();

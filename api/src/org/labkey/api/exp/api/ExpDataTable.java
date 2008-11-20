@@ -40,8 +40,6 @@ public interface ExpDataTable extends ExpTable<ExpDataTable.Column>
         Thumbnail,
     }
 
-    void populate();
-
     void setExperiment(ExpExperiment experiment);
     ExpExperiment getExperiment();
     void setRun(ExpRun run);

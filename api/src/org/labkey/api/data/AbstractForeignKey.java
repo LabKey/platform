@@ -23,7 +23,7 @@ import java.util.List;
  */
 public abstract class AbstractForeignKey implements ForeignKey
 {
-    protected String _schemaName;
+    protected String _lookupSchemaName;
     protected String _tableName;
     protected String _columnName;
 
@@ -33,18 +33,24 @@ public abstract class AbstractForeignKey implements ForeignKey
     
     protected AbstractForeignKey(String tableName, String columnName)
     {
+        this(tableName, columnName, null);
+    }
+
+    protected AbstractForeignKey(String tableName, String columnName, String schemaName)
+    {
         _tableName = tableName;
         _columnName = columnName;
+        _lookupSchemaName = schemaName;
     }
 
-    public String getSchemaName()
+    public String getLookupSchemaName()
     {
-        return _schemaName;
+        return _lookupSchemaName;
     }
 
-    public void setSchemaName(String schemaName)
+    public void setLookupSchemaName(String lookupSchemaName)
     {
-        _schemaName = schemaName;
+        _lookupSchemaName = lookupSchemaName;
     }
 
     protected void setTableName(String name)

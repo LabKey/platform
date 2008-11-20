@@ -24,10 +24,8 @@ import org.labkey.api.security.User;
 
 import java.util.*;
 
-public class ExpSchema extends UserSchema
+public class ExpSchema extends AbstractExpSchema
 {
-    private ContainerFilter _containerFilter = ContainerFilter.CURRENT;
-
     public static final String EXPERIMENTS_NARROW_WEB_PART_TABLE_NAME = ExpSchema.TableType.Experiments + "NarrowWebPart";
     public static final String EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME = ExpSchema.TableType.Experiments + "MembershipForRun";
     public static final String RUN_GROUPS_TABLE_NAME = "RunGroups";
@@ -89,10 +87,8 @@ public class ExpSchema extends UserSchema
 
     public ExpExperimentTable createExperimentsTable(String name, String alias)
     {
-        ExpExperimentTable result = ExperimentService.get().createExperimentTable(name, alias, this);
-        result.setContainerFilter(_containerFilter);
-        result.populate();
-        return result;
+        ExpExperimentTable ret = ExperimentService.get().createExperimentTable(name, alias, this);
+        return setupTable(ret);
     }
     
     public ExpExperimentTable createExperimentsTableWithRunMemberships(String alias, ExpRun run)
@@ -179,17 +175,13 @@ public class ExpSchema extends UserSchema
     public ExpDataTable createDatasTable(String alias)
     {
         ExpDataTable ret = ExperimentService.get().createDataTable(TableType.Datas.toString(), alias, this);
-        ret.setContainerFilter(_containerFilter);
-        ret.populate();
-        return ret;
+        return setupTable(ret);
     }
 
     public ExpSampleSetTable createSampleSetTable(String alias)
     {
         ExpSampleSetTable ret = ExperimentService.get().createSampleSetTable(TableType.SampleSets.toString(), alias, this);
-        ret.setContainerFilter(_containerFilter);
-        ret.populate(this);
-        return ret;
+        return setupTable(ret);
     }
 
     public ExpMaterialTable createMaterialsTable(String alias)
@@ -200,16 +192,13 @@ public class ExpSchema extends UserSchema
     public ExpRunTable createRunsTable(String alias)
     {
         ExpRunTable ret = ExperimentService.get().createRunTable(TableType.Runs.toString(), alias, this);
-        ret.setContainerFilter(_containerFilter);
-        ret.populate();
-        return ret;
+        return setupTable(ret);
     }
 
     public ExpProtocolTable createProtocolsTable(String alias)
     {
         ExpProtocolTable ret = ExperimentService.get().createProtocolTable(TableType.Protocols.toString(), alias, this);
-        ret.populate(this);
-        return ret;
+        return setupTable(ret);
     }
 
     public ForeignKey getProtocolLSIDForeignKey()
@@ -267,11 +256,5 @@ public class ExpSchema extends UserSchema
                 return createRunsTable("Runs");
             }
         };
-    }
-
-
-    public void setContainerFilter(ContainerFilter filter)
-    {
-        _containerFilter = filter;
     }
 }

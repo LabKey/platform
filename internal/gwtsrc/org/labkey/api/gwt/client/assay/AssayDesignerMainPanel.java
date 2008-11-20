@@ -25,6 +25,7 @@ import org.labkey.api.gwt.client.util.ServiceUtil;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 
 import java.util.*;
@@ -42,9 +43,9 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
     private Integer _protocolId;
     protected GWTProtocol _assay;
     private boolean _dirty;
-    private List<PropertiesEditor> _domainEditors = new ArrayList<PropertiesEditor>();
+    private List<PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor>> _domainEditors = new ArrayList<PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor>>();
     private HTML _statusLabel = new HTML("<br/>");
-    private String _statusSuccessful = "Save successful.";
+    private static final String STATUS_SUCCESSFUL = "Save successful.<br/>";
     private BoundTextBox _nameBox;
     private boolean _copy;
     private SaveButtonBar saveBarTop;
@@ -124,9 +125,9 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
         {
             _rootPanel.add(new HTML("<br/>"));
 
-            GWTDomain domain = _assay.getDomains().get(i);
+            GWTDomain<GWTPropertyDescriptor> domain = _assay.getDomains().get(i);
 
-            PropertiesEditor editor = createPropertiesEditor(domain);
+            PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor> editor = createPropertiesEditor(domain);
             editor.addChangeListener(new ChangeListener()
             {
                 public void onChange(Widget sender)
@@ -171,9 +172,9 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
         _rootPanel.add(mainPanel);
     }
 
-    protected PropertiesEditor createPropertiesEditor(GWTDomain domain)
+    protected PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor> createPropertiesEditor(GWTDomain domain)
     {
-        return new PropertiesEditor(getLookupService());
+        return new PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor>(getService());
     }
 
     protected FlexTable createAssayInfoTable(final GWTProtocol assay)
@@ -252,7 +253,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
 
     public void setDirty(boolean dirty)
     {
-        if (dirty && _statusLabel.getText().equalsIgnoreCase(_statusSuccessful))
+        if (dirty && _statusLabel.getText().equalsIgnoreCase(STATUS_SUCCESSFUL))
             _statusLabel.setHTML("<br/>");
 
         setAllowSave(dirty);
@@ -279,11 +280,11 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
         int numProps = 0;
 
         // Get the errors for each of the PropertiesEditors
-        for (PropertiesEditor propeditor : _domainEditors)
+        for (PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor> propeditor : _domainEditors)
         {
             List<String> domainErrors = propeditor.validate();
             numProps += propeditor.getPropertyCount(false);
-            if (domainErrors != null && domainErrors.size() > 0)
+            if (domainErrors.size() > 0)
                 errors.addAll(domainErrors);
         }
 
@@ -319,7 +320,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
             public void onSuccess(GWTProtocol result)
             {
                 setDirty(false);
-                _statusLabel.setHTML( _statusSuccessful);
+                _statusLabel.setHTML(STATUS_SUCCESSFUL);
                 _assay = result;
                 _copy = false;
                 show(_assay);
@@ -336,7 +337,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
 
             for (PropertiesEditor _domainEditor : _domainEditors)
             {
-                domains.add(_domainEditor.getDomainUpdates());
+                domains.add(_domainEditor.getUpdates());
             }
             _assay.setDomains(domains);
 
@@ -385,27 +386,6 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
             });
         }
 
-    }
-
-    protected LookupServiceAsync getLookupService()
-    {
-        return new LookupServiceAsync()
-        {
-            public void getContainers(AsyncCallback<List<String>> async)
-            {
-                getService().getContainers(async);
-            }
-
-            public void getSchemas(String containerId, AsyncCallback<List<String>> async)
-            {
-                getService().getSchemas(containerId, async);
-            }
-
-            public void getTablesForLookup(String containerId, String schemaName, AsyncCallback<Map<String,String>> async)
-            {
-                getService().getTablesForLookup(containerId, schemaName, async);
-            }
-        };
     }
 
     class AssayCloseListener implements WindowCloseListener

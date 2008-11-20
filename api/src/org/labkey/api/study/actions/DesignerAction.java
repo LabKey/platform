@@ -85,7 +85,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
             ExpProtocol protocol = _form.getProtocol(!_form.isCopy());
             result.addChild(protocol.getName(), AssayService.get().getAssayRunsURL(getContainer(), protocol));
         }
-        result.addChild("Assay Designer", getUrl("designer"));
+        result.addChild(_form.getProviderName() + " Assay Designer", getUrl("designer"));
         return result;
     }
 }

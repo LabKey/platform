@@ -25,5 +25,4 @@ public interface ExpProtocolTable extends ExpTable<ExpProtocolTable.Column>
         LSID,
         Container,
     }
-    void populate(ExpSchema schema);
 }

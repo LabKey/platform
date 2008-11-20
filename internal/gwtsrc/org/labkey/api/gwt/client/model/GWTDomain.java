@@ -26,7 +26,7 @@ import java.util.*;
  * Date: Apr 24, 2007
  * Time: 1:44:49 PM
  */
-public class GWTDomain implements IsSerializable
+public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSerializable
 {
     private int domainId;
     private String name;
@@ -34,18 +34,18 @@ public class GWTDomain implements IsSerializable
     private String description;
     private boolean allowFileLinkProperties;
     private boolean allowAttachmentProperties;
-    private List<GWTPropertyDescriptor> propertyDescriptors = new ArrayList<GWTPropertyDescriptor>();
+    private List<FieldType> fields = new ArrayList<FieldType>();
 
     private Set<String> mandatoryPropertyDescriptorNames = new HashSet<String>();
 
-    private Set<String> reservedPropertyNames = new HashSet<String>();
+    private Set<String> reservedFieldNames = new HashSet<String>();
 
     public GWTDomain()
     {
     }
 
     // deep clone constructor
-    public GWTDomain(GWTDomain src)
+    public GWTDomain(GWTDomain<FieldType> src)
     {
         this.domainId = src.domainId;    
         this.name = src.name;
@@ -53,19 +53,19 @@ public class GWTDomain implements IsSerializable
         this.description = src.description;
         this.allowFileLinkProperties = src.allowFileLinkProperties;
         this.allowAttachmentProperties = src.allowAttachmentProperties;
-        if (src.getPropertyDescriptors() == null)
+        if (src.getFields() == null)
             return;
-        for (int i=0 ; i<src.getPropertyDescriptors().size() ; i++)
-            this.propertyDescriptors.add(new GWTPropertyDescriptor(src.getPropertyDescriptors().get(i)));
+        for (int i=0 ; i<src.getFields().size() ; i++)
+            this.fields.add((FieldType)src.getFields().get(i).copy());
 
-        if (src.getMandatoryPropertyDescriptorNames() != null)
+        if (src.mandatoryPropertyDescriptorNames != null)
         {
-            this.mandatoryPropertyDescriptorNames.addAll(src.getMandatoryPropertyDescriptorNames());
+            this.mandatoryPropertyDescriptorNames.addAll(src.mandatoryPropertyDescriptorNames);
         }
 
-        if (src.getReservedPropertyNames() != null)
+        if (src.getReservedFieldNames() != null)
         {
-            this.getReservedPropertyNames().addAll(src.getReservedPropertyNames());
+            this.getReservedFieldNames().addAll(src.getReservedFieldNames());
         }
     }
 
@@ -110,14 +110,14 @@ public class GWTDomain implements IsSerializable
         this.description = description;
     }
 
-    public List<GWTPropertyDescriptor> getPropertyDescriptors()
+    public List<FieldType> getFields()
     {
-        return propertyDescriptors;
+        return fields;
     }
 
-    public void setPropertyDescriptors(List<GWTPropertyDescriptor> list)
+    public void setFields(List<FieldType> list)
     {
-        propertyDescriptors = list;
+        fields = list;
     }
 
     public boolean isAllowFileLinkProperties()
@@ -141,28 +141,41 @@ public class GWTDomain implements IsSerializable
     }
 
     /**
-     * @return names of property descriptors that must be present in this domain. Does not indicate that they must be non-nullable.
+     * @return Indicates that the property can't be removed from the domain. The property may or may not be nullable.
      */
-    public Set<String> getMandatoryPropertyDescriptorNames()
+    public boolean isMandatoryField(FieldType field)
     {
-        return mandatoryPropertyDescriptorNames;
+        if (mandatoryPropertyDescriptorNames == null || field.getName() == null)
+        {
+            return false;
+        }
+        return mandatoryPropertyDescriptorNames.contains(field.getName().toLowerCase());
+    }
+
+    public boolean isEditable(FieldType field)
+    {
+        return !isMandatoryField(field);
     }
 
     /**
-     * @param mandatoryPropertyDescriptors names of property descriptors that must be present in this domain.  Does not indicate that they must be non-nullable.
+     * @param mandatoryFieldNames names of property descriptors that must be present in this domain.  Does not indicate that they must be non-nullable.
      */
-    public void setMandatoryPropertyDescriptorNames(Set<String> mandatoryPropertyDescriptors)
+    public void setMandatoryFieldNames(Set<String> mandatoryFieldNames)
     {
-        this.mandatoryPropertyDescriptorNames = mandatoryPropertyDescriptors;
+        this.mandatoryPropertyDescriptorNames = new HashSet<String>();
+        for (String mandatoryPropertyDescriptor : mandatoryFieldNames)
+        {
+            this.mandatoryPropertyDescriptorNames.add(mandatoryPropertyDescriptor.toLowerCase());
+        }
     }
 
-    public Set<String> getReservedPropertyNames()
+    public Set<String> getReservedFieldNames()
     {
-        return reservedPropertyNames;
+        return reservedFieldNames;
     }
 
-    public void setReservedPropertyNames(Set<String> reservedPropertyNames)
+    public void setReservedFieldNames(Set<String> reservedFieldNames)
     {
-        this.reservedPropertyNames = reservedPropertyNames;
+        this.reservedFieldNames = reservedFieldNames;
     }
 }

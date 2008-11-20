@@ -40,7 +40,7 @@ public class GWTPropertyDescriptor implements IsSerializable
     private StringProperty ontologyURI = new StringProperty();
     private StringProperty name = new StringProperty();
     private StringProperty description = new StringProperty();
-    private StringProperty rangeURI = new StringProperty();
+    private StringProperty rangeURI = new StringProperty("http://www.w3.org/2001/XMLSchema#string");
     private StringProperty conceptURI = new StringProperty();
     private StringProperty label = new StringProperty();
     private StringProperty searchTerms = new StringProperty();
@@ -53,14 +53,9 @@ public class GWTPropertyDescriptor implements IsSerializable
 
     private List<GWTPropertyValidator> validators = new ArrayList<GWTPropertyValidator>();
 
-    // not really part of the property descriptor, but this was easier than
-    // having a side list of editable/non-editable properties
-    private boolean isEditable = true;
-
     public GWTPropertyDescriptor()
     {
     }
-
 
     public GWTPropertyDescriptor(GWTPropertyDescriptor s)
     {
@@ -84,9 +79,12 @@ public class GWTPropertyDescriptor implements IsSerializable
         {
             validators.add(v);
         }
-        this.isEditable = s.isEditable;
     }
 
+    public GWTPropertyDescriptor copy()
+    {
+        return new GWTPropertyDescriptor(this);
+    }
 
     public String getLookupContainer()
     {
@@ -328,16 +326,6 @@ public class GWTPropertyDescriptor implements IsSerializable
         return null;
     }
 
-    public boolean isEditable()
-    {
-        return isEditable;
-    }
-
-    public void setEditable(boolean editable)
-    {
-        isEditable = editable;
-    }
-
     public List<GWTPropertyValidator> getPropertyValidators()
     {
         return validators;
@@ -346,5 +334,15 @@ public class GWTPropertyDescriptor implements IsSerializable
     public void setPropertyValidators(List<GWTPropertyValidator> validators)
     {
         this.validators = validators;
+    }
+
+    public String getLookupDescription()
+    {
+        if (getLookupQuery() != null && getLookupQuery().length() > 0 &&
+                getLookupSchema() != null && getLookupSchema().length() > 0)
+        {
+            return getLookupSchema() + "." + getLookupQuery();
+        }
+        return "(none)";
     }
 }

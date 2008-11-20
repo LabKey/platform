@@ -33,7 +33,4 @@ public interface ExpSampleSetTable extends ExpTable<ExpSampleSetTable.Column>
         Modified,
         Container,
     }
-
-    void populate(ExpSchema schema);
-
 }

@@ -19,6 +19,7 @@ package org.labkey.api.gwt.client.assay;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.ui.LookupServiceAsync;
 
 import java.util.List;
 import java.util.Map;
@@ -28,20 +29,13 @@ import java.util.Map;
  * Date: June 20, 2007
  * Time: 2:37:25 PM
  */
-public interface AssayServiceAsync
+public interface AssayServiceAsync extends LookupServiceAsync
 {
     void getAssayDefinition(int rowId, boolean copy, AsyncCallback<GWTProtocol> async);
 
     void saveChanges(GWTProtocol plate, boolean replaceIfExisting, AsyncCallback<GWTProtocol> async);
 
     void updateDomainDescriptor(GWTDomain orig, GWTDomain update, AsyncCallback<List<String>> async);
-
-    // PropertiesEditor.LookupService
-    void getContainers(AsyncCallback<List<String>> async);
-
-    void getSchemas(String containerId, AsyncCallback<List<String>> async);
-
-    void getTablesForLookup(String containerId, String schemaName, AsyncCallback<Map<String, String>> async);
 
     void getAssayTemplate(String providerName, AsyncCallback<GWTProtocol> asyncCallback);
 }

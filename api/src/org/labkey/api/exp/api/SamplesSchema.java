@@ -17,10 +17,7 @@
 package org.labkey.api.exp.api;
 
 import org.labkey.api.security.User;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ForeignKey;
@@ -29,7 +26,7 @@ import java.util.Set;
 import java.util.Map;
 import java.util.TreeMap;
 
-public class SamplesSchema extends UserSchema
+public class SamplesSchema extends AbstractExpSchema
 {
     public static final String SCHEMA_NAME = "Samples";
 
@@ -62,17 +59,11 @@ public class SamplesSchema extends UserSchema
     }
 
     private Map<String, ExpSampleSet> _sampleSetMap;
-    private ContainerFilter _containerFilter = ContainerFilter.CURRENT;
 
     private SamplesSchema(User user, Container container, Map<String, ExpSampleSet> sampleSetMap)
     {
         super("Samples", user, container, ExperimentService.get().getSchema());
         _sampleSetMap = sampleSetMap;
-    }
-
-    public void setContainerFilter(ContainerFilter containerFilter)
-    {
-        _containerFilter = containerFilter;
     }
 
     protected Map<String, ExpSampleSet> getSampleSets()
@@ -102,6 +93,7 @@ public class SamplesSchema extends UserSchema
         ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), alias, this);
         ret.setContainerFilter(_containerFilter);
         ret.populate(ss, true);
+        QueryService.get().overlayMetadata(ret, ret.getPublicName(), SamplesSchema.this);
         return ret;
     }
 
@@ -113,6 +105,7 @@ public class SamplesSchema extends UserSchema
             {
                 ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), "lookup", SamplesSchema.this);
                 ret.populate(ss, false);
+                QueryService.get().overlayMetadata(ret, ret.getPublicName(), SamplesSchema.this);
                 return ret;
             }
         };

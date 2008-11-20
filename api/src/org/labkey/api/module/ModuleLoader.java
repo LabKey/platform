@@ -318,7 +318,7 @@ public class ModuleLoader implements Filter
             setUpgradeState(UpgradeState.UpgradeComplete);
         }
 
-        _log.info("LabKey Server startup is complete");
+        _log.info("Core LabKey Server startup is complete, modules will be initialized after the first HTTP/HTTPS request");
     }
 
     public File getWebappDir()

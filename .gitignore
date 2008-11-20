@@ -4,4 +4,5 @@ api/webapp/WEB-INF/.pageflow-struts-generated
 api/webapp/WEB-INF/classes
 api/webapp/WEB-INF/gen
 /config.properties
+/gwtConfig.properties
 /intellijBuild

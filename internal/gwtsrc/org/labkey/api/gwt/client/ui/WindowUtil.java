@@ -20,6 +20,7 @@ import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.DialogBox;
 import com.google.gwt.user.client.ui.Widget;
+import com.google.gwt.user.client.ui.PopupPanel;
 
 /**
  * Created by IntelliJ IDEA.
@@ -130,9 +131,34 @@ public class WindowUtil
         $wnd.history.back();
     }-*/;
 
+    public static PopupPanel.PositionCallback createPositionCallback(final DialogBox dialogBox)
+    {
+        return new PopupPanel.PositionCallback()
+        {
+            public void setPosition(int offsetWidth, int offsetHeight)
+            {
+                WindowUtil.centerDialog(dialogBox);
+            }
+        };
+    }
+
     public static void centerDialog(DialogBox dialogBox)
     {
         dialogBox.setPopupPosition((Window.getClientWidth() - dialogBox.getOffsetWidth()) / 2 + Window.getScrollLeft(), (Window.getClientHeight() - dialogBox.getOffsetHeight()) / 2 + Window.getScrollTop());
+    }
+
+    public static void reportException(String description, Throwable caught)
+    {
+        String message;
+        if (description == null)
+        {
+            message = caught.toString();
+        }
+        else
+        {
+            message = description + ": " + caught;
+        }
+        Window.alert(message);
     }
 
     public static class NavigateCommand implements Command

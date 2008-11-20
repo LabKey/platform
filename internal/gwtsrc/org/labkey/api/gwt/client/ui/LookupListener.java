@@ -22,7 +22,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
  * User: jeckels
  * Date: Sep 24, 2007
  */
-public interface LookupListener
+public interface LookupListener<FieldType extends GWTPropertyDescriptor>
 {
-    public void lookupUpdated(GWTPropertyDescriptor pd);
+    public void lookupUpdated(FieldType field);
 }

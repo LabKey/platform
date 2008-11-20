@@ -26,6 +26,10 @@ import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.gwt.client.util.IPropertyWrapper;
 import org.labkey.api.gwt.client.util.StringProperty;
+import org.labkey.api.gwt.client.ui.property.FormatItem;
+import org.labkey.api.gwt.client.ui.property.RequiredItem;
+import org.labkey.api.gwt.client.ui.property.DescriptionItem;
+import org.labkey.api.gwt.client.ui.property.ValidatorItem;
 
 import java.util.*;
 
@@ -35,57 +39,60 @@ import java.util.*;
  * Date: Apr 24, 2007
  * Time: 2:10:20 PM
  */
-public class PropertiesEditor implements LookupListener
+public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> implements LookupListener<FieldType>
 {
-    public static final String currentFolder = "[current folder]"; 
+    public static final String currentFolder = "[current folder]";
 
-    public static final String statusAdded = "ADDED";
-    public static final String statusDeleted = "DELETED";
-    public static final String statusExisting = "EXISTING";
-    public static final String statusChanged = "CHANGED";
+    public enum FieldStatus
+    {
+        Added("This field is newly added"),
+        Deleted("This field is marked for deletion"),
+        Existing("This field has not been changed"),
+        Changed("This field has been edited");
+
+        private final String _description;
+
+        private FieldStatus(String description)
+        {
+            _description = description;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+    }
 
     private DockPanel _panel;
-    private PropertyPane _propertiesPane;
+    private PropertyPane<DomainType, FieldType> _propertiesPane;
     private VerticalPanel _noColumnsPanel;
     private FlexTable _table;
     private HorizontalPanel _buttonPanel;
     private boolean _readOnly;
-    private LookupServiceAsync _lookupService;
+    protected LookupServiceAsync _lookupService;
     private List<ChangeListener> _listeners = new ArrayList<ChangeListener>();
 
-    private GWTPropertyDescriptor _selectedPD;
+    private FieldType _selectedPD;
     private ImageButton _addFieldButton;
     private ImageButton _importSchemaButton;
     private ImageButton _exportSchemaButton;
     private ImageButton _inferSchemaButton;
 
+    protected DomainType _domain;
+    ArrayList<Row> _rows;
+
     private class Row
     {
-        Row()
+        Row(FieldType p)
         {
-            edit = new GWTPropertyDescriptor();
-            edit.setRangeURI("http://www.w3.org/2001/XMLSchema#string");
-            edit.setRequired(false);
+            orig = p.getPropertyId() == 0 ? null : p;
+            edit = (FieldType)p.copy();
         }
 
-        Row(GWTPropertyDescriptor p)
-        {
-            orig = p;
-            edit = new GWTPropertyDescriptor(p);
-        }
-
-        GWTPropertyDescriptor orig;
-        GWTPropertyDescriptor edit;
-//        String status;
+        FieldType orig;
+        FieldType edit;
         boolean deleted;
-        boolean readOnly;
-        boolean locked;
-
-        boolean _expanded = false;
     }
-
-    GWTDomain _domain;
-    ArrayList<Row> _rows;
 
     public PropertiesEditor(LookupServiceAsync service)
     {
@@ -109,7 +116,7 @@ public class PropertiesEditor implements LookupListener
         {
             public void onClick(Widget sender)
             {
-                addPropertyDescriptor();
+                addField((FieldType)new GWTPropertyDescriptor());
             }
         };
 
@@ -151,10 +158,7 @@ public class PropertiesEditor implements LookupListener
         _exportSchemaButton = new ImageButton("Export Schema", exportSchemaListener);
         _inferSchemaButton = new ImageButton("Infer Schema from File", inferSchemaListener);
 
-        _buttonPanel.add(_addFieldButton);
-        _buttonPanel.add(_importSchemaButton);
-        _buttonPanel.add(_exportSchemaButton);
-        _buttonPanel.add(_inferSchemaButton);
+        refreshButtons(_buttonPanel);
 
         VerticalPanel propertiesListPanel = new VerticalPanel();
         propertiesListPanel.add(_noColumnsPanel);
@@ -163,7 +167,7 @@ public class PropertiesEditor implements LookupListener
 
         DockPanel propertyDock = new DockPanel();
 
-        _propertiesPane = new PropertyPane(propertyDock.getElement(), this);
+        _propertiesPane = createPropertyPane(propertyDock);
         _propertiesPane.addChangeListener(new ChangeListener()
         {
             public void onChange(Widget sender)
@@ -209,39 +213,51 @@ public class PropertiesEditor implements LookupListener
         _readOnly = false;
     }
 
+    protected PropertyPane<DomainType, FieldType> createPropertyPane(DockPanel propertyDock)
+    {
+        PropertyPane<DomainType, FieldType> propertyPane = new PropertyPane<DomainType, FieldType>(propertyDock.getElement(), this);
+        propertyPane.addItem(new FormatItem<DomainType, FieldType>(propertyPane));
+        propertyPane.addItem(new RequiredItem<DomainType, FieldType>(propertyPane));
+        propertyPane.addItem(new DescriptionItem<DomainType, FieldType>(propertyPane));
+        propertyPane.addItem(new ValidatorItem<DomainType, FieldType>(propertyPane));
+        return propertyPane;
+    }
+
+    public DomainType getCurrentDomain()
+    {
+        return _domain;
+    }
+
     public Panel getMainPanel()
     {
         return _panel;
     }
 
-    public void init(GWTDomain domain)
+    public void init(DomainType domain)
     {
         _domain = domain;
         _rows = new ArrayList<Row>();
 
-        List l = domain.getPropertyDescriptors();
-        if (null != l)
-        for (int i=0 ; i<l.size() ; i++)
+        List<FieldType> fields = domain.getFields();
+        if (null != fields)
         {
-            GWTPropertyDescriptor p = (GWTPropertyDescriptor)l.get(i);
-            _rows.add(new Row(p));
-            _setReadOnly(i, !p.isEditable());
-            if (domain.getMandatoryPropertyDescriptorNames().contains(p.getName()))
-                _setLocked(i, true);
+            for (FieldType field : fields)
+            {
+                _rows.add(new Row(field));
+            }
         }
 
         refresh();
     }
 
 
-    public GWTPropertyDescriptor addPropertyDescriptor()
+    public FieldType addField(FieldType field)
     {
         _table.setVisible(true);
         _noColumnsPanel.setVisible(false);
-        Row newRow = new Row();
+        Row newRow = new Row(field);
         _rows.add(newRow);
         int index = _rows.size() - 1;
-        _setReadOnly(index, false);
         refresh();
 
         select(newRow.edit);
@@ -249,14 +265,13 @@ public class PropertiesEditor implements LookupListener
         return newRow.edit;
     }
 
-    public void setPropertyDescriptors(List<GWTPropertyDescriptor> descriptors)
+    public void setPropertyDescriptors(List<FieldType> descriptors)
     {
         _selectedPD = null;
-        _domain.setPropertyDescriptors(descriptors);
+        _domain.setFields(descriptors);
         init(_domain);
         fireChangeEvent();
     }
-
 
     void refresh()
     {
@@ -274,30 +289,30 @@ public class PropertiesEditor implements LookupListener
         select(_selectedPD);
     }
 
-    void refreshButtons()
+    protected void refreshButtons(HorizontalPanel buttonPanel)
     {
         if (_readOnly)
         {
-            if (_buttonPanel.getWidgetCount() == 1)
+            if (buttonPanel.getWidgetCount() == 1)
                 return;
-            _buttonPanel.clear();
-            _buttonPanel.add(_exportSchemaButton);
+            buttonPanel.clear();
+            buttonPanel.add(_exportSchemaButton);
         }
         else
         {
-            if (_buttonPanel.getWidgetCount() > 1)
+            if (buttonPanel.getWidgetCount() > 1)
                 return;
-            _buttonPanel.clear();
-            _buttonPanel.add(_addFieldButton);
-            _buttonPanel.add(_importSchemaButton);
-            _buttonPanel.add(_exportSchemaButton);
-            _buttonPanel.add(_inferSchemaButton);
+            buttonPanel.clear();
+            buttonPanel.add(_addFieldButton);
+            buttonPanel.add(_importSchemaButton);
+            buttonPanel.add(_exportSchemaButton);
+            buttonPanel.add(_inferSchemaButton);
         }
     }
 
-    private void select(GWTPropertyDescriptor pd)
+    private void select(FieldType pd)
     {
-        GWTPropertyDescriptor oldPD = _selectedPD;
+        FieldType oldPD = _selectedPD;
         if (_selectedPD != null)
         {
             for (int row = 0; row < _table.getRowCount(); row++)
@@ -308,13 +323,12 @@ public class PropertiesEditor implements LookupListener
         }
 
         _selectedPD = pd;
+        int index = getRow(pd);
 
-        if (_selectedPD != null)
+        if (index != -1)
         {
-            int index = getRow(pd);
-
-            String status = getStatus(pd);
-            boolean readOnly = _readOnly || isReadOnly(index) || status.equals(statusDeleted);
+            FieldStatus status = getStatus(pd);
+            boolean readOnly = _readOnly || status == FieldStatus.Deleted;
             boolean locked = isLocked(index);
 
             int tableRow = index + 1;
@@ -328,7 +342,7 @@ public class PropertiesEditor implements LookupListener
         }
         else
         {
-            _propertiesPane.showPropertyDescriptor(pd, false);
+            _propertiesPane.showPropertyDescriptor(null, false);
         }
 
         if (oldPD != null)
@@ -337,7 +351,7 @@ public class PropertiesEditor implements LookupListener
         }
     }
 
-    public void refreshRow(final GWTPropertyDescriptor pd)
+    public void refreshRow(final FieldType pd)
     {
         final int index = getRow(pd);
         if (index == -1)
@@ -349,22 +363,22 @@ public class PropertiesEditor implements LookupListener
         final int tableRow = index + 1;
         int col = 0;
 
-        String status = getStatus(pd);
-        boolean readOnly = _readOnly || isReadOnly(index) || status.equals(statusDeleted);
+        FieldStatus status = getStatus(pd);
+        boolean readOnly = _readOnly || status == FieldStatus.Deleted;
         boolean locked = isLocked(index);
 
-        if (!status.equalsIgnoreCase(statusExisting))
+        Image statusImage = getStatusImage(Integer.toString(index), status);
+        if (status != FieldStatus.Existing)
         {
             fireChangeEvent();
+            statusImage.addMouseListener(new Tooltip(status.getDescription()));
         }
-        Image statusImage = getStatusImage(Integer.toString(index), status);
-        statusImage.addMouseListener(new Tooltip(status));
         _table.setWidget(tableRow, col, statusImage);
         col++;
 
-        if (!locked && !_readOnly && !isReadOnly(index))
+        if (!locked && !_readOnly && !_domain.isMandatoryField(pd))
         {
-            if (status.equals(statusDeleted))
+            if (status == FieldStatus.Deleted)
             {
                 Image l = getCancelImage(index, new ClickListener() {
                     public void onClick(Widget sender)
@@ -372,7 +386,7 @@ public class PropertiesEditor implements LookupListener
                         markUndeleted(index);
                     }
                 });
-                l.addMouseListener(new Tooltip("Cancel Delete"));
+                l.addMouseListener(new Tooltip("Click to cancel deletion"));
                 _table.setWidget(tableRow,col,l);
             }
             else
@@ -395,7 +409,7 @@ public class PropertiesEditor implements LookupListener
                         }
                     }
                 });
-                l.addMouseListener(new Tooltip("Delete"));
+                l.addMouseListener(new Tooltip("Click to delete"));
                 _table.setWidget(tableRow,col,l);
             }
         }
@@ -442,7 +456,7 @@ public class PropertiesEditor implements LookupListener
             }
         };
         nameTextBox.addFocusListener(focusListener);
-        nameTextBox.setEnabled(!locked && !readOnly);
+        nameTextBox.setEnabled(!locked && !readOnly && !_domain.isMandatoryField(pd));
         _table.setWidget(tableRow, col, nameTextBox);
 
         col++;
@@ -456,7 +470,7 @@ public class PropertiesEditor implements LookupListener
         BoundTypePicker typePicker = new BoundTypePicker(index, "ff_type" + index, _domain.isAllowFileLinkProperties(), _domain.isAllowAttachmentProperties());
         typePicker.addFocusListener(focusListener);
         typePicker.setRangeURI(pd.getRangeURI());
-        typePicker.setEnabled(status.equals(statusAdded));
+        typePicker.setEnabled(isTypeEditable(pd, status));
         _table.setWidget(tableRow, col, typePicker);
         col++;
 
@@ -470,20 +484,20 @@ public class PropertiesEditor implements LookupListener
                     editLookup(index);
                }
             });
+            l.addMouseListener(new Tooltip("Click to edit the lookup"));
             _table.setWidget(tableRow,col,l);
         }
         else
             _table.setText(tableRow,col,"");
         col++;
 
-        String lookupString = "(none)";
-        if (pd.getLookupQuery() != null && pd.getLookupQuery().length() > 0 &&
-                pd.getLookupSchema() != null && pd.getLookupSchema().length() > 0)
-        {
-            lookupString = "" + pd.getLookupSchema() + "." + pd.getLookupQuery();
-        }
-        _table.setText(tableRow,col,lookupString);
+        _table.setText(tableRow,col,pd.getLookupDescription());
         _table.getFlexCellFormatter().setWidth(tableRow,col,"900px");
+    }
+
+    protected boolean isTypeEditable(GWTPropertyDescriptor pd, FieldStatus status)
+    {
+        return status == FieldStatus.Added;
     }
 
     public static Image getPopupImage(String index, ClickListener l)
@@ -516,11 +530,11 @@ public class PropertiesEditor implements LookupListener
         return getActionImage("cancel", index, l);
     }
 
-    Image getStatusImage(String index, String status)
+    Image getStatusImage(String index, FieldStatus status)
     {
-        String src = PropertyUtil.getContextPath() + "/_images/part" + status.toLowerCase() + ".gif";
+        String src = PropertyUtil.getContextPath() + "/_images/part" + status.toString().toLowerCase() + ".gif";
         Image i = new Image(src);
-        DOM.setElementProperty(i.getElement(), "id", "part" + status.toLowerCase() + "_" + index);
+        DOM.setElementProperty(i.getElement(), "id", "part" + status.toString().toLowerCase() + "_" + index);
         return i;
     }
 
@@ -530,63 +544,24 @@ public class PropertiesEditor implements LookupListener
     }
 
 
-    public void _setReadOnly(int i, boolean b)
-    {
-        getRow(i).readOnly = b;
-    }
-
-
-    public void setReadOnly(int i, boolean b)
-    {
-        if (b != isReadOnly(i))
-        {
-            getRow(i).readOnly = b;
-            if (!_readOnly)
-                refresh();
-        }
-    }
-
-
     public boolean isLocked(int i)
     {
-        return getRow(i).locked;
+        return !_domain.isEditable(getRow(i).edit);
     }
 
-    public void _setLocked(int i, boolean b)
-    {
-        getRow(i).locked = b;
-    }
-
-
-    public void setLocked(int i, boolean b)
-    {
-        if (b != isReadOnly(i))
-        {
-            getRow(i).locked = b;
-            if (!_readOnly)
-                refresh();
-        }
-    }
-
-
-    public boolean isReadOnly(int i)
-    {
-        return getRow(i).readOnly;
-    }
-
-    public String getStatus(GWTPropertyDescriptor pd)
+    public FieldStatus getStatus(GWTPropertyDescriptor pd)
     {
         int i = getRow(pd);
         if (getRow(i).deleted)
-            return statusDeleted;
+            return FieldStatus.Deleted;
 
         GWTPropertyDescriptor orig = getRow(i).orig;
         GWTPropertyDescriptor edit = getRow(i).edit;
 
         if (orig == null)
-            return statusAdded;
+            return FieldStatus.Added;
 
-        return edit.equals(orig) ? statusExisting : statusChanged;
+        return edit.equals(orig) ? FieldStatus.Existing : FieldStatus.Changed;
     }
 
 
@@ -606,15 +581,15 @@ public class PropertiesEditor implements LookupListener
 
     public List<String> validate()
     {
-        GWTDomain d = getDomainUpdates();
+        DomainType d = getUpdates();
         Set<String> names = new HashSet<String>();
-        List<GWTPropertyDescriptor> l = d.getPropertyDescriptors();
+        List<FieldType> l = d.getFields();
         Set<String> errors = new HashSet<String>();
         Set<String> lowerCaseReservedNames = new HashSet<String>();
-        for (String name : d.getReservedPropertyNames())
+        for (String name : d.getReservedFieldNames())
             lowerCaseReservedNames.add(name.toLowerCase());
 
-        for (GWTPropertyDescriptor p : l)
+        for (FieldType p : l)
         {
             String name = p.getName();
             if (null == name || name.length() == 0)
@@ -641,27 +616,27 @@ public class PropertiesEditor implements LookupListener
                 continue;
             }
 
-            names.add(name);
+            names.add(name.toLowerCase());
         }
-        return errors.size() > 0 ? new ArrayList<String>(errors) : null;
+        return new ArrayList<String>(errors);
     }
 
 
-    public GWTDomain getDomainUpdates()
+    public DomainType getUpdates()
     {
         _propertiesPane.copyValuesToPropertyDescriptor();
-        GWTDomain d = _domain; // UNDONE COPY
-        ArrayList<GWTPropertyDescriptor> l = new ArrayList<GWTPropertyDescriptor>();
+        DomainType d = _domain; // UNDONE COPY
+        ArrayList<FieldType> l = new ArrayList<FieldType>();
         for (int i=0 ; i<_rows.size() ; i++)
         {
             Row r = getRow(i);
-            String status = getStatus(r.edit);
-            if (status.equals(statusDeleted))
+            FieldStatus status = getStatus(r.edit);
+            if (status == FieldStatus.Deleted)
                 continue;
             r.edit.setName(StringUtils.trimToNull(r.edit.getName()));
             l.add(r.edit);
         }
-        d.setPropertyDescriptors(l);
+        d.setFields(l);
         return d;
     }
 
@@ -678,7 +653,7 @@ public class PropertiesEditor implements LookupListener
         return -1;
     }
 
-    public GWTPropertyDescriptor getPropertyDescriptor(int i)
+    public FieldType getPropertyDescriptor(int i)
     {
         return getRow(i).edit;
     }
@@ -726,7 +701,7 @@ public class PropertiesEditor implements LookupListener
     public void setReadOnly(boolean readOnly)
     {
         _readOnly = readOnly;
-        refreshButtons();
+        refreshButtons(_buttonPanel);
     }
 
     public void addChangeListener(ChangeListener cl)
@@ -758,7 +733,7 @@ public class PropertiesEditor implements LookupListener
     private class BoundTypePicker extends TypePicker implements ChangeListener
     {
         int _index;
-        GWTPropertyDescriptor _p;
+        FieldType _p;
 
         BoundTypePicker(int i, String id, boolean allowFileLinkProperties, boolean allowAttachmentProperties)
         {
@@ -785,7 +760,7 @@ public class PropertiesEditor implements LookupListener
 
     private class BoundTextBox extends TextBox implements ChangeListener, FocusListener
     {
-        GWTPropertyDescriptor _pd = null;
+        FieldType _pd = null;
         IPropertyWrapper _prop;
 
         private BoundTextBox(String width, int maxLength, String id)
@@ -812,7 +787,7 @@ public class PropertiesEditor implements LookupListener
         }
 
         // this constructor knows how/when to refreshRow(i)
-        BoundTextBox(GWTPropertyDescriptor pd, String name, String width, int maxLength, String id)
+        BoundTextBox(FieldType pd, String name, String width, int maxLength, String id)
         {
             this(width, maxLength, id);
             _pd = pd;
@@ -863,13 +838,13 @@ public class PropertiesEditor implements LookupListener
 
             if (_pd != null)
             {
-                String status = getStatus(_pd);
+                FieldStatus status = getStatus(_pd);
                 Object propObj = _prop.get();
                 String propText = propObj == null ? null : propObj.toString();
                 if (!nullEquals(text, propText))
                 {
                     _prop.set(text);
-                    if (!status.equals(getStatus(_pd)))
+                    if (status != getStatus(_pd))
                         refreshRow(_pd);
                     fireChangeEvent();
                 }
@@ -915,24 +890,22 @@ public class PropertiesEditor implements LookupListener
         if (null == _lookupService)
             return;
 
-        final LookupEditor lookupEditor = new LookupEditor(_lookupService, this);
+        final LookupEditor<FieldType> lookupEditor = createLookupEditor();
 
         lookupEditor.init(getPropertyDescriptor(row));
-        PopupPanel.PositionCallback callback = new PopupPanel.PositionCallback()
-        {
-            public void setPosition(int offsetWidth, int offsetHeight)
-            {
-                WindowUtil.centerDialog(lookupEditor);
-            }
-        };
 
-        lookupEditor.setPopupPositionAndShow(callback);
+        lookupEditor.setPopupPositionAndShow(WindowUtil.createPositionCallback(lookupEditor));
 
         fireChangeEvent();
     }
 
+    protected LookupEditor<FieldType> createLookupEditor()
+    {
+        return new LookupEditor<FieldType>(_lookupService, this, true);
+    }
 
-    public void lookupUpdated(GWTPropertyDescriptor pd)
+
+    public void lookupUpdated(FieldType pd)
     {
         int row = getRow(pd);
         if (row != -1)
@@ -963,6 +936,11 @@ public class PropertiesEditor implements LookupListener
         return true;
     }
 
+    public void addButton(ImageButton imageButton)
+    {
+        _buttonPanel.add(imageButton);
+    }
+
     /**
      * Transform an illegal name into a safe version. All non-letter characters
      * become underscores, and the first character must be a letter
@@ -986,5 +964,4 @@ public class PropertiesEditor implements LookupListener
         }
         return sb.toString();
     }
-
 }

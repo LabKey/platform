@@ -47,6 +47,7 @@ public class ContainerForeignKey extends LookupForeignKey
     public ContainerForeignKey()
     {
         super("EntityId", "Name");
+        setLookupSchemaName("Core");
     }
 
     public TableInfo getLookupTableInfo()

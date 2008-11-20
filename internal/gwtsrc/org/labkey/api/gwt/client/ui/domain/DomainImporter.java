@@ -153,7 +153,7 @@ public class DomainImporter
             ignoredColumns = columnMapper.getMappedColumnNames();
         else
             ignoredColumns = new HashSet<String>(); // emptySet is not serializable
-        List<GWTPropertyDescriptor> newProps = newDomain.getPropertyDescriptors();
+        List<GWTPropertyDescriptor> newProps = newDomain.getFields();
         for (InferencedColumn column : columns)
         {
             // Don't create properties for columns we're mapping, or that are already in the base table

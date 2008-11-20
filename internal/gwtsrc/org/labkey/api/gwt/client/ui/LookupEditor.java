@@ -31,7 +31,7 @@ import java.util.*;
  * User: jeckels
 * Date: Sep 24, 2007
 */ // LookupEditor is a popup panel for editing lookup information
-public class LookupEditor extends DialogBox
+public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends DialogBox
 {
     FlexTable _table;
 
@@ -44,11 +44,11 @@ public class LookupEditor extends DialogBox
     private TextBox _txtContainer;
     private TextBox _txtSchemaName;
     private TextBox _txtTableName;
-    private GWTPropertyDescriptor _pd;
+    private FieldType _pd;
     private final LookupServiceAsync _service;
-    private final LookupListener _listener;
+    private final LookupListener<FieldType> _listener;
 
-    public LookupEditor(LookupServiceAsync service, LookupListener listener)
+    public LookupEditor(LookupServiceAsync service, LookupListener<FieldType> listener, boolean showContainer)
     {
         _service = service;
         _listener = listener;
@@ -59,61 +59,88 @@ public class LookupEditor extends DialogBox
 //            String contextPath = PropertyUtil.getServerProperty("contextPath")
 //            Image image = new Image("X");
 
-        PropertiesEditor.setBoldText(_table, row, 0, "Folder");
-        _txtContainer = new TextBox();
-        _txtContainer.setMaxLength(250);
-        _txtContainer.setWidth("200px");
-        DOM.setAttribute(_txtContainer.getElement(), "id", "folder");
-        _table.setWidget(row, 1, _txtContainer);
-        _table.setWidget(row, 2, PropertiesEditor.getPopupImage("folder", new ClickListener() {
-            public void onClick(Widget sender)
+        if (showContainer)
+        {
+            PropertiesEditor.setBoldText(_table, row, 0, "Folder");
+            _txtContainer = new TextBox();
+            _txtContainer.setMaxLength(250);
+            _txtContainer.setWidth("200px");
+            DOM.setElementProperty(_txtContainer.getElement(), "id", "folder");
+            _table.setWidget(row, 1, _txtContainer);
+            Image image = PropertiesEditor.getPopupImage("folder", new ClickListener()
             {
-                showContainers(sender.getAbsoluteLeft()-200, sender.getAbsoluteTop()+20);
-            }
-        }));
-        row++;
+                public void onClick(Widget sender)
+                {
+                    showContainers(sender.getAbsoluteLeft() - 200, sender.getAbsoluteTop() + 20);
+                }
+            });
+            image.addMouseListener(new Tooltip("Click to choose a target folder"));
+            _table.setWidget(row, 2, image);
+            row++;
+        }
 
         _txtSchemaName = new TextBox();
         PropertiesEditor.setBoldText(_table, row, 0, "Schema");
         _txtSchemaName.setMaxLength(250);
         _txtSchemaName.setWidth("200px");
-        DOM.setAttribute(_txtSchemaName.getElement(), "id", "schema");
+        DOM.setElementProperty(_txtSchemaName.getElement(), "id", "schema");
         _table.setWidget(row, 1, _txtSchemaName);
-        _table.setWidget(row, 2, PropertiesEditor.getPopupImage("schema", new ClickListener() {
+        Image image = PropertiesEditor.getPopupImage("schema", new ClickListener()
+        {
             public void onClick(Widget sender)
             {
-                showSchemas(sender.getAbsoluteLeft()-200, sender.getAbsoluteTop()+20);
+                showSchemas(sender.getAbsoluteLeft() - 200, sender.getAbsoluteTop() + 20);
             }
-        }));
+        });
+        image.addMouseListener(new Tooltip("Click to choose a target schema"));
+        _table.setWidget(row, 2, image);
         row++;
 
         PropertiesEditor.setBoldText(_table, row, 0, "Table");
         _txtTableName = new TextBox();
         _txtTableName.setMaxLength(250);
         _txtTableName.setWidth("200px");
-        DOM.setAttribute(_txtTableName.getElement(), "id", "table");
+        DOM.setElementProperty(_txtTableName.getElement(), "id", "table");
         _table.setWidget(row, 1, _txtTableName);
-        _table.setWidget(row, 2, PropertiesEditor.getPopupImage("table", new ClickListener() {
+        image = PropertiesEditor.getPopupImage("table", new ClickListener()
+        {
             public void onClick(Widget sender)
             {
-                showTables(sender.getAbsoluteLeft()-200, sender.getAbsoluteTop()+20);
+                showTables(sender.getAbsoluteLeft() - 200, sender.getAbsoluteTop() + 20);
             }
-        }));
+        });
+        image.addMouseListener(new Tooltip("Click to choose a target table"));
+        _table.setWidget(row, 2, image);
         row++;
 
         FlexTable buttonTable = new FlexTable();
+        int buttonIndex = 0;
 
         ImageButton clear = new ImageButton("Clear", new ClickListener()
         {
             public void onClick(Widget sender)
             {
-                _txtContainer.setText("");
+                if (_txtContainer != null)
+                {
+                    _txtContainer.setText("");
+                }
                 _txtSchemaName.setText("");
                 _txtTableName.setText("");
                 LookupEditor.this.hide();
             }
         });
-        buttonTable.setWidget(row, 0, clear);
+        buttonTable.setWidget(row, buttonIndex++, clear);
+
+        ImageButton cancel = new ImageButton("Cancel", new ClickListener()
+        {
+            public void onClick(Widget sender)
+            {
+                _pd = null;
+                LookupEditor.this.hide();
+            }
+        });
+        buttonTable.setWidget(row, buttonIndex++, cancel);
+
         ImageButton close = new ImageButton("Close", new ClickListener()
         {
             public void onClick(Widget sender)
@@ -121,7 +148,8 @@ public class LookupEditor extends DialogBox
                 LookupEditor.this.hide();
             }
         });
-        buttonTable.setWidget(row, 1, close);
+        buttonTable.setWidget(row, buttonIndex++, close);
+
         _table.setWidget(row, 1, buttonTable);
         _table.getCellFormatter().setHorizontalAlignment(row, 1, HasHorizontalAlignment.ALIGN_RIGHT);
         row++;
@@ -131,8 +159,8 @@ public class LookupEditor extends DialogBox
 
 
     // cache this
-    List _containersText = null;
-    List _containersValues  = null;
+    List<String> _containersText = null;
+    List<String> _containersValues  = null;
 
     void showContainers(final int x, final int y)
     {
@@ -143,20 +171,19 @@ public class LookupEditor extends DialogBox
         }
 
         // request container list
-        _service.getContainers(new AsyncCallback()
+        _service.getContainers(new AsyncCallback<List<String>>()
         {
             public void onFailure(Throwable caught)
             {
                 Window.alert(caught.getMessage());
             }
 
-            public void onSuccess(Object result)
+            public void onSuccess(List<String> l)
             {
-                List l = (List) result;
-                _containersValues = new ArrayList();
+                _containersValues = new ArrayList<String>();
                 _containersValues.add("");
                 _containersValues.addAll(l);
-                _containersText = new ArrayList();
+                _containersText = new ArrayList<String>();
                 _containersText.add(PropertiesEditor.currentFolder);
                 _containersText.addAll(l);
                 showContainersPopup(x, y);
@@ -175,7 +202,6 @@ public class LookupEditor extends DialogBox
                 _txtContainer.setText(StringUtils.trimToEmpty(getValue()));
             }
         };
-        String c = StringUtils.trimToEmpty(getContainer());
         popupList.setValue(getContainer());
         popupList.setPopupPosition(x, y);
         popupList.show();
@@ -185,16 +211,15 @@ public class LookupEditor extends DialogBox
     void showSchemas(final int x, final int y)
     {
         String container = getContainer();
-        _service.getSchemas(container, new AsyncCallback()
+        _service.getSchemas(container, new AsyncCallback<List<String>>()
         {
             public void onFailure(Throwable caught)
             {
                 Window.alert(caught.getMessage());
             }
 
-            public void onSuccess(Object result)
+            public void onSuccess(List<String> l)
             {
-                List l = (List)result;
                 l.add(0,"");
                 PopupList popupList = new PopupList(l, l)
                 {
@@ -218,33 +243,30 @@ public class LookupEditor extends DialogBox
         String container = getContainer();
         final String schema = StringUtils.trimToNull(getSchemaName());
         if (null == schema)
+        {
+            Window.alert("Please select a schema");
             return;
-        _service.getTablesForLookup(container, schema, new AsyncCallback()
+        }
+        _service.getTablesForLookup(container, schema, new AsyncCallback<Map<String, String>>()
         {
             public void onFailure(Throwable caught)
             {
                 Window.alert(caught.getMessage());
             }
 
-            public void onSuccess(Object result)
+            public void onSuccess(Map<String, String> m)
             {
-                Map m = (Map)result;
-                List tables = new ArrayList();
-                if (result == null)
+                List<String> tables = new ArrayList<String>();
+                if (m == null)
                 {
-                    Window.alert("Could not find any tables in the specified schema in the selected folder.");
+                    Window.alert("Could not find any tables in the '" + schema + "' schema in the selected folder.");
                     return;
                 }
                 tables.addAll(m.keySet());
-                Collections.sort(tables, new Comparator() {
-                    public int compare(Object o1, Object o2)
-                    {
-                        return ((String)o1).compareTo((String)o2);
-                    }
-                });
-                List display = new ArrayList();
-                for (int i=0 ; i<tables.size() ; i++)
-                    display.add(tables.get(i) + " (" + m.get(tables.get(i)) + ")");
+                Collections.sort(tables);
+                List<String> display = new ArrayList<String>();
+                for (String table : tables)
+                    display.add(table + " (" + m.get(table) + ")");
                 display.add(0,"");
                 tables.add(0,null);
                 PopupList popupList = new PopupList(display, tables)
@@ -264,7 +286,7 @@ public class LookupEditor extends DialogBox
     }
 
 
-    public void init(GWTPropertyDescriptor pd)
+    public void init(FieldType pd)
     {
         _pd = pd;
         // we could bind directly to the property descriptor
@@ -280,7 +302,10 @@ public class LookupEditor extends DialogBox
         setTableName(pd.getLookupQuery());
 
         // since we're reusing these we have to ping them
-        _txtContainer.setText(StringUtils.nullToEmpty(container));
+        if (_txtContainer != null)
+        {
+            _txtContainer.setText(StringUtils.nullToEmpty(container));
+        }
         _txtSchemaName.setText(StringUtils.nullToEmpty(schema));
         _txtTableName.setText(StringUtils.nullToEmpty(pd.getLookupQuery()));
 
@@ -297,16 +322,6 @@ public class LookupEditor extends DialogBox
         }
     }
 
-
-    ListBox makeListBox(List list)
-    {
-        ListBox l = new ListBox();
-        for (int i=0 ; i<list.size() ; i++)
-            l.addItem(String.valueOf(list.get(i)));
-        return l;
-    }
-
-
     public void show()
     {
         super.show();
@@ -319,11 +334,13 @@ public class LookupEditor extends DialogBox
         super.hide();
         if (_pd != null)
         {
-            _container.set(_txtContainer.getText());
-            String c = getContainer();
+            if (_txtContainer != null)
+            {
+                _container.set(_txtContainer.getText());
+                _pd.setLookupContainer(getContainer());
+            }
             _schemaName.set(_txtSchemaName.getText());
             _tableName.set(_txtTableName.getText());
-            _pd.setLookupContainer(c);
             _pd.setLookupSchema(getSchemaName());
             _pd.setLookupQuery(getTableName());
             _listener.lookupUpdated(_pd);
@@ -354,6 +371,10 @@ public class LookupEditor extends DialogBox
 
     public String getSchemaName()
     {
+        if ("".equals(_schemaName.getString()))
+        {
+            return null;
+        }
         return _schemaName.getString();
     }
 
@@ -364,6 +385,10 @@ public class LookupEditor extends DialogBox
 
     public String getTableName()
     {
+        if ("".equals(_tableName.getString()))
+        {
+            return null;
+        }
         return _tableName.getString();
     }
 
@@ -373,14 +398,14 @@ public class LookupEditor extends DialogBox
         ListBox _list = new ListBox();
         String _value = null;
 
-        PopupList(List items, List values)
+        PopupList(List<String> items, List<String> values)
         {
             super(true);
             if (values == null)
                 values = items;
 
-            for (int i=0 ; i<values.size() ; i++)
-                _list.addItem((String)items.get(i), (String)values.get(i));
+            for (int i=0; i<values.size(); i++)
+                _list.addItem(items.get(i), values.get(i));
 
             _list.addChangeListener(this);
             _list.setVisibleItemCount(10);

@@ -963,6 +963,11 @@ public class ColumnInfo
         {
             return _lookupKey;
         }
+
+        public String getLookupSchemaName()
+        {
+            return _dbSchemaName;
+        }
     }
 
     public DisplayColumn getRenderer()

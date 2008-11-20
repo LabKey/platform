@@ -48,7 +48,6 @@ public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
         }
     }
 
-    void populate();
     /**
      * Add a filter to only show runs using the specified protocol.
      */

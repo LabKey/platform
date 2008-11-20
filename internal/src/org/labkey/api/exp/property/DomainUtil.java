@@ -65,12 +65,12 @@ public class DomainUtil
                 list.add(p);
             }
 
-            d.setPropertyDescriptors(list);
+            d.setFields(list);
 
             // Handle reserved property names
             DomainKind domainKind = domain.getDomainKind();
             Set<String> reservedProperties = domainKind.getReservedPropertyNames(domain);
-            d.setReservedPropertyNames(new HashSet<String>(reservedProperties));
+            d.setReservedFieldNames(new HashSet<String>(reservedProperties));
 
             return d;
         }
@@ -155,9 +155,9 @@ public class DomainUtil
 
         // first delete properties
         Set<Integer> s = new HashSet<Integer>();
-        for (GWTPropertyDescriptor pd : (List<GWTPropertyDescriptor>) orig.getPropertyDescriptors())
+        for (GWTPropertyDescriptor pd : (List<GWTPropertyDescriptor>) orig.getFields())
             s.add(pd.getPropertyId());
-        for (GWTPropertyDescriptor pd : (List<GWTPropertyDescriptor>) update.getPropertyDescriptors())
+        for (GWTPropertyDescriptor pd : (List<GWTPropertyDescriptor>) update.getFields())
         {
             String format = pd.getFormat();
             String type = "";
@@ -200,12 +200,12 @@ public class DomainUtil
         }
 
         // and now update properties
-        for (GWTPropertyDescriptor pd : (List<GWTPropertyDescriptor>) update.getPropertyDescriptors())
+        for (GWTPropertyDescriptor pd : (List<GWTPropertyDescriptor>) update.getFields())
         {
-            if (pd.getPropertyId() <= 0 || !pd.isEditable())
+            if (pd.getPropertyId() <= 0)
                 continue;
             GWTPropertyDescriptor old = null;
-            for (GWTPropertyDescriptor t : (List<GWTPropertyDescriptor>) orig.getPropertyDescriptors())
+            for (GWTPropertyDescriptor t : (List<GWTPropertyDescriptor>) orig.getFields())
             {
                 if (t.getPropertyId() == pd.getPropertyId())
                 {
@@ -237,9 +237,9 @@ public class DomainUtil
         }
 
         // now add properties
-        for (GWTPropertyDescriptor pd : (List<GWTPropertyDescriptor>) update.getPropertyDescriptors())
+        for (GWTPropertyDescriptor pd : (List<GWTPropertyDescriptor>) update.getFields())
         {
-            if (pd.getPropertyId() > 0 || !pd.isEditable())
+            if (pd.getPropertyId() > 0)
                 continue;
 
             if (pd.getPropertyURI() == null)

@@ -55,5 +55,10 @@ abstract public interface ExpTable<C extends Enum> extends TableInfo
 
     public void setEditHelper(TableEditHelper helper);
 
+    /**
+     * Add the standard set of columns to the table
+     */
+    public void populate();
+
     public ColumnInfo addPropertyColumns(String domainDescription, PropertyDescriptor[] pds, QuerySchema schema);
 }

@@ -36,7 +36,7 @@ class ImportSchemaWizard extends DialogBox
         VerticalPanel vPanel = new VerticalPanel();
         vPanel.setSpacing(5);
         String warning = "<b>NOTE: This will replace any existing fields you have defined.</b>";
-        if (propertiesEditor._domain.getPropertyDescriptors().size() > 0)
+        if (propertiesEditor._domain.getFields().size() > 0)
         {
             warning = "<b><font class=\"labkey-error\">WARNING: This will replace any existing fields you have defined, " +
                 "and delete all data in any redefined fields.</font></b>";

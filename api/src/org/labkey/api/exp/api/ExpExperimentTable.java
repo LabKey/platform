@@ -38,6 +38,5 @@ public interface ExpExperimentTable extends ExpTable<ExpExperimentTable.Column>
         Container,
     }
 
-    void populate();
     ColumnInfo createRunCountColumn(String alias, ExpProtocol parentProtocol, ExpProtocol childProtocol);
 }
