@@ -161,14 +161,14 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             // Remove any fields that are duplicates of the default dataset fields.
             // e.g. participantid, etc.
 
-            List<GWTPropertyDescriptor> updatedProps = update.getPropertyDescriptors();
+            List<GWTPropertyDescriptor> updatedProps = update.getFields();
             for (Iterator<GWTPropertyDescriptor> iter = updatedProps.iterator(); iter.hasNext();)
             {
                 GWTPropertyDescriptor prop = iter.next();
                 if (DataSetDefinition.isDefaultFieldName(prop.getName(), study))
                     iter.remove();
             }
-            update.setPropertyDescriptors(updatedProps);
+            update.setFields(updatedProps);
 
             errors = updateDomainDescriptor(orig, update);
             if (errors == null)

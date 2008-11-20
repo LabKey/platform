@@ -523,7 +523,7 @@ public class ExperimentController extends SpringActionController
                 {
                     ExpMaterialTable table = ExperimentServiceImpl.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), "materials", getSchema());
                     table.setMaterials(predecessorMaterials);
-                    table.populate(null, false);
+                    table.populate();
                     return table;
                 }
             };

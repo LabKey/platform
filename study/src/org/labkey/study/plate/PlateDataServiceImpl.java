@@ -74,7 +74,6 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                 for (String propName : group.getPropertyNames())
                 {
                     groupProperties.put(propName, group.getProperty(propName));
-
                 }
                 translated.add(new GWTWellGroup(group.getType().name(), group.getName(), positions, groupProperties));
             }

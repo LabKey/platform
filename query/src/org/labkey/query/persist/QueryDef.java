@@ -44,6 +44,7 @@ public class QueryDef extends Entity implements Cloneable
             }
             else
             {
+                // Metadata for built-in tables is stored with a NULL value for the SQL
                 addIsNull(Column.sql);
             }
         }

@@ -1,0 +1,130 @@
+/*
+ * Copyright (c) 2008 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.labkey.query.metadata.client;
+
+import org.labkey.api.gwt.client.ui.*;
+import org.labkey.api.gwt.client.ui.property.FormatItem;
+import org.labkey.api.gwt.client.ui.property.DescriptionItem;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import com.google.gwt.user.client.ui.*;
+
+/**
+ * User: jeckels
+ * Date: Nov 14, 2008
+ */
+public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTColumnInfo>
+{
+    private ImageButton _wrapFieldButton;
+
+    public TablePropertiesEditor(LookupServiceAsync service)
+    {
+        super(service);
+    }
+
+    private ImageButton getWrapFieldButton()
+    {
+        if (_wrapFieldButton == null)
+        {
+            _wrapFieldButton = new ImageButton("Add Field", new ClickListener()
+            {
+                public void onClick(Widget sender)
+                {
+                    final ListBox list = new ListBox(false);
+                    for (GWTColumnInfo pd : _domain.getFields())
+                    {
+                        if (_domain.isMandatoryField(pd))
+                        {
+                            list.addItem(pd.getName());
+                        }
+                    }
+                    final DialogBox dialog = new DialogBox(false, true);
+                    dialog.setText("Choose a field to wrap");
+                    VerticalPanel panel = new VerticalPanel();
+                    panel.setSpacing(10);
+                    list.setWidth("100%");
+                    panel.setWidth("100%");
+                    panel.add(list);
+                    panel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
+
+                    HorizontalPanel buttonPanel = new HorizontalPanel();
+
+                    ImageButton okButton = new ImageButton("OK", new ClickListener()
+                    {
+                        public void onClick(Widget sender)
+                        {
+                            for (GWTPropertyDescriptor existingPD : _domain.getFields())
+                            {
+                                if (existingPD.getName().equals(list.getValue(list.getSelectedIndex())))
+                                {
+                                    GWTColumnInfo pd = new GWTColumnInfo();
+                                    pd.setRangeURI(existingPD.getRangeURI());
+                                    pd.setName("Wrapped" + existingPD.getName());
+                                    pd.setWrappedColumnName(existingPD.getName());
+                                    addField(pd);
+                                    dialog.hide();
+                                    break;
+                                }
+                            }
+                        }
+                    });
+                    ImageButton cancelButton = new ImageButton("Cancel", new ClickListener()
+                    {
+                        public void onClick(Widget sender)
+                        {
+                            dialog.hide();
+                        }
+                    });
+
+                    buttonPanel.add(okButton);
+                    buttonPanel.add(cancelButton);
+                    panel.add(buttonPanel);
+                    dialog.setWidget(panel);
+                    dialog.setPopupPositionAndShow(WindowUtil.createPositionCallback(dialog));
+                }
+            });
+        }
+        return _wrapFieldButton;
+    }
+
+    @Override
+    protected void refreshButtons(HorizontalPanel buttonPanel)
+    {
+        buttonPanel.clear();
+        buttonPanel.add(getWrapFieldButton());
+    }
+
+    protected PropertyPane<GWTTableInfo, GWTColumnInfo> createPropertyPane(DockPanel propertyDock)
+    {
+        PropertyPane<GWTTableInfo, GWTColumnInfo> propertyPane = new PropertyPane<GWTTableInfo, GWTColumnInfo>(propertyDock.getElement(), this);
+        propertyPane.addItem(new FormatItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
+        propertyPane.addItem(new DescriptionItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
+        propertyPane.addItem(new WrappedColumnItem(propertyPane));
+        return propertyPane;
+    }
+
+    @Override
+    protected boolean isTypeEditable(GWTPropertyDescriptor pd, FieldStatus status)
+    {
+        return false;
+    }
+
+    @Override
+    protected LookupEditor<GWTColumnInfo> createLookupEditor()
+    {
+        return new LookupEditor<GWTColumnInfo>(_lookupService, this, false);
+    }
+
+}

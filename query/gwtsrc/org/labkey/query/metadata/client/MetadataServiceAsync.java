@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2008 LabKey Corporation
+ * Copyright (c) 2008 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package org.labkey.query.controllers;
+package org.labkey.query.metadata.client;
 
-import org.labkey.api.query.QueryForm;
+import com.google.gwt.user.client.rpc.AsyncCallback;
+import org.labkey.api.gwt.client.ui.LookupServiceAsync;
 
-public class MetadataForm extends QueryForm
+public interface MetadataServiceAsync extends LookupServiceAsync
 {
-    public String ff_metadataText;
+    void getMetadata(String schema, String table, AsyncCallback<GWTTableInfo> async);
 
-    public void setFf_metadataText(String text)
-    {
-        ff_metadataText = text;
-    }
+    void saveMetadata(GWTTableInfo domain, String schema, AsyncCallback<GWTTableInfo> async);
+
+    void resetToDefault(String schemaName, String queryName, AsyncCallback<GWTTableInfo> asyncCallback);
 }

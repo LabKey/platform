@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2008 LabKey Corporation
+ * Copyright (c) 2008 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,24 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.labkey.query.metadata.client;
 
-package org.labkey.experiment.property.client;
-
-import com.google.gwt.user.client.rpc.AsyncCallback;
 import org.labkey.api.gwt.client.model.GWTDomain;
-import org.labkey.api.gwt.client.ui.LookupServiceAsync;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 
-import java.util.List;
+import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
- * User: matthewb
- * Date: Apr 26, 2007
- * Time: 1:36:23 PM
+ * User: jeckels
+ * Date: Nov 14, 2008
  */
-public interface PropertyServiceAsync extends LookupServiceAsync
+public class GWTTableInfo extends GWTDomain<GWTColumnInfo>
 {
-    void updateDomainDescriptor(GWTDomain orig, GWTDomain dd, AsyncCallback<List<String>> async);
-
-    void getDomainDescriptor(String typeURI, AsyncCallback<GWTDomain> async);
+    public boolean isEditable(GWTColumnInfo field)
+    {
+        return true;
+    }
 }

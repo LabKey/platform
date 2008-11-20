@@ -1350,6 +1350,14 @@ portal/src/org/labkey/portal/PortalModule.java -text
 portal/src/org/labkey/portal/customizeSearchWebPart.gm -text
 portal/src/org/labkey/portal/customizeWebPart.gm -text
 portal/src/org/labkey/portal/search.jsp -text
+query/gwtsrc/org/labkey/query/metadata/MetadataEditor.gwt.xml -text
+query/gwtsrc/org/labkey/query/metadata/client/GWTColumnInfo.java -text
+query/gwtsrc/org/labkey/query/metadata/client/GWTTableInfo.java -text
+query/gwtsrc/org/labkey/query/metadata/client/MetadataEditor.java -text
+query/gwtsrc/org/labkey/query/metadata/client/MetadataService.java -text
+query/gwtsrc/org/labkey/query/metadata/client/MetadataServiceAsync.java -text
+query/gwtsrc/org/labkey/query/metadata/client/TablePropertiesEditor.java -text
+query/gwtsrc/org/labkey/query/metadata/client/WrappedColumnItem.java -text
 query/gwtsrc/org/labkey/reports/designer/ChartDesigner.gwt.xml -text
 query/gwtsrc/org/labkey/reports/designer/client/ChartDesigner.java -text
 query/module.properties -text
@@ -1400,7 +1408,6 @@ query/src/org/labkey/query/controllers/DesignServiceForm.java -text
 query/src/org/labkey/query/controllers/InternalNewViewForm.java -text
 query/src/org/labkey/query/controllers/InternalSourceViewForm.java -text
 query/src/org/labkey/query/controllers/InternalViewForm.java -text
-query/src/org/labkey/query/controllers/MetadataForm.java -text
 query/src/org/labkey/query/controllers/NewQueryForm.java -text
 query/src/org/labkey/query/controllers/Page.java -text
 query/src/org/labkey/query/controllers/PropertiesForm.java -text
@@ -1423,7 +1430,6 @@ query/src/org/labkey/query/controllers/internalDeleteView.jsp -text
 query/src/org/labkey/query/controllers/internalNewView.jsp -text
 query/src/org/labkey/query/controllers/internalSourceView.jsp -text
 query/src/org/labkey/query/controllers/manageViews.jsp -text
-query/src/org/labkey/query/controllers/metadata.jsp -text
 query/src/org/labkey/query/controllers/newQuery.jsp -text
 query/src/org/labkey/query/controllers/propertiesQuery.jsp -text
 query/src/org/labkey/query/controllers/sourceQuery.jsp -text
@@ -1437,6 +1443,7 @@ query/src/org/labkey/query/data/JoinType.java -text
 query/src/org/labkey/query/data/Query.java -text
 query/src/org/labkey/query/data/QueryTableInfo.java -text
 query/src/org/labkey/query/data/SQLTableInfo.java -text
+query/src/org/labkey/query/metadata/MetadataServiceImpl.java -text
 query/src/org/labkey/query/persist/CstmView.java -text
 query/src/org/labkey/query/persist/DbUserSchemaDef.java -text
 query/src/org/labkey/query/persist/QueryDef.java -text

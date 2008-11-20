@@ -18,6 +18,7 @@ package org.labkey.study.dataset.client;
 
 import com.google.gwt.user.client.rpc.RemoteService;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.ui.LookupService;
 import org.labkey.study.dataset.client.model.GWTDataset;
 
 import java.util.List;
@@ -29,7 +30,7 @@ import java.util.Map;
  * Date: Apr 26, 2007
  * Time: 1:34:56 PM
  */
-public interface DatasetService extends RemoteService //, PropertiesEditorService
+public interface DatasetService extends LookupService
 {
     public GWTDataset getDataset(int id);
 
@@ -38,28 +39,9 @@ public interface DatasetService extends RemoteService //, PropertiesEditorServic
      * @param orig Unchanged domain
      * @param dd New Domain
      * @return List of errors
-     * @throws Exception
      */
     public List<String> updateDatasetDefinition(GWTDataset ds, GWTDomain orig, GWTDomain dd);
     public List<String> updateDatasetDefinition(GWTDataset ds, GWTDomain orig, String schema);
     public GWTDomain getDomainDescriptor(String typeURI, String domainContainerId);
     public GWTDomain getDomainDescriptor(String typeURI);
-
-    // PropertiesEditor.LookupService
-    /**
-     * @return list of container paths
-     */
-    public List<String> getContainers();
-    /**
-     * @return list of schema names
-     */
-    public List<String> getSchemas(String containerId);
-
-    /**
-     *
-     * @param containerId container
-     * @param schemaName name of schema for query module
-     * @return map table name to pk column name
-     */
-    public Map<String, String> getTablesForLookup(String containerId, String schemaName);
 }

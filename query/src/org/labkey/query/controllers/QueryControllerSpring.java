@@ -34,11 +34,14 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.CustomViewImpl;
 import org.labkey.query.QueryDefinitionImpl;
 import org.labkey.query.TableXML;
+import org.labkey.query.metadata.MetadataServiceImpl;
+import org.labkey.query.metadata.client.MetadataEditor;
 import org.labkey.query.data.Query;
 import org.labkey.query.data.DbUserSchemaUpdateService;
 import org.labkey.query.design.DgMessage;
@@ -147,10 +150,10 @@ public class QueryControllerSpring extends SpringActionController
                 return HttpView.redirect(actionURL(QueryAction.begin));
 
             JspView<QueryForm> customQueriesView = new JspView<QueryForm>(QueryControllerSpring.class, "customQueriesList.jsp", form, errors);
-            customQueriesView.setTitle("User Defined Queries");
+            customQueriesView.setTitle("User-Defined Queries");
             customQueriesView.setFrame(WebPartView.FrameType.PORTAL);
             JspView<QueryForm> builtInTablesView = new JspView<QueryForm>(QueryControllerSpring.class, "builtInTablesList.jsp", form, errors);
-            builtInTablesView.setTitle("Built-In Tables");
+            builtInTablesView.setTitle("Built-In Queries");
             builtInTablesView.setFrame(WebPartView.FrameType.PORTAL);
             return new VBox(customQueriesView, builtInTablesView);
         }
@@ -729,44 +732,41 @@ public class QueryControllerSpring extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_READ)
-    public class MetadataQueryAction extends FormViewAction<MetadataForm>
+    public class MetadataServiceAction extends GWTServiceAction
+    {
+        protected BaseRemoteService createService()
+        {
+            return new MetadataServiceImpl(getViewContext());
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class MetadataQueryAction extends FormViewAction<QueryForm>
     {
         QueryDefinition _query = null;
-        MetadataForm _form = null;
+        QueryForm _form = null;
         
-        public void validateCommand(MetadataForm target, Errors errors)
+        public void validateCommand(QueryForm target, Errors errors)
         {
         }
 
-        public ModelAndView getView(MetadataForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(QueryForm form, boolean reshow, BindException errors) throws Exception
         {
             assertQueryExists(form);
             _form = form;
             _query = _form.getQueryDef();
-            return new JspView<MetadataForm>(QueryControllerSpring.class, "metadata.jsp", form, errors);
+            Map<String, String> props = new HashMap<String, String>();
+            props.put("schemaName", form.getSchemaName());
+            props.put("queryName", form.getQueryName());
+            return new GWTView(MetadataEditor.class, props);
         }
 
-        public boolean handlePost(MetadataForm form, BindException errors) throws Exception
+        public boolean handlePost(QueryForm form, BindException errors) throws Exception
         {
-            if (form.canEdit())
-            {
-                try
-                {
-                    _query = form.getQueryDef();
-                    _query.setMetadataXml(form.ff_metadataText);
-                    _query.save(getUser(), getContainer());
-                    return true;
-                }
-                catch (Exception e)
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                    return false;
-                }
-            }
-            return true;
+            return false;
         }
 
-        public ActionURL getSuccessURL(MetadataForm metadataForm)
+        public ActionURL getSuccessURL(QueryForm metadataForm)
         {
             return _query.urlFor(QueryAction.metadataQuery);
         }
@@ -774,7 +774,7 @@ public class QueryControllerSpring extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             (new SchemaAction(_form)).appendNavTrail(root);
-            root.addChild("Query Metadata", _query.urlFor(QueryAction.metadataQuery));
+            root.addChild("Query Metadata: " + _form.getQueryName(), _query.urlFor(QueryAction.metadataQuery));
             return root;
         }
     }

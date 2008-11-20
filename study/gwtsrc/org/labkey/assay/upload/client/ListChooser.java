@@ -21,7 +21,6 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.assay.AssayService;
 import org.labkey.api.gwt.client.assay.AssayServiceAsync;
@@ -30,14 +29,11 @@ import org.labkey.api.gwt.client.ui.*;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.ServiceUtil;
 
-import java.util.List;
-import java.util.Map;
-
 /**
  * User: jeckels
  * Date: Sep 24, 2007
  */
-public class ListChooser implements EntryPoint, LookupListener
+public class ListChooser implements EntryPoint, LookupListener<GWTPropertyDescriptor>
 {
     private LookupEditor _lookupEditor;
     private Label _label;
@@ -66,7 +62,7 @@ public class ListChooser implements EntryPoint, LookupListener
         }));
         _label = new Label();
         panel.add(_label);
-        _lookupEditor = new LookupEditor(getLookupService(), this);
+        _lookupEditor = new LookupEditor(getService(), this, true);
         _lookupEditor.setTitle(PropertyUtil.getServerProperty("dialogTitle"));
 
         lookupUpdated(createPropertyDescriptorFromForm());
@@ -126,26 +122,5 @@ public class ListChooser implements EntryPoint, LookupListener
             ServiceUtil.configureEndpoint(_service, "service");
         }
         return _service;
-    }
-
-    LookupServiceAsync getLookupService()
-    {
-        return new LookupServiceAsync()
-        {
-            public void getContainers(AsyncCallback<List<String>> async)
-            {
-                getService().getContainers(async);
-            }
-
-            public void getSchemas(String containerId, AsyncCallback<List<String>> async)
-            {
-                getService().getSchemas(containerId, async);
-            }
-
-            public void getTablesForLookup(String containerId, String schemaName, AsyncCallback<Map<String,String>> async)
-            {
-                getService().getTablesForLookup(containerId, schemaName, async);
-            }
-        };
     }
 }

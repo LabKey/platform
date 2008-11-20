@@ -72,7 +72,7 @@ public class Designer implements EntryPoint
 
         _loading = new Label("Loading...");
 
-        _propTable = new PropertiesEditor(getLookupService());
+        _propTable = new PropertiesEditor(getService());
 
         _buttons = new FlexTable();
 
@@ -133,8 +133,8 @@ public class Designer implements EntryPoint
         _domain = d;
 
         _propTable.init(new GWTDomain(d));
-        if (null == d.getPropertyDescriptors() || d.getPropertyDescriptors().size() == 0)
-            _propTable.addPropertyDescriptor();
+        if (null == d.getFields() || d.getFields().size() == 0)
+            _propTable.addField(new GWTPropertyDescriptor());
 
         showUI();
     }
@@ -228,7 +228,7 @@ public class Designer implements EntryPoint
             }
         };
 
-        getService().updateDatasetDefinition(_dataset, _domain, _propTable.getDomainUpdates(), callback);
+        getService().updateDatasetDefinition(_dataset, _domain, _propTable.getUpdates(), callback);
     }
 
 
@@ -347,30 +347,9 @@ public class Designer implements EntryPoint
             p.setRangeURI("xsd:int");
             list.add(p);
 
-            domain.setPropertyDescriptors(list);
+            domain.setFields(list);
             setDomain(domain);
         }
-    }
-
-    LookupServiceAsync getLookupService()
-    {
-        return new LookupServiceAsync()
-        {
-            public void getContainers(AsyncCallback<List<String>> async)
-            {
-                getService().getContainers(async);
-            }
-
-            public void getSchemas(String containerId, AsyncCallback<List<String>> async)
-            {
-                getService().getSchemas(containerId, async);
-            }
-
-            public void getTablesForLookup(String containerId, String schemaName, AsyncCallback<Map<String,String>> async)
-            {
-                getService().getTablesForLookup(containerId, schemaName, async);
-            }
-        };
     }
 
     private interface WidgetUpdatable
@@ -865,7 +844,7 @@ public class Designer implements EntryPoint
             for (GWTPropertyDescriptor descriptor : descriptors)
             {
                 // Don't add deleted properties
-                if (_propTable.getStatus(descriptor).equals(PropertiesEditor.statusDeleted))
+                if (_propTable.getStatus(descriptor) == PropertiesEditor.FieldStatus.Deleted)
                     continue;
 
                 String label = descriptor.getLabel();
@@ -952,9 +931,7 @@ public class Designer implements EntryPoint
 
         public void validate(List<String> errors)
         {
-            List<String> error = _propEdit.validate();
-            if (error != null)
-                errors.addAll(error);
+            errors.addAll(_propEdit.validate());
         }
 
     }

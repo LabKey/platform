@@ -18,6 +18,7 @@ package org.labkey.experiment.property.client;
 
 import com.google.gwt.user.client.rpc.RemoteService;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.ui.LookupService;
 
 import java.util.List;
 import java.util.Map;
@@ -28,13 +29,8 @@ import java.util.Map;
  * Date: Apr 26, 2007
  * Time: 1:34:56 PM
  */
-public interface PropertyService extends RemoteService
+public interface PropertyService extends LookupService
 {
     public List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain dd);
     public GWTDomain getDomainDescriptor(String typeURI);
-
-    // PropertiesEditor.LookupService
-    public List<String> getContainers();
-    public List<String> getSchemas(String containerId);
-    public Map<String, String> getTablesForLookup(String containerId, String schemaName);
 }

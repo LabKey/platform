@@ -17,13 +17,12 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.ExpProtocolTable;
-import org.labkey.api.exp.api.ExpSchema;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.ActionURL;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.util.Collections;
 
@@ -50,7 +49,7 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
         throw new IllegalArgumentException("Unknown column " + column);
     }
 
-    public void populate(ExpSchema schema)
+    public void populate()
     {
         ColumnInfo colRowId = addColumn(Column.RowId);
         colRowId.setIsHidden(true);
@@ -61,7 +60,7 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
         ColumnInfo colLSID = addColumn(Column.LSID);
         colLSID.setIsHidden(true);
         addContainerColumn(Column.Container);
-        ActionURL urlDetails = new ActionURL("Experiment", "protocolDetails", schema.getContainer().getPath());
+        ActionURL urlDetails = new ActionURL(ExperimentController.ProtocolDetailsAction.class, _schema.getContainer());
         setDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("rowId", "RowId")));
         addDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("LSID", "LSID")));
     }

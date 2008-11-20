@@ -17,9 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.ExpSampleSetTable;
-import org.labkey.api.exp.api.ExpSchema;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
 
 /**
@@ -51,7 +49,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
         }
     }
 
-    public void populate(ExpSchema schema)
+    public void populate()
     {
         addColumn(ExpSampleSetTable.Column.RowId).setIsHidden(true);
         addColumn(ExpSampleSetTable.Column.Name);

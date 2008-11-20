@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.query.controllers.QueryControllerSpring" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -46,7 +47,10 @@
         <tr>
             <td><a href="<%= h(def.urlFor(QueryAction.executeQuery, context.getContainer()) )%>"><%=h(name)%></a></td>
             <td><labkey:button text="Run" href="<%= def.urlFor(QueryAction.executeQuery, context.getContainer()) %>"/></td>
-            <td><labkey:button text="Edit Metadata" href="<%= def.urlFor(QueryAction.sourceQuery, context.getContainer()) %>"/></td>
+            <% if (context.hasPermission(ACL.PERM_ADMIN)) { %>
+                <td><labkey:button text="Edit Metadata as XML" href="<%= def.urlFor(QueryAction.sourceQuery, context.getContainer()) %>"/></td>
+                <td><labkey:button text="Edit Metadata with GUI" href="<%= def.urlFor(QueryAction.metadataQuery, context.getContainer()) %>"/></td>
+            <% } %>
             <td>
                 <% if (def.getDescription() != null) { %>
                 <i><%=h(def.getDescription())%></i>
@@ -60,5 +64,5 @@
 
 <% if (context.getContainer().hasPermission(context.getUser(), ACL.PERM_ADMIN))
 {%>
-    <labkey:link href="<%=new ActionURL("query", "admin", context.getContainer())%>" text="Schema Administration" />
+    <labkey:link href="<%=new ActionURL(QueryControllerSpring.AdminAction.class, context.getContainer())%>" text="Schema Administration" />
 <% } %>

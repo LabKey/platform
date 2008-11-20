@@ -58,7 +58,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                     public TableInfo getLookupTableInfo()
                     {
                         ExpSampleSetTable sampleSetTable = ExperimentService.get().createSampleSetTable(ExpSchema.TableType.SampleSets.toString(), "SampleSets", _schema);
-                        sampleSetTable.populate(_schema instanceof ExpSchema ? (ExpSchema)_schema : new ExpSchema(_schema.getUser(), _schema.getContainer()));
+                        sampleSetTable.populate();
                         return sampleSetTable;
                     }
                 });
@@ -122,6 +122,11 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             sql.append(")");
             addCondition(sql);
         }
+    }
+
+    public void populate()
+    {
+        populate(null, false);
     }
 
     public void populate(ExpSampleSet ss, boolean filter)

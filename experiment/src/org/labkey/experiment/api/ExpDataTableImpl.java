@@ -51,6 +51,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         addColumn(Column.Run).setFk(schema.getRunIdForeignKey());
         addColumn(Column.LSID).setIsHidden(true);
         addColumn(Column.DataFileUrl);
+        addColumn(Column.Created);
         addColumn(Column.DownloadLink);
         addColumn(Column.ViewFileLink);
         addColumn(Column.ContentLink);

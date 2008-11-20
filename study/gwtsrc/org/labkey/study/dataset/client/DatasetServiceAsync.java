@@ -18,6 +18,7 @@ package org.labkey.study.dataset.client;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.ui.LookupServiceAsync;
 import org.labkey.study.dataset.client.model.GWTDataset;
 
 import java.util.List;
@@ -29,7 +30,7 @@ import java.util.Map;
  * Date: Apr 26, 2007
  * Time: 1:36:23 PM
  */
-public interface DatasetServiceAsync // extends PropertiesEditorServiceAsync
+public interface DatasetServiceAsync extends LookupServiceAsync
 {
     void getDataset(int id, AsyncCallback<GWTDataset> async);
 
@@ -38,12 +39,6 @@ public interface DatasetServiceAsync // extends PropertiesEditorServiceAsync
     void getDomainDescriptor(String typeURI, AsyncCallback<GWTDomain> async);
 
     void updateDatasetDefinition(GWTDataset ds, GWTDomain orig, GWTDomain dd, AsyncCallback<List<String>> async);
-
-    void getContainers(AsyncCallback<List<String>> async);
-
-    void getSchemas(String containerId, AsyncCallback<List<String>> async);
-
-    void getTablesForLookup(String containerId, String schemaName, AsyncCallback<Map<String, String>> async);
 
     void updateDatasetDefinition(GWTDataset ds, GWTDomain orig, String schema, AsyncCallback<List<String>> async);
 }

@@ -25,14 +25,12 @@ import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.ImageButton;
-import org.labkey.api.gwt.client.ui.LookupServiceAsync;
 import org.labkey.api.gwt.client.ui.PropertiesEditor;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.ServiceUtil;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -66,7 +64,7 @@ public class Designer implements EntryPoint
 
         _loading = new Label("Loading...");
 
-        _propTable = new PropertiesEditor(getLookupService());
+        _propTable = new PropertiesEditor(getService());
 
         _buttons = new HorizontalPanel();
         _buttons.add(new SubmitButton());
@@ -186,7 +184,7 @@ public class Designer implements EntryPoint
             return;
         }
 
-        GWTDomain edited = _propTable.getDomainUpdates();
+        GWTDomain edited = _propTable.getUpdates();
         getService().updateDomainDescriptor(_domain, edited, new AsyncCallback<List<String>>()
         {
             public void onFailure(Throwable caught)
@@ -314,29 +312,8 @@ public class Designer implements EntryPoint
             p.setRangeURI("xsd:int");
             list.add(p);
 
-            domain.setPropertyDescriptors(list);
+            domain.setFields(list);
             setDomain(domain);
         }
-    }
-
-    LookupServiceAsync getLookupService()
-    {
-        return new LookupServiceAsync()
-        {
-            public void getContainers(AsyncCallback<List<String>> async)
-            {
-                getService().getContainers(async);
-            }
-
-            public void getSchemas(String containerId, AsyncCallback<List<String>> async)
-            {
-                getService().getSchemas(containerId, async);
-            }
-
-            public void getTablesForLookup(String containerId, String schemaName, AsyncCallback<Map<String,String>> async)
-            {
-                getService().getTablesForLookup(containerId, schemaName, async);
-            }
-        };
     }
 }

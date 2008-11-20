@@ -458,7 +458,7 @@ public class PropertyController extends SpringActionController
         try
         {
             response.putBean(domain, "domainId", "name", "domainURI", "description");
-            response.putBeanList("fields", domain.getPropertyDescriptors());
+            response.putBeanList("fields", domain.getFields());
         }
         catch (Exception e)
         {
@@ -491,7 +491,7 @@ public class PropertyController extends SpringActionController
             props.add(prop);
         }
 
-        domain.setPropertyDescriptors(props);
+        domain.setFields(props);
 
         return domain;
     }

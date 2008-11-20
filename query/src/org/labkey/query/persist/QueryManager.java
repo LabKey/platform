@@ -49,8 +49,12 @@ public class QueryManager
         return def;
     }
 
+    /**
+     * @param customQuery whether to look for custom queries or modified metadata on built-in tables
+     */
     public QueryDef getQueryDef(Container container, String schema, String name, boolean customQuery)
     {
+        // Metadata for built-in tables is stored with a NULL value for the SQL
         QueryDef.Key key = new QueryDef.Key(container, customQuery);
         key.setSchema(schema);
         key.setQueryName(name);
@@ -64,8 +68,12 @@ public class QueryManager
         }
     }
 
+    /**
+     * @param customQuery whether to look for custom queries or modified metadata on built-in tables
+     */
     public QueryDef[] getQueryDefs(Container container, String schema, boolean inheritableOnly, boolean includeSnapshots, boolean customQuery)
     {
+        // Metadata for built-in tables is stored with a NULL value for the SQL
         try
         {
             QueryDef.Key key = new QueryDef.Key(container, customQuery);

@@ -77,12 +77,6 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         }
     }
 
-    // path -> containerid
-    public List<String> getContainers()
-    {
-        return super.getContainers();
-    }
-
     public GWTProtocol getAssayTemplate(String providerName) throws SerializableException
     {
         AssayProvider provider = org.labkey.api.study.assay.AssayService.get().getProvider(providerName);
@@ -96,7 +90,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         List<GWTDomain> gwtDomains = new ArrayList<GWTDomain>();
         for (Domain domain : template.getValue())
         {
-            GWTDomain gwtDomain = new GWTDomain();
+            GWTDomain<GWTPropertyDescriptor> gwtDomain = new GWTDomain<GWTPropertyDescriptor>();
             Set<String> mandatoryPropertyDescriptors = new HashSet<String>();
             if (!copy)
             {
@@ -116,9 +110,9 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                 if (provider.isMandatoryDomainProperty(domain, prop.getName()))
                     mandatoryPropertyDescriptors.add(prop.getName());
             }
-            gwtDomain.setPropertyDescriptors(gwtProps);
-            gwtDomain.setMandatoryPropertyDescriptorNames(mandatoryPropertyDescriptors);
-            gwtDomain.setReservedPropertyNames(provider.getReservedPropertyNames(protocol, domain));
+            gwtDomain.setFields(gwtProps);
+            gwtDomain.setMandatoryFieldNames(mandatoryPropertyDescriptors);
+            gwtDomain.setReservedFieldNames(provider.getReservedPropertyNames(protocol, domain));
         }
 
         GWTProtocol result = new GWTProtocol();
@@ -290,7 +284,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                 protocol.save(getUser());
 
                 StringBuilder errors = new StringBuilder();
-                for (GWTDomain domain : assay.getDomains())
+                for (GWTDomain<GWTPropertyDescriptor> domain : assay.getDomains())
                 {
                     List<String> domainErrors = updateDomainDescriptor(domain, protocol.getName(), getContainer());
                     if (domainErrors != null)
@@ -307,7 +301,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                 if (transactionOwner)
                     schema.getScope().commitTransaction();
 
-                return assay;
+                return getAssayDefinition(assay.getProtocolId(), false);
             }
             catch (UnexpectedException e)
             {
@@ -315,6 +309,10 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                 throw new AssayException(cause.getMessage());
             }
             catch (ExperimentException e)
+            {
+                throw new AssayException(e);
+            }
+            catch (SerializableException e)
             {
                 throw new AssayException(e);
             }
@@ -332,10 +330,10 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             throw new AssayException("Only replaceIfExisting == true is supported.");
     }
 
-    private List<String> updateDomainDescriptor(GWTDomain domain, String protocolName, Container protocolContainer)
+    private List<String> updateDomainDescriptor(GWTDomain<GWTPropertyDescriptor> domain, String protocolName, Container protocolContainer)
     {
         GWTDomain previous = getDomainDescriptor(domain.getDomainURI(), protocolContainer);
-        for (GWTPropertyDescriptor prop : domain.getPropertyDescriptors())
+        for (GWTPropertyDescriptor prop : domain.getFields())
         {
             if (prop.getLookupQuery() != null)
             {

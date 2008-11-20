@@ -22,7 +22,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
 
 import java.sql.Types;
@@ -101,5 +100,10 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
             }
         });
         return ret;
+    }
+
+    public void populate()
+    {
+        addColumn(Column.RowId);
     }
 }
