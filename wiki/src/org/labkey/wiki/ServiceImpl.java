@@ -46,8 +46,11 @@ import java.util.List;
  * Date: Jun 12, 2006
  * Time: 3:19:54 PM
  */
-public class ServiceImpl implements WikiService.Service
+public class ServiceImpl implements WikiService
 {
+    public static WikiRendererType DEFAULT_WIKI_RENDERER_TYPE = WikiRendererType.HTML;
+    public static WikiRendererType DEFAULT_MESSAGE_RENDERER_TYPE = WikiRendererType.TEXT_WITH_LINKS;
+
     private Map<String, MacroProvider> providers = new HashMap<String, MacroProvider>();
 
     public String getHtml(Container c, String name, boolean forceRefresh)
@@ -78,7 +81,7 @@ public class ServiceImpl implements WikiService.Service
         wikiversion.setBody(body);
 
         if (renderType == null)
-            renderType = WikiService.get().getDefaultWikiRendererType();
+            renderType = getDefaultWikiRendererType();
 
         wikiversion.setRendererType(renderType.name());
 
@@ -138,12 +141,12 @@ public class ServiceImpl implements WikiService.Service
 
     public WikiRendererType getDefaultWikiRendererType()
     {
-        return WikiRendererType.HTML;
+        return DEFAULT_WIKI_RENDERER_TYPE;
     }
 
     public WikiRendererType getDefaultMessageRendererType()
     {
-        return WikiRendererType.TEXT_WITH_LINKS;
+        return DEFAULT_MESSAGE_RENDERER_TYPE;
     }
     
     public WikiRenderer getRenderer(WikiRendererType rendererType)
@@ -191,8 +194,4 @@ public class ServiceImpl implements WikiService.Service
         }
     }
 
-    public static ServiceImpl get()
-    {
-        return (ServiceImpl) WikiService.get();
-    }
 }

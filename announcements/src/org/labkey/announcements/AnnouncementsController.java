@@ -43,6 +43,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.common.util.Pair;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1013,7 +1014,13 @@ public class AnnouncementsController extends SpringActionController
             if (!isNote() && (null != insert.getBody() || !insert.getAttachments().isEmpty()))
             {
                 String rendererTypeName = (String) form.get("rendererType");
-                WikiRendererType currentRendererType = (null == rendererTypeName ? WikiService.get().getDefaultMessageRendererType() : WikiRendererType.valueOf(rendererTypeName));
+                WikiRendererType currentRendererType = (null == rendererTypeName ? null : WikiRendererType.valueOf(rendererTypeName));
+                if(null == currentRendererType)
+                {
+                    WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+                    if(null != wikiService)
+                        currentRendererType = wikiService.getDefaultMessageRendererType();
+                }
                 sendNotificationEmails(insert, currentRendererType);
             }
 
@@ -1339,6 +1346,7 @@ public class AnnouncementsController extends SpringActionController
             Container c = getViewContext().getContainer();
 
             // In reshow case we leave all form values as is so user can correct the errors.
+            WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
             WikiRendererType currentRendererType;
             Integer assignedTo;
 
@@ -1348,8 +1356,8 @@ public class AnnouncementsController extends SpringActionController
             {
                 String rendererTypeName = (String) form.get("rendererType");
 
-                if (null == rendererTypeName)
-                    currentRendererType = WikiService.get().getDefaultMessageRendererType();
+                if (null == rendererTypeName && null != wikiService)
+                    currentRendererType = wikiService.getDefaultMessageRendererType();
                 else
                     currentRendererType = WikiRendererType.valueOf(rendererTypeName);
 
@@ -1365,7 +1373,7 @@ public class AnnouncementsController extends SpringActionController
 
                 String expires = DateUtil.formatDate(cal.getTime());
                 form.set("expires", expires);
-                currentRendererType = WikiService.get().getDefaultMessageRendererType();
+                currentRendererType = null != wikiService ? wikiService.getDefaultMessageRendererType() : null;
                 assignedTo = settings.getDefaultAssignedTo();
             }
             else
@@ -1846,8 +1854,12 @@ public class AnnouncementsController extends SpringActionController
         {
             //format email using same renderer chosen for message
             //note that we still send all messages, including plain text, as html-formatted messages; only the inserted body text differs between renderers.
-            WikiRenderer w = WikiService.get().getRenderer(currentRendererType);
-            page.body = w.format(a.getBody()).getHtml();
+            WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+            if(null != wikiService)
+            {
+                WikiRenderer w = wikiService.getRenderer(currentRendererType);
+                page.body = w.format(a.getBody()).getHtml();
+            }
         }
         return page;
     }

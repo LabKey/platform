@@ -28,6 +28,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.api.services.ServiceRegistry;
 
 import javax.ejb.*;
 import java.io.Serializable;
@@ -341,9 +342,12 @@ public class Announcement extends AttachmentParentEntity implements Serializable
     public String getRendererType()
     {
         if (_rendererType == null)
-            _rendererType = WikiService.get().getDefaultMessageRendererType();
+        {
+            WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+            _rendererType = null != wikiService ? wikiService.getDefaultMessageRendererType() : null;
+        }
 
-        return _rendererType.name();
+        return null != _rendererType ? _rendererType.name() : "none";
     }
 
     public void setRendererType(String rendererType)
@@ -358,10 +362,13 @@ public class Announcement extends AttachmentParentEntity implements Serializable
 
     public WikiRenderer getRenderer(String attachPrefix, Attachment[] attachments)
     {
+        WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
         if (_rendererType == null)
-            _rendererType = WikiService.get().getDefaultMessageRendererType();
+        {
+            _rendererType = null != wikiService ? wikiService.getDefaultMessageRendererType() : null;
+        }
 
-        return WikiService.get().getRenderer(_rendererType, attachPrefix, attachments);
+        return null != wikiService ? wikiService.getRenderer(_rendererType, attachPrefix, attachments) : null;
     }
 
     public String getStatus()

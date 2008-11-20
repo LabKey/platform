@@ -37,6 +37,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssueSearch;
@@ -1444,8 +1445,15 @@ public class IssuesController extends SpringActionController
         formattedComment.append("<div class=\"wiki\">");
         formattedComment.append(sbChanges);
         //render issues as plain text with links
-        WikiRenderer w = WikiService.get().getRenderer(WikiRendererType.TEXT_WITH_LINKS);
-        formattedComment.append(w.format(comment).getHtml());
+        WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+        if(null != wikiService)
+        {
+            WikiRenderer w = wikiService.getRenderer(WikiRendererType.TEXT_WITH_LINKS);
+            formattedComment.append(w.format(comment).getHtml());
+        }
+        else
+            formattedComment.append(comment);
+
         formattedComment.append("</div>");
 
         return issue.addComment(user, formattedComment.toString());

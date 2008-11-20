@@ -43,6 +43,7 @@ import org.labkey.api.util.Search;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.study.assay.*;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.assay.query.AssaySchema;
@@ -168,7 +169,9 @@ public class StudyModule extends DefaultModule
         AssayPublishService.register(new AssayPublishManager());
         SpecimenService.register(new SpecimenServiceImpl());
         LsidManager.get().registerHandler("Study", StudyManager.getLsidHandler());
-        WikiService.get().registerMacroProvider("study", new StudyMacroProvider());
+        WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+        if(null != wikiService)
+            wikiService.registerMacroProvider("study", new StudyMacroProvider());
         PlateManager.get().registerLsidHandlers();
         registerFolderType();
         SecurityManager.addViewFactory(new SecurityController.StudySecurityViewFactory());

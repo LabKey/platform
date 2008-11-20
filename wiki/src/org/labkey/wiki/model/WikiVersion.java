@@ -22,6 +22,8 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.api.wiki.WikiService;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.wiki.ServiceImpl;
 import org.labkey.wiki.WikiManager;
 
@@ -161,7 +163,7 @@ public class WikiVersion implements WikiRenderer.WikiLinkable
     public String getRendererType()
     {
         if (_rendererType == null)
-            _rendererType = ServiceImpl.get().getDefaultWikiRendererType();
+            _rendererType = ServiceImpl.DEFAULT_WIKI_RENDERER_TYPE;
 
         return _rendererType.name();
     }
@@ -183,8 +185,10 @@ public class WikiVersion implements WikiRenderer.WikiLinkable
                                     Attachment[] attachments)
     {
         if (_rendererType == null)
-            _rendererType = ServiceImpl.get().getDefaultWikiRendererType();
+            _rendererType = ServiceImpl.DEFAULT_WIKI_RENDERER_TYPE;
 
-        return ServiceImpl.get().getRenderer(_rendererType, hrefPrefix, attachPrefix, pages, attachments);
+        //TODO: why are we calling a version of getRenderer that doesn't exist on the service interface?
+        WikiService svc = ServiceRegistry.get().getService(WikiService.class);
+        return null == svc ? null : ((ServiceImpl)svc).getRenderer(_rendererType, hrefPrefix, attachPrefix, pages, attachments);
     }
 }

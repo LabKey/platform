@@ -48,6 +48,7 @@ import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.common.util.Pair;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.data.xml.TablesDocument;
@@ -728,8 +729,13 @@ public class AdminController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(Template.Dialog);
-            WikiRenderer formatter = WikiService.get().getRenderer(WikiRendererType.RADEOX);
-            String content = formatter.format(ModuleLoader.getInstance().getAdminOnlyMessage()).getHtml();
+            WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+            String content = "This site is currently undergoing maintenance.";
+            if(null != wikiService)
+            {
+                WikiRenderer formatter = wikiService.getRenderer(WikiRendererType.RADEOX);
+                content = formatter.format(ModuleLoader.getInstance().getAdminOnlyMessage()).getHtml();
+            }
             return new HtmlView("The site is currently undergoing maintenance", content);
         }
 
@@ -807,8 +813,14 @@ public class AdminController extends SpringActionController
             if (null != filenames)
                 wikiSource = wikiSource + getErrors(wikiSource, creditsFilename, filenames, fileType, foundWhere, wikiSourceSearchPattern);
 
-            WikiRenderer wf = WikiService.get().getRenderer(WikiRendererType.RADEOX);
-            _html = "<style type=\"text/css\">\ntr.table-odd td { background-color: #EEEEEE; }</style>\n" + wf.format(wikiSource).getHtml();
+            WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
+            if(null != wikiService)
+            {
+                WikiRenderer wf = wikiService.getRenderer(WikiRendererType.RADEOX);
+                _html = "<style type=\"text/css\">\ntr.table-odd td { background-color: #EEEEEE; }</style>\n" + wf.format(wikiSource).getHtml();
+            }
+            else
+                _html = "<p class='labkey-error'>NO WIKI SERVICE AVAILABLE!</p>";
         }
 
 

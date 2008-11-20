@@ -135,7 +135,7 @@ public class WikiEditModel
     {
         if(null == _wikiVersion)
             return _format != null ? PageFlowUtil.jsString(_format)
-                    : PageFlowUtil.jsString(ServiceImpl.get().getDefaultWikiRendererType().name());
+                    : PageFlowUtil.jsString(ServiceImpl.DEFAULT_WIKI_RENDERER_TYPE.name());
         else
             return PageFlowUtil.jsString(_wikiVersion.getRendererType());
     }
@@ -143,7 +143,7 @@ public class WikiEditModel
     public boolean isCurrentRendererType(WikiRendererType type)
     {
         if(null == _wikiVersion)
-            return ServiceImpl.get().getDefaultWikiRendererType() == type;
+            return ServiceImpl.DEFAULT_WIKI_RENDERER_TYPE == type;
         else
             return type.name().equalsIgnoreCase(_wikiVersion.getRendererType());
     }

@@ -23,6 +23,7 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
@@ -110,7 +111,14 @@ class WikiWebdavProvider implements WebdavService.Provider
         @NotNull
         public List<String> listNames()
         {
-            return WikiService.get().getNames(_c);
+            try
+            {
+                return WikiManager.getWikiNameList(_c);
+            }
+            catch(SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
         }
 
         public boolean exists()

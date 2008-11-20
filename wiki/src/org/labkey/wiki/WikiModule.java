@@ -31,6 +31,7 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.wiki.model.CollaborationFolderType;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
@@ -65,7 +66,7 @@ public class WikiModule extends DefaultModule
     {
         addController("wiki", WikiController.class, "attachments");
 
-        WikiService.register(new ServiceImpl());
+        ServiceRegistry.get().registerService(WikiService.class, new ServiceImpl());
     }
 
     protected Collection<? extends WebPartFactory> createWebPartFactories()
@@ -143,7 +144,7 @@ public class WikiModule extends DefaultModule
         wikiversion.setBody(body);
 
         if (renderAs == null)
-            renderAs = WikiService.get().getDefaultWikiRendererType();
+            renderAs = ServiceImpl.DEFAULT_WIKI_RENDERER_TYPE;
 
         wikiversion.setRendererType(renderAs.name());
 
