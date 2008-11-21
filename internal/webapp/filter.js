@@ -697,10 +697,10 @@ LABKEY.addMarkup('<div id="filterDiv" style="display:none;">' +
 '        </select><br>' +
 '        <input disabled style="visibility:hidden" id="value_2" type="text" name="value_2"><br><br>' +
 '        </span>' +
-'        <span class="labkey-button"><input type="submit" value="OK" onclick="doFilter();return false;"></span>' +
-'        <span class="labkey-button"><input type="submit" value="Cancel" onclick="hideFilterDiv();return false;"></span>' +
-'        <span class="labkey-button"><input type="submit" value="Clear Filter" onclick="clearFilter();return false;"></span>' +
-'        <span class="labkey-button"><input type="submit" value="Clear All Filters" onclick="clearAllFilters();return false;"></span>' +
+'        <a class="labkey-button" href="#" onclick="doFilter();return false;"><span>OK</span> ' +
+'        <a class="labkey-button" href="#" onclick="hideFilterDiv();return false;"><span>Cancel</span> ' +
+'        <a class="labkey-button" href="#" onclick="clearFilter();return false;"><span>Clear Filter</span> ' +
+'        <a class="labkey-button" href="#" onclick="clearAllFilters();return false;"><span>Clear All Filters</span> ' +
 '      </td>' +
 '    </tr>' +
 '  </table>' +

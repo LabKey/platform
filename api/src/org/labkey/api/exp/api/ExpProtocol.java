@@ -77,6 +77,8 @@ public interface ExpProtocol extends ExpObject
     public ExpProtocolAction addStep(User user, ExpProtocol childProtocol, int actionSequence);
 
     public ExpProtocol[] getParentProtocols();
+    
+    ExpRun[] getExpRuns();
 
     public void setApplicationType(ApplicationType type);
     public void setDescription(String description);
