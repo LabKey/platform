@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class ServiceRegistry
 {
-    private static ServiceRegistry _instance = null;
+    private static final ServiceRegistry _instance = new ServiceRegistry();
     private ConcurrentMap<Class,Object> _services = new ConcurrentHashMap<Class,Object>();
 
     /**
@@ -45,10 +45,8 @@ public class ServiceRegistry
      * @return The single instance of the ServiceRegistry
      */
     @NotNull
-    public synchronized static ServiceRegistry get()
+    public static ServiceRegistry get()
     {
-        if(null == _instance)
-            _instance = new ServiceRegistry();
         return _instance;
     }
 
