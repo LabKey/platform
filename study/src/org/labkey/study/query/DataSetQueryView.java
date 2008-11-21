@@ -17,14 +17,17 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.*;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
-import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -133,8 +136,7 @@ public class DataSetQueryView extends QueryView
                 sourceLsidDisplayCol.setVisible(false);
             if (_showSourceLinks)
             {
-                view.getDataRegion().addDisplayColumn(0, new DatasetDetailsColumn(view.getRenderContext().getContainer(),
-                        sourceLsidCol));
+                view.getDataRegion().addDisplayColumn(0, new DatasetDetailsColumn(sourceLsidCol, getUser()));
             }
         }
         Container c = getContainer();
@@ -156,23 +158,39 @@ public class DataSetQueryView extends QueryView
         return view;
     }
 
-    private class DatasetDetailsColumn extends DetailsColumn
+    private class DatasetDetailsColumn extends SimpleDisplayColumn
     {
-        private ColumnInfo _sourceLsidColumn;
-        public DatasetDetailsColumn(Container container, ColumnInfo sourceLsidCol)
+        private final ColumnInfo _sourceLsidColumn;
+        private final User _user;
+
+        public DatasetDetailsColumn(ColumnInfo sourceLsidCol, User user)
         {
-            super(new LookupURLExpression(new ActionURL(StudyController.DatasetItemDetailsAction.class, container),
-                    Collections.singletonMap("sourceLsid", sourceLsidCol)));
+            super();
             _sourceLsidColumn = sourceLsidCol;
+            _user = user;
         }
 
         @Override
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
-            if (ctx.get(_sourceLsidColumn.getName()) != null)
-                super.renderGridCellContents(ctx, out);
-            else
-                out.write("&nbsp;");
+            Object lsid = ctx.get(_sourceLsidColumn.getName());
+            if (lsid != null)
+            {
+                ExpRun run = ExperimentService.get().getExpRun(lsid.toString());
+                if (run != null)
+                {
+                    ExpProtocol protocol = run.getProtocol();
+                    if (protocol != null && run.getContainer().hasPermission(_user, ACL.PERM_READ))
+                    {
+                        ActionURL dataURL = AssayService.get().getAssayDataURL(run.getContainer(), protocol, run.getRowId());
+                        out.write("[<a href=\"");
+                        out.write(dataURL.getLocalURIString());
+                        out.write("\">details</a>]");
+                        return;
+                    }
+                }
+            }
+            out.write("&nbsp;");
         }
 
         @Override
