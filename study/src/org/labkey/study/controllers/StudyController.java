@@ -60,6 +60,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.*;
@@ -631,6 +632,13 @@ public class StudyController extends BaseStudyController
             boolean canWrite = def.canWrite(user) && def.getContainer().getAcl().hasPermission(user, ACL.PERM_UPDATE);
             boolean isSnapshot = QueryService.get().isQuerySnapshot(getContainer(), StudyManager.getSchemaName(), def.getLabel());
             boolean isAssayDataset = def.getProtocolId() != null;
+            ExpProtocol protocol = null;
+            if (isAssayDataset)
+            {
+                protocol = ExperimentService.get().getExpProtocol(def.getProtocolId().intValue());
+                if (protocol == null)
+                    isAssayDataset = false;
+            }
 
             if (!isSnapshot && canWrite &&!isAssayDataset)
             {
@@ -662,8 +670,39 @@ public class StudyController extends BaseStudyController
                 }
                 else
                 {
+                    ExpRun[] runs = protocol.getExpRuns();
+                    Set<Container> runContainers = new HashSet<Container>();
+                    for (ExpRun run : runs)
+                        runContainers.add(run.getContainer());
+                    for (Iterator<Container> iter = runContainers.iterator(); iter.hasNext();)
+                    {
+                        Container c = iter.next();
+                        if (!c.hasPermission(getUser(), ACL.PERM_INSERT))
+                        {
+                            iter.remove();
+                        }
+                    }
+
+                    if (runContainers.size() > 1)
+                    {
+                        MenuButton uploadButton = new MenuButton("Upload Data");
+                        for(Container container : runContainers)
+                        {
+                            ActionURL url = new ActionURL(UploadWizardAction.class, container);
+                            url.addParameter("rowId", protocol.getRowId());
+                            uploadButton.addMenuItem(container.getName(), url);
+                        }
+                        buttonBar.add(uploadButton);
+                    }
+                    else if (runContainers.size() == 1)
+                    {
+                        ActionURL url = new ActionURL(UploadWizardAction.class, runContainers.iterator().next());
+                        url.addParameter("rowId", protocol.getRowId());
+                        ActionButton uploadButton = new ActionButton(url, "Upload Data");
+                        buttonBar.add(uploadButton);
+                    }
+
                     ActionButton deleteRows = new ActionButton("button", "Recall Selected");
-                    ExpProtocol protocol = ExperimentService.get().getExpProtocol(def.getProtocolId().intValue());
                     ActionURL deleteRowsURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
                     deleteRowsURL.addParameter("protocolId", protocol.getRowId());
 
@@ -688,7 +727,6 @@ public class StudyController extends BaseStudyController
                 else
                 {
                     ActionButton purgeButton = new ActionButton("button", "Recall All Rows");
-                    ExpProtocol protocol = ExperimentService.get().getExpProtocol(def.getProtocolId().intValue());
                     ActionURL deleteAllRowsURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
                     deleteAllRowsURL.addParameter("protocolId", protocol.getRowId());
                     deleteAllRowsURL.addParameter("deleteAllData", "true");
@@ -711,18 +749,13 @@ public class StudyController extends BaseStudyController
             if (isAssayDataset)
             {
                 // provide a link to the source assay
-                Integer protocolRowId = def.getProtocolId();
-                ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolRowId.intValue());
-                if (protocol != null)
+                Container c = protocol.getContainer();
+                if (c.hasPermission(getUser(), ACL.PERM_READ))
                 {
-                    Container c = protocol.getContainer();
-                    if (c.hasPermission(getUser(), ACL.PERM_READ))
-                    {
-                        ActionURL url = AssayService.get().getAssayRunsURL(c, protocol);
-                        url.addParameter("includeSubfolders", "true");
-                        ActionButton viewAssayButton = new ActionButton(url, "View Source Assay");
-                        buttonBar.add(viewAssayButton);
-                    }
+                    ActionURL url = AssayService.get().getAssayRunsURL(c, protocol);
+                    url.addParameter("includeSubfolders", "true");
+                    ActionButton viewAssayButton = new ActionButton(url, "View Source Assay");
+                    buttonBar.add(viewAssayButton);
                 }
             }
         }

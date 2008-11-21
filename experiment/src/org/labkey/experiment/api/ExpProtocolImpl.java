@@ -18,12 +18,10 @@ package org.labkey.experiment.api;
 
 import org.labkey.api.data.Table;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.ProtocolParameter;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpProtocolAction;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ProtocolImplementation;
+import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -229,4 +227,28 @@ public class ExpProtocolImpl extends ExpIdentifiableBaseImpl<Protocol> implement
     {
         return _object.getOutputMaterialType();
     }
+
+    public ExpRun[] getExpRuns()
+    {
+        try
+        {
+            SQLFragment sql = new SQLFragment(" SELECT ER.* "
+                        + " FROM exp.ExperimentRun ER "
+                        + " WHERE ER.ProtocolLSID = ?");
+            sql.add(getLSID());
+
+            ExperimentRun[] runs = Table.executeQuery(
+                ExperimentService.get().getSchema(),
+                sql.getSQL(),
+                sql.getParams().toArray(new Object[sql.getParams().size()]),
+                ExperimentRun.class);
+
+            return ExpRunImpl.fromRuns(runs);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
 }
