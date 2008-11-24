@@ -144,6 +144,6 @@ the container "My Project/My Folder":
             }
             return newUrl;
         }
-    }
+    };
 };
 

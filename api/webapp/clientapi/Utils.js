@@ -29,7 +29,7 @@ LABKEY.Utils = new function()
         "limit" : "query.maxRows",
         "sort" : "query.sort",
         "dir" : "query.sortdir"
-        }
+        };
 
     // private functions
     function handleLoadError(This, o, arg, e)
@@ -216,5 +216,5 @@ LABKEY.Utils = new function()
             var extension = (idx >= 0) ? fileName.substring(idx + 1) : "_generic";
             return LABKEY.ActionURL.buildURL("core", "getAttachmentIcon", "", {extension: extension});
         }
-    }
-}
+    };
+};

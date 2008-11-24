@@ -22,7 +22,7 @@ Ext.namespace('LABKEY', 'LABKEY.ext');
 Ext.QuickTips.init();
 Ext.apply(Ext.QuickTips.getQuickTip(), {
     dismissDelay: 15000
-})
+});
 /**
  * Constructs a new LabKey EditorGridPanel using the supplied configuration.
  * @class LabKey extension to the <a href="http://extjs.com/deploy/dev/docs/?class=Ext.grid.EditorGridPanel">Ext.grid.EditorGridPanel</a>,
@@ -230,7 +230,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                     handler: this.onF2,
                     scope: this
                 }
-            ]
+            ];
         }
     },
 
@@ -341,7 +341,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                 col = this.columns[idx] = new Ext.grid.CheckColumn(col);
                 if(col.editable)
                     col.init(this);
-                col.editable = false //check columns apply edits immediately, so we don't want to go into edit mode
+                col.editable = false; //check columns apply edits immediately, so we don't want to go into edit mode
             }
 
             if(col.editable && !col.editor)
@@ -396,7 +396,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                     if (date.getHours() == 0 && date.getMinutes() == 0 && date.getSeconds() == 0)
                         displayValue = date.format("Y-m-d");
                     else
-                        displayValue = date.format("Y-m-d H:i:s")
+                        displayValue = date.format("Y-m-d H:i:s");
                     break;
                 case "string":
                 case "boolean":
@@ -419,7 +419,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                 return "<a href=\"" + record.get("_labkeyurl_" + col.dataIndex) + "\">" + displayValue + "</a>";
             else
                 return displayValue;
-        }
+        };
     },
 
     getLookupRenderer : function(col, meta) {
@@ -545,7 +545,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                     //set quick-tip attributes and let Ext QuickTips do the work
                     metadata.attr = "ext:qtip=\"" + Ext.util.Format.htmlEncode(data) + "\"";
                     return data;
-                }
+                };
 
                 if(col.editable)
                     col.editor = new LABKEY.ext.LongTextField({
@@ -639,7 +639,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         var record = this.getSelectionModel().getSelected();
         if(record)
         {
-            var index = this.getStore().findBy(function(recordComp, id){return id == record.id});
+            var index = this.getStore().findBy(function(recordComp, id){return id == record.id;});
             if(index > 0)
                 this.startEditing(index, this.firstEditableColumn);
         }
@@ -648,7 +648,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
 
     initFilterMenu : function()
     {
-        var filterItem = new Ext.menu.Item({text:"Filter...", scope:this, handler:function() {this.handleFilter()}});
+        var filterItem = new Ext.menu.Item({text:"Filter...", scope:this, handler:function() {this.handleFilter();}});
         var hmenu = this.getView().hmenu;
         hmenu.getEl().addClass("extContainer");
         hmenu.addItem(filterItem);
@@ -694,7 +694,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         };
         var defaultFilterTypes = {
             "int":ft.EQUAL, "string":ft.STARTS_WITH, "boolean":ft.EQUAL, "float":ft.GTE,  "date":ft.DATE_EQUAL
-        }
+        };
 
         //Option lists for drop-downs. Filled in on-demand based on filter type
         var dropDownOptions = [];
@@ -720,8 +720,8 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             });
             combo.on("select", function(combo, record, itemNo) {
                 var filter = findFilterType(index);
-                valueEditors[index].setVisible(filter != null && filter.isDataValueRequired())
-            })
+                valueEditors[index].setVisible(filter != null && filter.isDataValueRequired());
+            });
 
             return combo;
         }
@@ -740,7 +740,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         var dropDowns = [createFilterDropDown(0, filterColType, colFilters.length >= 1 ? colFilters[0] : null), createFilterDropDown(1, filterColType, colFilters.length >= 2 ? colFilters[1] : null)];
         var valueEditors = [
             new Ext.form.TextField({value:colFilters.length > 0 ? colFilters[0].getValue() : "",width:250}),
-            new Ext.form.TextField({value:colFilters.length > 1 ? colFilters[1].getValue() : "",width:250, hidden:colFilters.length < 2, hideMode:'visibility'})]
+            new Ext.form.TextField({value:colFilters.length > 1 ? colFilters[1].getValue() : "",width:250, hidden:colFilters.length < 2, hideMode:'visibility'})];
 
 
         function validateEntry(index)
@@ -752,7 +752,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             if (filterType == ft.IN)
                 return validateMultiple(valueEditors[index].getValue());
             else
-                return validate(valueEditors[index].getValue())
+                return validate(valueEditors[index].getValue());
         }
 
         function validateMultiple(allValues, mappedType, fieldName)
@@ -846,7 +846,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                 else
                 {
                     alert(value + " is not a valid boolean for field '" + colName + "'. Try true,false; yes,no; on,off; or 1,0.");
-                    return undefined
+                    return undefined;
                 }
             }
             else
@@ -895,11 +895,11 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                 },
                 {
                     text:"Cancel",
-                    handler:function() {win.close()}
+                    handler:function() {win.close();}
                 },
                 {
                     text:"Clear Filter",
-                    handler:function() {grid.setColumnFilters(colName, []); win.close()}
+                    handler:function() {grid.setColumnFilters(colName, []); win.close();}
                 },
                 {
                     text:"Clear All Filters",
@@ -909,7 +909,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         });
         win.show();
         //Focus doesn't work right away (who knows why?) so defer it...
-        function f() {valueEditors[0].focus()};
+        function f() {valueEditors[0].focus();};
         f.defer(100);
     },
 
@@ -918,7 +918,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         var colFilters = [];
         Ext.each(this.getStore().getUserFilters(), function(filter) {
             if (filter.getColumnName() == colName)
-                colFilters.push(filter)
+                colFilters.push(filter);
         });
         return colFilters;
     },
@@ -928,10 +928,10 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         var newFilters = [];
         Ext.each(this.getStore().getUserFilters(), function(filter) {
             if (filter.getColumnName() != colName)
-                newFilters.push(filter)
+                newFilters.push(filter);
         });
         if (filters)
-            Ext.each(filters, function(filter) {newFilters.push(filter)});
+            Ext.each(filters, function(filter) {newFilters.push(filter);});
 
         this.getStore().setUserFilters(newFilters);
         this.getStore().load({params:{start:0, limit:this.pageSize}});

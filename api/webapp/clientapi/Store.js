@@ -165,7 +165,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         for(var idx = 0; idx < records.length; ++idx)
         {
             key = {};
-            key[this.idName] = records[idx].id
+            key[this.idName] = records[idx].id;
             deleteRowsKeys[idx] = key;
         }
 
@@ -177,7 +177,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             rowDataArray: deleteRowsKeys,
             successCallback: this.getDeleteSuccessHandler(),
             action: "deleteRows" //hack for Query.js bug
-        })
+        });
     },
 
     /**
@@ -299,7 +299,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                 config.nullRecord = {
                     displayColumn: fieldMeta.lookup.displayColumn,
                     nullCaption: this.lookupNullCaption || "[none]"
-                }
+                };
 
             store = new LABKEY.ext.Store(config);
             this.lookupStores[columnName] = store;
@@ -347,7 +347,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                 record.id = row.values[idCol];
                 this.data.keys[this.data.indexOf(record)] = row.values[idCol];
 
-                delete this.data.map[record.id]
+                delete this.data.map[record.id];
                 this.data.map[row.values[idCol]] = record;
             }
 
@@ -387,7 +387,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         for(var idx = 0; idx < fields.length; ++idx)
         {
             if(fields[idx].name == columnName)
-                return fields[idx]
+                return fields[idx];
         }
         return null;
     },
@@ -451,7 +451,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         var store = this;
         return function(results) {
             store.reload();
-        }
+        };
     },
 
     getRowData : function(record) {

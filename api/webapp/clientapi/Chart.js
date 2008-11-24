@@ -148,7 +148,7 @@ LABKEY.Chart = function(config)
     var handleLoadError = function(args, config)
     {
         LABKEY.Utils.displayAjaxErrorResponse(args);
-    }
+    };
 
     var renderChartInternal = function(response, config)
     {
@@ -167,7 +167,7 @@ LABKEY.Chart = function(config)
             Ext.DomHelper.append(chartDivName, {
                 tag: 'img', src: data.imageURL});
         }
-    }
+    };
 
     // public methods:
     /** @scope LABKEY.Chart.prototype */
@@ -200,9 +200,9 @@ LABKEY.Chart = function(config)
                 success: renderChartInternal,
                 failure: config.errorCallback,
                 params: config
-            })
+            });
         }
-    }
+    };
 };
 
 // valid types

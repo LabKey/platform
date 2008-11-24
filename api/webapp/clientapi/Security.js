@@ -38,7 +38,7 @@ LABKEY.Security = new function()
 
             if(fn)
                 fn.call(scope || this, json, response);
-        }
+        };
     }
 
     /*-- public methods --*/
@@ -96,7 +96,7 @@ LABKEY.Security = new function()
             reader: 1,
             restrictedReader: 16,
             submitter: 2,
-            noPerms: 0 
+            noPerms: 0
         },
 
         /**
@@ -217,7 +217,7 @@ LABKEY.Security = new function()
          * in a given container, use the getContainers() method instead.
          * @param config A configuration object containing the following properties
          * @param {integer} config.userId The id of the user.
-         * @param {string} config.userEmail The email address (user name) of the user (specify only userId or userEmail, not both) 
+         * @param {string} config.userEmail The email address (user name) of the user (specify only userId or userEmail, not both)
          * @param {function} config.successCallback A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
@@ -391,7 +391,7 @@ LABKEY.Security = new function()
 
             var params = {};
             if(undefined != config.includeSubfolders)
-                params.includeSubfolders = config.includeSubfolders
+                params.includeSubfolders = config.includeSubfolders;
 
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("project", "getContainers", config.containerPath),
@@ -402,5 +402,5 @@ LABKEY.Security = new function()
             });
         }
 
-    }
-}
+    };
+};

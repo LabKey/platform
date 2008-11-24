@@ -48,7 +48,7 @@ LABKEY.Filter = new function()
             getDisplayText : function() { return displayText },
             getURLSuffix : function() { return urlSuffix },
             isDataValueRequired : function() { return dataValueRequired }
-        }
+        };
     }
 
     function getFilter(columnName, value, filterType)
@@ -59,7 +59,7 @@ LABKEY.Filter = new function()
             getFilterType: function() {return filterType},
             getURLParameterName : function() { return "query." + columnName + "~" + filterType.getURLSuffix() },
             getURLParameterValue : function() { return filterType.isDataValueRequired() ? value : undefined }
-        }
+        };
     }
 
     /** @scope LABKEY.Filter.prototype */
@@ -127,7 +127,7 @@ LABKEY.Filter = new function()
                 filterType = this.Types.EQUAL;
             return getFilter(columnName, value, filterType);
         }
-    }
+    };
 };
 
 /**

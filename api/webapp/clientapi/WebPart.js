@@ -123,7 +123,7 @@ LABKEY.WebPart = function(config)
             msg += response.statusText;
 
         Ext.Msg.alert("Error", msg);
-    }
+    };
 
     var renderPart = function(response, partConfig)
     {
@@ -138,7 +138,7 @@ LABKEY.WebPart = function(config)
         }
         else
             Ext.Msg.alert("Rendering Error", "The target element name was not set!");
-    }
+    };
 
     // public methods:
     /** @scope LABKEY.WebPart.prototype */
@@ -179,8 +179,8 @@ LABKEY.WebPart = function(config)
                 failure: _errorCallback,
                 method: 'GET',
                 params: _partConfig
-            })
+            });
         }
-    }
+    };
 };
 

@@ -55,7 +55,7 @@ LABKEY.Domain = new function()
         {
             var data = Ext.util.JSON.decode(response.responseText);
             successCallback(data);
-        }
+        };
     }
     
     /** @scope LABKEY.Domain.prototype */
@@ -120,7 +120,7 @@ LABKEY.Domain = new function()
                 {domainDesign:domainDesign, schemaName:schemaName, queryName:queryName},
                 containerPath);
         }
-    }
+    };
 
 
 };

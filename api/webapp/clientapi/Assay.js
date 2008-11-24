@@ -43,7 +43,7 @@ LABKEY.Assay = new function()
         {
             var data = Ext.util.JSON.decode(response.responseText);
             successCallback(data.definitions);
-        }
+        };
     }
     /** @scope LABKEY.Assay.prototype */
     return {
@@ -144,7 +144,7 @@ LABKEY.Assay = new function()
         {
             getAssays(getSuccessCallbackWrapper(successCallback), failureCallback, { id : id }, containerPath);
         }
-    }
+    };
 };
 
 /**

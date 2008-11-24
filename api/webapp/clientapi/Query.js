@@ -47,7 +47,7 @@ LABKEY.Query = new function()
         Ext.Ajax.request({
             url : LABKEY.ActionURL.buildURL("query", config.action, config.containerPath),
             method : 'POST',
-            success: getSuccessCallbackWrapper(config.successCallback),
+            success: getSuccessCallbackWrapper(config.successCallback, false),
             failure: getErrorCallbackWrapper(config.errorCallback),
             jsonData : dataObject,
             headers : {
@@ -81,7 +81,7 @@ LABKEY.Query = new function()
                 stripHiddenColData(data);
 
             callbackFn(data, options, response);
-        }
+        };
     }
 
     function getErrorCallbackWrapper(callbackFn)
@@ -96,7 +96,7 @@ LABKEY.Query = new function()
                 errorInfo = {exception: (response && response.statusText ? response.statusText : "Communication failure.")};
 
             callbackFn(errorInfo, options, response);
-        }
+        };
     }
 
     function stripHiddenColData(data)
@@ -126,7 +126,7 @@ LABKEY.Query = new function()
         for(idx = 0; idx < data.rows.length; ++idx)
         {
             row = data.rows[idx];
-            for(idxHidden = 0; idxHidden < hiddenCols.length; ++idxHidden)
+            for(var idxHidden = 0; idxHidden < hiddenCols.length; ++idxHidden)
             {
                 delete row[hiddenCols[idxHidden]];
                 delete row[LABKEY.Query.URL_COLUMN_PREFIX + hiddenCols[idxHidden]];
@@ -142,7 +142,7 @@ LABKEY.Query = new function()
             rowDataArray: args[2],
             successCallback: args[3],
             errorCallback: args[4]
-        }
+        };
     }
 
     // public methods:
@@ -177,7 +177,7 @@ LABKEY.Query = new function()
             var dataObject = {
                 schemaName: config.schemaName,
                 sql: config.sql
-            }
+            };
 
             //set optional parameters
             if(config.maxRows && config.maxRows >= 0)
@@ -485,7 +485,7 @@ LABKEY.Query = new function()
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'getSchemas', config.containerPath),
                 method : 'GET',
-                success: getSuccessCallbackWrapper(config.successCallback),
+                success: getSuccessCallbackWrapper(config.successCallback, false),
                 failure: getErrorCallbackWrapper(config.errorCallback)
             });
         },
@@ -540,7 +540,7 @@ LABKEY.Query = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'getQueries', config.containerPath),
                 method : 'GET',
-                success: getSuccessCallbackWrapper(config.successCallback),
+                success: getSuccessCallbackWrapper(config.successCallback, false),
                 failure: getErrorCallbackWrapper(config.errorCallback),
                 params: params
             });
@@ -590,7 +590,7 @@ LABKEY.Query = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'getQueryViews', config.containerPath),
                 method : 'GET',
-                success: getSuccessCallbackWrapper(config.successCallback),
+                success: getSuccessCallbackWrapper(config.successCallback, false),
                 failure: getErrorCallbackWrapper(config.errorCallback),
                 params: params
             });
@@ -619,12 +619,12 @@ LABKEY.Query = new function()
                         d = new Date(json.date);
                         config.successCallback(d);
                     }
-                })
+                }, false)
             });
         },
 
         URL_COLUMN_PREFIX: "_labkeyurl_"
-    }
+    };
 };
 
 /**
