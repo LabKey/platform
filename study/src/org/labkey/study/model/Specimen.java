@@ -33,7 +33,6 @@ public class Specimen extends AbstractStudyCachable<Specimen>
     private String _ptid; // NVARCHAR(32),
     private Date _drawTimestamp; // DATETIME,
     private Date _salReceiptDate; // DATETIME,
-    private String _specimenNumber; // NVARCHAR(50),
     private String _classId; // NVARCHAR(4),
     private Double _visitValue; // FLOAT,
     private String _protocolNumber; // NVARCHAR(10),
@@ -172,17 +171,6 @@ public class Specimen extends AbstractStudyCachable<Specimen>
     {
         verifyMutability();
         _salReceiptDate = salReceiptDate;
-    }
-
-    public String getSpecimenNumber()
-    {
-        return _specimenNumber;
-    }
-
-    public void setSpecimenNumber(String specimenNumber)
-    {
-        verifyMutability();
-        _specimenNumber = specimenNumber;
     }
 
     public String getSubAdditiveDerivative()

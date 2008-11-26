@@ -535,7 +535,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
                         Boolean.toString(_participantVisitFiltered) + "&id=${rowid}\">[history]</a>"));
             }
             rgn.setAggregates(new Aggregate(getTable().getColumn("Volume"), Aggregate.Type.SUM),
-                    new Aggregate(getTable().getColumn("SpecimenNumber"), Aggregate.Type.COUNT));
+                    new Aggregate(getTable().getColumn("GlobalUniqueId"), Aggregate.Type.COUNT));
         }
         else
         {

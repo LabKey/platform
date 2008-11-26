@@ -31,6 +31,7 @@ import java.util.ArrayList;
 public class SpecimenEventTable extends BaseStudyTable
 {
     private static final String[] DEFAULT_VISIBLE_COLS = {
+    "SpecimenNumber",
     "LabId",
     "Stored",
     "StorageFlag",

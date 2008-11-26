@@ -959,6 +959,7 @@ td.labkey-nav-tree-node
 {
     padding: 0px;
     padding-top: 0.5em;
+    vertical-align: top;
 }
 
 /* The link in an expandable nav menu */
@@ -966,6 +967,7 @@ td.labkey-nav-tree-text
 {
     padding: 0.3em;
     width: 100%;
+    vertical-align: top;
 }
 
 /* The expandable nav rows sometimes have a total like in the Study module */
@@ -973,6 +975,7 @@ td.labkey-nav-tree-total
 {
     padding: 0em;
     padding-top: 0.3em;
+    vertical-align: top;
 }
 
 /* The area shown by clicking the expander of an expandable nav menu */

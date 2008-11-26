@@ -99,6 +99,8 @@ var discussionMenu = {};
     discussionMenu.showEvent = function(event)
     {
         YAHOO.util.Event.stopPropagation(event);
+        var span = document.getElementById("discussionMenuToggle");
+        discussionMenu.menu.moveTo(span.top, span.right);
         discussionMenu.menu.show();
     };
 

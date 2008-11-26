@@ -175,7 +175,7 @@ public class TsvAssayProvider extends AbstractAssayProvider
                     if (!TARGET_STUDY_PROPERTY_NAME.equals(pd.getName()) && !PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equals(pd.getName()))
                     {
                         PropertyDescriptor publishPd = pd.clone();
-                        publishPd.setName("Run " + pd.getName());
+                        publishPd.setName("Run" + pd.getName());
                         addProperty(publishPd, runProperties.get(pd.getPropertyURI()), dataMap, tempTypes);
                     }
                 }

@@ -32,7 +32,7 @@ import org.labkey.study.StudySchema;
 public class SamplesGroupedGridView extends SamplesGridView
 {
     private static final String SPECIMEN_GROUPED_COLUMN_ORDER =
-            "Container, SpecimenNumber, Ptid, VisitDescription, VisitValue, Volume, AvailableVolume, " +
+            "Container, Ptid, VisitDescription, VisitValue, Volume, AvailableVolume, " +
             "VolumeUnits, PrimaryTypeId, AdditiveTypeId, DerivativeTypeId, VialCount, LockedInRequest, " +
             "AtRepository, Available, DrawTimestamp, " +
             "SalReceiptDate, ClassId, ProtocolNumber, OtherSpecimenId, ExpectedTimeValue, " +

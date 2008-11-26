@@ -307,7 +307,6 @@
       <ns:column columnName="Ptid"/>
       <ns:column columnName="DrawTimestamp"/>
       <ns:column columnName="SalReceiptDate"/>
-      <ns:column columnName="SpecimenNumber"/>
       <ns:column columnName="SpecimenHash"/>
       <ns:column columnName="ClassId"/>
       <ns:column columnName="VisitValue">
@@ -385,7 +384,6 @@
       <ns:column columnName="Ptid"/>
       <ns:column columnName="DrawTimestamp"/>
       <ns:column columnName="SalReceiptDate"/>
-      <ns:column columnName="SpecimenNumber"/>
       <ns:column columnName="SpecimenHash"/>
       <ns:column columnName="ClassId"/>
       <ns:column columnName="VisitValue">
@@ -482,6 +480,7 @@
       <ns:column columnName="fr_level2"/>
       <ns:column columnName="fr_position"/>
       <ns:column columnName="freezer"/>
+      <ns:column columnName="SpecimenNumber"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenPrimaryType" tableDbType="TABLE">

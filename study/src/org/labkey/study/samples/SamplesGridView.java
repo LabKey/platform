@@ -35,7 +35,7 @@ import java.io.IOException;
 public class SamplesGridView extends GridView
 {
     private static final String SPECIMEN_COLUMN_ORDER =
-            "RowId, SpecimenNumber, GlobalUniqueId, Ptid, VisitDescription, VisitValue, Volume, " +
+            "RowId, GlobalUniqueId, Ptid, VisitDescription, VisitValue, Volume, " +
                     "VolumeUnits, PrimaryTypeId, AdditiveTypeId, DerivativeTypeId, SiteName, " +
                     "SiteLdmsCode, DrawTimestamp, LockedInRequest, AtRepository, Available," +
                     "SalReceiptDate, ClassId, ProtocolNumber, OtherSpecimenId, ExpectedTimeValue, " +
@@ -48,7 +48,7 @@ public class SamplesGridView extends GridView
             "LockedInRequest", "AtRepository", "Available",
             "GlobalUniqueId", "VialCount", "AvailableVolume"};
 
-    private static final Sort DEFAULT_SORT = new Sort("SpecimenNumber,GlobalUniqueId");
+    private static final Sort DEFAULT_SORT = new Sort("Ptid,PrimaryType/Label,DerivativeType/Label,AdditiveType/Label,GlobalUniqueId");
 
     private static class RestrictedDataRegion extends DataRegion
     {

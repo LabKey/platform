@@ -53,6 +53,7 @@ public class SpecimenEvent extends AbstractStudyCachable<SpecimenEvent>
     private Float _expectedTimeValue; // FLOAT,
     private String _expectedTimeUnit; // NVARCHAR(15),
     private Integer _groupProtocol; // INT,
+    private String _specimenNumber; // NVARCHAR(50),
 
     public String getComments()
     {
@@ -346,4 +347,16 @@ public class SpecimenEvent extends AbstractStudyCachable<SpecimenEvent>
         verifyMutability();
         _groupProtocol = groupProtocol;
     }
+
+    public String getSpecimenNumber()
+    {
+        return _specimenNumber;
+    }
+
+    public void setSpecimenNumber(String specimenNumber)
+    {
+        verifyMutability();
+        _specimenNumber = specimenNumber;
+    }
+
 }

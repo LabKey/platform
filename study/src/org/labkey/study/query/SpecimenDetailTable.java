@@ -33,7 +33,6 @@ public class SpecimenDetailTable extends BaseStudyTable
         ColumnInfo rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
         rowIdColumn.setKeyField(true);
         addWrapColumn(_rootTable.getColumn("Container"));
-        addWrapColumn(_rootTable.getColumn("SpecimenNumber"));
         addWrapColumn(_rootTable.getColumn("SpecimenHash")).setIsHidden(true);
         addWrapColumn(_rootTable.getColumn("GlobalUniqueId"));
         ColumnInfo participantColumn = new AliasedColumn(this, "ParticipantId", _rootTable.getColumn("PTID"));

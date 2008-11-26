@@ -1622,7 +1622,6 @@ public class SamplesController extends BaseController
             _defaultSummaryCols.put("ParticipantId", new DisplayColumnInfo(true, true, true));
             _defaultSummaryCols.put("Available", new DisplayColumnInfo(true, false));
             _defaultSummaryCols.put("VolumeUnits", new DisplayColumnInfo(false, true));
-            _defaultSummaryCols.put("SpecimenNumber", new DisplayColumnInfo(true, false));
             _defaultSummaryCols.put("Clinic", new DisplayColumnInfo(true, true));
         }
 

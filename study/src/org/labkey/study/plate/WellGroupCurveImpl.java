@@ -313,10 +313,10 @@ public class WellGroupCurveImpl implements DilutionCurve
         // try reasonable variants of max and min, in case there's a better fit.  We'll keep going past "reasonable" if
         // we haven't found a single bestFit option, but we need to bail out at some point.  We currently quit once max
         // reaches 200 or min reaches -100, since these values don't seem biologically reasonable.
-        for (double min = minPercentage; (bestFit == null || min > 0 - step) && min > -100; min -= step )
+        for (double min = minPercentage; (bestFit == null || min > 0 - step) && min > (minPercentage - 100); min -= step )
         {
             parameters.min = min;
-            for (double max = maxPercentage; (bestFit == null || max <= 100 + step) && max < 200; max += step )
+            for (double max = maxPercentage; (bestFit == null || max <= 100 + step) && max < (maxPercentage + 100); max += step )
             {
                 double absoluteCutoff = min + (0.5 * (max - min));
                 double relativeEC50 = getInterpolatedCutoffDilution(absoluteCutoff/100);

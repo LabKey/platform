@@ -106,7 +106,7 @@ public class SpecimenServiceImpl implements SpecimenService.Service
         
         Specimen[] matches = SampleManager.getInstance().getSpecimens(studyContainer, participantId, date);
         if (matches.length > 0)
-            return new StudyParticipantVisit(studyContainer, null != matches[0].getGlobalUniqueId() ? matches[0].getGlobalUniqueId() : matches[0].getSpecimenNumber(), participantId, matches[0].getVisitValue(), matches[0].getDrawTimestamp());
+            return new StudyParticipantVisit(studyContainer, matches[0].getGlobalUniqueId(), participantId, matches[0].getVisitValue(), matches[0].getDrawTimestamp());
         else
             return new StudyParticipantVisit(studyContainer, null, participantId, null, date);
     }
@@ -117,7 +117,7 @@ public class SpecimenServiceImpl implements SpecimenService.Service
         {
             Specimen[] matches = SampleManager.getInstance().getSpecimens(studyContainer, participantId, visit);
             if (matches.length > 0)
-                return new StudyParticipantVisit(studyContainer, null != matches[0].getGlobalUniqueId() ? matches[0].getGlobalUniqueId() : matches[0].getSpecimenNumber(), participantId, matches[0].getVisitValue(), matches[0].getDrawTimestamp());
+                return new StudyParticipantVisit(studyContainer, matches[0].getGlobalUniqueId(), participantId, matches[0].getVisitValue(), matches[0].getDrawTimestamp());
         }
         return new StudyParticipantVisit(studyContainer, null, participantId, visit, null);
     }

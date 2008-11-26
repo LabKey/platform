@@ -134,11 +134,11 @@ public class SampleManager
         return _specimenHelper.get(container, rowId);
     }
 
-    /** Looks for any specimens that have the given id as a globalUniqueId or a specimenNumber */
-    public Specimen[] getSpecimens(Container container, String id) throws SQLException
+    /** Looks for any specimens that have the given id as a globalUniqueId  */
+    public Specimen[] getSpecimens(Container container, String globalUniqueId) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter();
-        filter.addClause(new SimpleFilter.SQLClause("LOWER(GlobalUniqueId) = LOWER(?) OR LOWER(SpecimenNumber) = LOWER(?)", new Object[] { id, id }));
+        filter.addClause(new SimpleFilter.SQLClause("LOWER(GlobalUniqueId) = LOWER(?)", new Object[] { globalUniqueId }));
         filter.addCondition("Container", container.getId());
         return _specimenHelper.get(container, filter);
     }

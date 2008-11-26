@@ -28,10 +28,6 @@
 %>
 <table>
     <tr>
-        <th align="right">Specimen Number</th>
-        <td><%= h(sample.getSpecimenNumber()) %></td>
-    </tr>
-    <tr>
         <th align="right">Globally Unique ID</th>
         <td><%= h(sample.getGlobalUniqueId()) %></td>
     </tr>

@@ -767,7 +767,7 @@ public class SpecimenUtils
         DataRegion dr = new DataRegion();
         dr.setTable(StudySchema.getInstance().getTableInfoSpecimen());
         dr.setColumns(StudySchema.getInstance().getTableInfoSpecimen().getColumns(
-                "SpecimenNumber, GlobalUniqueId, Ptid, VisitValue, Volume, VolumeUnits, " +
+                "GlobalUniqueId, Ptid, VisitValue, Volume, VolumeUnits, " +
                         "DrawTimestamp, ProtocolNumber"));
         RenderContext ctx = new RenderContext(getViewContext());
         ctx.setContainer(sampleRequest.getContainer());
@@ -786,7 +786,7 @@ public class SpecimenUtils
         DataRegion dr = new DataRegion();
         dr.setTable(StudySchema.getInstance().getTableInfoSpecimen());
         dr.setColumns(StudySchema.getInstance().getTableInfoSpecimen().getColumns(
-                "SpecimenNumber, GlobalUniqueId, Ptid, VisitValue, Volume, VolumeUnits, " +
+                "GlobalUniqueId, Ptid, VisitValue, Volume, VolumeUnits, " +
                         "DrawTimestamp, ProtocolNumber"));
         RenderContext ctx = new RenderContext(getViewContext());
         ctx.setContainer(sampleRequest.getContainer());
