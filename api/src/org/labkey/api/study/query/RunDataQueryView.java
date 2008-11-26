@@ -19,6 +19,7 @@ package org.labkey.api.study.query;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ChartQueryReport;
@@ -27,7 +28,6 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.study.assay.RunDataTable;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
@@ -120,7 +120,7 @@ public class RunDataQueryView extends AssayBaseQueryView
     @Override
     protected TableInfo createTable()
     {
-        RunDataTable table = (RunDataTable)super.createTable();
+        FilteredTable table = (FilteredTable)super.createTable();
         if (includeSubfolders)
             table.setContainerFilter(ContainerFilter.CURRENT_AND_SUBFOLDERS);
         return table;
