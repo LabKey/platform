@@ -47,8 +47,8 @@ public class SpecimenService
 
     public interface Service
     {
-        /** Does a search for matching GlobalUniqueIds or SpecimenNumbers */
-        ParticipantVisit getSampleInfo(Container studyContainer, String id) throws SQLException;
+        /** Does a search for matching GlobalUniqueIds  */
+        ParticipantVisit getSampleInfo(Container studyContainer, String globalUniqueId) throws SQLException;
 
         ParticipantVisit getSampleInfo(Container studyContainer, String participantId, Date date) throws SQLException;
 

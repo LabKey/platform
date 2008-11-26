@@ -136,8 +136,9 @@ public class NavTreeMenu extends WebPartView implements Collapsible
         ActionURL currentUrl = context.getActionURL();
 
         String link = nav.getValue() == null ? null : nav.getValue();
-        String onClickScript = (null != nav.getScript()) ? PageFlowUtil.filter(nav.getScript())
-                : PageFlowUtil.filter("window.location='" + link + "'");
+        String onClickScript = (null != nav.getScript()) ? PageFlowUtil.filter(nav.getScript()) : null;
+        if(null == onClickScript && null != link)
+            onClickScript = PageFlowUtil.filter("window.location='" + link + "'");
         boolean selected = _highlightSelection && null != link && matchPath(link, currentUrl, pattern);
         if (level == 0 && null != nav.getKey())
             level = 1;
@@ -152,7 +153,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
 
         if (level > 0)
         {
-            if (nav.getCanCollapse())
+            if (nav.getCanCollapse() && (null != link || null != onClickScript))
             {
                 out.print("<tr class=\"labkey-nav-tree-row labkey-header\">");
             }
@@ -178,7 +179,10 @@ public class NavTreeMenu extends WebPartView implements Collapsible
             else if (indentForExpansionGifs)
                 out.printf("<div class=\"labkey-nav-tree-indenter\" />");
 
-            out.print("</td><td class=\"labkey-nav-tree-text\" onclick=\"" + onClickScript + "\">\n");
+            out.print("</td><td class=\"labkey-nav-tree-text\"");
+            if(null != onClickScript)
+                out.print(" onclick=\"" + onClickScript + "\"");
+            out.println(">");
 
             if (null == link)
                 out.print(filter(nav.getKey()));

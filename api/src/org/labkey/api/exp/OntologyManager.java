@@ -152,6 +152,16 @@ public class OntologyManager
 			objInsert.setOwnerObjectId(ownerObjectId);
 
             List<ValidationError> errors = new ArrayList<ValidationError>();
+            Map<Integer, IPropertyValidator[]> validatorMap = new HashMap<Integer, IPropertyValidator[]>();
+
+            // cache all the property validators for this upload
+            for (PropertyDescriptor pd : descriptors)
+            {
+                IPropertyValidator[] validators = PropertyService.get().getPropertyValidators(pd);
+                if (validators.length > 0)
+                    validatorMap.put(pd.getPropertyId(), validators);
+            }
+
 			for (Map map : rows)
 			{
 				assert before.start();
@@ -184,7 +194,10 @@ public class OntologyManager
                             continue;
                     }
                     else
-                        validateProperty(pd, value, errors);
+                    {
+                        if (validatorMap.containsKey(pd.getPropertyId()))
+                            validateProperty(validatorMap.get(pd.getPropertyId()), pd, value, errors);
+                    }
                     PropertyRow row = new PropertyRow(objectId, pd.getPropertyId(), value, propertyTypes[i]);
 					propsToInsert.add(row);
 				}
@@ -223,12 +236,14 @@ public class OntologyManager
 		return lsidList.toArray(new String[lsidList.size()]);
 	}
 
-    private static boolean validateProperty(PropertyDescriptor prop, Object value, List<ValidationError> errors)
+    private static boolean validateProperty(IPropertyValidator[] validators, PropertyDescriptor prop, Object value, List<ValidationError> errors)
     {
         boolean ret = true;
-        for (IPropertyValidator validator : PropertyService.get().getPropertyValidators(prop))
+
+        if (validators != null)
         {
-            if (!validator.validate(prop.getLabel(), value, errors)) ret = false;
+            for (IPropertyValidator validator : validators)
+                if (!validator.validate(prop.getLabel(), value, errors)) ret = false;
         }
         return ret;
     }
@@ -1352,7 +1367,7 @@ public class OntologyManager
 					descriptors.put(property.getPropertyURI(),pd);
 				}
 				property.setPropertyId(pd.getPropertyId());
-                validateProperty(pd, property.value(), errors);
+                validateProperty(PropertyService.get().getPropertyValidators(pd), pd, property.value(), errors);
             }
 			if (0 == property.getObjectId())
 			{
