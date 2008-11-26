@@ -50,7 +50,7 @@ public class BtSchema extends UserSchema
         Entities,
         Tasks,
     }
-    final static Set<String> tableNames = new LinkedHashSet();
+    final static Set<String> tableNames = new LinkedHashSet<String>();
     static
     {
         for (TableType type : TableType.values())
@@ -105,7 +105,7 @@ public class BtSchema extends UserSchema
 
     public TableInfo createServersTable(String alias)
     {
-        FilteredTable ret = new FilteredTable(BtManager.get().getTinfoServer(), _container);
+        FilteredTable ret = new FilteredTable(BtManager.get().getTinfoServer(), _container, getUser());
         ret.addWrapColumn(ret.getRealTable().getColumn("RowId")).setIsHidden(true);
         ret.addWrapColumn(ret.getRealTable().getColumn("Name"));
         ret.setTitleColumn("Name");

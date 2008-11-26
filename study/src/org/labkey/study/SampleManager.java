@@ -1428,9 +1428,10 @@ public class SampleManager
                                 new Sort(tinfo.getTitleColumn()));
                     else
                     {
+                        SQLFragment fromSQL = tinfo.getFromSQL();
                         String sql = "SELECT DISTINCT " + col.getSelectSql() + " FROM " +
-                                tinfo.getFromSQL();
-                        rs = Table.executeQuery(tinfo.getSchema(), sql, null);
+                                fromSQL;
+                        rs = Table.executeQuery(tinfo.getSchema(), sql, fromSQL.getParamsArray());
                     }
                     while (rs.next())
                     {

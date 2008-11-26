@@ -754,7 +754,7 @@ public class StudyController extends BaseStudyController
                 {
                     ActionURL url = AssayService.get().getAssayRunsURL(c, protocol);
                     url.addParameter("includeSubfolders", "true");
-                    ActionButton viewAssayButton = new ActionButton(url, "View Source Assay");
+                    ActionButton viewAssayButton = new ActionButton("View Source Assay", url);
                     buttonBar.add(viewAssayButton);
                 }
             }

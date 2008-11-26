@@ -103,7 +103,7 @@ public class AssaySchema extends UserSchema
         return null;
     }
 
-    public TableInfo createRunTable(String alias, final ExpProtocol protocol, final AssayProvider provider)
+    public ExpRunTable createRunTable(String alias, final ExpProtocol protocol, final AssayProvider provider)
     {
         ExpRunTable runTable = provider.createRunTable(this, alias, protocol);
         runTable.setProtocolPatterns(protocol.getLSID());

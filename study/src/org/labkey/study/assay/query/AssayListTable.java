@@ -34,7 +34,7 @@ public class AssayListTable extends FilteredTable
     protected AssaySchema _schema;
     public AssayListTable(AssaySchema schema, String alias)
     {
-        super(ExperimentService.get().getTinfoProtocol(), null);
+        super(ExperimentService.get().getTinfoProtocol());
         setAlias(alias);
 
         List<String> containerIds = new ArrayList<String>(2);

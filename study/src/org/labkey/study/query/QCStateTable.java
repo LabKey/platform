@@ -26,7 +26,7 @@ public class QCStateTable extends FilteredTable
 {
     public QCStateTable(StudyQuerySchema schema)
     {
-        super(StudySchema.getInstance().getTableInfoQCState(), schema.getContainer());
+        super(StudySchema.getInstance().getTableInfoQCState(), schema.getContainer(), schema.getUser());
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
             String name = baseColumn.getName();

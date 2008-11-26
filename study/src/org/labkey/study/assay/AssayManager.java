@@ -16,28 +16,30 @@
 
 package org.labkey.study.assay;
 
-import org.labkey.api.exp.Handler;
-import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.security.User;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Handler;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRunTable;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.gwt.client.assay.model.GWTProtocol;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.gwt.client.assay.model.GWTProtocol;
-import org.labkey.study.assay.query.AssaySchema;
-import org.labkey.study.assay.query.AssayListQueryView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.study.assay.query.AssayListPortalView;
+import org.labkey.study.assay.query.AssayListQueryView;
+import org.labkey.study.assay.query.AssaySchema;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * User: brittp
@@ -101,7 +103,7 @@ public class AssayManager implements AssayService.Interface
         return Collections.unmodifiableList(_providers);
     }
 
-    public TableInfo createRunTable(String alias, ExpProtocol protocol, AssayProvider provider, User user, Container container)
+    public ExpRunTable createRunTable(String alias, ExpProtocol protocol, AssayProvider provider, User user, Container container)
     {
         return new AssaySchema(user, container).createRunTable(alias, protocol, provider);
     }

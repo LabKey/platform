@@ -21,10 +21,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.exp.*;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.actions.*;
@@ -33,8 +34,6 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.api.gwt.server.BaseRemoteService;
-import org.labkey.api.query.QueryView;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.assay.AssayServiceImpl;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
@@ -44,7 +43,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
 import java.util.*;
-import java.sql.ResultSet;
 
 /**
  * User: brittp
@@ -136,25 +134,43 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_READ)
-    public class ShowSelectedDataAction extends RedirectAction<ProtocolIdForm>
+    public class ShowSelectedDataAction extends RedirectAction<ShowSelectedForm>
     {
-        public ActionURL getSuccessURL(ProtocolIdForm protocolIdForm)
+        public ActionURL getSuccessURL(ShowSelectedForm form)
         {
             Set<String> selection = DataRegionSelection.getSelected(getViewContext(), true);
             int[] selectedIds = new int[selection.size()];
             int i = 0;
             for (String id : selection)
                 selectedIds[i++] = Integer.parseInt(id);
-            return AssayService.get().getAssayDataURL(getContainer(), protocolIdForm.getProtocol(), selectedIds);
+            ActionURL url = AssayService.get().getAssayDataURL(getContainer(), form.getProtocol(), selectedIds);
+            if (form.isIncludeSubfolders())
+                url.addParameter("includeSubfolders", true);
+            return url;
         }
 
-        public boolean doAction(ProtocolIdForm protocolIdForm, BindException errors) throws Exception
+        public boolean doAction(ShowSelectedForm form, BindException errors) throws Exception
         {
             return true;
         }
 
-        public void validateCommand(ProtocolIdForm target, Errors errors)
+        public void validateCommand(ShowSelectedForm target, Errors errors)
         {
+        }
+    }
+
+    public static class ShowSelectedForm extends ProtocolIdForm
+    {
+        private boolean includeSubfolders;
+
+        public boolean isIncludeSubfolders()
+        {
+            return includeSubfolders;
+        }
+
+        public void setIncludeSubfolders(boolean includeSubfolders)
+        {
+            this.includeSubfolders = includeSubfolders;
         }
     }
 

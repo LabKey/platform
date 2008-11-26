@@ -16,35 +16,32 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.query.*;
-import org.labkey.api.exp.api.ExpTable;
-import org.labkey.api.exp.api.TableEditHelper;
+import org.labkey.api.audit.query.ContainerForeignKey;
+import org.labkey.api.data.*;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ContainerFilter;
 import org.labkey.api.exp.api.ExpSchema;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.data.*;
+import org.labkey.api.exp.api.ExpTable;
+import org.labkey.api.exp.api.TableEditHelper;
+import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.audit.query.ContainerForeignKey;
+import org.labkey.experiment.api.flag.FlagColumnRenderer;
+import org.labkey.experiment.api.flag.FlagForeignKey;
 
 import java.sql.Types;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.Collection;
-
-import org.labkey.experiment.api.flag.FlagForeignKey;
-import org.labkey.experiment.api.flag.FlagColumnRenderer;
 
 abstract public class ExpTableImpl<C extends Enum> extends FilteredTable implements ExpTable<C>
 {
     protected TableEditHelper _editHelper;
     protected final UserSchema _schema;
-    private ContainerFilter _containerFilter;
 
     public ExpTableImpl(String name, String alias, TableInfo rootTable, UserSchema schema)
     {
-        super(rootTable);
+        super(rootTable, schema.getContainer(), schema.getUser());
         setName(name);
         setAlias(alias);
         _schema = schema;
@@ -59,41 +56,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
         return result;
     }
 
-    public void setContainerFilter(ContainerFilter filter)
-    {
-        _containerFilter = filter;
-        ColumnInfo containerColumn = _rootTable.getColumn("container");
-        if (containerColumn != null)
-        {
-            clearConditions(containerColumn);
-            Collection<String> ids = filter.getIds(getContainer(), _schema.getUser());
-            if (ids != null)
-            {
-                addCondition(new SimpleFilter(new SimpleFilter.InClause("Container", ids)));
-            }
-        }
-    }
 
-    protected ContainerFilter createLazyContainerFilter()
-    {
-        return new ContainerFilter()
-        {
-            public Collection<String> getIds(Container currentContainer, User user)
-            {
-                return _containerFilter.getIds(currentContainer, user);
-            }
-        };
-    }
-
-    public ContainerFilter getContainerFilter()
-    {
-        return _containerFilter;
-    }
-
-    public Container getContainer()
-    {
-        return _schema.getContainer();
-    }
 
     final public ColumnInfo addColumn(C column)
     {
@@ -225,11 +188,6 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
         return colProperty;
     }
 
-    public boolean isContainerFilterNeeded()
-    {
-        return _containerFilter == null;
-    }
-
     public ExpSchema getExpSchema()
     {
         if (_schema instanceof ExpSchema)
@@ -237,7 +195,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
             return (ExpSchema)_schema;
         }
         ExpSchema schema = new ExpSchema(_schema.getUser(), _schema.getContainer());
-        schema.setContainerFilter(_containerFilter);
+        schema.setContainerFilter(getContainerFilter());
         return schema;
     }
 

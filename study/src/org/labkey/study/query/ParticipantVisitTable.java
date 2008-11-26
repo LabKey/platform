@@ -37,7 +37,7 @@ public class ParticipantVisitTable extends FilteredTable
 
     public ParticipantVisitTable(StudyQuerySchema schema, ColumnInfo pv)
     {
-        super(StudySchema.getInstance().getTableInfoParticipantVisit(), schema.getContainer());
+        super(StudySchema.getInstance().getTableInfoParticipantVisit(), schema.getContainer(), schema.getUser());
         _schema = schema;
         _dialect = _schema.getDbSchema().getSqlDialect();
         _pvForeign = pv;
