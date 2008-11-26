@@ -51,7 +51,7 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
 
     public PlateBasedAssayRunDataTable(final UserSchema schema, String alias, final ExpProtocol protocol)
     {
-        super(OntologyManager.getTinfoObject(), schema.getContainer());
+        super(OntologyManager.getTinfoObject(), schema.getContainer(), schema.getUser());
 
         final AssayProvider provider = AssayService.get().getProvider(protocol);
         setAlias(alias);

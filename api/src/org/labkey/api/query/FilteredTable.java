@@ -17,7 +17,9 @@
 package org.labkey.api.query;
 
 import org.labkey.api.data.*;
-import java.sql.Types;
+import org.labkey.api.exp.api.ContainerFilter;
+import org.labkey.api.security.User;
+
 import java.util.Collection;
 import java.util.Collections;
 
@@ -30,6 +32,11 @@ public class FilteredTable extends AbstractTableInfo
     final private SimpleFilter _filter;
     protected TableInfo _rootTable;
 
+    // container, containerFilter and user must all be set or null as they are cross-dependent
+    private Container _container;
+    private ContainerFilter _containerFilter;
+    private User _user;
+
     public FilteredTable(TableInfo table)
     {
         super(table.getSchema());
@@ -40,11 +47,27 @@ public class FilteredTable extends AbstractTableInfo
         setTitleColumn(table.getTitleColumn());
     }
 
-    public FilteredTable(TableInfo table, Container container)
+    public FilteredTable(TableInfo table, Container container, User user)
+    {
+        this(table, container, ContainerFilter.CURRENT, user);
+    }
+
+    public FilteredTable(TableInfo table, Container container, ContainerFilter containerFilter, User user)
     {
         this(table);
-        if (container != null)
-            addCondition(table.getColumn("Container"), container);
+
+        if (container == null)
+            throw new IllegalArgumentException("container cannot be null");
+        _container = container;
+
+        if (user == null && containerFilter != ContainerFilter.CURRENT) // CURRENT does not require a user
+            throw new IllegalArgumentException("user cannot be null");
+        _user = user;
+
+        if (containerFilter == null)
+            throw new IllegalArgumentException("containerFilter cannot be null");
+        setContainerFilter(containerFilter);
+
     }
 
     public void wrapAllColumns(boolean preserveHidden)
@@ -146,33 +169,12 @@ public class FilteredTable extends AbstractTableInfo
         addCondition(frag);
     }
 
-    public void addInClause(ColumnInfo col, Collection<? extends Object> params)
+    public void addInClause(ColumnInfo col, Collection<?> params)
     {
         assert col.getParentTable() == _rootTable;
         SimpleFilter.InClause clause = new SimpleFilter.InClause(col.getValueSql().toString(), params);
         SQLFragment frag = clause.toSQLFragment(Collections.<String, ColumnInfo>emptyMap(), _schema.getSqlDialect());
         addCondition(frag);
-    }
-
-    public QueryMethod resolveMethod(String name, SQLFragment ... args)
-    {
-        throw new QueryException("Unknown method '" + name + "'");
-    }
-
-    public SQLFragment getSqlMethod(String name, SQLFragment ... args)
-    {
-        //return resolveMethod(name, arguments).getSql(arguments);
-        return null;
-    }
-
-    public String getCaption(String fieldName)
-    {
-        return ColumnInfo.captionFromName(fieldName);
-    }
-
-    public int getSqlType(String fieldName)
-    {
-        return Types.VARCHAR;
     }
 
     public SQLFragment getFromSQL(String alias)
@@ -206,4 +208,53 @@ public class FilteredTable extends AbstractTableInfo
     {
         return _filter;
     }
+
+    public void setContainerFilter(ContainerFilter filter)
+    {
+        // Bit of a hack here -- this table must already have a user or we're toast
+        // In the future, we should require a user on construction, perhaps store a UserSchema object?
+        if (_user == null && filter != ContainerFilter.CURRENT)
+            throw new IllegalStateException("Cannot add a ContainerFilter unless this object was constructed with a user");
+
+        _containerFilter = filter;
+        ColumnInfo containerColumn = _rootTable.getColumn("container");
+        if (containerColumn != null)
+        {
+            clearConditions(containerColumn);
+            Collection<String> ids = filter.getIds(getContainer(), _user);
+            if (ids != null)
+            {
+                addCondition(new SimpleFilter(new SimpleFilter.InClause("Container", ids)));
+            }
+        }
+    }
+
+    protected ContainerFilter createLazyContainerFilter()
+    {
+        return new ContainerFilter()
+        {
+            public Collection<String> getIds(Container currentContainer, User user)
+            {
+                return _containerFilter.getIds(currentContainer, user);
+            }
+        };
+    }
+
+    public ContainerFilter getContainerFilter()
+    {
+        return _containerFilter;
+    }
+
+    public Container getContainer()
+    {
+        return _container;
+    }
+
+    public boolean isContainerFilterNeeded()
+    {
+        return getContainerFilter() == null;
+    }
+
+
+    
 }

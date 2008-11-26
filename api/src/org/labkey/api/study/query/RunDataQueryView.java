@@ -17,18 +17,20 @@
 package org.labkey.api.study.query;
 
 import org.labkey.api.data.*;
+import org.labkey.api.exp.api.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.ChartQueryReport;
+import org.labkey.api.reports.report.RReport;
 import org.labkey.api.security.ACL;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.RunDataTable;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.RReport;
-import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.common.util.Pair;
 
 /**
@@ -38,6 +40,8 @@ import org.labkey.common.util.Pair;
  */
 public class RunDataQueryView extends AssayBaseQueryView
 {
+    private boolean includeSubfolders;
+
     public RunDataQueryView(ExpProtocol protocol, ViewContext context, QuerySettings settings)
     {
         super(protocol, context, settings);
@@ -101,5 +105,24 @@ public class RunDataQueryView extends AssayBaseQueryView
     protected TSVGridWriter.ColumnHeaderType getColumnHeaderType()
     {
         return TSVGridWriter.ColumnHeaderType.caption;
+    }
+
+    public boolean isIncludeSubfolders()
+    {
+        return includeSubfolders;
+    }
+
+    public void setIncludeSubfolders(boolean includeSubfolders)
+    {
+        this.includeSubfolders = includeSubfolders;
+    }
+
+    @Override
+    protected TableInfo createTable()
+    {
+        RunDataTable table = (RunDataTable)super.createTable();
+        if (includeSubfolders)
+            table.setContainerFilter(ContainerFilter.CURRENT_AND_SUBFOLDERS);
+        return table;
     }
 }

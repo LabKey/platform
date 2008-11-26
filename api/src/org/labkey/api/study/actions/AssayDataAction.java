@@ -34,13 +34,13 @@ import org.springframework.web.servlet.ModelAndView;
 * Time: 7:30:05 PM
 */
 @RequiresPermission(ACL.PERM_READ)
-public class AssayDataAction extends BaseAssayAction<ProtocolIdForm>
+public class AssayDataAction extends BaseAssayAction<AssayDataAction.AssayDataForm>
 {
     private ExpProtocol _protocol;
 
-    public ModelAndView getView(ProtocolIdForm summaryForm, BindException errors) throws Exception
+    public ModelAndView getView(AssayDataForm form, BindException errors) throws Exception
     {
-        _protocol = getProtocol(summaryForm);
+        _protocol = getProtocol(form);
         AssayHeaderView headerView = new AssayHeaderView(_protocol, AssayService.get().getProvider(_protocol), false);
 
         ViewContext context = getViewContext();
@@ -53,6 +53,8 @@ public class AssayDataAction extends BaseAssayAction<ProtocolIdForm>
             fullView.addView(provider.getDisallowedUploadMessageView(context.getUser(), context.getContainer(), _protocol));
 
         RunDataQueryView dataView = provider.createRunDataView(context, _protocol);
+        if (form.isIncludeSubfolders())
+            dataView.setIncludeSubfolders(true);
         fullView.addView(dataView);
         return fullView;
     }
@@ -63,5 +65,20 @@ public class AssayDataAction extends BaseAssayAction<ProtocolIdForm>
         result.addChild(_protocol.getName(), AssayService.get().getAssayRunsURL(getContainer(), _protocol));
         result.addChild(_protocol.getName() + " Data");
         return result;
+    }
+
+    public static class AssayDataForm extends ProtocolIdForm
+    {
+        private boolean includeSubfolders;
+
+        public boolean isIncludeSubfolders()
+        {
+            return includeSubfolders;
+        }
+
+        public void setIncludeSubfolders(boolean includeSubfolders)
+        {
+            this.includeSubfolders = includeSubfolders;
+        }
     }
 }

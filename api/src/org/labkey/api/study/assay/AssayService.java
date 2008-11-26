@@ -16,14 +16,14 @@
 
 package org.labkey.api.study.assay;
 
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.User;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRunTable;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 
 import java.util.List;
 
@@ -55,7 +55,7 @@ public class AssayService
         public List<AssayProvider> getAssayProviders();
         public QueryView createAssayListView(ViewContext context, boolean portalView);
 
-        TableInfo createRunTable(String alias, ExpProtocol protocol, AssayProvider provider, User user, Container container);
+        ExpRunTable createRunTable(String alias, ExpProtocol protocol, AssayProvider provider, User user, Container container);
 
         public UserSchema createSchema(User user, Container container);
 

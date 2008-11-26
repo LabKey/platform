@@ -16,17 +16,20 @@
 
 package org.labkey.api.study.assay;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRunTable;
 import org.labkey.api.query.*;
 
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.HashSet;
 
 /**
  * User: brittp
@@ -37,7 +40,7 @@ public class RunDataTable extends FilteredTable
 {
     public RunDataTable(final QuerySchema schema, String alias, final ExpProtocol protocol)
     {
-        super(OntologyManager.getTinfoObject(), schema.getContainer());
+        super(OntologyManager.getTinfoObject(), schema.getContainer(), schema.getUser());
         setAlias(alias);
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
         ColumnInfo objectIdColumn = addWrapColumn(_rootTable.getColumn("ObjectId"));
@@ -85,7 +88,9 @@ public class RunDataTable extends FilteredTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return AssayService.get().createRunTable(null, protocol, provider, schema.getUser(), schema.getContainer());
+                ExpRunTable expRunTable = AssayService.get().createRunTable(null, protocol, provider, schema.getUser(), schema.getContainer());
+                expRunTable.setContainerFilter(getContainerFilter());
+                return expRunTable;
             }
         });
         addColumn(runColumn);
