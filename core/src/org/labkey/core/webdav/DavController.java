@@ -37,6 +37,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavService;
@@ -767,7 +768,6 @@ public class DavController extends SpringActionController
                         resourceWriter.sendData();
                     }
                 }
-
             }
             catch (IOException x)
             {
@@ -856,338 +856,357 @@ public class DavController extends SpringActionController
     }
 
 
-       class XMLResourceWriter implements ResourceWriter
-       {
-           XMLWriter xml;
+    class XMLResourceWriter implements ResourceWriter
+    {
+        XMLWriter xml;
 
-           XMLResourceWriter(Writer writer)
-           {
-               xml = new XMLWriter(writer);
-           }
+        XMLResourceWriter(Writer writer)
+        {
+            xml = new XMLWriter(writer);
+        }
 
-           public void beginResponse(WebdavResponse response)
-           {
-               response.setStatus(WebdavStatus.SC_MULTI_STATUS);
-               response.setContentType("text/xml; charset=UTF-8");
+        public void beginResponse(WebdavResponse response)
+        {
+            response.setStatus(WebdavStatus.SC_MULTI_STATUS);
+            response.setContentType("text/xml; charset=UTF-8");
 
-               xml.writeXMLHeader();
-               xml.writeElement(null, "multistatus" + generateNamespaceDeclarations(), XMLWriter.OPENING);
-           }
+            xml.writeXMLHeader();
+            xml.writeElement(null, "multistatus" + generateNamespaceDeclarations(), XMLWriter.OPENING);
+        }
 
-           public void endResponse()
-           {
-               xml.writeElement(null, "multistatus", XMLWriter.CLOSING);
-           }
+        public void endResponse()
+        {
+            xml.writeElement(null, "multistatus", XMLWriter.CLOSING);
+        }
 
-           public void writeProperties(WebdavResolver.Resource resource, Find type, List<String> propertiesVector)
-           {
-               boolean exists = resource.exists();
+        public void writeProperties(WebdavResolver.Resource resource, Find type, List<String> propertiesVector)
+        {
+            boolean exists = resource.exists();
+            boolean isFile = exists && resource.isFile();
 
-               xml.writeElement(null, "response", XMLWriter.OPENING);
-               String status = "HTTP/1.1 " + WebdavStatus.SC_OK;
+            xml.writeElement(null, "response", XMLWriter.OPENING);
+            String status = "HTTP/1.1 " + WebdavStatus.SC_OK;
 
-               xml.writeElement(null, "href", XMLWriter.OPENING);
-               xml.writeText(h(resource.getLocalHref(getViewContext())));
-               xml.writeElement(null, "href", XMLWriter.CLOSING);
+            xml.writeElement(null, "href", XMLWriter.OPENING);
+            xml.writeText(h(resource.getLocalHref(getViewContext())));
+            xml.writeElement(null, "href", XMLWriter.CLOSING);
 
-               String displayName = resource.getPath().equals("/") ? WebdavService.getServletPath() : resource.getName();
+            String displayName = resource.getPath().equals("/") ? WebdavService.getServletPath() : resource.getName();
 
-               switch (type)
-               {
-                   case FIND_ALL_PROP:
+            switch (type)
+            {
+                case FIND_ALL_PROP:
 
-                       xml.writeElement(null, "propstat", XMLWriter.OPENING);
-                       xml.writeElement(null, "prop", XMLWriter.OPENING);
+                    xml.writeElement(null, "propstat", XMLWriter.OPENING);
+                    xml.writeElement(null, "prop", XMLWriter.OPENING);
 
-                       xml.writeProperty(null, "creationdate", getISOCreationDate(resource.getCreation()));
-                       if (null == displayName)
-                       {
-                           xml.writeElement(null, "displayname", XMLWriter.NO_CONTENT);
-                       }
-                       else
-                       {
-                           xml.writeElement(null, "displayname", XMLWriter.OPENING);
-                           xml.writeText(h(displayName));
-                           xml.writeElement(null, "displayname", XMLWriter.CLOSING);
-                       }
-                       if (resource.isFile())
-                       {
-                           xml.writeProperty(null, "getlastmodified", getHttpDateFormat(resource.getLastModified()));
-                           xml.writeProperty(null, "getcontentlength", String.valueOf(resource.getContentLength()));
-                           String contentType = resource.getContentType();
-                           if (contentType != null)
-                           {
-                               xml.writeProperty(null, "getcontenttype", contentType);
-                           }
-                           xml.writeProperty(null, "getetag", resource.getETag());
-                           xml.writeElement(null, "resourcetype", XMLWriter.NO_CONTENT);
-                       }
-                       else
-                       {
-                           xml.writeElement(null, "resourcetype", XMLWriter.OPENING);
-                           xml.writeElement(null, "collection", XMLWriter.NO_CONTENT);
-                           xml.writeElement(null, "resourcetype", XMLWriter.CLOSING);
-                       }
+                    String path = resource.getPath();
+                    if (!isFile && !path.endsWith("/"))
+                        path = path + "/";
+                    xml.writeProperty(null, "path", h(path));
 
-                       xml.writeProperty(null, "source", "");
+                    xml.writeProperty(null, "creationdate", getISOCreationDate(resource.getCreation()));
+                    if (null == displayName)
+                    {
+                        xml.writeElement(null, "displayname", XMLWriter.NO_CONTENT);
+                    }
+                    else
+                    {
+                        xml.writeProperty(null, "displayname", h(displayName));
+                    }
+                    if (exists)
+                    {
+                        if (isFile)
+                        {
+                            xml.writeProperty(null, "getlastmodified", getHttpDateFormat(resource.getLastModified()));
+                            xml.writeProperty(null, "getcontentlength", String.valueOf(resource.getContentLength()));
+                            String contentType = resource.getContentType();
+                            if (contentType != null)
+                            {
+                                xml.writeProperty(null, "getcontenttype", contentType);
+                            }
+                            xml.writeProperty(null, "getetag", resource.getETag());
+                            xml.writeElement(null, "resourcetype", XMLWriter.NO_CONTENT);
+                        }
+                        else
+                        {
+                            xml.writeElement(null, "resourcetype", XMLWriter.OPENING);
+                            xml.writeProperty(null, "collection", "1");
+                            xml.writeElement(null, "resourcetype", XMLWriter.CLOSING);
+                        }
+                    }
+                    
+                    xml.writeProperty(null, "iconHref", h(resource.getIconHref()));
 
-//                String supportedLocks = "<lockentry>"
-//                        + "<lockscope><exclusive/></lockscope>"
-//                        + "<locktype><write/></locktype>"
-//                        + "</lockentry>" + "<lockentry>"
-//                        + "<lockscope><shared/></lockscope>"
-//                        + "<locktype><write/></locktype>"
-//                        + "</lockentry>";
-//                generatedXML.writeElement(null, "supportedlock", XMLWriter.OPENING);
-//                generatedXML.writeText(supportedLocks);
-//                generatedXML.writeElement(null, "supportedlock", XMLWriter.CLOSING);
-//                generateLockDiscovery(resource.getPath(), generatedXML);
+                    xml.writeProperty(null, "source", "");
 
-                       xml.writeElement(null, "prop", XMLWriter.CLOSING);
-                       xml.writeElement(null, "status", XMLWriter.OPENING);
-                       xml.writeText(status);
-                       xml.writeElement(null, "status", XMLWriter.CLOSING);
-                       xml.writeElement(null, "propstat", XMLWriter.CLOSING);
+//					 String supportedLocks = "<lockentry>"
+//								+ "<lockscope><exclusive/></lockscope>"
+//								+ "<locktype><write/></locktype>"
+//								+ "</lockentry>" + "<lockentry>"
+//								+ "<lockscope><shared/></lockscope>"
+//								+ "<locktype><write/></locktype>"
+//								+ "</lockentry>";
+//					 generatedXML.writeElement(null, "supportedlock", XMLWriter.OPENING);
+//					 generatedXML.writeText(supportedLocks);
+//					 generatedXML.writeElement(null, "supportedlock", XMLWriter.CLOSING);
+//					 generateLockDiscovery(resource.getPath(), generatedXML);
 
-                       break;
+                    xml.writeElement(null, "prop", XMLWriter.CLOSING);
+                    xml.writeElement(null, "status", XMLWriter.OPENING);
+                    xml.writeText(status);
+                    xml.writeElement(null, "status", XMLWriter.CLOSING);
+                    xml.writeElement(null, "propstat", XMLWriter.CLOSING);
 
-                   case FIND_PROPERTY_NAMES:
+                    break;
 
-                       xml.writeElement(null, "propstat", XMLWriter.OPENING);
-                       xml.writeElement(null, "prop", XMLWriter.OPENING);
+                case FIND_PROPERTY_NAMES:
 
-                       xml.writeElement(null, "creationdate", XMLWriter.NO_CONTENT);
-                       xml.writeElement(null, "displayname", XMLWriter.NO_CONTENT);
-                       if (exists)
-                       {
-                           xml.writeElement(null, "getcontentlanguage", XMLWriter.NO_CONTENT);
-                           xml.writeElement(null, "getcontentlength", XMLWriter.NO_CONTENT);
-                           xml.writeElement(null, "getcontenttype", XMLWriter.NO_CONTENT);
-                           xml.writeElement(null, "getetag", XMLWriter.NO_CONTENT);
-                           xml.writeElement(null, "getlastmodified", XMLWriter.NO_CONTENT);
-                       }
-                       xml.writeElement(null, "resourcetype", XMLWriter.NO_CONTENT);
-                       xml.writeElement(null, "source", XMLWriter.NO_CONTENT);
-//                generatedXML.writeElement(null, "lockdiscovery", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "propstat", XMLWriter.OPENING);
+                    xml.writeElement(null, "prop", XMLWriter.OPENING);
 
-                       xml.writeElement(null, "prop", XMLWriter.CLOSING);
-                       xml.writeElement(null, "status", XMLWriter.OPENING);
-                       xml.writeText(status);
-                       xml.writeElement(null, "status", XMLWriter.CLOSING);
-                       xml.writeElement(null, "propstat", XMLWriter.CLOSING);
+                    xml.writeElement(null, "creationdate", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "displayname", XMLWriter.NO_CONTENT);
+                    if (exists)
+                    {
+                        xml.writeElement(null, "getcontentlanguage", XMLWriter.NO_CONTENT);
+                        xml.writeElement(null, "getcontentlength", XMLWriter.NO_CONTENT);
+                        xml.writeElement(null, "getcontenttype", XMLWriter.NO_CONTENT);
+                        xml.writeElement(null, "getetag", XMLWriter.NO_CONTENT);
+                        xml.writeElement(null, "getlastmodified", XMLWriter.NO_CONTENT);
+                    }
+                    xml.writeElement(null, "resourcetype", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "source", XMLWriter.NO_CONTENT);
+//					 generatedXML.writeElement(null, "lockdiscovery", XMLWriter.NO_CONTENT);
 
-                       break;
+                    xml.writeElement(null, "prop", XMLWriter.CLOSING);
+                    xml.writeElement(null, "status", XMLWriter.OPENING);
+                    xml.writeText(status);
+                    xml.writeElement(null, "status", XMLWriter.CLOSING);
+                    xml.writeElement(null, "propstat", XMLWriter.CLOSING);
 
-                   case FIND_BY_PROPERTY:
+                    break;
 
-                       List<String> propertiesNotFound = new Vector<String>();
+                case FIND_BY_PROPERTY:
 
-                       // Parse the list of properties
+                    List<String> propertiesNotFound = new Vector<String>();
 
-                       xml.writeElement(null, "propstat", XMLWriter.OPENING);
-                       xml.writeElement(null, "prop", XMLWriter.OPENING);
+                    // Parse the list of properties
 
-                       for (String property : propertiesVector)
-                       {
-                           if (property.equals("creationdate"))
-                           {
-                               xml.writeProperty(null, "creationdate", getISOCreationDate(resource.getCreation()));
-                           }
-                           else if (property.equals("displayname"))
-                           {
-                               if (null == displayName)
-                               {
-                                   xml.writeElement(null, "displayname", XMLWriter.NO_CONTENT);
-                               }
-                               else
-                               {
-                                   xml.writeElement(null, "displayname", XMLWriter.OPENING);
-                                   xml.writeText(h(displayName));
-                                   xml.writeElement(null, "displayname", XMLWriter.CLOSING);
-                               }
-                           }
-                           else if (property.equals("getcontentlanguage"))
-                           {
-                               if (!exists)
-                               {
-                                   propertiesNotFound.add(property);
-                               }
-                               else
-                               {
-                                   xml.writeElement(null, "getcontentlanguage", XMLWriter.NO_CONTENT);
-                               }
-                           }
-                           else if (property.equals("getcontentlength"))
-                           {
-                               if (!exists)
-                               {
-                                   propertiesNotFound.add(property);
-                               }
-                               else
-                               {
-                                   xml.writeProperty(null, "getcontentlength", (String.valueOf(resource.getContentLength())));
-                               }
-                           }
-                           else if (property.equals("getcontenttype"))
-                           {
-                               if (!exists)
-                               {
-                                   propertiesNotFound.add(property);
-                               }
-                               else
-                               {
-                                   xml.writeProperty(null, "getcontenttype", resource.getContentType());
-                               }
-                           }
-                           else if (property.equals("getetag"))
-                           {
-                               if (!exists)
-                               {
-                                   propertiesNotFound.add(property);
-                               }
-                               else
-                               {
-                                   xml.writeProperty(null, "getetag", resource.getETag());
-                               }
-                           }
-                           else if (property.equals("getlastmodified"))
-                           {
-                               if (!exists)
-                               {
-                                   propertiesNotFound.add(property);
-                               }
-                               else
-                               {
-                                   xml.writeProperty(null, "getlastmodified", getHttpDateFormat(resource.getLastModified()));
-                               }
-                           }
-                           else if (property.equals("resourcetype"))
-                           {
-                               if (resource.isCollection())
-                               {
-                                   xml.writeElement(null, "resourcetype", XMLWriter.OPENING);
-                                   xml.writeElement(null, "collection", XMLWriter.NO_CONTENT);
-                                   xml.writeElement(null, "resourcetype", XMLWriter.CLOSING);
-                               }
-                               else
-                               {
-                                   xml.writeElement(null, "resourcetype", XMLWriter.NO_CONTENT);
-                               }
-                           }
-                           else if (property.equals("source"))
-                           {
-                               xml.writeProperty(null, "source", "");
-                           }
-//                    else if (property.equals("supportedlock"))
-//                    {
-//                        supportedLocks = "<lockentry>"
-//                                + "<lockscope><exclusive/></lockscope>"
-//                                + "<locktype><write/></locktype>"
-//                                + "</lockentry>" + "<lockentry>"
-//                                + "<lockscope><shared/></lockscope>"
-//                                + "<locktype><write/></locktype>"
-//                                + "</lockentry>";
-//                        generatedXML.writeElement(null, "supportedlock", XMLWriter.OPENING);
-//                        generatedXML.writeText(supportedLocks);
-//                        generatedXML.writeElement(null, "supportedlock", XMLWriter.CLOSING);
-//                    }
-//                    else if (property.equals("lockdiscovery"))
-//                    {
-//                        if (!generateLockDiscovery(resource.getPath(), generatedXML))
-//                            propertiesNotFound.add(property);
-//                    }
-                           else if (property.equals("md5sum"))
-                           {
-                               String md5sum = null;
-                               try
-                               {
-                                   md5sum = FileUtil.md5sum(resource.getInputStream(getUser()));
-                               }
-                               catch (IOException x)
-                               {
-                                   /* */
-                               }
-                               if (null == md5sum)
-                               {
-                                   xml.writeElement(null, "md5sum", XMLWriter.NO_CONTENT);
-                               }
-                               else
-                               {
-                                   xml.writeElement(null, "md5sum", XMLWriter.OPENING);
-                                   xml.writeText(md5sum);
-                                   xml.writeElement(null, "md5sum", XMLWriter.CLOSING);
-                               }
-                           }
-                           else
-                           {
-                               propertiesNotFound.add(property);
-                           }
-                       }
+                    xml.writeElement(null, "propstat", XMLWriter.OPENING);
+                    xml.writeElement(null, "prop", XMLWriter.OPENING);
 
-                       xml.writeElement(null, "prop", XMLWriter.CLOSING);
-                       xml.writeElement(null, "status", XMLWriter.OPENING);
-                       xml.writeText(status);
-                       xml.writeElement(null, "status", XMLWriter.CLOSING);
-                       xml.writeElement(null, "propstat", XMLWriter.CLOSING);
+                    for (String property : propertiesVector)
+                    {
+                        if (property.equals("creationdate"))
+                        {
+                            xml.writeProperty(null, "creationdate", getISOCreationDate(resource.getCreation()));
+                        }
+                        else if (property.equals("displayname"))
+                        {
+                            if (null == displayName)
+                            {
+                                xml.writeElement(null, "displayname", XMLWriter.NO_CONTENT);
+                            }
+                            else
+                            {
+                                xml.writeElement(null, "displayname", XMLWriter.OPENING);
+                                xml.writeText(h(displayName));
+                                xml.writeElement(null, "displayname", XMLWriter.CLOSING);
+                            }
+                        }
+                        else if (property.equals("getcontentlanguage"))
+                        {
+                            if (!exists)
+                            {
+                                propertiesNotFound.add(property);
+                            }
+                            else
+                            {
+                                xml.writeElement(null, "getcontentlanguage", XMLWriter.NO_CONTENT);
+                            }
+                        }
+                        else if (property.equals("getcontentlength"))
+                        {
+                            if (!exists)
+                            {
+                                propertiesNotFound.add(property);
+                            }
+                            else
+                            {
+                                xml.writeProperty(null, "getcontentlength", (String.valueOf(resource.getContentLength())));
+                            }
+                        }
+                        else if (property.equals("getcontenttype"))
+                        {
+                            if (!exists)
+                            {
+                                propertiesNotFound.add(property);
+                            }
+                            else
+                            {
+                                xml.writeProperty(null, "getcontenttype", resource.getContentType());
+                            }
+                        }
+                        else if (property.equals("getetag"))
+                        {
+                            if (!exists)
+                            {
+                                propertiesNotFound.add(property);
+                            }
+                            else
+                            {
+                                xml.writeProperty(null, "getetag", resource.getETag());
+                            }
+                        }
+                        else if (property.equals("getlastmodified"))
+                        {
+                            if (!exists)
+                            {
+                                propertiesNotFound.add(property);
+                            }
+                            else
+                            {
+                                xml.writeProperty(null, "getlastmodified", getHttpDateFormat(resource.getLastModified()));
+                            }
+                        }
+                        else if (property.equals("resourcetype"))
+                        {
+                            if (resource.isCollection())
+                            {
+                                xml.writeElement(null, "resourcetype", XMLWriter.OPENING);
+                                xml.writeProperty(null, "collection", "1");
+                                xml.writeElement(null, "resourcetype", XMLWriter.CLOSING);
+                            }
+                            else
+                            {
+                                xml.writeElement(null, "resourcetype", XMLWriter.NO_CONTENT);
+                            }
+                        }
+                        else if (property.equals("source"))
+                        {
+                            xml.writeProperty(null, "source", "");
+                        }
+//						  else if (property.equals("supportedlock"))
+//						  {
+//								supportedLocks = "<lockentry>"
+//										  + "<lockscope><exclusive/></lockscope>"
+//										  + "<locktype><write/></locktype>"
+//										  + "</lockentry>" + "<lockentry>"
+//										  + "<lockscope><shared/></lockscope>"
+//										  + "<locktype><write/></locktype>"
+//										  + "</lockentry>";
+//								generatedXML.writeElement(null, "supportedlock", XMLWriter.OPENING);
+//								generatedXML.writeText(supportedLocks);
+//								generatedXML.writeElement(null, "supportedlock", XMLWriter.CLOSING);
+//						  }
+//						  else if (property.equals("lockdiscovery"))
+//						  {
+//								if (!generateLockDiscovery(resource.getPath(), generatedXML))
+//									 propertiesNotFound.add(property);
+//						  }
+                        else if (property.equals("md5sum"))
+                        {
+                            String md5sum = null;
+                            try
+                            {
+                                md5sum = FileUtil.md5sum(resource.getInputStream(getUser()));
+                            }
+                            catch (IOException x)
+                            {
+                                /* */
+                            }
+                            if (null == md5sum)
+                            {
+                                xml.writeElement(null, "md5sum", XMLWriter.NO_CONTENT);
+                            }
+                            else
+                            {
+                                xml.writeElement(null, "md5sum", XMLWriter.OPENING);
+                                xml.writeText(md5sum);
+                                xml.writeElement(null, "md5sum", XMLWriter.CLOSING);
+                            }
+                        }
+//                        else if (property.equals("history"))
+//                        {
+//                            xml.writeElement(null, "history", XMLWriter.OPENING);
+//                            List<WebdavResolver.History> list = resource.getHistory();
+//                            for (WebdavResolver.History history : list)
+//                            {
+//
+//                            }
+//                            xml.writeElement(null, "history", XMLWriter.CLOSING);
+//                        }
+                        else
+                        {
+                            propertiesNotFound.add(property);
+                        }
+                    }
 
-                       if (propertiesNotFound.size() > 0)
-                       {
-                           xml.writeElement(null, "propstat", XMLWriter.OPENING);
-                           xml.writeElement(null, "prop", XMLWriter.OPENING);
-                           for (String property : propertiesNotFound)
-                           {
-                               xml.writeElement(null, property, XMLWriter.NO_CONTENT);
-                           }
-                           xml.writeElement(null, "prop", XMLWriter.CLOSING);
-                           xml.writeElement(null, "status", XMLWriter.OPENING);
-                           xml.writeText("HTTP/1.1 " + WebdavStatus.SC_NOT_FOUND);
-                           xml.writeElement(null, "status", XMLWriter.CLOSING);
-                           xml.writeElement(null, "propstat", XMLWriter.CLOSING);
-                       }
-                       break;
-               }
+                    xml.writeElement(null, "prop", XMLWriter.CLOSING);
+                    xml.writeElement(null, "status", XMLWriter.OPENING);
+                    xml.writeText(status);
+                    xml.writeElement(null, "status", XMLWriter.CLOSING);
+                    xml.writeElement(null, "propstat", XMLWriter.CLOSING);
 
-               xml.writeElement(null, "response", XMLWriter.CLOSING);
-           }
+                    if (propertiesNotFound.size() > 0)
+                    {
+                        xml.writeElement(null, "propstat", XMLWriter.OPENING);
+                        xml.writeElement(null, "prop", XMLWriter.OPENING);
+                        for (String property : propertiesNotFound)
+                        {
+                            xml.writeElement(null, property, XMLWriter.NO_CONTENT);
+                        }
+                        xml.writeElement(null, "prop", XMLWriter.CLOSING);
+                        xml.writeElement(null, "status", XMLWriter.OPENING);
+                        xml.writeText("HTTP/1.1 " + WebdavStatus.SC_NOT_FOUND);
+                        xml.writeElement(null, "status", XMLWriter.CLOSING);
+                        xml.writeElement(null, "propstat", XMLWriter.CLOSING);
+                    }
+                    break;
+            }
+
+            xml.writeElement(null, "response", XMLWriter.CLOSING);
+        }
 
 
-           public void writeLockNullProperties(String path, Find type, List<String> propertiesVector) throws DavException
-           {
-               // Retrieving the lock associated with the lock-null resource
-               LockInfo lock = (LockInfo) resourceLocks.get(path);
-               if (lock == null)
-                   return;
+        public void writeLockNullProperties(String path, Find type, List<String> propertiesVector) throws DavException
+        {
+            // Retrieving the lock associated with the lock-null resource
+            LockInfo lock = (LockInfo) resourceLocks.get(path);
+            if (lock == null)
+                return;
 
-               WebdavResolver.Resource resource = resolvePath(path);
+            WebdavResolver.Resource resource = resolvePath(path);
 
-               xml.writeElement(null, "response", XMLWriter.OPENING);
-               String status = "HTTP/1.1 " + WebdavStatus.SC_OK;
+            xml.writeElement(null, "response", XMLWriter.OPENING);
+            String status = "HTTP/1.1 " + WebdavStatus.SC_OK;
 
-               // Generating href element
-               xml.writeElement(null, "href", XMLWriter.OPENING);
-               xml.writeText(h(resource.getHref(getViewContext())));
-               xml.writeElement(null, "href", XMLWriter.CLOSING);
+            // Generating href element
+            xml.writeElement(null, "href", XMLWriter.OPENING);
+            xml.writeText(h(resource.getHref(getViewContext())));
+            xml.writeElement(null, "href", XMLWriter.CLOSING);
 
-               switch (type)
-               {
-                   case FIND_ALL_PROP:
+            switch (type)
+            {
+                case FIND_ALL_PROP:
 
-                       xml.writeElement(null, "propstat", XMLWriter.OPENING);
-                       xml.writeElement(null, "prop", XMLWriter.OPENING);
+                    xml.writeElement(null, "propstat", XMLWriter.OPENING);
+                    xml.writeElement(null, "prop", XMLWriter.OPENING);
 
-                       xml.writeProperty(null, "creationdate", getISOCreationDate(lock.creationDate.getTime()));
-                       xml.writeElement(null, "displayname", XMLWriter.OPENING);
-                       xml.writeText(h(resource.getName()));
-                       xml.writeElement(null, "displayname", XMLWriter.CLOSING);
-                       xml.writeProperty(null, "getlastmodified", getHttpDateFormat(lock.creationDate.getTime()));
-                       xml.writeProperty(null, "getcontentlength", String.valueOf(0));
-                       xml.writeProperty(null, "getcontenttype", "");
-                       xml.writeProperty(null, "getetag", "");
-                       xml.writeElement(null, "resourcetype", XMLWriter.OPENING);
-                       xml.writeElement(null, "lock-null", XMLWriter.NO_CONTENT);
-                       xml.writeElement(null, "resourcetype", XMLWriter.CLOSING);
+                    xml.writeProperty(null, "creationdate", getISOCreationDate(lock.creationDate.getTime()));
+                    xml.writeElement(null, "displayname", XMLWriter.OPENING);
+                    xml.writeText(h(resource.getName()));
+                    xml.writeElement(null, "displayname", XMLWriter.CLOSING);
+                    xml.writeProperty(null, "getlastmodified", getHttpDateFormat(lock.creationDate.getTime()));
+                    xml.writeProperty(null, "getcontentlength", String.valueOf(0));
+                    xml.writeProperty(null, "getcontenttype", "");
+                    xml.writeProperty(null, "getetag", "");
+                    xml.writeElement(null, "resourcetype", XMLWriter.OPENING);
+                    xml.writeElement(null, "lock-null", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "resourcetype", XMLWriter.CLOSING);
 
-                       xml.writeProperty(null, "source", "");
+                    xml.writeProperty(null, "source", "");
 
 //                String supportedLocks = "<lockentry>"
 //                        + "<lockscope><exclusive/></lockscope>"
@@ -1202,89 +1221,89 @@ public class DavController extends SpringActionController
 
 //                generateLockDiscovery(path, generatedXML);
 
-                       xml.writeElement(null, "prop", XMLWriter.CLOSING);
-                       xml.writeElement(null, "status", XMLWriter.OPENING);
-                       xml.writeText(status);
-                       xml.writeElement(null, "status", XMLWriter.CLOSING);
-                       xml.writeElement(null, "propstat", XMLWriter.CLOSING);
+                    xml.writeElement(null, "prop", XMLWriter.CLOSING);
+                    xml.writeElement(null, "status", XMLWriter.OPENING);
+                    xml.writeText(status);
+                    xml.writeElement(null, "status", XMLWriter.CLOSING);
+                    xml.writeElement(null, "propstat", XMLWriter.CLOSING);
 
-                       break;
+                    break;
 
-                   case FIND_PROPERTY_NAMES:
+                case FIND_PROPERTY_NAMES:
 
-                       xml.writeElement(null, "propstat", XMLWriter.OPENING);
-                       xml.writeElement(null, "prop", XMLWriter.OPENING);
+                    xml.writeElement(null, "propstat", XMLWriter.OPENING);
+                    xml.writeElement(null, "prop", XMLWriter.OPENING);
 
-                       xml.writeElement(null, "creationdate", XMLWriter.NO_CONTENT);
-                       xml.writeElement(null, "displayname", XMLWriter.NO_CONTENT);
-                       xml.writeElement(null, "getcontentlanguage", XMLWriter.NO_CONTENT);
-                       xml.writeElement(null, "getcontentlength", XMLWriter.NO_CONTENT);
-                       xml.writeElement(null, "getcontenttype", XMLWriter.NO_CONTENT);
-                       xml.writeElement(null, "getetag", XMLWriter.NO_CONTENT);
-                       xml.writeElement(null, "getlastmodified", XMLWriter.NO_CONTENT);
-                       xml.writeElement(null, "resourcetype", XMLWriter.NO_CONTENT);
-                       xml.writeElement(null, "source", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "creationdate", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "displayname", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "getcontentlanguage", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "getcontentlength", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "getcontenttype", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "getetag", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "getlastmodified", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "resourcetype", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "source", XMLWriter.NO_CONTENT);
 //                generatedXML.writeElement(null, "lockdiscovery", XMLWriter.NO_CONTENT);
 
-                       xml.writeElement(null, "prop", XMLWriter.CLOSING);
-                       xml.writeElement(null, "status", XMLWriter.OPENING);
-                       xml.writeText(status);
-                       xml.writeElement(null, "status", XMLWriter.CLOSING);
-                       xml.writeElement(null, "propstat", XMLWriter.CLOSING);
+                    xml.writeElement(null, "prop", XMLWriter.CLOSING);
+                    xml.writeElement(null, "status", XMLWriter.OPENING);
+                    xml.writeText(status);
+                    xml.writeElement(null, "status", XMLWriter.CLOSING);
+                    xml.writeElement(null, "propstat", XMLWriter.CLOSING);
 
-                       break;
+                    break;
 
-                   case FIND_BY_PROPERTY:
+                case FIND_BY_PROPERTY:
 
-                       List<String> propertiesNotFound = new Vector<String>();
+                    List<String> propertiesNotFound = new Vector<String>();
 
-                       // Parse the list of properties
+                    // Parse the list of properties
 
-                       xml.writeElement(null, "propstat", XMLWriter.OPENING);
-                       xml.writeElement(null, "prop", XMLWriter.OPENING);
+                    xml.writeElement(null, "propstat", XMLWriter.OPENING);
+                    xml.writeElement(null, "prop", XMLWriter.OPENING);
 
-                       for (String property : propertiesVector)
-                       {
-                           if (property.equals("creationdate"))
-                           {
-                               xml.writeProperty(null, "creationdate", getISOCreationDate(lock.creationDate.getTime()));
-                           }
-                           else if (property.equals("displayname"))
-                           {
-                               xml.writeElement(null, "displayname", XMLWriter.OPENING);
-                               xml.writeText(h(resource.getName()));
-                               xml.writeElement(null, "displayname", XMLWriter.CLOSING);
-                           }
-                           else if (property.equals("getcontentlanguage"))
-                           {
-                               xml.writeElement(null, "getcontentlanguage", XMLWriter.NO_CONTENT);
-                           }
-                           else if (property.equals("getcontentlength"))
-                           {
-                               xml.writeProperty(null, "getcontentlength", (String.valueOf(0)));
-                           }
-                           else if (property.equals("getcontenttype"))
-                           {
-                               xml.writeProperty(null, "getcontenttype", "");
-                           }
-                           else if (property.equals("getetag"))
-                           {
-                               xml.writeProperty(null, "getetag", "");
-                           }
-                           else if (property.equals("getlastmodified"))
-                           {
-                               xml.writeProperty(null, "getlastmodified", getHttpDateFormat(lock.creationDate.getTime()));
-                           }
-                           else if (property.equals("resourcetype"))
-                           {
-                               xml.writeElement(null, "resourcetype", XMLWriter.OPENING);
-                               xml.writeElement(null, "lock-null", XMLWriter.NO_CONTENT);
-                               xml.writeElement(null, "resourcetype", XMLWriter.CLOSING);
-                           }
-                           else if (property.equals("source"))
-                           {
-                               xml.writeProperty(null, "source", "");
-                           }
+                    for (String property : propertiesVector)
+                    {
+                        if (property.equals("creationdate"))
+                        {
+                            xml.writeProperty(null, "creationdate", getISOCreationDate(lock.creationDate.getTime()));
+                        }
+                        else if (property.equals("displayname"))
+                        {
+                            xml.writeElement(null, "displayname", XMLWriter.OPENING);
+                            xml.writeText(h(resource.getName()));
+                            xml.writeElement(null, "displayname", XMLWriter.CLOSING);
+                        }
+                        else if (property.equals("getcontentlanguage"))
+                        {
+                            xml.writeElement(null, "getcontentlanguage", XMLWriter.NO_CONTENT);
+                        }
+                        else if (property.equals("getcontentlength"))
+                        {
+                            xml.writeProperty(null, "getcontentlength", (String.valueOf(0)));
+                        }
+                        else if (property.equals("getcontenttype"))
+                        {
+                            xml.writeProperty(null, "getcontenttype", "");
+                        }
+                        else if (property.equals("getetag"))
+                        {
+                            xml.writeProperty(null, "getetag", "");
+                        }
+                        else if (property.equals("getlastmodified"))
+                        {
+                            xml.writeProperty(null, "getlastmodified", getHttpDateFormat(lock.creationDate.getTime()));
+                        }
+                        else if (property.equals("resourcetype"))
+                        {
+                            xml.writeElement(null, "resourcetype", XMLWriter.OPENING);
+                            xml.writeElement(null, "lock-null", XMLWriter.NO_CONTENT);
+                            xml.writeElement(null, "resourcetype", XMLWriter.CLOSING);
+                        }
+                        else if (property.equals("source"))
+                        {
+                            xml.writeProperty(null, "source", "");
+                        }
 //                    else if (property.equals("supportedlock"))
 //                    {
 //                        supportedLocks = "<lockentry>"
@@ -1303,45 +1322,45 @@ public class DavController extends SpringActionController
 //                        if (!generateLockDiscovery(path, generatedXML))
 //                            propertiesNotFound.add(property);
 //                    }
-                           else
-                           {
-                               propertiesNotFound.add(property);
-                           }
+                        else
+                        {
+                            propertiesNotFound.add(property);
+                        }
 
-                       }
+                    }
 
-                       xml.writeElement(null, "prop", XMLWriter.CLOSING);
-                       xml.writeElement(null, "status", XMLWriter.OPENING);
-                       xml.writeText(status);
-                       xml.writeElement(null, "status", XMLWriter.CLOSING);
-                       xml.writeElement(null, "propstat", XMLWriter.CLOSING);
+                    xml.writeElement(null, "prop", XMLWriter.CLOSING);
+                    xml.writeElement(null, "status", XMLWriter.OPENING);
+                    xml.writeText(status);
+                    xml.writeElement(null, "status", XMLWriter.CLOSING);
+                    xml.writeElement(null, "propstat", XMLWriter.CLOSING);
 
-                       if (propertiesNotFound.size() > 0)
-                       {
-                           status = "HTTP/1.1 " + WebdavStatus.SC_NOT_FOUND;
-                           xml.writeElement(null, "propstat", XMLWriter.OPENING);
-                           xml.writeElement(null, "prop", XMLWriter.OPENING);
+                    if (propertiesNotFound.size() > 0)
+                    {
+                        status = "HTTP/1.1 " + WebdavStatus.SC_NOT_FOUND;
+                        xml.writeElement(null, "propstat", XMLWriter.OPENING);
+                        xml.writeElement(null, "prop", XMLWriter.OPENING);
 
-                           for (String aPropertiesNotFound : propertiesNotFound)
-                               xml.writeElement(null, aPropertiesNotFound, XMLWriter.NO_CONTENT);
+                        for (String aPropertiesNotFound : propertiesNotFound)
+                            xml.writeElement(null, aPropertiesNotFound, XMLWriter.NO_CONTENT);
 
-                           xml.writeElement(null, "prop", XMLWriter.CLOSING);
-                           xml.writeElement(null, "status", XMLWriter.OPENING);
-                           xml.writeText(status);
-                           xml.writeElement(null, "status", XMLWriter.CLOSING);
-                           xml.writeElement(null, "propstat", XMLWriter.CLOSING);
-                       }
-                       break;
-               }
+                        xml.writeElement(null, "prop", XMLWriter.CLOSING);
+                        xml.writeElement(null, "status", XMLWriter.OPENING);
+                        xml.writeText(status);
+                        xml.writeElement(null, "status", XMLWriter.CLOSING);
+                        xml.writeElement(null, "propstat", XMLWriter.CLOSING);
+                    }
+                    break;
+            }
 
-               xml.writeElement(null, "response", XMLWriter.CLOSING);
-           }
+            xml.writeElement(null, "response", XMLWriter.CLOSING);
+        }
 
-           public void sendData() throws IOException
-           {
-               xml.sendData();
-           }
-       }
+        public void sendData() throws IOException
+        {
+            xml.sendData();
+        }
+    }
 
 
     class JSONResourceWriter implements ResourceWriter
@@ -2857,10 +2876,22 @@ public class DavController extends SpringActionController
             ListPage page = new ListPage();
             page.resource = resource;
             page.loginURL = getLoginURL();
-            
-            JspView<ListPage> v = new JspView<ListPage>(DavController.class,  "list.jsp", page);
-            v.setFrame(WebPartView.FrameType.NONE);
-            v.render(getViewContext().getRequest(), getViewContext().getResponse());
+
+            if (1==1)
+            {
+                JspView<ListPage> v = new JspView<ListPage>(DavController.class,  "list.jsp", page);
+                v.setFrame(WebPartView.FrameType.NONE);
+                v.render(getViewContext().getRequest(), getViewContext().getResponse());
+            }
+            else
+            {
+                JspView<ListPage> v = new JspView<ListPage>(DavController.class,  "files.jsp", page);
+                v.setFrame(WebPartView.FrameType.NONE);
+                PageConfig config = new PageConfig();
+                config.setTitle(resource.getPath() + "-- webdav");
+                PrintTemplate print = new PrintTemplate(v, config);
+                print.render(getViewContext().getRequest(), getViewContext().getResponse());
+            }            
             return WebdavStatus.SC_OK;
         }
         catch (Exception x)

@@ -42,7 +42,7 @@ public class FtpPage implements HasViewContext
 
     public FtpPage()
     {
-        useFTP = null != StringUtils.trimToNull(AppProps.getInstance().getPipelineFTPHost());
+//        useFTP = null != StringUtils.trimToNull(AppProps.getInstance().getPipelineFTPHost());
     }
 
     public void setFileSetName(String fileSetName)

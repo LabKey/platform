@@ -50,7 +50,7 @@ LABKEY.ext.WebDavTreeLoader = function (config)
 
     var loader = this;
     var PropfindResponse = Ext.data.Record.create([
-        {name: 'id', mapping: 'href',
+        {name: 'id', mapping: 'path',
             convert : function (v, rec) {
                 return v.replace(loader.url, ""); // remove contextPath/webdav
             }
@@ -81,11 +81,12 @@ Ext.extend(LABKEY.ext.WebDavTreeLoader, Ext.tree.TreeLoader, {
      * @cfg {Regex} fileFilter (optional) Only files matching the pattern are shown.
      */
     fileFilter : null,
+    displayFiles: true,
 
     requestData : function(node, callback) {
         if (this.fireEvent("beforeload", this, node, callback) !== false) {
             this.transId = Ext.Ajax.request({
-                method: "POST",
+                method: "GET",
                 headers: {"Method" : "PROPFIND", "Depth" : "1,noroot"},
                 url : _concatPaths(this.url,node.id),
                 success: this.handleResponse,
@@ -103,9 +104,12 @@ Ext.extend(LABKEY.ext.WebDavTreeLoader, Ext.tree.TreeLoader, {
     },
 
     createNode : function (data) {
-        if (data.leaf && this.fileFilter)
+        if (data.leaf)
         {
-            data.disabled = !this.fileFilter.test(data.text);
+            if (!this.displayFiles)
+                return null;
+            if (this.fileFilter)
+                data.disabled = !this.fileFilter.test(data.text);
         }
         return LABKEY.ext.WebDavTreeLoader.superclass.createNode.call(this, data);
     },

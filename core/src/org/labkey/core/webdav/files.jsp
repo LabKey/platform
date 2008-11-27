@@ -42,101 +42,202 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
     boolean supportsDavScheme = false;
     boolean supportsWebdavScheme = userAgent.contains("Konqueror");
 %>
-<html>
-<head>
-<title><%=h(path)%> -- WebDAV: <%=h(app.getServerName())%></title>
-</head>
-<script type="text/javascript" src="<%=context.getContextPath()%>/labkey.js?<%=AppProps.getInstance().getServerSessionGUID()%>"></script>
 <script type="text/javascript" language="javascript">
     LABKEY.init(<%=PageFlowUtil.jsInitObject()%>);
-</script>
-<script type="text/javascript">
     LABKEY.requiresExtJs(true);
     LABKEY.requiresScript("FileTree.js", true);
 </script>
-<style type="text/css">
-    A {text-decoration:none; behavior: url(#default#AnchorClick);}
-    TR {margin-right:3px; margin-left:3px;}
-    BODY, TD, TH { font-family: arial sans-serif; color: black; }
-	html, body {
-        font:normal 12px verdana;
-        margin:0;
-        padding:0;
-        border:0 none;
-        overflow:hidden;
-        height:100%;
-    }
-	p {
-	    margin:5px;
-	}
-    /*.settings {*/
-        /*background-image:url(../shared/icons/fam/folder_wrench.png);*/
-    /*}*/
-    /*.nav {*/
-        /*background-image:url(../shared/icons/fam/folder_go.png);*/
-    /*}*/
-</style> 
-<body class="extContainer">
-
 <script type="text/javascript">
+var h = Ext.util.Format.htmlEncode;
+
 function renderName(value, metadata, record, rowIndex, colIndex, store)
 {
     var icon = record.get('iconHref');
     if (!icon)
-        return "<img src='" + LABKEY.contextPath + "/_.gif' width=16 height=16>&nbsp;" + value;
-    return "<img src='" + icon + "'>&nbsp;" + value;
+        return "<img src='" + LABKEY.contextPath + "/_.gif' width=16 height=16>&nbsp;" + h(value);
+    return "<img src='" + icon + "'>&nbsp;" + h(value);
 }
-Ext.onReady(function(){
 
-    var base = "/labkey/_webdav/";
-    var i = window.location.href.indexOf(base);
-    var path = window.location.href.substr(i+base.length);
+function renderDate(value, metadata, record, rowIndex, colIndex, store)
+{
+    return value;
+    alert(value);
+    var d = Date.parseDate(value, "Y-m-d\\TH:i:s");
+    alert(d);
+    var r =  Ext.util.Format.date(d, 'Y-m-d H:i:s');
+    alert(r);
+    return r;
+}
 
-    // create the Data Store
-    var store = new Ext.data.Store({
+function treePathFromId(id)
+{
+    // assumes id ends with "/"
+    var parts = id.substring(0,id.length-1).split("/");
+    var folder = "";;
+    var treePath = "";
+    for (var i=0 ; i<parts.length ; i++)
+    {
+        folder += parts[i] + "/";
+        treePath += ";" + folder;
+    }
+    return treePath;
+}
 
+var EVENTS = {selectionchange:"selectionchange", directorychange:"directorychange"};
+
+var fileBrowser =
+{
+    _debugName : 'fileBrowser',
+    
+    // instance variables
+    grid: null,
+    store: null,
+
+    currentDirectory: "/",
+    selectedPath: "/",
+    
+    //
+    // actions
+    //
+    
+    action : new Ext.Action({
+        text: 'Alert',
+        handler: function() {window.alert('Click','You clicked on "Action 1".');},
+        iconCls: 'blist'
+    }),
+
+    changeDirectory : function(path)
+    {
+        if (fileBrowser.currentDirectory != path)
+        {
+            fileBrowser.currentDirectory = path;
+            fileBrowser.events.fireEvent(EVENTS.directorychange, path);
+        }   
+    },
+
+    selectPath : function(path)
+    {
+        if (fileBrowser.selectedPath != path)
+        {
+            fileBrowser.selectedPath = path;
+            fileBrowser.events.fireEvent(EVENTS.selectionchange, path);
+        }
+    },
+    
+    //
+    // event handlers
+    //
+    Grid_onRowselect : function(sm, rowIdx, r)
+    {
+        if (fileBrowser.tree)
+            fileBrowser.tree.getSelectionModel().clearSelections();
+        if (r)
+        {
+            var path = r.get("path");
+            var collection = r.get("collection");
+            if (collection && path.charAt(path.length-1) != '/')
+                path = path + "/";
+            fileBrowser.selectPath(path);
+        }
+    },
+
+    Grid_onCelldblclick : function(grid, rowIndex, columnIndex, e)
+    {
+        var p = fileBrowser.selectedPath;
+        if (p.charAt(p.length-1) == '/')
+        {
+            fileBrowser.changeDirectory(p);
+            if (fileBrowser.tree)
+            {
+                var treePath = treePathFromId(p);
+                fileBrowser.tree.expandPath(treePath);
+                var node = fileBrowser.tree.getNodeById(p);
+                if (node)
+                {
+                    node.ensureVisible();
+                    node.select();
+                }
+            }
+        }
+    },
+    
+    Tree_onSelectionchange : function(sm, node)
+    {
+        if (fileBrowser.grid)
+            fileBrowser.grid.getSelectionModel().clearSelections();
+        if (node)
+        {
+            var folder = node.id;
+            fileBrowser.selectPath(folder);
+            fileBrowser.changeDirectory(folder);
+        }
+    },
+
+    events : new Ext.util.Observable()
+};
+fileBrowser.events.addEvents(
+{
+    "selectionchange":true,
+    "directorychange":true
+});
+
+
+fileBrowser.init = function(config)
+{
+    // 
+    // GRID
+    //
+    this.store = new Ext.data.Store(
+    {
         proxy: new Ext.data.HttpProxy({
             method: "GET",
             headers: {"Method" : "PROPFIND", "Depth" : "1,noroot"},
-            url: window.location.href}),
-
-        // the return will be XML, so lets set up a reader
+            url: config.url}),
         reader: new Ext.data.XmlReader(
-            {record: 'response', id: 'href'}, 
-            ['creationdate', 'displayname', 'getcontentlength', 'getlastmodified', 'collection', 'iconHref']
+            {record: 'response', id: 'path'},
+            ['path', 'creationdate', 'displayname', 'getcontentlength', 'getlastmodified', 'collection', 'iconHref']
         )
     });
-
-    // create the grid
-    var grid = new Ext.grid.GridPanel({
-        store: store,
+    this.store.load();
+    this.grid = new Ext.grid.GridPanel(
+    {
+        store: this.store,
         border:false,
         columns: [
             {header: "Name", width: 180, dataIndex: 'displayname', sortable: true, hidden:false, renderer:renderName},
-            {header: "Created", width: 120, dataIndex: 'creationdate', sortable: true, hidden:false},
+            {header: "Created", width: 120, dataIndex: 'creationdate', sortable: true, hidden:false, renderer:renderDate},
             {header: "Size", width: 115, dataIndex: 'getcontentlength', sortable: true, hidden:false}
         ]
     });
+    this.grid.getSelectionModel().on('rowselect', fileBrowser.Grid_onRowselect);
+    this.grid.on("celldblclick", fileBrowser.Grid_onCelldblclick);
 
-    var treeloader = new LABKEY.ext.WebDavTreeLoader({url:base});
-    var root = new Ext.tree.AsyncTreeNode({
-            id: "/",
-            text:'<root>',
-            listeners: {
-                'load': function (node) {
-                    if (!node.hasChildNodes())
-                    {
-                        node.appendChild({
-                            text: "&lt;no files found in root>",
-                            size: 0,
-                            disabled: true,
-                            leaf: true,
-                            iconCls: 'labkey-tree-error-icon'
-                        });
-                    }
+    //
+    // TREE
+    //
+    
+    var treeloader = new LABKEY.ext.WebDavTreeLoader({url: config.url, displayFiles:false});
+    var root = new Ext.tree.AsyncTreeNode(
+    {
+        id: "/",
+        text:'<root>',
+        listeners: {
+            'load': function (node) {
+                if (!node.hasChildNodes())
+                {
+                    node.appendChild({
+                        text: "&lt;no files found in root>",
+                        size: 0,
+                        disabled: true,
+                        leaf: true,
+                        iconCls: 'labkey-tree-error-icon'
+                    });
                 }
-            }});
-    var tree = new Ext.tree.TreePanel({
+            }
+        }
+    });
+    this.tree = new Ext.tree.TreePanel(
+    {
         loader:treeloader,
         root:root,
         rootVisible:false,
@@ -146,24 +247,36 @@ Ext.onReady(function(){
         animate:true,
         enableDD:false,
         containerScroll:true,
-        border:false
+        border:false,
+        pathSeparator:';'
     });
+    this.tree.getSelectionModel().on("selectionchange", this.Tree_onSelectionchange);
 
-    var border = new Ext.Viewport({
-        title: 'Border Layout',
-        layout:'border',
-        items: [{
+
+    //
+    // LAYOUT
+    //
+    var tbarConfig =
+        [
+            this.action, {                   // <-- Add the action directly to a toolbar
+                text: 'Action Menu',
+                menu: [this.action]          // <-- Add the action directly to a menu
+            }
+        ];
+    var layoutItems = [
+        {
             title: 'South Panel',
             region: 'south',
             height: 100,
             minSize: 75,
             maxSize: 250,
             margins: '0 5 5 5',
-            html:'south'
-        },{
+            layout: 'fit',
+            items: [{html:'south', id:'file-details'}]
+        },
+        {
             region:'west',
             id:'west-panel',
-            title:'West',
             split:true,
             width: 200,
             minSize: 100,
@@ -174,20 +287,22 @@ Ext.onReady(function(){
                 animate:true
             },
             items: [
-                tree,
+                this.tree,
                 {
                     title:'Settings',
                     html:'<p>Some settings in here.</p>',
                     border:false,
                     iconCls:'settings'
                 }]
-        },{
-            title: 'Main Content',
+        },
+        {
             region:'center',
             margins:'5 0 5 0',
             minSize: 200,
-            items: [grid]
-        },{
+            layout:'fit',
+            items: [this.grid]
+        },
+        {
             title: 'Properties',
             region:'east',
             split:true,
@@ -195,20 +310,68 @@ Ext.onReady(function(){
             width: 200,
             minSize: 100,
             html: 'east'
-        }]
+        }];
+
+    var border = new Ext.Panel(
+    {
+        id:'borderLayout',
+        height:600, width:800,
+        layout:'border',
+        tbar: tbarConfig,
+        items: layoutItems
     });
 
-    border.render("files");
-    store.load();
-});
+    border.render(config.renderTo);
 
+    var resizer = new Ext.Resizable('borderLayout', {
+        width:800, height:600,
+        minWidth:640,
+        minHeight:400});
+    resizer.on("resize", function(o,width,height){
+        border.setWidth(width);
+        border.setHeight(height);
+        resizer.setWidth(border.getWidth());
+        resizer.setHeight(border.getHeight());
+    });
+
+    //
+    // EVENTS (tie together components)
+    //
+
+    this.events.on(EVENTS.selectionchange, function(path)
+    {
+        var el = Ext.get('file-details');
+        if (el) el.update(path + "<br>" + treePathFromId(path));
+    });
+
+    this.events.on(EVENTS.directorychange, function(path)
+    {
+        //fileBrowser.store.proxy.url = config.url + path;
+        fileBrowser.store.proxy = new Ext.data.HttpProxy({
+            method: "GET",
+            headers: {"Method" : "PROPFIND", "Depth" : "1,noroot"},
+            url: config.url + path});
+        fileBrowser.store.reload();
+    });
+};
+
+
+
+Ext.onReady(function()
+{
+    Ext.QuickTips.init();
+    fileBrowser.init({url:window.location.pathname, renderTo:'files'});
+
+});
 </script>
 
 
+<div id="files" class="extContainer" style="margin:20px;"></div>
 
-<div id="files" class="ext-container"></div>
-
-
-
-</body>
-</html>
+<hr>
+<ul>
+    <li>should be able to root anywhere in the tree</li>
+    <li>pipeline actions</li>
+    <li>pipeline actions filtered by provider</li>
+    <li>history, audit</li>
+</ul>

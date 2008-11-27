@@ -27,21 +27,21 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.webdav.*;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ActionURL;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 
 import javax.naming.OperationNotSupportedException;
 import java.io.*;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -140,6 +140,11 @@ class WikiWebdavProvider implements WebdavService.Provider
         {
             return 0;
         }
+
+        public String getExecuteHref(ViewContext context)
+        {
+            return null;
+        }
     }
     
 
@@ -197,6 +202,11 @@ class WikiWebdavProvider implements WebdavService.Provider
         public long getLastModified()
         {
             return 0;
+        }
+
+        public String getExecuteHref(ViewContext context)
+        {
+            return new ActionURL(WikiController.PageAction.class, _c).addParameter("name",_wiki.getName()).toString();
         }
     }
 
@@ -287,6 +297,41 @@ class WikiWebdavProvider implements WebdavService.Provider
         }
 
 
+        @NotNull
+        public List<WebdavResolver.History> getHistory()
+        {
+            WikiVersion[] versions = WikiManager.getAllVersions(_wiki);
+            List<WebdavResolver.History> list = new ArrayList<WebdavResolver.History>();
+            for (WikiVersion v : versions)
+                list.add(new WikiHistory(v));
+            return list;
+        }
+
+
+        public static class WikiHistory implements WebdavResolver.History
+        {
+            WikiVersion v;
+            WikiHistory(WikiVersion v)
+            {
+                this.v = v;    
+            }
+
+            public User getUser()
+            {
+                return UserManager.getUser(v.getCreatedBy());
+            }
+
+            public Date getDate()
+            {
+                return v.getCreated();
+            }
+
+            public String getMessage()
+            {
+                return "version " + v.getVersion();
+            }
+        }
+
         // You can't actually delete this file, however, some clients do delete instead of overwrite,
         // so pretend we deleted it.
         public boolean delete(User user) throws IOException
@@ -337,6 +382,11 @@ class WikiWebdavProvider implements WebdavService.Provider
         public WebdavResolver.Resource find(String name)
         {
             return null;
+        }
+
+        public String getExecuteHref(ViewContext context)
+        {
+            return new ActionURL(WikiController.PageAction.class, _folder._c).addParameter("name",_wiki.getName()).toString();
         }
     }
 
@@ -452,6 +502,13 @@ class WikiWebdavProvider implements WebdavService.Provider
         {
             assert false;
             return null;
+        }
+
+        @NotNull
+        public List<WebdavResolver.History> getHistory()
+        {
+            //noinspection unchecked
+            return Collections.EMPTY_LIST;
         }
     }
 }
