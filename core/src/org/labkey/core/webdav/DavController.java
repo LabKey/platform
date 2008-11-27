@@ -2048,6 +2048,10 @@ public class DavController extends SpringActionController
         if (!checkIfHeaders(resource))
             return null;
 
+        String contentDisposition = getRequest().getParameter("contentDisposition");
+        if ("attachment".equals(contentDisposition) || "inline".equals(contentDisposition))
+            getResponse().setContentDisposition(contentDisposition);
+
         // Find content type
         String contentType = resource.getContentType();
 

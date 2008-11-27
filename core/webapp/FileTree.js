@@ -50,7 +50,7 @@ LABKEY.ext.WebDavTreeLoader = function (config)
 
     var loader = this;
     var PropfindResponse = Ext.data.Record.create([
-        {name: 'id', mapping: 'path',
+        {name: 'id', mapping: 'href',
             convert : function (v, rec) {
                 return v.replace(loader.url, ""); // remove contextPath/webdav
             }
