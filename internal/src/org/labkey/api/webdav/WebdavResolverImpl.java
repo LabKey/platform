@@ -340,17 +340,27 @@ public class WebdavResolverImpl implements WebdavResolver
 
         public Resource find(String child)
         {
-            for (String name : getWebFoldersNames(null))
+            String name = null;
+            for (String folder : getWebFoldersNames(null))
             {
-                if (!name.equalsIgnoreCase(child))
-                    continue;
+                if (folder.equalsIgnoreCase(child))
+                {
+                    name = folder;
+                    break;
+                }
+            }
+            Container c = getContainer().getChild(child);
+            if (name == null && c != null)
+                name = c.getName();
+
+            if (name != null)
+            {
                 String path = c(getPath(), name);
                 // check in webfolder cache
                 Resource resource = _folderCache.get(path);
                 if (null != resource)
                     return resource;
 
-                Container c = getContainer().getChild(name);
                 if (c != null)
                 {
                     AttachmentDirectory dir = null;
