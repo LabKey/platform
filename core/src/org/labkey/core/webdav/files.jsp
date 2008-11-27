@@ -58,26 +58,21 @@ function renderName(value, metadata, record, rowIndex, colIndex, store)
     return "<img src='" + icon + "'>&nbsp;" + h(value);
 }
 
-function renderDate(value, metadata, record, rowIndex, colIndex, store)
+function renderFileSize(value, metadata, record, rowIndex, colIndex, store)
 {
-    return value;
-    alert(value);
-    var d = Date.parseDate(value, "Y-m-d\\TH:i:s");
-    alert(d);
-    var r =  Ext.util.Format.date(d, 'Y-m-d H:i:s');
-    alert(r);
-    return r;
+    return value ? Ext.util.Format.fileSize(value) : "";
 }
 
 function treePathFromId(id)
 {
-    // assumes id ends with "/"
-    var parts = id.substring(0,id.length-1).split("/");
+    var dir = id.charAt(id.length-1) == '/';
+    if (dir) id = id.substring(0,id.length-1);
+    var parts = id.split("/");
     var folder = "";;
     var treePath = "";
     for (var i=0 ; i<parts.length ; i++)
     {
-        folder += parts[i] + "/";
+        folder += parts[i] + ((i<parts.length-1 || dir) ? "/" : "");
         treePath += ";" + folder;
     }
     return treePath;
@@ -88,23 +83,31 @@ var EVENTS = {selectionchange:"selectionchange", directorychange:"directorychang
 var fileBrowser =
 {
     _debugName : 'fileBrowser',
-    
+
     // instance variables
+    url: "/labkey/_webdav",
     grid: null,
     store: null,
 
-    currentDirectory: "/",
-    selectedPath: "/",
+    currentDirectory: null,
+    selectedPath: null,
     
     //
     // actions
     //
     
-    action : new Ext.Action({
-        text: 'Alert',
-        handler: function() {window.alert('Click','You clicked on "Action 1".');},
-        iconCls: 'blist'
-    }),
+    action : new Ext.Action({text: 'Alert', iconCls: 'blist', handler: function()
+    {
+        window.alert('Click','You clicked on "Action 1".');
+    }}),
+
+    downloadAction: new Ext.Action({text: 'Download',handler: function()
+    {
+        // CONSIDER: PROPFIND to ensure this link is still good?
+        var p = fileBrowser.selectedPath;
+        if (p && p.charAt(p.length-1) != '/')
+            window.location = fileBrowser.url + p + "?contentDisposition=attachment";
+    }}),
 
     changeDirectory : function(path)
     {
@@ -184,6 +187,8 @@ fileBrowser.events.addEvents(
 
 fileBrowser.init = function(config)
 {
+    this.url = config.url;
+    
     // 
     // GRID
     //
@@ -195,7 +200,7 @@ fileBrowser.init = function(config)
             url: config.url}),
         reader: new Ext.data.XmlReader(
             {record: 'response', id: 'path'},
-            ['path', 'creationdate', 'displayname', 'getcontentlength', 'getlastmodified', 'collection', 'iconHref']
+            ['path', {name: 'creationdate', mapping: 'propstat/prop/creationdate', type: 'date', dateFormat : "c"}, 'displayname', 'getcontentlength', 'getlastmodified', 'collection', 'iconHref']
         )
     });
     this.store.load();
@@ -205,8 +210,8 @@ fileBrowser.init = function(config)
         border:false,
         columns: [
             {header: "Name", width: 180, dataIndex: 'displayname', sortable: true, hidden:false, renderer:renderName},
-            {header: "Created", width: 120, dataIndex: 'creationdate', sortable: true, hidden:false, renderer:renderDate},
-            {header: "Size", width: 115, dataIndex: 'getcontentlength', sortable: true, hidden:false}
+            {header: "Created", width: 120, dataIndex: 'creationdate', sortable: true, hidden:false, renderer:Ext.util.Format.dateRenderer("Y-m-d H:i:s")},
+            {header: "Size", width: 115, dataIndex: 'getcontentlength', sortable: true, hidden:false, align:'right', renderer:renderFileSize}
         ]
     });
     this.grid.getSelectionModel().on('rowselect', fileBrowser.Grid_onRowselect);
@@ -258,10 +263,12 @@ fileBrowser.init = function(config)
     //
     var tbarConfig =
         [
-            this.action, {                   // <-- Add the action directly to a toolbar
+            this.action,
+            {
                 text: 'Action Menu',
-                menu: [this.action]          // <-- Add the action directly to a menu
-            }
+                menu: [this.action]
+            },
+            this.downloadAction
         ];
     var layoutItems = [
         {
@@ -309,7 +316,8 @@ fileBrowser.init = function(config)
             margins:'5 5 5 0',
             width: 200,
             minSize: 100,
-            html: 'east'
+            layout:'fit',
+            items: [{html:'<iframe id=auditFrame height=100% width=100% border=0 style="border:0px;" src="about:blank"></iframe>'}]
         }];
 
     var border = new Ext.Panel(
@@ -322,7 +330,7 @@ fileBrowser.init = function(config)
     });
 
     border.render(config.renderTo);
-
+                                                                 
     var resizer = new Ext.Resizable('borderLayout', {
         width:800, height:600,
         minWidth:640,
@@ -342,6 +350,10 @@ fileBrowser.init = function(config)
     {
         var el = Ext.get('file-details');
         if (el) el.update(path + "<br>" + treePathFromId(path));
+        if (path.charAt(path.length-1) == '/')
+            fileBrowser.downloadAction.disable();
+        else
+            fileBrowser.downloadAction.enable();
     });
 
     this.events.on(EVENTS.directorychange, function(path)
@@ -352,19 +364,20 @@ fileBrowser.init = function(config)
             headers: {"Method" : "PROPFIND", "Depth" : "1,noroot"},
             url: config.url + path});
         fileBrowser.store.reload();
+        var el = Ext.get('auditFrame');
+        if (el)
+            el.dom.src = LABKEY.contextPath + "/audit/showAuditLog.view?_print=1&view=FileSystem&audit.Key1~eq=" + path;
     });
 };
-
-
 
 Ext.onReady(function()
 {
     Ext.QuickTips.init();
     fileBrowser.init({url:window.location.pathname, renderTo:'files'});
-
+    fileBrowser.selectPath("/");
+    fileBrowser.changeDirectory("/");
 });
 </script>
-
 
 <div id="files" class="extContainer" style="margin:20px;"></div>
 
