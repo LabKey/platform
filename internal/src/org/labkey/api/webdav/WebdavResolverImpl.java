@@ -413,6 +413,12 @@ public class WebdavResolverImpl implements WebdavResolver
                 Category.getInstance(WebdavResolverImpl.class).error("unexpected exception", ex);
             }
         }
+
+        @NotNull
+        public List<History> getHistory()
+        {
+            return Collections.EMPTY_LIST;
+        }
     }
 
 
@@ -482,6 +488,12 @@ public class WebdavResolverImpl implements WebdavResolver
         public long getContentLength()
         {
             return 0;
+        }
+
+        @NotNull
+        public List<History> getHistory()
+        {
+            return Collections.EMPTY_LIST;
         }
     }
 

@@ -20,6 +20,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.settings.AppProps;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
@@ -107,6 +110,13 @@ public class FileSystemResource extends AbstractResource
         return _file;
     }
 
+    @Override
+    public String getIconHref()
+    {
+        if (isCollection())
+            return AppProps.getInstance().getContextPath() + "/" + PageFlowUtil.extJsRoot() + "/resources/images/default/tree/folder.gif";
+        return AppProps.getInstance().getContextPath() + Attachment.getFileIcon(getName());
+    }
 
     public InputStream getInputStream(User user) throws IOException
     {
@@ -252,9 +262,15 @@ public class FileSystemResource extends AbstractResource
         return _file.delete();
     }
 
+    @NotNull
+    public List<WebdavResolver.History> getHistory()
+    {
+        return Collections.EMPTY_LIST;
+    }
+
     /*
-     * not part of Resource interface, but used by FtpConnector
-     */
+    * not part of Resource interface, but used by FtpConnector
+    */
 
     public Container getContainer()
     {

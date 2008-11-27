@@ -16,11 +16,13 @@
 package org.labkey.api.webdav;
 
 import org.labkey.api.security.User;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collections;
 
 /**
  * Created by IntelliJ IDEA.
@@ -76,5 +78,12 @@ public abstract class AbstractCollectionResource extends AbstractResource
                 list.add(r);
         }
         return list;
+    }
+
+    @NotNull
+    public List<WebdavResolver.History> getHistory()
+    {
+        //noinspection unchecked
+        return Collections.EMPTY_LIST;
     }
 }

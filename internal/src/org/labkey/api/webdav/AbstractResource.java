@@ -20,6 +20,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -97,6 +98,7 @@ public abstract class AbstractResource implements WebdavResolver.Resource
     }
 
 
+    @NotNull
     public String getHref(ViewContext context)
     {
         ActionURL url = context.getActionURL();
@@ -110,6 +112,7 @@ public abstract class AbstractResource implements WebdavResolver.Resource
     }
 
 
+    @NotNull
     public String getLocalHref(ViewContext context)
     {
         String href = context.getContextPath() + context.getRequest().getServletPath() + PageFlowUtil.encodePath(_path);
@@ -119,11 +122,16 @@ public abstract class AbstractResource implements WebdavResolver.Resource
     }
 
 
-    public String getHrefAlternate(ViewContext context)
+    public String getExecuteHref(ViewContext context)
     {
         return null;
     }
 
+
+    public String getIconHref()
+    {
+        return null;
+    }
 
     public String getETag()
     {

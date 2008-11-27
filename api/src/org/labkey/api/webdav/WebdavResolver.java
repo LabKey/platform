@@ -18,11 +18,14 @@ package org.labkey.api.webdav;
 
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Date;
 
 /**
  * Created by IntelliJ IDEA.
@@ -81,11 +84,22 @@ public interface WebdavResolver
 
         long getContentLength();
 
+        @NotNull
         String getHref(ViewContext context);
 
+        @NotNull
         String getLocalHref(ViewContext context);
 
+        @Nullable
+        String getExecuteHref(ViewContext context);
+
+        @Nullable
+        String getIconHref();
+
         String getETag();
+
+        @NotNull
+        List<History> getHistory();
 
         /** user may read properties of this resource */
         boolean canList(User user);
@@ -102,6 +116,13 @@ public interface WebdavResolver
         boolean delete(User user) throws IOException;
     }
 
+    public static interface History
+    {
+        User getUser();
+        Date getDate();
+        String getMessage();
+    }
+    
     // marker interfaces for web folder, see FtpConnectorImpl
     public static interface WebFolder
     {
