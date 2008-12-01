@@ -29,6 +29,9 @@ CREATE INDEX IX_SampleRequest_EntityId ON study.SampleRequest(EntityId);
 CREATE INDEX IX_SampleRequestRequirement_OwnerEntityId ON study.SampleRequestRequirement(OwnerEntityId);
 GO
 
+EXEC core.executeJavaUpgradeCode 'upgradeRequirementsTables'
+GO
+
 DROP TABLE study.AssayRun
 GO
 

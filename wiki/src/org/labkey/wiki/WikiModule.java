@@ -88,32 +88,37 @@ public class WikiModule extends DefaultModule
         ModuleLoader.getInstance().registerFolderType(new CollaborationFolderType(this));
         WebdavService.addProvider(new WikiWebdavProvider());
 
+        // Ideally, this would be in afterUpdate(), but announcements runs the wiki sql scripts and is dependent on
+        // wiki module, so no dice.
         if (moduleContext.isNewInstall())
+            bootstrap(moduleContext);
+    }
+
+    private void bootstrap(ModuleContext moduleContext)
+    {
+        Container supportContainer = ContainerManager.getDefaultSupportContainer();
+        Container homeContainer = ContainerManager.getHomeContainer();
+
+        String defaultPageName = "default";
+
+        loadWikiContent(homeContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Server", "/org/labkey/wiki/welcomeWiki.txt", WikiRendererType.HTML);
+        loadWikiContent(supportContainer,  moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey support", "/org/labkey/wiki/supportWiki.txt", WikiRendererType.RADEOX);
+
+        try
         {
-            Container supportContainer = ContainerManager.getDefaultSupportContainer();
-            Container homeContainer = ContainerManager.getHomeContainer();
+            Map<String, String> homeProps = new HashMap<String, String>();
+            homeProps.put("webPartContainer", homeContainer.getId());
+            homeProps.put("name", defaultPageName);
+            addWebPart(WEB_PART_NAME, homeContainer, HttpView.BODY, homeProps);
 
-            String defaultPageName = "default";
-
-            loadWikiContent(homeContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Server", "/org/labkey/wiki/welcomeWiki.txt", WikiRendererType.HTML);
-            loadWikiContent(supportContainer,  moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey support", "/org/labkey/wiki/supportWiki.txt", WikiRendererType.RADEOX);
-
-            try
-            {
-                Map<String, String> homeProps = new HashMap<String, String>();
-                homeProps.put("webPartContainer", homeContainer.getId());
-                homeProps.put("name", defaultPageName);
-                addWebPart(WEB_PART_NAME, homeContainer, HttpView.BODY, homeProps);
-
-                Map<String, String> supportProps = new HashMap<String, String>();
-                supportProps.put("webPartContainer", supportContainer.getId());
-                supportProps.put("name", defaultPageName);
-                addWebPart(WEB_PART_NAME, supportContainer, HttpView.BODY, supportProps);
-            }
-            catch (SQLException e)
-            {
-                _log.error("Unable to set up support folder", e);
-            }
+            Map<String, String> supportProps = new HashMap<String, String>();
+            supportProps.put("webPartContainer", supportContainer.getId());
+            supportProps.put("name", defaultPageName);
+            addWebPart(WEB_PART_NAME, supportContainer, HttpView.BODY, supportProps);
+        }
+        catch (SQLException e)
+        {
+            _log.error("Unable to set up support folder", e);
         }
     }
 

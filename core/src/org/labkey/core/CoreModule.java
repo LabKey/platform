@@ -20,7 +20,6 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
-import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.module.*;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
@@ -44,8 +43,8 @@ import org.labkey.core.query.*;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.test.TestController;
 import org.labkey.core.user.UserController;
-import org.labkey.core.webdav.FileSystemAuditViewFactory;
 import org.labkey.core.webdav.DavController;
+import org.labkey.core.webdav.FileSystemAuditViewFactory;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -68,7 +67,7 @@ public class CoreModule extends SpringModule
 
     public double getVersion()
     {
-        return 8.30;
+        return 8.31;
     }
 
     @Override
@@ -167,18 +166,7 @@ public class CoreModule extends SpringModule
         super.afterUpdate(moduleContext);
 
         if (moduleContext.isNewInstall())
-        {
-            // Other containers inherit permissions from root; admins get all permisssions, users & guests none
-            ContainerManager.bootstrapContainer("/", ACL.PERM_ALLOWALL, 0, 0);
-
-            // Users & guests can read from /home
-            ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, ACL.PERM_ALLOWALL, ACL.PERM_READ, ACL.PERM_READ);
-
-            // Create the initial groups
-            GroupManager.bootstrapGroup(Group.groupAdministrators, "Administrators");
-            GroupManager.bootstrapGroup(Group.groupUsers, "Users");
-            GroupManager.bootstrapGroup(Group.groupGuests, "Guests");
-        }
+            bootstrap(moduleContext);
 
         try
         {
@@ -192,89 +180,27 @@ public class CoreModule extends SpringModule
     }
 
 
+    private void bootstrap(ModuleContext moduleContext)
+    {
+        // Other containers inherit permissions from root; admins get all permisssions, users & guests none
+        ContainerManager.bootstrapContainer("/", ACL.PERM_ALLOWALL, 0, 0);
+
+        // Users & guests can read from /home
+        ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, ACL.PERM_ALLOWALL, ACL.PERM_READ, ACL.PERM_READ);
+
+        // Create the initial groups
+        GroupManager.bootstrapGroup(Group.groupAdministrators, "Administrators");
+        GroupManager.bootstrapGroup(Group.groupUsers, "Users");
+        GroupManager.bootstrapGroup(Group.groupGuests, "Guests");
+    }
+
+
     @Override
-    public void afterSchemaUpdate(ModuleContext moduleContext)
+    public UpgradeCode getUpgradeCode()
     {
-        double installedVersion = moduleContext.getInstalledVersion();
-
-        if (installedVersion < 8.11)
-            GroupManager.bootstrapGroup(Group.groupDevelopers, "Developers", GroupManager.PrincipalType.ROLE);
-        if (installedVersion > 0 && installedVersion < 8.12)
-            migrateLdapSettings();
-        if (installedVersion > 0 && installedVersion < 8.22)
-            migrateLookAndFeelSettings();
+        return new CoreUpgradeCode();
     }
 
-    private void migrateLdapSettings()
-    {
-        try
-        {
-            Map<String, String> props = AppProps.getInstance().getProperties(ContainerManager.getRoot());
-            String domain = props.get("LDAPDomain");
-
-            if (null != domain && domain.trim().length() > 0)
-            {
-                PropertyMap map = PropertyManager.getWritableProperties("LDAPAuthentication", true);
-                map.put("Servers", props.get("LDAPServers"));
-                map.put("Domain", props.get("LDAPDomain"));
-                map.put("PrincipalTemplate", props.get("LDAPPrincipalTemplate"));
-                map.put("SASL", props.get("LDAPAuthentication"));
-                PropertyManager.saveProperties(map);
-                saveAuthenticationProviders(true);
-            }
-            else
-            {
-                saveAuthenticationProviders(false);
-            }
-        }
-        catch (SQLException e)
-        {
-            ExceptionUtil.logExceptionToMothership(null, e);
-        }
-    }
-
-    private void migrateLookAndFeelSettings()
-    {
-        PropertyMap configProps = PropertyManager.getWritableProperties(-1, ContainerManager.getRoot().getId(), "SiteConfig", true);
-        PropertyMap lafProps = PropertyManager.getWritableProperties(-1, ContainerManager.getRoot().getId(), "LookAndFeel", true);
-
-        for (String settingName : new String[] {"systemDescription", "systemShortName", "themeName", "folderDisplayMode",
-                "navigationBarWidth", "logoHref", "themeFont", "companyName", "systemEmailAddress", "reportAProblemPath"})
-        {
-            migrateSetting(configProps, lafProps, settingName);
-        }
-
-        PropertyManager.saveProperties(configProps);
-        PropertyManager.saveProperties(lafProps);
-    }
-
-    private void migrateSetting(PropertyMap configProps, PropertyMap lafProps, String propertyName)
-    {
-        lafProps.put(propertyName, configProps.get(propertyName));
-        configProps.remove(propertyName);
-    }
-
-    private static void saveAuthenticationProviders(boolean enableLdap)
-    {
-        PropertyMap map = PropertyManager.getWritableProperties("Authentication", true);
-        String activeAuthProviders = map.get("Authentication");
-
-        if (null == activeAuthProviders)
-            activeAuthProviders = "Database";
-
-        if (enableLdap)
-        {
-            if (!activeAuthProviders.contains("LDAP"))
-                activeAuthProviders = activeAuthProviders + ":LDAP";
-        }
-        else
-        {
-            activeAuthProviders = activeAuthProviders.replaceFirst("LDAP:", "").replaceFirst(":LDAP", "").replaceFirst("LDAP", "");
-        }
-
-        map.put("Authentication", activeAuthProviders);
-        PropertyManager.saveProperties(map);
-    }
 
     @Override
     public void destroy()
@@ -371,7 +297,8 @@ public class CoreModule extends SpringModule
             WebdavResolverImpl.TestCase.class,
             org.labkey.api.exp.Lsid.TestCase.class,
             MimeMap.TestCase.class,
-            MemTracker.TestCase.class
+            MemTracker.TestCase.class,
+            SqlDialect.SqlDialectTestCase.class
         )
         );
     }
@@ -381,23 +308,23 @@ public class CoreModule extends SpringModule
     public Set<DbSchema> getSchemasToTest()
     {
         return PageFlowUtil.set
-                (
-                    CoreSchema.getInstance().getSchema(),       // core
-                    Portal.getSchema(),                         // portal
-                    PropertyManager.getSchema(),                // prop
-                    TestSchema.getInstance().getSchema()        // test
-                );
+            (
+                CoreSchema.getInstance().getSchema(),       // core
+                Portal.getSchema(),                         // portal
+                PropertyManager.getSchema(),                // prop
+                TestSchema.getInstance().getSchema()        // test
+            );
     }
 
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set
-                (
-                    CoreSchema.getInstance().getSchemaName(),       // core
-                    Portal.getSchemaName(),                         // portal
-                    PropertyManager.getSchemaName(),                // prop
-                    TestSchema.getInstance().getSchemaName()        // test
-                );
+            (
+                CoreSchema.getInstance().getSchemaName(),       // core
+                Portal.getSchemaName(),                         // portal
+                PropertyManager.getSchemaName(),                // prop
+                TestSchema.getInstance().getSchemaName()        // test
+            );
     }
 
     public List<String> getAttributions()

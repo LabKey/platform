@@ -28,3 +28,6 @@ GO
 
 ALTER TABLE pipeline.StatusFiles ADD CONSTRAINT pk_statusfiles PRIMARY KEY (RowId)
 GO
+
+EXEC core.executeJavaUpgradeCode 'setPipelineToolsDirectory'
+GO

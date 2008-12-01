@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+EXEC core.executeJavaUpgradeCode 'uniquifyDatasetLabels'
+GO
+
 UPDATE study.dataset
   SET label = name
 WHERE

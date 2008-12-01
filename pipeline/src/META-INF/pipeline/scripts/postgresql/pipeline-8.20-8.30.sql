@@ -24,6 +24,8 @@ ALTER TABLE pipeline.PipelineRoots ADD COLUMN KeyPassword VARCHAR(32);
 
 ALTER TABLE pipeline.PipelineRoots ADD COLUMN PerlPipeline boolean NOT NULL DEFAULT FALSE;
 
+SELECT core.executeJavaUpgradeCode('updateRoots');
+
 /* pipeline-8.22-8.23.sql */
 
 ALTER TABLE pipeline.StatusFiles ADD COLUMN ActiveTaskId VARCHAR(255);
@@ -42,3 +44,5 @@ CREATE INDEX IX_StatusFiles_Job ON pipeline.StatusFiles (Job);
 /* pipeline-8.261-8.27.sql */
 
 CREATE INDEX IX_StatusFiles_JobParent ON pipeline.StatusFiles (JobParent);
+
+SELECT core.executeJavaUpgradeCode('setPipelineToolsDirectory');

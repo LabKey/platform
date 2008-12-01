@@ -23,6 +23,8 @@ ALTER TABLE study.SampleRequestRequirement
 CREATE INDEX IX_SampleRequest_EntityId ON study.SampleRequest(EntityId);
 CREATE INDEX IX_SampleRequestRequirement_OwnerEntityId ON study.SampleRequestRequirement(OwnerEntityId);
 
+SELECT core.executeJavaUpgradeCode('upgradeRequirementsTables');
+
 DROP TABLE study.AssayRun;
 
 ALTER TABLE study.Specimen

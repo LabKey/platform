@@ -16,22 +16,19 @@
 package org.labkey.pipeline;
 
 import junit.framework.TestCase;
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.*;
 import org.labkey.api.webdav.WebdavService;
@@ -45,7 +42,6 @@ import org.labkey.pipeline.xstream.PathMapperImpl;
 import org.mule.MuleManager;
 
 import java.beans.PropertyChangeEvent;
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
@@ -137,32 +133,6 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         PipelineController.registerAdminConsoleLinks();
         StatusController.registerAdminConsoleLinks();
         WebdavService.addProvider(new PipelineWebdavProvider());
-    }
-
-    public void afterSchemaUpdate(ModuleContext moduleContext)
-    {
-        super.afterSchemaUpdate(moduleContext);
-
-        if (moduleContext.getInstalledVersion() < 8.261)
-        {
-            String toolsDir = StringUtils.trimToNull(AppProps.getInstance().getPipelineToolsDirectory());
-            if (toolsDir == null || !NetworkDrive.exists(new File(toolsDir)))
-            {
-                try
-                {
-                    WriteableAppProps props = AppProps.getWriteableInstance();
-                    File webappRoot = new File(ModuleLoader.getServletContext().getRealPath("/"));
-                    props.setPipelineToolsDir(new File(webappRoot.getParentFile(), "bin").toString());
-                    props.save();
-                }
-                catch (SQLException e)
-                {
-                    _log.error("Failed to set pipeline tools directory.", e);
-                }
-            }
-        }
-
-        PipelineManager.updateRoots(moduleContext.getInstalledVersion());
     }
 
     @Override
@@ -262,5 +232,11 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             return Collections.emptyList();
         }
         return Arrays.asList("<a href=\"http://www.mulesource.com\" target=\"top\"><img src=\"http://www.mulesource.com/images/mulesource_license_logo.gif\" alt=\"MuleSource\" width=\"252\" height=\"52\"></a>");
+    }
+
+    @Override
+    public UpgradeCode getUpgradeCode()
+    {
+        return new PipelineUpgradeCode();
     }
 }

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+SELECT core.executeJavaUpgradeCode('version132Upgrade');
+
 UPDATE exp.protocolapplication SET cpastype = 'ProtocolApplication' WHERE
     cpastype != 'ProtocolApplication' AND
     cpastype != 'ExperimentRun' AND

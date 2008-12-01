@@ -232,9 +232,11 @@ core/src/META-INF/core/scripts/postgresql/core-2.20-2.30.sql -text
 core/src/META-INF/core/scripts/postgresql/core-2.30-2.31.sql -text
 core/src/META-INF/core/scripts/postgresql/core-2.30-8.10.sql -text
 core/src/META-INF/core/scripts/postgresql/core-2.31-2.32.sql -text
+core/src/META-INF/core/scripts/postgresql/core-8.10-8.20.sql -text
 core/src/META-INF/core/scripts/postgresql/core-8.20-8.21.sql -text
 core/src/META-INF/core/scripts/postgresql/core-8.20-8.30.sql -text
 core/src/META-INF/core/scripts/postgresql/core-8.21-8.22.sql -text
+core/src/META-INF/core/scripts/postgresql/core-8.30-8.31.sql -text
 core/src/META-INF/core/scripts/postgresql/core-create.sql -text
 core/src/META-INF/core/scripts/postgresql/core-drop.sql -text
 core/src/META-INF/core/scripts/postgresql/obsolete/bootstrap.sql -text
@@ -290,9 +292,11 @@ core/src/META-INF/core/scripts/sql[!!-~]server/core-2.20-2.30.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-2.30-2.31.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-2.30-8.10.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-2.31-2.32.sql -text
+core/src/META-INF/core/scripts/sql[!!-~]server/core-8.10-8.20.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-8.20-8.21.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-8.20-8.30.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-8.21-8.22.sql -text
+core/src/META-INF/core/scripts/sql[!!-~]server/core-8.30-8.31.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-create.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-drop.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/obsolete/bootstrap.sql -text
@@ -349,6 +353,7 @@ core/src/org/labkey/core/CoreContainerListener.java -text
 core/src/org/labkey/core/CoreController.java -text
 core/src/org/labkey/core/CoreFirstRequestHandler.java -text
 core/src/org/labkey/core/CoreModule.java -text
+core/src/org/labkey/core/CoreUpgradeCode.java -text
 core/src/org/labkey/core/SqlDialectPostgreSQL.java -text
 core/src/org/labkey/core/admin/AdminController.java -text
 core/src/org/labkey/core/admin/TestNetworkDriveBean.java -text
@@ -627,6 +632,7 @@ experiment/src/org/labkey/experiment/ExperimentRunDetails.jsp -text
 experiment/src/org/labkey/experiment/ExperimentRunDisplayColumn.java -text
 experiment/src/org/labkey/experiment/ExperimentRunGraph.java -text
 experiment/src/org/labkey/experiment/ExperimentRunInputOutput.jsp -text
+experiment/src/org/labkey/experiment/ExperimentUpgradeCode.java -text
 experiment/src/org/labkey/experiment/ExternalDocsLabelCustomPropertyRenderer.java -text
 experiment/src/org/labkey/experiment/ExternalDocsURLCustomPropertyRenderer.java -text
 experiment/src/org/labkey/experiment/LSIDRelativizer.java -text
@@ -839,6 +845,7 @@ issues/src/META-INF/issues/scripts/sql[!!-~]server/obsolete/issues-1.70-1.71.sql
 issues/src/org/labkey/issue/IssueContainerListener.java -text
 issues/src/org/labkey/issue/IssueGroupListener.java -text
 issues/src/org/labkey/issue/IssuePage.java -text
+issues/src/org/labkey/issue/IssueUpgradeCode.java -text
 issues/src/org/labkey/issue/IssueUserListener.java -text
 issues/src/org/labkey/issue/IssuesModule.java -text
 issues/src/org/labkey/issue/IssuesWebPartFactory.java -text
@@ -1003,6 +1010,7 @@ pipeline/src/org/labkey/pipeline/DirectoryView.java -text
 pipeline/src/org/labkey/pipeline/FileContentPipelineProvider.java -text
 pipeline/src/org/labkey/pipeline/PipelineController.java -text
 pipeline/src/org/labkey/pipeline/PipelineModule.java -text
+pipeline/src/org/labkey/pipeline/PipelineUpgradeCode.java -text
 pipeline/src/org/labkey/pipeline/PipelineWebPart.java -text
 pipeline/src/org/labkey/pipeline/PipelineWebdavProvider.java -text
 pipeline/src/org/labkey/pipeline/analysis/AnalysisController.java -text
@@ -1814,6 +1822,7 @@ study/src/org/labkey/study/StudyModule.java -text
 study/src/org/labkey/study/StudySchema.java -text
 study/src/org/labkey/study/StudySearch.java -text
 study/src/org/labkey/study/StudyServiceImpl.java -text
+study/src/org/labkey/study/StudyUpgradeCode.java -text
 study/src/org/labkey/study/StudyUpgrader.java -text
 study/src/org/labkey/study/assay/AssayDomainKind.java -text
 study/src/org/labkey/study/assay/AssayManager.java -text
@@ -2271,13 +2280,13 @@ wiki/src/org/labkey/wiki/view/wikiHtmlHelp.jsp -text
 wiki/src/org/labkey/wiki/view/wikiPrint.jsp -text
 wiki/src/org/labkey/wiki/view/wikiRadeoxHelp.jsp -text
 wiki/src/org/labkey/wiki/view/wikiSearch.jsp -text
+wiki/src/org/labkey/wiki/view/wikiVersion.jsp -text
 wiki/src/org/labkey/wiki/view/wiki_copy.gm -text
 wiki/src/org/labkey/wiki/view/wiki_customize.gm -text
 wiki/src/org/labkey/wiki/view/wiki_customizetoc.gm -text
 wiki/src/org/labkey/wiki/view/wiki_manage.gm -text
 wiki/src/org/labkey/wiki/view/wiki_printall.gm -text
 wiki/src/org/labkey/wiki/view/wiki_printraw.gm -text
-wiki/src/org/labkey/wiki/view/wiki_version.gm -text
 wiki/src/org/labkey/wiki/welcomeWiki.txt -text
 wiki/webapp/_images/page.png -text
 wiki/webapp/wiki/js/wikiEdit.js -text

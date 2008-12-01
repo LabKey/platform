@@ -48,6 +48,9 @@ GO
 
 /* exp-8.23-8.24.sql */
 
+EXEC core.executeJavaUpgradeCode 'version132Upgrade'
+GO
+
 UPDATE exp.protocolapplication SET cpastype = 'ProtocolApplication' WHERE
     cpastype != 'ProtocolApplication' AND
     cpastype != 'ExperimentRun' AND

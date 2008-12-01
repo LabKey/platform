@@ -44,29 +44,26 @@ import java.util.*;
  */
 public class PipelineManager
 {
-    private static Logger _log = Logger.getLogger(PipelineManager.class);
+    private static final Logger _log = Logger.getLogger(PipelineManager.class);
+    private static final PipelineSchema pipeline = PipelineSchema.getInstance();
 
-    private static PipelineSchema pipeline = PipelineSchema.getInstance();
-
-    public static void updateRoots(double installedVersion)
+    // Invoked at version 8.22
+    public static void updateRoots()
     {
-        if (installedVersion < 8.22)
+        // Perl pipeline use has been moved from an application-wide setting
+        // to a container setting.  If the application-wide setting was on, then
+        // turn on all existing pipeline roots.
+        if (AppProps.getInstance().isPerlPipelineEnabled())
         {
-            // Perl pipeline use has been moved from an application-wide setting
-            // to a container setting.  If the application-wide setting was on, then
-            // turn on all existing pipeline roots.
-            if (AppProps.getInstance().isPerlPipelineEnabled())
+            try
             {
-                try
-                {
-                    Table.execute(pipeline.getSchema(),
-                        "UPDATE " + pipeline.getTableInfoPipelineRoots().getFromSQL() + " SET PerlPipeline = 1",
-                            new Object[0]);
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeException("Failed setting PerlPipeline on existing roots.", e);
-                }
+                Table.execute(pipeline.getSchema(),
+                    "UPDATE " + pipeline.getTableInfoPipelineRoots().getFromSQL() + " SET PerlPipeline = 1",
+                        new Object[0]);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeException("Failed setting PerlPipeline on existing roots.", e);
             }
         }
     }

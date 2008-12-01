@@ -258,9 +258,8 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     {
         if (null == _attachments)
             return false;
-        for (int i = 0; i < _attachments.length; i++)
+        for (Attachment attachment : _attachments)
         {
-            Attachment attachment = _attachments[i];
             if (s.equalsIgnoreCase(attachment.getName()))
                 return true;
         }

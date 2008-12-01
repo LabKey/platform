@@ -37,7 +37,6 @@ public class AuditModule extends DefaultModule
 {
     public static final String NAME = "Audit";
     private static final Logger _log = Logger.getLogger(AuditModule.class);
-    private static Runnable _startupTask;
 
     protected Collection<? extends WebPartFactory> createWebPartFactories()
     {
@@ -76,8 +75,9 @@ public class AuditModule extends DefaultModule
         AuditLogService.get().addAuditViewFactory(new SiteSettingsAuditViewFactory());
         AuditController.registerAdminConsoleLinks();
 
-        if (_startupTask != null)
-            _startupTask.run();
+        // This schema conversion can't use the normal UpgradeCode process because it requires Ontology service to be started
+        if (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 8.24)
+            convertAuditDataMaps();
     }
 
     public Set<String> getSchemaNames()
@@ -88,19 +88,6 @@ public class AuditModule extends DefaultModule
     public Set<DbSchema> getSchemasToTest()
     {
         return PageFlowUtil.set(AuditSchema.getInstance().getSchema());
-    }
-
-    public void afterSchemaUpdate(ModuleContext moduleContext)
-    {
-        if (moduleContext.getInstalledVersion() < 8.24)
-        {
-            _startupTask = new Runnable() {
-                public void run()
-                {
-                    convertAuditDataMaps();
-                }
-            };
-        }
     }
 
     /**

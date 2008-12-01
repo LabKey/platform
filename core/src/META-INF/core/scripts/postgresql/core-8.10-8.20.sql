@@ -23,20 +23,5 @@ CREATE OR REPLACE FUNCTION core.executeJavaUpgradeCode(text) RETURNS void AS $$
     END
 $$ LANGUAGE plpgsql;
 
-/* core-8.20-8.21.sql */
-
--- Add Active column to Principals table
-ALTER TABLE core.Principals
-    ADD COLUMN Active boolean NOT NULL DEFAULT true;
-
-SELECT core.executeJavaUpgradeCode('migrateLookAndFeelSettings');
-
-/* core-8.21-8.22.sql */
-
-UPDATE core.Documents
-    SET DocumentName = REPLACE(DocumentName, 'cpas-site-logo.', 'labkey-logo.')
-    WHERE (DocumentName LIKE 'cpas-site-logo%');
-
-UPDATE core.Documents
-    SET DocumentName = REPLACE(DocumentName, 'cpas-site-favicon.ico', 'labkey-favicon.ico')
-    WHERE (DocumentName = 'cpas-site-favicon.ico');
+SELECT core.executeJavaUpgradeCode('bootstrapDevelopersGroup');
+SELECT core.executeJavaUpgradeCode('migrateLdapSettings');

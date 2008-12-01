@@ -28,6 +28,9 @@ ALTER TABLE pipeline.PipelineRoots ADD
     PerlPipeline bit NOT NULL DEFAULT 0
 GO
 
+EXEC core.executeJavaUpgradeCode 'updateRoots'
+GO
+
 /* pipeline-8.22-8.23.sql */
 
 ALTER TABLE pipeline.StatusFiles ADD
@@ -63,4 +66,7 @@ CREATE CLUSTERED INDEX IX_StatusFiles_Container ON pipeline.StatusFiles(Containe
 GO
 
 ALTER TABLE pipeline.StatusFiles ADD CONSTRAINT pk_statusfiles PRIMARY KEY (RowId)
+GO
+
+EXEC core.executeJavaUpgradeCode 'setPipelineToolsDirectory'
 GO

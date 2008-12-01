@@ -16,17 +16,19 @@
 
 package org.labkey.core;
 
+import junit.framework.TestCase;
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.data.*;
+import org.labkey.api.module.ModuleContext;
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.query.AliasManager;
-import org.labkey.api.data.*;
 
 import javax.servlet.ServletException;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Connection;
 import java.sql.Types;
 import java.util.Calendar;
 import java.util.Collection;
@@ -456,58 +458,19 @@ class SqlDialectPostgreSQL extends SqlDialect
      *                   and must all refer to the same table.
      * @param tinfo      table used in the insert(s)
      */
-    public void overrideAutoIncrement(StringBuffer statements, TableInfo tinfo)
+    public void overrideAutoIncrement(StringBuilder statements, TableInfo tinfo)
     {
         // Nothing special to do for the Postgres dialect
     }
 
 
-    // Strip all comments -- PostgreSQL JDBC driver goes berserk if it sees ; or ?
-    public int getNextSqlBlock(StringBuffer block, DbSchema schema, String sql, int start)
+    private static final Pattern JAVA_CODE_PATTERN = Pattern.compile("^\\s*SELECT\\s+core\\.executeJavaUpgradeCode\\s*\\(\\s*'(.+)'\\s*\\)\\s*;\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+
+    public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext) throws SQLException
     {
-        int j = start;
-
-        while (j < sql.length())
-        {
-            char c = sql.charAt(j);
-            String twoChars = null;
-            int end = j + 1;
-
-            if (j < (sql.length() - 1))
-                twoChars = sql.substring(j, j + 2);
-
-            if ('\'' == c)
-            {
-                end = sql.indexOf('\'', j + 1) + 1;
-
-                if (0 == end)
-                    _log.error("No quote termination char");
-                else
-                    block.append(sql.substring(j, end));
-            }
-            else if ("/*".equals(twoChars))
-            {
-                end = sql.indexOf("*/", j + 2) + 2;  // Skip comment completely
-
-                if (1 == end)
-                    _log.error("No comment termination char");
-            }
-            else if ("--".equals(twoChars))
-            {
-                end = sql.indexOf("\n", j + 2) + 1;  // Skip comment completely
-
-                if (0 == end)
-                    end = sql.length();
-            }
-            else
-                block.append(c);
-
-            j = end;
-        }
-
-        return sql.length();
+        SqlScriptParser parser = new SqlScriptParser(sql, null, JAVA_CODE_PATTERN, schema, upgradeCode, moduleContext);
+        parser.execute();
     }
-
 
     protected void checkSqlScript(String lower, String lowerNoWhiteSpace, Collection<String> errors)
     {
@@ -660,5 +623,60 @@ class SqlDialectPostgreSQL extends SqlDialect
     public boolean isCaseSensitive()
     {
         return true;
+    }
+
+    public TestCase getTestCase()
+    {
+        return new PostgresTestCase();
+    }
+
+    public class PostgresTestCase extends TestCase
+    {
+        public PostgresTestCase()
+        {
+            super();
+            setName("testJavaUpgradeCode");
+        }
+
+        public PostgresTestCase(String name)
+        {
+            super(name);
+        }
+
+        public void testJavaUpgradeCode()
+        {
+            String goodSql =
+                "SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +                       // Normal
+                "    SELECT     core.executeJavaUpgradeCode    ('upgradeCode')    ;     \n" +  // Lots of whitespace
+                "select CORE.EXECUTEJAVAUPGRADECODE('upgradeCode');\n" +                       // Case insensitive
+                "SELECT core.executeJavaUpgradeCode('upgradeCode');";                          // No line ending
+
+
+            String badSql =
+                "/* SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +       // Inside block comment
+                "   more comment\n" +
+                "*/" +
+                "    -- SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +   // Inside single-line comment
+                "SELECTcore.executeJavaUpgradeCode('upgradeCode');\n" +           // Bad syntax
+                "SELECT core. executeJavaUpgradeCode('upgradeCode');\n" +         // Bad syntax
+                "SEECT core.executeJavaUpgradeCode('upgradeCode');\n" +           // Misspell SELECT
+                "SELECT core.executeJaavUpgradeCode('upgradeCode');\n" +          // Misspell function name
+                "SELECT core.executeJavaUpgradeCode('upgradeCode')\n";            // No semicolon
+
+            try
+            {
+                TestUpgradeCode good = new TestUpgradeCode();
+                runSql(null, goodSql, good, null);
+                assertEquals(4, good.getCounter());
+
+                TestUpgradeCode bad = new TestUpgradeCode();
+                runSql(null, badSql, bad, null);
+                assertEquals(0, bad.getCounter());
+            }
+            catch (SQLException e)
+            {
+                fail("SQL Exception running test: " + e.getMessage());
+            }
+        }
     }
 }

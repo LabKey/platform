@@ -125,6 +125,9 @@ ALTER TABLE
     ALTER COLUMN LSID NVARCHAR(200) NOT NULL
 GO
 
+EXEC core.executeJavaUpgradeCode 'upgradeExtensibleTables_83'
+GO
+
 /* study-8.23-8.24.sql */
 
 ALTER TABLE
@@ -210,6 +213,9 @@ CREATE INDEX IX_SpecimenComment_SpecimenNumber ON study.SpecimenComment(Specimen
 
 /* study-8.28-8.29.sql */
 
+EXEC core.executeJavaUpgradeCode 'uniquifyDatasetLabels'
+GO
+
 UPDATE study.dataset
   SET label = name
 WHERE
@@ -240,4 +246,7 @@ GO
 
 CREATE INDEX IX_SpecimenComment_SpecimenHash ON study.SpecimenComment(Container, SpecimenHash);
 CREATE INDEX IX_Specimen_SpecimenHash ON study.Specimen(Container, SpecimenHash);
+GO
+
+EXEC core.executeJavaUpgradeCode 'updateAllCalculatedSpecimenData'
 GO

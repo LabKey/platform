@@ -33,6 +33,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyService;
@@ -40,10 +41,8 @@ import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Search;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.study.assay.*;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.assay.query.AssaySchema;
@@ -57,7 +56,6 @@ import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
-import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.model.*;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.plate.PlateManager;
@@ -68,8 +66,6 @@ import org.labkey.study.samples.SamplesWebPart;
 import org.labkey.study.view.*;
 
 import java.lang.reflect.InvocationTargetException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.*;
 
 
@@ -215,129 +211,6 @@ public class StudyModule extends DefaultModule
         ModuleLoader.getInstance().registerFolderType(new StudyFolderType(this));
     }
 
-    public void beforeSchemaUpdate(ModuleContext moduleContext)
-    {
-        if (moduleContext.getInstalledVersion() >= 2.1 && moduleContext.getInstalledVersion() < 8.29)
-        {
-            // We're going to add a unique constraint to dataset labels,
-            // so we need to go through and unique-ify any that are not unique.
-            ResultSet labelRS = null;
-            ResultSet nameRS = null;
-            try
-            {
-                DbSchema schema = StudySchema.getInstance().getSchema();
-                
-                String sql = "select num, container, label from (select count(*) as num, container, label\n" +
-                    "from study.dataset \n" +
-                    "group by container, label) as subselect\n" +
-                    "where num > 1";
-
-                labelRS = Table.executeQuery(schema, sql, new Object[0]);
-                while(labelRS.next())
-                {
-                    String container = labelRS.getString("container");
-                    String label = labelRS.getString("label");
-
-                    // Now we need to get all the names for those labels
-                    sql = "select name \n" +
-                        "from study.dataset \n" +
-                        "where container = ? AND\n" +
-                        "label = ?";
-
-                    nameRS = Table.executeQuery(schema, sql, new Object[]{container, label});
-
-                    while (nameRS.next())
-                    {
-                        // Make the new label "name: oldLabel"
-
-                        String name = nameRS.getString(1);
-
-                        // We're guaranteed to get two or more of these, so ignore if there's one whose
-                        // label matches its name
-                        if (name.equals(label))
-                            continue;
-
-                        String newLabel = name + ": " + label;
-
-                        sql = "update study.dataset\n" +
-                            "set label = ?\n" +
-                            "where name = ?\n" +
-                            "and container = ?";
-                        
-                        Table.execute(schema, sql, new Object[]{newLabel, name, container});
-                    }
-                }
-            }
-            catch (SQLException se)
-            {
-                throw UnexpectedException.wrap(se);
-            }
-            finally
-            {
-                try {if (labelRS != null) labelRS.close();} catch (SQLException se) {}
-                try {if (nameRS != null) nameRS.close();} catch (SQLException se) {}
-            }
-        }
-    }
-
-    public void afterSchemaUpdate(ModuleContext moduleContext)
-    {
-        if (moduleContext.getInstalledVersion() >= 1.3 && moduleContext.getInstalledVersion() < 2.11)
-        {
-            try
-            {
-                SampleManager.getInstance().upgradeRequirementsTables();
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
-        }
-
-        if (moduleContext.getInstalledVersion() >= 1.74 && moduleContext.getInstalledVersion() < 2.21)
-        {
-            ReportManager.UpgradeReport_22_23 upgrade = new ReportManager.UpgradeReport_22_23();
-            upgrade.upgradeStudyReports();
-        }
-
-        if (moduleContext.getInstalledVersion() >= 1.3 && moduleContext.getInstalledVersion() < 8.13)
-        {
-            try
-            {
-                SpecimenImporter.updateAllCalculatedSpecimenData(moduleContext.getUpgradeUser());
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
-        }
-
-        if (moduleContext.getInstalledVersion() >= 1.3 && moduleContext.getInstalledVersion() < 8.23)
-        {
-            try
-            {
-                StudyUpgrader.upgradeExtensibleTables_83(moduleContext.getUpgradeUser());
-            }
-            catch (SQLException se)
-            {
-                throw new RuntimeSQLException(se);
-            }
-        }
-
-        if (moduleContext.getInstalledVersion() >= 1.3 && moduleContext.getInstalledVersion() < 8.291)
-        {
-            try
-            {
-                SpecimenImporter.updateAllCalculatedSpecimenData(moduleContext.getUpgradeUser());
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
-        }
-
-    }
-
     private static class ReportsWebPartFactory extends BaseWebPartFactory
     {
         public ReportsWebPartFactory()
@@ -467,5 +340,12 @@ public class StudyModule extends DefaultModule
         Set<Class<? extends TestCase>> set = new HashSet<Class<? extends TestCase>>();
         set.add(StudyManager.StudyTestCase.class);
         return set;
+    }
+
+    @Override
+    public UpgradeCode getUpgradeCode()
+    {
+        return new StudyUpgra
+        deCode();
     }
 }

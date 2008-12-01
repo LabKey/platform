@@ -67,37 +67,38 @@ public class MothershipModule extends DefaultModule
         return true;
     }
 
-    public void afterSchemaUpdate(ModuleContext moduleContext)
+    @Override
+    public void afterUpdate(ModuleContext moduleContext)
+    {
+        super.afterUpdate(moduleContext);
+
+        if (moduleContext.isNewInstall())
+            bootstrap(moduleContext);
+    }
+
+    private void bootstrap(ModuleContext moduleContext)
     {
         try
         {
-            if (moduleContext.getInstalledVersion() == 0.0)
-            {
-                Container c = ContainerManager.ensureContainer("/_mothership");
-                Set<Module> modules = new HashSet<Module>(c.getActiveModules());
-                modules.add(this);
-                c.setActiveModules(modules);
-                c.setDefaultModule(this);
-            }
+            Container c = ContainerManager.ensureContainer("/_mothership");
+            ACL acl = org.labkey.api.security.SecurityManager.getACL(c);
+            Group mothershipGroup = SecurityManager.createGroup(c, "Mothership");
+            acl.setPermission(Group.groupGuests, 0);
+            acl.setPermission(Group.groupUsers, 0);
+            acl.setPermission(Group.groupAdministrators, ACL.PERM_ALLOWALL);
+            acl.setPermission(mothershipGroup, ACL.PERM_ALLOWALL);
+            SecurityManager.updateACL(c, acl);
+            SecurityManager.addMember(mothershipGroup, moduleContext.getUpgradeUser());
 
-            if (moduleContext.getInstalledVersion() <= 0.12)
-            {
-                Container c = ContainerManager.ensureContainer("/_mothership");
-                ACL acl = org.labkey.api.security.SecurityManager.getACL(c);
-                Group mothershipGroup = SecurityManager.createGroup(c, "Mothership");
-                acl.setPermission(Group.groupGuests, 0);
-                acl.setPermission(Group.groupUsers, 0);
-                acl.setPermission(Group.groupAdministrators, ACL.PERM_ALLOWALL);
-                acl.setPermission(mothershipGroup, ACL.PERM_ALLOWALL);
-                SecurityManager.updateACL(c, acl);
-                SecurityManager.addMember(mothershipGroup, moduleContext.getUpgradeUser());
-            }
+            Set<Module> modules = new HashSet<Module>(c.getActiveModules());
+            modules.add(this);
+            c.setActiveModules(modules);
+            c.setDefaultModule(this);
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
         }
-        super.afterSchemaUpdate(moduleContext);
     }
 
     public Set<String> getSchemaNames()

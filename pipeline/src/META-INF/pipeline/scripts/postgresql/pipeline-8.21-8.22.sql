@@ -15,3 +15,5 @@
  */
  
 ALTER TABLE pipeline.PipelineRoots ADD COLUMN PerlPipeline boolean NOT NULL DEFAULT FALSE;
+
+SELECT core.executeJavaUpgradeCode('updateRoots');

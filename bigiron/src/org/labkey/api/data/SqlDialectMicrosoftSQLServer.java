@@ -18,17 +18,19 @@ package org.labkey.api.data;
 
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.module.ModuleContext;
 
 import javax.servlet.ServletException;
-import java.sql.SQLException;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import junit.framework.TestCase;
 
 
 /**
@@ -454,33 +456,19 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
      *                   and must all refer to the same table.
      * @param tinfo      table used in the insert(s)
      */
-    public void overrideAutoIncrement(StringBuffer statements, TableInfo tinfo)
+    public void overrideAutoIncrement(StringBuilder statements, TableInfo tinfo)
     {
         statements.insert(0, "SET IDENTITY_INSERT " + tinfo + " ON\n");
         statements.append("SET IDENTITY_INSERT ").append(tinfo).append(" OFF");
     }
 
-    private static Pattern goPattern = Pattern.compile("^\\s*GO\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+    private static final Pattern GO_PATTERN = Pattern.compile("^\\s*GO\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+    private static final Pattern JAVA_CODE_PATTERN = Pattern.compile("^\\s*EXEC(?:UTE)*\\s+core\\.executeJavaUpgradeCode\\s*'(.+)'\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
-    public int getNextSqlBlock(StringBuffer block, DbSchema schema, String sql, int start)
+    public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext) throws SQLException
     {
-        Matcher m = goPattern.matcher(sql);
-        int endOfBlock;
-        int nextStart;
-
-        if (m.find(start))
-        {
-            endOfBlock = m.start();
-            nextStart = m.end();
-        }
-        else
-        {
-            nextStart = endOfBlock = sql.length();
-        }
-
-        block.append(sql.substring(start, endOfBlock));
-
-        return nextStart;
+        SqlScriptParser parser = new SqlScriptParser(sql, GO_PATTERN, JAVA_CODE_PATTERN, schema, upgradeCode, moduleContext);
+        parser.execute();
     }
 
     public String getMasterDataBaseName()
@@ -560,5 +548,63 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     public boolean isCaseSensitive()
     {
         return false;
+    }
+
+    public TestCase getTestCase()
+    {
+        return new SqlServerTestCase();
+    }
+
+
+    public class SqlServerTestCase extends TestCase
+    {
+        public SqlServerTestCase()
+        {
+            super();
+            setName("testJavaUpgradeCode");
+        }
+
+        public SqlServerTestCase(String name)
+        {
+            super(name);
+        }
+
+        public void testJavaUpgradeCode()
+        {
+            String goodSql =
+                "EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +                       // Normal
+                "EXECUTE core.executeJavaUpgradeCode 'upgradeCode'\n" +                    // EXECUTE
+                "execute core.executeJavaUpgradeCode'upgradeCode'\n" +                     // execute
+                "    EXEC     core.executeJavaUpgradeCode    'upgradeCode'         \n" +   // Lots of whitespace
+                "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode'\n" +                       // Case insensitive
+                "EXEC core.executeJavaUpgradeCode 'upgradeCode'";                          // No line ending
+
+            String badSql =
+                "/* EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +           // Inside block comment
+                "   more comment\n" +
+                "*/" +
+                "    -- EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +       // Inside single-line comment
+                "EXECcore.executeJavaUpgradeCode 'upgradeCode'\n" +               // Bad syntax: EXECcore
+                "EXEC core. executeJavaUpgradeCode 'upgradeCode'\n" +             // Bad syntax: core. execute...
+                "EXECUT core.executeJavaUpgradeCode 'upgradeCode'\n" +            // Misspell EXECUTE
+                "EXEC core.executeJaavUpgradeCode 'upgradeCode'\n" +              // Misspell function name
+                "EXEC core.executeJavaUpgradeCode 'upgradeCode';\n" +             // Bad syntax: semicolon
+                "EXEC core.executeJavaUpgradeCode('upgradeCode')\n";              // Bad syntax: Parentheses
+
+            try
+            {
+                TestUpgradeCode good = new TestUpgradeCode();
+                runSql(null, goodSql, good, null);
+                assertEquals(6, good.getCounter());
+
+                TestUpgradeCode bad = new TestUpgradeCode();
+                runSql(null, badSql, bad, null);
+                assertEquals(0, bad.getCounter());
+            }
+            catch (SQLException e)
+            {
+                fail("SQL Exception running test: " + e.getMessage());
+            }
+        }
     }
 }

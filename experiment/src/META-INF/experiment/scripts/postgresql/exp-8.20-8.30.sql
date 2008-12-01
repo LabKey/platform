@@ -45,6 +45,8 @@ ALTER TABLE exp.ProtocolApplicationParameter ALTER COLUMN StringValue TYPE TEXT;
 
 /* exp-8.23-8.24.sql */
 
+SELECT core.executeJavaUpgradeCode('version132Upgrade');
+
 UPDATE exp.protocolapplication SET cpastype = 'ProtocolApplication' WHERE
     cpastype != 'ProtocolApplication' AND
     cpastype != 'ExperimentRun' AND

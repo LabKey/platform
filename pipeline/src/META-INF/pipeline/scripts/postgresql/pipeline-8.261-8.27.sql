@@ -15,3 +15,5 @@
  */
 
 CREATE INDEX IX_StatusFiles_JobParent ON pipeline.StatusFiles (JobParent);
+
+SELECT core.executeJavaUpgradeCode('setPipelineToolsDirectory');

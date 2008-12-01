@@ -50,3 +50,6 @@ ALTER TABLE
     study.Study
     ALTER COLUMN LSID NVARCHAR(200) NOT NULL
 GO
+
+EXEC core.executeJavaUpgradeCode 'upgradeExtensibleTables_83'
+GO

@@ -17,8 +17,10 @@ package org.labkey.issue;
 
 import junit.framework.TestCase;
 import org.apache.log4j.Logger;
-import org.labkey.api.data.*;
-import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
@@ -26,13 +28,14 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.util.*;
-import org.labkey.api.view.*;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Search;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.WebPartFactory;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssueSearch;
 import org.labkey.issue.query.IssuesQuerySchema;
 
-import javax.servlet.http.HttpServletResponse;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -129,44 +132,9 @@ public class IssuesModule extends DefaultModule
         return PageFlowUtil.set(IssuesSchema.getInstance().getSchemaName());
     }
 
-    public void afterSchemaUpdate(ModuleContext moduleContext)
+    @Override
+    public UpgradeCode getUpgradeCode()
     {
-        double version = moduleContext.getInstalledVersion();
-        if (version > 0 && version < 8.11)
-        {
-            try
-            {
-                doPopulateCommentEntityIds();
-            }
-            catch (Exception e)
-            {
-                String msg = "Error running afterSchemaUpdate doPopulateCommentEntityIds on IssueModule, upgrade from version " + String.valueOf(version);
-                _log.error(msg + " \n Caused by " + e);
-                ExperimentException ex = new ExperimentException(msg, e);
-                //following sends an exception report to mothership if site is configured to do so, but doesn't abort schema upgrade
-                ExceptionUtil.getErrorRenderer(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg, ex, null, false, false);
-            }
-        }
-        super.afterSchemaUpdate(moduleContext);
-    }
-
-    private void doPopulateCommentEntityIds() throws SQLException
-    {
-        TableInfo tinfo = IssuesSchema.getInstance().getTableInfoComments();
-        Table.TableResultSet rs = Table.select(tinfo, tinfo.getColumns(), null, null);
-        String sql = "UPDATE " + tinfo + " SET EntityId = ? WHERE CommentId = ? AND IssueId = ?";
-
-        try
-        {
-            while (rs.next())
-            {
-                Map<String, Object> row = rs.getRowMap();
-                Table.execute(tinfo.getSchema(), sql, new Object[]{GUID.makeGUID(), row.get("CommentId"), row.get("IssueId")});
-            }
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
+        return new IssueUpgradeCode();
     }
 }

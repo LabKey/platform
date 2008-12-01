@@ -22,27 +22,11 @@ IF EXISTS(SELECT name FROM sysobjects WHERE name = 'executeJavaUpgradeCode' AND 
 GO
 
 CREATE PROCEDURE core.executeJavaUpgradeCode(@Name VARCHAR(255)) AS
-    BEGIN
-        DECLARE @notice VARCHAR(255)
-        SET @notice = 'Empty function that signals script runner to execute Java code.  See usages of UpgradeCode.java.'
-    END
+BEGIN
+    DECLARE @notice VARCHAR(255)
+    SET @notice = 'Empty function that signals script runner to execute Java code.  See usages of UpgradeCode.java.'
+END
 GO
 
-/* core-8.20-8.21.sql */
-
--- Add Active column to Principals table
-ALTER TABLE core.Principals ADD
-	Active bit NOT NULL DEFAULT 1
-
-EXEC core.executeJavaUpgradeCode 'migrateLookAndFeelSettings'
-
-/* core-8.21-8.22.sql */
-
-UPDATE core.Documents
-    SET DocumentName = REPLACE(DocumentName, 'cpas-site-logo.', 'labkey-logo.')
-    WHERE (DocumentName LIKE 'cpas-site-logo%')
-
-UPDATE core.Documents
-    SET DocumentName = REPLACE(DocumentName, 'cpas-site-favicon.ico', 'labkey-favicon.ico')
-    WHERE (DocumentName = 'cpas-site-favicon.ico')
-GO
+EXEC core.executeJavaUpgradeCode 'bootstrapDevelopersGroup'
+EXEC core.executeJavaUpgradeCode 'migrateLdapSettings'

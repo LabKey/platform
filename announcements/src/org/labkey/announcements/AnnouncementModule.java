@@ -120,25 +120,34 @@ public class AnnouncementModule extends DefaultModule
         UserManager.addUserListener(listener);
         SecurityManager.addGroupListener(listener);
 
-        if (moduleContext.isNewInstall())
-        {
-            try
-            {
-                Container supportContainer = ContainerManager.getDefaultSupportContainer();
-                addWebPart(WEB_PART_NAME, supportContainer, null);
-
-                User installerUser = moduleContext.getUpgradeUser();
-
-                if (installerUser != null && !installerUser.isGuest())
-                    AnnouncementManager.saveEmailPreference(installerUser, supportContainer, AnnouncementManager.EMAIL_PREFERENCE_ALL);
-            }
-            catch (SQLException e)
-            {
-                _log.error("Unable to set up support folder", e);
-            }
-        }
-
         DailyDigest.setTimer();
+    }
+
+    @Override
+    public void afterUpdate(ModuleContext moduleContext)
+    {
+        super.afterUpdate(moduleContext);
+
+        if (moduleContext.isNewInstall())
+            bootstrap(moduleContext);
+    }
+
+    private void bootstrap(ModuleContext moduleContext)
+    {
+        try
+        {
+            Container supportContainer = ContainerManager.getDefaultSupportContainer();
+            addWebPart(WEB_PART_NAME, supportContainer, null);
+
+            User installerUser = moduleContext.getUpgradeUser();
+
+            if (installerUser != null && !installerUser.isGuest())
+                AnnouncementManager.saveEmailPreference(installerUser, supportContainer, AnnouncementManager.EMAIL_PREFERENCE_ALL);
+        }
+        catch (SQLException e)
+        {
+            _log.error("Unable to set up support folder", e);
+        }
     }
 
     @Override

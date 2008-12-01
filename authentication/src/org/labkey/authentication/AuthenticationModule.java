@@ -75,32 +75,4 @@ public class AuthenticationModule extends DefaultModule
     {
         return TabDisplayMode.DISPLAY_NEVER;
     }
-
-    public void afterSchemaUpdate(ModuleContext moduleContext)
-    {
-        double installedVersion = moduleContext.getInstalledVersion();
-
-        if (installedVersion > 0 && installedVersion < 2.31)
-        {
-            AttachmentParent parent = ContainerManager.RootContainer.get();
-
-            try
-            {
-                Attachment oldLogo = AttachmentService.get().getAttachment(parent, "auth_OpenSSO");
-
-                if (null != oldLogo)
-                {
-                    AttachmentService.get().copyAttachment(moduleContext.getUpgradeUser(), parent, oldLogo, AuthenticationManager.HEADER_LOGO_PREFIX + "OpenSSO");
-                    AttachmentService.get().renameAttachment(parent, oldLogo.getName(), AuthenticationManager.LOGIN_PAGE_LOGO_PREFIX + "OpenSSO");
-                }
-            }
-            catch (Exception e)
-            {
-                // TODO: log to mothership
-                _log.error(e);
-            }
-        }
-
-        super.afterSchemaUpdate(moduleContext);
-    }
 }

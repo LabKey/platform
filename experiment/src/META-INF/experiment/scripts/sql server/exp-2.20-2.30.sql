@@ -34,3 +34,6 @@ GO
 ALTER TABLE exp.IndexVarchar ADD
     EntityId ENTITYID
 GO
+
+EXEC core.executeJavaUpgradeCode 'populateListEntityIds'
+GO

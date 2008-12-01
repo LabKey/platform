@@ -29,3 +29,5 @@ ALTER TABLE exp.IndexInteger
 
 ALTER TABLE exp.IndexVarchar
     ADD COLUMN EntityId ENTITYID;
+
+SELECT core.executeJavaUpgradeCode('populateListEntityIds');

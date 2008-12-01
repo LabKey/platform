@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-EXEC core.executeJavaUpgradeCode 'version132Upgrade'
-GO
-
-UPDATE exp.protocolapplication SET cpastype = 'ProtocolApplication' WHERE
-    cpastype != 'ProtocolApplication' AND
-    cpastype != 'ExperimentRun' AND
-    cpastype != 'ExperimentRunOutput'
-GO
+-- This empty stored procedure doesn't directly change the database, but calling it from a sql script signals the
+-- script runner to invoke the specified method at this point in the script running process.  See usages of the
+-- UpgradeCode interface for more details.
+CREATE OR REPLACE FUNCTION core.executeJavaUpgradeCode(text) RETURNS void AS $$
+    DECLARE note TEXT := 'Empty function that signals script runner to execute Java code.  See usages of UpgradeCode.java.';
+    BEGIN
+    END
+$$ LANGUAGE plpgsql;

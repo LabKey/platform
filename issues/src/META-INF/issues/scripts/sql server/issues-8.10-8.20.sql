@@ -19,3 +19,6 @@
 ALTER TABLE issues.Comments ADD
     EntityId ENTITYID
 GO
+
+EXEC core.executeJavaUpgradeCode 'populateCommentEntityIds'
+GO

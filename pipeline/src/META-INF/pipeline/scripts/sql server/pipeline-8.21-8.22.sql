@@ -17,3 +17,6 @@
 ALTER TABLE pipeline.PipelineRoots ADD
     PerlPipeline bit NOT NULL DEFAULT 0
 GO
+
+EXEC core.executeJavaUpgradeCode 'updateRoots'
+GO

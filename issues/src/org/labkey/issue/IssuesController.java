@@ -211,7 +211,7 @@ public class IssuesController extends SpringActionController
 
 
     private static final String ISSUES_QUERY = "Issues";
-    private HttpView getIssuesView(IssuesController.ListForm form) throws SQLException, ServletException
+    private HttpView getIssuesView() throws SQLException, ServletException
     {
         UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), IssuesQuerySchema.SCHEMA_NAME);
         QuerySettings settings = schema.getSettings(getViewContext(), ISSUES_QUERY, ISSUES_QUERY);
@@ -261,7 +261,7 @@ public class IssuesController extends SpringActionController
             }
 
             getPageConfig().setRssProperties(new RssAction().getUrl(), "Issues");
-            HttpView view = getIssuesView(form);
+            HttpView view = getIssuesView();
             return view;
         }
 

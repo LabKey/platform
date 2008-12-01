@@ -32,6 +32,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.*;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.menu.NavTreeMenu;
@@ -39,7 +40,6 @@ import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.settings.AppProps;
 import org.labkey.common.util.Pair;
 import org.labkey.wiki.model.*;
 import org.springframework.validation.BindException;
@@ -1150,6 +1150,14 @@ public class WikiController extends SpringActionController
     }
 
 
+    private ActionURL getVersionURL(String name)
+    {
+        ActionURL url = new ActionURL(VersionAction.class, getContainer());
+        url.addParameter("name", name);
+        return url;
+    }
+
+
     @RequiresPermission(ACL.PERM_READ)
     public class VersionAction extends SimpleViewAction<WikiNameForm>
     {
@@ -1175,8 +1183,6 @@ public class WikiController extends SpringActionController
             if (null == _wiki)
                 HttpView.throwNotFound();
 
-            BaseWikiPermissions perms = getPermissions();
-
             //return latest version first since it may be cached
             _wikiversion = WikiManager.getLatestVersion(_wiki);
 
@@ -1189,28 +1195,13 @@ public class WikiController extends SpringActionController
                 if (version != _wikiversion.getVersion())
                     _wikiversion = WikiManager.getVersion(_wiki, version);
             }
+
             if (null == _wikiversion)
                 HttpView.throwNotFound();
 
-            HttpView versionView = new GroovyView("/org/labkey/wiki/view/wiki_version.gm");
-            versionView.addObject("wiki", _wiki);
-            versionView.addObject("title", _wikiversion.getTitle());
-            versionView.addObject("wikiversion", _wikiversion);
-            versionView.addObject("pageLink", _wiki.getPageLink());
-            versionView.addObject("versionsLink", _wiki.getVersionsLink());
-            versionView.addObject("makeCurrentLink", getViewContext().cloneActionURL().setAction("makeCurrent").toString());
-            versionView.addObject("hasReadPermission", perms.allowRead(_wiki));
-            versionView.addObject("hasAdminPermission", perms.allowAdmin());
-            versionView.addObject("hasSetCurVersionPermission", perms.allowUpdate(_wiki));
-            versionView.addObject("createdBy", UserManager.getDisplayName(_wikiversion.getCreatedBy(), getViewContext()));
-            versionView.addObject("created",
-                    DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG).format(_wikiversion.getCreated()));
+            VersionBean bean = new VersionBean(_wiki, _wikiversion, getPermissions());
 
-            //base url for different versions of this page
-            ActionURL versionURL = wikiURL("version", "name", name);
-            versionView.addObject("versionLink", versionURL.toString());
-
-            return versionView;
+            return new JspView<VersionBean>("/org/labkey/wiki/view/wikiVersion.jsp", bean);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1228,6 +1219,141 @@ public class WikiController extends SpringActionController
             url.addParameter("name", _wiki.getName());
             url.addParameter("version", " "+ _wikiversion.getVersion());
             return url;
+        }
+    }
+
+
+    public class VersionBean
+    {
+        public Wiki wiki;
+        public String title;
+        public WikiVersion wikiVersion;
+        public String pageLink;      // TODO: ActionURL
+        public String versionsLink;  // TODO: ActionURL
+        public String makeCurrentLink;
+        public boolean hasReadPermission;
+        public boolean hasAdminPermission;
+        public boolean hasSetCurVersionPermission;
+        public String createdBy;
+        public String created;
+        public String versionLink;            //base url for different versions of this page
+        public String compareLink;            //base url for comparing to another version
+
+        private VersionBean(Wiki wiki, WikiVersion wikiVersion, BaseWikiPermissions perms)
+        {
+            this.wiki = wiki;
+            title = wikiVersion.getTitle();
+            this.wikiVersion = wikiVersion;
+            pageLink = wiki.getPageLink();
+            versionsLink = wiki.getVersionsLink();
+            makeCurrentLink = getViewContext().cloneActionURL().setAction("makeCurrent").toString();  // TODO: Fix
+            hasReadPermission = perms.allowRead(wiki);
+            hasAdminPermission = perms.allowAdmin();
+            hasSetCurVersionPermission = perms.allowUpdate(wiki);
+            createdBy = UserManager.getDisplayName(wikiVersion.getCreatedBy(), getViewContext());
+            created = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG).format(wikiVersion.getCreated());
+            versionLink = getVersionURL(wiki.getName()).toString();
+            compareLink = getCompareVersionsURL(wiki.getName()).toString();
+        }
+    }
+
+
+    private ActionURL getCompareVersionsURL(String name)
+    {
+        ActionURL url = new ActionURL(CompareVersionsAction.class, getContainer());
+        url.addParameter("name", name);
+        return url;
+    }
+
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class CompareVersionsAction extends SimpleViewAction<CompareForm>
+    {
+        private Wiki _wiki = null;
+        private WikiVersion _wikiVersion1 = null;
+        private WikiVersion _wikiVersion2 = null;
+
+        public ModelAndView getView(CompareForm form, BindException errors) throws Exception
+        {
+            String name = StringUtils.trimToEmpty(form.getName());
+
+            _wiki = WikiManager.getWiki(getContainer(), name);
+            if (null == _wiki)
+                HttpView.throwNotFound();
+
+            _wikiVersion1 = WikiManager.getVersion(_wiki, form.getVersion1());
+
+            if (null == _wikiVersion1)
+                HttpView.throwNotFound();
+
+            _wikiVersion2 = WikiManager.getVersion(_wiki, form.getVersion2());
+
+            if (null == _wikiVersion2)
+                HttpView.throwNotFound();
+
+            String html1 = _wikiVersion1.getHtml(getContainer(), _wiki);
+            String html2 = _wikiVersion2.getHtml(getContainer(), _wiki);
+
+            DiffMatchPatch diffTool = new DiffMatchPatch();
+            LinkedList<DiffMatchPatch.Diff> diffs = diffTool.diff_main(html1, html2);
+            StringBuilder html = new StringBuilder(diffTool.diff_prettyHtml(diffs));
+            html.append("<hr>");
+
+            TextExtractor te1 = new TextExtractor(html1);
+            String text1 = te1.extract();
+            TextExtractor te2 = new TextExtractor(html2);
+            String text2 = te2.extract();
+            diffs = diffTool.diff_main(text1, text2);
+            html.append(diffTool.diff_prettyHtml(diffs));
+
+            return new HtmlView(html.toString());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            String pageTitle = _wikiVersion1.getTitle();
+            pageTitle += " (Comparing version " + _wikiVersion1.getVersion() + " to version " + _wikiVersion2.getVersion() + ")";
+
+            return new VersionsAction(_wiki, _wikiVersion1).appendNavTrail(root)
+                    .addChild(pageTitle);
+        }
+    }
+
+
+    public static class CompareForm
+    {
+        private String name;
+        private int version1;
+        private int version2;
+
+        public String getName()
+        {
+            return name;
+        }
+
+        public void setName(String name)
+        {
+            this.name = name;
+        }
+
+        public int getVersion1()
+        {
+            return version1;
+        }
+
+        public void setVersion1(int version1)
+        {
+            this.version1 = version1;
+        }
+
+        public int getVersion2()
+        {
+            return version2;
+        }
+
+        public void setVersion2(int version2)
+        {
+            this.version2 = version2;
         }
     }
 
@@ -1291,7 +1417,7 @@ public class WikiController extends SpringActionController
             dr.addDisplayColumn(new DataColumn(tinfoVersions.getColumn("Created")));
 
             //url displays version
-            ActionURL urlVersion = wikiURL("version", "name", wikiname);
+            ActionURL urlVersion = getVersionURL(wikiname);
             String urlstring = urlVersion.toString() + "&version=${Version}";
             dr.getDisplayColumn("Version").setURL(urlstring);
 
@@ -2159,15 +2285,6 @@ public class WikiController extends SpringActionController
         {
             out.write(getValue(ctx).toString());
         }
-    }
-
-
-    ActionURL wikiURL(String action, String... args) throws ServletException
-    {
-        ActionURL url = new ActionURL("Wiki", action, getContainer());
-        for (int i=0 ; i<args.length ; i+=2)
-            url.addParameter(args[i], args[i+1]);
-        return url;
     }
 
 
