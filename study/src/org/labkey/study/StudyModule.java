@@ -345,7 +345,6 @@ public class StudyModule extends DefaultModule
     @Override
     public UpgradeCode getUpgradeCode()
     {
-        return new StudyUpgra
-        deCode();
+        return new StudyUpgradeCode();
     }
 }
