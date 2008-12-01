@@ -22,14 +22,20 @@ import org.apache.log4j.Logger;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.module.ModuleContext;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
 import java.lang.reflect.Method;
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import junit.framework.Test;
+import junit.framework.TestSuite;
+import junit.framework.TestCase;
 
 /**
  * User: arauch
@@ -41,7 +47,7 @@ import java.util.regex.Pattern;
 public abstract class SqlDialect
 {
     protected static final Logger _log = Logger.getLogger(SqlDialect.class);
-    private static List<SqlDialect> _dialects = new ArrayList<SqlDialect>();
+    private static List<SqlDialect> _dialects = new CopyOnWriteArrayList<SqlDialect>();
 
     public static final String GENERIC_ERROR_MESSAGE = "The database experienced an unexpected problem. Please check your input and try again.";
     public static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
@@ -340,7 +346,7 @@ public abstract class SqlDialect
 
     public abstract String getSubstringFunction(String s, String start, String length);
 
-    public abstract int getNextSqlBlock(StringBuffer block, DbSchema schema, String sql, int i);
+    public abstract void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext) throws SQLException;
 
     public abstract String getMasterDataBaseName();
 
@@ -393,7 +399,7 @@ public abstract class SqlDialect
      *                   and must all refer to the same table.
      * @param tinfo      table used in the insert(s)
      */
-    public abstract void overrideAutoIncrement(StringBuffer statements, TableInfo tinfo);
+    public abstract void overrideAutoIncrement(StringBuilder statements, TableInfo tinfo);
 
     protected String getSystemTableNames()
     {
@@ -475,20 +481,6 @@ public abstract class SqlDialect
         }
     }
 
-    public void runSql(DbSchema schema, String sql) throws SQLException
-    {
-        int i = 0;
-
-        while (i < sql.length())
-        {
-            StringBuffer block = new StringBuffer();
-            i = getNextSqlBlock(block, schema, sql, i);
-
-            if (0 != block.length())
-                Table.execute(schema, block.toString(), new Object[]{});
-        }
-    }
-
     /**
      * Transform the JDBC error message into something the user is more likely
      * to understand.
@@ -521,12 +513,6 @@ public abstract class SqlDialect
     }
 
     public abstract String getBooleanDatatype();
-
-
-    public String getDatabaseName(String url) throws ServletException
-    {
-        return getJdbcHelper(url).getDatabase();
-    }
 
 
     // We need to determine the database name from a data source, so we've implemented a helper that parses
@@ -567,6 +553,12 @@ public abstract class SqlDialect
         {
             throw new ServletException("Error retrieving url property from DataSource", e);
         }
+    }
+
+
+    public String getDatabaseName(String url) throws ServletException
+    {
+        return getJdbcHelper(url).getDatabase();
     }
 
 
@@ -814,4 +806,35 @@ public abstract class SqlDialect
     public abstract boolean isCaseSensitive();
     public abstract boolean isSqlServer();
     public abstract boolean isPostgreSQL();
+    public abstract TestCase getTestCase();
+
+
+    // JUnit test case
+    public static class SqlDialectTestCase extends junit.framework.TestCase
+    {
+        public static Test suite()
+        {
+            TestSuite suite = new TestSuite();
+            suite.addTest(CoreSchema.getInstance().getSqlDialect().getTestCase());
+            return suite;
+        }
+    }
+
+
+
+    public static class TestUpgradeCode implements UpgradeCode
+    {
+        private int _counter = 0;
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void upgradeCode(ModuleContext moduleContext)
+        {
+            _counter++;
+        }
+
+        public int getCounter()
+        {
+            return _counter;
+        }
+    }
 }

@@ -42,8 +42,8 @@ import java.util.Set;
  */
 public class GroupManager
 {
-    private static Logger _log = Logger.getLogger(GroupManager.class);
-    private static CoreSchema _core = CoreSchema.getInstance();
+    private static final Logger _log = Logger.getLogger(GroupManager.class);
+    private static final CoreSchema _core = CoreSchema.getInstance();
     private static final String USER_CACHE_PREFIX = "Groups/AllGroups=";
     private static final String GROUP_CACHE_PREFIX = "Groups/Groups=";
     public static final String GROUP_AUDIT_EVENT = "GroupAuditEvent";
@@ -192,11 +192,11 @@ public class GroupManager
     }
 
 
-    private static String _insertGroupSql;
+    private static final String _insertGroupSql;
 
     static
     {
-        StringBuffer ins = new StringBuffer();
+        StringBuilder ins = new StringBuilder();
         ins.append("INSERT INTO ");
         ins.append(_core.getTableInfoPrincipals());
         ins.append(" (UserId, Name, Type) VALUES (?, ?, ?)");

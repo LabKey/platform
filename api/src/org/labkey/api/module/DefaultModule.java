@@ -16,10 +16,7 @@
 package org.labkey.api.module;
 
 import junit.framework.TestCase;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.FileSqlScriptProvider;
-import org.labkey.api.data.SqlScriptRunner;
+import org.labkey.api.data.*;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.security.User;
@@ -165,8 +162,6 @@ public abstract class DefaultModule implements Module
      */
     public void versionUpdate(ModuleContext moduleContext) throws Exception
     {
-        beforeSchemaUpdate(moduleContext);
-
         if (hasScripts())
         {
             SqlScriptProvider provider = new FileSqlScriptProvider(this);
@@ -175,16 +170,6 @@ public abstract class DefaultModule implements Module
             if (!scripts.isEmpty())
                 SqlScriptRunner.runScripts(this, moduleContext.getUpgradeUser(), scripts);
         }
-
-        afterSchemaUpdate(moduleContext);
-    }
-
-    public void beforeSchemaUpdate(ModuleContext moduleContext)
-    {
-    }
-
-    public void afterSchemaUpdate(ModuleContext moduleContext)
-    {
     }
 
     public void afterUpdate(ModuleContext moduleContext)
@@ -411,13 +396,8 @@ public abstract class DefaultModule implements Module
     }
 
 
-    // Called after every script runs.  Does nothing by default, but modules can override if they must execute code
-    // after a specific script is executed.  For example, if some tranformation of data, that can only be performed
-    // in code, must be done before subsequent scripts are run.  Overriding this method is a last resort; make every
-    // effort to do the upgrade/transformation in a SQL script because the code you write and call MUST continue to
-    // work against the old schema for the rest of time (it should be self-contained).  Also, future script
-    // consolidations could easily break your code, since they may invalidate version checks.
-    public void afterScriptRuns(SqlScript script)
+    public UpgradeCode getUpgradeCode()
     {
+        return null;
     }
 }

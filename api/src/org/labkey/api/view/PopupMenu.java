@@ -23,7 +23,6 @@ import java.io.Writer;
 import java.io.IOException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: May 13, 2008
  * Time: 3:30:25 PM

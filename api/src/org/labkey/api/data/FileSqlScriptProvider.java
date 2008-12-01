@@ -78,17 +78,11 @@ public class FileSqlScriptProvider implements SqlScriptProvider
     }
 
 
-    protected boolean shouldInclude(SqlScript script)
-    {
-        return true;
-    }
-
-
     public SqlScript getScript(String description)
     {
         FileSqlScript script = new FileSqlScript(this, description);
 
-        if (script.isValidName() && shouldInclude(script))
+        if (script.isValidName())
             return script;
         else
             return null;
@@ -237,9 +231,9 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         }
     }
 
-    private void afterScriptRuns(FileSqlScript fileSqlScript)
+    public UpgradeCode getUpgradeCode()
     {
-        _module.afterScriptRuns(fileSqlScript);
+        return _module.getUpgradeCode();
     }
 
     private String getScriptPath()
@@ -358,11 +352,6 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         public SqlScriptProvider getProvider()
         {
             return _provider;
-        }
-
-        public void afterScriptRuns()
-        {
-            _provider.afterScriptRuns(this);
         }
 
         public boolean equals(Object o)

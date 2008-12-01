@@ -28,6 +28,7 @@ import java.text.DecimalFormat;
 public class ModuleContext implements Cloneable
 {
     private double _installedVersion;
+    private double _originalVersion = 0.0;
     private String _className;
     private String _name;
     private ModuleLoader.ModuleState _moduleState = ModuleLoader.ModuleState.Loading;
@@ -53,9 +54,16 @@ public class ModuleContext implements Cloneable
         return _installedVersion;
     }
 
+    // InstalledVersion gets changed after upgrade... OriginalVersion keeps the version as it existed at server startup
+    public double getOriginalVersion()
+    {
+        return _originalVersion;
+    }
+
     public void setInstalledVersion(double installedVersion)
     {
         _installedVersion = installedVersion;
+        _originalVersion = installedVersion;
     }
 
     public boolean isNewInstall()

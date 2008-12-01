@@ -21,6 +21,7 @@ import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.log4j.Logger;
 import org.labkey.api.security.User;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -92,7 +93,7 @@ public class SqlScriptRunner
 
         for (SqlScript script : scripts)
         {
-            SqlScriptManager.runScript(user, script);
+            SqlScriptManager.runScript(user, script, ModuleLoader.getInstance().getModuleContext(module));
 
             synchronized(SCRIPT_LOCK)
             {
@@ -250,7 +251,6 @@ public class SqlScriptRunner
         public String getErrorMessage();
         public String getDescription();
         public SqlScriptProvider getProvider();
-        public void afterScriptRuns();
         public boolean isValidName();
     }
 
@@ -263,5 +263,6 @@ public class SqlScriptRunner
         public String getProviderName();
         public List<SqlScript> getDropScripts() throws SqlScriptException;
         public List<SqlScript> getCreateScripts() throws SqlScriptException;
+        public UpgradeCode getUpgradeCode();
     }
 }

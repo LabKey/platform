@@ -147,6 +147,7 @@ api/src/org/labkey/api/data/ShowRows.java -text
 api/src/org/labkey/api/data/SimpleFilter.java -text
 api/src/org/labkey/api/data/SqlDialect.java -text
 api/src/org/labkey/api/data/SqlScriptManager.java -text
+api/src/org/labkey/api/data/SqlScriptParser.java -text
 api/src/org/labkey/api/data/SqlScriptRunner.java -text
 api/src/org/labkey/api/data/TSVGridWriter.java -text
 api/src/org/labkey/api/data/TSVWriter.java -text
@@ -154,6 +155,7 @@ api/src/org/labkey/api/data/TableInfo.java -text
 api/src/org/labkey/api/data/TableXmlUtils.java -text
 api/src/org/labkey/api/data/TempTableTracker.java -text
 api/src/org/labkey/api/data/TestSchema.java -text
+api/src/org/labkey/api/data/UpgradeCode.java -text
 api/src/org/labkey/api/data/UrlColumn.java -text
 api/src/org/labkey/api/data/VirtualTable.java -text
 api/src/org/labkey/api/data/WrappedColumn.java -text
@@ -1624,11 +1626,13 @@ internal/src/org/labkey/api/security/UserComparator.java -text
 internal/src/org/labkey/api/util/BeanQuery.java -text
 internal/src/org/labkey/api/util/ContainerTree.java -text
 internal/src/org/labkey/api/util/ContainerTreeSelected.java -text
+internal/src/org/labkey/api/util/DiffMatchPatch.java -text
 internal/src/org/labkey/api/util/FTPUtil.java -text
 internal/src/org/labkey/api/util/HashHelpers.java -text
 internal/src/org/labkey/api/util/LogPrintWriter.java -text
 internal/src/org/labkey/api/util/Search.java -text
 internal/src/org/labkey/api/util/SessionTempFileHolder.java -text
+internal/src/org/labkey/api/util/TextExtractor.java -text
 internal/src/org/labkey/api/util/URLExpression.java -text
 internal/src/org/labkey/api/util/wiki_markup.properties -text
 internal/src/org/labkey/api/view/AbstractCustomizeWebPartView.java -text

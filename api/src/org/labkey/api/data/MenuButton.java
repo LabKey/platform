@@ -17,15 +17,12 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang.BooleanUtils;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.PopupMenu;
-import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.PopupMenu;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * User: jeckels
