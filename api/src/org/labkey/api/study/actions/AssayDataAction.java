@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.actions;
 
+import org.labkey.api.exp.api.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
@@ -53,8 +54,10 @@ public class AssayDataAction extends BaseAssayAction<AssayDataAction.AssayDataFo
             fullView.addView(provider.getDisallowedUploadMessageView(context.getUser(), context.getContainer(), _protocol));
 
         RunDataQueryView dataView = provider.createRunDataView(context, _protocol);
-        if (form.isIncludeSubfolders())
-            dataView.setIncludeSubfolders(true);
+        if (form.getContainerFilter() != null)
+        {
+            dataView.setContainerFilter(ContainerFilter.Filters.valueOf(form.getContainerFilter()));
+        }
         fullView.addView(dataView);
         return fullView;
     }
@@ -69,16 +72,16 @@ public class AssayDataAction extends BaseAssayAction<AssayDataAction.AssayDataFo
 
     public static class AssayDataForm extends ProtocolIdForm
     {
-        private boolean includeSubfolders;
+        private String containerFilter;
 
-        public boolean isIncludeSubfolders()
+        public String getContainerFilter()
         {
-            return includeSubfolders;
+            return containerFilter;
         }
 
-        public void setIncludeSubfolders(boolean includeSubfolders)
+        public void setContainerFilter(String containerFilter)
         {
-            this.includeSubfolders = includeSubfolders;
+            this.containerFilter = containerFilter;
         }
     }
 }

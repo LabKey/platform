@@ -27,7 +27,7 @@ import org.labkey.api.data.DbSchema;
  */
 public abstract class AbstractExpSchema extends UserSchema
 {
-    protected ContainerFilter _containerFilter = ContainerFilter.CURRENT;
+    protected ContainerFilter _containerFilter = ContainerFilter.Filters.CURRENT;
 
     public AbstractExpSchema(String name, User user, Container container, DbSchema dbSchema)
     {

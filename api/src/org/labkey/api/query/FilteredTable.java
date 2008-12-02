@@ -49,7 +49,7 @@ public class FilteredTable extends AbstractTableInfo
 
     public FilteredTable(TableInfo table, Container container, User user)
     {
-        this(table, container, ContainerFilter.CURRENT, user);
+        this(table, container, ContainerFilter.Filters.CURRENT, user);
     }
 
     public FilteredTable(TableInfo table, Container container, ContainerFilter containerFilter, User user)
@@ -60,7 +60,7 @@ public class FilteredTable extends AbstractTableInfo
             throw new IllegalArgumentException("container cannot be null");
         _container = container;
 
-        if (user == null && containerFilter != ContainerFilter.CURRENT) // CURRENT does not require a user
+        if (user == null && containerFilter != ContainerFilter.Filters.CURRENT) // CURRENT does not require a user
             throw new IllegalArgumentException("user cannot be null");
         _user = user;
 
@@ -213,7 +213,7 @@ public class FilteredTable extends AbstractTableInfo
     {
         // Bit of a hack here -- this table must already have a user or we're toast
         // In the future, we should require a user on construction, perhaps store a UserSchema object?
-        if (_user == null && filter != ContainerFilter.CURRENT)
+        if (_user == null && filter != ContainerFilter.Filters.CURRENT)
             throw new IllegalStateException("Cannot add a ContainerFilter unless this object was constructed with a user");
 
         _containerFilter = filter;

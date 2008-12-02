@@ -38,10 +38,12 @@ public class AssayDataLinkDisplayColumn extends DataColumn
     private ColumnInfo _protocolColumnInfo;
     private Map<Number, ExpProtocol> _protocols = new HashMap<Number, ExpProtocol>();
     private ColumnInfo _runIdColumnInfo;
+    private ContainerFilter _containerFilter;
 
-    public AssayDataLinkDisplayColumn(ColumnInfo colInfo)
+    public AssayDataLinkDisplayColumn(ColumnInfo colInfo, ContainerFilter containerFilter)
     {
         super(colInfo);
+        _containerFilter = containerFilter;
     }
 
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
@@ -57,6 +59,9 @@ public class AssayDataLinkDisplayColumn extends DataColumn
                 _protocols.put(protocolId, protocol);
             }
             ActionURL url = AssayService.get().getAssayDataURL(ctx.getContainer(), protocol, runId.intValue());
+            if (_containerFilter != null)
+                url.addParameter("containerFilter", _containerFilter.toString());            
+
             out.write("<a href=\"" + url.getLocalURIString() + "\" title=\"View the data for just this run\">" +
                     PageFlowUtil.filter(getDisplayColumn().getValue(ctx)) + "</a>");
         }

@@ -36,7 +36,7 @@ public class ExperimentRunListView extends QueryView
     private boolean _showRemoveFromExperimentButton = false;
     private boolean _showExportXARButton = false;
     private boolean _showMoveRunsButton = false;
-    private boolean _includeSubfolders = false;
+    private ContainerFilter _containerFilter;
 
     private final ExperimentRunFilter _selectedFilter;
 
@@ -95,14 +95,14 @@ public class ExperimentRunListView extends QueryView
         _showRemoveFromExperimentButton = showRemoveFromExperimentButton;
     }
 
-    public boolean isIncludeSubfolders()
+    public ContainerFilter getContainerFilter()
     {
-        return _includeSubfolders;
+        return _containerFilter;
     }
 
-    public void setIncludeSubfolders(boolean includeSubfolders)
+    public void setContainerFilter(ContainerFilter containerFilter)
     {
-        _includeSubfolders = includeSubfolders;
+        _containerFilter = containerFilter;
     }
 
     private ExpExperiment getExperiment()
@@ -234,8 +234,8 @@ public class ExperimentRunListView extends QueryView
     protected TableInfo createTable()
     {
         ExpRunTable table = (ExpRunTable)super.createTable();
-        if (_includeSubfolders)
-            table.setContainerFilter(ContainerFilter.CURRENT_AND_SUBFOLDERS);
+        if (_containerFilter != null)
+            table.setContainerFilter(_containerFilter);
         return table;
     }
 

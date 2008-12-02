@@ -33,6 +33,10 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.Pair;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * User: brittp
  * Date: Jun 29, 2007
@@ -40,7 +44,7 @@ import org.labkey.common.util.Pair;
  */
 public class RunDataQueryView extends AssayBaseQueryView
 {
-    private boolean includeSubfolders;
+    private ContainerFilter containerFilter;
 
     public RunDataQueryView(ExpProtocol protocol, ViewContext context, QuerySettings settings)
     {
@@ -69,12 +73,7 @@ public class RunDataQueryView extends AssayBaseQueryView
 
                 AssayProvider provider = AssayService.get().getProvider(_protocol);
 
-                if (provider.allowUpload(getUser(), getContainer(), _protocol))
-                {
-                    ActionButton uploadRuns = new ActionButton(provider.getUploadWizardURL(getContainer(), _protocol).getLocalURIString(),
-                            "Upload Runs", DataRegion.MODE_GRID, ActionButton.Action.GET);
-                    bbar.add(uploadRuns);
-                }
+                handleUploadButton(provider, bbar);
 
                 ActionURL publishURL = AssayService.get().getProtocolURL(getContainer(), _protocol, "publishStart");
                 for (Pair<String, String> param : publishURL.getParameters())
@@ -102,27 +101,70 @@ public class RunDataQueryView extends AssayBaseQueryView
         return view;
     }
 
+    private void handleUploadButton(AssayProvider provider, ButtonBar buttonBar)
+    {
+        if (containerFilter == null)
+        {
+            if (provider.allowUpload(getUser(), getContainer(), _protocol))
+            {
+                ActionButton uploadRuns = new ActionButton(provider.getUploadWizardURL(getContainer(), _protocol).getLocalURIString(),
+                        "Upload Runs", DataRegion.MODE_GRID, ActionButton.Action.GET);
+                buttonBar.add(uploadRuns);
+            }
+            return;
+        }
+        Collection<String> containersFromFilter = containerFilter.getIds(getContainer(), getUser());
+        Set<Container> allowedContainers = new HashSet<Container>();
+        for (String id : containersFromFilter)
+        {
+            Container c = ContainerManager.getForId(id);
+            if (c == null || !provider.allowUpload(getUser(), c, _protocol) || !c.hasPermission(getUser(), ACL.PERM_INSERT))
+                continue;
+            allowedContainers.add(c);
+        }
+
+        if (allowedContainers.isEmpty())
+            return;
+        if (allowedContainers.size() == 1)
+        {
+            ActionButton uploadRuns = new ActionButton(provider.getUploadWizardURL(getContainer(), _protocol).getLocalURIString(),
+                "Upload Runs", DataRegion.MODE_GRID, ActionButton.Action.GET);
+            buttonBar.add(uploadRuns);
+            return;
+        }
+
+        // We have multiple containers
+        MenuButton uploadButton = new MenuButton("Upload Runs");
+        for(Container container : allowedContainers)
+        {
+            ActionURL url = provider.getUploadWizardURL(container, _protocol);
+            uploadButton.addMenuItem(container.getName(), url);
+        }
+        buttonBar.add(uploadButton);
+
+    }
+
     protected TSVGridWriter.ColumnHeaderType getColumnHeaderType()
     {
         return TSVGridWriter.ColumnHeaderType.caption;
     }
 
-    public boolean isIncludeSubfolders()
+    public ContainerFilter getContainerFilter()
     {
-        return includeSubfolders;
+        return containerFilter;
     }
 
-    public void setIncludeSubfolders(boolean includeSubfolders)
+    public void setContainerFilter(ContainerFilter containerFilter)
     {
-        this.includeSubfolders = includeSubfolders;
+        this.containerFilter = containerFilter;
     }
 
     @Override
     protected TableInfo createTable()
     {
         FilteredTable table = (FilteredTable)super.createTable();
-        if (includeSubfolders)
-            table.setContainerFilter(ContainerFilter.CURRENT_AND_SUBFOLDERS);
+        if (containerFilter != null)
+            table.setContainerFilter(containerFilter);
         return table;
     }
 }

@@ -208,7 +208,7 @@ public class ExpSchema extends AbstractExpSchema
             public TableInfo getLookupTableInfo()
             {
                 ExpProtocolTable protocolTable = createProtocolsTable("Protocols");
-                protocolTable.setContainerFilter(ContainerFilter.EVERYTHING);
+                protocolTable.setContainerFilter(ContainerFilter.Filters.EVERYTHING);
                 return protocolTable;
             }
         };

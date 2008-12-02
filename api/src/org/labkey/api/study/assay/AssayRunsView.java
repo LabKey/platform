@@ -17,6 +17,7 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.exp.api.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.study.actions.AssayHeaderView;
 import org.labkey.api.study.query.RunListQueryView;
@@ -30,14 +31,14 @@ import org.labkey.api.view.ViewContext;
  */
 public class AssayRunsView extends VBox
 {
-    public AssayRunsView(ExpProtocol protocol, boolean minimizeLinks, boolean includeSubfolders)
+    public AssayRunsView(ExpProtocol protocol, boolean minimizeLinks, ContainerFilter containerFilter)
     {
         AssayHeaderView headerView = new AssayHeaderView(protocol, AssayService.get().getProvider(protocol), minimizeLinks);
         ViewContext context = getViewContext();
         AssayProvider provider = AssayService.get().getProvider(protocol);
         RunListQueryView runsView = provider.createRunView(context, protocol);
-        if (includeSubfolders)
-            runsView.setIncludeSubfolders(true);
+        if (containerFilter != null)
+            runsView.setContainerFilter(containerFilter);
         if (minimizeLinks)
         {
             runsView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);

@@ -16,14 +16,15 @@
 
 package org.labkey.api.study.actions;
 
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.ACL;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.view.*;
-import org.labkey.api.study.assay.AssayRunsView;
 import org.labkey.api.data.DataRegionSelection;
-import org.springframework.web.servlet.ModelAndView;
+import org.labkey.api.exp.api.ContainerFilter;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.study.assay.AssayRunsView;
+import org.labkey.api.view.NavTree;
 import org.springframework.validation.BindException;
+import org.springframework.web.servlet.ModelAndView;
 
 /**
  * User: brittp
@@ -36,7 +37,7 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
     public static class AssayRunsForm extends ProtocolIdForm
     {
         private String _clearDataRegionSelectionKey;
-        private boolean _includeSubfolders;
+        private String _containerFilter;
 
         public String getClearDataRegionSelectionKey()
         {
@@ -48,14 +49,14 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
             _clearDataRegionSelectionKey = clearDataRegionSelectionKey;
         }
 
-        public boolean isIncludeSubfolders()
+        public String getContainerFilter()
         {
-            return _includeSubfolders;
+            return _containerFilter;
         }
 
-        public void setIncludeSubfolders(boolean includeSubfolders)
+        public void setContainerFilter(String containerFilter)
         {
-            _includeSubfolders = includeSubfolders;
+            _containerFilter = containerFilter;
         }
     }
 
@@ -66,7 +67,10 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
         if (summaryForm.getClearDataRegionSelectionKey() != null)
             DataRegionSelection.clearAll(getViewContext(), summaryForm.getClearDataRegionSelectionKey());
         _protocol = getProtocol(summaryForm);
-        return new AssayRunsView(_protocol, false, summaryForm.isIncludeSubfolders());
+        ContainerFilter containerFilter = null;
+        if (summaryForm.getContainerFilter() != null)
+            containerFilter = ContainerFilter.Filters.valueOf(summaryForm.getContainerFilter());
+        return new AssayRunsView(_protocol, false, containerFilter);
     }
 
     public NavTree appendNavTrail(NavTree root)
