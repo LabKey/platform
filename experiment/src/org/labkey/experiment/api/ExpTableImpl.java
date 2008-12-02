@@ -45,7 +45,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
         setName(name);
         setAlias(alias);
         _schema = schema;
-        setContainerFilter(ContainerFilter.CURRENT);
+        setContainerFilter(ContainerFilter.Filters.CURRENT);
     }
 
     protected ColumnInfo addContainerColumn(C containerCol)

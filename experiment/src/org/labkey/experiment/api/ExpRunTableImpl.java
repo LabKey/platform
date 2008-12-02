@@ -166,12 +166,12 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         if (_schema.getContainer().equals(ContainerManager.getSharedContainer()))
         {
             // If we're in the /Shared project, look everywhere
-            setContainerFilter(ContainerFilter.ALL_IN_SITE);
+            setContainerFilter(ContainerFilter.Filters.ALL_IN_SITE);
         }
         else if (getContainer().isProject())
         {
             // If we're in a project, look in subfolders
-            setContainerFilter(ContainerFilter.CURRENT_AND_SUBFOLDERS);
+            setContainerFilter(ContainerFilter.Filters.CURRENT_AND_SUBFOLDERS);
         }
     }
 

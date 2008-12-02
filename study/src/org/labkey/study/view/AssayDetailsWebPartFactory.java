@@ -16,11 +16,12 @@
 
 package org.labkey.study.view;
 
-import org.labkey.api.view.*;
-import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.study.assay.AssayRunsView;
+import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.view.*;
 
 /**
  * User: jeckels
@@ -63,7 +64,7 @@ public class AssayDetailsWebPartFactory extends BaseWebPartFactory
         }
         else
         {
-            view = new AssayRunsView(protocol, !showButtons, includeSubfolders);
+            view = new AssayRunsView(protocol, !showButtons, includeSubfolders ? ContainerFilter.Filters.CURRENT_AND_SUBFOLDERS : null);
             view.setTitleHref(AssayService.get().getAssayRunsURL(portalCtx.getContainer(), protocol).getLocalURIString());
             view.setTitle(protocol.getName() + " Runs");
         }

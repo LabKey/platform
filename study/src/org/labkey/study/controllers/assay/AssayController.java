@@ -144,8 +144,8 @@ public class AssayController extends SpringActionController
             for (String id : selection)
                 selectedIds[i++] = Integer.parseInt(id);
             ActionURL url = AssayService.get().getAssayDataURL(getContainer(), form.getProtocol(), selectedIds);
-            if (form.isIncludeSubfolders())
-                url.addParameter("includeSubfolders", true);
+            if (form.getContainerFilter() != null)
+                url.addParameter("containerFilter", form.getContainerFilter());
             return url;
         }
 
@@ -161,16 +161,16 @@ public class AssayController extends SpringActionController
 
     public static class ShowSelectedForm extends ProtocolIdForm
     {
-        private boolean includeSubfolders;
+        private String containerFilter;
 
-        public boolean isIncludeSubfolders()
+        public String getContainerFilter()
         {
-            return includeSubfolders;
+            return containerFilter;
         }
 
-        public void setIncludeSubfolders(boolean includeSubfolders)
+        public void setContainerFilter(String containerFilter)
         {
-            this.includeSubfolders = includeSubfolders;
+            this.containerFilter = containerFilter;
         }
     }
 
