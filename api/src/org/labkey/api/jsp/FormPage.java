@@ -17,26 +17,26 @@
 package org.labkey.api.jsp;
 
 import org.labkey.api.view.JspView;
-import org.labkey.api.view.ViewForm;
+import org.labkey.api.view.ViewFormData;
 import org.springframework.validation.BindException;
 
-abstract public class FormPage<FROM extends ViewForm> extends ContextPage
+abstract public class FormPage<FROM extends ViewFormData> extends ContextPage
 {
     public FROM __form;
     
-    static public <F extends ViewForm> FormPage<F> get(Class clazzPackage, F form, String name)
+    static public <F extends ViewFormData> FormPage<F> get(Class clazzPackage, F form, String name)
     {
         FormPage<F> ret = (FormPage<F>) JspLoader.createPage(form.getRequest(), clazzPackage, name);
         ret.setForm(form);
         return ret;
     }
 
-    static public <F extends ViewForm> JspView<F> getView(Class clazzPackage, F form, BindException errors, String name)
+    static public <F extends ViewFormData> JspView<F> getView(Class clazzPackage, F form, BindException errors, String name)
     {
         return get(clazzPackage, form, name).createView(errors);
     }
 
-    static public <F extends ViewForm> JspView<F> getView(Class clazzPackage, F form, String name)
+    static public <F extends ViewFormData> JspView<F> getView(Class clazzPackage, F form, String name)
     {
         return get(clazzPackage, form, name).createView();
     }

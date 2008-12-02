@@ -16,7 +16,7 @@
 
 package org.labkey.api.reports.actions;
 
-import org.labkey.api.view.ViewForm;
+import org.labkey.api.view.ViewFormData;
 import org.springframework.validation.BindException;
 
 /**
@@ -24,7 +24,7 @@ import org.springframework.validation.BindException;
  * User: Karl Lum
  * Date: Jan 30, 2008
  */
-public class ReportForm extends ViewForm
+public class ReportForm extends ViewFormData
 {
     private String _tabId;
     protected BindException _errors;

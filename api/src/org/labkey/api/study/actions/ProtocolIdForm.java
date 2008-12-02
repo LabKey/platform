@@ -16,7 +16,7 @@
 
 package org.labkey.api.study.actions;
 
-import org.labkey.api.view.ViewForm;
+import org.labkey.api.view.ViewFormData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
@@ -26,7 +26,7 @@ import org.labkey.api.study.assay.AssayService;
 * Date: Jul 26, 2007
 * Time: 7:02:45 PM
 */
-public class ProtocolIdForm extends ViewForm
+public class ProtocolIdForm extends ViewFormData
 {
     private ExpProtocol _protocol;
 

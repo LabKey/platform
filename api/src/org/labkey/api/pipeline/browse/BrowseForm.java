@@ -16,12 +16,12 @@
 
 package org.labkey.api.pipeline.browse;
 
-import org.labkey.api.view.ViewForm;
+import org.labkey.api.view.ViewFormData;
 import org.labkey.api.view.ActionURL;
 
 import java.util.*;
 
-abstract public class BrowseForm extends ViewForm
+abstract public class BrowseForm extends ViewFormData
 {
     public enum Param
     {

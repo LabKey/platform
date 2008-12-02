@@ -27,14 +27,12 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.api.action.HasValidator;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.BaseViewAction;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
-import org.springframework.validation.Errors;
 import org.springframework.beans.PropertyValues;
 import org.springframework.beans.PropertyValue;
 
@@ -50,7 +48,7 @@ import java.util.*;
  * Supports insert, update, delete functionality with a minimum of fuss
  * <p/>
  */
-public class TableViewForm extends ViewForm implements DynaBean, HasBindParameters
+public class TableViewForm extends ViewFormData implements DynaBean, HasBindParameters
 {
     protected Map<String, String> _stringValues = new CaseInsensitiveHashMap<String>();
     protected Map<String, Object> _values = null;
