@@ -110,7 +110,7 @@ public class BaseController extends ViewController
         return BaseStudyController.nullSafeEqual(first, second);
     }
 
-    public static class IdForm extends ViewForm
+    public static class IdForm extends ViewFormData
     {
         private int _id;
 

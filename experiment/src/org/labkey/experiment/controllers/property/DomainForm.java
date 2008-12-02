@@ -16,7 +16,7 @@
 
 package org.labkey.experiment.controllers.property;
 
-import org.labkey.api.view.ViewForm;
+import org.labkey.api.view.ViewFormData;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.exp.*;
@@ -30,7 +30,7 @@ import javax.servlet.ServletException;
 import java.util.Map;
 import java.util.LinkedHashMap;
 
-public class DomainForm extends ViewForm
+public class DomainForm extends ViewFormData
 {
     protected Domain _domain;
     private boolean _allowFileLinkProperties = false;

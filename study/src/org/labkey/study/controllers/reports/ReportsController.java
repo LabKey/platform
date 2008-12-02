@@ -1542,7 +1542,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    public static class SaveReportForm extends ViewForm
+    public static class SaveReportForm extends ViewFormData
     {
         protected String label;
         protected String params;
@@ -1724,7 +1724,7 @@ public class ReportsController extends BaseStudyController
         public String getDataRegionName(){return _dataRegionName;}
     }
 
-    public static class PlotForm extends ViewForm
+    public static class PlotForm extends ViewFormData
     {
         private int reportId;
         private int datasetId = 0;

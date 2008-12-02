@@ -28,7 +28,7 @@ import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.ViewForm;
+import org.labkey.api.view.ViewFormData;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -49,7 +49,7 @@ public class AnalyticsController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Configuration, "analytics settings", new ActionURL(BeginAction.class, ContainerManager.getRoot()));
     }
 
-    static public class SettingsForm extends ViewForm
+    static public class SettingsForm extends ViewFormData
     {
         public AnalyticsServiceImpl.TrackingStatus ff_trackingStatus;
         public String ff_accountId;

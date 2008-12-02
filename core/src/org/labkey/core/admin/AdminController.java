@@ -3794,7 +3794,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    public static class ManageFoldersForm extends ViewForm
+    public static class ManageFoldersForm extends ViewFormData
     {
         private String name;
         private String folder;

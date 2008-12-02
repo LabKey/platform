@@ -33,7 +33,7 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.ViewForm;
+import org.labkey.api.view.ViewFormData;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -473,7 +473,7 @@ public class AnalysisController extends SpringActionController
         }
     }
 
-    public static class AnalyzeForm extends ViewForm
+    public static class AnalyzeForm extends ViewFormData
     {
         public enum Params { path, nsClass, name, fileInputNames }
 

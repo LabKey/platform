@@ -16,19 +16,17 @@
 
 package org.labkey.query.controllers;
 
-import org.labkey.api.view.ViewForm;
+import org.labkey.api.view.ViewFormData;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.security.ACL;
-import org.labkey.api.security.User;
 import org.apache.struts.action.ActionMapping;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.QueryManager;
 
 import javax.servlet.http.HttpServletRequest;
-import java.awt.*;
 
-public class InternalViewForm extends ViewForm
+public class InternalViewForm extends ViewFormData
 {
     private int _customViewId;
     CstmView _view;

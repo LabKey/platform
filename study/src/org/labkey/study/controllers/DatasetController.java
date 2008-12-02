@@ -587,7 +587,7 @@ public class DatasetController extends BaseStudyController
         }
     }
 
-    public static class EditDatasetRowForm extends ViewForm
+    public static class EditDatasetRowForm extends ViewFormData
     {
         private String lsid;
         private int datasetId;

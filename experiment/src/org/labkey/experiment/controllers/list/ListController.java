@@ -99,9 +99,9 @@ public class ListController extends SpringActionController
 
 
     @RequiresPermission(ACL.PERM_READ)
-    public class BeginAction extends SimpleViewAction<ViewForm>
+    public class BeginAction extends SimpleViewAction<ViewFormData>
     {
-        public ModelAndView getView(ViewForm form, BindException errors) throws Exception
+        public ModelAndView getView(ViewFormData form, BindException errors) throws Exception
         {
             return FormPage.getView(ListController.class, form, "begin.jsp");
         }

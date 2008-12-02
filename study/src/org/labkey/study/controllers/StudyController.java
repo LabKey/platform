@@ -2837,7 +2837,7 @@ public class StudyController extends BaseStudyController
         return Collections.emptyList();
     }
 
-    public static class VisitForm extends ViewForm
+    public static class VisitForm extends ViewFormData
     {
         private int[] _dataSetIds;
         private String[] _dataSetStatus;
@@ -3067,7 +3067,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class ManageQCStatesForm extends ViewForm
+    public static class ManageQCStatesForm extends ViewFormData
     {
         private int[] _ids;
         private String[] _labels;
@@ -5104,7 +5104,7 @@ public class StudyController extends BaseStudyController
         return prefix + (getStudy().isDateBased() ? "Timepoint" : "Visit") + ".jsp";
     }
 
-    public static class ParticipantForm extends ViewForm implements StudyManager.ParticipantViewConfig
+    public static class ParticipantForm extends ViewFormData implements StudyManager.ParticipantViewConfig
     {
         private String participantId;
         private int datasetId;
@@ -5374,7 +5374,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class ImportDataSetForm extends ViewForm
+    public static class ImportDataSetForm extends ViewFormData
     {
         private int datasetId = 0;
         private String typeURI;
@@ -5423,7 +5423,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class DataSetForm extends ViewForm
+    public static class DataSetForm extends ViewFormData
     {
         private String _name;
         private String _label;

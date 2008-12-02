@@ -1440,7 +1440,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public static class DeleteForm extends ViewForm implements DataRegionSelection.DataSelectionKeyForm
+    public static class DeleteForm extends ViewFormData implements DataRegionSelection.DataSelectionKeyForm
     {
         private String _returnURL;
         private boolean _forceDelete;

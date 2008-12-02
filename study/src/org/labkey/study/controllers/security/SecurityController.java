@@ -360,7 +360,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    private static class StudySecurityForm extends ViewForm
+    private static class StudySecurityForm extends ViewFormData
     {
         private SecurityType _securityType;
 

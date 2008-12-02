@@ -16,10 +16,8 @@
 
 package org.labkey.experiment.controllers.exp;
 
-import org.labkey.api.view.ViewForm;
+import org.labkey.api.view.ViewFormData;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.experiment.api.ExpRunImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
@@ -27,7 +25,7 @@ import org.labkey.experiment.api.ExperimentServiceImpl;
  * User: jeckels
 * Date: Dec 19, 2007
 */
-public class ExperimentRunForm extends ViewForm
+public class ExperimentRunForm extends ViewFormData
 {
     private int _rowId;
     private String _lsid;

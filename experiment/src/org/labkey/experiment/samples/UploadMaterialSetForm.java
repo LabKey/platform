@@ -17,13 +17,13 @@
 package org.labkey.experiment.samples;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.view.ViewForm;
+import org.labkey.api.view.ViewFormData;
 import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.util.Map;
 
-public class UploadMaterialSetForm extends ViewForm
+public class UploadMaterialSetForm extends ViewFormData
 {
     static final private Logger _log = Logger.getLogger(UploadMaterialSetForm.class);
     private String name;

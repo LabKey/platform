@@ -20,13 +20,13 @@ import org.apache.struts.action.ActionMapping;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.ViewForm;
+import org.labkey.api.view.ViewFormData;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ActionURLException;
 
 import javax.servlet.http.HttpServletRequest;
 
-public class ListDefinitionForm extends ViewForm
+public class ListDefinitionForm extends ViewFormData
 {
     protected ListDefinition _listDef;
     private String _returnUrl;

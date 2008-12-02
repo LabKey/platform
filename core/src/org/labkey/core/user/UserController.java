@@ -1258,7 +1258,7 @@ public class UserController extends SpringActionController
     }
 
 
-    public static class UserForm extends ViewForm
+    public static class UserForm extends ViewFormData
     {
         private String userId;
         private String newEmail;

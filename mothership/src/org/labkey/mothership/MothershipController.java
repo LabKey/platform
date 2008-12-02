@@ -32,7 +32,6 @@ import org.jfree.data.xy.XYDataset;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.action.LabkeyError;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.FilteredTable;
@@ -771,7 +770,7 @@ public class MothershipController extends SpringActionController
         return builder.toString();
     }
 
-    public static abstract class ServerInfoForm extends ViewForm
+    public static abstract class ServerInfoForm extends ViewFormData
     {
         private String _svnRevision;
         private String _runtimeOS;
@@ -1421,7 +1420,7 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    public static class CreateIssueFinishedForm extends ViewForm
+    public static class CreateIssueFinishedForm extends ViewFormData
     {
         private int _exceptionStackTraceId;
         private int _issueId;
@@ -1462,7 +1461,7 @@ public class MothershipController extends SpringActionController
     }
 
 
-    public static class UpgradeMessageForm extends ViewForm
+    public static class UpgradeMessageForm extends ViewFormData
     {
         private int _currentRevision;
         private String _message;

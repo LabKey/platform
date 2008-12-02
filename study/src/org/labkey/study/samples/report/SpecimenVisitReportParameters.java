@@ -1,6 +1,6 @@
 package org.labkey.study.samples.report;
 
-import org.labkey.api.view.ViewForm;
+import org.labkey.api.view.ViewFormData;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.util.PageFlowUtil;
@@ -31,7 +31,7 @@ import java.sql.SQLException;
 * User: brittp
 * Created: Jan 14, 2008 12:26:17 PM
 */
-public abstract class SpecimenVisitReportParameters extends ViewForm
+public abstract class SpecimenVisitReportParameters extends ViewFormData
 {
     public enum PARAMS
     {

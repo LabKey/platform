@@ -1075,7 +1075,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    public static class CreateSampleRequestForm extends ViewForm implements HiddenFormInputGenerator
+    public static class CreateSampleRequestForm extends ViewFormData implements HiddenFormInputGenerator
     {
         private String[] _inputs;
         private int _destinationSite;
@@ -2068,7 +2068,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    public static class SubmissionForm extends ViewForm
+    public static class SubmissionForm extends ViewFormData
     {
         private int _id;
 
@@ -2655,7 +2655,7 @@ public class SpringSpecimenController extends BaseStudyController
         // with request->bean translation for this report type.
     }
 
-    public static class ReportListForm extends ViewForm
+    public static class ReportListForm extends ViewFormData
     {
         private String getURL(Class<? extends SpecimenVisitReportAction> actionClass, TypeSummaryReportFactory.Status status)
         {
@@ -2755,7 +2755,7 @@ public class SpringSpecimenController extends BaseStudyController
         APPEND,
         REPLACE
     }
-    public static class UpdateSpecimenCommentsForm extends ViewForm
+    public static class UpdateSpecimenCommentsForm extends ViewFormData
     {
         private String _comments;
         private int[] _rowId;
