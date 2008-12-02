@@ -108,7 +108,7 @@ public class RunDataQueryView extends AssayBaseQueryView
             if (provider.allowUpload(getUser(), getContainer(), _protocol))
             {
                 ActionButton uploadRuns = new ActionButton(provider.getUploadWizardURL(getContainer(), _protocol).getLocalURIString(),
-                        "Upload Runs", DataRegion.MODE_GRID, ActionButton.Action.GET);
+                        "Import Runs", DataRegion.MODE_GRID, ActionButton.Action.GET);
                 buttonBar.add(uploadRuns);
             }
             return;
@@ -128,13 +128,13 @@ public class RunDataQueryView extends AssayBaseQueryView
         if (allowedContainers.size() == 1)
         {
             ActionButton uploadRuns = new ActionButton(provider.getUploadWizardURL(getContainer(), _protocol).getLocalURIString(),
-                "Upload Runs", DataRegion.MODE_GRID, ActionButton.Action.GET);
+                "Import Runs", DataRegion.MODE_GRID, ActionButton.Action.GET);
             buttonBar.add(uploadRuns);
             return;
         }
 
         // We have multiple containers
-        MenuButton uploadButton = new MenuButton("Upload Runs");
+        MenuButton uploadButton = new MenuButton("Import Runs");
         for(Container container : allowedContainers)
         {
             ActionURL url = provider.getUploadWizardURL(container, _protocol);

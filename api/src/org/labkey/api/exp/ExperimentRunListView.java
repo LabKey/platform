@@ -186,7 +186,7 @@ public class ExperimentRunListView extends QueryView
             bar.add(exportXAR);
         }
 
-        _selectedFilter.populateButtonBar(context, bar, view);
+        _selectedFilter.populateButtonBar(context, bar, view, _containerFilter);
 
         if (getViewContext().hasPermission(ACL.PERM_UPDATE))
         {

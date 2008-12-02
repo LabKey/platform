@@ -17,14 +17,15 @@
 package org.labkey.api.exp;
 
 import org.labkey.api.data.*;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.DataView;
+import org.labkey.api.exp.api.ContainerFilter;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSchema;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.ViewContext;
 
 import java.sql.SQLException;
 
@@ -121,7 +122,7 @@ public abstract class ExperimentRunFilter implements Comparable<ExperimentRunFil
         return null;
     }
 
-    public void populateButtonBar(ViewContext context, ButtonBar bar, DataView view)
+    public void populateButtonBar(ViewContext context, ButtonBar bar, DataView view, ContainerFilter containerFilter)
     {
     }
 }
