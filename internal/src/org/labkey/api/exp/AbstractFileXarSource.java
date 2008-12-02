@@ -19,6 +19,8 @@ package org.labkey.api.exp;
 import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 import org.apache.xmlbeans.XmlException;
 
 import java.io.IOException;
@@ -36,6 +38,11 @@ public abstract class AbstractFileXarSource extends XarSource
     public AbstractFileXarSource(PipelineJob job)
     {
         super(job);
+    }
+
+    public AbstractFileXarSource(String description, Container container, User user)
+    {
+        super(description, container, user);
     }
 
     public ExperimentArchiveDocument getDocument() throws XmlException, IOException

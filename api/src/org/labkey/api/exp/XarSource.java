@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.security.User;
 import org.apache.xmlbeans.XmlException;
 
 import java.io.IOException;
@@ -48,9 +49,14 @@ public abstract class XarSource implements Serializable
 
     private final XarContext _xarContext;
 
+    public XarSource(String description, Container container, User user)
+    {
+        _xarContext = new XarContext(description, container, user);
+    }
+
     public XarSource(PipelineJob job)
     {
-        _xarContext = new XarContext(job.getDescription(), job.getContainer(), job.getUser());
+        this(job.getDescription(), job.getContainer(), job.getUser());
     }
 
 

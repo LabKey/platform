@@ -41,6 +41,8 @@ public class XarContext
     private final Map<String, ExpData> _originalURLs;
     private final Map<String, ExpData> _originalCaseInsensitiveURLs;
     private final String _jobDescription;
+    private final Container _container;
+    private final User _user;
 
     private final Map<String, String> _substitutions;
 
@@ -66,6 +68,8 @@ public class XarContext
         _originalURLs = new HashMap<String, ExpData>(parent._originalURLs);
         _originalCaseInsensitiveURLs = new CaseInsensitiveHashMap<ExpData>(parent._originalURLs);
         _substitutions = new HashMap<String, String>(parent._substitutions);
+        _container = parent.getContainer();
+        _user = parent.getUser();
     }
 
     public XarContext(String jobDescription, Container c, User user)
@@ -86,12 +90,18 @@ public class XarContext
         _substitutions.put(CONTAINER_ID_NAME, Integer.toString(c.getRowId()));
 
         _substitutions.put(XAR_FILE_ID_NAME, "Xar-" + GUID.makeGUID());
-        _substitutions.put("UserEmail", user.getEmail());
-        _substitutions.put("UserName", user.getFullName());
+        if (user != null)
+        {
+            _substitutions.put("UserEmail", user.getEmail());
+            _substitutions.put("UserName", user.getFullName());
+        }
         _substitutions.put(FOLDER_LSID_BASE_NAME, "urn:lsid:" + LSID_AUTHORITY_SUBSTITUTION + ":${LSIDNamespace.Prefix}.Folder-" + CONTAINER_ID_SUBSTITUTION);
         _substitutions.put(RUN_LSID_BASE_NAME, "urn:lsid:" + LSID_AUTHORITY_SUBSTITUTION + ":${LSIDNamespace.Prefix}.Run-" + EXPERIMENT_RUN_ID_SUBSTITUTION);
 
         _substitutions.put(LSID_AUTHORITY_NAME, AppProps.getInstance().getDefaultLsidAuthority());
+
+        _container = c;
+        _user = user;
     }
     
     public String getJobDescription()
@@ -224,5 +234,15 @@ public class XarContext
     public static String createSubstitution(String name)
     {
         return "${" + name + "}";
+    }
+
+    public Container getContainer()
+    {
+        return _container;
+    }
+
+    public User getUser()
+    {
+        return _user;
     }
 }

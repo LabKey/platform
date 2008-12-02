@@ -35,6 +35,7 @@ import java.util.Set;
 import java.sql.SQLException;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 
 public class ExperimentService
 {
@@ -74,6 +75,7 @@ public class ExperimentService
         ExpData createData(Container container, DataType type);
         ExpData createData(Container container, DataType type, String name);
         ExpData createData(Container container, String name, String lsid);
+        ExpData createData(URI uri, XarSource source) throws XarFormatException;
 
         ExpMaterial createExpMaterial(Container container, String lsid, String name);
         ExpMaterial getExpMaterial(int rowid);
@@ -202,7 +204,7 @@ public class ExperimentService
 
         /** Kicks off an asynchronous move - a PipelineJob is submitted to the queue to perform the move */
         void moveRuns(ViewBackgroundInfo targetInfo, Container sourceContainer, List<ExpRun> runs) throws SQLException, IOException;
-        public ExpProtocol insertSimpleProtocol(ExpProtocol baseProtocol, User user) throws SQLException;
+        public ExpProtocol insertSimpleProtocol(ExpProtocol baseProtocol, User user);
 
         /**
          * The run must be a instance of a protocol created with insertSimpleProtocol().
@@ -214,11 +216,12 @@ public class ExperimentService
          * @param outputDatas map from output role name to output data
          * @param info context information, including the user
          * @param log output log target
+         * @param loadDataFiles
          * @throws SQLException
          * @throws XarFormatException
          * @throws ExperimentException
          */
-        public ExpRun insertSimpleExperimentRun(ExpRun run, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, ViewBackgroundInfo info, Logger log) throws SQLException, ExperimentException;
+        public ExpRun insertSimpleExperimentRun(ExpRun run, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException;
         public ExpRun deriveSamples(Map<ExpMaterial, String> inputMaterials, Map<ExpMaterial, String> outputMaterials, ViewBackgroundInfo info, Logger log) throws ExperimentException;
 
         public void registerExperimentDataHandler(ExperimentDataHandler handler);

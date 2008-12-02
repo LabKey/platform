@@ -523,7 +523,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 outputMaterials,
                 outputDatas,
                 new ViewBackgroundInfo(context.getContainer(),
-                        context.getUser(), context.getActionURL()), LOG);
+                        context.getUser(), context.getActionURL()), LOG, true);
 
             if (transactionOwner)
                 scope.commitTransaction();
@@ -574,7 +574,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     public ExpProtocol createAssayDefinition(User user, Container container, String name, String description)
-            throws ExperimentException, SQLException
+            throws ExperimentException
     {
         String protocolLsid = new Lsid(_protocolLSIDPrefix, "Folder-" + container.getRowId(), name).toString();
 

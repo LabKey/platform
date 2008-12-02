@@ -64,7 +64,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     String getName();
 
-    ExpProtocol createAssayDefinition(User user, Container container, String name, String description) throws ExperimentException, SQLException;
+    ExpProtocol createAssayDefinition(User user, Container container, String name, String description) throws ExperimentException;
 
     List<Domain> createDefaultDomains(Container c, User user);
 
