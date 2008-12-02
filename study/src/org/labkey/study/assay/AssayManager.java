@@ -60,7 +60,7 @@ public class AssayManager implements AssayService.Interface
     }
 
     public ExpProtocol createAssayDefinition(User user, Container container, GWTProtocol newProtocol)
-            throws SQLException, ExperimentException
+            throws ExperimentException
     {
         return getProvider(newProtocol.getProviderName()).createAssayDefinition(user, container, newProtocol.getName(),
                 newProtocol.getDescription());

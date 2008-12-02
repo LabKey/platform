@@ -151,71 +151,13 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
         // Check if we've already dealt with this one
         if (data == null)
         {
-            File f = null;
-            // Check if it's in the database already
-            if (uri.toString().startsWith("file:"))
+            try
             {
-                f = new File(uri);
+                data = ExperimentService.get().createData(uri, source);
             }
-
-            data = ExperimentService.get().getExpDataByURL(uri.toString(), getJob().getContainer());
-            if (data == null)
+            catch (XarFormatException e)
             {
-                // Have to make a new one
-                String name;
-                if (f != null)
-                {
-                    name = f.getName();
-                }
-                else
-                {
-                    String[] parts = uri.toString().split("/");
-                    name = parts[parts.length - 1];
-                }
-                try
-                {
-                    String path;
-                    if (f != null)
-                    {
-                        try
-                        {
-                            f = new File(new URI(source.getCanonicalDataFileURL(f.getAbsolutePath())));
-                            path = FileUtil.relativizeUnix(source.getRoot(), f, false);
-                        }
-                        catch (URISyntaxException e)
-                        {
-                            path = f.toString();
-                        }
-                        catch (IOException e)
-                        {
-                            path = f.toString();
-                        }
-                    }
-                    else
-                    {
-                        path = uri.toString();
-                    }
-
-                    Lsid lsid = new Lsid(LsidUtils.resolveLsidFromTemplate(AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION, source.getXarContext(), "Data", new AutoFileLSIDReplacer(path, getJob().getContainer(), source)));
-                    int version = 1;
-                    do
-                    {
-                        data = ExperimentService.get().getExpData(lsid.toString());
-                        if (data != null)
-                        {
-                            lsid.setVersion(Integer.toString(++version));
-                        }
-                    }
-                    while (data != null);
-
-                    data = ExperimentService.get().createData(getJob().getContainer(), name, lsid.toString());
-                    data.setDataFileURI(uri);
-                    data.save(getJob().getUser());
-                }
-                catch (XarFormatException e)
-                {
-                    throw new PipelineJobException(e);
-                }
+                throw new PipelineJobException(e);
             }
             datas.put(uri, data);
             datas.put(originalURI, data);
