@@ -204,7 +204,7 @@ abstract class BaseWikiView extends GroovyView
             customizeUrl.addParameter("pageId", _pageId);
             customizeUrl.addParameter("index", Integer.toString(_index));
             context.put("customizeLink", customizeUrl.toString());
-            setTitleHref(WikiController.getPageUrl(_wiki).getEncodedLocalURIString());
+            setTitleHref(WikiController.getPageURL(_wiki, c));
         }
 
         if (!isInWebPart || perms.allowInsert())

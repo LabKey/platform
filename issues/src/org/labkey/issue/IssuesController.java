@@ -128,12 +128,12 @@ public class IssuesController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return HttpView.redirect(getListUrl(getContainer()));
+            return HttpView.redirect(getListURL(getContainer()));
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Issues", getListUrl(getContainer()));
+            return root.addChild("Issues", getListURL(getContainer()));
         }
     }
 
@@ -202,7 +202,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    private static ActionURL getListUrl(Container c)
+    public static ActionURL getListURL(Container c)
     {
         ActionURL url = new ActionURL(ListAction.class, c);
         url.addParameter(DataRegion.LAST_FILTER_PARAM, "true");
@@ -1745,9 +1745,9 @@ public class IssuesController extends SpringActionController
             if (!bean.hasPermission)
                 return;
 
-            setTitleHref(getListUrl(c));
+            setTitleHref(getListURL(c));
 
-            bean.listURL = getListUrl(c).deleteParameters();
+            bean.listURL = getListURL(c).deleteParameters();
 
             try
             {

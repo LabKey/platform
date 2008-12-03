@@ -110,9 +110,7 @@ public class IssuesModule extends DefaultModule
     @Override
     public ActionURL getTabURL(Container c, User user)
     {
-        ActionURL url = new ActionURL(getName().toLowerCase(), "list", c == null ? null : c.getPath());
-        url.addParameter(".lastFilter", "true");
-        return url;
+        return IssuesController.getListURL(c);
     }
 
     public Set<Class<? extends TestCase>> getJUnitTests()

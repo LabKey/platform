@@ -219,7 +219,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
 
             if (img != null)
             {
-                StringBuffer buf = new StringBuffer();
+                StringBuilder buf = new StringBuilder();
                 buf.append("<img src=\"").append(img).append("\"");
                 if (alt != null)
                     buf.append(" alt=\"").append(alt).append("\"");

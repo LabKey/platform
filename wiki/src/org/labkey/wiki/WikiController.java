@@ -66,21 +66,14 @@ import java.util.*;
 
 public class WikiController extends SpringActionController
 {
-    static DefaultActionResolver _actionResolver = new DefaultActionResolver(WikiController.class);
-
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(WikiController.class);
     private static final boolean SHOW_CHILD_REORDERING = false;
-
 
     public WikiController()
     {
         setActionResolver(_actionResolver);
     }
 
-
-    protected ActionURL wikiURL(String action)
-    {
-        return new ActionURL("wiki", action, getContainer());
-    }
 
     protected BaseWikiPermissions getPermissions()
     {
@@ -163,7 +156,7 @@ public class WikiController extends SpringActionController
                     {
                         cStored = context.getContainer();
 
-                        //reset the webPartContainer property so that wiki_cusotmize.gm selects the correct one in the UI
+                        //reset the webPartContainer property so that wiki_customize.gm selects the correct one in the UI
                         webPart.getPropertyMap().put("webPartContainer", cStored.getId());
                     }
                 }
@@ -240,6 +233,12 @@ public class WikiController extends SpringActionController
     }
 
 
+    private ActionURL getBeginURL(Container c)
+    {
+        return getPageURL(getDefaultPage(c), c);
+    }
+
+
     /**
      * This method represents the point of entry into the pageflow
      */
@@ -253,8 +252,7 @@ public class WikiController extends SpringActionController
 
         public ActionURL getUrl()
         {
-            String name = getDefaultPage(getContainer()).getName();
-            return wikiURL("page").addParameter("name",name);
+            return getBeginURL(getContainer());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -488,7 +486,7 @@ public class WikiController extends SpringActionController
 
         public ActionURL getUrl()
         {
-            return wikiURL("manage").addParameter("name",_wiki.getName()).addParameter("rowId",""+_wiki.getRowId());
+            return new ActionURL(ManageAction.class, getContainer()).addParameter("name", _wiki.getName()).addParameter("rowId", "" + _wiki.getRowId());
         }
     }
 
@@ -618,11 +616,8 @@ public class WikiController extends SpringActionController
             for (Wiki aWikiPageList : wikiPageList)
                 wikiContentList.add(WikiManager.getWiki(c, aWikiPageList.getName()));
 
-            GroovyView v = new GroovyView("/org/labkey/wiki/view/wiki_printall.gm");
+            JspView v = new JspView<PrintAllBean>("/org/labkey/wiki/view/wikiPrintAll.jsp", new PrintAllBean(wikiPageList, wikiContentList));
             v.setFrame(WebPartView.FrameType.NONE);
-            v.addObject("wikiPageList", wikiPageList);
-            v.addObject("wikiContentList", wikiContentList);
-            v.addObject("userEmail", getUser().toString());
 
             getPageConfig().setTemplate(PageConfig.Template.None);
             return new PrintTemplate(v, "Print all pages in " + getContainer().getPath());
@@ -631,6 +626,20 @@ public class WikiController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
+        }
+    }
+
+
+    public class PrintAllBean
+    {
+        public List<Wiki> wikiPageList;
+        public List<Wiki> wikiContentList;
+        public String displayName = getUser().getDisplayName(getViewContext());
+
+        private PrintAllBean(List<Wiki> wikiPageList, List<Wiki> wikiContentList)
+        {
+            this.wikiPageList = wikiPageList;
+            this.wikiContentList = wikiContentList;
         }
     }
 
@@ -647,16 +656,12 @@ public class WikiController extends SpringActionController
 
             Wiki wiki = WikiManager.getWiki(c, name);
 
-            //just want to re-use same groovy file
-            List<Wiki> wikiPageList = new ArrayList<Wiki>(1);
-            wikiPageList.add(wiki);
-
-            GroovyView v = new GroovyView("/org/labkey/wiki/view/wiki_printraw.gm");
+            //just want to re-use same jsp
+            List<Wiki> wikiList = Collections.singletonList(wiki);
+            JspView v = new JspView<PrintRawBean>("/org/labkey/wiki/view/wikiPrintRaw.jsp", new PrintRawBean(wikiList));
             v.setFrame(WebPartView.FrameType.NONE);
-            v.addObject("wikiPageList", wikiPageList);
-            v.addObject("userEmail", getUser().toString());
-
             getPageConfig().setTemplate(PageConfig.Template.None);
+
             return new PrintTemplate(v, "Print Page '" + name + "'");
         }
 
@@ -674,14 +679,11 @@ public class WikiController extends SpringActionController
         {
             Container c = getContainer();
             //get a list of wiki pages. Each wiki object contains only partial wiki data.
-            List<Wiki> wikiPageList = WikiManager.getPageList(c);
-
-            GroovyView v = new GroovyView("/org/labkey/wiki/view/wiki_printraw.gm");
+            List<Wiki> wikiList = WikiManager.getPageList(c);
+            JspView v = new JspView<PrintRawBean>("/org/labkey/wiki/view/wikiPrintRaw.jsp", new PrintRawBean(wikiList));
             v.setFrame(WebPartView.FrameType.NONE);
-            v.addObject("wikiPageList", wikiPageList);
-            v.addObject("userEmail", getUser().toString());
-
             getPageConfig().setTemplate(PageConfig.Template.None);
+
             return new PrintTemplate(v, "Print All Pages");
         }
 
@@ -690,6 +692,20 @@ public class WikiController extends SpringActionController
             return null;
         }
     }
+
+
+    public class PrintRawBean
+    {
+        public List<Wiki> wikiList;
+        public String displayName;
+
+        private PrintRawBean(List<Wiki> wikiList)
+        {
+            this.wikiList = wikiList;
+            displayName = getUser().getDisplayName(getViewContext());
+        }
+    }
+
 
     public static class CopyWikiForm extends FormData
     {
@@ -845,7 +861,7 @@ public class WikiController extends SpringActionController
             throws ServletException
     {
         Container cSource;
-        if(source == null)
+        if (source == null)
             cSource = getContainer();
         else
             cSource = ContainerManager.getForPath(source);
@@ -856,10 +872,10 @@ public class WikiController extends SpringActionController
     private Container getDestContainer(String destContainer, String path)
             throws SQLException
     {
-        if(destContainer == null)
+        if (destContainer == null)
         {
             destContainer = path;
-            if(destContainer == null)
+            if (destContainer == null)
                 return null;
         }
 
@@ -897,7 +913,18 @@ public class WikiController extends SpringActionController
 
         public ActionURL getSuccessURL(CopyWikiForm copyWikiForm)
         {
-            return new ActionURL("Wiki", "begin", copyWikiForm.getDestContainer());
+            Container destContainer;
+
+            try
+            {
+                destContainer = getDestContainer(copyWikiForm.getDestContainer(), copyWikiForm.getPath());
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+
+            return getBeginURL(destContainer);
         }
 
         public boolean handlePost(CopyWikiForm form, BindException errors) throws Exception
@@ -948,8 +975,8 @@ public class WikiController extends SpringActionController
 
                 //display the wiki module in the destination container
                 displayWikiModuleInDestContainer(cDest);
-
             }
+
             return true;
         }
 
@@ -993,8 +1020,7 @@ public class WikiController extends SpringActionController
 
             displayWikiModuleInDestContainer(cDest);
 
-            ActionURL url = new ActionURL("Wiki", "page", cDest.getPath());
-            url.addParameter("name", newWikiPage.getName());
+            ActionURL url = getPageURL(newWikiPage, cDest);
             HttpView.throwRedirect(url);
             return true;
         }
@@ -1022,29 +1048,35 @@ public class WikiController extends SpringActionController
         {
             //get projects and folders for which user has admin permissions
             Container c = getContainer();
-            ActionURL currentUrl = getViewContext().cloneActionURL();
-            ContainerTreeSelected ct = new ContainerTreeSelected("/", getUser(), ACL.PERM_ADMIN, currentUrl);
+            ActionURL currentURL = getViewContext().cloneActionURL();
+            ContainerTreeSelected ct = new ContainerTreeSelected("/", getUser(), ACL.PERM_ADMIN, currentURL);
             ct.setCurrent(c);
             ct.setInitialLevel(1);
 
-            HttpView v = new GroovyView("/org/labkey/wiki/view/wiki_copy.gm");
-            //folder tree
-            v.addObject("folderList", ct.render());
-            //hidden inputs
-            v.addObject("destContainer", c.getPath());
-            v.addObject("sourceContainer", form.getSourceContainer());
-            //cancel and return to source container
-            v.addObject("cancelLink", ActionURL.toPathString("Wiki", "begin", form.getSourceContainer()));
+            CopyBean bean = new CopyBean();
+            bean.folderList = ct.render().toString();           // folder tree
+            bean.destContainer = c.getPath();                   // hidden input
+            bean.sourceContainer = form.getSourceContainer();   // hidden input
+            bean.cancelURL = getBeginURL(getSourceContainer(form.getSourceContainer()));
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
 
-            return v;
+            return new JspView<CopyBean>("/org/labkey/wiki/view/wikiCopy.jsp", bean);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
         }
+    }
+
+
+    public class CopyBean
+    {
+        public String folderList;
+        public String destContainer;
+        public String sourceContainer;
+        public ActionURL cancelURL;
     }
 
 
@@ -1125,19 +1157,19 @@ public class WikiController extends SpringActionController
                 return;
             appendWikiTrail(root, wiki.getParentWiki());
             WikiVersion v = WikiManager.getLatestVersion(wiki, false);
-            root.addChild(v == null ? wiki.getName() : v.getTitle(), wikiURL("page").addParameter("name", wiki.getName()));
+            root.addChild(v == null ? wiki.getName() : v.getTitle(), getPageURL(wiki, getContainer()));
         }
 
         ActionURL getUrl()
         {
-            return wikiURL("page").addParameter("name", _wiki.getName());
+            return getPageURL(_wiki, getContainer());
         }
     }
 
 
-    public static ActionURL getPageUrl(Wiki wiki)
+    public static ActionURL getPageURL(Wiki wiki, Container c)
     {
-        ActionURL url = new ActionURL("Wiki", "page", wiki.lookupContainer());
+        ActionURL url = new ActionURL(PageAction.class, c);
         return url.addParameter("name", wiki.getName());
     }
 
@@ -1458,7 +1490,7 @@ public class WikiController extends SpringActionController
 
         public ActionURL getUrl()
         {
-            return wikiURL("versions").addParameter("name",_wiki.getName());
+            return getVersionURL(_wiki.getName());
         }
     }
 

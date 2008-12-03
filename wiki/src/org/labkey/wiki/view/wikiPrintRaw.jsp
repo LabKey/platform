@@ -16,22 +16,31 @@
  */
 %>
 <%@ page import="org.labkey.api.util.DateUtil"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.wiki.WikiController" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.wiki.model.Wiki" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%
+    JspView<WikiController.PrintRawBean> me = (JspView<WikiController.PrintRawBean>) HttpView.currentView();
+    WikiController.PrintRawBean bean = me.getModelBean();
+%>
 <div style="padding:10px;">
 
 <table width="100%">
     <tr>
         <td align=left><h3 class="labkey-header-large">Table of Contents</h3></td>
-        <td align=right><%=userEmail%><br><%=DateUtil.formatDate()%></td>
+        <td align=right><%=h(bean.displayName)%><br><%=DateUtil.formatDate()%></td>
     </tr>
 </table>
 
 <%
     //print each page's content with title
-    for(wikipage in wikiPageList)
+    for (Wiki wiki : bean.wikiList)
     {%>
         <hr size=1>
-        <h3><a name="<%=wikipage.getName()%>"></a><%= filter(wikipage.latestVersion().getTitle())%></h3><br>
-        <pre><%=filter(wikipage.latestVersion().getBody())%></pre><br><br>
+        <h3><a name="<%=h(wiki.getName())%>"></a><%=h(wiki.latestVersion().getTitle())%></h3><br>
+        <pre><%=h(wiki.latestVersion().getBody())%></pre><br><br>
     <%}
 %>
 </div>

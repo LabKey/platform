@@ -42,7 +42,7 @@ import java.util.*;
 
 public class ProjectController extends SpringActionController
 {
-    static DefaultActionResolver _actionResolver = new DefaultActionResolver(ProjectController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ProjectController.class);
 
     public static class PipelineUrlsImp implements ProjectUrls
     {
@@ -805,7 +805,7 @@ public class ProjectController extends SpringActionController
 
         protected List<Search.Searchable> getSearchables(SearchForm form)
         {
-            if(null == form.getDomains() || form.getDomains().length() == 0)
+            if (null == form.getDomains() || form.getDomains().length() == 0)
                 return Search.ALL_SEARCHABLES;
 
             List<Search.Searchable> searchables = new ArrayList<Search.Searchable>();
@@ -854,9 +854,9 @@ public class ProjectController extends SpringActionController
             return response;
         }
 
-        protected Map<String,Object> getContainerProps(Container container, User user, boolean recurse)
+        protected Map<String, Object> getContainerProps(Container container, User user, boolean recurse)
         {
-            Map<String,Object> containerProps = new HashMap<String,Object>();
+            Map<String, Object> containerProps = new HashMap<String,Object>();
             containerProps.put("name", container.getName());
             containerProps.put("id", container.getId());
             containerProps.put("path", container.getPath());

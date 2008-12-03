@@ -61,6 +61,7 @@ public class UserController extends SpringActionController
         public ActionURL getSiteUsersURL()
         {
             return new ActionURL(ShowUsersAction.class, ContainerManager.getRoot());
+            // TODO: Always add lastFilter?
         }
 
         public ActionURL getProjectMembersURL(Container container)

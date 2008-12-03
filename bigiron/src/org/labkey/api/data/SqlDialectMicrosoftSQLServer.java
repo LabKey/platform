@@ -200,59 +200,6 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, int rowCount, long offset)
     {
         throw new UnsupportedOperationException("limitRows() with an offset not supported in SQLServer 2000");
-
-//        String selectSql = select.getSQL();
-//        if (!selectSql.substring(0, 6).equalsIgnoreCase("SELECT"))
-//            throw new IllegalArgumentException("ERROR: Limit SQL Doesn't Start with SELECT: " + selectSql);
-//
-//        select.insert(6, " TOP " + (rowCount + offset));
-//
-//        if (order == null || order.trim().length() == 0)
-//            throw new IllegalArgumentException("ERROR: ORDER BY clause required to limit");
-//        String reverse = reverseSort(order);
-//
-//        SQLFragment sql = new SQLFragment();
-//        sql.append("SELECT * FROM (\n");
-//        sql.append("SELECT TOP ").append(rowCount).append(" * FROM (");
-//        sql.append(select); // top (rowCount+offset)
-//        sql.append("\n").append(from);
-//        if (filter != null) sql.append("\n").append(filter);
-//        sql.append(order);
-//        sql.append("\n) _rev ");
-//        sql.append(reverse);
-//        sql.append("\n) _page ");
-//        sql.append(order);
-//        return sql;
-    }
-
-    private String reverseSort(String sort)
-    {
-        StringBuffer result = new StringBuffer(sort.length());
-        result.append("ORDER BY ");
-
-        if (sort.startsWith("ORDER BY "))
-            sort = sort.substring("ORDER BY ".length());
-
-        String comma = "";
-        for (String part : sort.split(","))
-        {
-            part = part.trim();
-            if (part.length() == 0)
-                continue;
-            if (part.endsWith(" ASC"))
-            {
-                result.append(part.substring(0, part.length() - " ASC".length()));
-                result.append(" DESC");
-            }
-            else if (part.endsWith(" DESC"))
-            {
-                result.append(part.substring(0, part.length() - " DESC".length()));
-                result.append(" ASC");
-            }
-            result.append(comma);
-            comma = ", ";
-        }
-        return result.toString();
     }
 
 
@@ -587,7 +534,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
                 "EXECcore.executeJavaUpgradeCode 'upgradeCode'\n" +               // Bad syntax: EXECcore
                 "EXEC core. executeJavaUpgradeCode 'upgradeCode'\n" +             // Bad syntax: core. execute...
                 "EXECUT core.executeJavaUpgradeCode 'upgradeCode'\n" +            // Misspell EXECUTE
-                "EXEC core.executeJaavUpgradeCode 'upgradeCode'\n" +              // Misspell function name
+                "EXEC core.executeJaavUpgradeCode 'upgradeCode'\n" +              // Misspell executeJavaUpgradeCode
                 "EXEC core.executeJavaUpgradeCode 'upgradeCode';\n" +             // Bad syntax: semicolon
                 "EXEC core.executeJavaUpgradeCode('upgradeCode')\n";              // Bad syntax: Parentheses
 

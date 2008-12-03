@@ -21,12 +21,13 @@
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.core.user.UserController" %>
+<%@ page import="org.labkey.api.security.UserUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<UserController.UserPreference> me = (JspView<UserController.UserPreference>) HttpView.currentView();
     UserController.UserPreference bean = me.getModelBean();
 
-    ActionURL showGridLink = new ActionURL("User", "showUsers", "");
+    ActionURL showGridLink = urlProvider(UserUrls.class).getSiteUsersURL();
     showGridLink.addParameter(".lastFilter", "true");
 %>
 <form action="" method="post">

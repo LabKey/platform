@@ -16,23 +16,31 @@
  */
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.wiki.WikiController" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%
+    JspView<WikiController.CopyBean> me = (JspView<WikiController.CopyBean>) HttpView.currentView();
+    WikiController.CopyBean bean = me.getModelBean();
+%>
 <form name="copy" action="copyWiki.post" method="POST">
 
-<input type="hidden" name="sourceContainer" value="<%=sourceContainer%>">
-<input type="hidden" name="destContainer" value="<%=destContainer%>">
+<input type="hidden" name="sourceContainer" value="<%=h(bean.sourceContainer)%>">
+<input type="hidden" name="destContainer" value="<%=h(bean.destContainer)%>">
 
 <table class="labkey-data-region">
 <tr><td style="padding-left:0">Select a destination folder. Click the Copy Pages button to copy all wiki pages in this folder to the destination folder.<br>
 Note that only the latest version of each wiki page is copied.    
 </td></tr>
 <tr><td>&nbsp;</td></tr>
-<%=folderList%>
+<%=bean.folderList%>
 </table><br>
 
 <table class="labkey-button-bar">
     <tr>
         <td><%=PageFlowUtil.generateSubmitButton("Copy Pages")%></td>
-        <td><%=PageFlowUtil.generateButton("Cancel", cancelLink)%></td>
+        <td><%=PageFlowUtil.generateButton("Cancel", bean.cancelURL)%></td>
     </tr>
 </table>
 </form>
