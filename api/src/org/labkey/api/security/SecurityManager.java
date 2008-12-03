@@ -523,7 +523,7 @@ public class SecurityManager
 
     public static String createTempPassword()
     {
-        StringBuffer tempPassword = new StringBuffer(tempPasswordLength);
+        StringBuilder tempPassword = new StringBuilder(tempPasswordLength);
 
         for (int i = 0; i < tempPasswordLength; i++)
             tempPassword.append(passwordChars.charAt((int) Math.floor((Math.random() * passwordChars.length()))));

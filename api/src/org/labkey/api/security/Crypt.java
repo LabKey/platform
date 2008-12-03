@@ -18,12 +18,10 @@ package org.labkey.api.security;
 
 import org.apache.commons.codec.binary.Base64;
 
-import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 
 /**
@@ -33,22 +31,29 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class Crypt
 {
-    protected static MessageDigest md = null;
+    private static final MessageDigest md;
 
     static
     {
+        MessageDigest instance;
+
         try
         {
-            md = MessageDigest.getInstance("MD5");
+            instance = MessageDigest.getInstance("MD5");
         }
         catch (NoSuchAlgorithmException x)
         {
+            instance = null;
         }
+
+        md = instance;
     }
 
     public static String digest(String credentials)
     {
-        if (null == credentials) credentials = "";
+        if (null == credentials)
+            credentials = "";
+
         synchronized (md)
         {
             md.reset();

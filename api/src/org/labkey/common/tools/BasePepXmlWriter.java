@@ -15,20 +15,22 @@
  */
 package org.labkey.common.tools;
 
-import java.io.*;
+import net.systemsbiology.regisWeb.pepXML.AaSymbolType;
+import net.systemsbiology.regisWeb.pepXML.MassType;
+import net.systemsbiology.regisWeb.pepXML.MsmsPipelineAnalysisDocument;
+import net.systemsbiology.regisWeb.pepXML.NameValueType;
+import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlAnySimpleType;
+import org.apache.xmlbeans.XmlOptions;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.util.List;
-
-import org.apache.log4j.Logger;
-
-import net.systemsbiology.regisWeb.pepXML.*;
-import org.w3c.dom.Node;
-import org.w3c.dom.Element;
-import org.w3c.dom.Attr;
-import org.apache.xmlbeans.XmlOptions;
-import org.apache.xmlbeans.XmlAnySimpleType;
-
-import javax.xml.stream.events.Attribute;
 
 /**
  * An abstract base class for use as a wrapper for writing PepXml files.  We take advantage of XmlBeans to build
@@ -54,7 +56,7 @@ import javax.xml.stream.events.Attribute;
  */
 public abstract class BasePepXmlWriter
 {
-    static Logger _log = Logger.getLogger(BasePepXmlWriter.class);
+    private static final Logger _log = Logger.getLogger(BasePepXmlWriter.class);
 
     //root node
     protected MsmsPipelineAnalysisDocument _xmlBeansPepXmlDoc = null;

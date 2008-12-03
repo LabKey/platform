@@ -444,7 +444,6 @@ public class DbSchema
         synchronized (loadedSchemas)
         {
             loadedSchemas.clear();
-            scopes.clear();
         }
     }
 
