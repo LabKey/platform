@@ -94,7 +94,7 @@ LABKEY.requiresScript = function(file, immediate)
         else
             document.write('<script type="text/javascript" language="javascript" src="' + LABKEY.contextPath + "/" + file + '?' + LABKEY.hash + '"></script>');
     }
-}
+};
 
 LABKEY.addElemToHead = function(elemName, attributes)
 {
@@ -102,7 +102,7 @@ LABKEY.addElemToHead = function(elemName, attributes)
     for(var attr in attributes)
         elem[attr] = attributes[attr];
     document.getElementsByTagName("head")[0].appendChild(elem);
-}
+};
 
 LABKEY.addMarkup = function(html)
 {
@@ -114,7 +114,7 @@ LABKEY.addMarkup = function(html)
     }
     else
         document.write(html);
-}
+};
 
 
 LABKEY.loadScripts = function()
@@ -125,7 +125,7 @@ LABKEY.loadScripts = function()
         LABKEY.requiresScript(file, true);
     }
     LABKEY.isDocumentClosed = true;
-}
+};
 
 
 LABKEY.requiresCss = function(file)
@@ -140,7 +140,7 @@ LABKEY.requiresCss = function(file)
         href: fullPath
     });
     this._requestedScriptFiles[fullPath] = 1;
-}
+};
 
 
 LABKEY.requiresYahoo = function(script, immediate)
@@ -151,7 +151,7 @@ LABKEY.requiresYahoo = function(script, immediate)
     var base=LABKEY.yahooRoot + "/" + dir + "/" + script;
     var expanded = LABKEY.devMode ? (LABKEY.verbose ? base+"-debug.js" : base+".js") : base+"-min.js";
     LABKEY.requiresScript(expanded, immediate);
-}
+};
 
 LABKEY.requiresExtJs = function(immediate)
 {
@@ -159,7 +159,7 @@ LABKEY.requiresExtJs = function(immediate)
     LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-all.css');
     LABKEY.requiresScript(LABKEY.extJsRoot + "/adapter/ext/ext-base.js", immediate);
     LABKEY.requiresScript(LABKEY.extJsRoot + "/ext-all" + (LABKEY.devMode ?  "-debug.js" : ".js"), immediate);
-}
+};
 
 LABKEY.requiresClientAPI = function(immediate)
 {
@@ -187,7 +187,7 @@ LABKEY.requiresClientAPI = function(immediate)
     }
     else
         LABKEY.requiresScript('clientapi/clientapi' + (LABKEY.devMode ? '.js' : '.min.js'), immediate);
-}
+};
 
 
 function showMenu(parent, menuElementId, align) {
@@ -206,19 +206,19 @@ LABKEY.requiresMenu = function()
     LABKEY.requiresYahoo('dom', true);
     LABKEY.requiresYahoo('container', true);
     LABKEY.requiresYahoo('menu', true);
-}
+};
 
 LABKEY.setSubmit = function (submit)
 {
     this.submit = submit;
-}
+};
 
 LABKEY.setDirty = function (dirty)
 {
     this.dirty = dirty;
-}
+};
 
-LABKEY.isDirty = function () { return this.dirty; }
+LABKEY.isDirty = function () { return this.dirty; };
 
 LABKEY.beforeunload = function (dirtyCallback)
 {
@@ -227,8 +227,8 @@ LABKEY.beforeunload = function (dirtyCallback)
             (LABKEY.isDirty() || (dirtyCallback && dirtyCallback()))) {
             return "You will lose any changes made to this page.";
         }
-    }
-}
+    };
+};
 
 //
 // language extensions, global functions
@@ -257,7 +257,7 @@ LABKEY.createElement = function(tag, innerHTML, attributes)
         for (var att in attributes)
             e[att] = attributes[att];
     return e;
-}
+};
 
 LABKEY.toHTML = function(elem)
 {
@@ -266,7 +266,7 @@ LABKEY.toHTML = function(elem)
     var y = document.createElement("SPAN");
     y.appendChild(elem);
     return y.innerHTML;
-}
+};
 
 LABKEY.showNavTrail = function()
 {
@@ -276,4 +276,4 @@ LABKEY.showNavTrail = function()
     elem = document.getElementById("labkey-nav-trail-current-page");
     if(elem)
         elem.style.visibility = "visible";
-}
+};
