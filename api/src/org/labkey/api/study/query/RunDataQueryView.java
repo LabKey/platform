@@ -83,6 +83,9 @@ public class RunDataQueryView extends AssayBaseQueryView
                 }
                 publishURL.deleteParameters();
 
+                if (containerFilter != null)
+                    publishURL.addParameter("containerFilter", containerFilter.toString());
+
                 if (provider.canPublish())
                 {
                     ActionButton publishButton = new ActionButton(publishURL.getLocalURIString(),

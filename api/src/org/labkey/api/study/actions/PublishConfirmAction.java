@@ -22,6 +22,7 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.exp.api.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
@@ -60,6 +61,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         private boolean _validate;
         private String _dataRegionSelectionKey;
         private String _returnURL;
+        private String _containerFilter;
 
         public String getReturnURL()
         {
@@ -140,6 +142,16 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         public void setValidate(boolean validate)
         {
             _validate = validate;
+        }
+
+        public String getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(String containerFilter)
+        {
+            _containerFilter = containerFilter;
         }
     }
 
@@ -255,6 +267,10 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         settings.setAllowChooseView(false);
         PublishRunDataQueryView queryView = new PublishRunDataQueryView(_protocol, context, settings,
                 objectIds, targetStudy, postedVisits, postedPtids);
+
+        if (publishConfirmForm.getContainerFilter() != null)
+            queryView.setContainerFilter(ContainerFilter.Filters.valueOf(publishConfirmForm.getContainerFilter()));
+
         List<ActionButton> buttons = new ArrayList<ActionButton>();
         String returnURL;
         if (publishConfirmForm.getReturnURL() != null)

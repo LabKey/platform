@@ -47,6 +47,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         private String _viewType;
         private String _dataRegionSelectionKey;
         private String _returnURL;
+        private String _containerFilter;
 
         public String getViewType()
         {
@@ -77,6 +78,16 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         {
             _returnURL = returnURL;
         }
+
+        public String getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(String containerFilter)
+        {
+            _containerFilter = containerFilter;
+        }
     }
 
     public class PublishBean
@@ -89,10 +100,12 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         private boolean _insufficientPermissions;
         private String _dataRegionSelectionKey;
         private final String _returnURL;
+        private final String _containerFilter;
 
         public PublishBean(AssayProvider provider, ExpProtocol protocol,
                            List<Integer> ids, String dataRegionSelectionKey,
-                           Set<Container> studies, boolean nullStudies, boolean insufficientPermissions, String returnURL)
+                           Set<Container> studies, boolean nullStudies, boolean insufficientPermissions, String returnURL,
+                           String containerFilter)
         {
             _insufficientPermissions = insufficientPermissions;
             _provider = provider;
@@ -102,6 +115,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             _ids = ids;
             _dataRegionSelectionKey = dataRegionSelectionKey;
             _returnURL = returnURL;
+            _containerFilter = containerFilter;
         }
 
         public String getReturnURL()
@@ -147,6 +161,11 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         {
             return _insufficientPermissions;
         }
+
+        public String getContainerFilter()
+        {
+            return _containerFilter;
+        }
     }
 
     public ModelAndView getView(PublishForm publishForm, BindException errors) throws Exception
@@ -171,7 +190,15 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         }
 
         return new JspView<PublishBean>("/org/labkey/study/assay/view/publishChooseStudy.jsp",
-                new PublishBean(provider, _protocol, ids, publishForm.getDataRegionSelectionKey(), containers, nullsFound, insufficientPermissions, publishForm.getReturnURL()));
+                new PublishBean(provider,
+                    _protocol,
+                    ids,
+                    publishForm.getDataRegionSelectionKey(),
+                    containers,
+                    nullsFound,
+                    insufficientPermissions,
+                    publishForm.getReturnURL(),
+                    publishForm.getContainerFilter()));
     }
 
     public NavTree appendNavTrail(NavTree root)
