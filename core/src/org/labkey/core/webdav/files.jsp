@@ -316,7 +316,12 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
 
 var BROWSER_EVENTS = {selectionchange:"selectionchange", directorychange:"directorychange"};
 
-var fileBrowser =
+var FileBrowser = function(config)
+{
+    this.events.addEvents( [ BROWSER_EVENTS.selectionchange, BROWSER_EVENTS.directorychange ]);
+    this.init(config);
+};
+FileBrowser.prototype =
 {
     _debugName : 'fileBrowser',
 
@@ -337,23 +342,23 @@ var fileBrowser =
     // actions
     //
 
-    action : new Ext.Action({text: 'Alert', iconCls: 'blist', handler: function()
+    action : new Ext.Action({text: 'Alert', iconCls: 'blist', scope: this, handler: function()
     {
         window.alert('Click','You clicked on "Action 1".');
     }}),
 
-    downloadAction: new Ext.Action({text: 'Download',handler: function()
+    downloadAction : new Ext.Action({text: 'Download', scope: this, handler: function()
     {
         // CONSIDER: PROPFIND to ensure this link is still good?
-        var p = fileBrowser.selectedPath;
+        var p = this.selectedPath;
         if (p && p.charAt(p.length-1) != '/')
-            window.location = fileBrowser.url + p + "?contentDisposition=attachment";
+            window.location = this.url + p + "?contentDisposition=attachment";
     }}),
 
-    parentFolderAction: new Ext.Action({text: 'Up',handler: function()
+    parentFolderAction : new Ext.Action({text: 'Up', scope: this, handler: function()
     {
         // CONSIDER: PROPFIND to ensure this link is still good?
-        var p = fileBrowser.currentDirectory;
+        var p = this.currentDirectory;
         if (!p)
             p = "/";
         if (p.length > 1 && p.charAt(p.length-1) == '/')
@@ -361,24 +366,34 @@ var fileBrowser =
         var i = p.lastIndexOf('/');
         if (i > -1)
             p = p.substring(0,i);
-        fileBrowser.changeDirectory(p);
+        this.changeDirectory(p);
     }}),
+
+    refreshAction : new Ext.Action({text: 'Refresh', scope:this, handler: function()
+    {
+        this.fileSystem.listFiles(path, function(filesystem, path, records)
+        {
+            this.store.removeAll();
+            this.store.add(records);
+        });
+    }}),
+
 
     changeDirectory : function(path)
     {
-        if (fileBrowser.currentDirectory != path)
+        if (this.currentDirectory != path)
         {
-            fileBrowser.currentDirectory = path;
-            fileBrowser.events.fireEvent(BROWSER_EVENTS.directorychange, path);
+            this.currentDirectory = path;
+            this.events.fireEvent(BROWSER_EVENTS.directorychange, path);
         }
     },
 
     selectPath : function(path)
     {
-        if (fileBrowser.selectedPath != path)
+        if (this.selectedPath != path)
         {
-            fileBrowser.selectedPath = path;
-            fileBrowser.events.fireEvent(BROWSER_EVENTS.selectionchange, path);
+            this.selectedPath = path;
+            this.events.fireEvent(BROWSER_EVENTS.selectionchange, path);
         }
     },
 
@@ -387,29 +402,29 @@ var fileBrowser =
     //
     Grid_onRowselect : function(sm, rowIdx, r)
     {
-        if (fileBrowser.tree)
-            fileBrowser.tree.getSelectionModel().clearSelections();
+        if (this.tree)
+            this.tree.getSelectionModel().clearSelections();
         if (r)
         {
             var path = r.get("path");
             var collection = r.get("collection");
             if (collection && path.charAt(path.length-1) != '/')
                 path = path + "/";
-            fileBrowser.selectPath(path);
+            this.selectPath(path);
         }
     },
 
     Grid_onCelldblclick : function(grid, rowIndex, columnIndex, e)
     {
-        var p = fileBrowser.selectedPath;
+        var p = this.selectedPath;
         if (p.charAt(p.length-1) == '/')
         {
-            fileBrowser.changeDirectory(p);
-            if (fileBrowser.tree)
+            this.changeDirectory(p);
+            if (this.tree)
             {
                 var treePath = treePathFromId(p);
-                fileBrowser.tree.expandPath(treePath);
-                var node = fileBrowser.tree.getNodeById(p);
+                this.tree.expandPath(treePath);
+                var node = this.tree.getNodeById(p);
                 if (node)
                 {
                     node.ensureVisible();
@@ -421,220 +436,217 @@ var fileBrowser =
 
     Tree_onSelectionchange : function(sm, node)
     {
-        if (fileBrowser.grid)
-            fileBrowser.grid.getSelectionModel().clearSelections();
+        if (this.grid)
+            this.grid.getSelectionModel().clearSelections();
         if (node)
         {
             var folder = node.id;
-            fileBrowser.selectPath(folder);
-            fileBrowser.changeDirectory(folder);
+            this.selectPath(folder);
+            this.changeDirectory(folder);
         }
     },
 
-    events : new Ext.util.Observable()
-};
-fileBrowser.events.addEvents( [ BROWSER_EVENTS.selectionchange, BROWSER_EVENTS.directorychange ]);
+    events : new Ext.util.Observable(),
 
-
-fileBrowser.init = function(config)
-{
-    this.fileSystem = config.fileSystem;
-
-    //
-    // GRID
-    //
-    this.store = new Ext.data.Store();
-    this.grid = new Ext.grid.GridPanel(
+    init : function(config)
     {
-        store: this.store,
-        border:false,
-        columns: [
-            {header: "", width:20, dataIndex: 'iconHref', sortable: false, hiddenn:false, renderer:renderIcon},
-            {header: "Name", width: 150, dataIndex: 'name', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
-            {header: "Created", width: 150, dataIndex: 'creationdate', sortable: true, hidden:false, renderer:renderDateTime},
-            {header: "Size", width: 80, dataIndex: 'size', sortable: true, hidden:false, align:'right', renderer:renderFileSize}
-        ]
-    });
-    this.grid.getSelectionModel().on('rowselect', fileBrowser.Grid_onRowselect);
-    this.grid.on("celldblclick", fileBrowser.Grid_onCelldblclick);
+        this.fileSystem = config.fileSystem;
+    
+        //
+        // GRID
+        //
+        this.store = new Ext.data.Store();
+        this.grid = new Ext.grid.GridPanel(
+        {
+            store: this.store,
+            border:false,
+            columns: [
+                {header: "", width:20, dataIndex: 'iconHref', sortable: false, hiddenn:false, renderer:renderIcon},
+                {header: "Name", width: 150, dataIndex: 'name', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
+                {header: "Created", width: 150, dataIndex: 'creationdate', sortable: true, hidden:false, renderer:renderDateTime},
+                {header: "Size", width: 80, dataIndex: 'size', sortable: true, hidden:false, align:'right', renderer:renderFileSize}
+            ]
+        });
+        this.grid.getSelectionModel().on('rowselect', this.Grid_onRowselect, this);
+        this.grid.on("celldblclick", this.Grid_onCelldblclick, this);
 
+        //
+        // TREE
+        //
 
-
-    //
-    // TREE
-    //
-
-//    var treeloader = new LABKEY.ext.WebDavTreeLoader({url: config.url, displayFiles:false});
-    var treeloader = new FileSystemTreeLoader({fileSystem: this.fileSystem, displayFiles:false});
-    var root = new Ext.tree.AsyncTreeNode(
-    {
-        id: "/",
-        text:'<root>',
-        listeners: {
-            'load': function (node) {
-                if (!node.hasChildNodes())
-                {
-                    node.appendChild({
-                        text: "&lt;no files found in root>",
-                        size: 0,
-                        disabled: true,
-                        leaf: true,
-                        iconCls: 'labkey-tree-error-icon'
-                    });
+        var treeloader = new FileSystemTreeLoader({fileSystem: this.fileSystem, displayFiles:false});
+        var root = new Ext.tree.AsyncTreeNode(
+        {
+            id: "/",
+            text:'<root>',
+            listeners: {
+                'load': function (node) {
+                    if (!node.hasChildNodes())
+                    {
+                        node.appendChild({
+                            text: "&lt;no files found in root>",
+                            size: 0,
+                            disabled: true,
+                            leaf: true,
+                            iconCls: 'labkey-tree-error-icon'
+                        });
+                    }
                 }
             }
-        }
-    });
-    this.tree = new Ext.tree.TreePanel(
-    {
-        loader:treeloader,
-        root:root,
-        rootVisible:false,
-        title: 'File Browser',
-        useArrows:true,
-        autoScroll:true,
-        animate:true,
-        enableDD:false,
-        containerScroll:true,
-        border:false,
-        pathSeparator:';'
-    });
-    this.tree.getSelectionModel().on("selectionchange", this.Tree_onSelectionchange);
+        });
+        this.tree = new Ext.tree.TreePanel(
+        {
+            loader:treeloader,
+            root:root,
+            rootVisible:false,
+            title: 'File Browser',
+            useArrows:true,
+            autoScroll:true,
+            animate:true,
+            enableDD:false,
+            containerScroll:true,
+            border:false,
+            pathSeparator:';'
+        });
+        this.tree.getSelectionModel().on("selectionchange", this.Tree_onSelectionchange, this);
 
-    //
-    // LAYOUT
-    //
-    var tbarConfig =
-        [
-            {
-                text: 'Action Menu',
-                menu: [this.action]
-            },
-            this.parentFolderAction,
-            this.downloadAction
-        ];
-    var layoutItems = [];
-    if (this.showAddressBar)
-        layoutItems.push(
-        {
-            region: 'north',
-            height: 24,
-            margins: '5 5 0 5',
-            layout: 'fit',
-            border: false,
-            items: [{id:'addressBar', html: 'address bar'}]
-        });
-    if (this.showDetails)
-        layoutItems.push(
-        {
-            title: 'South Panel',
-            region: 'south',
-            height: 100,
-            minSize: 75,
-            maxSize: 250,
-            margins: '0 5 5 5',
-            layout: 'fit',
-            items: [{html:'south', id:'file-details'}]
-        });
-    if (this.showAddressBar)
-        layoutItems.push(
-        {
-            region:'west',
-            id:'west-panel',
-            split:true,
-            width: 200,
-            minSize: 100,
-            collapsible: true,
-            margins:'5 0 5 5',
-            layout:'accordion',
-            layoutConfig:{animate:true},
-            items: [
-                this.tree,
+        //
+        // LAYOUT
+        //
+        var tbarConfig =
+            [
                 {
-                    title:'Settings',
-                    html:'<p>Some settings in here.</p>',
-                    border:false,
-                    iconCls:'settings'
-                }]
-        });
-    layoutItems.push(
-        {
-            region:'center',
-            margins:'5 0 5 0',
-            minSize: 200,
-            layout:'fit',
-            items: [this.grid]
-        });
-    if (this.showProperties)
+                    text: 'Action Menu',
+                    menu: [this.action]
+                },
+                this.parentFolderAction,
+                this.downloadAction,
+                this.refreshAction
+            ];
+        var layoutItems = [];
+        if (this.showAddressBar)
+            layoutItems.push(
+            {
+                region: 'north',
+                height: 24,
+                margins: '5 5 0 5',
+                layout: 'fit',
+                border: false,
+                items: [{id:'addressBar', html: 'address bar'}]
+            });
+        if (this.showDetails)
+            layoutItems.push(
+            {
+                title: 'South Panel',
+                region: 'south',
+                height: 100,
+                minSize: 75,
+                maxSize: 250,
+                margins: '0 5 5 5',
+                layout: 'fit',
+                items: [{html:'south', id:'file-details'}]
+            });
+        if (this.showAddressBar)
+            layoutItems.push(
+            {
+                region:'west',
+                id:'west-panel',
+                split:true,
+                width: 200,
+                minSize: 100,
+                collapsible: true,
+                margins:'5 0 5 5',
+                layout:'accordion',
+                layoutConfig:{animate:true},
+                items: [
+                    this.tree,
+                    {
+                        title:'Settings',
+                        html:'<p>Some settings in here.</p>',
+                        border:false,
+                        iconCls:'settings'
+                    }]
+            });
         layoutItems.push(
+            {
+                region:'center',
+                margins:'5 0 5 0',
+                minSize: 200,
+                layout:'fit',
+                items: [this.grid]
+            });
+        if (this.showProperties)
+            layoutItems.push(
+            {
+                title: 'Properties',
+                region:'east',
+                split:true,
+                margins:'5 5 5 0',
+                width: 150,
+                minSize: 100,
+                border: false,
+                layout: 'fit',
+                items: [{html:'<iframe id=auditFrame height=100% width=100% border=0 style="border:0px;" src="about:blank"></iframe>'}]
+            });
+
+        var border = new Ext.Panel(
         {
-            title: 'Properties',
-            region:'east',
-            split:true,
-            margins:'5 5 5 0',
-            width: 150,
-            minSize: 100,
-            border: false,
-            layout: 'fit',
-            items: [{html:'<iframe id=auditFrame height=100% width=100% border=0 style="border:0px;" src="about:blank"></iframe>'}]
+            id:'borderLayout',
+            height:600, width:800,
+            layout:'border',
+            tbar: tbarConfig,
+            items: layoutItems
         });
 
-    var border = new Ext.Panel(
-    {
-        id:'borderLayout',
-        height:600, width:800,
-        layout:'border',
-        tbar: tbarConfig,
-        items: layoutItems
-    });
+        border.render(config.renderTo);
 
-    border.render(config.renderTo);
-
-    var resizer = new Ext.Resizable('borderLayout', {
-        width:800, height:600,
-        minWidth:640,
-        minHeight:400});
-    resizer.on("resize", function(o,width,height){
-        border.setWidth(width);
-        border.setHeight(height);
-        resizer.setWidth(border.getWidth());
-        resizer.setHeight(border.getHeight());
-    });
-
-    //
-    // EVENTS (tie together components)
-    //
-
-    this.events.on(BROWSER_EVENTS.selectionchange, function(path)
-    {
-        var el = Ext.get('file-details');
-        if (el) el.update(path + "<br>" + treePathFromId(path));
-        if (path.charAt(path.length-1) == '/')
-            fileBrowser.downloadAction.disable();
-        else
-            fileBrowser.downloadAction.enable();
-    });
-
-    this.events.on(BROWSER_EVENTS.directorychange, function(path)
-    {
-        fileBrowser.fileSystem.listFiles(path, function(filesystem, path, records)
-        {
-            fileBrowser.store.removeAll();
-            fileBrowser.store.add(records);
+        var resizer = new Ext.Resizable('borderLayout', {
+            width:800, height:600,
+            minWidth:640,
+            minHeight:400});
+        resizer.on("resize", function(o,width,height){
+            border.setWidth(width);
+            border.setHeight(height);
+            resizer.setWidth(border.getWidth());
+            resizer.setHeight(border.getHeight());
         });
-    });
-    
-    this.events.on(BROWSER_EVENTS.directorychange, function(path)
-    {
-        Ext.get('addressBar').update(h(unescape(path)));
-    });
+
+        //
+        // EVENTS (tie together components)
+        //
+
+        this.events.on(BROWSER_EVENTS.selectionchange, function(path)
+        {
+            var el = Ext.get('file-details');
+            if (el) el.update(path + "<br>" + treePathFromId(path));
+            if (path.charAt(path.length-1) == '/')
+                this.downloadAction.disable();
+            else
+                this.downloadAction.enable();
+        }, this);
+
+        this.events.on(BROWSER_EVENTS.directorychange,function(path)
+        {
+            this.fileSystem.listFiles(path, (function(filesystem, path, records)
+            {
+                this.store.removeAll();
+                this.store.add(records);
+            }).createDelegate(this));
+        }, this);
+
+        this.events.on(BROWSER_EVENTS.directorychange, function(path)
+        {
+            Ext.get('addressBar').update(h(unescape(path)));
+        }, this);
+    }
 };
 
 Ext.onReady(function()
 {
     Ext.QuickTips.init();
     var fileSystem = new WebdavFileSystem({});
-    fileBrowser.init({fileSystem:fileSystem, renderTo:'files'});
+    var fileBrowser = new FileBrowser({fileSystem:fileSystem, renderTo:'files'});
+
     // let's let that layout
     (function() {
         fileBrowser.selectPath("/");
