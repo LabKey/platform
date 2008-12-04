@@ -39,7 +39,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
     private ExpMaterial _inputMaterial;
     private ExpData _inputData;
-    private List<ExpRun> _runs;
 
     public ExpRunTableImpl(String name, String alias, UserSchema schema)
     {
@@ -131,7 +130,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
     public void setRuns(List<ExpRun> runs)
     {
-        _runs = runs;
         if (runs.isEmpty())
         {
             addCondition(new SQLFragment("1 = 2"));
@@ -166,12 +164,12 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         if (_schema.getContainer().equals(ContainerManager.getSharedContainer()))
         {
             // If we're in the /Shared project, look everywhere
-            setContainerFilter(ContainerFilter.Filters.ALL_IN_SITE);
+            setContainerFilter(ContainerFilter.Filters.ALL_IN_SITE, _schema.getUser());
         }
         else if (getContainer().isProject())
         {
             // If we're in a project, look in subfolders
-            setContainerFilter(ContainerFilter.Filters.CURRENT_AND_SUBFOLDERS);
+            setContainerFilter(ContainerFilter.Filters.CURRENT_AND_SUBFOLDERS, _schema.getUser());
         }
     }
 
@@ -552,9 +550,10 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
     }
 
-    public boolean isContainerFilterNeeded()
+    @Override
+    public boolean needsContainerClauseAdded()
     {
-        if (!super.isContainerFilterNeeded())
+        if (!super.needsContainerClauseAdded())
         {
             return false;
         }

@@ -72,7 +72,7 @@
 %>
     <input type="hidden" name="<%= parameter.getKey() %>" value="<%= h(parameter.getValue()) %>">
     <input type="hidden" name="returnURL" value="<%= h(bean.getReturnURL()) %>">
-    <input type="hidden" name="containerFilter" value="<%= h(bean.getContainerFilter()) %>"
+    <input type="hidden" name="containerFilterName" value="<%= h(bean.getContainerFilterName()) %>"
 <%
     }
     for (Integer id : bean.getIds())

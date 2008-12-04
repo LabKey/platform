@@ -21,6 +21,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -133,7 +134,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
     {
         if (ss != null && !ss.getContainer().equals(getContainer()))
         {
-            setContainerFilter(new ContainerFilter.CurrentPlusExtras(ss.getContainer()));
+            setContainerFilter(new ContainerFilter.CurrentPlusExtras(ss.getContainer()), _schema.getUser());
         }
 
         addColumn(ExpMaterialTable.Column.RowId);

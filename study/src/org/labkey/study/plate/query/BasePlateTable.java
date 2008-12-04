@@ -37,7 +37,7 @@ public abstract class BasePlateTable extends FilteredTable
 
     public BasePlateTable(PlateSchema schema, TableInfo info)
     {
-        super(info, schema.getContainer(), schema.getUser());
+        super(info, schema.getContainer());
         _schema = schema;
     }
 

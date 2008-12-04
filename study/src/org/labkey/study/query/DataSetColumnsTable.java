@@ -35,7 +35,7 @@ public class DataSetColumnsTable extends FilteredTable
 {
     public DataSetColumnsTable(final StudyQuerySchema schema)
     {
-        super(ExperimentService.get().getTinfoPropertyDescriptor(), schema.getContainer(), schema.getUser());
+        super(ExperimentService.get().getTinfoPropertyDescriptor(), schema.getContainer());
 
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
         SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".DataSetId");

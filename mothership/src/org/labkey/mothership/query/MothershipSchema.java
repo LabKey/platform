@@ -86,7 +86,7 @@ public class MothershipSchema extends UserSchema
 
     public FilteredTable createServerSessionTable(String alias)
     {
-        FilteredTable result = new FilteredTable(MothershipManager.get().getTableInfoServerSession(), getContainer(), getUser());
+        FilteredTable result = new FilteredTable(MothershipManager.get().getTableInfoServerSession(), getContainer());
         result.setAlias(alias);
         result.wrapAllColumns(true);
         result.setTitleColumn("RowId");
@@ -131,7 +131,7 @@ public class MothershipSchema extends UserSchema
 
     public TableInfo createServerInstallationTable(String alias)
     {
-        FilteredTable result = new FilteredTable(MothershipManager.get().getTableInfoServerInstallation(), getContainer(), getUser());
+        FilteredTable result = new FilteredTable(MothershipManager.get().getTableInfoServerInstallation(), getContainer());
         result.setAlias(alias);
         result.wrapAllColumns(true);
 

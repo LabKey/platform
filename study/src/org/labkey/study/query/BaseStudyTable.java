@@ -24,7 +24,7 @@ public abstract class BaseStudyTable extends FilteredTable
     protected StudyQuerySchema _schema;
     public BaseStudyTable(StudyQuerySchema schema, TableInfo realTable)
     {
-        super(realTable, schema.getContainer(), schema.getUser());
+        super(realTable, schema.getContainer());
         _schema = schema;
     }
 }

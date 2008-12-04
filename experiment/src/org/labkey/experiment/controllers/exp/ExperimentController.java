@@ -508,7 +508,7 @@ public class ExperimentController extends SpringActionController
 
             ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), ExperimentRunFilter.ALL_RUNS_FILTER, true);
             runListView.getRunTable().setRuns(successorRuns);
-            runListView.getRunTable().setContainerFilter(ContainerFilter.Filters.ALL_IN_SITE);
+            runListView.getRunTable().setContainerFilter(ContainerFilter.Filters.ALL_IN_SITE, getUser());
             runListView.setTitle("Runs using this material or a derived material");
             vbox.addView(runListView);
 
@@ -833,7 +833,7 @@ public class ExperimentController extends SpringActionController
 
             ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), ExperimentRunFilter.ALL_RUNS_FILTER, true);
             runListView.getRunTable().setInputData(_data);
-            runListView.getRunTable().setContainerFilter(ContainerFilter.Filters.ALL_IN_SITE);
+            runListView.getRunTable().setContainerFilter(ContainerFilter.Filters.ALL_IN_SITE, getUser());
             runListView.setTitle("Runs using this data as an input");
             VBox vbox = new VBox(new StandardAndCustomPropertiesView(detailsView, cpv), runListView);
 

@@ -144,8 +144,8 @@ public class AssayController extends SpringActionController
             for (String id : selection)
                 selectedIds[i++] = Integer.parseInt(id);
             ActionURL url = AssayService.get().getAssayDataURL(getContainer(), form.getProtocol(), selectedIds);
-            if (form.getContainerFilter() != null)
-                url.addParameter("containerFilter", form.getContainerFilter());
+            if (form.getContainerFilterName() != null)
+                url.addParameter("containerFilterName", form.getContainerFilterName());
             return url;
         }
 
@@ -161,16 +161,16 @@ public class AssayController extends SpringActionController
 
     public static class ShowSelectedForm extends ProtocolIdForm
     {
-        private String containerFilter;
+        private String containerFilterName;
 
-        public String getContainerFilter()
+        public String getContainerFilterName()
         {
-            return containerFilter;
+            return containerFilterName;
         }
 
-        public void setContainerFilter(String containerFilter)
+        public void setContainerFilter(String containerFilterName)
         {
-            this.containerFilter = containerFilter;
+            this.containerFilterName = containerFilterName;
         }
     }
 

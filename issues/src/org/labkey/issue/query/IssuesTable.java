@@ -41,7 +41,7 @@ public class IssuesTable extends FilteredTable
 
     public IssuesTable(IssuesQuerySchema schema)
     {
-        super(IssuesSchema.getInstance().getTableInfoIssues(), schema.getContainer(), schema.getUser());
+        super(IssuesSchema.getInstance().getTableInfoIssues(), schema.getContainer());
         _schema = schema;
 
         addAllColumns();

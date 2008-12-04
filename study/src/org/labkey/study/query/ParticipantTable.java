@@ -35,7 +35,7 @@ public class ParticipantTable extends FilteredTable
 
     public ParticipantTable(StudyQuerySchema schema)
     {
-        super(StudySchema.getInstance().getTableInfoParticipant(), schema.getContainer(), schema.getUser());
+        super(StudySchema.getInstance().getTableInfoParticipant(), schema.getContainer());
         _schema = schema;
         ColumnInfo rowIdColumn = new AliasedColumn(this, "ParticipantId", _rootTable.getColumn("ParticipantId"));
         rowIdColumn.setFk(new TitleForeignKey(getBaseDetailsURL(), null, null, "participantId"));

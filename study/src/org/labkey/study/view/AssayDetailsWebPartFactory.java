@@ -16,7 +16,7 @@
 
 package org.labkey.study.view;
 
-import org.labkey.api.exp.api.ContainerFilter;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.study.assay.AssayRunsView;

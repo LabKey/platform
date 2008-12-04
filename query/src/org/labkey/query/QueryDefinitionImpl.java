@@ -41,6 +41,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 import java.util.*;
 
+@SuppressWarnings({"ThrowableInstanceNeverThrown"})
 public abstract class QueryDefinitionImpl implements QueryDefinition
 {
     final static private QueryManager mgr = QueryManager.get();
@@ -240,7 +241,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         }
         if (errors == null)
         {
-            errors = new ArrayList();
+            errors = new ArrayList<QueryException>();
         }
         Query query = getQuery(schema);
         QueryTableInfo ret = query.getTableInfo(name);

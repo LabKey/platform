@@ -16,17 +16,15 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.api.*;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.api.*;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserSchema;
 
 import java.sql.Types;
-
-import org.labkey.api.exp.api.SamplesSchema;
 
 public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApplicationTable.Column> implements ExpProtocolApplicationTable
 {
@@ -95,7 +93,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
             public TableInfo getLookupTableInfo()
             {
                 ExpDataTable expDataTable = schema.createDatasTable("lookup");
-                expDataTable.setContainerFilter(getContainerFilter());
+                expDataTable.setContainerFilter(getContainerFilter(), schema.getUser());
                 return expDataTable;
             }
         });

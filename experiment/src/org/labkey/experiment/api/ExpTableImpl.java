@@ -20,7 +20,6 @@ import org.labkey.api.audit.query.ContainerForeignKey;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.api.ContainerFilter;
 import org.labkey.api.exp.api.ExpSchema;
 import org.labkey.api.exp.api.ExpTable;
 import org.labkey.api.exp.api.TableEditHelper;
@@ -41,11 +40,10 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
 
     public ExpTableImpl(String name, String alias, TableInfo rootTable, UserSchema schema)
     {
-        super(rootTable, schema.getContainer(), schema.getUser());
+        super(rootTable, schema.getContainer());
         setName(name);
         setAlias(alias);
         _schema = schema;
-        setContainerFilter(ContainerFilter.Filters.CURRENT);
     }
 
     protected ColumnInfo addContainerColumn(C containerCol)

@@ -35,7 +35,7 @@ import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.api.ContainerFilter;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -754,7 +754,7 @@ public class StudyController extends BaseStudyController
                 if (c.hasPermission(getUser(), ACL.PERM_READ))
                 {
                     ActionURL url = AssayService.get().getAssayRunsURL(c, protocol);
-                    url.addParameter("containerFilter", ContainerFilter.Filters.CURRENT_AND_SUBFOLDERS.name());
+                    url.addParameter("containerFilterName", ContainerFilter.Filters.CURRENT_AND_SUBFOLDERS.name());
                     ActionButton viewAssayButton = new ActionButton("View Source Assay", url);
                     buttonBar.add(viewAssayButton);
                 }

@@ -29,7 +29,7 @@ public class SpecimenCommentTable extends FilteredTable
 {
     public SpecimenCommentTable(final StudyQuerySchema schema)
     {
-        super(StudySchema.getInstance().getTableInfoSpecimenComment(), schema.getContainer(), schema.getUser());
+        super(StudySchema.getInstance().getTableInfoSpecimenComment(), schema.getContainer());
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
             String name = baseColumn.getName();
