@@ -70,20 +70,14 @@ public class Portal
         return getSchema().getTable("PortalWebParts");
     }
 
-    //void wantsToDelete(Container c, List<String> messages);
-    public void containerCreated(Container c)
-    {
-
-    }
-
     public static void containerDeleted(Container c)
     {
         Cache.getShared().removeUsingPrefix(_portalPrefix);
         try
         {
             Table.delete(getTableInfoPortalWebParts(), new SimpleFilter("PageId", c.getId()));
-
-        } catch (SQLException e)
+        }
+        catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
         }

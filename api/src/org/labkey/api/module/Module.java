@@ -71,35 +71,26 @@ public interface Module
     // Formatted version number for display purposes.
     String getFormattedVersion();
 
-    // Called on every module in REVERSE dependency order before versionUpdate(), as long as at least one module
+    // Called on every module in REVERSE dependency order before versionUpdate() is called, as long as at least one module
     // requires updating.  This is a fine place to drop views and other dependent objects.
     public void beforeUpdate(ModuleContext moduleContext);
 
     /**
-     * Do any version updating module needs to do. If module
-     * requires a UI for updating version, the ActionURL for
-     * the upgrade UI should be returned here. Do NOT return null.
+     * Do any version updating module needs to do.
      * <p/>
-     * For initialization, versionUpdate will be called with an oldVersion of 0.0
+     * At installation time, ModuleContext.getInstalledVersion() will be 0.0
      * <p/>
-     * When version updating is successful
-     * module must call moduleContext.upgradeComplete(ViewContext viewContext, double newVersion)
-     * This will redirect to the appropriate location to continue the upgrade process.
-     * Note that if the module wishes to set up its own upgrade UI it should redirect to that
-     * UI and then when complete call this method.
      */
     public void versionUpdate(ModuleContext moduleContext) throws Exception;
 
-    // Called on every module in dependency order after versionUpdate(), as long as at least one module requires
+    // Called on each module in dependency order after versionUpdate(), as long as at least one module requires
     // updating.  This is a fine place to create views and other dependent objects.
     public void afterUpdate(ModuleContext moduleContext);
 
     //TODO: Spring ApplicationContext might be good here
 
     /**
-     * The application is starting. Bootstrap has already happened. Version updating
-     * has already happened.
-     * No predicatable order for startup calls though.
+     * The application is starting. Version updating is complete. startup() has been called on all dependencies.
      */
     public void startup(ModuleContext moduleContext);
 
@@ -114,7 +105,7 @@ public interface Module
     /**
      * Return Collection of WebPartFactory objects for this module.
      * NOTE: This may be called before startup, but will never be called
-     * before bootstrap.
+     * before upgrade is complete.
      *
      * @return null if no web parts, otherwise Collection of WebPartFactory
      */
