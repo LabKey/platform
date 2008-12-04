@@ -4,13 +4,18 @@ import org.labkey.api.view.ViewFormData;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.CustomView;
 import org.labkey.study.model.*;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.SampleManager;
+import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.List;
 import java.util.Collections;
 import java.util.Set;
+import java.util.Map;
 import java.sql.SQLException;
 
 /**
@@ -33,12 +38,14 @@ import java.sql.SQLException;
 */
 public abstract class SpecimenVisitReportParameters extends ViewFormData
 {
+    public static final String DEFAULT_VIEW_ID = "~default~";
     public enum PARAMS
     {
         statusFilterName,
         viewVialCount,
         viewParticipantCount,
         viewVolume,
+        baseCustomViewName,
         viewPtidList,
         typeLevel
     }
@@ -66,6 +73,7 @@ public abstract class SpecimenVisitReportParameters extends ViewFormData
     private Integer _cohortId;
     private Cohort _cohort;
     private Status _statusFilter = Status.ALL;
+    private String _baseCustomViewName;
     private boolean _viewVialCount = false;
     private boolean _viewParticipantCount = false;
     private boolean _viewVolume = false;
@@ -177,6 +185,16 @@ public abstract class SpecimenVisitReportParameters extends ViewFormData
         _excelExport = excelExport;
     }
 
+    public String getBaseCustomViewName()
+    {
+        return _baseCustomViewName;
+    }
+
+    public void setBaseCustomViewName(String baseCustomViewName)
+    {
+        _baseCustomViewName = baseCustomViewName;
+    }
+
     protected void addBaseFilters(SimpleFilter filter)
     {
         if (allowsAvailabilityFilter() && getStatusFilter() != null)
@@ -212,15 +230,15 @@ public abstract class SpecimenVisitReportParameters extends ViewFormData
         StudyManager.getInstance().assertCohortsViewable(getContainer(), getUser());
         if (cohortId != null)
         {
-            filter.addWhereClause("ptid IN\n" +
+            filter.addWhereClause("ParticipantId IN\n" +
                     "(SELECT ParticipantId FROM study.participant WHERE cohortId = ? AND Container = ?)",
                     new Object[] { cohortId, getContainer().getId()});
         }
         else
         {
-            filter.addWhereClause("(ptid IN\n" +
+            filter.addWhereClause("(ParticipantId IN\n" +
                     "(SELECT ParticipantId FROM study.participant WHERE cohortId IS NULL AND Container = ?)" +
-                    "OR (ptid NOT IN (SELECT ParticipantId FROM study.participant WHERE Container = ?)))",
+                    "OR (ParticipantId NOT IN (SELECT ParticipantId FROM study.participant WHERE Container = ?)))",
                     new Object[] { getContainer().getId(), getContainer().getId()});
         }
     }
@@ -245,6 +263,41 @@ public abstract class SpecimenVisitReportParameters extends ViewFormData
                 if (selectedSiteId != null && selectedSiteId.intValue() == site.getRowId())
                     builder.append(" SELECTED");
                 builder.append(">").append(PageFlowUtil.filter(site.getLabel())).append("</option");
+            }
+        }
+        builder.append("</select>");
+        return builder.toString();
+    }
+
+    public String getCustomViewPicker()
+    {
+        StringBuilder builder = new StringBuilder();
+        builder.append("<select name=\"baseCustomViewName\">");
+        builder.append("<option value=\"\">Base report on all vials</option>");
+        StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(getContainer()), getUser(), true);
+        QueryDefinition def = QueryService.get().createQueryDefForTable(schema, "SpecimenDetail");
+        Map<String, CustomView> views = def.getCustomViews(getUser(), getViewContext().getRequest());
+
+        for (Map.Entry<String, CustomView> viewEntry : views.entrySet())
+        {
+            String name = viewEntry.getKey();
+            CustomView view = viewEntry.getValue();
+            if (view.getFilter() != null)
+            {
+                if (name == null)
+                {
+                    builder.append("<option value=\"").append(PageFlowUtil.filter(DEFAULT_VIEW_ID)).append("\"");
+                    if (_baseCustomViewName != null && _baseCustomViewName.equals(DEFAULT_VIEW_ID))
+                        builder.append(" SELECTED");
+                    builder.append(">Base on default view (filtered)</option");
+                }
+                else
+                {
+                    builder.append("<option value=\"").append(PageFlowUtil.filter(view.getName())).append("\"");
+                    if (_baseCustomViewName != null && _baseCustomViewName.equals(view.getName()))
+                        builder.append(" SELECTED");
+                    builder.append(">Base on view: ").append(PageFlowUtil.filter(view.getName())).append("</option");
+                }
             }
         }
         builder.append("</select>");
@@ -297,6 +350,11 @@ public abstract class SpecimenVisitReportParameters extends ViewFormData
     }
 
     public boolean allowsParticipantAggregegates()
+    {
+        return true;
+    }
+
+    public boolean allowsCustomViewFilter()
     {
         return true;
     }

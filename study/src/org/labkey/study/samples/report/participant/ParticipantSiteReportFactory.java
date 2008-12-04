@@ -68,13 +68,13 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
             addBaseFilters(filter);
             if (site != null)
             {
-                filter.addWhereClause("Ptid IN (SELECT ParticipantId FROM study.Participant " +
-                        "WHERE EnrollmentSiteId = ? AND Container = ?)", new Object[] { site.getRowId(), getContainer().getId() }, "Ptid");
+                filter.addWhereClause("ParticipantId IN (SELECT ParticipantId FROM study.Participant " +
+                        "WHERE EnrollmentSiteId = ? AND Container = ?)", new Object[] { site.getRowId(), getContainer().getId() }, "ParticipantId");
             }
             else
             {
-                filter.addWhereClause("Ptid IN (SELECT ParticipantId FROM study.Participant " +
-                        "WHERE EnrollmentSiteId IS NULL AND Container = ?)", new Object[] { getContainer().getId() }, "Ptid");
+                filter.addWhereClause("ParticipantId IN (SELECT ParticipantId FROM study.Participant " +
+                        "WHERE EnrollmentSiteId IS NULL AND Container = ?)", new Object[] { getContainer().getId() }, "ParticipantId");
             }
             reports.add(new ParticipantSiteReport(label, visits, filter, this));
         }

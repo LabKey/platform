@@ -44,7 +44,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
         {
             SampleManager.SpecimenTypeLevel level = getTypeLevelEnum();
             SampleManager.SummaryByVisitType[] countSummary =
-                    SampleManager.getInstance().getSpecimenSummaryByVisitType(_container, _filter, isViewPtidList(), level);
+                    SampleManager.getInstance().getSpecimenSummaryByVisitType(_container, getUser(), _filter, isViewPtidList(), level, getBaseCustomView());
             Map<String, Row> rows = new TreeMap<String, Row>();
             for (SampleManager.SummaryByVisitType count : countSummary)
             {
@@ -149,6 +149,11 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
                     url.addParameter(SpecimenVisitReportParameters.PARAMS.viewVialCount, isViewVialCount());
                     url.addParameter(SpecimenVisitReportParameters.PARAMS.viewParticipantCount, isViewParticipantCount());
                     url.addParameter(SpecimenVisitReportParameters.PARAMS.viewVolume, isViewVolume());
+                    if (getBaseCustomViewName() != null && getBaseCustomViewName().length() > 0 &&
+                        !SpecimenVisitReportParameters.DEFAULT_VIEW_ID.equals(getBaseCustomViewName()))
+                    {
+                        url.addParameter(SpecimenVisitReportParameters.PARAMS.baseCustomViewName, getBaseCustomViewName());
+                    }
                     cellHtml.append("<a href=\"").append(url.getLocalURIString()).append("\">");
                     cellHtml.append(PageFlowUtil.filter(participantId));
                     cellHtml.append("</a>");

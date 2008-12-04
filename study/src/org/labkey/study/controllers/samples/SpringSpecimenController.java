@@ -2673,9 +2673,9 @@ public class SpringSpecimenController extends BaseStudyController
 
     public static class ReportConfigurationBean
     {
-        private static final String COUNTS_BY_DERIVATIVE_TYPE_TITLE = "Specimen Types by Timepoint";
+        private static final String COUNTS_BY_DERIVATIVE_TYPE_TITLE = "Collected Vials by Type and Timepoint";
         private static final String REQUESTS_BY_DERIVATIVE_TYPE_TITLE = "Requested Vials by Type and Timepoint";
-        private static final String COUNTS_BY_PARTICIPANT_TITLE = "Participants By Timepoint";
+        private static final String COUNTS_BY_PARTICIPANT_TITLE = "Collected Vials by Participant By Timepoint";
         private Map<String, List<SpecimenVisitReportParameters>> _reportFactories = new LinkedHashMap<String, List<SpecimenVisitReportParameters>>();
         private boolean _listView = true;
         private ViewContext _viewContext;

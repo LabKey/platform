@@ -30,13 +30,16 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.*;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.*;
+import org.labkey.api.view.ActionURL;
 import org.labkey.common.util.Pair;
 import org.labkey.study.model.*;
 import org.labkey.study.requirements.RequirementProvider;
 import org.labkey.study.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.study.requirements.SpecimenRequestRequirementType;
 import org.labkey.study.samples.report.SpecimenCountSummary;
+import org.labkey.study.query.StudyQuerySchema;
+import org.apache.commons.beanutils.PropertyUtils;
 
 import javax.mail.Address;
 import javax.servlet.ServletException;
@@ -45,6 +48,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.*;
+import java.lang.reflect.InvocationTargetException;
 
 public class SampleManager
 {
@@ -1767,11 +1771,8 @@ public class SampleManager
     public static class SummaryByVisitType extends SpecimenCountSummary
     {
         private String _primaryType;
-        private Integer _primaryTypeId;
         private String _derivative;
-        private Integer _derivativeTypeId;
         private String _additive;
-        private Integer _additiveTypeId;
         private Long _participantCount;
         private Set<String> _participantIds;
 
@@ -1805,26 +1806,6 @@ public class SampleManager
             _participantCount = participantCount;
         }
 
-        public Integer getPrimaryTypeId()
-        {
-            return _primaryTypeId;
-        }
-
-        public void setPrimaryTypeId(Integer primaryTypeId)
-        {
-            _primaryTypeId = primaryTypeId;
-        }
-
-        public Integer getDerivativeTypeId()
-        {
-            return _derivativeTypeId;
-        }
-
-        public void setDerivativeTypeId(Integer derivativeTypeId)
-        {
-            _derivativeTypeId = derivativeTypeId;
-        }
-
         public Set<String> getParticipantIds()
         {
             return _participantIds;
@@ -1843,16 +1824,6 @@ public class SampleManager
         public void setAdditive(String additive)
         {
             _additive = additive;
-        }
-
-        public Integer getAdditiveTypeId()
-        {
-            return _additiveTypeId;
-        }
-
-        public void setAdditiveTypeId(Integer additiveTypeId)
-        {
-            _additiveTypeId = additiveTypeId;
         }
     }
 
@@ -1882,58 +1853,67 @@ public class SampleManager
         }
     }
 
-    public SummaryByVisitType[] getSpecimenSummaryByVisitType(Container container, boolean includeParticipantLists, SpecimenTypeLevel level) throws SQLException
+    public SummaryByVisitType[] getSpecimenSummaryByVisitType(Container container, User user, boolean includeParticipantLists, SpecimenTypeLevel level) throws SQLException
     {
-        return getSpecimenSummaryByVisitType(container, null, includeParticipantLists, level);
+        return getSpecimenSummaryByVisitType(container, user, null, includeParticipantLists, level);
+    }
+
+    public static class SpecimenTypeBeanProperty
+    {
+        private FieldKey _typeKey;
+        private String _beanProperty;
+        private SpecimenTypeLevel _level;
+
+        public SpecimenTypeBeanProperty(FieldKey typeKey, String beanProperty, SpecimenTypeLevel level)
+        {
+            _typeKey = typeKey;
+            _beanProperty = beanProperty;
+            _level = level;
+        }
+
+        public FieldKey getTypeKey()
+        {
+            return _typeKey;
+        }
+
+        public String getBeanProperty()
+        {
+            return _beanProperty;
+        }
+
+        public SpecimenTypeLevel getLevel()
+        {
+            return _level;
+        }
     }
 
     public enum SpecimenTypeLevel
     {
         PrimaryType()
         {
-            public String getJoinClauses(String detailsTable)
+            public List<SpecimenTypeBeanProperty> getGroupingColumns()
             {
-                return "LEFT JOIN study.SpecimenPrimaryType on \n" +
-                    "\tstudy.SpecimenPrimaryType.scharpid = " + detailsTable + ".PrimaryTypeid AND \n" +
-                    "\tstudy.SpecimenPrimaryType.container = " + detailsTable + ".container\n";
-            }
-
-            public String getDisplaySelectColumns()
-            {
-                return getSpecimenDetailColumns() + ", PrimaryType";
-            }
-
-            public String getSpecimenDetailColumns()
-            {
-                return "PrimaryTypeId";
+                List<SpecimenTypeBeanProperty> list = new ArrayList<SpecimenTypeBeanProperty>();
+                list.add(new SpecimenTypeBeanProperty(FieldKey.fromParts("PrimaryType", "Description"), "primaryType", this));
+                return list;
             }
 
             public String[] getTitleHirarchy(SummaryByVisitType summary)
             {
                 return new String[] { summary.getPrimaryType() };
             }
+
             public String getLabel()
             {
                 return "Primary Type";
             }},
         Derivative()
         {
-            public String getJoinClauses(String detailsTable)
+            public List<SpecimenTypeBeanProperty> getGroupingColumns()
             {
-                return PrimaryType.getJoinClauses(detailsTable) +
-                    "LEFT JOIN study.SpecimenDerivative on \n" +
-                    "\tstudy.SpecimenDerivative.scharpid = " + detailsTable + ".DerivativeTypeid AND \n" +
-                    "\tstudy.SpecimenDerivative.container = " + detailsTable + ".container\n";
-            }
-
-            public String getDisplaySelectColumns()
-            {
-                return PrimaryType.getDisplaySelectColumns() + ", DerivativeTypeId, Derivative";
-            }
-
-            public String getSpecimenDetailColumns()
-            {
-                return PrimaryType.getSpecimenDetailColumns() + ", DerivativeTypeId";
+                List<SpecimenTypeBeanProperty> parent = SpecimenTypeLevel.PrimaryType.getGroupingColumns();
+                parent.add(new SpecimenTypeBeanProperty(FieldKey.fromParts("DerivativeType", "Description"), "derivative", this));
+                return parent;
             }
 
             public String[] getTitleHirarchy(SummaryByVisitType summary)
@@ -1946,41 +1926,128 @@ public class SampleManager
             }},
         Additive()
         {
-            public String getJoinClauses(String detailsTable)
+            public List<SpecimenTypeBeanProperty> getGroupingColumns()
             {
-                return Derivative.getJoinClauses(detailsTable) +
-                    "LEFT JOIN study.SpecimenAdditive on \n" +
-                    "\tstudy.SpecimenAdditive.scharpid = " + detailsTable + ".AdditiveTypeid AND \n" +
-                    "\tstudy.SpecimenAdditive.container = " + detailsTable + ".container\n";
-            }
-
-            public String getDisplaySelectColumns()
-            {
-                return Derivative.getDisplaySelectColumns() + ", AdditiveTypeId, Additive";
-            }
-
-            public String getSpecimenDetailColumns()
-            {
-                return Derivative.getSpecimenDetailColumns() + ", AdditiveTypeId";
+                List<SpecimenTypeBeanProperty> parent = SpecimenTypeLevel.Derivative.getGroupingColumns();
+                parent.add(new SpecimenTypeBeanProperty(FieldKey.fromParts("AdditiveType", "Description"), "additive", this));
+                return parent;
             }
 
             public String[] getTitleHirarchy(SummaryByVisitType summary)
             {
                 return new String[] { summary.getPrimaryType(), summary.getDerivative(), summary.getAdditive() };
             }
+
             public String getLabel()
             {
                 return "Additive";
             }};
 
         public abstract String[] getTitleHirarchy(SummaryByVisitType summary);
-        public abstract String getSpecimenDetailColumns();
-        public abstract String getDisplaySelectColumns();
-        public abstract String getJoinClauses(String detailsTable);
+        public abstract List<SpecimenTypeBeanProperty> getGroupingColumns();
         public abstract String getLabel();
     }
 
-    public SummaryByVisitType[] getSpecimenSummaryByVisitType(Container container, SimpleFilter specimenDetailFilter, boolean includeParticipantLists, SpecimenTypeLevel level) throws SQLException
+    private class SpecimenDetailQueryHelper
+    {
+        private SQLFragment _viewSql;
+        private String _typeGroupingColumns;
+        private Map<String, SpecimenTypeBeanProperty> _aliasToTypePropertyMap;
+
+        private SpecimenDetailQueryHelper(SQLFragment viewSql, String typeGroupingColumns, Map<String, SpecimenTypeBeanProperty> aliasToTypePropertyMap)
+        {
+            _viewSql = viewSql;
+            _typeGroupingColumns = typeGroupingColumns;
+            _aliasToTypePropertyMap = aliasToTypePropertyMap;
+        }
+
+        public SQLFragment getViewSql()
+        {
+            return _viewSql;
+        }
+
+        public String getTypeGroupingColumns()
+        {
+            return _typeGroupingColumns;
+        }
+
+        public Map<String, SpecimenTypeBeanProperty> getAliasToTypePropertyMap()
+        {
+            return _aliasToTypePropertyMap;
+        }
+    }
+
+    private SpecimenDetailQueryHelper getSpecimenDetailQueryHelper(Container container, User user,
+                                                                   CustomView baseView, SimpleFilter specimenDetailFilter,
+                                                                   SpecimenTypeLevel level)
+    {
+        StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(container), user, true);
+        TableInfo tinfo = schema.getTable("SpecimenDetail", "SpecimenDetailAlias");
+        Map<String, SpecimenTypeBeanProperty> aliasToTypeProperty = new LinkedHashMap<String, SpecimenTypeBeanProperty>();
+
+        Collection<FieldKey> columns = new HashSet<FieldKey>();
+        if (baseView != null)
+        {
+            // copy our saved view filter into our SimpleFilter via an ActionURL (yuck...)
+            ActionURL url = new ActionURL();
+            baseView.applyFilterAndSortToURL(url, "mockDataRegion");
+            specimenDetailFilter.addUrlFilters(url, "mockDataRegion");
+            columns.addAll(baseView.getColumns());
+        }
+        else
+            columns.addAll(tinfo.getDefaultVisibleColumns());
+
+        // Build a list fo FieldKeys for all the columns that we must select,
+        // regardless of whether they're in the selected specimen view.  We need to ask the view which
+        // columns are required in case there's a saved filter on a column outside the primary table:
+        columns.add(FieldKey.fromParts("Container"));
+        columns.add(FieldKey.fromParts("Visit"));
+        columns.add(FieldKey.fromParts("ParticipantId"));
+        columns.add(FieldKey.fromParts("Volume"));
+        if (level != null)
+        {
+            for (SpecimenTypeBeanProperty typeProperty : level.getGroupingColumns())
+                columns.add(typeProperty.getTypeKey());
+        }
+
+        // turn our fieldkeys into columns:
+        List<ColumnInfo> cols = new ArrayList<ColumnInfo>();
+        Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(tinfo, columns);
+        Set<String> unresolvedColumns = new HashSet<String>();
+        cols.addAll(colMap.values());
+        QueryService.get().ensureRequiredColumns(tinfo, cols, specimenDetailFilter, null, unresolvedColumns);
+        if (!unresolvedColumns.isEmpty())
+            throw new IllegalStateException("Unable to resolve column(s): " + unresolvedColumns.toString());
+        // generate our select SQL:
+        SQLFragment viewSql = Table.getDisplaySelectSQL(tinfo, cols, specimenDetailFilter, null);
+
+        // save off the aliases for our grouping columns, so we can group by them later:
+        String groupingColSql = null;
+        if (level != null)
+        {
+            StringBuilder builder = new StringBuilder();
+            String sep = "";
+            for (SpecimenTypeBeanProperty typeProperty : level.getGroupingColumns())
+            {
+                ColumnInfo col = colMap.get(typeProperty.getTypeKey());
+                builder.append(sep).append(col.getAlias());
+                sep = ", ";
+                aliasToTypeProperty.put(col.getAlias(), typeProperty);
+            }
+            groupingColSql = builder.toString();
+        }
+        return new SpecimenDetailQueryHelper(viewSql, groupingColSql, aliasToTypeProperty);
+    }
+
+    public SummaryByVisitType[] getSpecimenSummaryByVisitType(Container container, User user, SimpleFilter specimenDetailFilter,
+                                                              boolean includeParticipantLists, SpecimenTypeLevel level) throws SQLException
+    {
+        return getSpecimenSummaryByVisitType(container, user, specimenDetailFilter, includeParticipantLists, level, null);
+    }
+
+    public SummaryByVisitType[] getSpecimenSummaryByVisitType(Container container, User user, SimpleFilter specimenDetailFilter,
+                                                              boolean includeParticipantLists, SpecimenTypeLevel level,
+                                                              CustomView baseView) throws SQLException
     {
         if (specimenDetailFilter == null)
             specimenDetailFilter = new SimpleFilter();
@@ -1990,33 +2057,75 @@ public class SampleManager
             clone.addAllClauses(specimenDetailFilter);
             specimenDetailFilter = clone;
         }
-        specimenDetailFilter.addCondition("Container", container.getId());
-        SQLFragment filterSql = specimenDetailFilter.getSQLFragment(StudySchema.getInstance().getSqlDialect());
+
+        SpecimenDetailQueryHelper viewSqlHelper = getSpecimenDetailQueryHelper(container, user, baseView, specimenDetailFilter, level);
 
         String perPtidSpecimenSQL = "\t-- Inner SELECT gets the number of vials per participant/visit/type:\n" +
-            "\tSELECT Container, VisitValue, " + level.getSpecimenDetailColumns() + ", ptid, COUNT(*) AS VialCount, \n" +
-            "\tSUM(Volume) AS PtidVolume FROM study.SpecimenDetail\n" + filterSql.toString() + "\n" +
-            "\tGROUP BY Container, ptid, VisitValue, " + level.getSpecimenDetailColumns() + "\n";
+            "\tSELECT InnerView.Container, InnerView.Visit, " + viewSqlHelper.getTypeGroupingColumns() + ",\n" +
+            "\tInnerView.ParticipantId, COUNT(*) AS VialCount, SUM(InnerView.Volume) AS PtidVolume \n" +
+            "FROM (\n" + viewSqlHelper.getViewSql().toString() + "\n) InnerView\n" +
+            "\tGROUP BY InnerView.Container, InnerView.ParticipantId, InnerView.Visit, " + viewSqlHelper.getTypeGroupingColumns() + "\n";
 
         StringBuilder sql = new StringBuilder("-- Outer grouping allows us to count participants AND sum vial counts:\n" +
-            "SELECT VisitValue AS SequenceNum, " + level.getDisplaySelectColumns() + ", COUNT(*) as ParticipantCount, \n" +
-            "SUM(VialCount) AS VialCount, SUM(VialData.PtidVolume) AS TotalVolume FROM \n" +
-            "(\n" + perPtidSpecimenSQL + ") AS VialData \n" + level.getJoinClauses("VialData") +
-            "GROUP BY VisitValue, " + level.getDisplaySelectColumns() + "\n" +
-            "ORDER BY " + level.getDisplaySelectColumns() + ", VisitValue");
+            "SELECT VialData.Visit AS SequenceNum, " + viewSqlHelper.getTypeGroupingColumns() + ", COUNT(*) as ParticipantCount, \n" +
+            "SUM(VialData.VialCount) AS VialCount, SUM(VialData.PtidVolume) AS TotalVolume FROM \n" +
+            "(\n" + perPtidSpecimenSQL + ") AS VialData\n" +
+            "GROUP BY Visit, " + viewSqlHelper.getTypeGroupingColumns() + "\n" +
+            "ORDER BY " + viewSqlHelper.getTypeGroupingColumns() + ", Visit");
 
-        SummaryByVisitType[] summaries = Table.executeQuery(StudySchema.getInstance().getSchema(), sql.toString(), filterSql.getParamsArray(), SummaryByVisitType.class);
+        ResultSet rs = null;
+        List<SummaryByVisitType> ret;
+        try
+        {
+            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql.toString(), viewSqlHelper.getViewSql().getParamsArray());
+            ret = new ArrayList<SummaryByVisitType>();
+            while (rs.next())
+            {
+                SummaryByVisitType summary = new SummaryByVisitType();
+                summary.setSequenceNum(rs.getDouble("SequenceNum"));
+                summary.setTotalVolume(rs.getDouble("TotalVolume"));
+                Double vialCount = rs.getDouble("VialCount");
+                summary.setVialCount(vialCount.longValue());
+                Double participantCount = rs.getDouble("ParticipantCount");
+                summary.setParticipantCount(participantCount.longValue());
+                for (Map.Entry<String, SpecimenTypeBeanProperty> typeProperty : viewSqlHelper.getAliasToTypePropertyMap().entrySet())
+                {
+                    String value = rs.getString(typeProperty.getKey());
+                    PropertyUtils.setProperty(summary, typeProperty.getValue().getBeanProperty(), value);
+                }
+                ret.add(summary);
+            }
+        }
+        catch (InvocationTargetException e)
+        {
+            throw new RuntimeException(e);
+        }
+        catch (NoSuchMethodException e)
+        {
+            throw new RuntimeException(e);
+        }
+        catch (IllegalAccessException e)
+        {
+            throw new RuntimeException(e);
+        }
+        finally
+        {
+            if (rs != null)
+                try { rs.close(); } catch (SQLException e) { /* fall through */ }
+        }
+        SummaryByVisitType[] summaries = ret.toArray(new SummaryByVisitType[ret.size()]);
 
         if (includeParticipantLists)
-            setSummaryParticpantLists(perPtidSpecimenSQL, filterSql.getParamsArray(), level, summaries, "ptid", "VisitValue");
+            setSummaryParticpantLists(perPtidSpecimenSQL, viewSqlHelper.getViewSql().getParamsArray(),
+                    viewSqlHelper.getAliasToTypePropertyMap(), summaries, "ParticipantId", "Visit");
         return summaries;
     }
 
-    private String getPtidListKey(Double visitValue, Integer primaryTypeId, Integer derivativeTypeId, Integer additiveTypeId)
+    private String getPtidListKey(Double visitValue, String primaryType, String derivativeType, String additiveType)
     {
-        return visitValue + "/" + primaryTypeId + "/" +
-            (derivativeTypeId != null ? derivativeTypeId : "all") +
-            (additiveTypeId != null ? additiveTypeId : "all");
+        return visitValue + "/" + primaryType + "/" +
+            (derivativeType != null ? derivativeType : "all") +
+            (additiveType != null ? additiveType : "all");
     }
 
     public Site[] getSitesWithRequests(Container container) throws SQLException
@@ -2126,7 +2235,8 @@ public class SampleManager
         }
     }
 
-    public SummaryByVisitParticipant[] getParticipantSummaryByVisitType(Container container, SimpleFilter specimenDetailFilter) throws SQLException
+    public SummaryByVisitParticipant[] getParticipantSummaryByVisitType(Container container, User user, 
+                                                                        SimpleFilter specimenDetailFilter, CustomView baseView) throws SQLException
     {
         if (specimenDetailFilter == null)
             specimenDetailFilter = new SimpleFilter();
@@ -2136,29 +2246,25 @@ public class SampleManager
             clone.addAllClauses(specimenDetailFilter);
             specimenDetailFilter = clone;
         }
-        specimenDetailFilter.addCondition("study.SpecimenDetail.Container", container.getId());
-        SQLFragment filterSql = specimenDetailFilter.getSQLFragment(StudySchema.getInstance().getSqlDialect());
+        SpecimenDetailQueryHelper sqlHelper = getSpecimenDetailQueryHelper(container, user, baseView, specimenDetailFilter, null);
 
-        String ptidSpecimenSQL = "SELECT VisitValue AS SequenceNum, ptid AS ParticipantId,\n" +
-                "COUNT(*) AS VialCount, study.Cohort.Label AS Cohort, SUM(Volume) AS TotalVolume\n" +
-                "FROM study.SpecimenDetail\n" +
+        String ptidSpecimenSQL = "SELECT SpecimenQuery.Visit AS SequenceNum, SpecimenQuery.ParticipantId,\n" +
+                "COUNT(*) AS VialCount, study.Cohort.Label AS Cohort, SUM(SpecimenQuery.Volume) AS TotalVolume\n" +
+                "FROM (" + sqlHelper.getViewSql().toString() + ") AS SpecimenQuery\n" +
                 "LEFT OUTER JOIN study.Participant ON\n" +
-                "\tstudy.SpecimenDetail.ptid = study.Participant.ParticipantId AND\n" +
-                "\tstudy.SpecimenDetail.Container = study.Participant.Container\n" +
+                "\tSpecimenQuery.ParticipantId = study.Participant.ParticipantId AND\n" +
+                "\tSpecimenQuery.Container = study.Participant.Container\n" +
                 "LEFT OUTER JOIN study.Cohort ON \n" +
                 "\tstudy.Participant.CohortId = study.Cohort.RowId AND\n" +
-                "\tStudy.Participant.Container = study.Cohort.Container" +
-                "\t" + filterSql.getSQL() + "\n" +
-                "GROUP BY study.SpecimenDetail.Container, study.Cohort.Label, VisitValue, ptid\n" +
-                "ORDER BY study.Cohort.Label, ptid, VisitValue";
+                "\tstudy.Participant.Container = study.Cohort.Container\n" +
+                "GROUP BY study.Cohort.Label, SpecimenQuery.ParticipantId, Visit\n" +
+                "ORDER BY study.Cohort.Label, SpecimenQuery.ParticipantId, Visit";
 
-        SummaryByVisitParticipant[] summaries = Table.executeQuery(StudySchema.getInstance().getSchema(),
-                ptidSpecimenSQL, filterSql.getParamsArray(), SummaryByVisitParticipant.class);
-
-        return summaries;
+        return Table.executeQuery(StudySchema.getInstance().getSchema(),
+                ptidSpecimenSQL, sqlHelper.getViewSql().getParamsArray(), SummaryByVisitParticipant.class);
     }
 
-    public RequestSummaryByVisitType[] getRequestSummaryBySite(Container container, SimpleFilter specimenDetailFilter, boolean includeParticipantLists, SpecimenTypeLevel level) throws SQLException
+    public RequestSummaryByVisitType[] getRequestSummaryBySite(Container container, User user, SimpleFilter specimenDetailFilter, boolean includeParticipantLists, SpecimenTypeLevel level, CustomView baseView) throws SQLException
     {
         if (specimenDetailFilter == null)
             specimenDetailFilter = new SimpleFilter();
@@ -2168,13 +2274,12 @@ public class SampleManager
             clone.addAllClauses(specimenDetailFilter);
             specimenDetailFilter = clone;
         }
-        specimenDetailFilter.addCondition("Request.Container", container.getId());
-        SQLFragment filterSql = specimenDetailFilter.getSQLFragment(StudySchema.getInstance().getSqlDialect());
+        SpecimenDetailQueryHelper sqlHelper = getSpecimenDetailQueryHelper(container, user, baseView, specimenDetailFilter, level);
 
-        String sql = "SELECT Specimen.Container, Specimen.Ptid AS ParticipantId, Request.DestinationSiteId,\n" +
-                "Site.Label AS SiteLabel, VisitValue AS SequenceNum, \n" +
-                 level.getDisplaySelectColumns() + ", COUNT(*) AS VialCount, SUM(Volume) AS TotalVolume\n" +
-                "FROM study.Specimen AS Specimen\n" +
+        String sql = "SELECT Specimen.Container, Specimen.ParticipantId AS ParticipantId, Request.DestinationSiteId,\n" +
+                "Site.Label AS SiteLabel, Visit AS SequenceNum, \n" +
+                 sqlHelper.getTypeGroupingColumns() + ", COUNT(*) AS VialCount, SUM(Volume) AS TotalVolume\n" +
+                "FROM (" + sqlHelper.getViewSql().toString() + ") AS Specimen\n" +
                 "JOIN study.SampleRequestSpecimen AS RequestSpecimen ON \n" +
                 "\tSpecimen.GlobalUniqueId = RequestSpecimen.SpecimenGlobalUniqueId AND\n" +
                 "\tSpecimen.Container = RequestSpecimen.Container\n" +
@@ -2187,17 +2292,15 @@ public class SampleManager
                 "JOIN study.SampleRequestStatus AS Status ON\n" +
                 "\tStatus.Container = Request.Container AND\n" +
                 "\tStatus.RowId = Request.StatusId and Status.SpecimensLocked = ?\n" +
-                level.getJoinClauses("Specimen") + "\n" +
-                filterSql.toString() +
-                "GROUP BY Specimen.Container, Specimen.Ptid, Site.Label, DestinationSiteId, " + level.getDisplaySelectColumns() + ", VisitValue\n" +
-                "ORDER BY Specimen.Container, Specimen.Ptid, Site.Label, DestinationSiteId, " + level.getDisplaySelectColumns() + ", VisitValue";
+                "GROUP BY Specimen.Container, Specimen.ParticipantId, Site.Label, DestinationSiteId, " + sqlHelper.getTypeGroupingColumns() + ", Visit\n" +
+                "ORDER BY Specimen.Container, Specimen.ParticipantId, Site.Label, DestinationSiteId, " + sqlHelper.getTypeGroupingColumns() + ", Visit";
 
-        Object[] params = new Object[filterSql.getParamsArray().length + 1];
-        params[0] = Boolean.TRUE;
-        System.arraycopy(filterSql.getParamsArray(), 0, params, 1, filterSql.getParamsArray().length);
+        Object[] params = new Object[sqlHelper.getViewSql().getParamsArray().length + 1];
+        System.arraycopy(sqlHelper.getViewSql().getParamsArray(), 0, params, 0, sqlHelper.getViewSql().getParamsArray().length);
+        params[params.length - 1] = Boolean.TRUE;
         RequestSummaryByVisitType[] summaries = Table.executeQuery(StudySchema.getInstance().getSchema(), sql, params, RequestSummaryByVisitType.class);
         if (includeParticipantLists)
-            setSummaryParticpantLists(sql, params, level, summaries, "ParticipantId", "SequenceNum");
+            setSummaryParticpantLists(sql, params, null, summaries, "ParticipantId", "SequenceNum");
         return summaries;
     }
 
@@ -2271,7 +2374,7 @@ public class SampleManager
         }
     }
 
-    private void setSummaryParticpantLists(String sql, Object[] paramArray, SpecimenTypeLevel level,
+    private void setSummaryParticpantLists(String sql, Object[] paramArray, Map<String, SpecimenTypeBeanProperty> aliasToTypeProperty,
                                            SummaryByVisitType[] summaries, String ptidColumnName, String visitValueColumnName) throws SQLException
     {
         Table.TableResultSet rs = null;
@@ -2283,15 +2386,25 @@ public class SampleManager
             {
                 String ptid = rs.getString(ptidColumnName);
                 Double visitValue = rs.getDouble(visitValueColumnName);
-                Integer primaryTypeId = rs.getInt("PrimaryTypeId");
-                Integer derivativeTypeId = null;
-                if (level == SpecimenTypeLevel.Derivative || level == SpecimenTypeLevel.Additive)
-                    derivativeTypeId = rs.getInt("DerivativeTypeId");
-                Integer additiveTypeId = null;
-                if (level == SpecimenTypeLevel.Additive)
-                    additiveTypeId = rs.getInt("AdditiveTypeId");
-
-                String key = getPtidListKey(visitValue, primaryTypeId, derivativeTypeId, additiveTypeId);
+                String primaryType = null;
+                String derivative = null;
+                String additive = null;
+                for (Map.Entry<String, SpecimenTypeBeanProperty> entry : aliasToTypeProperty.entrySet())
+                {
+                    switch (entry.getValue().getLevel())
+                    {
+                        case PrimaryType:
+                            primaryType = rs.getString(entry.getKey());
+                            break;
+                        case Derivative:
+                            derivative = rs.getString(entry.getKey());
+                            break;
+                        case Additive:
+                            additive = rs.getString(entry.getKey());
+                            break;
+                    }
+                }
+                String key = getPtidListKey(visitValue, primaryType, derivative, additive);
 
                 Set<String> ptids = cellToPtidSet.get(key);
                 if (ptids == null)
@@ -2305,10 +2418,7 @@ public class SampleManager
             for (SummaryByVisitType summary : summaries)
             {
                 Double visitValue = summary.getSequenceNum();
-                Integer primaryTypeId = summary.getPrimaryTypeId();
-                Integer derivativeTypeId = summary.getDerivativeTypeId();
-                Integer additiveTypeId = summary.getAdditiveTypeId();
-                String key = getPtidListKey(visitValue, primaryTypeId, derivativeTypeId, additiveTypeId);
+                String key = getPtidListKey(visitValue, summary.getPrimaryType(), summary.getDerivative(), summary.getAdditive());
                 Set<String> ptids = cellToPtidSet.get(key);
                 summary.setParticipantIds(ptids);
             }

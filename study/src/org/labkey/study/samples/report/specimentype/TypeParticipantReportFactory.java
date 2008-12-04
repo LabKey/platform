@@ -77,7 +77,7 @@ public class TypeParticipantReportFactory extends TypeReportFactory
         Study study = StudyManager.getInstance().getStudy(getContainer());
         for (String participantId : participantIds)
         {
-            SimpleFilter filter = new SimpleFilter("ptid", participantId);
+            SimpleFilter filter = new SimpleFilter("ParticipantId", participantId);
             addBaseFilters(filter);
             try
             {

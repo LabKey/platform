@@ -84,8 +84,6 @@ public class SpecimenTypeSummary
         public abstract List<? extends TypeCount> getChildren();
 
         public abstract String getSpecimenViewFilterColumn();
-
-        public abstract String getSpecimenDetailFilterColumn();
     }
 
     private class PrimaryTypeCount extends TypeCount
@@ -103,11 +101,6 @@ public class SpecimenTypeSummary
         public String getSpecimenViewFilterColumn()
         {
             return "PrimaryType";
-        }
-
-        public String getSpecimenDetailFilterColumn()
-        {
-            return "PrimaryTypeId";
         }
     }
 
@@ -129,11 +122,6 @@ public class SpecimenTypeSummary
         {
             return "DerivativeType";
         }
-
-        public String getSpecimenDetailFilterColumn()
-        {
-            return "DerivativeTypeId";
-        }
     }
 
     private class AdditiveTypeCount extends TypeCount
@@ -151,11 +139,6 @@ public class SpecimenTypeSummary
         public String getSpecimenViewFilterColumn()
         {
             return "AdditiveType";
-        }
-
-        public String getSpecimenDetailFilterColumn()
-        {
-            return "AdditiveTypeId";
         }
     }
 

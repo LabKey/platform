@@ -46,7 +46,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SampleManager.Su
         try
         {
             SampleManager.SummaryByVisitParticipant[] countSummary =
-                    SampleManager.getInstance().getParticipantSummaryByVisitType(_container, _filter);
+                    SampleManager.getInstance().getParticipantSummaryByVisitType(_container, getUser(), _filter, getBaseCustomView());
             Map<String, Row> rows = new TreeMap<String, Row>();
             for (SampleManager.SummaryByVisitParticipant count : countSummary)
             {

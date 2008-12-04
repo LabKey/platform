@@ -49,7 +49,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
             addBaseFilters(filter);
             while (type != null)
             {
-                filter.addCondition(type.getSpecimenDetailFilterColumn(), type.getRowId());
+                filter.addCondition(type.getSpecimenViewFilterColumn(), type.getRowId());
                 type = type.getParent();
             }
             reports.add(new ParticipantVisitReport(label, visits, filter, this));

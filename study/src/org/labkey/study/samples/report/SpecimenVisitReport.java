@@ -1,11 +1,13 @@
 package org.labkey.study.samples.report;
 
 import org.labkey.study.model.Visit;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.SampleManager;
+import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 
 import java.util.Collection;
@@ -133,7 +135,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
             fullFilter.addCondition(FieldKey.fromParts("ParticipantId", "Cohort", "RowId").toString(), _parameters.getCohortId());
 
         // This is a terrible hack to deal with the fact that the some SpecimenDetail columns have been aliased
-        // tin the query view.  As a result, we need to use the view's column name for filtering
+        // in the query view.  As a result, we need to use the view's column name for filtering
         // at the database layer, and then map this column name for use in a query view filter parameter:
         fullFilter = replaceFilterParameterName(fullFilter, "PrimaryTypeId", FieldKey.fromParts("PrimaryType", "ScharpId").toString());
         fullFilter = replaceFilterParameterName(fullFilter, "DerivativeTypeId", FieldKey.fromParts("DerivativeType", "ScharpId").toString());
@@ -144,7 +146,15 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
 
     protected String getFilterQueryString(Visit visit, CELLDATA summary)
     {
-        return getViewFilter().toQueryString("SpecimenDetail");
+        String ret = getViewFilter().toQueryString("SpecimenDetail");
+        if (_parameters.getBaseCustomViewName() != null && _parameters.getBaseCustomViewName().length() > 0)
+        {
+            if (!SpecimenVisitReportParameters.DEFAULT_VIEW_ID.equals(_parameters.getBaseCustomViewName()))
+                ret += "&SpecimenDetail.viewName=" + _parameters.getBaseCustomViewName();
+        }
+        else
+            ret += "&SpecimenDetail.ignoreFilter=1";
+        return ret;
     }
 
     public int getLabelDepth()
@@ -280,6 +290,11 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         return _viewPtidList;
     }
 
+    protected String getBaseCustomViewName()
+    {
+        return _parameters.getBaseCustomViewName();
+    }
+
     protected SampleManager.SpecimenTypeLevel getTypeLevelEnum()
     {
         return _parameters.getTypeLevelEnum();
@@ -288,5 +303,20 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
     protected String getStatusFilterName()
     {
         return _parameters.getStatusFilterName();
+    }
+
+    protected CustomView getBaseCustomView()
+    {
+        if (_parameters.getBaseCustomViewName() == null)
+            return null;
+        StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(_container), _parameters.getUser(), true);
+        QueryDefinition def = QueryService.get().createQueryDefForTable(schema, "SpecimenDetail");
+        String customViewName = _parameters.getBaseCustomViewName();
+        if (SpecimenVisitReportParameters.DEFAULT_VIEW_ID.equals(customViewName))
+            customViewName = null;
+        CustomView view = def.getCustomView(_parameters.getUser(), _parameters.getViewContext().getRequest(), customViewName);
+        if (view == null)
+            throw new IllegalStateException("Custom view " + _parameters.getBaseCustomViewName() + " was not found.  It may have been deleted by another user.");
+        return view;
     }
 }

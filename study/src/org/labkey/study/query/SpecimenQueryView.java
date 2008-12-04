@@ -26,6 +26,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.SampleManager;
+import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.model.*;
 
 import java.io.IOException;

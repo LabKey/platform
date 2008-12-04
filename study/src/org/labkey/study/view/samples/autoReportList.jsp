@@ -138,6 +138,18 @@
                     </tr>
                 <%
                     }
+                    if (factory.allowsCustomViewFilter())
+                    {
+                        String viewPickerHtml = factory.getCustomViewPicker();
+                %>
+                    <tr>
+                        <td>
+                            <%= viewPickerHtml %>
+                        </td>
+                    </tr>
+                <%
+                    }
+
                     List<String> additionalFormInputs = factory.getAdditionalFormInputHtml();
                     for (String html : additionalFormInputs)
                     {
