@@ -17,8 +17,8 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.study.actions.AssayHeaderView;
 import org.labkey.api.study.query.RunListQueryView;
 import org.labkey.api.view.VBox;
@@ -31,21 +31,21 @@ import org.labkey.api.view.ViewContext;
  */
 public class AssayRunsView extends VBox
 {
-    public AssayRunsView(ExpProtocol protocol, boolean minimizeLinks, ContainerFilter containerFilter)
+    private RunListQueryView _runsView;
+
+    public AssayRunsView(ExpProtocol protocol, boolean minimizeLinks)
     {
         AssayHeaderView headerView = new AssayHeaderView(protocol, AssayService.get().getProvider(protocol), minimizeLinks);
         ViewContext context = getViewContext();
         AssayProvider provider = AssayService.get().getProvider(protocol);
-        RunListQueryView runsView = provider.createRunView(context, protocol);
-        if (containerFilter != null)
-            runsView.getSettings().setContainerFilter(containerFilter);
+        _runsView = provider.createRunView(context, protocol);
         if (minimizeLinks)
         {
-            runsView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
+            _runsView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
         }
         else
         {
-            runsView.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
+            _runsView.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
         }
 
         addView(headerView);
@@ -53,6 +53,11 @@ public class AssayRunsView extends VBox
         if (!provider.allowUpload(context.getUser(), context.getContainer(), protocol))
             addView(provider.getDisallowedUploadMessageView(context.getUser(), context.getContainer(), protocol));
 
-        addView(runsView);
+        addView(_runsView);
+    }
+
+    public QuerySettings getQuerySettings()
+    {
+        return _runsView.getSettings();
     }
 }

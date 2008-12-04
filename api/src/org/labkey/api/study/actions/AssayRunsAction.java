@@ -17,7 +17,6 @@
 package org.labkey.api.study.actions;
 
 import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
@@ -37,7 +36,6 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
     public static class AssayRunsForm extends ProtocolIdForm
     {
         private String _clearDataRegionSelectionKey;
-        private String _containerFilterName;
 
         public String getClearDataRegionSelectionKey()
         {
@@ -48,16 +46,6 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
         {
             _clearDataRegionSelectionKey = clearDataRegionSelectionKey;
         }
-
-        public String getContainerFilterName()
-        {
-            return _containerFilterName;
-        }
-
-        public void setContainerFilterName(String containerFilterName)
-        {
-            _containerFilterName = containerFilterName;
-        }
     }
 
     private ExpProtocol _protocol;
@@ -67,10 +55,7 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
         if (summaryForm.getClearDataRegionSelectionKey() != null)
             DataRegionSelection.clearAll(getViewContext(), summaryForm.getClearDataRegionSelectionKey());
         _protocol = getProtocol(summaryForm);
-        ContainerFilter containerFilter = null;
-        if (summaryForm.getContainerFilterName() != null)
-            containerFilter = ContainerFilter.Filters.valueOf(summaryForm.getContainerFilterName());
-        return new AssayRunsView(_protocol, false, containerFilter);
+        return new AssayRunsView(_protocol, false);
     }
 
     public NavTree appendNavTrail(NavTree root)

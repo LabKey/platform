@@ -34,11 +34,11 @@ import org.springframework.web.servlet.ModelAndView;
 * Time: 7:30:05 PM
 */
 @RequiresPermission(ACL.PERM_READ)
-public class AssayDataAction extends BaseAssayAction<AssayDataAction.AssayDataForm>
+public class AssayDataAction extends BaseAssayAction<ProtocolIdForm>
 {
     private ExpProtocol _protocol;
 
-    public ModelAndView getView(AssayDataForm form, BindException errors) throws Exception
+    public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception
     {
         _protocol = getProtocol(form);
         AssayHeaderView headerView = new AssayHeaderView(_protocol, AssayService.get().getProvider(_protocol), false);
@@ -53,10 +53,7 @@ public class AssayDataAction extends BaseAssayAction<AssayDataAction.AssayDataFo
             fullView.addView(provider.getDisallowedUploadMessageView(context.getUser(), context.getContainer(), _protocol));
 
         RunDataQueryView dataView = provider.createRunDataView(context, _protocol);
-        if (form.getContainerFilterName() != null)
-        {
-            dataView.getSettings().setContainerFilterName(form.getContainerFilterName());
-        }
+        
         fullView.addView(dataView);
         return fullView;
     }
@@ -69,18 +66,4 @@ public class AssayDataAction extends BaseAssayAction<AssayDataAction.AssayDataFo
         return result;
     }
 
-    public static class AssayDataForm extends ProtocolIdForm
-    {
-        private String containerFilterName;
-
-        public String getContainerFilterName()
-        {
-            return containerFilterName;
-        }
-
-        public void setContainerFilterName(String containerFilterName)
-        {
-            this.containerFilterName = containerFilterName;
-        }
-    }
 }

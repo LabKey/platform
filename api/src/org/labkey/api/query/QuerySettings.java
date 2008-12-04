@@ -213,6 +213,10 @@ public class QuerySettings
                 }
                 catch (NumberFormatException e) { }
             }
+
+            String containerFilterNameParam = _getParameter(param(QueryParam.containerFilterName));
+            if (containerFilterNameParam != null)
+                setContainerFilterName(containerFilterNameParam);
         }
     }
 

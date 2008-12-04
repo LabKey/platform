@@ -17,6 +17,7 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRunTable;
 import org.labkey.api.query.QueryView;
@@ -70,7 +71,9 @@ public class AssayService
         ActionURL getDesignerURL(Container container, ExpProtocol protocol, boolean copy);
         ActionURL getAssayListURL(Container container);
         ActionURL getAssayRunsURL(Container container, ExpProtocol protocol);
+        ActionURL getAssayRunsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter);
         ActionURL getAssayDataURL(Container container, ExpProtocol protocol, int... runIds);
+        ActionURL getAssayDataURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... runIds);
         ActionURL getUploadWizardURL(Container container, ExpProtocol protocol);
 
     }
