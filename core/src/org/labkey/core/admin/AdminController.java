@@ -278,12 +278,11 @@ public class AdminController extends SpringActionController
     }
 
 
-    private ActionURL getConsolidateScriptsURL(Double toVersion)
+    private ActionURL getConsolidateScriptsURL(double fromVersion, double toVersion)
     {
         ActionURL url = new ActionURL(ConsolidateScriptsAction.class, ContainerManager.getRoot());
-
-        if (null != toVersion)
-            url.addParameter("toVersion", toVersion.toString());
+        url.addParameter("fromVersion", Double.toString(fromVersion));
+        url.addParameter("toVersion", Double.toString(toVersion));
 
         return url;
     }
@@ -292,15 +291,13 @@ public class AdminController extends SpringActionController
     @RequiresSiteAdmin
     public class ConsolidateScriptsAction extends SimpleViewAction<ConsolidateForm>
     {
-        ConsolidateForm _form;
-        
         public ModelAndView getView(ConsolidateForm form, BindException errors) throws Exception
         {
-            _form = form;
             List<Module> modules = ModuleLoader.getInstance().getModules();
             List<ScriptConsolidator> consolidators = new ArrayList<ScriptConsolidator>();
 
-            double maxToVersion = -Double.MAX_VALUE;
+            double fromVersion = form.getFromVersion();
+            double toVersion = form.getToVersion();
 
             for (Module module : modules)
             {
@@ -315,42 +312,42 @@ public class AdminController extends SpringActionController
 
                         for (String schemaName : schemaNames)
                         {
-                            ScriptConsolidator consolidator = new ScriptConsolidator(provider, schemaName, form.getAll());
+                            ScriptConsolidator consolidator = new ScriptConsolidator(provider, schemaName, fromVersion, toVersion);
 
                             if (!consolidator.getScripts().isEmpty())
-                            {
                                 consolidators.add(consolidator);
-
-                                for (SqlScript script : consolidator.getScripts())
-                                    if (script.getToVersion() > maxToVersion)
-                                        maxToVersion = script.getToVersion();
-                            }
                         }
                     }
                 }
             }
 
+            StringBuilder formHtml = new StringBuilder();
+
+            formHtml.append("<form method=\"get\">\n");
+            formHtml.append("  <table>\n");
+            formHtml.append("    <tr><td>From:</td><td><input name=\"fromVersion\" size=\"10\" value=\"");
+            formHtml.append(ModuleContext.formatVersion(fromVersion));
+            formHtml.append("\"/></td></tr>\n");
+            formHtml.append("    <tr><td>To:</td><td><input name=\"toVersion\" size=\"10\" value=\"");
+            formHtml.append(ModuleContext.formatVersion(toVersion));
+            formHtml.append("\"/></td></tr>\n");
+            formHtml.append("    <tr><td colspan=2>");
+            formHtml.append(PageFlowUtil.generateSubmitButton("Update"));
+            formHtml.append("</td></tr>\n");
+            formHtml.append("  </table>\n");
+            formHtml.append("</form><br>\n");
 
             StringBuilder html = new StringBuilder();
-            double toVersion = 0.0 != form.getToVersion() ?  form.getToVersion() : Math.ceil(maxToVersion * 10) / 10 - 0.01;
-
-            if (form.getAll())
-                html.append("[<a href='?all=false'>consolidate incremental</a>]<p/>");
-            else
-                html.append("[<a href='?all=true'>consolidate all</a>]<p/>");
 
             for (ScriptConsolidator consolidator : consolidators)
             {
-                consolidator.setSharedToVersion(toVersion);
                 List<SqlScript> scripts = consolidator.getScripts();
                 String filename = consolidator.getFilename();
 
                 if (1 == scripts.size() && scripts.get(0).getDescription().equals(filename))
                     continue;  // No consolidation to do on this schema
 
-                ActionURL url = getConsolidateSchemaURL(consolidator.getModuleName(), consolidator.getSchemaName(), toVersion);
-                if (form.getAll())
-                    url.addParameter("all","true");
+                ActionURL url = getConsolidateSchemaURL(consolidator.getModuleName(), consolidator.getSchemaName(), fromVersion, toVersion);
                 html.append("<b>Schema ").append(consolidator.getSchemaName()).append("</b><br>\n");
 
                 for (SqlScript script : scripts)
@@ -361,7 +358,9 @@ public class AdminController extends SpringActionController
             }
 
             if (0 == html.length())
-                html.append("No schemas require consolidation");
+                html.append("No schemas require consolidation in this range");
+
+            html.insert(0, formHtml);
 
             return new HtmlView(html.toString());
         }
@@ -369,10 +368,7 @@ public class AdminController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             new ScriptsAction().appendNavTrail(root);
-            if (_form.getAll())
-                root.addChild("Consolidate All Scripts");
-            else
-                root.addChild("Consolidate Incremental Scripts");
+            root.addChild("Consolidate Scripts");
             return root;
         }
     }
@@ -383,35 +379,16 @@ public class AdminController extends SpringActionController
         private FileSqlScriptProvider _provider;
         private String _schemaName;
         private List<SqlScript> _scripts = new ArrayList<SqlScript>();
-        private double sharedToVersion = -1;
+        private double _fromVersion;
+        private double _toVersion;
 
-        private ScriptConsolidator(FileSqlScriptProvider provider, String schemaName, boolean consolidateAll) throws SqlScriptRunner.SqlScriptException
+        private ScriptConsolidator(FileSqlScriptProvider provider, String schemaName, double fromVersion, double toVersion) throws SqlScriptRunner.SqlScriptException
         {
             _provider = provider;
             _schemaName = schemaName;
-
-            List<SqlScript> recommendedScripts = SqlScriptRunner.getRecommendedScripts(provider.getScripts(schemaName), 0, 9999.0);
-
-            for (SqlScript script : recommendedScripts)
-            {
-                if (consolidateAll || isIncrementalScript(script))
-                    _scripts.add(script);
-                else
-                    _scripts.clear();
-            }
-        }
-
-        private void setSharedToVersion(double sharedToVersion)
-        {
-            this.sharedToVersion = sharedToVersion;
-        }
-
-        private double getSharedToVersion()
-        {
-            if (-1 == sharedToVersion)
-                throw new IllegalStateException("SharedToVersion is not set");
-
-            return sharedToVersion;
+            _fromVersion = fromVersion;
+            _toVersion = toVersion;
+            _scripts = SqlScriptRunner.getRecommendedScripts(provider.getScripts(schemaName), fromVersion, toVersion);
         }
 
         private List<SqlScript> getScripts()
@@ -426,18 +403,12 @@ public class AdminController extends SpringActionController
 
         private double getFromVersion()
         {
-            double fromVersion = 0.00;
-            if (!_scripts.isEmpty())
-                fromVersion = _scripts.get(0).getFromVersion();
-            return fromVersion;
+            return _fromVersion;
         }
 
         private double getToVersion()
         {
-            double toVersion = 0.00;
-            if (!_scripts.isEmpty())
-                toVersion = _scripts.get(_scripts.size() - 1).getToVersion();
-            return Math.max(toVersion, getSharedToVersion());
+            return _toVersion;
         }
 
         private String getFilename()
@@ -487,14 +458,6 @@ public class AdminController extends SpringActionController
             return sb.toString();
         }
 
-        private static boolean isIncrementalScript(SqlScript script)
-        {
-            double startVersion = script.getFromVersion() * 10;
-            double endVersion = script.getToVersion() * 10;
-
-            return (Math.floor(startVersion) != startVersion || Math.floor(endVersion) != endVersion);
-        }
-
         public void saveScript() throws IOException
         {
             _provider.saveScript(getFilename(), getConsolidatedScript());
@@ -504,10 +467,10 @@ public class AdminController extends SpringActionController
 
     public static class ConsolidateForm
     {
-        private boolean _all = false;
         private String _module;
         private String _schema;
-        private double _toVersion;
+        private double _fromVersion = Math.floor(ModuleLoader.getInstance().getCoreModule().getVersion() * 10) / 10;
+        private double _toVersion = _fromVersion + 0.1;
 
         public String getModule()
         {
@@ -529,6 +492,16 @@ public class AdminController extends SpringActionController
             _schema = schema;
         }
 
+        public double getFromVersion()
+        {
+            return _fromVersion;
+        }
+
+        public void setFromVersion(double fromVersion)
+        {
+            _fromVersion = fromVersion;
+        }
+
         public double getToVersion()
         {
             return _toVersion;
@@ -538,24 +511,15 @@ public class AdminController extends SpringActionController
         {
             _toVersion = toVersion;
         }
-
-        public boolean getAll()
-        {
-            return _all;
-        }
-
-        public void setAll(boolean all)
-        {
-            _all = all;
-        }
     }
 
 
-    private ActionURL getConsolidateSchemaURL(String moduleName, String schemaName, double toVersion)
+    private ActionURL getConsolidateSchemaURL(String moduleName, String schemaName, double fromVersion, double toVersion)
     {
         ActionURL url = new ActionURL(ConsolidateSchemaAction.class, ContainerManager.getRoot());
         url.addParameter("module", moduleName);
         url.addParameter("schema", schemaName);
+        url.addParameter("fromVersion", String.valueOf(fromVersion));
         url.addParameter("toVersion", String.valueOf(toVersion));
         return url;
     }
@@ -597,7 +561,7 @@ public class AdminController extends SpringActionController
 
         public ActionURL getSuccessURL(ConsolidateForm form)
         {
-            return getConsolidateScriptsURL(form.getToVersion());
+            return getConsolidateScriptsURL(form.getFromVersion(), form.getToVersion());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -609,10 +573,7 @@ public class AdminController extends SpringActionController
         {
             DefaultModule module = (DefaultModule)ModuleLoader.getInstance().getModule(form.getModule());
             FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
-            ScriptConsolidator consolidator = new ScriptConsolidator(provider, form.getSchema(), form.getAll());
-            consolidator.setSharedToVersion(form.getToVersion());
-
-            return consolidator;
+            return new ScriptConsolidator(provider, form.getSchema(), form.getFromVersion(), form.getToVersion());
         }
     }
 

@@ -131,10 +131,11 @@ public class StudyUpgradeCode implements UpgradeCode
         }
     }
 
-    // Invoked at version 8.291
+    // Intended for version 8.291, but invoked from afterUpdate(), NOT from script, because the code path depends
+    //  too heavily on an up-to-date schema. 
     public void updateAllCalculatedSpecimenData(ModuleContext moduleContext)
     {
-        if (!moduleContext.isNewInstall())
+        if (!moduleContext.isNewInstall() && moduleContext.getInstalledVersion() < 8.291)
         {
             try
             {

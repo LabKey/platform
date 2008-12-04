@@ -247,6 +247,3 @@ GO
 CREATE INDEX IX_SpecimenComment_SpecimenHash ON study.SpecimenComment(Container, SpecimenHash);
 CREATE INDEX IX_Specimen_SpecimenHash ON study.Specimen(Container, SpecimenHash);
 GO
-
-EXEC core.executeJavaUpgradeCode 'updateAllCalculatedSpecimenData'
-GO

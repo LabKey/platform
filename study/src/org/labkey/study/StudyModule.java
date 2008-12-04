@@ -335,6 +335,7 @@ public class StudyModule extends DefaultModule
         }
     }
 
+    @Override
     public Set<Class<? extends TestCase>> getJUnitTests()
     {
         Set<Class<? extends TestCase>> set = new HashSet<Class<? extends TestCase>>();
@@ -346,5 +347,13 @@ public class StudyModule extends DefaultModule
     public UpgradeCode getUpgradeCode()
     {
         return new StudyUpgradeCode();
+    }
+
+    @Override
+    public void afterUpdate(ModuleContext moduleContext)
+    {
+        super.afterUpdate(moduleContext);
+
+        new StudyUpgradeCode().updateAllCalculatedSpecimenData(moduleContext);
     }
 }
