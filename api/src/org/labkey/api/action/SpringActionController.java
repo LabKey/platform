@@ -81,7 +81,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     private static Map<Class<? extends Controller>, ActionDescriptor> _classToDescriptor = new HashMap<Class<? extends Controller>, ActionDescriptor>();
 
-    static Logger _log = Logger.getLogger(SpringActionController.class);
+    private static final Logger _log = Logger.getLogger(SpringActionController.class);
 
     public void setActionResolver(ActionResolver actionResolver)
     {
@@ -129,7 +129,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     {
         Controller resolveActionName(Controller actionController, String actionName);
         void addTime(Controller action, long elapsedTime);
-        Set<ActionDescriptor> getActionDescriptors();
+        Collection<ActionDescriptor> getActionDescriptors();
     }
 
     public interface ActionDescriptor
@@ -141,11 +141,15 @@ public abstract class SpringActionController implements Controller, HasViewConte
         Constructor getConstructor();
 
         void addTime(long time);
+        ActionStats getStats();
+    }
+
+    public interface ActionStats
+    {
         long getCount();
         long getElapsedTime();
         long getMaxTime();
     }
-
 
     WebApplicationContext _webApplicationContext;
     ViewResolver _viewResolver = null;
@@ -503,41 +507,43 @@ public abstract class SpringActionController implements Controller, HasViewConte
     public static class DefaultActionResolver implements ActionResolver
     {
         private final Class _outerClass;
-        private String _pageFlowName;
-        private Map<String, ActionDescriptor> _nameToDescriptor = new HashMap<String, ActionDescriptor>();
+        private final String _pageFlowName;
+        private final Map<String, ActionDescriptor> _nameToDescriptor;
 
         public DefaultActionResolver(Class outerClass, Class<? extends Controller>... otherClasses)
         {
             _outerClass = outerClass;
             _pageFlowName = ViewServlet.getPageFlowName(_outerClass);
 
+            Map<String, ActionDescriptor> nameToDescriptor = new HashMap<String, ActionDescriptor>();
+
             // Add all concrete inner classes of this controller
-            addInnerClassActions(_outerClass);
+            addInnerClassActions(nameToDescriptor, _outerClass);
 
             // Add all actions that were passed in
             for (Class<? extends Controller> actionClass : otherClasses)
-                addAction(actionClass);
+                addAction(nameToDescriptor, actionClass);
 
-            _nameToDescriptor = Collections.unmodifiableMap(_nameToDescriptor);
+            _nameToDescriptor = Collections.unmodifiableMap(nameToDescriptor);
         }
 
-        private void addInnerClassActions(Class outerClass)
+        private void addInnerClassActions(Map<String, ActionDescriptor> nameToDescriptor, Class outerClass)
         {
             Class[] innerClasses = outerClass.getDeclaredClasses();
 
             for (Class innerClass : innerClasses)
                 if (Controller.class.isAssignableFrom(innerClass) && !Modifier.isAbstract(innerClass.getModifiers()))
-                    addAction(innerClass);
+                    addAction(nameToDescriptor, innerClass);
         }
 
-        private void addAction(Class<? extends Controller> actionClass)
+        private void addAction(Map<String, ActionDescriptor> nameToDescriptor, Class<? extends Controller> actionClass)
         {
             try
             {
                 ActionDescriptor ad = new DefaultActionDescriptor(actionClass);
 
                 for (String name : ad.getAllNames())
-                    _nameToDescriptor.put(name, ad);
+                    nameToDescriptor.put(name, ad);
 
                 registerAction(ad);
             }
@@ -551,7 +557,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
         public Controller resolveActionName(Controller actionController, String name)
         {
-            ActionDescriptor ad =  _nameToDescriptor.get(name);
+            ActionDescriptor ad = _nameToDescriptor.get(name);
 
             if (ad == null)
                 return null;
@@ -591,10 +597,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             if (null == ad)
                 return;
 
-            synchronized(ad)
-            {
-                ad.addTime(elapsedTime);
-            }
+            ad.addTime(elapsedTime);
         }
 
 
@@ -602,8 +605,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
         {
             private final Class<? extends Controller> _actionClass;
             private final Constructor _con;
-            private String _primaryName;
-            private List<String> _allNames;
+            private final String _primaryName;
+            private final List<String> _allNames;
+
             private long _count = 0;
             private long _elapsedTime = 0;
             private long _maxTime = 0;
@@ -618,10 +622,8 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 // @ActionNames("name1, name2") annotation overrides default behavior of using class name to generate name
                 ActionNames actionNames = actionClass.getAnnotation(ActionNames.class);
 
-                if (null != actionNames)
-                    initializeNames(actionNames.value().split(","));
-                else
-                    initializeNames(getDefaultActionName());
+                _allNames = (null != actionNames ? initializeNames(actionNames.value().split(",")) : initializeNames(getDefaultActionName()));
+                _primaryName = _allNames.get(0);
 
                 Constructor con = null;
 
@@ -647,12 +649,12 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 }
             }
 
-            private void initializeNames(String... names)
+            private List<String> initializeNames(String... names)
             {
-                _allNames = new ArrayList<String>(names.length);
+                List<String> list = new ArrayList<String>(names.length);
                 for (String name : names)
-                    _allNames.add(name.trim());
-                _primaryName = _allNames.get(0);
+                    list.add(name.trim());
+                return list;
             }
 
             public Class<? extends Controller> getActionClass()
@@ -680,8 +682,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 return _allNames;
             }
 
-            // Externally synchronized
-            public void addTime(long time)
+            synchronized public void addTime(long time)
             {
                 _count++;
                 _elapsedTime += time;
@@ -690,19 +691,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
                     _maxTime = time;
             }
 
-            public long getCount()
+            synchronized public ActionStats getStats()
             {
-                return _count;
-            }
-
-            public long getElapsedTime()
-            {
-                return _elapsedTime;
-            }
-
-            public long getMaxTime()
-            {
-                return _maxTime;
+                return new DefaultActionStats(_count, _elapsedTime, _maxTime);
             }
 
             private String getDefaultActionName()
@@ -718,14 +709,42 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
                 return name;
             }
+
+            // Immutable stats holder to eliminate external synchronization needs
+            private class DefaultActionStats implements ActionStats
+            {
+                private final long _count;
+                private final long _elapsedTime;
+                private final long _maxTime;
+
+                private DefaultActionStats(long count, long elapsedTime, long maxTime)
+                {
+                    _count = count;
+                    _elapsedTime = elapsedTime;
+                    _maxTime = maxTime;
+                }
+
+                public long getCount()
+                {
+                    return _count;
+                }
+
+                public long getElapsedTime()
+                {
+                    return _elapsedTime;
+                }
+
+                public long getMaxTime()
+                {
+                    return _maxTime;
+                }
+            }
         }
 
-        // Returns the live values.  No synchronization is needed on the map itself (it's completely initialized when
-        // the controller class loads) but callers need to synchronize on each ActionDescriptor before inspecting
-        // or displaying statistics
-        public Set<ActionDescriptor> getActionDescriptors()
+        // Map is unmodifiable, so returning values() directly is safe.  ActionDescriptors are thread-safe as well.
+        public Collection<ActionDescriptor> getActionDescriptors()
         {
-            return new HashSet<ActionDescriptor>(_nameToDescriptor.values());
+            return _nameToDescriptor.values();
         }
     }
 }

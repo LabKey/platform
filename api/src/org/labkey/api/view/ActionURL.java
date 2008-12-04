@@ -48,14 +48,14 @@ public class ActionURL extends URLHelper implements Cloneable
 {
     protected static URLHelper.PathParser _viewParser = new _ViewParser();
 
-    static final int indexContextPath = 0;
-    static final int indexPageFlow = 1;
-    static final int indexExtraPath = 2;
-    static final int indexAction = 3;
+    private static final int indexContextPath = 0;
+    private static final int indexPageFlow = 1;
+    private static final int indexExtraPath = 2;
+    private static final int indexAction = 3;
 
     private boolean _baseServerPropsInitialized = false;
 
-    static Pattern urlPattern = indexExtraPath == 1 ?
+    private static final Pattern urlPattern = indexExtraPath == 1 ?
             // ExtraPath/PageFlow/Action
             Pattern.compile("(.*)/(\\w*(?:\\-\\w*)*)/(\\w*)\\.(.*)") :
             // PageFlow/ExtraPath/Action

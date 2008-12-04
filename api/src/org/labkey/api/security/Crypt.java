@@ -74,10 +74,10 @@ public class Crypt
     public static String encodeHex(byte bytes[])
     {
         StringBuffer sb = new StringBuffer(bytes.length * 2);
-        for (int i = 0; i < bytes.length; i++)
+        for (byte aByte : bytes)
         {
-            sb.append(convertDigit((int) (bytes[i] >> 4)));
-            sb.append(convertDigit((int) (bytes[i] & 0x0f)));
+            sb.append(convertDigit(aByte >> 4));
+            sb.append(convertDigit(aByte & 0x0f));
         }
         return sb.toString();
     }
