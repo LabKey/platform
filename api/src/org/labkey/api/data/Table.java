@@ -1236,11 +1236,17 @@ public class Table
         return dialect.limitRows(selectFrag, fromFrag, filterFrag, orderBy, rowCount, offset);
     }
 
-
     /**
      * Returns the sql for a select.
      */
-    private static SQLFragment getDisplaySelectSQL(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset)
+    public static SQLFragment getDisplaySelectSQL(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort)
+    {
+        return getDisplaySelectSQL(table, columns,  filter, sort, 0, 0);
+    }
+    /**
+     * Returns the sql for a select.
+     */
+    public static SQLFragment getDisplaySelectSQL(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset)
     {
         SqlDialect dialect = table.getSqlDialect();
         SQLFragment selectFrag = new SQLFragment("SELECT *");

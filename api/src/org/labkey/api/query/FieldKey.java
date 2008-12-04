@@ -163,18 +163,27 @@ public class FieldKey implements Comparable
         return _name;
     }
 
+    private boolean strEqualsIgnoreCase(String a, String b)
+    {
+        if (a == null && b == null)
+            return true;
+        if (a == null)
+            return false;
+        return a.equalsIgnoreCase(b);
+    }
+
     public boolean equals(Object other)
     {
         if (!(other instanceof FieldKey))
             return false;
         FieldKey that = (FieldKey) other;
-        return ObjectUtils.equals(this._name, that._name) &&
+        return strEqualsIgnoreCase(this._name, that._name) &&
                 ObjectUtils.equals(this._parent, that._parent);
     }
 
     public int hashCode()
     {
-        return ObjectUtils.hashCode(_name) ^ ObjectUtils.hashCode(_parent);
+        return _name.toLowerCase().hashCode() ^ ObjectUtils.hashCode(_parent);
     }
 
     public List<String> getParts()
