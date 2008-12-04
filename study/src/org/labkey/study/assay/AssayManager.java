@@ -18,6 +18,7 @@ package org.labkey.study.assay;
 
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -27,6 +28,7 @@ import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
@@ -36,7 +38,6 @@ import org.labkey.study.assay.query.AssayListPortalView;
 import org.labkey.study.assay.query.AssayListQueryView;
 import org.labkey.study.assay.query.AssaySchema;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -207,7 +208,17 @@ public class AssayManager implements AssayService.Interface
 
     public ActionURL getAssayRunsURL(Container container, ExpProtocol protocol)
     {
-        return getProtocolURL(container, protocol, "assayRuns");
+        return getAssayRunsURL(container, protocol, null);
+    }
+
+    public ActionURL getAssayRunsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter)
+    {
+        ActionURL url = getProtocolURL(container, protocol, "assayRuns");
+        if (containerFilter != null)
+        {
+            url.addParameter("Assay Runs." + QueryParam.containerFilterName, containerFilter.toString());
+        }
+        return url;
     }
 
     public ActionURL getAssayListURL(Container container)
@@ -221,6 +232,11 @@ public class AssayManager implements AssayService.Interface
     }
 
     public ActionURL getAssayDataURL(Container container, ExpProtocol protocol, int... runIds)
+    {
+        return getAssayDataURL(container, protocol, null, runIds);
+    }
+
+    public ActionURL getAssayDataURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... runIds)
     {
         ActionURL result = getProtocolURL(container, protocol, "assayData");
         AssayProvider provider = getProvider(protocol);
@@ -241,6 +257,8 @@ public class AssayManager implements AssayService.Interface
             result.addFilter(provider.getRunDataTableName(protocol),
                     provider.getRunIdFieldKeyFromDataRow(), CompareType.EQUAL, runIds[0]);
         }
+        if (containerFilter != null)
+            result.addParameter("Assay Data." + QueryParam.containerFilterName, containerFilter.toString());
         return result;
     }
 }
