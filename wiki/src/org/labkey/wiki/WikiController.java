@@ -2002,12 +2002,12 @@ public class WikiController extends SpringActionController
                 node.setId(rootId);
                 elements.add(node);
             }
-            return elements.toArray(new NavTree[0]);
+            return elements.toArray(new NavTree[elements.size()]);
         }
 
         public WikiTOC(ViewContext context)
         {
-            super(context, "", null);
+            super(context, "");
             setFrame(FrameType.PORTAL);
             setHighlightSelection(true);
 
@@ -2182,48 +2182,46 @@ public class WikiController extends SpringActionController
 
             //output only this one if wiki contains no pages
             boolean bHasInsert = cToc.hasPermission(user, ACL.PERM_INSERT),
-                    bHasCopy = (cToc.hasPermission(user, ACL.PERM_ADMIN) && getElements().length > 0) ? true : false,
-                    bHasPrint = ((!isInWebPart || cToc.hasPermission(user, ACL.PERM_INSERT)) && getElements().length > 0) ?
-                                    true : false;
+                    bHasCopy = (cToc.hasPermission(user, ACL.PERM_ADMIN) && getElements().length > 0),
+                    bHasPrint = ((!isInWebPart || cToc.hasPermission(user, ACL.PERM_INSERT)) && getElements().length > 0);
 
             if (bHasInsert || bHasCopy || bHasPrint)
             {
                 out.println("<table class=\"labkey-wp-link-panel\">");
                 out.println("<tr>");
                 out.println("<td  style=\"height:16;\">");
-            }
 
-            if (bHasInsert)
-            {
-                out.print("[<a href=\"");
-                ActionURL newPageUrl = new ActionURL(EditWikiAction.class, cToc);
-                newPageUrl.addParameter("cancel", getViewContext().getActionURL().getLocalURIString());
-                out.print(newPageUrl.getLocalURIString());
-                out.print("\">new page</a>]&nbsp;");
-            }
-            if (bHasCopy)
-            {
-                URLHelper copyUrl = new ActionURL("Wiki", "copyWikiLocation", cToc.getPath());
-                //pass in source container as a param.
-                copyUrl.addParameter("sourceContainer", cToc.getPath());
+                if (bHasInsert)
+                {
+                    out.print("[<a href=\"");
+                    ActionURL newPageUrl = new ActionURL(EditWikiAction.class, cToc);
+                    newPageUrl.addParameter("cancel", getViewContext().getActionURL().getLocalURIString());
+                    out.print(newPageUrl.getLocalURIString());
+                    out.print("\">new page</a>]&nbsp;");
+                }
 
-                out.print("[<a href=\"");
-                out.print(PageFlowUtil.filter(copyUrl.toString()));
-                out.print("\">copy pages</a>]&nbsp;");
-            }
-            if (bHasPrint)
-            {
-                out.print("[<a href=\"");
-                out.print(PageFlowUtil.filter(ActionURL.toPathString("Wiki", "printAll", cToc.getPath())));
-                out.print("\" target=\"_blank\">print all</a>]");
-            }
-            if (bHasInsert || bHasCopy || bHasPrint)
-            {
+                if (bHasCopy)
+                {
+                    URLHelper copyUrl = new ActionURL("Wiki", "copyWikiLocation", cToc.getPath());
+                    //pass in source container as a param.
+                    copyUrl.addParameter("sourceContainer", cToc.getPath());
+
+                    out.print("[<a href=\"");
+                    out.print(PageFlowUtil.filter(copyUrl.toString()));
+                    out.print("\">copy pages</a>]&nbsp;");
+                }
+
+                if (bHasPrint)
+                {
+                    out.print("[<a href=\"");
+                    out.print(PageFlowUtil.filter(ActionURL.toPathString("Wiki", "printAll", cToc.getPath())));
+                    out.print("\" target=\"_blank\">print all</a>]");
+                }
+
                 out.println("");
                 out.println("</td></tr>");
                 out.println("</table>");
             }
-
 
             out.println("<div id=\"NavTree-"+ getId() +"\">");
             super.renderView(model, out);
@@ -2234,7 +2232,7 @@ public class WikiController extends SpringActionController
                 out.println("<table width=\"100%\">");
                 out.println("<tr>\n<td>");
 
-                if(prevLink != null)
+                if (prevLink != null)
                 {
                     out.print("<a href=\"");
                     out.print(PageFlowUtil.filter(prevLink));
@@ -2243,7 +2241,7 @@ public class WikiController extends SpringActionController
                 else
                     out.println("[previous]");
 
-                if(nextLink != null)
+                if (nextLink != null)
                 {
                     out.print("<a href=\"");
                     out.print(PageFlowUtil.filter(nextLink));
@@ -2282,7 +2280,7 @@ public class WikiController extends SpringActionController
 
             getPageConfig().setHelpTopic(new HelpTopic("search", HelpTopic.Area.DEFAULT));
 
-            return new Search.SearchResultsView(c, l, searchTerm, new ActionURL("Wiki", "search", c), getUser(), includeSubfolders, true);
+            return new Search.SearchResultsView(c, l, searchTerm, new ActionURL(SearchAction.class, c), getUser(), includeSubfolders, true);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -2991,7 +2989,7 @@ public class WikiController extends SpringActionController
             super();
 
             //because this will typically be called from a hidden iframe
-            //we must responsd with a content-type of text/html or the
+            //we must respond with a content-type of text/html or the
             //browser will prompt the user to save the response, as the
             //browser won't natively show application/json content-type
             setContentTypeOverride("text/html");

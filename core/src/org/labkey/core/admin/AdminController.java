@@ -81,10 +81,11 @@ import java.util.regex.Pattern;
  */
 public class AdminController extends SpringActionController
 {
-    private static DefaultActionResolver _actionResolver = new DefaultActionResolver(AdminController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(AdminController.class);
+    private static final NumberFormat _formatInteger = DecimalFormat.getIntegerInstance();
+    private static final Logger _log = Logger.getLogger(AdminController.class);
+
     private static long _errorMark = 0;
-    private static NumberFormat formatInteger = DecimalFormat.getIntegerInstance();
-    private static Logger _log = Logger.getLogger(AdminController.class);
 
     public static void registerAdminConsoleLinks()
     {
@@ -2381,20 +2382,18 @@ public class AdminController extends SpringActionController
                                 out.print("</td>");
                             }
 
-                            // Synchronize to ensure the stats aren't updated half-way through rendering
-                            synchronized(ad)
-                            {
-                                if (ad.getCount() > 0)
-                                    invokedCount++;
+                            ActionStats stats = ad.getStats();
 
-                                if (_summary)
-                                    continue;
+                            if (stats.getCount() > 0)
+                                invokedCount++;
 
-                                renderTd(out, ad.getCount());
-                                renderTd(out, ad.getElapsedTime());
-                                renderTd(out, 0 == ad.getCount() ? 0 : ad.getElapsedTime() / ad.getCount());
-                                renderTd(out, ad.getMaxTime());
-                            }
+                            if (_summary)
+                                continue;
+
+                            renderTd(out, stats.getCount());
+                            renderTd(out, stats.getElapsedTime());
+                            renderTd(out, 0 == stats.getCount() ? 0 : stats.getElapsedTime() / stats.getCount());
+                            renderTd(out, stats.getMaxTime());
 
                             out.print("</tr>");
                         }
@@ -2450,7 +2449,7 @@ public class AdminController extends SpringActionController
         private void renderTd(PrintWriter out, Number d)
         {
             out.print("<td>");
-            out.print(formatInteger.format(d));
+            out.print(_formatInteger.format(d));
             out.print("</td>");
         }
     }
@@ -2813,10 +2812,10 @@ public class AdminController extends SpringActionController
         try
         {
             StringBuffer sb = new StringBuffer();
-            sb.append("init = ").append(formatInteger.format(usage.getInit()));
-            sb.append("; used = ").append(formatInteger.format(usage.getUsed()));
-            sb.append("; committed = ").append(formatInteger.format(usage.getCommitted()));
-            sb.append("; max = ").append(formatInteger.format(usage.getMax()));
+            sb.append("init = ").append(_formatInteger.format(usage.getInit()));
+            sb.append("; used = ").append(_formatInteger.format(usage.getUsed()));
+            sb.append("; committed = ").append(_formatInteger.format(usage.getCommitted()));
+            sb.append("; max = ").append(_formatInteger.format(usage.getMax()));
             return sb.toString();
         }
         catch (IllegalArgumentException x)
