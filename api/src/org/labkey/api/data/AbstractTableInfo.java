@@ -16,23 +16,24 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.util.*;
-import org.labkey.api.query.*;
+import org.apache.beehive.netui.pageflow.Forward;
 import org.labkey.api.data.collections.CaseInsensitiveMap;
+import org.labkey.api.query.*;
 import org.labkey.api.security.User;
+import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.NamedObjectList;
+import org.labkey.api.util.SimpleNamedObject;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
-import org.apache.log4j.Logger;
-import org.apache.beehive.netui.pageflow.Forward;
 
-import java.util.*;
-import java.sql.SQLException;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
 
 abstract public class AbstractTableInfo implements TableInfo
 {
-    static private final Logger _log = Logger.getLogger(AbstractTableInfo.class);
     protected Iterable<FieldKey> _defaultVisibleColumns;
     protected DbSchema _schema;
     private String _titleColumn;
@@ -381,6 +382,7 @@ abstract public class AbstractTableInfo implements TableInfo
                 fkSchema = QueryService.get().getUserSchema(schema.getUser(), schema.getContainer(), fk.getFkDbSchema());
                 if (fkSchema == null)
                 {
+                    //noinspection ThrowableInstanceNeverThrown
                     qpe.add(new MetadataException("Schema " + fk.getFkDbSchema() + " not found."));
                     return;
                 }
@@ -478,7 +480,7 @@ abstract public class AbstractTableInfo implements TableInfo
         return getSchema().getName();
     }
 
-    public boolean isContainerFilterNeeded()
+    public boolean needsContainerClauseAdded()
     {
         return true;
     }

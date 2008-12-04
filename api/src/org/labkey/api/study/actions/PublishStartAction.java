@@ -47,7 +47,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         private String _viewType;
         private String _dataRegionSelectionKey;
         private String _returnURL;
-        private String _containerFilter;
+        private String _containerFilterName;
 
         public String getViewType()
         {
@@ -79,14 +79,14 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             _returnURL = returnURL;
         }
 
-        public String getContainerFilter()
+        public String getContainerFilterName()
         {
-            return _containerFilter;
+            return _containerFilterName;
         }
 
-        public void setContainerFilter(String containerFilter)
+        public void setContainerFilterName(String containerFilterName)
         {
-            _containerFilter = containerFilter;
+            _containerFilterName = containerFilterName;
         }
     }
 
@@ -100,12 +100,12 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         private boolean _insufficientPermissions;
         private String _dataRegionSelectionKey;
         private final String _returnURL;
-        private final String _containerFilter;
+        private final String _containerFilterName;
 
         public PublishBean(AssayProvider provider, ExpProtocol protocol,
                            List<Integer> ids, String dataRegionSelectionKey,
                            Set<Container> studies, boolean nullStudies, boolean insufficientPermissions, String returnURL,
-                           String containerFilter)
+                           String containerFilterName)
         {
             _insufficientPermissions = insufficientPermissions;
             _provider = provider;
@@ -115,7 +115,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             _ids = ids;
             _dataRegionSelectionKey = dataRegionSelectionKey;
             _returnURL = returnURL;
-            _containerFilter = containerFilter;
+            _containerFilterName = containerFilterName;
         }
 
         public String getReturnURL()
@@ -162,9 +162,9 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             return _insufficientPermissions;
         }
 
-        public String getContainerFilter()
+        public String getContainerFilterName()
         {
-            return _containerFilter;
+            return _containerFilterName;
         }
     }
 
@@ -198,7 +198,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
                     nullsFound,
                     insufficientPermissions,
                     publishForm.getReturnURL(),
-                    publishForm.getContainerFilter()));
+                    publishForm.getContainerFilterName()));
     }
 
     public NavTree appendNavTrail(NavTree root)

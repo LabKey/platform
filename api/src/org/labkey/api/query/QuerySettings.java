@@ -21,14 +21,15 @@ import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.ShowRows;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
-import org.springframework.beans.MutablePropertyValues;
 
 import java.sql.SQLException;
 
@@ -50,6 +51,9 @@ public class QuerySettings
     private boolean _showHiddenFieldsWhenCustomizing = false;
 
     PropertyValues _filterSort = null;
+
+    private String _containerFilterName;
+    ContainerFilter _containerFilter;
 
 
     public QuerySettings(String dataRegionName)
@@ -410,5 +414,25 @@ public class QuerySettings
     public void setAllowCustomizeView(boolean allowCustomizeView)
     {
         _allowCustomizeView = allowCustomizeView;
+    }
+
+    public ContainerFilter getContainerFilter()
+    {
+        return _containerFilter;
+    }
+
+    public void setContainerFilter(ContainerFilter containerFilter)
+    {
+        _containerFilter = containerFilter;
+    }
+
+    public void setContainerFilterName(String name)
+    {
+        _containerFilter = ContainerFilter.Filters.valueOf(name);
+    }
+
+    public String getContainerFilterName()
+    {
+        return _containerFilter == null ? null : _containerFilter.toString();
     }
 }

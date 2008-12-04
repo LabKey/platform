@@ -36,7 +36,6 @@ public class ExperimentRunListView extends QueryView
     private boolean _showRemoveFromExperimentButton = false;
     private boolean _showExportXARButton = false;
     private boolean _showMoveRunsButton = false;
-    private ContainerFilter _containerFilter;
 
     private final ExperimentRunFilter _selectedFilter;
 
@@ -93,16 +92,6 @@ public class ExperimentRunListView extends QueryView
     public void setShowRemoveFromExperimentButton(boolean showRemoveFromExperimentButton)
     {
         _showRemoveFromExperimentButton = showRemoveFromExperimentButton;
-    }
-
-    public ContainerFilter getContainerFilter()
-    {
-        return _containerFilter;
-    }
-
-    public void setContainerFilter(ContainerFilter containerFilter)
-    {
-        _containerFilter = containerFilter;
     }
 
     private ExpExperiment getExperiment()
@@ -186,7 +175,7 @@ public class ExperimentRunListView extends QueryView
             bar.add(exportXAR);
         }
 
-        _selectedFilter.populateButtonBar(context, bar, view, _containerFilter);
+        _selectedFilter.populateButtonBar(context, bar, view, getSettings().getContainerFilter());
 
         if (getViewContext().hasPermission(ACL.PERM_UPDATE))
         {
@@ -228,15 +217,6 @@ public class ExperimentRunListView extends QueryView
     public ExpRunTable getRunTable()
     {
         return (ExpRunTable)getTable();
-    }
-
-    @Override
-    protected TableInfo createTable()
-    {
-        ExpRunTable table = (ExpRunTable)super.createTable();
-        if (_containerFilter != null)
-            table.setContainerFilter(_containerFilter);
-        return table;
     }
 
     public void setShowExportXARButton(boolean showExportXARButton)

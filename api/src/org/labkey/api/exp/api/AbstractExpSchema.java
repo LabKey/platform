@@ -20,6 +20,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.ContainerFilter;
 
 /**
  * User: jeckels
@@ -36,7 +37,7 @@ public abstract class AbstractExpSchema extends UserSchema
 
     protected <T extends ExpTable> T setupTable(T table)
     {
-        table.setContainerFilter(_containerFilter);
+        table.setContainerFilter(_containerFilter, _user);
         table.populate();
         QueryService.get().overlayMetadata(table, table.getPublicName(), this);
         return table;

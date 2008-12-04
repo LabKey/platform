@@ -19,6 +19,7 @@ package org.labkey.api.study.assay;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.util.PageFlowUtil;
@@ -60,7 +61,7 @@ public class AssayDataLinkDisplayColumn extends DataColumn
             }
             ActionURL url = AssayService.get().getAssayDataURL(ctx.getContainer(), protocol, runId.intValue());
             if (_containerFilter != null)
-                url.addParameter("containerFilter", _containerFilter.toString());            
+                url.addParameter("containerFilterName", _containerFilter.toString());            
 
             out.write("<a href=\"" + url.getLocalURIString() + "\" title=\"View the data for just this run\">" +
                     PageFlowUtil.filter(getDisplayColumn().getValue(ctx)) + "</a>");

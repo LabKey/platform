@@ -121,5 +121,5 @@ public interface TableInfo
 
     public String getPublicSchemaName();
 
-    public boolean isContainerFilterNeeded();
+    public boolean needsContainerClauseAdded();
 }

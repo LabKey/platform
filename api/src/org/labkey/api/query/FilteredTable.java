@@ -16,8 +16,8 @@
 
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
-import org.labkey.api.exp.api.ContainerFilter;
 import org.labkey.api.security.User;
 
 import java.util.Collection;
@@ -27,15 +27,15 @@ import java.util.Collections;
  * A table that filters down to a particular set of values. A typical example
  * would be filtering to only show rows that are part of a particular container.
  */
-public class FilteredTable extends AbstractTableInfo
+public class FilteredTable extends AbstractTableInfo implements ContainerFilterable
 {
     final private SimpleFilter _filter;
     protected TableInfo _rootTable;
 
-    // container, containerFilter and user must all be set or null as they are cross-dependent
     private Container _container;
+
+    @NotNull
     private ContainerFilter _containerFilter;
-    private User _user;
 
     public FilteredTable(TableInfo table)
     {
@@ -45,11 +45,12 @@ public class FilteredTable extends AbstractTableInfo
         _name = _rootTable.getName();
         _alias = _name;
         setTitleColumn(table.getTitleColumn());
+        _containerFilter = ContainerFilter.Filters.CURRENT;
     }
 
-    public FilteredTable(TableInfo table, Container container, User user)
+    public FilteredTable(TableInfo table, Container container)
     {
-        this(table, container, ContainerFilter.Filters.CURRENT, user);
+        this(table, container, ContainerFilter.Filters.CURRENT, null);
     }
 
     public FilteredTable(TableInfo table, Container container, ContainerFilter containerFilter, User user)
@@ -62,11 +63,10 @@ public class FilteredTable extends AbstractTableInfo
 
         if (user == null && containerFilter != ContainerFilter.Filters.CURRENT) // CURRENT does not require a user
             throw new IllegalArgumentException("user cannot be null");
-        _user = user;
 
         if (containerFilter == null)
             throw new IllegalArgumentException("containerFilter cannot be null");
-        setContainerFilter(containerFilter);
+        setContainerFilter(containerFilter, user);
 
     }
 
@@ -209,19 +209,19 @@ public class FilteredTable extends AbstractTableInfo
         return _filter;
     }
 
-    public void setContainerFilter(ContainerFilter filter)
+    public void setContainerFilter(ContainerFilter filter, User user)
     {
         // Bit of a hack here -- this table must already have a user or we're toast
         // In the future, we should require a user on construction, perhaps store a UserSchema object?
-        if (_user == null && filter != ContainerFilter.Filters.CURRENT)
-            throw new IllegalStateException("Cannot add a ContainerFilter unless this object was constructed with a user");
+        if (user == null && filter != ContainerFilter.Filters.CURRENT)
+            throw new IllegalArgumentException("Cannot add a ContainerFilter without a user");
 
         _containerFilter = filter;
         ColumnInfo containerColumn = _rootTable.getColumn("container");
-        if (containerColumn != null)
+        if (containerColumn != null && getContainer() != null)
         {
             clearConditions(containerColumn);
-            Collection<String> ids = filter.getIds(getContainer(), _user);
+            Collection<String> ids = filter.getIds(getContainer(), user);
             if (ids != null)
             {
                 addCondition(new SimpleFilter(new SimpleFilter.InClause("Container", ids)));
@@ -240,6 +240,7 @@ public class FilteredTable extends AbstractTableInfo
         };
     }
 
+    @NotNull
     public ContainerFilter getContainerFilter()
     {
         return _containerFilter;
@@ -250,11 +251,10 @@ public class FilteredTable extends AbstractTableInfo
         return _container;
     }
 
-    public boolean isContainerFilterNeeded()
+    public boolean needsContainerClauseAdded()
     {
-        return getContainerFilter() == null;
+        return false;
     }
 
 
-    
 }

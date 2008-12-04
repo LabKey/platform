@@ -208,7 +208,8 @@ public class QueryView extends WebPartView<Object>
             current = _customView.getName();
         else if (_report != null)
             current = getSettings().getViewName();//_report.getDescriptor().getReportName();
-
+        
+        //noinspection deprecation
         addReportsToChangeViewPicker(options);
 
         return new QueryPicker("Custom View:", param(QueryParam.viewName), current, options);
@@ -760,7 +761,7 @@ public class QueryView extends WebPartView<Object>
                 {
                     Report report = ReportService.get().createReportInstance(entry.getKey());
                     if (report != null)
-                        menuItems.add(new Pair(report.getTypeDescription(), entry.getValue()));
+                        menuItems.add(new Pair<String,String>(report.getTypeDescription(), entry.getValue()));
                         //submenu.addChild(report.getTypeDescription(), entry.getValue());
                 }
             }
@@ -1247,6 +1248,13 @@ public class QueryView extends WebPartView<Object>
         if (_table != null)
             return _table;
         _table = createTable();
+
+        if (_table instanceof ContainerFilterable && _settings.getContainerFilter() != null)
+        {
+            ContainerFilterable fTable = (ContainerFilterable)_table;
+            fTable.setContainerFilter(_settings.getContainerFilter(), _schema.getUser());
+        }
+
         return _table;
     }
 

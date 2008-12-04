@@ -17,18 +17,18 @@
 package org.labkey.api.exp.api;
 
 import org.labkey.api.data.*;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
-import org.labkey.api.exp.PropertyDescriptor;
-
-import java.util.List;
+import org.labkey.api.security.User;
 
 abstract public interface ExpTable<C extends Enum> extends TableInfo
 {
     static public final String COLUMN_DATAINPUT_DATAID = "exp.datainput.dataid";
     public Container getContainer();
-    public void setContainerFilter(ContainerFilter filter);
+    public void setContainerFilter(ContainerFilter filter, User user);
+    public ContainerFilter getContainerFilter();
 
     public ColumnInfo addColumn(C column);
     public ColumnInfo addColumn(String alias, C column);

@@ -20,6 +20,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.security.User;
 
 import java.util.*;
@@ -94,7 +95,7 @@ public class ExpSchema extends AbstractExpSchema
     public ExpExperimentTable createExperimentsTableWithRunMemberships(String alias, ExpRun run)
     {
         ExpExperimentTable ret = createExperimentsTable(EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME, alias);
-        ret.setContainerFilter(_containerFilter);
+        ret.setContainerFilter(_containerFilter, _user);
         ret.getColumn(ExpExperimentTable.Column.RunCount).setIsHidden(true);
 
         ret.addExperimentMembershipColumn(run);
@@ -208,7 +209,7 @@ public class ExpSchema extends AbstractExpSchema
             public TableInfo getLookupTableInfo()
             {
                 ExpProtocolTable protocolTable = createProtocolsTable("Protocols");
-                protocolTable.setContainerFilter(ContainerFilter.Filters.EVERYTHING);
+                protocolTable.setContainerFilter(ContainerFilter.Filters.EVERYTHING, _user);
                 return protocolTable;
             }
         };

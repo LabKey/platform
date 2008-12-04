@@ -295,7 +295,7 @@ public class RenderContext extends BoundMap // extends ViewContext
         //this...
         ColumnInfo containerCol = tinfo.getColumn("container");
         Container c = getContainer();
-        if (null != c && null != containerCol && isUseContainerFilter() && tinfo.isContainerFilterNeeded())
+        if (null != c && null != containerCol && isUseContainerFilter() && tinfo.needsContainerClauseAdded())
         {
             // This CAST improves performance on Postgres for some queries by choosing a more efficient query plan
             filter.addClause(new SimpleFilter.SQLClause(containerCol.getName() + " = CAST('" + c.getId() + "' AS UniqueIdentifier)", new Object[0], containerCol.getName()));

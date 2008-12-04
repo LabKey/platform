@@ -22,7 +22,6 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.exp.api.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
@@ -61,7 +60,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         private boolean _validate;
         private String _dataRegionSelectionKey;
         private String _returnURL;
-        private String _containerFilter;
+        private String _containerFilterName;
 
         public String getReturnURL()
         {
@@ -144,14 +143,14 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             _validate = validate;
         }
 
-        public String getContainerFilter()
+        public String getContainerFilterName()
         {
-            return _containerFilter;
+            return _containerFilterName;
         }
 
-        public void setContainerFilter(String containerFilter)
+        public void setContainerFilterName(String containerFilterName)
         {
-            _containerFilter = containerFilter;
+            _containerFilterName = containerFilterName;
         }
     }
 
@@ -268,8 +267,8 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         PublishRunDataQueryView queryView = new PublishRunDataQueryView(_protocol, context, settings,
                 objectIds, targetStudy, postedVisits, postedPtids);
 
-        if (publishConfirmForm.getContainerFilter() != null)
-            queryView.setContainerFilter(ContainerFilter.Filters.valueOf(publishConfirmForm.getContainerFilter()));
+        if (publishConfirmForm.getContainerFilterName() != null)
+            queryView.getSettings().setContainerFilterName(publishConfirmForm.getContainerFilterName());
 
         List<ActionButton> buttons = new ArrayList<ActionButton>();
         String returnURL;
@@ -282,7 +281,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             returnURL = getSummaryLink(_protocol).addParameter("clearDataRegionSelectionKey", publishConfirmForm.getDataRegionSelectionKey()).toString();
         }
 
-        ActionURL publishURL = getPublishHandlerURL(_protocol, provider);
+        ActionURL publishURL = getPublishHandlerURL(_protocol);
         
         publishURL.replaceParameter("validate", "false");
         ActionButton publishButton = new ActionButton(publishURL.getLocalURIString(), "Copy to Study");
@@ -317,7 +316,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         }
     }
 
-    protected ActionURL getPublishHandlerURL(ExpProtocol protocol, AssayProvider provider)
+    protected ActionURL getPublishHandlerURL(ExpProtocol protocol)
     {
         return AssayService.get().getPublishConfirmURL(getContainer(), protocol).deleteParameters();
     }

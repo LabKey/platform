@@ -18,7 +18,7 @@ package org.labkey.api.study.assay;
 
 import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentRunFilter;
-import org.labkey.api.exp.api.ContainerFilter;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.security.ACL;

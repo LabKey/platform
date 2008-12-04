@@ -87,7 +87,4 @@ public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
      * Returns a column which is a lookup to a table which has columns for output datas and materials from the run output protocol app.
      */
     ColumnInfo createOutputLookupColumn(String alias, ExpSchema schema);
-
-    ContainerFilter getContainerFilter();
-    void setContainerFilter(ContainerFilter filter);
 }

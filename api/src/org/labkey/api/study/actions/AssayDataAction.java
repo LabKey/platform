@@ -16,7 +16,6 @@
 
 package org.labkey.api.study.actions;
 
-import org.labkey.api.exp.api.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
@@ -54,9 +53,9 @@ public class AssayDataAction extends BaseAssayAction<AssayDataAction.AssayDataFo
             fullView.addView(provider.getDisallowedUploadMessageView(context.getUser(), context.getContainer(), _protocol));
 
         RunDataQueryView dataView = provider.createRunDataView(context, _protocol);
-        if (form.getContainerFilter() != null)
+        if (form.getContainerFilterName() != null)
         {
-            dataView.setContainerFilter(ContainerFilter.Filters.valueOf(form.getContainerFilter()));
+            dataView.getSettings().setContainerFilterName(form.getContainerFilterName());
         }
         fullView.addView(dataView);
         return fullView;
@@ -72,16 +71,16 @@ public class AssayDataAction extends BaseAssayAction<AssayDataAction.AssayDataFo
 
     public static class AssayDataForm extends ProtocolIdForm
     {
-        private String containerFilter;
+        private String containerFilterName;
 
-        public String getContainerFilter()
+        public String getContainerFilterName()
         {
-            return containerFilter;
+            return containerFilterName;
         }
 
-        public void setContainerFilter(String containerFilter)
+        public void setContainerFilterName(String containerFilterName)
         {
-            this.containerFilter = containerFilter;
+            this.containerFilterName = containerFilterName;
         }
     }
 }

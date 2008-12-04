@@ -17,9 +17,7 @@
 package org.labkey.api.study.query;
 
 import org.labkey.api.data.*;
-import org.labkey.api.exp.api.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ChartQueryReport;
@@ -44,8 +42,6 @@ import java.util.Set;
  */
 public class RunDataQueryView extends AssayBaseQueryView
 {
-    private ContainerFilter containerFilter;
-
     public RunDataQueryView(ExpProtocol protocol, ViewContext context, QuerySettings settings)
     {
         super(protocol, context, settings);
@@ -83,8 +79,8 @@ public class RunDataQueryView extends AssayBaseQueryView
                 }
                 publishURL.deleteParameters();
 
-                if (containerFilter != null)
-                    publishURL.addParameter("containerFilter", containerFilter.toString());
+                if (getSettings().getContainerFilter() != null)
+                    publishURL.addParameter("containerFilterName", getSettings().getContainerFilter().toString());
 
                 if (provider.canPublish())
                 {
@@ -106,7 +102,7 @@ public class RunDataQueryView extends AssayBaseQueryView
 
     private void handleUploadButton(AssayProvider provider, ButtonBar buttonBar)
     {
-        if (containerFilter == null)
+        if (getSettings().getContainerFilter() == null)
         {
             if (provider.allowUpload(getUser(), getContainer(), _protocol))
             {
@@ -116,7 +112,7 @@ public class RunDataQueryView extends AssayBaseQueryView
             }
             return;
         }
-        Collection<String> containersFromFilter = containerFilter.getIds(getContainer(), getUser());
+        Collection<String> containersFromFilter = getSettings().getContainerFilter().getIds(getContainer(), getUser());
         Set<Container> allowedContainers = new HashSet<Container>();
         for (String id : containersFromFilter)
         {
@@ -150,24 +146,5 @@ public class RunDataQueryView extends AssayBaseQueryView
     protected TSVGridWriter.ColumnHeaderType getColumnHeaderType()
     {
         return TSVGridWriter.ColumnHeaderType.caption;
-    }
-
-    public ContainerFilter getContainerFilter()
-    {
-        return containerFilter;
-    }
-
-    public void setContainerFilter(ContainerFilter containerFilter)
-    {
-        this.containerFilter = containerFilter;
-    }
-
-    @Override
-    protected TableInfo createTable()
-    {
-        FilteredTable table = (FilteredTable)super.createTable();
-        if (containerFilter != null)
-            table.setContainerFilter(containerFilter);
-        return table;
     }
 }
