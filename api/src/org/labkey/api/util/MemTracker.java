@@ -219,7 +219,7 @@ public class MemTracker
     // reference tracking impl
     //
 
-    private Map<Object, AllocationInfo> _references = new ReferenceIdentityMap<Object, AllocationInfo>(AbstractReferenceMap.WEAK, AbstractReferenceMap.HARD, true);
+    private final Map<Object, AllocationInfo> _references = new ReferenceIdentityMap<Object, AllocationInfo>(AbstractReferenceMap.WEAK, AbstractReferenceMap.HARD, true);
 
     private synchronized boolean _put(Object object)
     {
