@@ -16,20 +16,14 @@
 
 package org.labkey.timeline;
 
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.view.*;
-import org.labkey.api.action.*;
-import org.labkey.api.query.*;
-import org.labkey.api.data.TableInfo;
-import org.springframework.web.servlet.ModelAndView;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.NavTree;
 import org.springframework.validation.BindException;
-import org.apache.commons.lang.StringUtils;
-
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.HashMap;
+import org.springframework.web.servlet.ModelAndView;
 
 public class TimelineController extends SpringActionController
 {
@@ -37,7 +31,6 @@ public class TimelineController extends SpringActionController
 
     public TimelineController() throws Exception
     {
-        super();
         setActionResolver(_actionResolver);
     }
 

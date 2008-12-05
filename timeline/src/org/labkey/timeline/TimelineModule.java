@@ -17,18 +17,13 @@
 package org.labkey.timeline;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.timeline.view.TimelineView;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
 
 public class TimelineModule extends DefaultModule
 {
@@ -75,20 +70,5 @@ public class TimelineModule extends DefaultModule
     public boolean hasScripts()
     {
         return false;
-    }
-
-    public Collection<String> getSummary(Container c)
-    {
-        return Collections.emptyList();
-    }
-
-    public Set<String> getSchemaNames()
-    {
-        return Collections.singleton("timeline");
-    }
-
-    public Set<DbSchema> getSchemasToTest()
-    {
-        return PageFlowUtil.set(TimelineSchema.getInstance().getSchema());
     }
 }

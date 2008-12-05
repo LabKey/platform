@@ -83,7 +83,7 @@ var settings = {
     endField: <%=nq(settings.getEndField())%>,
     titleField: <%=nq(settings.getTitleField())%>,
     descriptionField: <%=nq(settings.getDescriptionField())%>
-}
+};
 
 var schemaInfos = <%= new JSONObject(schemaTableNames).toString() %>;
 
@@ -172,9 +172,10 @@ function clearFieldPickers()
         document.getElementById(fieldPickers[i].id).length = 0;
 }
 
-Ext.onReady(function() {
+Ext.onReady(function()
+{
     updateFields(settings.schemaName, settings.queryName, settings.viewName);
-})
+});
 </script>
 <form name="frmCustomize" method="post" action="<%=part.getCustomizePostURL(ctx.getContainer()).getEncodedLocalURIString()%>">
     <table>
@@ -187,7 +188,7 @@ Ext.onReady(function() {
             <td>
                 <select name="schemaName" id="schemaName"
                         title="Select a Schema Name"
-                        onchange="updateQueries(this.value)">
+                        onchange="updateQueries(this.value);">
                     <labkey:options value="<%=settings.getSchemaName()%>" map="<%=schemaOptions%>" />
                 </select>
             </td>
@@ -196,7 +197,7 @@ Ext.onReady(function() {
             <td class="ms-searchform" valign="top">Query and View:</td>
             <td>
                             <select name="queryName" id="queryName"
-                                    title="Select a Table Name" onchange="updateViews(this.value)">
+                                    title="Select a Table Name" onchange="updateViews(this.value);">
                                 <%
                                 Map<String, List<String>> tableNames = schemaTableNames.get(settings.getSchemaName());
                                 if (tableNames != null)
@@ -210,7 +211,7 @@ Ext.onReady(function() {
                             </select>
                             <br/>
                             <select name="viewName" id="viewName"
-                                    title="Select a View Name" onchange="updateFields(this.value)">
+                                    title="Select a View Name" onchange="updateFields(this.value);">
                                 <%
                                 if (tableNames != null)
                                 {
@@ -232,25 +233,25 @@ Ext.onReady(function() {
         <tr>
             <td>Start:</td>
             <td>
-                <select name="startField" id="startField" onchange="settings[this.id] = this.value"></select>
+                <select name="startField" id="startField" onchange="settings[this.id] = this.value;"></select>
             </td>
         </tr>
         <tr>
             <td>End:</td>
             <td>
-                <select name="endField" id="endField" onchange="settings[this.id] = this.value"></select>
+                <select name="endField" id="endField" onchange="settings[this.id] = this.value;"></select>
             </td>
         </tr>
         <tr>
             <td>Title:</td>
             <td>
-                <select name="titleField" id="titleField" onchange="settings[this.id] = this.value"></select>
+                <select name="titleField" id="titleField" onchange="settings[this.id] = this.value;"></select>
             </td>
         </tr>
         <tr>
             <td>Description:</td>
             <td>
-                <select name="descriptionField" id="descriptionField" onchange="settings[this.id] = this.value"></select>
+                <select name="descriptionField" id="descriptionField" onchange="settings[this.id] = this.value;"></select>
             </td>
         </tr>
         <tr>
