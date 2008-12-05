@@ -64,11 +64,12 @@ public class AssayDetailsWebPartFactory extends BaseWebPartFactory
         }
         else
         {
-            AssayRunsView runsView = new AssayRunsView(protocol, !showButtons);
+            AssayRunsView runsView = new AssayRunsView(protocol,
+                !showButtons,
+                includeSubfolders ? ContainerFilter.Filters.CURRENT_AND_SUBFOLDERS : null);
+
             runsView.setTitleHref(AssayService.get().getAssayRunsURL(portalCtx.getContainer(), protocol).getLocalURIString());
             runsView.setTitle(protocol.getName() + " Runs");
-            if (includeSubfolders)
-                runsView.getQuerySettings().setContainerFilter(ContainerFilter.Filters.CURRENT_AND_SUBFOLDERS);
             view = runsView;
         }
         view.setFrame(WebPartView.FrameType.PORTAL);

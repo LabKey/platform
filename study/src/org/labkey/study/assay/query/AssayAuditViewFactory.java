@@ -94,13 +94,13 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
         return view;
     }
 
-    public AuditLogQueryView createPublishHistoryView(ViewContext context, int protocolId)
+    public AuditLogQueryView createPublishHistoryView(ViewContext context, int protocolId, ContainerFilter containerFilter)
     {
         SimpleFilter filter = new SimpleFilter();
         if (protocolId != -1)
             filter.addCondition("IntKey1", protocolId);
         filter.addCondition("EventType", AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
-        filter.addCondition("ContainerId", context.getContainer().getId());
+        filter.addInClause("ContainerId", containerFilter.getIds(context.getContainer(), context.getUser()));
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
         view.setSort(new Sort("-Date"));

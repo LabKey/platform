@@ -216,7 +216,7 @@ public class AssayManager implements AssayService.Interface
         ActionURL url = getProtocolURL(container, protocol, "assayRuns");
         if (containerFilter != null)
         {
-            url.addParameter("Assay Runs." + QueryParam.containerFilterName, containerFilter.toString());
+            url.addParameter(protocol.getName() + " Runs." + QueryParam.containerFilterName, containerFilter.toString());
         }
         return url;
     }
@@ -258,7 +258,7 @@ public class AssayManager implements AssayService.Interface
                     provider.getRunIdFieldKeyFromDataRow(), CompareType.EQUAL, runIds[0]);
         }
         if (containerFilter != null)
-            result.addParameter("Assay Data." + QueryParam.containerFilterName, containerFilter.toString());
+            result.addParameter(protocol.getName() + " Data." + QueryParam.containerFilterName, containerFilter.toString());
         return result;
     }
 }

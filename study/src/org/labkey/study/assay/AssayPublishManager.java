@@ -525,8 +525,18 @@ public class AssayPublishManager implements AssayPublishService.Service
     
     public ActionURL getPublishHistory(Container c, ExpProtocol protocol)
     {
+        return getPublishHistory(c, protocol, null);
+    }
+
+    public ActionURL getPublishHistory(Container container, ExpProtocol protocol, ContainerFilter containerFilter)
+    {
         if (protocol != null)
-            return new ActionURL("assay", "publishHistory", c).addParameter("rowId", protocol.getRowId());
+        {
+            ActionURL url = new ActionURL("assay", "publishHistory", container).addParameter("rowId", protocol.getRowId());
+            if (containerFilter != null)
+                url.addParameter("containerFilterName", containerFilter.toString());
+            return url;
+        }
 
         HttpView.throwNotFound("Specified protocol is invalid");
         return null;

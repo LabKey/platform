@@ -18,6 +18,7 @@ package org.labkey.study.controllers.assay;
 
 import org.labkey.api.action.*;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.exp.*;
@@ -143,7 +144,11 @@ public class AssayController extends SpringActionController
             int i = 0;
             for (String id : selection)
                 selectedIds[i++] = Integer.parseInt(id);
-            ActionURL url = AssayService.get().getAssayDataURL(getContainer(), form.getProtocol(), selectedIds);
+            ContainerFilter containerFilter = null;
+            if (form.getContainerFilterName() != null)
+                containerFilter = ContainerFilter.Filters.valueOf(form.getContainerFilterName());
+
+            ActionURL url = AssayService.get().getAssayDataURL(getContainer(), form.getProtocol(), containerFilter, selectedIds);
             if (form.getContainerFilterName() != null)
                 url.addParameter("containerFilterName", form.getContainerFilterName());
             return url;
@@ -168,7 +173,7 @@ public class AssayController extends SpringActionController
             return containerFilterName;
         }
 
-        public void setContainerFilter(String containerFilterName)
+        public void setContainerFilterName(String containerFilterName)
         {
             this.containerFilterName = containerFilterName;
         }
@@ -428,15 +433,19 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_READ)
-    public class PublishHistoryAction extends BaseAssayAction<ProtocolIdForm>
+    public class PublishHistoryAction extends BaseAssayAction<PublishHistoryForm>
     {
         private ExpProtocol _protocol;
-        public ModelAndView getView(ProtocolIdForm protocolIdForm, BindException errors) throws Exception
+        public ModelAndView getView(PublishHistoryForm form, BindException errors) throws Exception
         {
-            _protocol = getProtocol(protocolIdForm);
+            ContainerFilter containerFilter = ContainerFilter.Filters.CURRENT;
+            if (form.getContainerFilterName() != null)
+                containerFilter = ContainerFilter.Filters.valueOf(form.getContainerFilterName());
+
+            _protocol = getProtocol(form);
             VBox view = new VBox();
-            view.addView(new AssayHeaderView(_protocol, getProvider(protocolIdForm), false));
-            view.addView(AssayAuditViewFactory.getInstance().createPublishHistoryView(getViewContext(), _protocol.getRowId()));
+            view.addView(new AssayHeaderView(_protocol, getProvider(form), false, containerFilter));
+            view.addView(AssayAuditViewFactory.getInstance().createPublishHistoryView(getViewContext(), _protocol.getRowId(), containerFilter));
             return view;
         }
 
@@ -444,6 +453,21 @@ public class AssayController extends SpringActionController
         {
             return root.addChild("Assay List", getUrl("begin")).addChild(_protocol.getName(),
                     getUrl("assayRuns").addParameter("rowId", _protocol.getRowId())).addChild("Copy-to-Study History");
+        }
+    }
+
+    public static class PublishHistoryForm extends ProtocolIdForm
+    {
+        private String containerFilterName;
+
+        public String getContainerFilterName()
+        {
+            return containerFilterName;
+        }
+
+        public void setContainerFilterName(String containerFilterName)
+        {
+            this.containerFilterName = containerFilterName;
         }
     }
 }
