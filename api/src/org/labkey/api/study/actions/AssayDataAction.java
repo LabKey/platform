@@ -40,19 +40,21 @@ public class AssayDataAction extends BaseAssayAction<ProtocolIdForm>
 
     public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception
     {
-        _protocol = getProtocol(form);
-        AssayHeaderView headerView = new AssayHeaderView(_protocol, AssayService.get().getProvider(_protocol), false);
-
         ViewContext context = getViewContext();
+        _protocol = getProtocol(form);
+        AssayProvider provider = AssayService.get().getProvider(_protocol);
+        RunDataQueryView dataView = provider.createRunDataView(context, _protocol);
+
+        AssayHeaderView headerView = new AssayHeaderView(_protocol, AssayService.get().getProvider(_protocol), false, dataView.getSettings().getContainerFilter());
 
         VBox fullView = new VBox();
         fullView.addView(headerView);
-        AssayProvider provider = AssayService.get().getProvider(_protocol);
+
 
         if (!provider.allowUpload(context.getUser(), context.getContainer(), _protocol))
             fullView.addView(provider.getDisallowedUploadMessageView(context.getUser(), context.getContainer(), _protocol));
 
-        RunDataQueryView dataView = provider.createRunDataView(context, _protocol);
+
         
         fullView.addView(dataView);
         return fullView;

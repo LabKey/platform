@@ -17,6 +17,7 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -56,6 +57,7 @@ public class AssayPublishService
         Map<Container, String> getValidPublishTargets(User user, int permission);
 
         ActionURL getPublishHistory(Container container, ExpProtocol protocol);
+        ActionURL getPublishHistory(Container container, ExpProtocol protocol, ContainerFilter containerFilter);
 
         TimepointType getTimepointType(Container container);
     }

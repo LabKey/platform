@@ -16,9 +16,9 @@
 
 package org.labkey.api.study.assay;
 
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.query.QuerySettings;
 import org.labkey.api.study.actions.AssayHeaderView;
 import org.labkey.api.study.query.RunListQueryView;
 import org.labkey.api.view.VBox;
@@ -33,12 +33,15 @@ public class AssayRunsView extends VBox
 {
     private RunListQueryView _runsView;
 
-    public AssayRunsView(ExpProtocol protocol, boolean minimizeLinks)
+    public AssayRunsView(ExpProtocol protocol, boolean minimizeLinks, ContainerFilter containerFilter)
     {
-        AssayHeaderView headerView = new AssayHeaderView(protocol, AssayService.get().getProvider(protocol), minimizeLinks);
-        ViewContext context = getViewContext();
         AssayProvider provider = AssayService.get().getProvider(protocol);
+        ViewContext context = getViewContext();
+
         _runsView = provider.createRunView(context, protocol);
+        if (containerFilter != null)
+            _runsView.getSettings().setContainerFilter(containerFilter);
+        AssayHeaderView headerView = new AssayHeaderView(protocol, provider, minimizeLinks, _runsView.getSettings().getContainerFilter());
         if (minimizeLinks)
         {
             _runsView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
@@ -54,10 +57,5 @@ public class AssayRunsView extends VBox
             addView(provider.getDisallowedUploadMessageView(context.getUser(), context.getContainer(), protocol));
 
         addView(_runsView);
-    }
-
-    public QuerySettings getQuerySettings()
-    {
-        return _runsView.getSettings();
     }
 }

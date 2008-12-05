@@ -18,15 +18,15 @@ package org.labkey.api.study.actions;
 
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.security.ACL;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.view.*;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.*;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -43,7 +43,7 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
 
     protected Map<String, ActionURL> _links = new LinkedHashMap<String, ActionURL>();
 
-    public AssayHeaderView(ExpProtocol protocol, AssayProvider provider, boolean minimizeLinks)
+    public AssayHeaderView(ExpProtocol protocol, AssayProvider provider, boolean minimizeLinks, ContainerFilter containerFilter)
     {
         super("/org/labkey/api/study/actions/assayHeader.jsp");
         setModelBean(this);
@@ -81,11 +81,11 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
                 _managePopupView.setButtonStyle(PopupMenu.ButtonStyle.TEXTBUTTON);
             }
 
-            _links.put("view all runs", AssayService.get().getAssayRunsURL(getViewContext().getContainer(), _protocol));
-            _links.put("view all data", AssayService.get().getAssayDataURL(getViewContext().getContainer(), _protocol));
+            _links.put("view all runs", AssayService.get().getAssayRunsURL(getViewContext().getContainer(), _protocol, containerFilter));
+            _links.put("view all data", AssayService.get().getAssayDataURL(getViewContext().getContainer(), _protocol, containerFilter));
 
             if (AuditLogService.get().isViewable() && _provider.canPublish())
-                _links.put("view copy-to-study history", AssayPublishService.get().getPublishHistory(getViewContext().getContainer(), protocol));
+                _links.put("view copy-to-study history", AssayPublishService.get().getPublishHistory(getViewContext().getContainer(), protocol, containerFilter));
         }
         else
         {
