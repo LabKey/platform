@@ -438,6 +438,7 @@ core/src/org/labkey/core/webdav/files.jsp -text
 core/src/org/labkey/core/webdav/list.jsp -text
 core/webapp/FileTree.js -text
 core/webapp/dropApplet.js -text
+core/webapp/fileBrowser.js -text
 core/webapp/printStyle.css -text
 core/webapp/stylesheet.css -text
 demo/module.properties -text
