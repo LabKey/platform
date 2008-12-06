@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>           
 <!--
 
  * Copyright (c) 2006-2008 LabKey Corporation
@@ -339,6 +339,10 @@
       <ns:column columnName="VisitValue">
         <ns:formatString>0.####</ns:formatString>
       </ns:column>
+      <ns:column columnName="VisitRowId"/>
+      <ns:column columnName="SequenceNumMin">
+        <ns:formatString>0.####</ns:formatString>
+      </ns:column>
       <ns:column columnName="VisitDescription"/>
       <ns:column columnName="TotalVolume">
         <ns:formatString>#,###.0#</ns:formatString>
@@ -387,6 +391,10 @@
       <ns:column columnName="SpecimenHash"/>
       <ns:column columnName="ClassId"/>
       <ns:column columnName="VisitValue">
+        <ns:formatString>0.####</ns:formatString>
+      </ns:column>
+      <ns:column columnName="VisitRowId"/>
+      <ns:column columnName="SequenceNumMin">
         <ns:formatString>0.####</ns:formatString>
       </ns:column>
       <ns:column columnName="ProtocolNumber"/>
