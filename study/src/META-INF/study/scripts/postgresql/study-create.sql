@@ -48,10 +48,14 @@ CREATE VIEW study.SpecimenDetail AS
         ) AS Available
          FROM
             (
-                SELECT Specimen.*, (CASE IsRepository WHEN True THEN True ELSE False END) AS AtRepository,
+               SELECT Specimen.*, 	PV.VisitRowId, V.SequenceNumMin,
+                    (CASE IsRepository WHEN True THEN True ELSE False END) AS AtRepository,
                      Site.Label AS SiteName,Site.LdmsLabCode AS SiteLdmsCode,
                      (CASE LockedSpecimens.Locked WHEN True THEN True ELSE False END) AS LockedInRequest
     	        FROM study.Specimen AS Specimen
+				LEFT OUTER JOIN
+					(study.ParticipantVisit PV INNER JOIN study.Visit V ON (V.RowId = PV.VisitRowId))
+					ON (Specimen.Ptid = PV.ParticipantId AND Specimen.VisitValue = PV.SequenceNum AND Specimen.Container = PV.Container)
                 LEFT OUTER JOIN study.Site AS Site ON
                         (Site.RowId = Specimen.CurrentLocation)
                 LEFT OUTER JOIN (SELECT *, True AS Locked FROM study.LockedSpecimens) LockedSpecimens ON
@@ -60,8 +64,8 @@ CREATE VIEW study.SpecimenDetail AS
         ) SpecimenInfo;
 
 CREATE VIEW study.SpecimenSummary AS
-    SELECT Container, SpecimenHash, Ptid, VisitDescription, VisitValue, SUM(Volume) AS TotalVolume,
-        SUM(CASE Available WHEN True THEN Volume ELSE 0 END) AS AvailableVolume,
+        SELECT Container, SpecimenHash, Ptid, VisitDescription, VisitValue, VisitRowId, SequenceNumMin,
+        SUM(Volume) AS TotalVolume, SUM(CASE Available WHEN True THEN Volume ELSE 0 END) AS AvailableVolume,
         VolumeUnits, PrimaryTypeId, AdditiveTypeId, DerivativeTypeId, DrawTimestamp, SalReceiptDate,
         ClassId, ProtocolNumber, SubAdditiveDerivative, OriginatingLocationId,
         COUNT(GlobalUniqueId) AS VialCount,
@@ -72,4 +76,4 @@ CREATE VIEW study.SpecimenSummary AS
     GROUP BY Container, SpecimenHash, Ptid, VisitDescription,
         VisitValue, VolumeUnits, PrimaryTypeId, AdditiveTypeId, DerivativeTypeId,
         DrawTimestamp, SalReceiptDate, ClassId, ProtocolNumber, SubAdditiveDerivative,
-        OriginatingLocationId;
+        OriginatingLocationId, VisitRowId, SequenceNumMin;

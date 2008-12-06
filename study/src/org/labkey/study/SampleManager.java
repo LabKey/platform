@@ -92,7 +92,7 @@ public class SampleManager
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addClause(new SimpleFilter.SQLClause("LOWER(ptid) = LOWER(?)", new Object[] {participantId}, "ptid"));
-        filter.addCondition("VisitValue", visit);
+        filter.addCondition("SequenceNumMin", visit);
         filter.addCondition("Container", container.getId());
         return _specimenHelper.get(container, filter);
     }
@@ -1741,8 +1741,9 @@ public class SampleManager
     {
         try
         {
-            SQLFragment visitIdSQL = new SQLFragment("SELECT VisitValue from study.Specimen " +
-                    "WHERE Container = ? GROUP BY VisitValue", container.getId());
+            //TODO: consider changing this to query-based.
+            SQLFragment visitIdSQL = new SQLFragment("SELECT SequenceNumMin from study.SpecimenDetail " +
+                    "WHERE Container = ? GROUP BY SequenceNumMin", container.getId());
             List<Double> visitIds = new ArrayList<Double>();
             ResultSet rs = null;
             try

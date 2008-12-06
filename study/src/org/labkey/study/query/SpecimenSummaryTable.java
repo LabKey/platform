@@ -40,24 +40,27 @@ public class SpecimenSummaryTable extends BaseStudyTable
         participantColumn.setFk(new QueryForeignKey(_schema, "Participant", "ParticipantId", null));
         participantColumn.setKeyField(true);
         addColumn(participantColumn);
-        ColumnInfo visitColumn = new AliasedColumn(this, "Visit", _rootTable.getColumn("VisitValue"));
+
+        // Same as in SpecimentDetailTable
+        AliasedColumn visitColumn;
         ColumnInfo visitDescriptionColumn = addWrapColumn(_rootTable.getColumn("VisitDescription"));
-        //In date based studies, joining sequenceNum does not make sense.
         if (_schema.getStudy().isDateBased())
         {
-            visitColumn.setIsHidden(true);
+            visitColumn = new AliasedColumn(this, "Visit", _rootTable.getColumn("SequenceNumMin"));
+            visitColumn.setCaption("Timepoint");
             visitDescriptionColumn.setIsHidden(true);
         }
         else
         {
-            visitColumn.setFk(new LookupForeignKey(null, (String) null, "SequenceNumMin", null)
-            {
-                public TableInfo getLookupTableInfo()
-                {
-                    return new VisitTable(_schema);
-                }
-            });
+            visitColumn = new AliasedColumn(this, "Visit", _rootTable.getColumn("VisitValue"));
         }
+        visitColumn.setFk(new LookupForeignKey(null, (String) null, "SequenceNumMin", null)
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return new VisitTable(_schema);
+            }
+        });
         visitColumn.setKeyField(true);
         addColumn(visitColumn);
 

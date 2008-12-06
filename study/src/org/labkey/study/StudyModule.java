@@ -93,7 +93,7 @@ public class StudyModule extends DefaultModule
 
     public double getVersion()
     {
-        return 8.32;
+        return 8.33;
     }
 
     protected void init()
@@ -319,7 +319,7 @@ public class StudyModule extends DefaultModule
             return new StudyDesignsWebPart(portalCtx, true);
         }
     }
-    
+
     private static class StudyDesignSummaryWebPartFactory extends BaseWebPartFactory
     {
         public StudyDesignSummaryWebPartFactory()

@@ -53,23 +53,28 @@ public class SpecimenDetailTable extends BaseStudyTable
             }
         });
 
-        AliasedColumn visitColumn = new AliasedColumn(this, "Visit", _rootTable.getColumn("VisitValue"));
+        AliasedColumn visitColumn;
         ColumnInfo visitDescriptionColumn = addWrapColumn(_rootTable.getColumn("VisitDescription"));
         if (_schema.getStudy().isDateBased())
         {
-            visitColumn.setIsHidden(true);
+            //consider:  use SequenceNumMin for visit-based studies too (in visit-based studies VisitValue == SequenceNumMin) 
+            // could change to visitrowid but that changes datatype and displays rowid
+            // instead of sequencenum when label is null
+            visitColumn = new AliasedColumn(this, "Visit", _rootTable.getColumn("SequenceNumMin"));
+            visitColumn.setCaption("Timepoint");
             visitDescriptionColumn.setIsHidden(true);
         }
         else
         {
-            visitColumn.setFk(new LookupForeignKey(null, (String) null, "SequenceNumMin", null)
-            {
-                public TableInfo getLookupTableInfo()
-                {
-                    return new VisitTable(_schema);
-                }
-            });
+            visitColumn = new AliasedColumn(this, "Visit", _rootTable.getColumn("VisitValue"));
         }
+        visitColumn.setFk(new LookupForeignKey(null, (String) null, "SequenceNumMin", null)
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return new VisitTable(_schema);
+            }
+        });
         visitColumn.setKeyField(true);
         addColumn(visitColumn);
         addWrapColumn(_rootTable.getColumn("Volume"));
