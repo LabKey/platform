@@ -44,6 +44,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
@@ -55,6 +56,7 @@ import org.mule.umo.lifecycle.Callable;
 import org.mule.impl.RequestContext;
 
 import javax.xml.namespace.QName;
+import javax.naming.*;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -109,7 +111,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
 
     public void resume(UMODescriptor descriptor)
     {
-        for (UMOEndpoint endpoint : (List< UMOEndpoint>)descriptor.getInboundRouter().getEndpoints())
+        for (UMOEndpoint endpoint : (List<UMOEndpoint>)descriptor.getInboundRouter().getEndpoints())
         {
             if (endpoint.getFilter() instanceof TaskJmsSelectorFilter)
             {
@@ -200,6 +202,11 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
             }
             job.getLogger().info(sb.toString());
 
+            for (String warning : checkGlobusConfiguration())
+            {
+                job.getLogger().warn(warning);
+            }
+
             gramJob.submit(gramJob.getEndpoint(), false, false, getJobURI(job));
             sb.append("Job submitted to Globus.");
             submitted = true;
@@ -224,6 +231,97 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
         }
         return null;
     }
+
+    public static List<String> checkGlobusConfiguration()
+    {
+        List<String> result = new ArrayList<String>();
+        if (AppProps.getInstance().getBaseServerUrl().indexOf("//localhost") != -1)
+        {
+            result.add("You have not set your base server URL. Unless the Globus server is running on the same machine" +
+                    " as LabKey Server, it will not be able to call back to give status updates. To fix this, go to " +
+                    "Admin Console->Site Settings and enter a base server URL that your Globus server can use to " +
+                    "issue HTTP/HTTPS requests to your LabKey Server.");
+        }
+        File homeDir = new File(System.getProperty("user.home"));
+        File globusDir = new File(homeDir, ".globus");
+        File certsDir = new File(globusDir, "certificates");
+        FilenameFilter filter = new FilenameFilter()
+        {
+            public boolean accept(File dir, String name)
+            {
+                return name.endsWith(".0");
+            }
+        };
+        if (!certsDir.exists() || certsDir.listFiles(filter) == null || certsDir.listFiles(filter).length == 0)
+        {
+            result.add("Your LabKey Server does not have the required Globus CA certificates in " + certsDir +
+                    ". Please see " + new HelpTopic("configureEnterprisePipeline", HelpTopic.Area.SERVER) +
+                    " for instructions.");
+        }
+
+        try
+        {
+            InitialContext ctx = new InitialContext();
+            Context envCtx = (Context) ctx.lookup("java:comp/env");
+            StringBuilder message = new StringBuilder("You are missing the following JNDI object(s):");
+            int originalLength = message.length();
+            ensureJNDIConfig(envCtx, message, "services/NotificationConsumerService/home");
+            ensureJNDIConfig(envCtx, message, "timer/ContainerTimer");
+            ensureJNDIConfig(envCtx, message, "topic/ContainerTopicExpressionEngine");
+            ensureJNDIConfig(envCtx, message, "query/eval/xpath");
+            ensureJNDIConfig(envCtx, message, "query/ContainerQueryEngine");
+            ensureJNDIConfig(envCtx, message, "topic/eval/simple");
+
+            if (message.length() > originalLength)
+            {
+                message.append(". Please see ");
+                message.append(new HelpTopic("configureEnterprisePipeline", HelpTopic.Area.SERVER));
+                message.append(" for instructions.");
+                result.add(message.toString());
+            }
+        }
+        catch (NamingException e)
+        {
+            result.add("Unable to look up Globus objects in JNDI " + e);
+            _log.error("Unable to look up Globus objects in JNDI", e);
+        }
+
+        return result;
+    }
+
+    private static void ensureJNDIConfig(Context ctx, StringBuilder errors, String name)
+    {
+        String[] components = name.split("/");
+        try
+        {
+            for (int i = 0; i < components.length - 2; i++)
+            {
+                Object o = ctx.lookup(components[i]);
+                if (!(o instanceof Context))
+                {
+                    errors.append(" ");
+                    errors.append(name);
+                    return;
+                }
+                ctx = (Context)o;
+            }
+            NamingEnumeration<NameClassPair> listing = ctx.list(components[components.length - 2]);
+            while (listing.hasMoreElements())
+            {
+                NameClassPair classPair = listing.next();
+                if (classPair.getName().equals(components[components.length - 1]))
+                {
+                    return;
+                }
+            }
+        }
+        catch (NamingException e)
+        {
+        }
+        errors.append(" ");
+        errors.append(name);
+    }
+
 
     private GramJob createGramJob(PipelineJob job, File serializedJobFile) throws Exception
     {

@@ -25,6 +25,8 @@
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.pipeline.PipelineJobService" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.pipeline.mule.PipelineJobRunnerGlobus" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<PipelineController.SetupBean> thisView = (JspView<PipelineController.SetupBean>) HttpView.currentView();
@@ -64,6 +66,14 @@ function toggleGlobusVisible()
         if (PipelineService.get().isEnterprisePipeline() &&
                 PipelineJobService.get().getGlobusClientProperties() != null)
         {
+            List<String> warnings = PipelineJobRunnerGlobus.checkGlobusConfiguration();
+            for (String warning : warnings)
+            { %>
+                <tr>
+                    <td class="labkey-form-label">Warning:</td>
+                    <td class="labkey-error"><%= warning %></td>
+                </tr><%
+            }
             boolean showConfig = true;
             if (bean.getGlobusKeyPair() != null)
             {

@@ -120,7 +120,7 @@ public class AssayManager implements AssayService.Interface
         ExpProtocol[] containerProtocols = ExperimentService.get().getExpProtocols(container);
         addTopLevelProtocols(containerProtocols, protocols);
         Container project = container.getProject();
-        if (!container.equals(project))
+        if (project != null && !container.equals(project))
         {
             ExpProtocol[] projectProtocols = ExperimentService.get().getExpProtocols(container.getProject());
             addTopLevelProtocols(projectProtocols, protocols);

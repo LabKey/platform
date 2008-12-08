@@ -94,9 +94,8 @@ public class ProjectController extends SpringActionController
                 {
                     if (getUser().isGuest())
                         HttpView.throwUnauthorized();
-                    HtmlView htmlView = new HtmlView("You do not have permission to view this folder.<br>" +
+                    return new HtmlView("You do not have permission to view this folder.<br>" +
                             "Please select another folder from the tree to the left.");
-                    return htmlView;
                 }
             }
             return HttpView.redirect(c.getStartURL(getViewContext()));

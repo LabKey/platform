@@ -1549,6 +1549,10 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(MaterialSourceForm form, BindException errors) throws Exception
         {
             ExpSampleSet ss = ExperimentService.get().getSampleSet(form.getBean().getRowId());
+            if (ss == null)
+            {
+                return HttpView.throwNotFound("Could not find sample set with rowId " + form.getBean().getRowId());
+            }
             HttpView.throwRedirect(ss.getType().urlEditDefinition(false, false));
             return null;
         }

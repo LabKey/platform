@@ -39,7 +39,10 @@ public class AssayListTable extends FilteredTable
 
         List<String> containerIds = new ArrayList<String>(2);
         containerIds.add(schema.getContainer().getId());
-        containerIds.add(schema.getContainer().getProject().getId());
+        if (schema.getContainer().getProject() != null)
+        {
+            containerIds.add(schema.getContainer().getProject().getId());
+        }
         addInClause(_rootTable.getColumn("container"), containerIds);
         addCondition(_rootTable.getColumn("ApplicationType"), "ExperimentRun");
 

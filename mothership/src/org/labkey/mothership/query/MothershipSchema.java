@@ -39,6 +39,8 @@ public class MothershipSchema extends UserSchema
     public static final String SERVER_INSTALLATIONS_TABLE_NAME = "ServerInstallations";
     public static final String SERVER_SESSIONS_TABLE_NAME = "ServerSessions";
     public static final String EXCEPTION_REPORT_TABLE_NAME = "ExceptionReport";
+    public static final String EXCEPTION_STACK_TRACE_TABLE_NAME = "ExceptionStackTrace";
+    public static final String SOFTWARE_RELEASES_TABLE_NAME = "SoftwareReleases";
 
     private static Set<String> TABLE_NAMES = Collections.unmodifiableSet(new LinkedHashSet<String>(
         Arrays.asList(SERVER_INSTALLATIONS_TABLE_NAME, SERVER_SESSIONS_TABLE_NAME, EXCEPTION_REPORT_TABLE_NAME)
@@ -75,6 +77,18 @@ public class MothershipSchema extends UserSchema
         {
             return createServerSessionTable(alias);
         }
+        else if (name.equalsIgnoreCase(EXCEPTION_STACK_TRACE_TABLE_NAME))
+        {
+            FilteredTable result = createExceptionStackTraceTable();
+            result.setAlias(alias);
+            return result;
+        }
+        else if (name.equalsIgnoreCase(SOFTWARE_RELEASES_TABLE_NAME))
+        {
+            FilteredTable result = createSoftwareReleasesTable();
+            result.setAlias(alias);
+            return result;
+        }
         else if (name.equalsIgnoreCase(EXCEPTION_REPORT_TABLE_NAME))
         {
             FilteredTable result = createExceptionReportTable();
@@ -82,6 +96,24 @@ public class MothershipSchema extends UserSchema
             return result;
         }
         return null;
+    }
+
+    public FilteredTable createSoftwareReleasesTable()
+    {
+        FilteredTable result = new FilteredTable(MothershipManager.get().getTableInfoSoftwareRelease(), getContainer());
+        result.wrapAllColumns(true);
+
+        result.getColumn("SVNURL").setWidth("500");
+
+        List<FieldKey> defaultCols = new ArrayList<FieldKey>();
+        defaultCols.add(FieldKey.fromParts("Description"));
+        defaultCols.add(FieldKey.fromParts("SVNRevision"));
+        defaultCols.add(FieldKey.fromParts("SVNURL"));
+        result.setDefaultVisibleColumns(defaultCols);
+
+        result.setDetailsURL(new DetailsURL(new ActionURL(MothershipController.ShowUpdateAction.class, getContainer()), Collections.singletonMap("softwareReleaseId", "SoftwareReleaseId")));
+
+        return result;
     }
 
     public FilteredTable createServerSessionTable(String alias)
@@ -223,6 +255,57 @@ public class MothershipSchema extends UserSchema
                 return new StackTraceDisplayColumn(colInfo);
             }
         });
+        ExprColumn lastReportColumn = new ExprColumn(result, "LastReport", new SQLFragment("(SELECT MAX(Created) FROM " +
+                MothershipManager.get().getTableInfoExceptionReport() + " er WHERE er.ExceptionStackTraceId = " +
+                ExprColumn.STR_TABLE_ALIAS + ".ExceptionStackTraceId)"), Types.TIMESTAMP);
+        result.addColumn(lastReportColumn);
+
+        ExprColumn firstReportColumn = new ExprColumn(result, "FirstReport", new SQLFragment("(SELECT MIN(Created) FROM " +
+                MothershipManager.get().getTableInfoExceptionReport() + " er WHERE er.ExceptionStackTraceId = " +
+                ExprColumn.STR_TABLE_ALIAS + ".ExceptionStackTraceId)"), Types.TIMESTAMP);
+        result.addColumn(firstReportColumn);
+
+        ExprColumn countColumn = new ExprColumn(result, "Instances", new SQLFragment("(SELECT COUNT(*) FROM " +
+                MothershipManager.get().getTableInfoExceptionReport() + " er WHERE er.ExceptionStackTraceId = " +
+                ExprColumn.STR_TABLE_ALIAS + ".ExceptionStackTraceId)"), Types.INTEGER);
+        result.addColumn(countColumn);
+
+        ExprColumn maxRevisionColumn = new ExprColumn(result, "MaxSVNRevision", new SQLFragment("(SELECT MAX(SVNRevision) FROM " +
+                MothershipManager.get().getTableInfoExceptionReport() + " er, " +
+                MothershipManager.get().getTableInfoSoftwareRelease() + " sr, " +
+                MothershipManager.get().getTableInfoServerSession() + " ss " +
+                " WHERE er.ExceptionStackTraceId = " + ExprColumn.STR_TABLE_ALIAS + ".ExceptionStackTraceId" +
+                " AND ss.ServerSessionId = er.ServerSessionId AND ss.SoftwareReleaseId = sr.SoftwareReleaseId)"), Types.INTEGER);
+        result.addColumn(maxRevisionColumn);
+
+        ExprColumn minRevisionColumn = new ExprColumn(result, "MinSVNRevision", new SQLFragment("(SELECT MIN(SVNRevision) FROM " +
+                MothershipManager.get().getTableInfoExceptionReport() + " er, " +
+                MothershipManager.get().getTableInfoSoftwareRelease() + " sr, " +
+                MothershipManager.get().getTableInfoServerSession() + " ss " +
+                " WHERE er.ExceptionStackTraceId = " + ExprColumn.STR_TABLE_ALIAS + ".ExceptionStackTraceId" +
+                " AND ss.ServerSessionId = er.ServerSessionId AND ss.SoftwareReleaseId = sr.SoftwareReleaseId)"), Types.INTEGER);
+        result.addColumn(minRevisionColumn);
+
+        ActionURL issueURL = new ActionURL("Issues", "details.view", MothershipManager.get().getIssuesContainer(getContainer()));
+        result.getColumn("BugNumber").setURL(issueURL.toString() + "issueId=${BugNumber}");
+
+        result.getColumn("ExceptionStackTraceId").setURL(new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer()) + "exceptionStackTraceId=${ExceptionStackTraceId}");
+        result.getColumn("ExceptionStackTraceId").setCaption("Exception");
+        result.getColumn("ExceptionStackTraceId").setFormatString("'#'0");
+
+
+        List<FieldKey> defaultCols = new ArrayList<FieldKey>();
+        defaultCols.add(FieldKey.fromParts("ExceptionStackTraceId"));
+        defaultCols.add(FieldKey.fromParts("Instances"));
+        defaultCols.add(FieldKey.fromParts("MinSVNRevision"));
+        defaultCols.add(FieldKey.fromParts("MaxSVNRevision"));
+        defaultCols.add(FieldKey.fromParts("FirstReport"));
+        defaultCols.add(FieldKey.fromParts("LastReport"));
+        defaultCols.add(FieldKey.fromParts("BugNumber"));
+        defaultCols.add(FieldKey.fromParts("AssignedTo"));
+        defaultCols.add(FieldKey.fromParts("StackTrace"));
+        result.setDefaultVisibleColumns(defaultCols);
+
         return result;
     }
 

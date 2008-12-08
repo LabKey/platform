@@ -94,6 +94,67 @@ public class MothershipManager
         }
     }
 
+    public SoftwareRelease ensureSoftwareRelease(Container container, Integer svnRevision, String svnURL)
+    {
+        try
+        {
+            SimpleFilter filter = new SimpleFilter();
+            if (svnRevision == null)
+            {
+                filter.addCondition("SVNRevision", null, CompareType.ISBLANK);
+            }
+            else
+            {
+                filter.addCondition("SVNRevision", svnRevision);
+            }
+
+            if (svnURL == null)
+            {
+                filter.addCondition("SVNURL", null, CompareType.ISBLANK);
+            }
+            else
+            {
+                filter.addCondition("SVNURL", svnURL);
+            }
+            filter.addCondition("Container", container.getId());
+            SoftwareRelease result = Table.selectObject(getTableInfoSoftwareRelease(), filter, null, SoftwareRelease.class);
+            if (result == null)
+            {
+                result = new SoftwareRelease();
+                result.setSVNRevision(svnRevision);
+                result.setSVNURL(svnURL);
+                result.setContainer(container.getId());
+                if (svnURL != null)
+                {
+                    if (svnURL.startsWith("https://hedgehog.fhcrc.org/tor/stedi/"))
+                    {
+                        String description = svnURL.substring("https://hedgehog.fhcrc.org/tor/stedi/".length());
+                        if (description.endsWith("/server"))
+                        {
+                            description = description.substring(0, description.length() - "/server".length());
+                        }
+                        if (description.startsWith("branches/"))
+                        {
+                            description = description.substring("branches/".length());
+                        }
+                        if (svnRevision != null)
+                        {
+                            description = description + " - " + svnRevision;
+                        }
+                        result.setDescription(description);
+                    }
+                }
+                result = Table.insert(null, getTableInfoSoftwareRelease(), result);
+            }
+            return result;
+
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
     public ServerInstallation getServerInstallation(String serverGUID, String containerId) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter("ServerInstallationGUID", serverGUID);
@@ -245,11 +306,6 @@ public class MothershipManager
         return getSchema().getTable("ServerSession");
     }
 
-    public TableInfo getTableInfoServerInstallationWithSession()
-    {
-        return getSchema().getTable("ServerInstallationWithSession");
-    }
-
     public TableInfo getTableInfoServerInstallation()
     {
         return getSchema().getTable("ServerInstallation");
@@ -260,28 +316,17 @@ public class MothershipManager
         return getSchema().getSqlDialect();
     }
 
-    public TableInfo getTableInfoExceptionSummary()
-    {
-        return getSchema().getTable("ExceptionSummary");
-    }
-
-    public TableInfo getTableInfoExceptionReportSummary()
-    {
-        return getSchema().getTable("ExceptionReportSummary");
-    }
-
-
-    private PropertyManager.PropertyMap getWritableProperties(Container c) throws SQLException
+    private PropertyManager.PropertyMap getWritableProperties(Container c)
     {
         return PropertyManager.getWritableProperties(0, c.getId(), UPGRADE_MESSAGE_PROPERTY_CATEGORY, true);
     }
 
-    private Map getProperties(Container c) throws SQLException
+    private Map getProperties(Container c)
     {
         return PropertyManager.getProperties(0, c.getId(), UPGRADE_MESSAGE_PROPERTY_CATEGORY, true);
     }
 
-    public int getCurrentRevision(Container c) throws SQLException
+    public int getCurrentRevision(Container c)
     {
         Map props = getProperties(c);
         String rev = (String)props.get(CURRENT_REVISION_PROP);
@@ -292,7 +337,7 @@ public class MothershipManager
         return Integer.parseInt(rev);
     }
 
-    private String getStringProperty(Container c, String name) throws SQLException
+    private String getStringProperty(Container c, String name)
     {
         Map props = getProperties(c);
         String message = (String)props.get(name);
@@ -303,7 +348,7 @@ public class MothershipManager
         return message;
     }
 
-    public String getUpgradeMessage(Container c) throws SQLException
+    public String getUpgradeMessage(Container c)
     {
         return getStringProperty(c, UPGRADE_MESSAGE_PROP);
     }
@@ -340,7 +385,7 @@ public class MothershipManager
         Table.update(user, getTableInfoExceptionStackTrace(), stackTrace, stackTrace.getExceptionStackTraceId(), null);
     }
 
-    public String getIssuesContainer(Container c) throws SQLException
+    public String getIssuesContainer(Container c)
     {
         return getStringProperty(c, ISSUES_CONTAINER_PROP);
     }
@@ -365,7 +410,7 @@ public class MothershipManager
     public SoftwareRelease updateSoftwareRelease(Container container, User user, SoftwareRelease bean) throws SQLException
     {
         bean.setContainer(container.getId());
-        return Table.update(user, getTableInfoSoftwareRelease(), bean, bean.getReleaseId(), null);
+        return Table.update(user, getTableInfoSoftwareRelease(), bean, bean.getSoftwareReleaseId(), null);
     }
 
     public ServerInstallation[] getServerInstallationsActiveOn(Calendar cal) throws SQLException

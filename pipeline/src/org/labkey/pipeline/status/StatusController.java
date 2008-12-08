@@ -1032,27 +1032,21 @@ public class StatusController extends SpringActionController
         bb.add(showData);
 
         // escalate pipeline failure button
-        try
+        PipelineStatusFile sf = getStatusFile(rowId);
+        if (sf == null)
         {
-            PipelineStatusFile sf = getStatusFile(Integer.valueOf(rowId));
-            if (sf != null && !PipelineJob.COMPLETE_STATUS.equals(sf.getStatus()))
+            HttpView.throwNotFound("Could not find status file for rowId " + rowId);
+        }
+        
+        if (sf != null && !PipelineJob.COMPLETE_STATUS.equals(sf.getStatus()))
+        {
+            final String escalationUsers = PipelineEmailPreferences.get().getEscalationUsers(c);
+            if (!StringUtils.isEmpty(escalationUsers))
             {
-                final String escalationUsers = PipelineEmailPreferences.get().getEscalationUsers(c);
-                if (!StringUtils.isEmpty(escalationUsers))
-                {
-                    ActionButton escalate = new ActionButton("escalateJobFailure.view?rowId=${rowId}", "Escalate Job Failure");
-                    escalate.setActionType(ActionButton.Action.LINK);
-                    bb.add(escalate);
-                }
+                ActionButton escalate = new ActionButton("escalateJobFailure.view?rowId=${rowId}", "Escalate Job Failure");
+                escalate.setActionType(ActionButton.Action.LINK);
+                bb.add(escalate);
             }
-        }
-        catch (NumberFormatException nfe)
-        {
-            _log.error("Invalid row ID showing details.", nfe);
-        }
-        catch (SQLException e)
-        {
-            _log.error("Failed setting up escalation action", e);
         }
         rgn.setButtonBar(bb, DataRegion.MODE_DETAILS);
 

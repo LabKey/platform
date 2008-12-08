@@ -380,7 +380,7 @@ public class PipelineController extends SpringActionController
                     keyPair = pipeRoot.getGlobusKeyPair();
                     usePerlPipeline = pipeRoot.isPerlPipeline();
                 }
-                
+
                 SetupBean bean = new SetupBean(confirmMessage, strValue, doneURL, keyPair, usePerlPipeline);                
                 JspView<SetupBean> jspView = new JspView<SetupBean>("/org/labkey/pipeline/setup.jsp", bean, errors);
 

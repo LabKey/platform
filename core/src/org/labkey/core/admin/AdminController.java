@@ -101,6 +101,8 @@ public class AdminController extends SpringActionController
         // Diagnostics
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "running threads", new ActionURL(ShowThreadsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "memory usage", new ActionURL(MemTrackerAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "environment variables", new ActionURL(EnvironmentVariablesAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "system properties", new ActionURL(SystemPropertiesAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "scripts", new ActionURL(ScriptsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "groovy templates", new ActionURL(GroovyAction.class, root));
@@ -2290,6 +2292,33 @@ public class AdminController extends SpringActionController
         }
     }
 
+    @RequiresSiteAdmin
+    public class EnvironmentVariablesAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView<Map<String, String>>("/org/labkey/core/admin/properties.jsp", System.getenv());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "Environment Variables", this.getClass());
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class SystemPropertiesAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView<Map<String, String>>("/org/labkey/core/admin/properties.jsp", new HashMap(System.getProperties()));
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "System Properties", this.getClass());
+        }
+    }
 
     private static class ActionsTabStrip extends TabStripView
     {

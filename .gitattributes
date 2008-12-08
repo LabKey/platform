@@ -377,6 +377,7 @@ core/src/org/labkey/core/admin/manageFolders.jsp -text
 core/src/org/labkey/core/admin/memTracker.jsp -text
 core/src/org/labkey/core/admin/moduleErrors.jsp -text
 core/src/org/labkey/core/admin/moveFolder.jsp -text
+core/src/org/labkey/core/admin/properties.jsp -text
 core/src/org/labkey/core/admin/renameFolder.jsp -text
 core/src/org/labkey/core/admin/reorderFolders.jsp -text
 core/src/org/labkey/core/admin/sql/ShowRunningScriptsPage.java -text
@@ -875,6 +876,7 @@ mothership/src/META-INF/mothership/scripts/postgresql/mothership-0.00-2.10.sql -
 mothership/src/META-INF/mothership/scripts/postgresql/mothership-2.10-2.20.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/mothership-2.20-2.30.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/mothership-2.30-8.10.sql -text
+mothership/src/META-INF/mothership/scripts/postgresql/mothership-8.30-8.31.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/mothership-create.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/mothership-drop.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/obsolete/mothership-0.00-0.10.sql -text
@@ -893,6 +895,7 @@ mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-0.00-2.10.
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-2.10-2.20.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-2.20-2.30.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-2.30-8.10.sql -text
+mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-8.30-8.31.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-create.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-drop.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/obsolete/mothership-0.00-0.10.sql -text

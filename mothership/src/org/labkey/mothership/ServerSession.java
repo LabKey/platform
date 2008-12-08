@@ -31,7 +31,7 @@ public class ServerSession
     private Date _lastKnownTime;
     private String _container;
 
-    private Integer _svnRevision;
+    private int _softwareReleaseId;
     private String _databaseProductVersion;
     private String _databaseProductName;
     private String _databaseDriverVersion;
@@ -133,14 +133,14 @@ public class ServerSession
         _container = container;
     }
 
-    public void setSvnRevision(Integer svnRevision)
+    public int getSoftwareReleaseId()
     {
-        _svnRevision = svnRevision;
+        return _softwareReleaseId;
     }
 
-    public Integer getSvnRevision()
+    public void setSoftwareReleaseId(int softwareReleaseId)
     {
-        return _svnRevision;
+        _softwareReleaseId = softwareReleaseId;
     }
 
     public void setDatabaseProductVersion(String databaseProductVersion)

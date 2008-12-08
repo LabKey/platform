@@ -49,11 +49,17 @@ public class PipelineStatusManager
      *
      * @param rowId id field
      * @return the corresponding <code>PipelineStatusFileImpl</code>
-     * @throws SQLException database error
      */
-    public static PipelineStatusFileImpl getStatusFile(int rowId) throws SQLException
+    public static PipelineStatusFileImpl getStatusFile(int rowId)
     {
-        return getStatusFile(new SimpleFilter("RowId", new Integer(rowId)));
+        try
+        {
+            return getStatusFile(new SimpleFilter("RowId", new Integer(rowId)));
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     /**

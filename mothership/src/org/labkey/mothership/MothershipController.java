@@ -119,7 +119,6 @@ public class MothershipController extends SpringActionController
         public boolean handlePost(SoftwareReleaseForm form, BindException errors) throws Exception
         {
             SoftwareRelease release = form.getBean();
-            release.setSVNRevision(Integer.parseInt(getViewContext().getRequest().getParameter("svnrevision")));
             MothershipManager.get().updateSoftwareRelease(getContainer(), getUser(), release);
             return true;
         }
@@ -136,9 +135,16 @@ public class MothershipController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             HtmlView linkView = new HtmlView(getLinkBarHTML());
-            ReleaseGridView gridView = new ReleaseGridView();
 
-            return new VBox(linkView, gridView);
+            MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
+            QuerySettings settings = new QuerySettings(getViewContext(), "softwareReleases");
+            settings.setSchemaName(schema.getSchemaName());
+            settings.setQueryName(MothershipSchema.SOFTWARE_RELEASES_TABLE_NAME);
+            settings.setAllowChooseQuery(false);
+            
+            ReleaseQueryView queryView = new ReleaseQueryView(schema, settings);
+
+            return new VBox(linkView, queryView);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -335,9 +341,16 @@ public class MothershipController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             HtmlView linkView = new HtmlView(getLinkBarHTML());
-            ExceptionSummaryGridView gridView = new ExceptionSummaryGridView();
 
-            return new VBox(linkView, gridView);
+            MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
+            QuerySettings settings = new QuerySettings(getViewContext(), "exceptions");
+            settings.setSchemaName(schema.getSchemaName());
+            settings.setQueryName(MothershipSchema.EXCEPTION_STACK_TRACE_TABLE_NAME);
+            settings.setAllowChooseQuery(false);
+
+            ExceptionSummaryQueryView queryView = new ExceptionSummaryQueryView(schema, settings);
+
+            return new VBox(linkView, queryView);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -591,26 +604,26 @@ public class MothershipController extends SpringActionController
                 stackTrace.setStackTrace(form.getStackTrace());
                 stackTrace.setContainer(getContainer().getId());
 
-                ExceptionReport report = new ExceptionReport();
-                report.setURL(form.getRequestURL());
-                report.setUsernameform(form.getUsername());
-                report.setReferrerURL(form.getReferrerURL());
-                report.setSQLState(form.getSqlState());
-                report.setPageflowAction(form.getPageflowAction());
-                report.setPageflowName(form.getPageflowName());
-
                 ServerSession session = form.toSession(getContainer());
 
-                report.setBrowser(form.getBrowser());
 
                 ServerInstallation installation = new ServerInstallation();
                 installation.setServerIP(getViewContext().getRequest().getRemoteAddr());
                 installation.setServerInstallationGUID(form.getServerGUID());
 
                 session = MothershipManager.get().updateServerSession(session, installation, getContainer());
-                if (session.getSvnRevision() != null)
+                if (form.getSvnRevision() != null && form.getSvnURL() != null)
                 {
+                    ExceptionReport report = new ExceptionReport();
+                    report.setURL(form.getRequestURL());
+                    report.setUsernameform(form.getUsername());
+                    report.setReferrerURL(form.getReferrerURL());
+                    report.setSQLState(form.getSqlState());
+                    report.setPageflowAction(form.getPageflowAction());
+                    report.setPageflowName(form.getPageflowName());
+                    report.setBrowser(form.getBrowser());
                     report.setServerSessionId(session.getServerSessionId());
+                    
                     MothershipManager.get().insertException(stackTrace, report);
                 }
                 setSuccessHeader();
@@ -773,6 +786,7 @@ public class MothershipController extends SpringActionController
     public static abstract class ServerInfoForm extends ViewFormData
     {
         private String _svnRevision;
+        private String _svnURL;
         private String _runtimeOS;
         private String _javaVersion;
         private String _databaseProductName;
@@ -789,6 +803,16 @@ public class MothershipController extends SpringActionController
         private String _administratorEmail;
         private boolean _ldapEnabled;
         private boolean _enterprisePipelineEnabled;
+
+        public String getSvnURL()
+        {
+            return _svnURL;
+        }
+
+        public void setSvnURL(String svnURL)
+        {
+            _svnURL = svnURL;
+        }
 
         public String getRuntimeOS()
         {
@@ -946,8 +970,10 @@ public class MothershipController extends SpringActionController
         public ServerSession toSession(Container container)
         {
             ServerSession session = new ServerSession();
+            SoftwareRelease release = MothershipManager.get().ensureSoftwareRelease(container, parseSvnRevision(), getSvnURL());
+            session.setSoftwareReleaseId(release.getSoftwareReleaseId());
+
             session.setServerSessionGUID(getServerSessionGUID());
-            session.setSvnRevision(parseSvnRevision());
             session.setDatabaseDriverName(getDatabaseDriverName());
             session.setDatabaseDriverVersion(getDatabaseDriverVersion());
             session.setDatabaseProductName(getDatabaseProductName());
@@ -1127,29 +1153,19 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    public class ExceptionSummaryGridView extends GridView
+    public class ExceptionSummaryQueryView extends QueryView
     {
-        public ExceptionSummaryGridView() throws SQLException, ServletException
+        public ExceptionSummaryQueryView(MothershipSchema schema, QuerySettings settings) throws SQLException, ServletException
         {
-            super(new DataRegion());
+            super(schema, settings);
+        }
 
-            getDataRegion().addColumns(MothershipManager.get().getTableInfoExceptionSummary(), "ExceptionStackTraceId,Instances,StackTrace,MinSVNRevision,MaxSVNRevision,FirstReport,LastReport,BugNumber,AssignedTo");
-            getDataRegion().removeColumns("StackTrace");
-            getDataRegion().addDisplayColumn(new StackTraceDisplayColumn(MothershipManager.get().getTableInfoExceptionSummary().getColumn("StackTrace")));
-            getDataRegion().getDisplayColumn("ExceptionStackTraceId").setURL(getViewContext().getActionURL().relativeUrl("showStackTraceDetail", "exceptionStackTraceId=${ExceptionStackTraceId}"));
-            getDataRegion().getDisplayColumn("ExceptionStackTraceId").setCaption("Exception");
-            getDataRegion().getDisplayColumn("ExceptionStackTraceId").setFormatString("'#'0");
-            ActionURL issueURL = getViewContext().getActionURL().clone();
-            issueURL.deleteParameters();
-            issueURL.setPageFlow("Issues");
-            issueURL.setExtraPath(MothershipManager.get().getIssuesContainer(getContainer()));
-            issueURL.setAction("details.view");
-            getDataRegion().getDisplayColumn("BugNumber").setURL(issueURL.toString() + "issueId=${BugNumber}");
-            getRenderContext().setBaseSort(new Sort("-ExceptionStackTraceId"));
-
-            ButtonBar bb = new ButtonBar();
-
-            getDataRegion().setButtonBar(bb);
+        @Override
+        public DataView createDataView()
+        {
+            DataView result = super.createDataView();
+            result.getRenderContext().setBaseSort(new Sort("-ExceptionStackTraceId"));
+            return result;
         }
     }
 
@@ -1184,16 +1200,17 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    public class ReleaseGridView extends GridView
+    public class ReleaseQueryView extends QueryView
     {
-        public ReleaseGridView()
+        public ReleaseQueryView(MothershipSchema schema, QuerySettings settings)
         {
-            super(new DataRegion());
-            getRenderContext().setBaseSort(new Sort("SVNRevision"));
-            DataRegion region = getDataRegion();
-            region.addColumns(MothershipManager.get().getTableInfoSoftwareRelease(), "SVNRevision,Description");
-            region.getDisplayColumn("SVNRevision").setURL("showUpdate.view?releaseId=${ReleaseId}");
-            region.setShowRecordSelectors(true);
+            super(schema, settings);
+        }
+
+        protected void setupDataView(DataView view)
+        {
+            view.getRenderContext().setBaseSort(new Sort("-SVNRevision"));
+            super.setupDataView(view);
         }
     }
 

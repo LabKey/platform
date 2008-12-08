@@ -422,10 +422,9 @@ public class PipelineServiceImpl extends PipelineService
     private List<String> parseArray(String dbPaths)
     {
         if(dbPaths == null) return null;
-        if(dbPaths.length() == 0) return new ArrayList();
+        if(dbPaths.length() == 0) return new ArrayList<String>();
         String[] tokens = dbPaths.split("\\|");
-        ArrayList<String> dbPathsList = new ArrayList<String>(Arrays.asList(tokens));
-        return dbPathsList;
+        return new ArrayList<String>(Arrays.asList(tokens));
     }
 
     private String list2String(List<String> sequenceDbPathsList)

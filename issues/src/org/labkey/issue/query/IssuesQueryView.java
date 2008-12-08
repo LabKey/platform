@@ -48,8 +48,7 @@ public class IssuesQueryView extends QueryView
     {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
-        ResultSet rs = rgn.getResultSet(view.getRenderContext());
-        return rs;
+        return rgn.getResultSet(view.getRenderContext());
     }
 
     public DataView createDataView()
@@ -196,93 +195,12 @@ public class IssuesQueryView extends QueryView
         bar.add(prefsButton);
     }
 
-    public Map<String, String> getReports()
-    {
-        Map<String, String> reports = new HashMap<String, String>();
-        addReportsToChangeViewPicker(reports);
-
-        return reports;
-    }
-
     protected void setupDataView(DataView view)
     {
         // We need to set the base sort _before_ calling super.setupDataView.  If the user
         // has set a sort on their custom view, we want their sort to take precedence.
         view.getRenderContext().setBaseSort(new Sort("-IssueId"));
         super.setupDataView(view);
-    }
-
-    private static final String CUSTOM_VIEW_ALL = "all";
-    private static final String CUSTOM_VIEW_OPEN = "open";
-    private static final String CUSTOM_VIEW_RESOLVED = "resolved";
-
-    private void ensureDefaultCustomViews()
-    {
-        UserSchema schema = QueryService.get().getUserSchema(null, _context.getContainer(), IssuesQuerySchema.SCHEMA_NAME);
-        QueryDefinition qd = schema.getQueryDefForTable("Issues");
-        Map<String, CustomView> views = qd.getCustomViews(null, _context.getRequest());
-
-        if (!views.containsKey(CUSTOM_VIEW_ALL))
-        {
-            CustomView view = qd.createCustomView(null, CUSTOM_VIEW_ALL);
-            List<FieldKey> columns = new ArrayList<FieldKey>();
-
-            view.setIsHidden(true);
-            columns.add(FieldKey.fromParts("IssueId"));
-            columns.add(FieldKey.fromParts("Type"));
-            columns.add(FieldKey.fromParts("Area"));
-            columns.add(FieldKey.fromParts("Title"));
-            columns.add(FieldKey.fromParts("AssignedTo"));
-            columns.add(FieldKey.fromParts("Priority"));
-            columns.add(FieldKey.fromParts("Status"));
-            columns.add(FieldKey.fromParts("Milestone"));
-            view.setColumns(columns);
-
-            view.setFilterAndSortFromURL(new ActionURL().addParameter("Issues.sort", "-Milestone,AssignedTo/DisplayName"), "Issues");
-            view.save(null, null);
-        }
-
-        if (!views.containsKey(CUSTOM_VIEW_OPEN))
-        {
-            CustomView view = qd.createCustomView(null, CUSTOM_VIEW_OPEN);
-            List<FieldKey> columns = new ArrayList<FieldKey>();
-
-            view.setIsHidden(true);
-            columns.add(FieldKey.fromParts("IssueId"));
-            columns.add(FieldKey.fromParts("Type"));
-            columns.add(FieldKey.fromParts("Area"));
-            columns.add(FieldKey.fromParts("Title"));
-            columns.add(FieldKey.fromParts("AssignedTo"));
-            columns.add(FieldKey.fromParts("Priority"));
-            columns.add(FieldKey.fromParts("Status"));
-            columns.add(FieldKey.fromParts("Milestone"));
-            view.setColumns(columns);
-
-            view.setFilterAndSortFromURL(new ActionURL().addParameter("Issues.sort", "-Milestone,AssignedTo/DisplayName").
-                    addParameter("Issues.Status~eq", "open"), "Issues");
-            view.save(null, null);
-        }
-
-        if (!views.containsKey(CUSTOM_VIEW_RESOLVED))
-        {
-            CustomView view = qd.createCustomView(null, CUSTOM_VIEW_RESOLVED);
-            List<FieldKey> columns = new ArrayList<FieldKey>();
-
-            view.setIsHidden(true);
-            columns.add(FieldKey.fromParts("IssueId"));
-            columns.add(FieldKey.fromParts("Type"));
-            columns.add(FieldKey.fromParts("Area"));
-            columns.add(FieldKey.fromParts("Title"));
-            columns.add(FieldKey.fromParts("AssignedTo"));
-            columns.add(FieldKey.fromParts("Priority"));
-            columns.add(FieldKey.fromParts("Status"));
-            columns.add(FieldKey.fromParts("Milestone"));
-            view.setColumns(columns);
-
-            view.setFilterAndSortFromURL(new ActionURL().addParameter("Issues.sort", "-Milestone,AssignedTo/DisplayName").
-                    addParameter("Issues.Status~eq", "resolved"), "Issues");
-            view.save(null, null);
-        }
     }
 
     public ActionURL getCustomizeURL()

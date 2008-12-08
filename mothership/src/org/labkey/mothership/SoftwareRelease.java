@@ -22,8 +22,9 @@ package org.labkey.mothership;
  */
 public class SoftwareRelease
 {
-    private int _releaseId;
-    private int _SVNRevision;
+    private int _softwareReleaseId;
+    private Integer _SVNRevision;
+    private String _SVNURL;
     private String _description;
     private String _container;
 
@@ -37,12 +38,12 @@ public class SoftwareRelease
         _container = container;
     }
 
-    public int getSVNRevision()
+    public Integer getSVNRevision()
     {
         return _SVNRevision;
     }
 
-    public void setSVNRevision(int SVNRevision)
+    public void setSVNRevision(Integer SVNRevision)
     {
         _SVNRevision = SVNRevision;
     }
@@ -57,13 +58,23 @@ public class SoftwareRelease
         _description = description;
     }
 
-    public int getReleaseId()
+    public int getSoftwareReleaseId()
     {
-        return _releaseId;
+        return _softwareReleaseId;
     }
 
-    public void setReleaseId(int releaseId)
+    public void setSoftwareReleaseId(int softwareReleaseId)
     {
-        _releaseId = releaseId;
+        _softwareReleaseId = softwareReleaseId;
+    }
+
+    public String getSVNURL()
+    {
+        return _SVNURL;
+    }
+
+    public void setSVNURL(String SVNURL)
+    {
+        _SVNURL = SVNURL;
     }
 }

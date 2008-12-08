@@ -21,6 +21,7 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.data.*;
+import org.labkey.study.controllers.assay.AssayController;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -64,7 +65,7 @@ public class AssayListPortalView extends AssayListQueryView
     protected void renderView(Object model, PrintWriter out) throws Exception
     {
         super.renderView(model, out);
-        out.write(textLink("Manage Assays", new ActionURL("assay", "begin.view", getContainer())));
+        out.write(textLink("Manage Assays", new ActionURL(AssayController.BeginAction.class, getContainer())));
     }
 
     protected void populateButtonBar(DataView view, ButtonBar bar)
