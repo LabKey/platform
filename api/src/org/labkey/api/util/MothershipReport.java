@@ -204,7 +204,7 @@ public class MothershipReport implements Runnable
         {
             addParam("svnRevision", coreModule.getSvnRevision());
         }
-        String svnURL = coreModuleProperties.get("SVNURL");
+        String svnURL = coreModule.getSvnUrl();
         if (svnURL != null)
         {
             addParam("svnURL", svnURL);

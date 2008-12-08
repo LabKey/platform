@@ -171,6 +171,7 @@ public interface Module
     public String getSourcePath();
     public String getBuildPath();
     public String getSvnRevision();
+    public String getSvnUrl();
     public Map<String, String> getProperties();
     public Set<String> getModuleDependenciesAsSet();
 

@@ -182,6 +182,11 @@ public class MockModule implements Module
         return null;
     }
 
+    public String getSvnUrl()
+    {
+        return null;
+    }
+
     public Map<String, String> getProperties()
     {
         return null;
