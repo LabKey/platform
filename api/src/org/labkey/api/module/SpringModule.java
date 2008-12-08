@@ -120,7 +120,7 @@ public abstract class SpringModule extends DefaultModule implements ServletConte
 
         List<String> result = new ArrayList<String>();
         // Add the location of the context XML inside the module
-        result.add("/WEB-INF/" + prefix + "/" + prefix + "Context.xml");
+        result.add("/WEB-INF/" + prefix + "Context.xml");
 
         if (ContextType.config.equals(getContextType()))
         {

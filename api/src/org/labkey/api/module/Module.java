@@ -18,15 +18,19 @@ package org.labkey.api.module;
 import junit.framework.TestCase;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.SqlDialect;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.common.util.Pair;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.ServletContext;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.io.File;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -161,14 +165,45 @@ public interface Module
      */
     public Set<String> getSchemaNames();
 
-    public void setMetaData(ModuleMetaData metaData);
-    public ModuleMetaData getMetaData();
     public InputStream getResourceStreamFromWebapp(ServletContext ctx, String filename) throws FileNotFoundException;
     public InputStream getResourceStream(String filename) throws FileNotFoundException;
     public Pair<InputStream, Long> getResourceStreamIfChanged(String filename, long tsPrevious) throws FileNotFoundException;
     public String getSourcePath();
     public String getBuildPath();
+    public String getSvnRevision();
+    public Map<String, String> getProperties();
+    public Set<String> getModuleDependenciesAsSet();
 
     /** Get a list of attributions (in HTML) that should be shown before users can log in. */
     public List<String> getAttributions();
+
+    /**
+     * Returns the exploded path for the module.
+     * @return The path to the exploded module directory
+     */
+    public File getExplodedPath();
+
+    /**
+     * This is called by the module loader to let the module know where it's exploded path is
+     * so that the module can later load resources.
+     * @param path The path to the module's exploded directory
+     */
+    public void setExplodedPath(File path);
+
+    /**
+     * Returns a list of sql script file names for a given schema name,
+     * or all sql script names if the schema name is null.
+     * @param schemaName The schema name, or null
+     * @param dialect The desired sql dialect
+     * @return The list of sql script names
+     */
+    public Set<String> getSqlScripts(@Nullable String schemaName, @NotNull SqlDialect dialect);
+
+    /**
+     * Returns the file path for this modules sql scripts
+     * @param dialect The sql dialect for the scripts
+     * @return The script file path
+     */
+    public String getSqlScriptsPath(@NotNull SqlDialect dialect);
+
 }

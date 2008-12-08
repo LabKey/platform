@@ -23,7 +23,6 @@ import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.CaseInsensitiveHashSet;
 
 import java.io.*;
 import java.util.*;
@@ -62,7 +61,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
     // schemaName = null returns all scripts
     public List<SqlScript> getScripts(String schemaName) throws SqlScriptException
     {
-        List<String> filenames = getScriptFilenames(schemaName);
+        Set<String> filenames = getScriptFilenames(schemaName);
 
         List<SqlScript> scripts = new ArrayList<SqlScript>(filenames.size());
 
@@ -95,35 +94,14 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             schemaName == <schema>      <schema>*.sql
 
     */
-    private List<String> getScriptFilenames(String schemaName) throws SqlScriptException
+    private Set<String> getScriptFilenames(String schemaName) throws SqlScriptException
     {
-        String path = getScriptPath();
-        Set<String> filenames = _module.getManifest(path, "manifest.txt");
-
-        if (null == filenames)
-            throw new SqlScriptException("Script directory does not exist", path);
-
-        CaseInsensitiveHashSet validFilenames = new CaseInsensitiveHashSet(filenames.size());
-
-        // Get rid of path.  Only take SQL files that start with specified schema name.
-        for (String fileName : filenames)
-        {
-            int index = fileName.lastIndexOf('/');
-
-            if (-1 != index)
-                fileName = fileName.substring(index + 1);
-
-            if (fileName.endsWith(".sql") && (null == schemaName || fileName.startsWith(schemaName)))
-                validFilenames.add(fileName);
-        }
+        Set<String> filenames = _module.getSqlScripts(schemaName, CoreSchema.getInstance().getSqlDialect());
 
         // Every script directory should have at least one script... but don't fail in production mode.
-        assert !validFilenames.isEmpty() : "SQL script directory " + path + " has no valid scripts";
+        assert !filenames.isEmpty() : "No SQL scripts found for schema " + schemaName;
 
-        List<String> list = new ArrayList<String>(validFilenames);
-        Collections.sort(list);
-
-        return list;
+        return filenames;
     }
 
     public List<SqlScript> getDropScripts() throws SqlScriptException
@@ -158,7 +136,8 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
         try
         {
-            is = _module.getResourceStream(getScriptPath() + "/" + filename);
+            File path = new File(_module.getSqlScriptsPath(CoreSchema.getInstance().getSqlDialect()), filename);
+            is = _module.getResourceStream(path.getPath());
 
             // TODO: use PageFlowUtil.getStreamContentsAsString()?
             br = new BufferedReader(new InputStreamReader(is));
@@ -211,7 +190,8 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         if (!AppProps.getInstance().isDevMode())
             throw new IllegalStateException("Can't save scripts while in production mode");
 
-        File file = new File(_module.getSourcePath() + "/src" + getScriptPath() + "/" + description);
+        File scriptsDir = new File(_module.getSourcePath(), _module.getSqlScriptsPath(CoreSchema.getInstance().getSqlDialect()));
+        File file = new File(scriptsDir, description);
 
         if (file.exists() && !overwrite)
             throw new IllegalStateException("File " + file.getAbsolutePath() + " already exists");
@@ -234,11 +214,6 @@ public class FileSqlScriptProvider implements SqlScriptProvider
     public UpgradeCode getUpgradeCode()
     {
         return _module.getUpgradeCode();
-    }
-
-    private String getScriptPath()
-    {
-        return "/META-INF/" + _module.getName().toLowerCase() +  "/scripts/" + CoreSchema.getInstance().getSqlDialect().getSQLScriptPath();
     }
 
     public static class FileSqlScript implements SqlScript

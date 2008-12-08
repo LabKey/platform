@@ -20,11 +20,13 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.view.*;
+import org.labkey.api.settings.AppProps;
 import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.mvc.Controller;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.ServletContext;
 import java.io.*;
@@ -47,10 +49,21 @@ public abstract class DefaultModule implements Module
     private final Map<Class, String> _pageFlowClassToName = new HashMap<Class, String>();
     private final Collection<? extends WebPartFactory> _webPartFactories;
 
-    private ModuleMetaData _metaData;
     private boolean _loadFromSource;
-    private String _buildPath;
-    private String _sourcePath;
+    private String _name = null;
+    private double _version = 0.0;
+    private double _requiredServerVersion = 0.0;
+    private Set<String> _moduleDependencies = new CaseInsensitiveHashSet();
+    private String _moduleDependenciesString = null;
+    private String _svnRevision = null;
+    private String _svnUrl = null;
+    private String _buildUser = null;
+    private String _buildTime = null;
+    private String _buildOS = null;
+    private String _buildPath = null;
+    private String _sourcePath = null;
+    private File _explodedPath = null;
+
 
     private enum SchemaUpdateType
     {
@@ -89,10 +102,22 @@ public abstract class DefaultModule implements Module
         }
 
         ModuleLoader.getInstance().registerResourcePrefix(getResourcePath(), this);
-        ModuleLoader.getInstance().registerResourcePrefix(getResourcePath(), new ResourceFinder(this));
+        if(null != getSourcePath() && null != getBuildPath())
+            ModuleLoader.getInstance().registerResourcePrefix(getResourcePath(), new ResourceFinder(this));
 
-        for (WebPartFactory part : getWebPartFactories())
-            part.setModule(this);
+        Collection<? extends WebPartFactory> wpFactories = getWebPartFactories();
+        if(null != wpFactories)
+        {
+            for (WebPartFactory part : wpFactories)
+                part.setModule(this);
+        }
+
+        if (AppProps.getInstance().isDevMode() && _sourcePath != null)
+        {
+            File f = new File(_sourcePath);
+            if (f.exists())
+                _loadFromSource = true;
+        }
 
         init();
     }
@@ -279,24 +304,110 @@ public abstract class DefaultModule implements Module
         return Collections.emptySet();
     }
 
-    public void setMetaData(ModuleMetaData metaData)
+    public String getName()
     {
-        _metaData = metaData;
-        _loadFromSource = false;
-        _buildPath = _metaData.getBuildPath();
-        _sourcePath = _metaData.getSourcePath();
+        return _name;
+    }
 
-        if (AppProps.getInstance().isDevMode() && _sourcePath != null)
+    public void setName(String name)
+    {
+        _name = name;
+    }
+
+    public double getVersion()
+    {
+        return _version;
+    }
+
+    public void setVersion(double version)
+    {
+        _version = version;
+    }
+
+    public double getRequiredServerVersion()
+    {
+        return _requiredServerVersion;
+    }
+
+    public void setRequiredServerVersion(double requiredServerVersion)
+    {
+        _requiredServerVersion = requiredServerVersion;
+    }
+
+    public Set<String> getModuleDependenciesAsSet()
+    {
+        return _moduleDependencies;
+    }
+
+    public void setModuleDependencies(String dependencies)
+    {
+        _moduleDependenciesString = dependencies;
+
+        if(null == dependencies || dependencies.length() == 0)
+            return;
+
+        String[] depArray = dependencies.split(",");
+        for (String dependency : depArray)
         {
-            File f = new File(_sourcePath);
-            if (f.exists())
-                _loadFromSource = true;
+            dependency = dependency.trim();
+            if (dependency.length() > 0)
+                _moduleDependencies.add(dependency.toLowerCase());
         }
     }
 
-    public ModuleMetaData getMetaData()
+    public String getModuleDependencies()
     {
-        return _metaData;
+        return _moduleDependenciesString;
+    }
+
+    public String getSvnRevision()
+    {
+        return _svnRevision;
+    }
+
+    public void setSvnRevision(String svnRevision)
+    {
+        _svnRevision = svnRevision;
+    }
+
+    public String getSvnUrl()
+    {
+        return _svnUrl;
+    }
+
+    public void setSvnUrl(String svnUrl)
+    {
+        _svnUrl = svnUrl;
+    }
+
+    public String getBuildUser()
+    {
+        return _buildUser;
+    }
+
+    public void setBuildUser(String buildUser)
+    {
+        _buildUser = buildUser;
+    }
+
+    public String getBuildTime()
+    {
+        return _buildTime;
+    }
+
+    public void setBuildTime(String buildTime)
+    {
+        _buildTime = buildTime;
+    }
+
+    public String getBuildOS()
+    {
+        return _buildOS;
+    }
+
+    public void setBuildOS(String buildOS)
+    {
+        _buildOS = buildOS;
     }
 
     public String getSourcePath()
@@ -304,14 +415,81 @@ public abstract class DefaultModule implements Module
         return _sourcePath;
     }
 
+    public void setSourcePath(String sourcePath)
+    {
+        _sourcePath = sourcePath;
+    }
+
     public String getBuildPath()
     {
         return _buildPath;
     }
 
+    public void setBuildPath(String buildPath)
+    {
+        _buildPath = buildPath;
+    }
+
+    public Map<String, String> getProperties()
+    {
+        Map<String,String> props = new HashMap<String,String>();
+        
+        props.put("Module Class", getClass().toString());
+        props.put("Build Path", getBuildPath());
+        props.put("SVN URL", getSvnUrl());
+        props.put("SVN Revision", getSvnRevision());
+        props.put("Build OS", getBuildOS());
+        props.put("Build Time", getBuildTime());
+        props.put("Build User", getBuildUser());
+        props.put("Build Path", getBuildPath());
+        props.put("Module Dependencies", getModuleDependencies());
+
+        return props;
+    }
+
     public List<String> getAttributions()
     {
         return Collections.emptyList();
+    }
+
+    public File getExplodedPath()
+    {
+        return _explodedPath;
+    }
+
+    public void setExplodedPath(File path)
+    {
+        _explodedPath = path;
+    }
+
+    public Set<String> getSqlScripts(@Nullable String schemaName, @NotNull SqlDialect dialect)
+    {
+        Set<String> fileNames = new HashSet<String>();
+        File dir;
+        if(_loadFromSource)
+            dir = new File(_sourcePath, getSqlScriptsPath(dialect));
+        else
+            dir = new File(_explodedPath, getSqlScriptsPath(dialect));
+            
+        if(dir.exists() && dir.isDirectory())
+        {
+            for(File script : dir.listFiles())
+            {
+                String name = script.getName().toLowerCase();
+                if(name.endsWith(".sql") && (null == schemaName || name.startsWith(schemaName + "-")))
+                    fileNames.add(script.getName());
+            }
+        }
+
+        return fileNames;
+    }
+
+    public String getSqlScriptsPath(@NotNull SqlDialect dialect)
+    {
+        if(_loadFromSource)
+            return "/src/META-INF/" + getName().toLowerCase() + "/scripts/" + dialect.getSQLScriptPath(true) + "/";
+        else
+            return "schemas/dbscripts/" + dialect.getSQLScriptPath(false) + "/";
     }
 
     public InputStream getResourceStreamFromWebapp(ServletContext ctx, String path) throws FileNotFoundException
@@ -344,50 +522,19 @@ public abstract class DefaultModule implements Module
 
     public InputStream getResourceStream(String path) throws FileNotFoundException
     {
-        if (_loadFromSource)
-        {
-            File f = new File(_sourcePath, "/src" + path);
-            return new FileInputStream(f);
-        }
+        //first try to get this from the exploded/source directory,
+        //and if not found, try the class loader
+        File file = null;
+        if(_loadFromSource)
+            file = new File(_sourcePath, path);
+        else
+            file = new File(_explodedPath, path);
+
+        if(file.exists())
+            return new FileInputStream(file);
         else
             return this.getClass().getResourceAsStream(path);
     }
-
-
-    // Returns NULL if path does not exist.  Returns empty set if path exists but has no files.
-    public Set<String> getManifest(String path, String filename)
-    {
-        Set<String> fileNames = null;
-
-        if (_loadFromSource)
-        {
-            File dir = new File(_sourcePath, "/src" + path);
-
-            if (dir.exists())
-            {
-                fileNames = new HashSet<String>();
-
-                for (File file : dir.listFiles())
-                    fileNames.add(file.getName());
-            }
-        }
-        else
-        {
-            InputStream s = this.getClass().getResourceAsStream(path + "/" + filename);
-
-            try
-            {
-                fileNames = new HashSet<String>(PageFlowUtil.getStreamContentsAsList(s));
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-
-        return fileNames;
-    }
-
 
     @Override
     public String toString()

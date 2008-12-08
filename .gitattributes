@@ -270,14 +270,19 @@ api/src/org/labkey/api/module/AllowedDuringUpgrade.java -text
 api/src/org/labkey/api/module/DefaultModule.java -text
 api/src/org/labkey/api/module/FirstRequestHandler.java -text
 api/src/org/labkey/api/module/FolderType.java -text
+api/src/org/labkey/api/module/MockModule.java -text
 api/src/org/labkey/api/module/Module.java -text
 api/src/org/labkey/api/module/ModuleContext.java -text
 api/src/org/labkey/api/module/ModuleDependencySorter.java -text
+api/src/org/labkey/api/module/ModuleFileCopyListener.java -text
 api/src/org/labkey/api/module/ModuleLoader.java -text
-api/src/org/labkey/api/module/ModuleMetaData.java -text
+api/src/org/labkey/api/module/ModuleReportLoader.java -text
+api/src/org/labkey/api/module/ModuleResourceLoadException.java -text
+api/src/org/labkey/api/module/ModuleResourceLoader.java -text
 api/src/org/labkey/api/module/ModuleUpgrader.java -text
 api/src/org/labkey/api/module/ResourceFinder.java -text
 api/src/org/labkey/api/module/SafeFlushResponseWrapper.java -text
+api/src/org/labkey/api/module/SimpleModule.java -text
 api/src/org/labkey/api/module/SpringModule.java -text
 api/src/org/labkey/api/ms1/MS1Service.java -text
 api/src/org/labkey/api/ms1/MS1Urls.java -text
@@ -444,6 +449,7 @@ api/src/org/labkey/api/reports/report/ChartReport.java -text
 api/src/org/labkey/api/reports/report/ChartReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/CustomRReport.java -text
 api/src/org/labkey/api/reports/report/DefaultScriptRunner.java -text
+api/src/org/labkey/api/reports/report/ModuleRReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/QueryReport.java -text
 api/src/org/labkey/api/reports/report/QueryReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/RReport.java -text
@@ -600,6 +606,7 @@ api/src/org/labkey/api/util/ContextListener.java -text
 api/src/org/labkey/api/util/ExceptionReportingLevel.java -text
 api/src/org/labkey/api/util/ExceptionUtil.java -text
 api/src/org/labkey/api/util/Expression.java -text
+api/src/org/labkey/api/util/FileCopyListener.java -text
 api/src/org/labkey/api/util/FileType.java -text
 api/src/org/labkey/api/util/FileUtil.java -text
 api/src/org/labkey/api/util/FolderDisplayMode.java -text

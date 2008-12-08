@@ -20,6 +20,7 @@ import org.apache.log4j.Category;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.settings.AppProps;
@@ -198,11 +199,10 @@ public class MothershipReport implements Runnable
 
     public void addServerSessionParams()
     {
-        Map<String, String> coreModuleProperties = ModuleLoader.getInstance().getCoreModule().getMetaData().getAllProperties();
-        String svnRevision = coreModuleProperties.get("SVNRevision");
-        if (svnRevision != null)
+        Module coreModule = ModuleLoader.getInstance().getCoreModule();
+        if (coreModule.getSvnRevision() != null)
         {
-            addParam("svnRevision", svnRevision);
+            addParam("svnRevision", coreModule.getSvnRevision());
         }
         addParam("runtimeOS", System.getProperty("os.name"));
         addParam("javaVersion", System.getProperty("java.version"));

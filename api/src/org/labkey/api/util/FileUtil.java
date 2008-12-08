@@ -19,10 +19,12 @@ package org.labkey.api.util;
 import org.labkey.api.security.Crypt;
 import org.apache.log4j.Logger;
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.security.MessageDigest;
@@ -267,6 +269,65 @@ public class FileUtil
         }
     }
 
+    /**
+     * Copies an entire file system branch to another location, including the root directory itself
+     * @param src The source file root
+     * @param dest The destination file root
+     * @throws IOException thrown from IO functions
+     */
+    public static void copyBranch(File src, File dest) throws IOException
+    {
+        copyBranch(src, dest, false);
+    }
+
+    public static void copyBranch(File src, File dest, boolean contentsOnly) throws IOException
+    {
+        copyBranch(src, dest, contentsOnly, null);
+    }
+
+    /**
+     * Copies an entire file system branch to another location
+     * @param src The source file root
+     * @param dest The destination file root
+     * @param contentsOnly Pass false to copy the root directory as well as the files within; true to just copy the contents
+     * @param listener An optional FileCopyListener that should be notified (or null if not desired)
+     * @throws IOException Thrown if there's an IO exception
+     */
+    public static void copyBranch(File src, File dest, boolean contentsOnly, @Nullable FileCopyListener listener) throws IOException
+    {
+        //if src is just a file, copy it and return
+        if(src.isFile())
+        {
+            File destFile = new File(dest, src.getName());
+            if(null == listener || listener.shouldCopy(src, destFile))
+            {
+                copyFile(src, destFile);
+                if(null != listener)
+                    listener.afterFileCopy(src, destFile);
+            }
+            return;
+        }
+
+        //if copying the src root directory as well, make that
+        //within the dest and re-assign dest to the new directory
+        if(!contentsOnly)
+        {
+            dest = new File(dest, src.getName());
+            if(null == listener || listener.shouldCopy(src, dest))
+            {
+                dest.mkdirs();
+                if(!dest.isDirectory())
+                    throw new IOException("Unable to create the directory " + dest.toString() + "!");
+                if(null != listener)
+                    listener.afterFileCopy(src, dest);
+            }
+        }
+
+        for(File file : src.listFiles())
+        {
+            copyBranch(file, dest, false, listener);
+        }
+    }
 
     /**
      * always returns path starting with /.  Tries to leave trailing '/' as is

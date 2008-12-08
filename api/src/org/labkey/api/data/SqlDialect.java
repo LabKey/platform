@@ -284,7 +284,7 @@ public abstract class SqlDialect
 
     protected abstract String getProductName();
 
-    public abstract String getSQLScriptPath();
+    public abstract String getSQLScriptPath(boolean source);
 
     public abstract void appendStatement(StringBuilder sql, String statement);
 

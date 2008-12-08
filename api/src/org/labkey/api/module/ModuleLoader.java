@@ -26,6 +26,9 @@ import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.HttpView;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.xml.XmlBeanFactory;
+import org.springframework.core.io.FileSystemResource;
 
 import javax.naming.*;
 import javax.servlet.Filter;
@@ -73,6 +76,8 @@ public class ModuleLoader implements Filter
 
     private static final Object STARTUP_LOCK = new Object();
     private boolean _startupComplete = false;
+
+    private ModuleResourceLoader[] _resourceLoaders = {new ModuleReportLoader()};
 
     public enum ModuleState
     {
@@ -198,12 +203,12 @@ public class ModuleLoader implements Filter
 
         removeAPIFiles(unclaimedFiles, _webappDir);
 
-        Set<File> moduleFiles;
+        Set<File> explodedModulesDirs;
         try
         {
             ClassLoader webappClassLoader = getClass().getClassLoader();
             Method m = webappClassLoader.getClass().getMethod("getModuleFiles");
-            moduleFiles = (Set<File>)m.invoke(webappClassLoader);
+            explodedModulesDirs = (Set<File>)m.invoke(webappClassLoader);
         }
         catch (NoSuchMethodException e)
         {
@@ -214,40 +219,35 @@ public class ModuleLoader implements Filter
             throw new RuntimeException(e);
         }
 
-        List<ModuleMetaData> moduleList = new ArrayList<ModuleMetaData>();
-        for (File moduleFile : moduleFiles)
-        {
-            try
-            {
-                moduleList.add(new ModuleMetaData(moduleFile));
-            }
-            catch (Throwable t)
-            {
-                _log.error("Unable to instantiate module " + moduleFile, t);
-                _moduleFailures.put(moduleFile.getName(), t);
-            }
-        }
+        //load module instances using Spring
+        _modules = loadModules(explodedModulesDirs);
 
+        //sort the modules by dependencies
         ModuleDependencySorter sorter = new ModuleDependencySorter();
-        moduleList = sorter.sortModulesByDependencies(moduleList);
-        _modules = new ArrayList<Module>();
-        for (ModuleMetaData moduleMetaData : moduleList)
+        _modules = sorter.sortModulesByDependencies(_modules);
+
+        //initialize each module in turn
+        for(Module module : _modules)
         {
             try
             {
-                Module module = moduleMetaData.createModule(getClass().getClassLoader());
-                assert moduleMetaData.getName().equalsIgnoreCase(module.getName());
-                _modules.add(module);
+                module.initialize();
                 moduleMap.put(module.getName(), module);
+
+                for(ModuleResourceLoader resLoader : _resourceLoaders)
+                {
+                    resLoader.loadResources(module, module.getExplodedPath());
+                }
             }
-            catch (Throwable t)
+            catch(Throwable t)
             {
-                _log.error("Unable to instantiate module " + moduleMetaData.getName(), t);
-                _moduleFailures.put(moduleMetaData.getName(), t);
+                _log.error("Unable to initialize module " + module.getName());
+                _moduleFailures.put(module.getName(), t);
             }
         }
 
-        extractModules(moduleFiles, servletCtx, unclaimedFiles);
+
+        extractModules(explodedModulesDirs, servletCtx, unclaimedFiles);
 
         File webinfDir = new File(_webappDir, "WEB-INF");
         File webinfLibDir = new File(webinfDir, "lib");
@@ -321,6 +321,46 @@ public class ModuleLoader implements Filter
         _log.info("Core LabKey Server startup is complete, modules will be initialized after the first HTTP/HTTPS request");
     }
 
+    public static List<Module> loadModules(Set<File> moduleFiles)
+    {
+        List<Module> modules = new ArrayList<Module>();
+        for(File moduleDir : moduleFiles)
+        {
+            Module module = null;
+            File moduleXml = new File(moduleDir, "config/module.xml");
+            try
+            {
+                if(moduleXml.exists())
+                {
+                    BeanFactory beanFactory = new XmlBeanFactory(new FileSystemResource(moduleXml));
+                    module = (Module)beanFactory.getBean("moduleBean", Module.class);
+                }
+                else
+                {
+                    //assume that module name is directory name
+                    SimpleModule simpleModule = new SimpleModule(moduleDir.getName());
+                    simpleModule.setSourcePath(moduleDir.getAbsolutePath());
+
+                    module = simpleModule;
+                }
+
+                if(null != module)
+                {
+                    module.setExplodedPath(moduleDir);
+                    modules.add(module);
+                }
+                else
+                    _log.error("No module class was found for the module '" + moduleDir.getName() + "'");
+            }
+            catch(Throwable t)
+            {
+                _log.error("Unable to instantiate module " + moduleDir);
+                _moduleFailures.put(moduleDir.getName(), t);
+            }
+        }
+        return modules;
+    }
+
     public File getWebappDir()
     {
         return _webappDir;
@@ -370,118 +410,59 @@ public class ModuleLoader implements Filter
         return result;
     }
 
-    private void extractModules(Set<File> moduleFiles, ServletContext context, Set<File> unclaimedFiles) throws ServletException, IllegalAccessException, InstantiationException, ClassNotFoundException
+    private void extractModules(Set<File> explodedModuleDirs, ServletContext context, Set<File> unclaimedFiles) throws ServletException, IllegalAccessException, InstantiationException, ClassNotFoundException, IOException
     {
-        File webappContentDir;
-        File webInfJspDir;
-        File webInfClassesDir;
-        try
-        {
-            webappContentDir = new File(context.getRealPath("")).getCanonicalFile();
-            webInfJspDir = new File(context.getRealPath("WEB-INF/jsp")).getCanonicalFile();
-            webInfClassesDir = new File(context.getRealPath("WEB-INF/classes")).getCanonicalFile();
-        }
-        catch (IOException e)
-        {
-            throw new ServletException(e);
-        }
+        File webappContentDir = new File(context.getRealPath("")).getCanonicalFile();
+        File webInfDir = new File(context.getRealPath("WEB-INF")).getCanonicalFile();
+        File webInfJspDir = new File(context.getRealPath("WEB-INF/jsp")).getCanonicalFile();
+        File webInfClassesDir = new File(context.getRealPath("WEB-INF/classes")).getCanonicalFile();
+        ModuleFileCopyListener fileCopyListener = new ModuleFileCopyListener(unclaimedFiles);
 
-        for (File moduleFile : moduleFiles)
+        for (File explodedModuleDir : explodedModuleDirs)
         {
-            JarFile jarFile = null;
-            try
+            //copy static web resources to webapp content directory
+            File moduleWebContentDir = new File(explodedModuleDir, "web");
+            if(moduleWebContentDir.exists())
+                FileUtil.copyBranch(moduleWebContentDir, webappContentDir, true, fileCopyListener);
+
+            //copy the _pageflow directory to the web-inf/classes dir
+            //so that it ends up as web-inf/classes/_pageflow
+            File modulePageFlowDir = new File(explodedModuleDir, "lib/_pageflow");
+            if(modulePageFlowDir.exists())
+                FileUtil.copyBranch(modulePageFlowDir, webInfClassesDir, false, fileCopyListener);
+
+            //copy any JSP JARs that might exists in the module lib directory
+            File moduleLibDir = new File(explodedModuleDir, "lib");
+            if(moduleLibDir.exists())
             {
-                jarFile = new JarFile(moduleFile);
-
-                Enumeration<JarEntry> entries = jarFile.entries();
-                while (entries.hasMoreElements())
+                for(File libFile : moduleLibDir.listFiles())
                 {
-                    JarEntry entry = entries.nextElement();
-                    String name = entry.getName().toLowerCase();
-                    if (!name.startsWith("meta-inf/"))
+                    if(libFile.getName().toLowerCase().endsWith("_jsp.jar"))
                     {
-                        extractEntry(jarFile, entry, entry.getName(), webappContentDir, unclaimedFiles);
-                    }
-                    else if (name.startsWith("meta-inf/_pageflow/"))
-                    {
-                        extractEntry(jarFile, entry, entry.getName().substring("meta-inf/".length()), webInfClassesDir, unclaimedFiles);
-                    }
-                    else if (name.startsWith("meta-inf/jsp/") && name.endsWith("_jsp.jar"))
-                    {
-                        extractEntry(jarFile, entry, entry.getName().substring("meta-inf/jsp/".length()), webInfJspDir, unclaimedFiles);
+                        File destFile = new File(webInfJspDir, libFile.getName());
+                        FileUtil.copyFile(libFile, destFile);
+                        unclaimedFiles.remove(destFile);
                     }
                 }
             }
-            catch (IOException e)
+
+            //copy any Spring module config XML files to web inf directory
+            File moduleConfigDir = new File(explodedModuleDir, "config");
+            if(moduleConfigDir.exists())
             {
-                _log.error("Could not extract module data", e);
-                throw new ServletException(e);
-            }
-            finally
-            {
-                if (jarFile != null) { try { jarFile.close(); } catch (IOException e) {} }
+                for(File configFile : moduleConfigDir.listFiles())
+                {
+                    if(configFile.getName().toLowerCase().endsWith("context.xml"))
+                    {
+                        File destFile = new File(webInfDir, configFile.getName());
+                        FileUtil.copyFile(configFile, destFile);
+                        unclaimedFiles.remove(destFile);
+                    }
+                }
             }
         }
     }
 
-    private void extractEntry(JarFile jarFile, JarEntry entry, String directory, File destinationDirectory, Set<File> unclaimedFiles) throws IOException
-    {
-        InputStream in = jarFile.getInputStream(entry);
-        File targetFile = new File(destinationDirectory, directory);
-        unclaimedFiles.remove(targetFile);
-
-        if (targetFile.exists() && targetFile.isDirectory() != entry.isDirectory())
-        {
-            FileUtil.deleteDir(targetFile);
-        }
-
-        if (!targetFile.exists() ||
-            entry.getTime() == -1 ||
-            entry.getTime() > (targetFile.lastModified() + 2000) ||
-            entry.getTime() < (targetFile.lastModified() - 2000) ||
-            entry.getSize() == -1 ||
-            entry.getSize() != targetFile.length())
-        {
-            if (entry.isDirectory())
-            {
-                targetFile.mkdirs();
-            }
-            else
-            {
-                BufferedInputStream bIn = null;
-                BufferedOutputStream bOut = null;
-                try
-                {
-                    File targetFileParent = targetFile.getParentFile();
-                    if (!targetFileParent.isDirectory() && !targetFileParent.mkdirs())
-                    {
-                        throw new IOException("Unable to create directory " + targetFileParent);
-                    }
-
-                    bIn = new BufferedInputStream(in);
-
-                    FileOutputStream fOut = new FileOutputStream(targetFile);
-                    bOut = new BufferedOutputStream(fOut);
-
-                    byte[] bytes = new byte[4096];
-                    int i;
-                    while ((i = bIn.read(bytes)) != -1)
-                    {
-                        bOut.write(bytes, 0, i);
-                    }
-                }
-                finally
-                {
-                    if (bIn != null) { try { bIn.close(); } catch (IOException e) {} }
-                    if (bOut != null) { try { bOut.close(); } catch (IOException e) {} }
-                }
-                if (entry.getTime() != -1)
-                {
-                    targetFile.setLastModified(entry.getTime());
-                }
-            }
-        }
-    }
 
     // Enumerate each jdbc DataSource in labkey.xml and attempt a (non-pooled) connection to each.  If connection fails, attempt to create
     // the database.

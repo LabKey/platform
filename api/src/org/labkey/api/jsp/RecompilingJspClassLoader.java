@@ -98,7 +98,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
                     FileUtil.copyFile(sourceFile, stagingJsp);
 
                     ClassPath cp = new ClassPath();
-                    cp.addDirectory(new File(finder.getBuildPath(), "/explodedModule/META-INF/lib"));
+                    cp.addDirectory(new File(finder.getBuildPath(), "/explodedModule/lib"));
                     cp.addDirectory(getTomcatCommonLib());
                     cp.addDirectory(getWebInfLib());
                     cp.addDirectory(getWebInfClasses());
