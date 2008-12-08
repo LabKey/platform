@@ -204,6 +204,11 @@ public class MothershipReport implements Runnable
         {
             addParam("svnRevision", coreModule.getSvnRevision());
         }
+        String svnURL = coreModuleProperties.get("SVNURL");
+        if (svnURL != null)
+        {
+            addParam("svnURL", svnURL);
+        }
         addParam("runtimeOS", System.getProperty("os.name"));
         addParam("javaVersion", System.getProperty("java.version"));
         addParam("perlPipelineEnabled", AppProps.getInstance().isPerlPipelineEnabled());

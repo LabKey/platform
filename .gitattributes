@@ -408,7 +408,6 @@ api/src/org/labkey/api/query/QueryForm.java -text
 api/src/org/labkey/api/query/QueryMethod.java -text
 api/src/org/labkey/api/query/QueryParam.java -text
 api/src/org/labkey/api/query/QueryParseException.java -text
-api/src/org/labkey/api/query/QueryPicker.java -text
 api/src/org/labkey/api/query/QuerySchema.java -text
 api/src/org/labkey/api/query/QueryService.java -text
 api/src/org/labkey/api/query/QuerySettings.java -text

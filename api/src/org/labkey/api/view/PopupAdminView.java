@@ -96,9 +96,7 @@ public class PopupAdminView extends PopupMenuView
             projectAdmin.addChildren(ProjectAdminMenu.getNavTree(context));
             navTree.addChild(projectAdmin);
 
-            navTree.addChild(new NavTree("Manage Assays", AssayService.get().getAssayListURL(c)));
-
-            navTree.addChild(new NavTree("Manage Lists", ListService.get().getManageListsURL(c)));
+            c.getFolderType().addManageLinks(navTree, c);
 
             SortedSet<Module> modules = new TreeSet<Module>(new Comparator<Module>()
             {

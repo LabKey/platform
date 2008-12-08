@@ -76,6 +76,12 @@ public class HelpTopic
         _area = area;
     }
 
+    @Override
+    public String toString()
+    {
+        return getHelpTopicLink();
+    }
+
     public String getHelpTopicLink()
     {
         return HELP_ROOT_URL + _area.getAreaPath() + HELP_VERSION_URL + _topic;

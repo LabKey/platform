@@ -120,7 +120,7 @@ public class ActionURL extends URLHelper implements Cloneable
     }
 
     /**
-     * This is the main contstructor for creating ActionURLs.  Many of the others
+     * This is the main constructor for creating ActionURLs.  Many of the others
      * exist for historic reasons.  Use this constructor where possible.
      *
      * @param actionClass the class of the Spring action

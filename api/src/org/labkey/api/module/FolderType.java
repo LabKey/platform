@@ -24,6 +24,9 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.exp.list.ListService;
 
 import java.util.Collections;
 import java.util.List;
@@ -109,6 +112,13 @@ public interface FolderType
      * @return all web parts that are recommended for inclusion in the portal page.
      */
     public List<Portal.WebPart> getPreferredWebParts();
+
+    /**
+     * Add any management links to the admin popup menu
+     * @param adminNavTree popup menu
+     * @param container current folder
+     */
+    public void addManageLinks(NavTree adminNavTree, Container container);
     
     /**
      * Folder type that results in an old style "tabbed" folder.
@@ -146,6 +156,12 @@ public interface FolderType
             if (null == c.getDefaultModule())
                 return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
             return c.getDefaultModule().getTabURL(c, u);
+        }
+
+        public void addManageLinks(NavTree adminNavTree, Container container)
+        {
+            adminNavTree.addChild(new NavTree("Manage Assays", AssayService.get().getAssayListURL(container)));
+            adminNavTree.addChild(new NavTree("Manage Lists", ListService.get().getManageListsURL(container)));
         }
     }
 

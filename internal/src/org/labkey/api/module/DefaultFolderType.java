@@ -23,6 +23,9 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.exp.list.ListService;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -250,4 +253,9 @@ public class DefaultFolderType implements FolderType
         return ModuleLoader.getInstance().getModule(moduleName);
     }
 
+    public void addManageLinks(NavTree adminNavTree, Container container)
+    {
+        adminNavTree.addChild(new NavTree("Manage Assays", AssayService.get().getAssayListURL(container)));
+        adminNavTree.addChild(new NavTree("Manage Lists", ListService.get().getManageListsURL(container)));
+    }
 }

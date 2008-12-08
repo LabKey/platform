@@ -186,48 +186,7 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
-    /**
-     * @deprecated
-     */
-    public QueryPicker getColumnListPicker(HttpServletRequest request)
-    {
-        Map<String, CustomView> customViews = _queryDef.getCustomViews(getUser(), request);
-        Map<String, String> options = new LinkedHashMap<String, String>();
-        options.put("", "<default>");
-        for (CustomView view : customViews.values())
-        {
-            if (view.isHidden())
-                continue;
-            String label = view.getName();
-            if (label == null)
-                continue;
-            options.put(view.getName(), label);
-        }
-        String current = "";
-        if (_customView != null)
-            current = _customView.getName();
-        else if (_report != null)
-            current = getSettings().getViewName();//_report.getDescriptor().getReportName();
-        
-        //noinspection deprecation
-        addReportsToChangeViewPicker(options);
-
-        return new QueryPicker("Custom View:", param(QueryParam.viewName), current, options);
-    }
-
     public static final String REPORTID_PARAM = "reportID=";
-
-    /**
-     * @deprecated
-     */
-    protected void addReportsToChangeViewPicker(Map<String, String> options)
-    {
-        String reportKey = ReportUtil.getReportKey(getSchema().getSchemaName(), getSettings().getQueryName());
-        for (Report report : ReportUtil.getReports(getViewContext(), reportKey, true))
-        {
-            options.put(REPORTID_PARAM + report.getDescriptor().getReportId(), report.getDescriptor().getReportName());
-        }
-    }
 
     public MenuButton createQueryPickerButton(String label)
     {
@@ -798,23 +757,6 @@ public class QueryView extends WebPartView<Object>
     protected String textLink(String text, ActionURL url)
     {
         return textLink(text, url, null);
-    }
-
-    /**
-     * @deprecated
-     */
-    public void renderCustomizeViewLink(PrintWriter out)
-    {
-        if (getSettings().isAllowCustomizeView() && _report == null)
-        {
-            out.write(textLink("Customize View", urlFor(QueryAction.chooseColumns)));
-            QueryDefinition queryDef = getQueryDef();
-            if (queryDef.canEdit(getUser()) && getContainer().equals(queryDef.getContainer()))
-            {
-                out.write(textLink("Design Query", getSchema().urlFor(QueryAction.designQuery, queryDef)));
-                out.write(textLink("Edit Query", getSchema().urlFor(QueryAction.sourceQuery, queryDef)));
-            }
-        }
     }
 
     public void addCustomizeViewItems(MenuButton button)
