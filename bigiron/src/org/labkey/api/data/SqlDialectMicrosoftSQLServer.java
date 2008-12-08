@@ -117,9 +117,10 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return "Sql Server";
     }
 
-    public String getSQLScriptPath()
+    public String getSQLScriptPath(boolean source)
     {
-        return "sql server";
+        //TODO: change this once we adjust the source tree to match the built module structure
+        return source ? "sql server" : "sqlserver";
     }
 
     public String getDefaultDateTimeDatatype()

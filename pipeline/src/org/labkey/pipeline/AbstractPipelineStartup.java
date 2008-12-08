@@ -15,19 +15,21 @@
  */
 package org.labkey.pipeline;
 
-import org.labkey.pipeline.mule.LoggerUtil;
-import org.labkey.pipeline.api.PipelineJobServiceImpl;
-import org.labkey.api.module.ModuleMetaData;
-import org.labkey.api.module.ModuleDependencySorter;
-import org.labkey.api.util.CaseInsensitiveHashMap;
-import org.springframework.context.support.FileSystemXmlApplicationContext;
-import org.springframework.beans.factory.BeanFactory;
 import org.apache.log4j.Logger;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleDependencySorter;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.pipeline.api.PipelineJobServiceImpl;
+import org.labkey.pipeline.mule.LoggerUtil;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -48,25 +50,22 @@ public abstract class AbstractPipelineStartup
         // Set up the PipelineJobService so that Spring can configure it
         PipelineJobServiceImpl.initDefaults();
 
-        List<ModuleMetaData> metaDatas = new ArrayList<ModuleMetaData>();
-        for (File moduleFile : moduleFiles)
-        {
-            metaDatas.add(new ModuleMetaData(moduleFile));
-        }
+        //load the modules and sort them by dependencies
+        List<Module> modules = ModuleLoader.loadModules(new HashSet<File>(moduleFiles));
         ModuleDependencySorter sorter = new ModuleDependencySorter();
-        metaDatas = sorter.sortModulesByDependencies(metaDatas);
+        modules = sorter.sortModulesByDependencies(modules);
 
         Map<String, BeanFactory> result = new CaseInsensitiveHashMap<BeanFactory>();
 
-        for (ModuleMetaData metaData : metaDatas)
+        for (Module module : modules)
         {
             List<String> springConfigPaths = new ArrayList<String>();
-            File moduleConfig = findFile(moduleConfigFiles, metaData.getName() + "Context.xml");
+            File moduleConfig = findFile(moduleConfigFiles, module.getName() + "Context.xml");
             if (moduleConfig != null)
             {
                 springConfigPaths.add(moduleConfig.getAbsoluteFile().toURI().toString());
             }
-            File customConfig = findFile(customConfigFiles, metaData.getName() + "Config.xml");
+            File customConfig = findFile(customConfigFiles, module.getName() + "Config.xml");
             if (customConfig != null)
             {
                 springConfigPaths.add(customConfig.getAbsoluteFile().toURI().toString());
@@ -74,11 +73,11 @@ public abstract class AbstractPipelineStartup
 
             if (!springConfigPaths.isEmpty())
             {
-                _log.info("Loading Spring configuration for the " + metaData.getName() + " module from " + springConfigPaths);
+                _log.info("Loading Spring configuration for the " + module.getName() + " module from " + springConfigPaths);
 
                 // Initialize the Spring context
                 BeanFactory context = new FileSystemXmlApplicationContext(springConfigPaths.toArray(new String[springConfigPaths.size()]));
-                result.put(metaData.getName(), context);
+                result.put(module.getName(), context);
 
             }
         }
