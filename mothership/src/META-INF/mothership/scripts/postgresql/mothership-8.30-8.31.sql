@@ -27,10 +27,12 @@ ALTER TABLE mothership.SoftwareRelease ALTER COLUMN SVNRevision DROP NOT NULL;
 
 -- Make sure that we have a release entry for every report we've gotten
 INSERT INTO mothership.SoftwareRelease (Container, SVNRevision, Description)
-    SELECT DISTINCT si.Container, ss.SVNRevision, ss.SVNRevision::VARCHAR(40)
+    SELECT DISTINCT si.Container, ss.SVNRevision, CASE WHEN ss.SVNRevision IS NULL THEN 'NotSvn' ELSE CAST(ss.SVNRevision AS VARCHAR(50)) END
         FROM mothership.ServerSession ss, mothership.ServerInstallation si
         WHERE si.ServerInstallationId = ss.ServerInstallationId AND SVNRevision NOT IN
             (SELECT SVNRevision FROM mothership.SoftwareRelease sr WHERE sr.Container = si.Container);
+
+DELETE FROM mothership.SoftwareRelease WHERE SVNRevision IS NULL;
 
 INSERT INTO mothership.SoftwareRelease (Container, SVNRevision, Description)
     SELECT Container, NULL as Revision, 'NotSVN' as Description FROM mothership.SoftwareRelease LIMIT 1;

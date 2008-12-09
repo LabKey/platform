@@ -30,10 +30,13 @@ GO
 
 -- Make sure that we have a release entry for every report we've gotten
 INSERT INTO mothership.SoftwareRelease (Container, SVNRevision, Description)
-    SELECT DISTINCT si.Container, ss.SVNRevision, ss.SVNRevision
+    SELECT DISTINCT si.Container, ss.SVNRevision, CASE WHEN ss.SVNRevision IS NULL THEN 'NotSvn' ELSE CAST(ss.SVNRevision AS NVARCHAR(50)) END
         FROM mothership.ServerSession ss, mothership.ServerInstallation si
         WHERE si.ServerInstallationId = ss.ServerInstallationId AND SVNRevision NOT IN
             (SELECT SVNRevision FROM mothership.SoftwareRelease sr WHERE sr.Container = si.Container)
+GO
+
+DELETE FROM mothership.SoftwareRelease WHERE SVNRevision IS NULL
 GO
 
 INSERT INTO mothership.SoftwareRelease (Container, SVNRevision, Description)
