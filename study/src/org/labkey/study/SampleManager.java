@@ -92,7 +92,7 @@ public class SampleManager
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addClause(new SimpleFilter.SQLClause("LOWER(ptid) = LOWER(?)", new Object[] {participantId}, "ptid"));
-        filter.addCondition("SequenceNumMin", visit);
+        filter.addCondition("VisitValue", visit);
         filter.addCondition("Container", container.getId());
         return _specimenHelper.get(container, filter);
     }
