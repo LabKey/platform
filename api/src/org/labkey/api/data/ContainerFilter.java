@@ -31,21 +31,30 @@ public interface ContainerFilter
      */
     public Collection<String> getIds(Container currentContainer, User user);
 
+    /**
+     * @return true if this filter should be exposed in the UI from query
+     */
+    public boolean isPublicFilter();
+    
+    public String name();
+
     public enum Filters implements ContainerFilter
     {
-        EVERYTHING()
-        {
-            public Collection<String> getIds(Container currentContainer, User user)
-            {
-                return null;
-            }
-        },
-
         CURRENT()
         {
             public Collection<String> getIds(Container currentContainer, User user)
             {
                 return Collections.singleton(currentContainer.getId());
+            }
+
+            public String toString()
+            {
+                return "Current Folder";
+            }
+
+            public boolean isPublicFilter()
+            {
+                return true;
             }
         },
 
@@ -56,6 +65,16 @@ public interface ContainerFilter
                 Set<Container> containers = new HashSet<Container>(ContainerManager.getAllChildren(currentContainer, user, ACL.PERM_READ));
                 containers.add(currentContainer);
                 return toIds(containers);
+            }
+
+            public String toString()
+            {
+                return "Current Folder and Subfolders";
+            }
+
+            public boolean isPublicFilter()
+            {
+                return true;
             }
         },
 
@@ -77,6 +96,11 @@ public interface ContainerFilter
                 }
                 return toIds(containers);
             }
+
+            public boolean isPublicFilter()
+            {
+                return false;
+            }
         },
 
         ALL_IN_PROJECT()
@@ -93,6 +117,11 @@ public interface ContainerFilter
                 containers.add(project);
                 return toIds(containers);
             }
+
+            public boolean isPublicFilter()
+            {
+                return false;
+            }
         },
 
         ALL_IN_SITE()
@@ -105,6 +134,11 @@ public interface ContainerFilter
                     return null;
                 }
                 return ContainerManager.getIds(user, ACL.PERM_READ);
+            }
+
+            public boolean isPublicFilter()
+            {
+                return false;
             }
         };
 
@@ -152,6 +186,33 @@ public interface ContainerFilter
             return ids;
         }
 
+        public boolean isPublicFilter()
+        {
+            return false;
+        }
+
+        public String name()
+        {
+            return getClass().getSimpleName();
+        }
     }
+
+    public static final ContainerFilter EVERYTHING = new ContainerFilter()
+    {
+        public Collection<String> getIds(Container currentContainer, User user)
+        {
+            return null;
+        }
+
+        public boolean isPublicFilter()
+        {
+            return false;
+        }
+
+        public String name()
+        {
+            return getClass().getSimpleName();
+        }
+    };
 
 }

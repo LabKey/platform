@@ -437,6 +437,6 @@ public class QuerySettings
 
     public String getContainerFilterName()
     {
-        return _containerFilter == null ? null : _containerFilter.toString();
+        return _containerFilter == null ? null : _containerFilter.name();
     }
 }

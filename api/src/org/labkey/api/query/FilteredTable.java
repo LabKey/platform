@@ -209,7 +209,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         return _filter;
     }
 
-    public void setContainerFilter(ContainerFilter filter, User user)
+    public void setContainerFilter(@NotNull ContainerFilter filter, User user)
     {
         // Bit of a hack here -- this table must already have a user or we're toast
         // In the future, we should require a user on construction, perhaps store a UserSchema object?
@@ -236,6 +236,16 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
             public Collection<String> getIds(Container currentContainer, User user)
             {
                 return _containerFilter.getIds(currentContainer, user);
+            }
+
+            public boolean isPublicFilter()
+            {
+                return false;
+            }
+
+            public String name()
+            {
+                return "LazyContainerFilter";
             }
         };
     }

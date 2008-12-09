@@ -55,7 +55,7 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
         if (summaryForm.getClearDataRegionSelectionKey() != null)
             DataRegionSelection.clearAll(getViewContext(), summaryForm.getClearDataRegionSelectionKey());
         _protocol = getProtocol(summaryForm);
-        return new AssayRunsView(_protocol, false, null);
+        return new AssayRunsView(_protocol, false);
     }
 
     public NavTree appendNavTrail(NavTree root)

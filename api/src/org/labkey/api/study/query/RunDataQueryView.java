@@ -80,7 +80,7 @@ public class RunDataQueryView extends AssayBaseQueryView
                 publishURL.deleteParameters();
 
                 if (getSettings().getContainerFilter() != null)
-                    publishURL.addParameter("containerFilterName", getSettings().getContainerFilter().toString());
+                    publishURL.addParameter("containerFilterName", getSettings().getContainerFilter().name());
 
                 if (provider.canPublish())
                 {

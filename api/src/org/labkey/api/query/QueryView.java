@@ -798,6 +798,36 @@ public class QueryView extends WebPartView<Object>
                 item.setId("Views:Edit Snapshot");
             }
         }
+
+        if (getTable() instanceof ContainerFilterable)
+        {
+            NavTree containerFilterItem = new NavTree("Folder Filter");
+            containerFilterItem.setId("Views:Folder Filter");
+            button.addMenuItem(containerFilterItem);
+
+            ContainerFilterable table = (ContainerFilterable)getTable();
+
+            ContainerFilter selectedFilter = table.getContainerFilter();
+
+            for (ContainerFilter filter : ContainerFilter.Filters.values())
+            {
+                if (filter.isPublicFilter())
+                {
+                    ActionURL url = getViewContext().getActionURL().clone();
+                    String propName = getDataRegionName() + ".containerFilterName";
+                    url.replaceParameter(propName, filter.name());
+                    NavTree filterItem = new NavTree(filter.toString(), url);
+
+                    filterItem.setId("Views:Folder Filter:" + filter.toString());
+
+                    if(selectedFilter == filter)
+                    {
+                        filterItem.setSelected(true);
+                    }
+                    containerFilterItem.addChild(filterItem);
+                }
+            }
+        }
     }
 
     public String getDataRegionName()
