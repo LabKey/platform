@@ -24,7 +24,7 @@ import org.labkey.api.util.UnexpectedException;
 
 import java.io.Serializable;
 
-public class CstmView extends Entity implements Cloneable, Serializable
+public final class CstmView extends Entity implements Cloneable, Serializable
 {
     public enum Column
     {

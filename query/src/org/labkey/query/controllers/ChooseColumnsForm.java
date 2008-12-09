@@ -181,6 +181,8 @@ public class ChooseColumnsForm extends DesignForm
             return true;
         if ("sort".equals(check))
             return true;
+        if (check.equals("containerFilterName"))
+            return true;
         return false;
     }
 

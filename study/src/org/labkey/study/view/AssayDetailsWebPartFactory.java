@@ -16,7 +16,6 @@
 
 package org.labkey.study.view;
 
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.study.assay.AssayRunsView;
@@ -31,7 +30,6 @@ public class AssayDetailsWebPartFactory extends BaseWebPartFactory
 {
     public static final String PREFERENCE_KEY = "viewProtocolId";
     public static final String SHOW_BUTTONS_KEY = "showButtons";
-    public static final String INCLUDE_SUBFOLDERS = "includeSubfolders";
 
     public AssayDetailsWebPartFactory()
     {
@@ -42,7 +40,6 @@ public class AssayDetailsWebPartFactory extends BaseWebPartFactory
     {
         String viewSetting = webPart.getPropertyMap().get(PREFERENCE_KEY);
         boolean showButtons = Boolean.parseBoolean(webPart.getPropertyMap().get(SHOW_BUTTONS_KEY));
-        boolean includeSubfolders = Boolean.parseBoolean(webPart.getPropertyMap().get(INCLUDE_SUBFOLDERS));
         ExpProtocol protocol = null;
         if (viewSetting != null)
         {
@@ -64,9 +61,7 @@ public class AssayDetailsWebPartFactory extends BaseWebPartFactory
         }
         else
         {
-            AssayRunsView runsView = new AssayRunsView(protocol,
-                !showButtons,
-                includeSubfolders ? ContainerFilter.Filters.CURRENT_AND_SUBFOLDERS : null);
+            AssayRunsView runsView = new AssayRunsView(protocol, !showButtons);
 
             runsView.setTitleHref(AssayService.get().getAssayRunsURL(portalCtx.getContainer(), protocol).getLocalURIString());
             runsView.setTitle(protocol.getName() + " Runs");
