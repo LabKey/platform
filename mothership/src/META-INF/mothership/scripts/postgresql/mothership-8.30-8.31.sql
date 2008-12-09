@@ -22,15 +22,15 @@ DELETE FROM mothership.softwarerelease WHERE Container NOT IN (SELECT EntityId F
 ALTER TABLE mothership.softwarerelease ADD CONSTRAINT FK_SoftwareRelease_Container
     FOREIGN KEY (Container) REFERENCES core.containers(EntityId);
 
+-- Handle null revisions, which happens when building from a source distribution instead of SVN
+ALTER TABLE mothership.SoftwareRelease ALTER COLUMN SVNRevision DROP NOT NULL;
+
 -- Make sure that we have a release entry for every report we've gotten
 INSERT INTO mothership.SoftwareRelease (Container, SVNRevision, Description)
     SELECT DISTINCT si.Container, ss.SVNRevision, ss.SVNRevision::VARCHAR(40)
         FROM mothership.ServerSession ss, mothership.ServerInstallation si
         WHERE si.ServerInstallationId = ss.ServerInstallationId AND SVNRevision NOT IN
             (SELECT SVNRevision FROM mothership.SoftwareRelease sr WHERE sr.Container = si.Container);
-
--- Handle null revisions, which happens when building from a source distribution instead of SVN
-ALTER TABLE mothership.SoftwareRelease ALTER COLUMN SVNRevision DROP NOT NULL;
 
 INSERT INTO mothership.SoftwareRelease (Container, SVNRevision, Description)
     SELECT Container, NULL as Revision, 'NotSVN' as Description FROM mothership.SoftwareRelease LIMIT 1;

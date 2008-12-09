@@ -24,16 +24,16 @@ ALTER TABLE mothership.softwarerelease ADD CONSTRAINT FK_SoftwareRelease_Contain
     FOREIGN KEY (Container) REFERENCES core.containers(EntityId)
 GO
 
+-- Handle null revisions, which happens when building from a source distribution instead of SVN
+ALTER TABLE mothership.SoftwareRelease ALTER COLUMN SVNRevision INT NULL
+GO
+
 -- Make sure that we have a release entry for every report we've gotten
 INSERT INTO mothership.SoftwareRelease (Container, SVNRevision, Description)
     SELECT DISTINCT si.Container, ss.SVNRevision, ss.SVNRevision
         FROM mothership.ServerSession ss, mothership.ServerInstallation si
         WHERE si.ServerInstallationId = ss.ServerInstallationId AND SVNRevision NOT IN
             (SELECT SVNRevision FROM mothership.SoftwareRelease sr WHERE sr.Container = si.Container)
-GO
-
--- Handle null revisions, which happens when building from a source distribution instead of SVN
-ALTER TABLE mothership.SoftwareRelease ALTER COLUMN SVNRevision INT NULL
 GO
 
 INSERT INTO mothership.SoftwareRelease (Container, SVNRevision, Description)
