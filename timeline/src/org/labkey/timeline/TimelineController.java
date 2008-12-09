@@ -27,7 +27,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 public class TimelineController extends SpringActionController
 {
-    static DefaultActionResolver _actionResolver = new DefaultActionResolver(TimelineController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(TimelineController.class);
 
     public TimelineController() throws Exception
     {

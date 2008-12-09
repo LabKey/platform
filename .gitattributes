@@ -857,7 +857,7 @@ issues/src/org/labkey/issue/detailList.jsp -text
 issues/src/org/labkey/issue/detailView.jsp -text
 issues/src/org/labkey/issue/emailPreferences.jsp -text
 issues/src/org/labkey/issue/issues_customize.gm -text
-issues/src/org/labkey/issue/keywordAdmin.gm -text
+issues/src/org/labkey/issue/keywordAdmin.jsp -text
 issues/src/org/labkey/issue/list.jsp -text
 issues/src/org/labkey/issue/model/Issue.java -text
 issues/src/org/labkey/issue/model/IssueManager.java -text

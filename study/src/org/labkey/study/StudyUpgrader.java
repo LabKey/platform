@@ -15,14 +15,14 @@
  */
 package org.labkey.study;
 
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
+import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.study.model.Cohort;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 
 import java.sql.SQLException;
+import java.util.List;
 
 /**
  * User: jgarms
@@ -41,7 +41,12 @@ public class StudyUpgrader
         DbSchema schema = StudySchema.getInstance().getSchema();
         DbScope scope = schema.getScope();
         boolean transactionOwner = !scope.isTransactionActive();
-        Study[] studies = StudyManager.getInstance().getAllStudies();
+
+        // Retrieve studies, requesting only columns that exist at this point in the upgrade process 
+        TableInfo studyTableInfo = StudySchema.getInstance().getTableInfoStudy();
+        List<ColumnInfo> columns = studyTableInfo.getColumns("Label, Container, EntityId, DateBased, StartDate, ParticipantCohortDataSetId, ParticipantCohortProperty, SecurityType, LSID");
+        Study[] studies = Table.select(studyTableInfo, columns, null, null, Study.class);
+
         for (Study study : studies)
         {
             try

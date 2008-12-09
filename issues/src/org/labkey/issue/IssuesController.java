@@ -120,9 +120,6 @@ public class IssuesController extends SpringActionController
     }
 
 
-    /**
-     * This method represents the point of entry into the pageflow
-     */
     @RequiresPermission(ACL.PERM_READ)
     public class BeginAction extends SimpleViewAction
     {
@@ -245,9 +242,9 @@ public class IssuesController extends SpringActionController
 
 
     @RequiresPermission(ACL.PERM_READ)
-    public class ListAction extends SimpleViewAction<IssuesController.ListForm>
+    public class ListAction extends SimpleViewAction<ListForm>
     {
-        public ModelAndView getView(IssuesController.ListForm form, BindException errors) throws Exception
+        public ModelAndView getView(ListForm form, BindException errors) throws Exception
         {
             // convert AssignedTo/Email to AssignedTo/DisplayName: old bookmarks
             // reference Email, which is no longer displayed.
@@ -356,7 +353,7 @@ public class IssuesController extends SpringActionController
     @RequiresPermission(ACL.PERM_READ)
     public class DetailsListAction extends SimpleViewAction<ListForm>
     {
-        public ModelAndView getView(IssuesController.ListForm listForm, BindException errors) throws Exception
+        public ModelAndView getView(ListForm listForm, BindException errors) throws Exception
         {
             // convert AssignedTo/Email to AssignedTo/DisplayName: old bookmarks
             // reference Email, which is no longer displayed.
@@ -439,7 +436,7 @@ public class IssuesController extends SpringActionController
             setNewIssueDefaults(_issue);
 
             IssuePage page = new IssuePage();
-            JspView v = new JspView<IssuePage>(IssuesController.class, "updateView.jsp",page);
+            JspView v = new JspView<IssuePage>(IssuesController.class, "updateView.jsp", page);
 
             IssueManager.CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
@@ -678,7 +675,7 @@ public class IssuesController extends SpringActionController
             requiresUpdatePermission(user, _issue);
 
             IssuePage page = new IssuePage();
-            JspView v = new JspView<IssuePage>(IssuesController.class, "updateView.jsp",page);
+            JspView v = new JspView<IssuePage>(IssuesController.class, "updateView.jsp", page);
 
             IssueManager.CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
@@ -756,7 +753,7 @@ public class IssuesController extends SpringActionController
             }
 
             IssuePage page = new IssuePage();
-            JspView v = new JspView<IssuePage>(IssuesController.class, "updateView.jsp",page);
+            JspView v = new JspView<IssuePage>(IssuesController.class, "updateView.jsp", page);
 
             IssueManager.CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
@@ -863,7 +860,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    private void validateRequiredFields(IssuesController.IssuesForm form, Errors errors)
+    private void validateRequiredFields(IssuesForm form, Errors errors)
     {
         String requiredFields = IssueManager.getRequiredIssueFields(getContainer());
         final Map<String, String> newFields = form.getStrings();
@@ -924,7 +921,7 @@ public class IssuesController extends SpringActionController
     }
     
 
-    private void validateNotifyList(Issue issue, IssuesController.IssuesForm form, Errors errors)
+    private void validateNotifyList(Issue issue, IssuesForm form, Errors errors)
     {
         String[] rawEmails = _toString(form.getNotifyList()).split("\n");
         List<String> invalidEmails = new ArrayList<String>();
@@ -1075,7 +1072,7 @@ public class IssuesController extends SpringActionController
             emailAddresses.add(current);
 
         // build up the final semicolon delimited list, excluding the current user
-        for (String email : emailAddresses.toArray(new String[0]))
+        for (String email : emailAddresses.toArray(new String[emailAddresses.size()]))
         {
             if (selfSpam || !email.equals(current))
             {
@@ -1161,7 +1158,7 @@ public class IssuesController extends SpringActionController
             page.getResolutionOptions(getContainer());
             // </HACK>
 
-            IssuesController.AdminView adminView = new IssuesController.AdminView(getContainer(), getCustomColumnConfiguration());
+            AdminView adminView = new AdminView(getContainer(), getCustomColumnConfiguration());
             return adminView;
         }
 
@@ -1471,38 +1468,62 @@ public class IssuesController extends SpringActionController
     //
     // VIEWS
     //
-    public static class AdminView extends GroovyView
+    public static class AdminView extends JspView<AdminBean>
     {
-        Container _c;
-        IssueManager.CustomColumnConfiguration _ccc;
-        IssuesController.KeywordAdminView _keywordAdminView;
-        JspView<IssuesController.IssuesPreference> _requiredFieldsView;
-
         public AdminView(Container c, IssueManager.CustomColumnConfiguration ccc)
         {
-            super("/org/labkey/issue/admin.gm");
+            super("/org/labkey/issue/admin.jsp");
 
-            _ccc = ccc;
-
-            _keywordAdminView = new IssuesController.KeywordAdminView(c);
-            _keywordAdminView.addKeyword("Type", ISSUE_TYPE);
-            _keywordAdminView.addKeyword("Area", ISSUE_AREA);
-            _keywordAdminView.addKeyword("Priority", ISSUE_PRIORITY);
-            _keywordAdminView.addKeyword("Milestone", ISSUE_MILESTONE);
-            _keywordAdminView.addKeyword("Resolution", ISSUE_RESOLUTION);
-
-            addCustomColumn("string1", ISSUE_STRING1);
-            addCustomColumn("string2", ISSUE_STRING2);
+            KeywordAdminView keywordView = new KeywordAdminView(c, ccc);
+            keywordView.addKeyword("Type", ISSUE_TYPE);
+            keywordView.addKeyword("Area", ISSUE_AREA);
+            keywordView.addKeyword("Priority", ISSUE_PRIORITY);
+            keywordView.addKeyword("Milestone", ISSUE_MILESTONE);
+            keywordView.addKeyword("Resolution", ISSUE_RESOLUTION);
+            keywordView.addCustomColumn("string1", ISSUE_STRING1);
+            keywordView.addCustomColumn("string2", ISSUE_STRING2);
 
             List<String> columnNames = new ArrayList<String>();
             columnNames.addAll(Arrays.asList(REQUIRED_FIELDS_COLUMNS.split(",")));
             columnNames.addAll(IssuesTable.getCustomColumnCaptions(c).keySet());
-            List<ColumnInfo> cols = IssuesSchema.getInstance().getTableInfoIssues().getColumns(columnNames.toArray(new String[0]));
+            List<ColumnInfo> cols = IssuesSchema.getInstance().getTableInfoIssues().getColumns(columnNames.toArray(new String[columnNames.size()]));
 
-            IssuesController.IssuesPreference bean = new IssuesController.IssuesPreference(cols, IssueManager.getRequiredIssueFields(c));
-            _requiredFieldsView = new JspView<IssuesController.IssuesPreference>("/org/labkey/issue/requiredFields.jsp", bean);
+            IssuesPreference ipb = new IssuesPreference(cols, IssueManager.getRequiredIssueFields(c));
+
+            AdminBean bean = new AdminBean();
+
+            bean.ccc = ccc;
+            bean.keywordView = keywordView;
+            bean.requiredFieldsView = new JspView<IssuesPreference>("/org/labkey/issue/requiredFields.jsp", ipb);
+
+            setModelBean(bean);
         }
+    }
 
+
+    public static class AdminBean
+    {
+        public IssueManager.CustomColumnConfiguration ccc;
+        public KeywordAdminView keywordView;
+        public JspView<IssuesPreference> requiredFieldsView;
+    }
+
+
+    // Renders the pickers for all keywords; would be nice to render each picker independently, but that makes it hard to align
+    // all the top and bottom sections with each other.
+    public static class KeywordAdminView extends JspView<List<KeywordPicker>>
+    {
+        private Container _c;
+        private List<KeywordPicker> _keywordPickers = new ArrayList<KeywordPicker>(5);
+        public IssueManager.CustomColumnConfiguration _ccc;
+
+        public KeywordAdminView(Container c, IssueManager.CustomColumnConfiguration ccc)
+        {
+            super("/org/labkey/issue/keywordAdmin.jsp");
+            setModelBean(_keywordPickers);
+            _c = c;
+            _ccc = ccc;
+        }
 
         // Add keyword admin for custom columns with column picker enabled
         private void addCustomColumn(String tableColumn, int type)
@@ -1510,65 +1531,33 @@ public class IssuesController extends SpringActionController
             if (_ccc.getPickListColumns().contains(tableColumn))
             {
                 String caption = _ccc.getColumnCaptions().get(tableColumn);
-                _keywordAdminView.addKeyword(caption, type);
+                addKeyword(caption, type);
             }
         }
 
-
-        @Override
-        protected void prepareWebPart(Object model) throws ServletException
+        private void addKeyword(String name, int type)
         {
-            this.setView("keywordView", _keywordAdminView);
-            this.setView("requiredFieldsView", _requiredFieldsView);
-
-            addObject("captions", _ccc.getColumnCaptions());
-            addObject("pickLists", _ccc.getPickListColumns());
-            addObject("pickListName", IssueManager.CustomColumnConfiguration.PICK_LIST_NAME);
-
-            super.prepareWebPart(model);
+            _keywordPickers.add(new KeywordPicker(_c, name, type));
         }
     }
 
 
-    // Renders the pickers for all keywords; would be nice to render each picker independently, but that makes it hard to align
-    // all the top and bottom sections with each other.
-    public static class KeywordAdminView extends GroovyView
+    public static class KeywordPicker
     {
-        private Container _c;
-        private List<IssuesController.KeywordAdminView.KeywordPicker> _keywordPickers = new ArrayList<IssuesController.KeywordAdminView.KeywordPicker>(5);
+        public String name;
+        public String plural;
+        public int type;
+        public IssueManager.Keyword[] keywords;
 
-        public KeywordAdminView(Container c)
+        KeywordPicker(Container c, String name, int type)
         {
-            super("/org/labkey/issue/keywordAdmin.gm");
-            _c = c;
-        }
-
-        public void addKeyword(String name, int type)
-        {
-            _keywordPickers.add(new IssuesController.KeywordAdminView.KeywordPicker(_c, name, type));
-        }
-
-        protected void prepareWebPart(Object context) throws ServletException
-        {
-            addObject("keywordPickers", _keywordPickers);
-        }
-
-        public static class KeywordPicker
-        {
-            public String name;
-            public String plural;
-            public int type;
-            public IssueManager.Keyword[] keywords;
-
-            KeywordPicker(Container c, String name, int type)
-            {
-                this.name = name;
-                this.plural = name.endsWith("y") ? name.substring(0, name.length() - 1) + "ies" : name + "s";
-                this.type = type;
-                this.keywords = IssueManager.getKeywords(c.getId(), type);
-            }
+            this.name = name;
+            this.plural = name.endsWith("y") ? name.substring(0, name.length() - 1) + "ies" : name + "s";
+            this.type = type;
+            this.keywords = IssueManager.getKeywords(c.getId(), type);
         }
     }
+
 
     public static class EmailPrefsBean
     {
@@ -1791,7 +1780,7 @@ public class IssuesController extends SpringActionController
 
         public static Test suite()
         {
-            return new TestSuite(IssuesController.TestCase.class);
+            return new TestSuite(TestCase.class);
         }
     }
 

@@ -3019,8 +3019,7 @@ public class WikiController extends SpringActionController
                 }
             }
 
-            Map<String,Object> warnings = new HashMap<String,Object>();
-
+            Map<String, Object> warnings = new HashMap<String, Object>();
             Map<String, MultipartFile> fileMap = (Map<String, MultipartFile>)((MultipartHttpServletRequest)getViewContext().getRequest()).getFileMap();
             List<AttachmentFile> files = SpringAttachmentFile.createList(fileMap);
 
