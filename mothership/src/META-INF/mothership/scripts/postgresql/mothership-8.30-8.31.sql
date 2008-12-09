@@ -33,7 +33,7 @@ INSERT INTO mothership.SoftwareRelease (Container, SVNRevision, Description)
 ALTER TABLE mothership.SoftwareRelease ALTER COLUMN SVNRevision DROP NOT NULL;
 
 INSERT INTO mothership.SoftwareRelease (Container, SVNRevision, Description)
-    VALUES ((SELECT MIN(Container) FROM mothership.SoftwareRelease), NULL, 'NotSVN');
+    SELECT Container, NULL as Revision, 'NotSVN' as Description FROM mothership.SoftwareRelease LIMIT 1;
 
 -- Change the PK
 ALTER TABLE mothership.ServerSession ADD SoftwareReleaseId INT;

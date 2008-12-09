@@ -124,11 +124,12 @@ public class MothershipManager
                 result.setSVNRevision(svnRevision);
                 result.setSVNURL(svnURL);
                 result.setContainer(container.getId());
+                String description;
                 if (svnURL != null)
                 {
                     if (svnURL.startsWith("https://hedgehog.fhcrc.org/tor/stedi/"))
                     {
-                        String description = svnURL.substring("https://hedgehog.fhcrc.org/tor/stedi/".length());
+                        description = svnURL.substring("https://hedgehog.fhcrc.org/tor/stedi/".length());
                         if (description.endsWith("/server"))
                         {
                             description = description.substring(0, description.length() - "/server".length());
@@ -141,9 +142,17 @@ public class MothershipManager
                         {
                             description = description + " - " + svnRevision;
                         }
-                        result.setDescription(description);
+                    }
+                    else
+                    {
+                        description = "UnknownSVN";
                     }
                 }
+                else
+                {
+                    description = "NotSVN";
+                }
+                result.setDescription(description);
                 result = Table.insert(null, getTableInfoSoftwareRelease(), result);
             }
             return result;
