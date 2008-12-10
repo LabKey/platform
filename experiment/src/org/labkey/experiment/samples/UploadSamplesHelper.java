@@ -257,7 +257,7 @@ public class UploadSamplesHelper
                             {
                                 throw new SQLException("A material with LSID " + lsid + " is already loaded into the folder " + material.getContainer().getPath());
                             }
-                            OntologyManager.deleteOntologyObject(_form.getContainer().getId(), material.getLSID());
+                            OntologyManager.deleteOntologyObjects(_form.getContainer(), material.getLSID());
                             reusedMaterialLSIDs.add(lsid);
                         }
                     }

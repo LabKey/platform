@@ -20,30 +20,13 @@ import org.labkey.api.pipeline.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.DateUtil;
-import org.labkey.experiment.XarExporter;
-import org.labkey.experiment.LSIDRelativizer;
-import org.labkey.experiment.DataURLRelativizer;
-import org.labkey.experiment.XarReader;
-import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.labkey.experiment.api.ExpRunImpl;
-import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlException;
-import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
-import org.fhcrc.cpas.exp.xml.ExperimentArchiveType;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.FileNotFoundException;
-import java.sql.BatchUpdateException;
-import java.sql.SQLException;
-import java.util.*;
 
 /**
  * User: jeckels
@@ -54,15 +37,15 @@ public class MoveRunsPipelineJob extends PipelineJob
     private final int[] _runIds;
     private Container _sourceContainer;
 
-    public MoveRunsPipelineJob(ViewBackgroundInfo info, Container sourceContainer, int[] runIds) throws SQLException, IOException
+    public MoveRunsPipelineJob(ViewBackgroundInfo info, Container sourceContainer, int[] runIds) throws IOException
     {
         super(ExperimentPipelineProvider.NAME, info);
         _runIds = runIds;
         _sourceContainer = sourceContainer;
         PipeRoot root = PipelineService.get().findPipelineRoot(info.getContainer());
-        if (!NetworkDrive.exists(root.getRootPath()))
+        if (root == null || !NetworkDrive.exists(root.getRootPath()))
         {
-            throw new FileNotFoundException("Could not find pipeline root on disk: " + root.getRootPath());
+            throw new FileNotFoundException("Could not find pipeline root on disk: " + (root == null ? null : root.getRootPath()));
         }
         File moveRunLogsDir = ExperimentPipelineProvider.getMoveDirectory(root);
         moveRunLogsDir.mkdirs();

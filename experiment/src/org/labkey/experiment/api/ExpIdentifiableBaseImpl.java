@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.exp.IdentifiableBase;
+import org.labkey.api.exp.Lsid;
 
 /**
  * User: jeckels
@@ -41,6 +42,11 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
         return _object;
     }
 
+    public void setLSID(Lsid lsid)
+    {
+        setLSID(lsid == null ? null : lsid.toString());
+    }
+
     public void setLSID(String lsid)
     {
         _object.setLSID(lsid);
@@ -56,8 +62,6 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
         _object.setName(name);
     }
 
-
-
     public boolean equals(Object o)
     {
         if (this == o) return true;
@@ -66,9 +70,7 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
 
         ExpIdentifiableBaseImpl that = (ExpIdentifiableBaseImpl) o;
 
-        if (_object.getLSID() != null ? !_object.getLSID().equals(that._object.getLSID()) : that._object.getLSID() != null) return false;
-
-        return true;
+        return !(_object.getLSID() != null ? !_object.getLSID().equals(that._object.getLSID()) : that._object.getLSID() != null);
     }
 
     public int hashCode()

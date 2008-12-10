@@ -19,9 +19,7 @@ package org.labkey.study.assay.query;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpRunTable;
-import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.*;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.*;
@@ -29,6 +27,7 @@ import org.labkey.api.study.query.RunDataQueryView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.controllers.assay.AssayController;
 
 import javax.servlet.ServletException;
 import java.sql.Types;
@@ -105,7 +104,7 @@ public class AssaySchema extends UserSchema
 
     public ExpRunTable createRunTable(String alias, final ExpProtocol protocol, final AssayProvider provider)
     {
-        ExpRunTable runTable = provider.createRunTable(this, alias, protocol);
+        final ExpRunTable runTable = provider.createRunTable(this, alias, protocol);
         runTable.setProtocolPatterns(protocol.getLSID());
 
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>(runTable.getDefaultVisibleColumns());
@@ -115,56 +114,30 @@ public class AssaySchema extends UserSchema
         PropertyDescriptor[] pds = runColumns.toArray(new PropertyDescriptor[runColumns.size()]);
 
         ColumnInfo propsCol = runTable.addPropertyColumns("Run Properties", pds, this);
-        propsCol.setFk(new PropertyForeignKey(pds, this)
+        propsCol.setFk(new AssayPropertyForeignKey(pds));
+
+        SQLFragment batchSQL = new SQLFragment("(SELECT MIN(ExperimentId) FROM ");
+        batchSQL.append(ExperimentService.get().getTinfoRunList());
+        batchSQL.append(" rl, ");
+        batchSQL.append(ExperimentService.get().getTinfoExperiment());
+        batchSQL.append(" e WHERE e.RowId = rl.ExperimentId AND rl.ExperimentRunId = ");
+        batchSQL.append(ExprColumn.STR_TABLE_ALIAS);
+        batchSQL.append(".RowId AND e.LSID LIKE '%:Experiment.Folder-%AssayBatch:%')");
+        ExprColumn batchColumn = new ExprColumn(runTable, "Batch", batchSQL, Types.INTEGER, runTable.getColumn(ExpRunTable.Column.RowId));
+        batchColumn.setFk(new LookupForeignKey("RowId")
         {
-            protected ColumnInfo constructColumnInfo(ColumnInfo parent, String name, final PropertyDescriptor pd)
+            public TableInfo getLookupTableInfo()
             {
-                ColumnInfo result = super.constructColumnInfo(parent, name, pd);
-                if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(pd.getName()))
-                {
-                    result.setFk(new LookupForeignKey("Container", "Label")
-                    {
-                        public TableInfo getLookupTableInfo()
-                        {
-                            FilteredTable table = new FilteredTable(StudyManager.getSchema().getTable("Study"));
-                            ExprColumn col = new ExprColumn(table, "Container", new SQLFragment("CAST (" + ExprColumn.STR_TABLE_ALIAS + ".Container AS VARCHAR(200))"), Types.VARCHAR);
-                            table.addColumn(col);
-                            table.addColumn(table.wrapColumn(table.getRealTable().getColumn("Label")));
-                            return table;
-                        }
-                    });
-                    result.setDisplayColumnFactory(new DisplayColumnFactory()
-                    {
-                        public DisplayColumn createRenderer(ColumnInfo colInfo)
-                        {
-                            return new DataColumn(colInfo)
-                            {
-                                public String getFormattedValue(RenderContext ctx)
-                                {
-                                    Object value = getDisplayColumn().getValue(ctx);
-                                    if (value == null)
-                                    {
-                                        return "[None]";
-                                    }
-                                    return super.getFormattedValue(ctx);
-                                }
-                            };
-                        }
-                    });
-                }
-                if (pd.getPropertyType() == PropertyType.FILE_LINK)
-                {
-                    result.setDisplayColumnFactory(new DisplayColumnFactory()
-                    {
-                        public DisplayColumn createRenderer(ColumnInfo colInfo)
-                        {
-                            return new FileLinkDisplayColumn(colInfo, pd, new ActionURL("assay", "downloadFile.view", _container));
-                        }
-                    });
-                }
+                ExpExperimentTable result = ExperimentService.get().createExperimentTable("Experiments", null, AssaySchema.this);
+                result.populate();
+                result.setContainerFilter(runTable.getContainerFilter(), getUser());
+                PropertyDescriptor[] batchPDs = provider.getUploadSetColumns(protocol);
+                ColumnInfo batchPropsCol = result.addPropertyColumns("Batch Properties", batchPDs, AssaySchema.this);
+                batchPropsCol.setFk(new AssayPropertyForeignKey(batchPDs));
                 return result;
             }
         });
+        runTable.addColumn(batchColumn);
 
         FieldKey runKey = FieldKey.fromString("Run Properties");
         for (PropertyDescriptor runColumn : runColumns)
@@ -195,5 +168,61 @@ public class AssaySchema extends UserSchema
         }
 
         return super.createView(context, settings);
+    }
+
+    private class AssayPropertyForeignKey extends PropertyForeignKey
+    {
+        public AssayPropertyForeignKey(PropertyDescriptor[] pds)
+        {
+            super(pds, AssaySchema.this);
+        }
+
+        protected ColumnInfo constructColumnInfo(ColumnInfo parent, String name, final PropertyDescriptor pd)
+        {
+            ColumnInfo result = super.constructColumnInfo(parent, name, pd);
+            if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(pd.getName()))
+            {
+                result.setFk(new LookupForeignKey("Container", "Label")
+                {
+                    public TableInfo getLookupTableInfo()
+                    {
+                        FilteredTable table = new FilteredTable(StudyManager.getSchema().getTable("Study"));
+                        ExprColumn col = new ExprColumn(table, "Container", new SQLFragment("CAST (" + ExprColumn.STR_TABLE_ALIAS + ".Container AS VARCHAR(200))"), Types.VARCHAR);
+                        table.addColumn(col);
+                        table.addColumn(table.wrapColumn(table.getRealTable().getColumn("Label")));
+                        return table;
+                    }
+                });
+                result.setDisplayColumnFactory(new DisplayColumnFactory()
+                {
+                    public DisplayColumn createRenderer(ColumnInfo colInfo)
+                    {
+                        return new DataColumn(colInfo)
+                        {
+                            public String getFormattedValue(RenderContext ctx)
+                            {
+                                Object value = getDisplayColumn().getValue(ctx);
+                                if (value == null)
+                                {
+                                    return "[None]";
+                                }
+                                return super.getFormattedValue(ctx);
+                            }
+                        };
+                    }
+                });
+            }
+            if (pd.getPropertyType() == PropertyType.FILE_LINK)
+            {
+                result.setDisplayColumnFactory(new DisplayColumnFactory()
+                {
+                    public DisplayColumn createRenderer(ColumnInfo colInfo)
+                    {
+                        return new FileLinkDisplayColumn(colInfo, pd, new ActionURL(AssayController.DownloadFileAction.class, _container));
+                    }
+                });
+            }
+            return result;
+        }
     }
 }

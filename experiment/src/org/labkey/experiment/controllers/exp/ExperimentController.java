@@ -103,10 +103,11 @@ public class ExperimentController extends SpringActionController
             RunGroupWebPart v = new RunGroupWebPart(getViewContext(), false);
             v.showHeader();
 
-            ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(ExperimentService.get().getExperimentRunFilters(), ExperimentRunFilter.getSelectedFilter(getViewContext().getRequest().getParameter("experimentRunFilter")), getViewContext().getActionURL().clone());
+            Set<ExperimentRunType> types = ExperimentService.get().getExperimentRunTypes(getContainer());
+            ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(types, ExperimentRunType.getSelectedFilter(types, getViewContext().getRequest().getParameter("experimentRunFilter")), getViewContext().getActionURL().clone());
             JspView chooserView = new JspView<ChooseExperimentTypeBean>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean);
             chooserView.setTitle(ExperimentModule.EXPERIMENT_RUN_WEB_PART_NAME);
-            chooserView.setTitleHref(ExperimentUrlsImpl.get().getShowRunsURL(getContainer(), ExperimentRunFilter.ALL_RUNS_FILTER));
+            chooserView.setTitleHref(ExperimentUrlsImpl.get().getShowRunsURL(getContainer(), ExperimentRunType.ALL_RUNS_TYPE));
 
             ExperimentRunListView runView = ExperimentRunListView.createView(getViewContext(), bean.getSelectedFilter(), true);
             runView.setShowDeleteButton(true);
@@ -130,7 +131,8 @@ public class ExperimentController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(ExperimentService.get().getExperimentRunFilters(), ExperimentRunFilter.getSelectedFilter(getViewContext().getRequest().getParameter("experimentRunFilter")), getViewContext().getActionURL().clone());
+            Set<ExperimentRunType> types = ExperimentService.get().getExperimentRunTypes(getContainer());
+            ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(types, ExperimentRunType.getSelectedFilter(types, getViewContext().getRequest().getParameter("experimentRunFilter")), getViewContext().getActionURL().clone());
             JspView chooserView = new JspView<ChooseExperimentTypeBean>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean);
 
             ExperimentRunListView view = ExperimentRunListView.createView(getViewContext(), bean.getSelectedFilter(), true);
@@ -204,23 +206,23 @@ public class ExperimentController extends SpringActionController
 
             ExpProtocol[] protocols = _experiment.getProtocols();
 
-            ExperimentRunFilter selectedFilter = ExperimentRunFilter.getSelectedFilter(getViewContext().getRequest().getParameter("experimentRunFilter"));
-            if (selectedFilter == null)
+            Set<ExperimentRunType> types = new TreeSet<ExperimentRunType>(ExperimentService.get().getExperimentRunTypes(getContainer()));
+            ExperimentRunType selectedType = ExperimentRunType.getSelectedFilter(types, getViewContext().getRequest().getParameter("experimentRunFilter"));
+            if (selectedType == null)
             {
                 if (protocols.length == 0)
                 {
-                    selectedFilter = ExperimentRunFilter.ALL_RUNS_FILTER;
+                    selectedType = ExperimentRunType.ALL_RUNS_TYPE;
                 }
                 else
                 {
-                    Set<ExperimentRunFilter> filters = new TreeSet<ExperimentRunFilter>(ExperimentService.get().getExperimentRunFilters());
                     Handler.Priority bestPriority = null;
-                    for (ExperimentRunFilter filter : filters)
+                    for (ExperimentRunType type : types)
                     {
                         Handler.Priority worstFilterPriority = Handler.Priority.HIGH;
                         for (ExpProtocol protocol : protocols)
                         {
-                            Handler.Priority p = filter.getPriority(protocol);
+                            Handler.Priority p = type.getPriority(protocol);
                             if (worstFilterPriority != null && (p == null || p.compareTo(worstFilterPriority) < 0))
                             {
                                 worstFilterPriority = p;
@@ -230,19 +232,22 @@ public class ExperimentController extends SpringActionController
                         if (worstFilterPriority != null && (bestPriority == null || bestPriority.compareTo(worstFilterPriority) < 0))
                         {
                             bestPriority = worstFilterPriority;
-                            selectedFilter = filter;
+                            selectedType = type;
                         }
                     }
                 }
-
             }
 
-            ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(ExperimentService.get().getExperimentRunFilters(), selectedFilter, getViewContext().getActionURL().clone());
+            ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(types, selectedType, getViewContext().getActionURL().clone());
             JspView chooserView = new JspView<ChooseExperimentTypeBean>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean);
 
             ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), bean.getSelectedFilter(), true);
             runListView.getRunTable().setExperiment(_experiment);
             runListView.setShowRemoveFromExperimentButton(true);
+            runListView.setShowDeleteButton(true);
+            runListView.setShowAddToRunGroupButton(true);
+            runListView.setShowExportXARButton(true);
+            runListView.setShowMoveRunsButton(true);
             chooserView.setTitle("Experiment Runs");
             vbox.addView(chooserView);
             vbox.addView(runListView);
@@ -506,7 +511,7 @@ public class ExperimentController extends SpringActionController
                 vbox.addView(deriveView);
             }
 
-            ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), ExperimentRunFilter.ALL_RUNS_FILTER, true);
+            ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), ExperimentRunType.ALL_RUNS_TYPE, true);
             runListView.getRunTable().setRuns(successorRuns);
             runListView.getRunTable().setContainerFilter(ContainerFilter.Filters.ALL_IN_SITE, getUser());
             runListView.setTitle("Runs using this material or a derived material");
@@ -673,7 +678,7 @@ public class ExperimentController extends SpringActionController
 
             if (form.isIncluded())
             {
-                exp.addRun(getViewContext().getUser(), run);
+                exp.addRuns(getViewContext().getUser(), run);
             }
             else
             {
@@ -831,7 +836,7 @@ public class ExperimentController extends SpringActionController
             CustomPropertiesView cpv = new CustomPropertiesView(_data.getLSID(), getViewContext().cloneActionURL(), c);
 
 
-            ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), ExperimentRunFilter.ALL_RUNS_FILTER, true);
+            ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), ExperimentRunType.ALL_RUNS_TYPE, true);
             runListView.getRunTable().setInputData(_data);
             runListView.getRunTable().setContainerFilter(ContainerFilter.Filters.ALL_IN_SITE, getUser());
             runListView.setTitle("Runs using this data as an input");
@@ -987,7 +992,7 @@ public class ExperimentController extends SpringActionController
 
 
             ExpSchema schema = new ExpSchema(getUser(), getContainer());
-            ExperimentRunListView runView = new ExperimentRunListView(schema, ExperimentRunListView.getRunListQuerySettings(schema, getViewContext(), ExpSchema.TableType.Runs.name(), false), ExperimentRunFilter.ALL_RUNS_FILTER)
+            ExperimentRunListView runView = new ExperimentRunListView(schema, ExperimentRunListView.getRunListQuerySettings(schema, getViewContext(), ExpSchema.TableType.Runs.name(), false), ExperimentRunType.ALL_RUNS_TYPE)
             {
                 public DataView createDataView()
                 {
@@ -2167,7 +2172,16 @@ public class ExperimentController extends SpringActionController
             throws SQLException
     {
         int[] runIds = PageFlowUtil.toInts(DataRegionSelection.getSelected(getViewContext(), true));
-        ExperimentServiceImpl.get().addRunsToExperiment(exp.getRowId(), runIds);
+        List<ExpRun> runs = new ArrayList<ExpRun>();
+        for (int runId : runIds)
+        {
+            ExpRun run = ExperimentServiceImpl.get().getExpRun(runId);
+            if (run != null)
+            {
+                runs.add(run);
+            }
+        }
+        exp.addRuns(getUser(), runs.toArray(new ExpRun[runs.size()]));
     }
 
 
@@ -2529,7 +2543,7 @@ public class ExperimentController extends SpringActionController
 
             DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleSet, form.getOutputCount(), getContainer(), getUser());
 
-            if (!UploadWizardAction.validatePostedProperties(helper.getPostedPropertyValues(getViewContext().getRequest()), getViewContext().getRequest(),errors))
+            if (!UploadWizardAction.validatePostedProperties(helper.getPostedPropertyValues(getViewContext().getRequest()), errors))
             {
                 return redirectError(form, errors);
             }
@@ -2926,7 +2940,14 @@ public class ExperimentController extends SpringActionController
             ViewBackgroundInfo info = getViewBackgroundInfo();
             info.setContainer(_targetContainer);
 
-            ExperimentService.get().moveRuns(info, getContainer(), runs);
+            try
+            {
+                ExperimentService.get().moveRuns(info, getContainer(), runs);
+            }
+            catch (IOException e)
+            {
+                HttpView.throwNotFound("Failed to initialize move. Check that the pipeline root is configured correctly. " + e);
+            }
             return true;
         }
 
@@ -3262,10 +3283,10 @@ public class ExperimentController extends SpringActionController
             return new ActionURL(AddRunsToExperimentAction.class, c).addParameter("expRowId", exp.getRowId());
         }
 
-        public ActionURL getShowRunsURL(Container c, ExperimentRunFilter filter)
+        public ActionURL getShowRunsURL(Container c, ExperimentRunType type)
         {
             ActionURL result = new ActionURL(ShowRunsAction.class, c);
-            result.addParameter("experimentRunFilter", filter.getDescription());
+            result.addParameter("experimentRunFilter", type.getDescription());
             return result;
         }
 

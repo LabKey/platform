@@ -21,17 +21,14 @@ import org.labkey.api.exp.pipeline.XarGeneratorId;
 import org.labkey.api.exp.pipeline.XarGeneratorFactorySettings;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.*;
-import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.FileUtil;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.ExpRunImpl;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.DataURLRelativizer;
 import org.labkey.experiment.ExperimentRunGraph;
-import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 
 import java.io.IOException;
 import java.io.File;

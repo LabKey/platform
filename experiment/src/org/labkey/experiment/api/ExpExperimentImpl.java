@@ -20,8 +20,6 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.experiment.api.Experiment;
-import org.labkey.experiment.api.ExperimentRun;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
@@ -113,12 +111,12 @@ public class ExpExperimentImpl extends ExpIdentifiableBaseImpl<Experiment> imple
         ExperimentServiceImpl.get().dropRunsFromExperiment(getLSID(), run.getRowId());
     }
 
-    public void addRun(User user, ExpRun run) throws Exception
+    public void addRuns(User user, ExpRun... runs)
     {
-        ExperimentServiceImpl.get().addRunsToExperiment(getRowId(), run.getRowId());
+        ExperimentServiceImpl.get().addRunsToExperiment(this, runs);
     }
 
-    public void save(User user) throws Exception
+    public void save(User user)
     {
         if (getRowId() == 0)
         {

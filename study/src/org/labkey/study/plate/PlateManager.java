@@ -414,7 +414,7 @@ public class PlateManager implements PlateService.Service
         }
         try {
             if (objectProperties.length > 0)
-                OntologyManager.insertProperties(container.getId(), objectProperties, ownerLsid);
+                OntologyManager.insertProperties(container, ownerLsid, objectProperties);
         }
         catch (ValidationException ve)
         {
@@ -493,7 +493,7 @@ public class PlateManager implements PlateService.Service
         {
             scope.beginTransaction();
             AttachmentService.get().deleteAttachments(plate);
-            OntologyManager.deleteOntologyObjects(lsids.toArray(new String[lsids.size()]), container);
+            OntologyManager.deleteOntologyObjects(container, lsids.toArray(new String[lsids.size()]));
             Table.delete(StudySchema.getInstance().getTableInfoWell(), plateIdFilter);
             Table.delete(StudySchema.getInstance().getTableInfoWellGroup(), plateIdFilter);
             Table.delete(StudySchema.getInstance().getTableInfoPlate(), plateFilter);

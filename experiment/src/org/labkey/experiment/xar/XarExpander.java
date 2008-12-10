@@ -17,6 +17,7 @@
 package org.labkey.experiment.xar;
 
 import org.fhcrc.cpas.exp.xml.*;
+import org.fhcrc.cpas.exp.xml.ExperimentRunType;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.Replacer;

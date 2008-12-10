@@ -130,7 +130,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
             {
                 ObjectProperty oprop = new ObjectProperty(getLSID(), getContainerId(), pd.getPropertyURI(), value, pd.getPropertyType());
                 oprop.setPropertyId(pd.getPropertyId());
-                OntologyManager.insertProperty(getContainerId(), oprop, getOwnerObjectLSID());
+                OntologyManager.insertProperties(getContainer(), getOwnerObjectLSID(), oprop);
             }
             if (fTrans)
             {
@@ -149,7 +149,6 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
                 ExperimentService.get().rollbackTransaction();
             }
         }
-
     }
 
     public String urlFlag(boolean flagged)
@@ -192,7 +191,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
             throw new IllegalArgumentException("Property already exists");
         String objectURI = GUID.makeURN();
         ObjectProperty oprop = new ObjectProperty(getLSID(), getContainerId(), pd.getPropertyURI(), objectURI);
-        OntologyManager.insertProperty(getContainerId(), oprop, getOwnerObjectLSID());
+        OntologyManager.insertProperties(getContainer(), getOwnerObjectLSID(), oprop);
         return new ExpChildObjectImpl(getOwnerObject(), this, pd, objectURI);
     }
 

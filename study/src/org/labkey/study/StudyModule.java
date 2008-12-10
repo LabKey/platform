@@ -21,7 +21,10 @@ import org.apache.log4j.Logger;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.LsidManager;
+import org.labkey.api.exp.ExperimentRunTypeSource;
+import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
@@ -39,6 +42,8 @@ import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayRunType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Search;
 import org.labkey.api.view.*;
@@ -173,6 +178,22 @@ public class StudyModule extends DefaultModule
         SecurityManager.addViewFactory(new SecurityController.StudySecurityViewFactory());
         AssayService.get().registerAssayProvider(new TsvAssayProvider());
         ExperimentService.get().registerExperimentDataHandler(new TsvDataHandler());
+        ExperimentService.get().registerExperimentRunTypeSource(new ExperimentRunTypeSource()
+        {
+            public Set<ExperimentRunType> getExperimentRunTypes(Container container)
+            {
+                if (container.getActiveModules().contains(StudyModule.this))
+                {
+                    Set<ExperimentRunType> result = new HashSet<ExperimentRunType>();
+                    for (final ExpProtocol protocol : AssayService.get().getAssayProtocols(container))
+                    {
+                        result.add(new AssayRunType(protocol, container));
+                    }
+                    return result;
+                }
+                return Collections.emptySet();
+            }
+        });
         AuditLogService.get().addAuditViewFactory(AssayAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(DatasetAuditViewFactory.getInstance());
 

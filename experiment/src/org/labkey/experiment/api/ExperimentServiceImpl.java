@@ -65,7 +65,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     static private final Logger _log = Logger.getLogger(ExperimentServiceImpl.class);
     public static final String DEFAULT_MATERIAL_SOURCE_NAME = "Unspecified";
 
-    private Set<ExperimentRunFilter> _runFilters = new TreeSet<ExperimentRunFilter>();
+    private List<ExperimentRunTypeSource> _runTypeSources = new ArrayList<ExperimentRunTypeSource>();
     private Set<ExperimentDataHandler> _dataHandlers = new HashSet<ExperimentDataHandler>();
     private Set<RunExpansionHandler> _expansionHanders = new HashSet<RunExpansionHandler>();
     protected Map<String, DataType> _dataTypes = new HashMap<String, DataType>();
@@ -614,14 +614,28 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public void beginTransaction() throws SQLException
+    public void beginTransaction()
     {
-        getExpSchema().getScope().beginTransaction();
+        try
+        {
+            getExpSchema().getScope().beginTransaction();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
-    public void commitTransaction() throws SQLException
+    public void commitTransaction()
     {
-        getExpSchema().getScope().commitTransaction();
+        try
+        {
+            getExpSchema().getScope().commitTransaction();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public void closeTransaction()
@@ -639,16 +653,16 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         getExpSchema().getScope().rollbackTransaction();
     }
 
-    public ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunFilter filter, boolean moveButton, boolean exportXARButton)
+    public ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunType type, boolean moveButton, boolean exportXARButton)
     {
-        ExperimentRunListView view = ExperimentRunListView.createView(context, filter, true);
+        ExperimentRunListView view = ExperimentRunListView.createView(context, type, true);
         view.setShowDeleteButton(true);
         view.setShowAddToRunGroupButton(true);
         view.setShowMoveRunsButton(moveButton);
         view.setShowExportXARButton(exportXARButton);
         view.setTitle("Experiment Runs");
         ActionURL url = new ActionURL(ExperimentController.ShowRunsAction.class, context.getContainer());
-        url.addParameter("experimentRunFilter", filter.getDescription());
+        url.addParameter("experimentRunFilter", type.getDescription());
         view.setTitleHref(url.toString());
         return view;
     }
@@ -1288,7 +1302,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         String experimentIds = StringUtils.join(toIntegers(selectedExperimentIds), ",");
 
         String sql = "SELECT LSID FROM exp.Experiment WHERE RowId IN (" + experimentIds + ")  AND Container = ? ;";
-        String[] expLsids = Table.executeQuery(getExpSchema(), sql, new Object[]{container.getId()}, String.class);
+        String[] expLsids = Table.executeArray(getExpSchema(), sql, new Object[]{container.getId()}, String.class);
 
         if (expLsids.length != selectedExperimentIds.length)
             _log.debug("deleteExperimentByRowIds:  LSIDs not found in container for all rowIds selected");
@@ -1307,9 +1321,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     + " AND E.Container = ? ); ";
             Table.execute(getExpSchema(), sql, new Object[]{container.getId()});
 
-            for (String lsid: expLsids)
-                    OntologyManager.deleteOntologyObject(container.getId(),lsid);
-
+            OntologyManager.deleteOntologyObjects(container, expLsids);
+            
             sql = "  DELETE FROM " + getTinfoExperiment()
                     + " WHERE RowId IN ("+ experimentIds + ") "
                     + " AND Container = ? ";
@@ -1360,17 +1373,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public ExpExperimentImpl addRunsToExperiment(int expId, int... selectedRunIds) throws SQLException
+    public ExpExperiment addRunsToExperiment(ExpExperiment exp, ExpRun... runs)
     {
-        ExpExperimentImpl exp = getExpExperiment(expId);
-        if (exp == null)
-        {
-            throw new SQLException("Attempting to add Runs to an Experiment that does not exist");
-        }
-
-        if (selectedRunIds.length == 0)
-            return exp;
-
         boolean containingTrans = getExpSchema().getScope().isTransactionActive();
         try
         {
@@ -1379,8 +1383,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             ExperimentRun[] existingRunIds = getRunsForExperiment(exp.getLSID());
             Set<Integer> newRuns = new HashSet<Integer>();
-            for (int runId : selectedRunIds)
-                newRuns.add(new Integer(runId));
+            for (ExpRun run : runs)
+                newRuns.add(new Integer(run.getRowId()));
 
             for (ExperimentRun er : existingRunIds)
             {
@@ -1398,6 +1402,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 getExpSchema().getScope().commitTransaction();
 
             return exp;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
         }
         finally
         {
@@ -1581,7 +1589,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     throw new SQLException("Attemping to delete a Protocol from another container");
                 }
                 DbCache.remove(getTinfoProtocol(), getCacheKey(protocol.getLSID()));
-                OntologyManager.deleteOntologyObject(c.getId(), protocol.getLSID());
+                OntologyManager.deleteOntologyObjects(c, protocol.getLSID());
             }
 
             sql = "  DELETE FROM exp.Protocol WHERE RowId IN (" + protocolIds + ");";
@@ -1650,7 +1658,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 {
                     throw new SQLException("Attemping to delete a Material from another container");
                 }
-                OntologyManager.deleteOntologyObject(container.getId(), material.getLSID());
+                OntologyManager.deleteOntologyObjects(container, material.getLSID());
             }
             Table.execute(getExpSchema(),
                     "DELETE FROM exp.MaterialInput WHERE MaterialId IN (" + materialIds + ")",
@@ -1694,7 +1702,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 {
                     throw new SQLException("Attemping to delete a Data from another container");
                 }
-                OntologyManager.deleteOntologyObject(container.getId(), data.getLSID());
+                OntologyManager.deleteOntologyObjects(container, data.getLSID());
             }
             sql = "  DELETE FROM exp.Data WHERE RowId IN (" + dataIds + ");";
             Table.execute(getExpSchema(), sql, new Object[]{});
@@ -1837,7 +1845,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ExpDataImpl.fromDatas(Table.executeQuery(getSchema(), sql.toString(), new Object[] { runId }, Data.class));
     }
 
-    public void moveRuns(ViewBackgroundInfo info, Container sourceContainer, List<ExpRun> runs) throws SQLException, IOException
+    public void moveRuns(ViewBackgroundInfo info, Container sourceContainer, List<ExpRun> runs) throws IOException
     {
         int[] rowIds = new int[runs.size()];
         for (int i = 0; i < runs.size(); i++)
@@ -2060,7 +2068,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             //Delete everything the ontology knows about this
             //includes all properties where this is the owner.
-            OntologyManager.deleteOntologyObject(source.getContainer().getId(), source.getLSID());
+            OntologyManager.deleteOntologyObjects(source.getContainer(), source.getLSID());
             if (OntologyManager.getDomainDescriptor(source.getLSID(), c) != null)
             {
                 try
@@ -2527,7 +2535,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 loadParameter(user, param, getTinfoProtocolParameter(), "ProtocolId", protocol.getRowId());
             }
 
-            savePropertyCollection(protocol.retrieveObjectProperties(), protocol.getLSID(), protocol.getContainer(), !newProtocol);
+            savePropertyCollection(protocol.retrieveObjectProperties(), protocol.getLSID(), ContainerManager.getForId(protocol.getContainer()), !newProtocol);
             return result;
         }
         catch (SQLException e)
@@ -2553,7 +2561,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public void savePropertyCollection(Map<String, ObjectProperty> propMap, String ownerLSID, String container, boolean clearExisting) throws SQLException
+    public void savePropertyCollection(Map<String, ObjectProperty> propMap, String ownerLSID, Container container, boolean clearExisting) throws SQLException
     {
         if (propMap.size() == 0)
             return;
@@ -2561,14 +2569,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         // Todo - make this more efficient - don't delete all the old ones if they're the same
         if (clearExisting)
         {
-            OntologyManager.deleteOntologyObject(container, ownerLSID);
+            OntologyManager.deleteOntologyObjects(container, ownerLSID);
             for (ObjectProperty prop : propMap.values())
             {
                 prop.setObjectId(0);
             }
         }
         try {
-            OntologyManager.insertProperties(container, props, ownerLSID);
+            OntologyManager.insertProperties(container, ownerLSID, props);
             for (ObjectProperty prop : props)
             {
                 Map<String, ObjectProperty> childProps = prop.retrieveChildProperties();
@@ -2617,9 +2625,16 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return (ExperimentServiceImpl)ExperimentService.get();
     }
 
-    public Experiment insertExperiment(User user, Experiment exp) throws SQLException
+    public Experiment insertExperiment(User user, Experiment exp)
     {
-        return Table.insert(user, getTinfoExperiment(), exp);
+        try
+        {
+            return Table.insert(user, getTinfoExperiment(), exp);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     /** @return all the Data objects from this run */
@@ -2907,9 +2922,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         _expansionHanders.add(handler);
     }
 
-    public void registerExperimentRunFilter(ExperimentRunFilter filter)
+    public void registerExperimentRunTypeSource(ExperimentRunTypeSource source)
     {
-        _runFilters.add(filter);
+        _runTypeSources.add(source);
     }
 
     public void registerDataType(DataType type)
@@ -2917,9 +2932,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         _dataTypes.put(type.getNamespacePrefix(), type);
     }
 
-    public Set<ExperimentRunFilter> getExperimentRunFilters()
+    public Set<ExperimentRunType> getExperimentRunTypes(Container container)
     {
-        return Collections.unmodifiableSet(_runFilters);
+        Set<ExperimentRunType> result = new TreeSet<ExperimentRunType>();
+        for (ExperimentRunTypeSource runTypeSource : _runTypeSources)
+        {
+            result.addAll(runTypeSource.getExperimentRunTypes(container));
+        }
+        return Collections.unmodifiableSet(result);
     }
 
     public Set<ExperimentDataHandler> getExperimentDataHandlers()

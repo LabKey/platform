@@ -426,7 +426,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
             prop.setObjectURI(parentLsid);
 
         try {
-            OntologyManager.insertProperties(c.getId(), properties, parentLsid);
+            OntologyManager.insertProperties(c, parentLsid, properties);
         }
         catch (ValidationException e)
         {

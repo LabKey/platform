@@ -23,8 +23,9 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.ExperimentRunFilter;
+import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.ExperimentRunTypeSource;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
 import org.labkey.api.exp.api.ExpSchema;
 import org.labkey.api.exp.api.ExperimentService;
@@ -157,7 +158,7 @@ public class ExperimentModule extends SpringModule
         result.add(new BaseWebPartFactory(ExperimentModule.EXPERIMENT_RUN_WEB_PART_NAME){
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart)
             {
-                return ExperimentService.get().createExperimentRunWebPart(new ViewContext(portalCtx), ExperimentRunFilter.ALL_RUNS_FILTER, true, true);
+                return ExperimentService.get().createExperimentRunWebPart(new ViewContext(portalCtx), ExperimentRunType.ALL_RUNS_TYPE, true, true);
             }
         });
         result.add(new BaseWebPartFactory(SAMPLE_SET_WEB_PART_NAME){
@@ -194,7 +195,13 @@ public class ExperimentModule extends SpringModule
     public void startup(ModuleContext context)
     {
         PipelineService.get().registerPipelineProvider(new ExperimentPipelineProvider());
-        ExperimentService.get().registerExperimentRunFilter(ExperimentRunFilter.ALL_RUNS_FILTER);
+        ExperimentService.get().registerExperimentRunTypeSource(new ExperimentRunTypeSource()
+        {
+            public Set<ExperimentRunType> getExperimentRunTypes(Container container)
+            {
+                return Collections.singleton(ExperimentRunType.ALL_RUNS_TYPE);
+            }
+        });
         ExperimentService.get().registerRunExpansionHandler(new DefaultRunExpansionHandler());
         ExperimentService.get().registerExperimentDataHandler(new DefaultExperimentDataHandler());
         ExperimentService.get().registerDataType(new LogDataType());

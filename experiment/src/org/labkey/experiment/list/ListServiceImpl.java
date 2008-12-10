@@ -102,12 +102,12 @@ public class ListServiceImpl implements ListService.Interface
 
     // These transaction methods were added to abstract the detail that
     // Lists use the ExperimentService for their database storage.
-    public void beginTransaction() throws SQLException
+    public void beginTransaction()
     {
         ExperimentService.get().beginTransaction();
     }
 
-    public void commitTransaction() throws SQLException
+    public void commitTransaction()
     {
         ExperimentService.get().commitTransaction();
     }

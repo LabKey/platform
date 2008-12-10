@@ -73,6 +73,6 @@ public abstract class ExtensibleStudyEntity<E> extends AbstractStudyEntity<E>
                 objectProperties[idx++] = new ObjectProperty(ownerLsid, container.getId(), propertyURI, entry.getValue(), PropertyType.STRING);
         }
         if (objectProperties.length > 0)
-            OntologyManager.insertProperties(container.getId(), objectProperties, ownerLsid);
+            OntologyManager.insertProperties(container, ownerLsid, objectProperties);
     }
 }

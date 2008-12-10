@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.xmlbeans.*;
 import org.fhcrc.cpas.exp.xml.*;
 import org.fhcrc.cpas.exp.xml.DataType;
+import org.fhcrc.cpas.exp.xml.ExperimentRunType;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.xar.LsidUtils;
@@ -722,7 +723,7 @@ public class XarReader extends AbstractXarImporter
         if (experimentLSID != null)
         {
             ExpExperiment e = ExperimentService.get().getExpExperiment(experimentLSID);
-            ExperimentService.get().addRunsToExperiment(e.getRowId(), runId);
+            e.addRuns(getUser(), new ExpRunImpl(run));
         }
 
         runContext.setCurrentRun(new ExpRunImpl(run));
@@ -1369,7 +1370,7 @@ public class XarReader extends AbstractXarImporter
 
         if (!propsToInsert.isEmpty())
         {
-            ExperimentServiceImpl.get().savePropertyCollection(propsToInsert, ownerLSID, getContainer().getId(), false);
+            ExperimentServiceImpl.get().savePropertyCollection(propsToInsert, ownerLSID, getContainer(), false);
         }
     }
 
@@ -1732,7 +1733,7 @@ public class XarReader extends AbstractXarImporter
                     }
                 }
 
-                OntologyManager.insertProperty(getContainer().getId(), new ObjectProperty(parentLSID, propertyURI, stringValue, propertyType), run.getLSID());
+                OntologyManager.insertProperties(getContainer(), run.getLSID(), new ObjectProperty(parentLSID, propertyURI, stringValue, propertyType));
             }
             catch (Exception e)
             {

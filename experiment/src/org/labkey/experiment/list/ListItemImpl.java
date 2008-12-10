@@ -146,7 +146,7 @@ public class ListItemImpl implements ListItem
             OntologyObject object = OntologyManager.getOntologyObject(itm.getObjectId());
             if (object != null)
             {
-                OntologyManager.deleteOntologyObject(object.getContainer(), object.getObjectURI());
+                OntologyManager.deleteOntologyObjects(c, object.getObjectURI());
             }
         }
 
@@ -262,14 +262,15 @@ public class ListItemImpl implements ListItem
                     {
                         if (dp.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT)
                             AttachmentService.get().deleteAttachment(parent, (String)oldValue);
-                        OntologyManager.deleteProperty(obj.getContainer(), obj.getObjectURI(), entry.getKey());
+                        Container c = ContainerManager.getForId(obj.getContainer());
+                        OntologyManager.deleteProperty(obj.getObjectURI(), entry.getKey(), c, c);
                     }
                     if (entry.getValue() != null)
                     {
                         ObjectProperty property = new ObjectProperty(obj.getObjectURI(), obj.getContainer(), entry.getKey(), entry.getValue(), dp.getPropertyDescriptor().getPropertyType(), dp.getPropertyDescriptor().getName());
                         if (dp.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT)
                             newAttachments.add((AttachmentFile)entry.getValue());
-                        OntologyManager.insertProperty(obj.getContainer(), property, obj.getObjectURI());
+                        OntologyManager.insertProperties(ContainerManager.getForId(obj.getContainer()), obj.getObjectURI(), property);
                     }
                 }
                 _oldProperties = null;

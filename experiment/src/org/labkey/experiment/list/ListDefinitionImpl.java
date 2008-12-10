@@ -239,7 +239,7 @@ public class ListDefinitionImpl implements ListDefinition
         }
     }
 
-    public void deleteListItems(User user, Collection keys) throws Exception
+    public void deleteListItems(User user, Collection keys) throws SQLException
     {
         boolean fTransaction = false;
         try
@@ -492,7 +492,6 @@ public class ListDefinitionImpl implements ListDefinition
                 ExperimentService.get().rollbackTransaction();
             }
         }
-        return;
     }
 
     private void addAuditEvent(User user, String comment) throws Exception

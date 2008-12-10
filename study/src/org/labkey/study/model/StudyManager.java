@@ -2005,7 +2005,7 @@ public class StudyManager
         }
         deleteFilter.addWhereClause("LSID IN (" + sbDelete + ")", new Object[]{});
         Table.delete(StudySchema.getInstance().getTableInfoStudyData(), deleteFilter);
-        OntologyManager.deleteOntologyObjects(deleteSet.toArray(new String[0]), c);
+        OntologyManager.deleteOntologyObjects(c, deleteSet.toArray(new String[0]));
 
         return null;
     }

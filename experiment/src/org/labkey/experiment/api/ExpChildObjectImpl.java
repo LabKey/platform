@@ -20,6 +20,7 @@ import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpChildObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.security.User;
 
@@ -50,6 +51,11 @@ public class ExpChildObjectImpl extends ExpObjectImpl implements ExpChildObject
     public String getLSID()
     {
         return _objectURI;
+    }
+
+    public void setLSID(Lsid lsid)
+    {
+        setLSID(lsid == null ? null : lsid.toString());
     }
 
     public void setLSID(String lsid)

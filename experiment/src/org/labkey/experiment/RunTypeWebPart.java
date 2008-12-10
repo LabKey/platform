@@ -16,7 +16,7 @@
 
 package org.labkey.experiment;
 
-import org.labkey.api.exp.ExperimentRunFilter;
+import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.view.JspView;
 
@@ -26,13 +26,14 @@ import java.util.Set;
  * User: jeckels
  * Date: Feb 26, 2008
  */
-public class RunTypeWebPart extends JspView<Set<ExperimentRunFilter>>
+public class RunTypeWebPart extends JspView<Set<ExperimentRunType>>
 {
     public static final String WEB_PART_NAME = "Run Types";
 
     public RunTypeWebPart()
     {
-        super("/org/labkey/experiment/runTypeFilters.jsp", ExperimentService.get().getExperimentRunFilters());
+        super("/org/labkey/experiment/runTypeFilters.jsp");
+        setModelBean(ExperimentService.get().getExperimentRunTypes(getViewContext().getContainer()));
         setTitle("Run Types");
     }
 }

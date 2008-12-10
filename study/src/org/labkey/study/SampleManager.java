@@ -1062,8 +1062,8 @@ public class SampleManager
                 String setItemLsid = ensureOntologyManagerSetItem(container, parentObjectLsid, getTitle());
                 String propertyId = parentObjectLsid + "." + siteId;
                 ObjectProperty defaultValueProperty = new ObjectProperty(setItemLsid, container.getId(), propertyId, value);
-                OntologyManager.deleteProperty(container.getId(), setItemLsid, propertyId);
-                OntologyManager.insertProperty(container.getId(), defaultValueProperty, setItemLsid);
+                OntologyManager.deleteProperty(setItemLsid, propertyId, container, container);
+                OntologyManager.insertProperties(container, setItemLsid, defaultValueProperty);
             }
             catch (ValidationException e)
             {
@@ -1145,7 +1145,7 @@ public class SampleManager
                 // create the resource property that links the parent object to the list item object:
                 ObjectProperty resourceProperty = new ObjectProperty(lsidBase, container.getId(),
                         listItemPropertyReferenceLsid, listItemObjectLsid, PropertyType.RESOURCE);
-                OntologyManager.insertProperty(container.getId(), resourceProperty, lsidBase);
+                OntologyManager.insertProperties(container, lsidBase, resourceProperty);
             }
             return listItemObjectLsid;
         }
@@ -1175,7 +1175,7 @@ public class SampleManager
                 props[2] = new ObjectProperty(setItemLsid, container.getId(), parentObjectLsid + ".RememberSiteValue", input.isRememberSiteValue() ? 1 : 0);
                 props[3] = new ObjectProperty(setItemLsid, container.getId(), parentObjectLsid + ".Title", input.getTitle());
                 props[4] = new ObjectProperty(setItemLsid, container.getId(), parentObjectLsid + ".MultiLine", input.isMultiLine() ? 1 : 0);
-                OntologyManager.insertProperties(container.getId(), props, setItemLsid);
+                OntologyManager.insertProperties(container, setItemLsid, props);
             }
         }
         catch (ValidationException ve)

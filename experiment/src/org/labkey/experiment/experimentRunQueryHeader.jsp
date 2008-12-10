@@ -16,7 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.exp.ExperimentRunFilter"%>
+<%@ page import="org.labkey.api.exp.ExperimentRunType"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.experiment.ChooseExperimentTypeBean" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -36,9 +36,9 @@
     <%  }
     } %>
     Filter by run type: <select name="experimentRunFilter" onchange="form.submit()">
-        <% for (ExperimentRunFilter filter : bean.getFilters()) { %>
-            <option <% if (filter == bean.getSelectedFilter()) { %>selected <% } %> value="<%= filter.getDescription() %>"><%=
-                filter.getDescription() %></option>
+        <% for (ExperimentRunType type : bean.getFilters()) { %>
+            <option <% if (type == bean.getSelectedFilter()) { %>selected <% } %> value="<%= type.getDescription() %>"><%=
+                type.getDescription() %></option>
         <% } %>
     </select>
 </form>

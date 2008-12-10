@@ -17,7 +17,7 @@
 package org.labkey.experiment;
 
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.exp.ExperimentRunFilter;
+import org.labkey.api.exp.ExperimentRunType;
 
 import java.util.Set;
 
@@ -27,28 +27,28 @@ import java.util.Set;
  */
 public class ChooseExperimentTypeBean
 {
-    private final Set<ExperimentRunFilter> _filters;
-    private final ExperimentRunFilter _selectedFilter;
+    private final Set<ExperimentRunType> _types;
+    private final ExperimentRunType _selectedType;
     private final ActionURL _url;
 
-    public ChooseExperimentTypeBean(Set<ExperimentRunFilter> filters, ExperimentRunFilter selectedFilter, ActionURL url)
+    public ChooseExperimentTypeBean(Set<ExperimentRunType> types, ExperimentRunType selectedType, ActionURL url)
     {
-        _filters = filters;
-        if (selectedFilter == null)
+        _types = types;
+        if (selectedType == null)
         {
-            _selectedFilter = ExperimentRunFilter.ALL_RUNS_FILTER;
+            _selectedType = ExperimentRunType.ALL_RUNS_TYPE;
         }
         else
         {
-            _selectedFilter = selectedFilter;
+            _selectedType = selectedType;
         }
 
         _url = url;
     }
 
-    public Set<ExperimentRunFilter> getFilters()
+    public Set<ExperimentRunType> getFilters()
     {
-        return _filters;
+        return _types;
     }
 
     public ActionURL getUrl()
@@ -56,8 +56,8 @@ public class ChooseExperimentTypeBean
         return _url;
     }
 
-    public ExperimentRunFilter getSelectedFilter()
+    public ExperimentRunType getSelectedFilter()
     {
-        return _selectedFilter;
+        return _selectedType;
     }
 }
