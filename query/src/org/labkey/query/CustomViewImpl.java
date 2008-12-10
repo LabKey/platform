@@ -42,6 +42,7 @@ public class CustomViewImpl implements CustomView
 {
     private static final Logger _log = Logger.getLogger(CustomViewImpl.class);
     private static final String FILTER_PARAM_PREFIX = "filter";
+    private static final String CONTAINER_FILTER_NAME = "containerFilterName";
     boolean _dirty;
     final QueryManager _mgr = QueryManager.get();
     final QueryDefinitionImpl _queryDef;
@@ -88,7 +89,7 @@ public class CustomViewImpl implements CustomView
         Integer userId = _collist.getCustomViewOwner();
         if (userId == null)
             return null;
-        return UserManager.getUser(userId);
+        return UserManager.getUser(userId.intValue());
     }
 
     public Container getContainer()
@@ -98,7 +99,7 @@ public class CustomViewImpl implements CustomView
 
     public List<FieldKey> getColumns()
     {
-        List<FieldKey> ret = new ArrayList();
+        List<FieldKey> ret = new ArrayList<FieldKey>();
         for (Map.Entry<FieldKey, Map<ColumnProperty, String>> entry : getColumnProperties())
         {
             ret.add(entry.getKey());
@@ -128,23 +129,23 @@ public class CustomViewImpl implements CustomView
     {
         if (value == null)
         {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         String[] values = StringUtils.split(value, "&");
-        List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> ret = new ArrayList();
+        List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> ret = new ArrayList<Map.Entry<FieldKey, Map<ColumnProperty, String>>>();
         for (String entry : values)
         {
             int ichEquals = entry.indexOf("=");
-            Map<ColumnProperty, String> properties;
+            Map<ColumnProperty,String> properties;
             FieldKey field;
             if (ichEquals < 0)
             {
                 field = FieldKey.fromString(PageFlowUtil.decode(entry));
-                properties = Collections.EMPTY_MAP;
+                properties = Collections.emptyMap();
             }
             else
             {
-                properties = new EnumMap(ColumnProperty.class);
+                properties = new EnumMap<ColumnProperty,String>(ColumnProperty.class);
                 field = FieldKey.fromString(PageFlowUtil.decode(entry.substring(0, ichEquals)));
                 for (Map.Entry<String, String> e : PageFlowUtil.fromQueryString(PageFlowUtil.decode(entry.substring(ichEquals + 1))))
                 {
@@ -164,7 +165,7 @@ public class CustomViewImpl implements CustomView
 
     public Map<FieldKey, Map<ColumnProperty, String>> getColumnPropertiesMap()
     {
-        Map<FieldKey, Map<ColumnProperty, String>> ret = new HashMap();
+        Map<FieldKey, Map<ColumnProperty, String>> ret = new HashMap<FieldKey, Map<ColumnProperty, String>>();
         for (Map.Entry<FieldKey, Map<ColumnProperty, String>> entry : getColumnProperties())
         {
             ret.put(entry.getKey(), entry.getValue());
@@ -182,11 +183,6 @@ public class CustomViewImpl implements CustomView
 
     public void setColumns(List<FieldKey> columns)
     {
-        List<Map.Entry<FieldKey, Map<String, String>>> properties = new ArrayList();
-        for (FieldKey field : columns)
-        {
-            properties.add(Pair.of(field, Collections.<String, String>emptyMap()));
-        }
         edit().setColumns(StringUtils.join(columns.iterator(), "&"));
     }
 
@@ -218,9 +214,27 @@ public class CustomViewImpl implements CustomView
         }
         catch (URISyntaxException use)
         {
-            return;
+            // do nothing
         }
 
+    }
+
+    public String getContainerFilterName()
+    {
+        if (!hasFilterOrSort())
+            return null;
+        try
+        {
+            URLHelper src = new URLHelper(_collist.getFilter());
+            String[] containerFilterNames = src.getParameters(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME);
+            if (containerFilterNames.length > 0)
+                return containerFilterNames[containerFilterNames.length - 1];
+            return null;
+        }
+        catch (URISyntaxException use)
+        {
+            return null;
+        }
     }
 
     public void setFilterAndSortFromURL(ActionURL url, String dataRegionName)
@@ -364,13 +378,13 @@ public class CustomViewImpl implements CustomView
         List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> columns = getColumnProperties();
         if (columns.size() == 0)
         {
-            columns = new ArrayList();
+            columns = new ArrayList<Map.Entry<FieldKey, Map<ColumnProperty, String>>>();
             for (FieldKey key : tinfo.getDefaultVisibleColumns())
             {
                 columns.add(Pair.of(key, Collections.<ColumnProperty, String>emptyMap()));
             }
         }
-        Set<FieldKey> allKeys = new HashSet();
+        Set<FieldKey> allKeys = new HashSet<FieldKey>();
         for (Map.Entry<FieldKey, Map<ColumnProperty, String>> entry : columns)
         {
             DgColumn column = select.addNewColumn();
@@ -417,6 +431,9 @@ public class CustomViewImpl implements CustomView
                     ob.setStringValue(sf.getColumnName());
                     allKeys.add(FieldKey.fromString(sf.getColumnName()));
                 }
+                String[] containerFilterNames = filterSort.getParameters(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME);
+                if (containerFilterNames.length > 0)
+                    view.setContainerFilterName(containerFilterNames[containerFilterNames.length - 1]);
             }
             catch (URISyntaxException use)
             {
@@ -454,7 +471,7 @@ public class CustomViewImpl implements CustomView
         DgQuery view = doc.getView();
         DgQuery.Select select = view.getSelect();
 
-        List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> fields = new ArrayList();
+        List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> fields = new ArrayList<Map.Entry<FieldKey, Map<ColumnProperty, String>>>();
         for (DgColumn column : select.getColumnArray())
         {
             FieldKey key = FieldKey.fromString(column.getValue().getField().getStringValue());
@@ -462,7 +479,7 @@ public class CustomViewImpl implements CustomView
             if (column.getMetadata() != null)
             {
                 ColumnType metadata = column.getMetadata();
-                map = new EnumMap(ColumnProperty.class);
+                map = new EnumMap<ColumnProperty,String>(ColumnProperty.class);
                 if (metadata.getColumnTitle() != null)
                 {
                     map.put(ColumnProperty.columnTitle, metadata.getColumnTitle());
@@ -507,6 +524,8 @@ public class CustomViewImpl implements CustomView
         {
             url.addParameter(FILTER_PARAM_PREFIX + ".sort", sort.toString());
         }
+        if (view.isSetContainerFilterName())
+            url.addParameter(FILTER_PARAM_PREFIX + "." + CONTAINER_FILTER_NAME, view.getContainerFilterName());
         setFilterAndSortFromURL(url, FILTER_PARAM_PREFIX);
     }
 
