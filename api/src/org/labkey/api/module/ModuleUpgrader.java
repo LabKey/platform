@@ -16,6 +16,7 @@
 package org.labkey.api.module;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.data.DbSchema;
 
 import java.util.List;
 import java.util.ListIterator;
@@ -54,6 +55,9 @@ public class ModuleUpgrader
             module.afterUpdate(ctx);
             ctx.upgradeComplete(module.getVersion());
         }
+
+        //invalidate the schemas so that we pick up changes made by the upgrade scripts
+        DbSchema.invalidateSchemas();
     }
 
 
