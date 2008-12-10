@@ -55,9 +55,6 @@ public class ModuleUpgrader
             module.afterUpdate(ctx);
             ctx.upgradeComplete(module.getVersion());
         }
-
-        //invalidate the schemas so that we pick up changes made by the upgrade scripts
-        DbSchema.invalidateSchemas();
     }
 
 

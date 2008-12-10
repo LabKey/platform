@@ -212,10 +212,7 @@ public abstract class DefaultModule implements Module
                 List<SqlScript> scripts = type.getScripts(provider);
 
                 if (!scripts.isEmpty())
-                {
                     SqlScriptRunner.runScripts(this, null, scripts);
-                    DbSchema.invalidateSchemas();
-                }
             }
         }
         catch (Exception e)

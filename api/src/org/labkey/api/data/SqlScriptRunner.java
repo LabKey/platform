@@ -101,6 +101,9 @@ public class SqlScriptRunner
                 SCRIPT_LOCK.notifyAll();
             }
         }
+        
+        //invalidate the schemas so that we pick up changes made by the upgrade scripts
+        DbSchema.invalidateSchemas();
 
         synchronized(SCRIPT_LOCK)
         {
