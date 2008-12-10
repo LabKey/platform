@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2008 LabKey Corporation
+ * Copyright (c) 2008 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.labkey.api.exp;
 
-package org.labkey.api.exp.api;
+import org.labkey.api.data.Container;
 
-import java.util.Date;
-import org.labkey.api.security.User;
+import java.util.Set;
 
-public interface ExpExperiment extends ExpObject
+/**
+ * User: jeckels
+ * Date: Dec 10, 2008
+ */
+public interface ExperimentRunTypeSource
 {
-    ExpRun[] getRuns();
-    ExpRun[] getRuns(ExpProtocol parentProtocol, ExpProtocol childProtocol);
-    ExpProtocol[] getProtocols();
-    Date getCreated();
-    User getCreatedBy();
-    void removeRun(User user, ExpRun run) throws Exception;
-    void addRuns(User user, ExpRun... run);
-    void save(User user);
+    /**
+     * Gets the run types that are relevant for the specified container
+     * @param container scope for the run types
+     * @return all the run types that may be present in the container
+     */
+    public Set<ExperimentRunType> getExperimentRunTypes(Container container);
 }

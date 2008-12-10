@@ -28,17 +28,18 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 
 import java.sql.SQLException;
+import java.util.Set;
 
 /**
  * User: jeckels
  * Date: Sep 25, 2006
  */
-public abstract class ExperimentRunFilter implements Comparable<ExperimentRunFilter>, Handler<ExpProtocol>
+public abstract class ExperimentRunType implements Comparable<ExperimentRunType>, Handler<ExpProtocol>
 {
     private final String _description;
     private final String _schemaName;
     private final String _tableName;
-    public static final ExperimentRunFilter ALL_RUNS_FILTER = new ExperimentRunFilter("All Runs", ExpSchema.SCHEMA_NAME, ExpSchema.TableType.Runs.toString())
+    public static final ExperimentRunType ALL_RUNS_TYPE = new ExperimentRunType("All Runs", ExpSchema.SCHEMA_NAME, ExpSchema.TableType.Runs.toString())
     {
         public Priority getPriority(ExpProtocol object)
         {
@@ -46,7 +47,7 @@ public abstract class ExperimentRunFilter implements Comparable<ExperimentRunFil
         }
     };
 
-    public ExperimentRunFilter(String description, String schemaName, String tableName)
+    public ExperimentRunType(String description, String schemaName, String tableName)
     {
         _description = description;
         _schemaName = schemaName;
@@ -85,7 +86,7 @@ public abstract class ExperimentRunFilter implements Comparable<ExperimentRunFil
         }
     }
 
-    public int compareTo(ExperimentRunFilter o)
+    public int compareTo(ExperimentRunType o)
     {
         return _description.compareTo(o.getDescription());
     }
@@ -95,7 +96,7 @@ public abstract class ExperimentRunFilter implements Comparable<ExperimentRunFil
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        final ExperimentRunFilter that = (ExperimentRunFilter) o;
+        final ExperimentRunType that = (ExperimentRunType) o;
 
         return !(_description != null ? !_description.equals(that._description) : that._description != null);
     }
@@ -105,18 +106,18 @@ public abstract class ExperimentRunFilter implements Comparable<ExperimentRunFil
         return (_description != null ? _description.hashCode() : 0);
     }
 
-    public static ExperimentRunFilter getSelectedFilter(String filterName)
+    public static ExperimentRunType getSelectedFilter(Set<ExperimentRunType> types, String filterName)
     {
         if (filterName == null)
         {
             return null;
         }
 
-        for (ExperimentRunFilter filter : ExperimentService.get().getExperimentRunFilters())
+        for (ExperimentRunType type : types)
         {
-            if (filter.getDescription().equals(filterName))
+            if (type.getDescription().equals(filterName))
             {
-                return filter;
+                return type;
             }
         }
         return null;

@@ -411,7 +411,7 @@ public class OntologyManager
 
 
     // UNDONE: optimize (see deleteOntologyObjects(Integer[])
-    public static void deleteOntologyObjects(String[] uris, Container c) throws SQLException
+    public static void deleteOntologyObjects(Container c, String... uris) throws SQLException
     {
         if (uris.length == 0)
             return;
@@ -558,14 +558,6 @@ public class OntologyManager
         }
     }
 
-
-    public static void deleteOntologyObject(String containerId, String objectURI) throws SQLException
-	{
-		String sql = getSqlDialect().execute(getExpSchema(), "deleteObject", "?, ?");
-		Table.execute(getExpSchema(), sql, new Object[]{containerId, objectURI});
-		mapCache.clear();
-		objectIdCache.clear();
-	}
 
     public static OntologyObject getOntologyObject(int id)
     {
@@ -912,7 +904,7 @@ public class OntologyManager
                 {
                     Container cObj = ContainerManager.getForId(op.getContainer());
                     deleteProperty(op.getObjectURI(), op.getPropertyURI(), cObj, c);
-                    insertProperty(op.getContainer(), op, op.getObjectURI());
+                    insertProperties(cObj, op.getObjectURI(), op);
                 }
             }
         }
@@ -1063,7 +1055,7 @@ public class OntologyManager
                 {
                     Container cObj = ContainerManager.getForId(op.getContainer());
                     deleteProperty(op.getObjectURI(), op.getPropertyURI(), cObj, oldProject);
-                    insertProperty(op.getContainer(), op, op.getObjectURI());
+                    insertProperties(cObj, op.getObjectURI(), op);
                 }
 
             }
@@ -1343,11 +1335,10 @@ public class OntologyManager
 
 
 
-	private static void insertProperties(String containerId, ObjectProperty[] props) throws SQLException, ValidationException
+	private static void insertProperties(Container c, ObjectProperty[] props) throws SQLException, ValidationException
 	{
 		HashMap<String,PropertyDescriptor> descriptors = new HashMap<String, PropertyDescriptor>();
 		HashMap<String,Integer> objects = new HashMap<String, Integer>();
-        Container c = ContainerManager.getForId(containerId);
         List<ValidationError> errors = new ArrayList<ValidationError>();
        // assert !c.equals(ContainerManager.getRoot());
 
@@ -1440,13 +1431,6 @@ public class OntologyManager
         clearPropertyCache();
     }
 
-    @Deprecated
-    public static void deleteProperty(String containerId, String objectURI, String propertyURI)
-    {
-        Container c = ContainerManager.getForId(containerId);
-        deleteProperty(objectURI, propertyURI, c, c );
-    }
-
     public static void deleteProperty(String objectURI, String propertyURI, Container objContainer, Container propContainer)
     {
         try
@@ -1505,12 +1489,7 @@ public class OntologyManager
         }
     }
 
-    public static void insertProperty(String containerId, ObjectProperty oprop, String ownerObjectLsid) throws ValidationException
-	{
-        insertProperties(containerId, new ObjectProperty[] { oprop }, ownerObjectLsid);
-    }
-
-    public static void insertProperties(String containerId, ObjectProperty[] properties, String ownerObjectLsid) throws ValidationException
+    public static void insertProperties(Container container, String ownerObjectLsid, ObjectProperty... properties) throws ValidationException
     {
         boolean ownTransaction = !getExpSchema().getScope().isTransactionActive();
         try
@@ -1518,12 +1497,12 @@ public class OntologyManager
             if (ownTransaction)
                 getExpSchema().getScope().beginTransaction();
 
-            Integer parentId = ownerObjectLsid == null ? null : ensureObject(containerId, ownerObjectLsid);
+            Integer parentId = ownerObjectLsid == null ? null : ensureObject(container.getId(), ownerObjectLsid);
             for (ObjectProperty oprop : properties)
             {
                 oprop.setObjectOwnerId(parentId);
             }
-            insertProperties(containerId, properties);
+            insertProperties(container, properties);
 
             if (ownTransaction)
             {
@@ -2180,7 +2159,7 @@ public class OntologyManager
                 String childObjectLsid = new Lsid("Junit", "OntologyManager", "child").toString();
 
                 //First delete in case test case failed before
-                OntologyManager.deleteOntologyObject(containerId, parentObjectLsid);
+                OntologyManager.deleteOntologyObjects(c, parentObjectLsid);
                 assertNull(OntologyManager.getOntologyObject(containerId, parentObjectLsid));
                 assertNull(OntologyManager.getOntologyObject(containerId, childObjectLsid));
                 OntologyManager.ensureObject(containerId, childObjectLsid, parentObjectLsid);
@@ -2194,15 +2173,15 @@ public class OntologyManager
                 assertEquals(oParent.getContainer(), containerId);
 
                 String strProp = new Lsid("Junit", "OntologyManager", "stringProp").toString();
-                OntologyManager.insertProperty(containerId, new ObjectProperty(childObjectLsid, containerId, strProp, "The String"), parentObjectLsid);
+                OntologyManager.insertProperties(c, parentObjectLsid, new ObjectProperty(childObjectLsid, containerId, strProp, "The String"));
 
                 String intProp = new Lsid("Junit", "OntologyManager", "intProp").toString();
-                OntologyManager.insertProperty(containerId, new ObjectProperty(childObjectLsid, containerId, intProp, 5), parentObjectLsid);
+                OntologyManager.insertProperties(c, parentObjectLsid, new ObjectProperty(childObjectLsid, containerId, intProp, 5));
 
                 Calendar cal = Calendar.getInstance();
                 cal.set(Calendar.MILLISECOND, 0);
                 String dateProp = new Lsid("Junit", "OntologyManager", "dateProp").toString();
-                OntologyManager.insertProperty(containerId, new ObjectProperty(childObjectLsid, containerId, dateProp, cal.getTime()), parentObjectLsid);
+                OntologyManager.insertProperties(c, parentObjectLsid, new ObjectProperty(childObjectLsid, containerId, dateProp, cal.getTime()));
 
                 Map m = OntologyManager.getProperties(containerId, oChild.getObjectURI());
                 assertNotNull(m);
@@ -2212,7 +2191,7 @@ public class OntologyManager
                 assertEquals(m.get(dateProp), cal.getTime());
 
 
-                OntologyManager.deleteOntologyObject(containerId, parentObjectLsid);
+                OntologyManager.deleteOntologyObjects(c, parentObjectLsid);
                 assertNull(OntologyManager.getOntologyObject(containerId, parentObjectLsid));
                 assertNull(OntologyManager.getOntologyObject(containerId, childObjectLsid));
 
@@ -2244,15 +2223,15 @@ public class OntologyManager
                 assertNotNull(oChild);
 
                 String strProp = new Lsid("Junit", "OntologyManager", "stringProp").toString();
-                OntologyManager.insertProperty(containerId, new ObjectProperty(childObjectLsid, containerId, strProp, "The String"), ownerObjectLsid);
+                OntologyManager.insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, containerId, strProp, "The String"));
 
                 String intProp = new Lsid("Junit", "OntologyManager", "intProp").toString();
-                OntologyManager.insertProperty(containerId, new ObjectProperty(childObjectLsid, containerId, intProp, 5), ownerObjectLsid);
+                OntologyManager.insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, containerId, intProp, 5));
 
                 Calendar cal = Calendar.getInstance();
                 cal.set(Calendar.MILLISECOND, 0);
                 String dateProp = new Lsid("Junit", "OntologyManager", "dateProp").toString();
-                OntologyManager.insertProperty(containerId, new ObjectProperty(childObjectLsid, containerId, dateProp, cal.getTime()), ownerObjectLsid);
+                OntologyManager.insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, containerId, dateProp, cal.getTime()));
 
                 OntologyManager.deleteAllObjects(c);
                 assertEquals(0, OntologyManager.getObjectCount(containerId));
@@ -2275,17 +2254,17 @@ public class OntologyManager
                 OntologyManager.ensureObject(fldr1a.getId(), objP1Fa);
                 String propP1Fa = fa + "PD1";
                 OntologyManager.ensurePropertyDescriptor(propP1Fa, PropertyType.STRING.getTypeUri(),"PropertyDescriptor 1"+ fa, fldr1a);
-                OntologyManager.insertProperty(fldr1a.getId(), new ObjectProperty(objP1Fa, fldr1a.getId(), propP1Fa, "same fldr"),null);
+                OntologyManager.insertProperties(fldr1a, null, new ObjectProperty(objP1Fa, fldr1a.getId(), propP1Fa, "same fldr"));
 
                 //object in folder not moving, prop desc in folder moving
                 String objP2Fb = new Lsid("OntologyObject", "JUnit", fb.replace('/','.')).toString();
                 OntologyManager.ensureObject(fldr1b.getId(), objP2Fb);
-                OntologyManager.insertProperty(fldr1b.getId(), new ObjectProperty(objP2Fb, fldr1b.getId(), propP1Fa, "object in folder not moving, prop desc in folder moving"),null);
+                OntologyManager.insertProperties(fldr1b, null, new ObjectProperty(objP2Fb, fldr1b.getId(), propP1Fa, "object in folder not moving, prop desc in folder moving"));
 
                 //object in folder moving, prop desc in folder not moving
                 String propP2Fb = fb + "PD1";
                 OntologyManager.ensurePropertyDescriptor(propP2Fb, PropertyType.STRING.getTypeUri(),"PropertyDescriptor 1" + fb, fldr1b);
-                OntologyManager.insertProperty(fldr1a.getId(), new ObjectProperty(objP1Fa, fldr1a.getId(), propP2Fb, "object in folder moving, prop desc in folder not moving"),null);
+                OntologyManager.insertProperties(fldr1a, null, new ObjectProperty(objP1Fa, fldr1a.getId(), propP2Fb, "object in folder moving, prop desc in folder not moving"));
 
                 // third prop desc in folder that is moving;  shares domain with first prop desc
                 String propP1Fa3 = fa + "PD3";
@@ -2526,10 +2505,10 @@ public class OntologyManager
                 assertNotNull(oChild);
 
                 String strProp = new Lsid("Junit", "OntologyManager", "stringProp").toString();
-                OntologyManager.insertProperty(containerId, new ObjectProperty(childObjectLsid, containerId, strProp, "The String"), ownerObjectLsid);
+                OntologyManager.insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, containerId, strProp, "The String"));
 
                 String intProp = new Lsid("Junit", "OntologyManager", "intProp").toString();
-                    OntologyManager.insertProperty(containerId, new ObjectProperty(childObjectLsid, containerId, intProp, 5), ownerObjectLsid);
+                    OntologyManager.insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, containerId, intProp, 5));
                 OntologyManager.getExpSchema().getScope().rollbackTransaction();
 
                 assertEquals(0, OntologyManager.getObjectCount(c.getId()));
@@ -2543,12 +2522,12 @@ public class OntologyManager
                 assertNotNull(oChild);
 
                 strProp = new Lsid("Junit", "OntologyManager", "stringProp").toString();
-                OntologyManager.insertProperty(containerId, new ObjectProperty(childObjectLsid, containerId, strProp, "The String"), ownerObjectLsid);
+                OntologyManager.insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, containerId, strProp, "The String"));
 
                 //Rollback transaction for one new property
                 OntologyManager.getExpSchema().getScope().beginTransaction();
                 intProp = new Lsid("Junit", "OntologyManager", "intProp").toString();
-                OntologyManager.insertProperty(containerId, new ObjectProperty(childObjectLsid, containerId, intProp, 5), ownerObjectLsid);
+                OntologyManager.insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, containerId, intProp, 5));
                 OntologyManager.getExpSchema().getScope().rollbackTransaction();
 
                 oChild = OntologyManager.getOntologyObject(containerId, childObjectLsid);
@@ -2559,7 +2538,7 @@ public class OntologyManager
 
                 OntologyManager.getExpSchema().getScope().beginTransaction();
                 intProp = new Lsid("Junit", "OntologyManager", "intProp").toString();
-                OntologyManager.insertProperty(containerId, new ObjectProperty(childObjectLsid, containerId, intProp, 5), ownerObjectLsid);
+                OntologyManager.insertProperties(c, ownerObjectLsid, new ObjectProperty(childObjectLsid, containerId, intProp, 5));
                 OntologyManager.getExpSchema().getScope().commitTransaction();
 
                 m = OntologyManager.getProperties(containerId, childObjectLsid);
@@ -2625,8 +2604,8 @@ public class OntologyManager
 
             ObjectProperty strProp = new ObjectProperty(childObjectLsid, containerId, strPropURI, "String value");
             ObjectProperty intProp = new ObjectProperty(childObjectLsid, containerId, intPropURI, new Integer(42));
-            OntologyManager.insertProperty(containerId, strProp, ownerObjectLsid);
-            OntologyManager.insertProperty(containerId, intProp, ownerObjectLsid);
+            OntologyManager.insertProperties(c, ownerObjectLsid, strProp);
+            OntologyManager.insertProperties(c, ownerObjectLsid, intProp);
 
             OntologyManager.deleteType(domURIa, c);
             assertEquals(0, OntologyManager.getObjectCount(containerId));

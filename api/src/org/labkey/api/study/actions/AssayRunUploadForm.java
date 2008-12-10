@@ -57,6 +57,7 @@ public class AssayRunUploadForm extends ProtocolIdForm implements AssayRunUpload
     private boolean _successfulUploadComplete;
     private String _uploadAttemptID = GUID.makeGUID();
     private Map<PropertyDescriptor, File> _additionalFiles;
+    private Integer _batchId;
 
     // Unfortunate query hackery that orders display columns based on default view
     protected PropertyDescriptor[] reorderDomainColumns(PropertyDescriptor[] unorderedColumns, ViewContext context, ExpProtocol protocol)
@@ -451,5 +452,15 @@ public class AssayRunUploadForm extends ProtocolIdForm implements AssayRunUpload
     public void resetUploadAttemptID()
     {
         _uploadAttemptID = GUID.makeGUID();
+    }
+
+    public Integer getBatchId()
+    {
+        return _batchId;
+    }
+
+    public void setBatchId(Integer batchId)
+    {
+        _batchId = batchId;
     }
 }

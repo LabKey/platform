@@ -23,7 +23,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.study.assay.AssayRunFilter;
+import org.labkey.api.study.assay.AssayRunType;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -37,7 +37,7 @@ import org.labkey.api.view.ViewContext;
 public class RunListQueryView extends ExperimentRunListView
 {
     private ExpProtocol _protocol;
-    public RunListQueryView(ExpProtocol protocol, UserSchema schema, QuerySettings settings, AssayRunFilter assayRunFilter)
+    public RunListQueryView(ExpProtocol protocol, UserSchema schema, QuerySettings settings, AssayRunType assayRunFilter)
     {
         super(schema, settings, assayRunFilter);
         _protocol = protocol;
@@ -51,20 +51,20 @@ public class RunListQueryView extends ExperimentRunListView
                 getDefaultQuerySettings(protocol, context), getDefaultAssayRunFilter(protocol, context));
     }
 
-    public static AssayRunFilter getDefaultAssayRunFilter(ExpProtocol protocol, ViewContext context)
+    public static AssayRunType getDefaultAssayRunFilter(ExpProtocol protocol, ViewContext context)
     {
-        return new AssayRunFilter(protocol, context.getContainer());
+        return new AssayRunType(protocol, context.getContainer());
     }
 
     public static QuerySettings getDefaultQuerySettings(ExpProtocol protocol, ViewContext context)
     {
         UserSchema schema = getDefaultUserSchema(context);
-        return ExperimentRunListView.getRunListQuerySettings(schema, context, AssayRunFilter.getRunListTableName(protocol), true);
+        return ExperimentRunListView.getRunListQuerySettings(schema, context, AssayRunType.getRunListTableName(protocol), true);
     }
 
     public static UserSchema getDefaultUserSchema(ViewContext context)
     {
-        return QueryService.get().getUserSchema(context.getUser(), context.getContainer(), AssayRunFilter.SCHEMA_NAME);
+        return QueryService.get().getUserSchema(context.getUser(), context.getContainer(), AssayRunType.SCHEMA_NAME);
     }
 
     protected void populateButtonBar(DataView view, ButtonBar bar)

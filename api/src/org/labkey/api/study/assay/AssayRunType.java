@@ -17,7 +17,7 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.data.*;
-import org.labkey.api.exp.ExperimentRunFilter;
+import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -36,13 +36,13 @@ import java.util.Set;
 * Date: Oct 10, 2007
 * Time: 2:24:42 PM
 */
-public class AssayRunFilter extends ExperimentRunFilter
+public class AssayRunType extends ExperimentRunType
 {
     public static final String SCHEMA_NAME = "assay";
     private final ExpProtocol _protocol;
     private final Container _container;
 
-    public AssayRunFilter(ExpProtocol protocol, Container c)
+    public AssayRunType(ExpProtocol protocol, Container c)
     {
         super(protocol.getName(), SCHEMA_NAME, getRunListTableName(protocol));
         _protocol = protocol;

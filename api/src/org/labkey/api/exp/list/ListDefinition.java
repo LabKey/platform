@@ -27,6 +27,7 @@ import org.labkey.common.tools.DataLoader;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.sql.SQLException;
 
 public interface ListDefinition
 {
@@ -159,7 +160,7 @@ public interface ListDefinition
     void setKeyType(KeyType type);
 
     void save(User user) throws Exception;
-    void deleteListItems(User user, Collection keys) throws Exception;
+    void deleteListItems(User user, Collection keys) throws SQLException;
     void delete(User user) throws Exception;
 
     ListItem createListItem();

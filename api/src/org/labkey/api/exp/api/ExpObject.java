@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.Identifiable;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.DomainProperty;
 
 import java.util.Comparator;
@@ -30,6 +31,7 @@ public interface ExpObject extends Identifiable
 {
     int getRowId();
     void setLSID(String lsid);
+    void setLSID(Lsid lsid);
     String getLSIDNamespacePrefix();
     void setName(String name);
     URLHelper detailsURL();
@@ -43,9 +45,6 @@ public interface ExpObject extends Identifiable
     String getComment();
     void setComment(User user, String comment) throws Exception;
     String urlFlag(boolean flagged);
-
-    boolean equals(Object o);
-    int hashCode();
 
     User getCreatedBy();
 

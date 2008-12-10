@@ -24,6 +24,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpRunTable;
+import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
@@ -58,7 +59,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     PropertyDescriptor[] getRunDataColumns(ExpProtocol protocol);
 
-    ExpRun saveExperimentRun(AssayRunUploadContext context) throws ExperimentException;
+    Pair<ExpRun, ExpExperiment> saveExperimentRun(AssayRunUploadContext context, ExpExperiment batch) throws ExperimentException;
 
     List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles);
 

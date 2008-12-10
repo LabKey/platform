@@ -35,6 +35,7 @@ import org.labkey.api.study.query.RunDataQueryView;
 import org.labkey.api.study.query.RunListQueryView;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.*;
 import org.labkey.common.util.Pair;
 
@@ -366,10 +367,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 transaction = false;
             }
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
         finally
         {
             if (transaction)
@@ -442,7 +439,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return run;
     }
 
-    public ExpRun saveExperimentRun(AssayRunUploadContext context) throws ExperimentException
+    /**
+     * @param batch if not null, the run group that's already created for this batch. If null, a new one needs to be created
+     * @return the run and batch that were inserted
+     * @throws ExperimentException
+     */
+    public Pair<ExpRun, ExpExperiment> saveExperimentRun(AssayRunUploadContext context, ExpExperiment batch) throws ExperimentException
     {
         ExpRun run = createExperimentRun(context);
 
@@ -513,7 +515,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
             if (transactionOwner)
                 scope.beginTransaction();
 
-
             savePropertyObject(run.getLSID(), runProperties, context.getContainer());
             savePropertyObject(run.getLSID(), uploadSetProperties, context.getContainer());
 
@@ -525,10 +526,28 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 new ViewBackgroundInfo(context.getContainer(),
                         context.getUser(), context.getActionURL()), LOG, true);
 
+            if (batch == null)
+            {
+                String namePrefix = DateUtil.formatDate() + " batch ";
+                int batchNumber = 1;
+                do
+                {
+                    batch = ExperimentService.get().createExpExperiment(run.getContainer(), namePrefix + batchNumber++);
+                    Lsid lsid = new Lsid(batch.getLSID());
+                    lsid.setNamespaceSuffix(lsid.getNamespaceSuffix() + "AssayBatch");
+                    batch.setLSID(lsid);
+                }
+                while(ExperimentService.get().getExpExperiment(batch.getLSID()) != null);
+
+                batch.save(context.getUser());
+                batch.addRuns(context.getUser(), run);
+                savePropertyObject(batch.getLSID(), uploadSetProperties, context.getContainer());
+            }
+
             if (transactionOwner)
                 scope.commitTransaction();
 
-            return run;
+            return new Pair<ExpRun, ExpExperiment>(run, batch);
         }
         catch (SQLException e)
         {
@@ -565,7 +584,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 property.setName(pd.getName());
                 objProperties[i++] = property;
             }
-            OntologyManager.insertProperties(container.getId(), objProperties, parentLSID);
+            OntologyManager.insertProperties(container, parentLSID, objProperties);
         }
         catch (ValidationException ve)
         {

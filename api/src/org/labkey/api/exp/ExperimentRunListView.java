@@ -37,13 +37,13 @@ public class ExperimentRunListView extends QueryView
     private boolean _showExportXARButton = false;
     private boolean _showMoveRunsButton = false;
 
-    private final ExperimentRunFilter _selectedFilter;
+    private final ExperimentRunType _selectedType;
 
-    public ExperimentRunListView(UserSchema schema, QuerySettings settings, ExperimentRunFilter selectedFilter)
+    public ExperimentRunListView(UserSchema schema, QuerySettings settings, ExperimentRunType selectedType)
     {
         super(schema, settings);
         _buttonBarPosition = DataRegion.ButtonBarPosition.BOTTOM;
-        _selectedFilter = selectedFilter;
+        _selectedType = selectedType;
         setShowDetailsColumn(false);
         setShowExportButtons(false);
         setShowRecordSelectors(true);
@@ -60,10 +60,10 @@ public class ExperimentRunListView extends QueryView
         return settings;
     }
 
-    public static ExperimentRunListView createView(ViewContext model, ExperimentRunFilter selectedFilter, boolean allowCustomizations)
+    public static ExperimentRunListView createView(ViewContext model, ExperimentRunType selectedType, boolean allowCustomizations)
     {
-        UserSchema schema = QueryService.get().getUserSchema(model.getUser(), model.getContainer(), selectedFilter.getSchemaName());
-        return new ExperimentRunListView(schema, getRunListQuerySettings(schema, model, selectedFilter.getTableName(), allowCustomizations), selectedFilter);
+        UserSchema schema = QueryService.get().getUserSchema(model.getUser(), model.getContainer(), selectedType.getSchemaName());
+        return new ExperimentRunListView(schema, getRunListQuerySettings(schema, model, selectedType.getTableName(), allowCustomizations), selectedType);
     }
 
 
@@ -175,7 +175,7 @@ public class ExperimentRunListView extends QueryView
             bar.add(exportXAR);
         }
 
-        _selectedFilter.populateButtonBar(context, bar, view, getSettings().getContainerFilter());
+        _selectedType.populateButtonBar(context, bar, view, getSettings().getContainerFilter());
 
         if (getViewContext().hasPermission(ACL.PERM_UPDATE))
         {
@@ -188,7 +188,7 @@ public class ExperimentRunListView extends QueryView
         DataRegion result = super.createDataRegion();
         result.setShadeAlternatingRows(true);
         result.setShowBorders(true);
-        result.setName(_selectedFilter.getTableName());
+        result.setName(_selectedType.getTableName());
         for (DisplayColumn column : result.getDisplayColumns())
         {
             if (column.getCaption().startsWith("Experiment Run "))

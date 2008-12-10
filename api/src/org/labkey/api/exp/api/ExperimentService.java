@@ -24,7 +24,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.apache.log4j.Logger;
@@ -55,7 +54,7 @@ public class ExperimentService
         instance = impl;
     }
 
-    public interface Interface
+    public interface Interface extends ExperimentRunTypeSource
     {
         public static final String SAMPLE_DERIVATION_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:SampleDerivationProtocol";
 
@@ -137,12 +136,12 @@ public class ExperimentService
         DataType getDataType(String namespacePrefix);
 
         boolean isTransactionActive();
-        void beginTransaction() throws SQLException;
-        void commitTransaction() throws SQLException;
+        void beginTransaction();
+        void commitTransaction();
         void closeTransaction();
         void rollbackTransaction();
 
-        QueryView createExperimentRunWebPart(ViewContext context, ExperimentRunFilter filter, boolean moveButton, boolean exportXARButton);
+        QueryView createExperimentRunWebPart(ViewContext context, ExperimentRunType type, boolean moveButton, boolean exportXARButton);
 
         public DbSchema getSchema();
 
@@ -158,6 +157,7 @@ public class ExperimentService
         TableInfo getTinfoProtocol();
         TableInfo getTinfoExperiment();
         TableInfo getTinfoExperimentRun();
+        TableInfo getTinfoRunList();
         TableInfo getTinfoData();
         TableInfo getTinfoPropertyDescriptor();
         ExpSampleSet ensureDefaultSampleSet() throws SQLException;
@@ -184,8 +184,6 @@ public class ExperimentService
         void deleteExperimentByRowIds(Container container, int... experimentRowIds) throws SQLException, ExperimentException;
         void deleteExperimentRunsByRowIds(Container container, User user, int... rowIds) throws SQLException, ExperimentException;
 
-        ExpExperiment addRunsToExperiment(int expId, int... runIds) throws SQLException;
-        
         Lsid getSampleSetLsid(String name, Container container);
 
         void clearCaches();
@@ -203,7 +201,7 @@ public class ExperimentService
         ExpData[] getAllDataUsedByRun(int runId) throws SQLException;
 
         /** Kicks off an asynchronous move - a PipelineJob is submitted to the queue to perform the move */
-        void moveRuns(ViewBackgroundInfo targetInfo, Container sourceContainer, List<ExpRun> runs) throws SQLException, IOException;
+        void moveRuns(ViewBackgroundInfo targetInfo, Container sourceContainer, List<ExpRun> runs) throws IOException;
         public ExpProtocol insertSimpleProtocol(ExpProtocol baseProtocol, User user);
 
         /**
@@ -226,11 +224,10 @@ public class ExperimentService
 
         public void registerExperimentDataHandler(ExperimentDataHandler handler);
         public void registerRunExpansionHandler(RunExpansionHandler handler);
-        public void registerExperimentRunFilter(ExperimentRunFilter filter);
+        public void registerExperimentRunTypeSource(ExperimentRunTypeSource source);
         public void registerDataType(DataType type);
         public void registerProtocolImplementation(ProtocolImplementation impl);
 
-        public Set<ExperimentRunFilter> getExperimentRunFilters();
         public Set<ExperimentDataHandler> getExperimentDataHandlers();
         public Set<RunExpansionHandler> getRunExpansionHandlers();
         public ProtocolImplementation getProtocolImplementation(String name);

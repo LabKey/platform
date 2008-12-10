@@ -365,7 +365,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     {
         try
         {
-            OntologyManager.deleteOntologyObject(container.getId(), data.getLSID());
+            OntologyManager.deleteOntologyObjects(container, data.getLSID());
         }
         catch (SQLException e)
         {

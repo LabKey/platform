@@ -25,9 +25,11 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
@@ -35,6 +37,7 @@ import org.labkey.api.study.assay.*;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
+import org.labkey.common.util.Pair;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -56,7 +59,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
 {
     protected ExpProtocol _protocol;
 
-    private Map<String, StepHandler> _stepHandlers = new HashMap<String, StepHandler>();
+    private Map<String, StepHandler<FormClass>> _stepHandlers = new HashMap<String, StepHandler<FormClass>>();
 
     protected String _stepDescription;
 
@@ -72,17 +75,17 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         addStepHandler(getRunStepHandler());
     }
 
-    protected StepHandler getUploadSetStepHandler()
+    protected StepHandler<FormClass> getUploadSetStepHandler()
     {
         return new UploadSetStepHandler();
     }
 
-    protected StepHandler getRunStepHandler()
+    protected StepHandler<FormClass> getRunStepHandler()
     {
         return new RunStepHandler();
     }
 
-    protected void addStepHandler(StepHandler stepHandler)
+    protected void addStepHandler(StepHandler<FormClass> stepHandler)
     {
         _stepHandlers.put(stepHandler.getName(), stepHandler);
     }
@@ -106,7 +109,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
                 //if current user is an admin, include a link to the pipeline setup page
                 if(getViewContext().getUser().isAdministrator())
                 {
-                    ActionURL urlhelper = new ActionURL("Pipeline", "setup", getContainer());
+                    ActionURL urlhelper = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(getContainer());
                     msg.append("</p><p><a href='").append(urlhelper.getLocalURIString()).append("'>[Setup Pipeline]</a></p>");
                 }
                 else
@@ -118,7 +121,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
                 return getUploadSetPropertiesView(form, false, errors);
         } //first step
 
-        StepHandler handler = _stepHandlers.get(currentStep);
+        StepHandler<FormClass> handler = _stepHandlers.get(currentStep);
         if (handler == null)
         {
             throw new IllegalStateException("Unknown wizard post step: " + currentStep);
@@ -173,6 +176,10 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
             {
                 errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
             }
+        }
+        if (form.getBatchId() != null)
+        {
+            view.getDataRegion().addHiddenFormField("batchId", form.getBatchId().toString());
         }
         view.getDataRegion().addHiddenFormField("uploadStep", uploadStepName);
         view.getDataRegion().addHiddenFormField("multiRunUpload", "false");
@@ -231,7 +238,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
             PropertyDescriptor pd = entry.getKey();
             String value = entry.getValue();
             properties.put(ColumnInfo.propNameFromName(pd.getName()), value);
-            if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equals(pd.getName()) && value instanceof String)
+            if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equals(pd.getName()) && value != null)
             {
                 ParticipantVisitResolverType type = AbstractAssayProvider.findType(value, provider.getParticipantVisitResolverTypes());
                 type.putDefaultProperties(request, properties);
@@ -413,32 +420,6 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         return result;
     }
 
-    private boolean validateSamples(Map<String, String> sampleFormElements, String targetStudy) throws SQLException
-    {
-/*        if (targetStudy == null)
-            return true;
-        Container studyContainer = ContainerManager.getForId(targetStudy);
-        if (studyContainer == null)
-            return true;
-        Map<Container, String> studies = AssayPublishService.get().getValidPublishTargets(getViewContext().getUser());
-        if (!studies.containsKey(studyContainer))
-            return true;
-        ActionErrors strutsErrors = PageFlowUtil.getActionErrors(getViewContext().getRequest(), true);
-        for (Map.Entry<String,String> sampleFormElement : sampleFormElements.entrySet())
-        {
-            AssayPublishService.SampleInfo info = AssayPublishService.get().getSampleInfo(studyContainer, sampleFormElement.getValue());
-            if (info == null || info.getParticipantId() == null || info.getSequenceNum() == null)
-            {
-                strutsErrors.add("main", new ActionMessage("Sample \"" + sampleFormElement.getValue() +
-                        "\" was not found in study \"" + studies.get(studyContainer) + "\""));
-            }
-        }
-        return strutsErrors.size() == 0;
-        */
-        // Don't validate samples for now - we don't actually do anything useful with them
-        return true;
-    }
-
     protected class InputDisplayColumn extends SimpleDisplayColumn
     {
         protected String _inputName;
@@ -531,7 +512,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         }
     }
 
-    public static boolean validatePostedProperties(Map<PropertyDescriptor, String> properties, HttpServletRequest request, BindException errors)
+    public static boolean validatePostedProperties(Map<PropertyDescriptor, String> properties, BindException errors)
     {
         for (Map.Entry<PropertyDescriptor, String> entry : properties.entrySet())
         {
@@ -573,7 +554,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
 
         public ModelAndView handleStep(FormClass form, BindException errors) throws ServletException
         {
-            if (!form.isResetDefaultValues() && validatePostedProperties(form.getUploadSetProperties(), form.getRequest(), errors))
+            if (!form.isResetDefaultValues() && validatePostedProperties(form.getUploadSetProperties(), errors))
                 return getRunPropertiesView(form, false, false, errors);
             else
                 return getUploadSetPropertiesView(form, true, errors);
@@ -609,19 +590,15 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
 
         public ModelAndView handleStep(FormClass form, BindException errors) throws ServletException, SQLException
         {
-            boolean validSamples = true;
-            if (!form.isIgnoreWarnings())
-                validSamples = validateSamples(form.getRunSamplesByFormElementName(), form.getTargetStudy());
-
             if (getCompletedUploadAttemptIDs().contains(form.getUploadAttemptID()))
             {
                 HttpView.throwRedirect(AssayService.get().getUploadWizardURL(getContainer(), _protocol));
             }
 
-            if (!form.isResetDefaultValues() && validatePost(form, errors) && validSamples)
+            if (!form.isResetDefaultValues() && validatePost(form, errors))
                 return handleSuccessfulPost(form, errors);
             else
-                return getRunPropertiesView(form, true, !validSamples, errors);
+                return getRunPropertiesView(form, true, false, errors);
         }
 
         protected ModelAndView handleSuccessfulPost(FormClass form, BindException errors) throws SQLException, ServletException
@@ -630,16 +607,6 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
             try
             {
                 run = saveExperimentRun(form);
-
-                saveDefaultValues(form.getUploadSetProperties(), form.getRequest(), form.getProvider(), UploadSetStepHandler.NAME);
-                saveDefaultValues(form.getRunProperties(), form.getRequest(), form.getProvider(), RunStepHandler.NAME);
-                getCompletedUploadAttemptIDs().add(form.getUploadAttemptID());
-                AssayDataCollector collector = form.getSelectedDataCollector();
-                if (collector != null)
-                {
-                    collector.uploadComplete(form);
-                }
-                form.resetUploadAttemptID();
             }
             catch (ExperimentException e)
             {
@@ -652,13 +619,33 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
 
         protected ExpRun saveExperimentRun(FormClass form) throws ExperimentException
         {
-            AssayProvider provider = form.getProvider();
-            return provider.saveExperimentRun(form);
+            ExpExperiment exp = null;
+            if (form.getBatchId() != null)
+            {
+                exp = ExperimentService.get().getExpExperiment(form.getBatchId().intValue());
+            }
+
+            Pair<ExpRun, ExpExperiment> insertedValues = form.getProvider().saveExperimentRun(form, exp);
+
+            ExpRun run = insertedValues.getKey();
+            form.setBatchId(insertedValues.getValue().getRowId());
+
+            saveDefaultValues(form.getUploadSetProperties(), form.getRequest(), form.getProvider(), UploadSetStepHandler.NAME);
+            saveDefaultValues(form.getRunProperties(), form.getRequest(), form.getProvider(), RunStepHandler.NAME);
+            getCompletedUploadAttemptIDs().add(form.getUploadAttemptID());
+            AssayDataCollector collector = form.getSelectedDataCollector();
+            if (collector != null)
+            {
+                collector.uploadComplete(form);
+            }
+            form.resetUploadAttemptID();
+
+            return run;
         }
 
         protected boolean validatePost(FormClass form, BindException errors)
         {
-            return UploadWizardAction.this.validatePostedProperties(form.getRunProperties(), form.getRequest(), errors);
+            return validatePostedProperties(form.getRunProperties(), errors);
         }
 
         public String getName()
