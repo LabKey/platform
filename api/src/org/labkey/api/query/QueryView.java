@@ -1221,13 +1221,28 @@ public class QueryView extends WebPartView<Object>
             return _table;
         _table = createTable();
 
-        if (_table instanceof ContainerFilterable && _settings.getContainerFilter() != null)
+        if (_table instanceof ContainerFilterable)
         {
-            ContainerFilterable fTable = (ContainerFilterable)_table;
-            fTable.setContainerFilter(_settings.getContainerFilter(), _schema.getUser());
+            ContainerFilter filter = getContainerFilter();
+            if (filter != null)
+            {
+                ContainerFilterable fTable = (ContainerFilterable)_table;
+                fTable.setContainerFilter(filter, _schema.getUser());
+            }
         }
-
         return _table;
+    }
+
+    private ContainerFilter getContainerFilter()
+    {
+        ContainerFilter filter = _settings.getContainerFilter();
+        if (filter == null && _customView != null)
+        {
+            String filterName = _customView.getContainerFilterName();
+            if (filterName != null)
+                filter = ContainerFilter.Filters.valueOf(filterName);
+        }
+        return filter;
     }
 
     public List<DisplayColumn> getDisplayColumns()

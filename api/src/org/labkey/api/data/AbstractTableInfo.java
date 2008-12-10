@@ -484,4 +484,9 @@ abstract public class AbstractTableInfo implements TableInfo
     {
         return true;
     }
+
+    public ContainerFilter getContainerFilter()
+    {
+        return null;
+    }
 }

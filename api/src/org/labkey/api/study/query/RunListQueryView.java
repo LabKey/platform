@@ -72,8 +72,8 @@ public class RunListQueryView extends ExperimentRunListView
         super.populateButtonBar(view, bar);
 
         ActionURL target = AssayService.get().getProtocolURL(getContainer(), _protocol, "showSelectedData");
-        if (getSettings().getContainerFilter() != null)
-            target.addParameter("containerFilterName", getSettings().getContainerFilter().name());
+        if (getTable().getContainerFilter() != null)
+            target.addParameter("containerFilterName", getTable().getContainerFilter().name());
         ActionButton viewSelectedButton = new ActionButton(target, "Show Data For Runs");
         viewSelectedButton.setScript("return verifySelected(this.form, \"" + target.getLocalURIString() + "\", \"post\", \"runs\")");
         viewSelectedButton.setActionType(ActionButton.Action.POST);

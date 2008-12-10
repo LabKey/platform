@@ -50,6 +50,7 @@ public interface CustomView
     void setFilterAndSortFromURL(ActionURL url, String dataRegionName);
     String getFilter();
     void setFilter(String filter);
+    String getContainerFilterName();
     
     boolean hasFilterOrSort();
 

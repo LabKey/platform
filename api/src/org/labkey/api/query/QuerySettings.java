@@ -52,7 +52,6 @@ public class QuerySettings
 
     PropertyValues _filterSort = null;
 
-    private String _containerFilterName;
     ContainerFilter _containerFilter;
 
 
@@ -420,23 +419,13 @@ public class QuerySettings
         _allowCustomizeView = allowCustomizeView;
     }
 
-    public ContainerFilter getContainerFilter()
+    ContainerFilter getContainerFilter()
     {
         return _containerFilter;
-    }
-
-    public void setContainerFilter(ContainerFilter containerFilter)
-    {
-        _containerFilter = containerFilter;
     }
 
     public void setContainerFilterName(String name)
     {
         _containerFilter = ContainerFilter.Filters.valueOf(name);
-    }
-
-    public String getContainerFilterName()
-    {
-        return _containerFilter == null ? null : _containerFilter.name();
     }
 }

@@ -38,7 +38,7 @@ public class AssayRunsView extends VBox
         ViewContext context = getViewContext();
 
         _runsView = provider.createRunView(context, protocol);
-        AssayHeaderView headerView = new AssayHeaderView(protocol, provider, minimizeLinks, _runsView.getSettings().getContainerFilter());
+        AssayHeaderView headerView = new AssayHeaderView(protocol, provider, minimizeLinks, _runsView.getTable().getContainerFilter());
         if (minimizeLinks)
         {
             _runsView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);

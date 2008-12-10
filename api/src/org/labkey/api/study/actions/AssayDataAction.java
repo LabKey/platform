@@ -45,7 +45,11 @@ public class AssayDataAction extends BaseAssayAction<ProtocolIdForm>
         AssayProvider provider = AssayService.get().getProvider(_protocol);
         RunDataQueryView dataView = provider.createRunDataView(context, _protocol);
 
-        AssayHeaderView headerView = new AssayHeaderView(_protocol, AssayService.get().getProvider(_protocol), false, dataView.getSettings().getContainerFilter());
+        AssayHeaderView headerView = new AssayHeaderView(
+            _protocol,
+            AssayService.get().getProvider(_protocol),
+            false,
+            dataView.getTable().getContainerFilter());
 
         VBox fullView = new VBox();
         fullView.addView(headerView);

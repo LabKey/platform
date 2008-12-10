@@ -59,7 +59,7 @@ public class AssayRunType extends ExperimentRunType
     public void populateButtonBar(ViewContext context, ButtonBar bar, DataView view, ContainerFilter filter)
     {
         Set<Container> containers;
-        if (filter != null)
+        if (filter != null && filter != ContainerFilter.Filters.CURRENT)
         {
             Collection<String> containerIds = filter.getIds(context.getContainer(), context.getUser());
             Set<Container> filterContainers = new HashSet<Container>();

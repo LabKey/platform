@@ -79,8 +79,8 @@ public class RunDataQueryView extends AssayBaseQueryView
                 }
                 publishURL.deleteParameters();
 
-                if (getSettings().getContainerFilter() != null)
-                    publishURL.addParameter("containerFilterName", getSettings().getContainerFilter().name());
+                if (getTable().getContainerFilter() != null)
+                    publishURL.addParameter("containerFilterName", getTable().getContainerFilter().name());
 
                 if (provider.canPublish())
                 {
@@ -102,7 +102,7 @@ public class RunDataQueryView extends AssayBaseQueryView
 
     private void handleUploadButton(AssayProvider provider, ButtonBar buttonBar)
     {
-        if (getSettings().getContainerFilter() == null)
+        if (getTable().getContainerFilter() == null)
         {
             if (provider.allowUpload(getUser(), getContainer(), _protocol))
             {
@@ -112,7 +112,7 @@ public class RunDataQueryView extends AssayBaseQueryView
             }
             return;
         }
-        Collection<String> containersFromFilter = getSettings().getContainerFilter().getIds(getContainer(), getUser());
+        Collection<String> containersFromFilter = getTable().getContainerFilter().getIds(getContainer(), getUser());
         Set<Container> allowedContainers = new HashSet<Container>();
         for (String id : containersFromFilter)
         {

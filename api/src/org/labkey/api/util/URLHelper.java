@@ -16,20 +16,19 @@
 package org.labkey.api.util;
 
 import org.apache.commons.collections.ArrayStack;
-import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.log4j.Logger;
 import org.labkey.common.util.Pair;
-import org.springframework.beans.PropertyValues;
-import org.springframework.beans.PropertyValue;
 import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.PropertyValue;
+import org.springframework.beans.PropertyValues;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
-import java.lang.reflect.Array;
 
 
 public class URLHelper implements Cloneable, Serializable
@@ -392,7 +391,7 @@ public class URLHelper implements Cloneable, Serializable
     }
 
 
-    String[] _emptyStringArray = new String[0];
+    private final String[] _emptyStringArray = new String[0];
 
     public String[] getKeysByPrefix(String prefix)
     {
