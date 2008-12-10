@@ -43,8 +43,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 
 /**
  * User: migra
@@ -199,16 +197,12 @@ public class ModuleLoader implements Filter
 
         _webappDir = new File(servletCtx.getRealPath(".")).getCanonicalFile();
 
-        Set<File> unclaimedFiles = listCurrentFiles(_webappDir);
-
-        removeAPIFiles(unclaimedFiles, _webappDir);
-
-        Set<File> explodedModulesDirs;
+        List<File> explodedModuleDirs;
         try
         {
             ClassLoader webappClassLoader = getClass().getClassLoader();
-            Method m = webappClassLoader.getClass().getMethod("getModuleFiles");
-            explodedModulesDirs = (Set<File>)m.invoke(webappClassLoader);
+            Method m = webappClassLoader.getClass().getMethod("getExplodedModuleDirectories");
+            explodedModuleDirs = (List<File>)m.invoke(webappClassLoader);
         }
         catch (NoSuchMethodException e)
         {
@@ -220,7 +214,7 @@ public class ModuleLoader implements Filter
         }
 
         //load module instances using Spring
-        _modules = loadModules(explodedModulesDirs);
+        _modules = loadModules(explodedModuleDirs);
 
         //sort the modules by dependencies
         ModuleDependencySorter sorter = new ModuleDependencySorter();
@@ -246,20 +240,6 @@ public class ModuleLoader implements Filter
             }
         }
 
-
-        extractModules(explodedModulesDirs, servletCtx, unclaimedFiles);
-
-        File webinfDir = new File(_webappDir, "WEB-INF");
-        File webinfLibDir = new File(webinfDir, "lib");
-        // Clean up any old files that might be from modules that are no
-        // longer part of this installation
-        for (File unclaimedFile : unclaimedFiles)
-        {
-            if (!unclaimedFile.getParentFile().equals(webinfLibDir))
-            {
-                FileUtil.deleteDir(unclaimedFile);
-            }
-        }
 
         ensureDataBases();
 
@@ -321,10 +301,10 @@ public class ModuleLoader implements Filter
         _log.info("Core LabKey Server startup is complete, modules will be initialized after the first HTTP/HTTPS request");
     }
 
-    public static List<Module> loadModules(Set<File> moduleFiles)
+    public static List<Module> loadModules(List<File> explodedModuleDirs)
     {
         List<Module> modules = new ArrayList<Module>();
-        for(File moduleDir : moduleFiles)
+        for(File moduleDir : explodedModuleDirs)
         {
             Module module = null;
             File moduleXml = new File(moduleDir, "config/module.xml");
@@ -410,7 +390,7 @@ public class ModuleLoader implements Filter
         return result;
     }
 
-    private void extractModules(Set<File> explodedModuleDirs, ServletContext context, Set<File> unclaimedFiles) throws ServletException, IllegalAccessException, InstantiationException, ClassNotFoundException, IOException
+    private void extractModules(List<File> explodedModuleDirs, ServletContext context, Set<File> unclaimedFiles) throws ServletException, IllegalAccessException, InstantiationException, ClassNotFoundException, IOException
     {
         File webappContentDir = new File(context.getRealPath("")).getCanonicalFile();
         File webInfDir = new File(context.getRealPath("WEB-INF")).getCanonicalFile();
