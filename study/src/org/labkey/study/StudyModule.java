@@ -29,6 +29,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
@@ -78,6 +79,8 @@ public class StudyModule extends DefaultModule
 {
     private static final Logger _log = Logger.getLogger(DefaultModule.class);
 
+    public static final String MODULE_NAME = "Study";
+
     public static final BaseWebPartFactory reportsPartFactory = new ReportsWebPartFactory();
     public static final WebPartFactory reportsWidePartFactory = new ReportsWideWebPartFactory();
     public static final WebPartFactory samplesPartFactory = new SamplesWebPartFactory("right");
@@ -93,7 +96,7 @@ public class StudyModule extends DefaultModule
 
     public String getName()
     {
-        return "Study";
+        return MODULE_NAME;
     }
 
     public double getVersion()
@@ -131,6 +134,12 @@ public class StudyModule extends DefaultModule
 
         EnumConverter.registerEnum(SecurityType.class);
         QuerySnapshotService.registerProvider(StudyManager.getSchemaName(), DatasetSnapshotProvider.getInstance());
+    }
+
+    @Override
+    public Set<ModuleResourceLoader> getResourceLoaders()
+    {
+        return Collections.<ModuleResourceLoader>singleton(new ModuleAssayLoader());
     }
 
     public boolean hasScripts()
