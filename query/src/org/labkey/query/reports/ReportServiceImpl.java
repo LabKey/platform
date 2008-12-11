@@ -26,6 +26,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.common.util.Pair;
 
 import java.beans.PropertyChangeEvent;
@@ -336,10 +338,31 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
     public Report[] getReports(User user, Container c, String key) throws SQLException
     {
+        List<ReportDescriptor> moduleReportDescriptors = new ArrayList<ReportDescriptor>();
+        for(Module module : ModuleLoader.getInstance().getModules())
+        {
+            List<ReportDescriptor> descriptors = module.getReportDescriptors(key);
+            if(null != descriptors)
+                moduleReportDescriptors.addAll(descriptors);
+        }
+
+        List<Report> reports = new ArrayList<Report>();
+        for(ReportDescriptor descriptor : moduleReportDescriptors)
+        {
+            String type = descriptor.getReportType();
+            Report report = createReportInstance(type);
+            if (report != null)
+            {
+                report.setDescriptor(descriptor);
+                reports.add(report);
+            }
+        }
+
         SimpleFilter filter = new SimpleFilter("ContainerId", c.getId());
         if (key != null)
             filter.addCondition("ReportKey", key);
-        return _getReports(user, filter);
+        reports.addAll(Arrays.asList(_getReports(user, filter)));
+        return reports.toArray(new Report[reports.size()]);
     }
 
     public Report[] getReports(User user, Container c, String key, int flagMask, int flagValue) throws SQLException
