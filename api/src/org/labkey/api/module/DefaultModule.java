@@ -47,7 +47,7 @@ public abstract class DefaultModule implements Module
     public static final String CORE_MODULE_NAME = "Core";
 
     public static final String R_REPORT_EXTENSION = ".r";
-    
+
     protected static final FilenameFilter rReportFilter = new FilenameFilter(){
         public boolean accept(File dir, String name)
         {
@@ -359,7 +359,7 @@ public abstract class DefaultModule implements Module
         {
             dependency = dependency.trim();
             if (dependency.length() > 0)
-                _moduleDependencies.add(dependency.toLowerCase());
+                _moduleDependencies.add(dependency);
         }
     }
 
@@ -441,7 +441,7 @@ public abstract class DefaultModule implements Module
     public Map<String, String> getProperties()
     {
         Map<String,String> props = new HashMap<String,String>();
-        
+
         props.put("Module Class", getClass().toString());
         props.put("Build Path", getBuildPath());
         props.put("SVN URL", getSvnUrl());
@@ -478,7 +478,7 @@ public abstract class DefaultModule implements Module
             dir = new File(_sourcePath, getSqlScriptsPath(dialect));
         else
             dir = new File(_explodedPath, getSqlScriptsPath(dialect));
-            
+
         if(dir.exists() && dir.isDirectory())
         {
             for(File script : dir.listFiles())
@@ -517,8 +517,13 @@ public abstract class DefaultModule implements Module
             }
             return reportDescriptors;
         }
-        
+
         return null;
+    }
+
+    public Set<ModuleResourceLoader> getResourceLoaders()
+    {
+        return Collections.emptySet();
     }
 
     public InputStream getResourceStreamFromWebapp(ServletContext ctx, String path) throws FileNotFoundException

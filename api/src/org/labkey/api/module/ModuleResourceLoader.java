@@ -17,6 +17,7 @@ package org.labkey.api.module;
 
 import java.io.IOException;
 import java.io.File;
+import java.util.Set;
 
 /*
 * User: Dave
@@ -32,5 +33,7 @@ import java.io.File;
  */
 public interface ModuleResourceLoader
 {
+    public Set<String> getModuleDependencies(Module module, File explodedModuleDir);
+
     public void loadResources(Module module, File explodedModuleDir) throws IOException, ModuleResourceLoadException;
 }

@@ -75,7 +75,7 @@ public class ModuleLoader implements Filter
     private static final Object STARTUP_LOCK = new Object();
     private boolean _startupComplete = false;
 
-    private ModuleResourceLoader[] _resourceLoaders = {};
+    private final List<ModuleResourceLoader> _resourceLoaders = new ArrayList<ModuleResourceLoader>();
 
     public enum ModuleState
     {
@@ -173,7 +173,7 @@ public class ModuleLoader implements Filter
     }
 
     ServletContext _servletContext = null;
-    
+
     public static ServletContext getServletContext()
     {
         return getInstance()._servletContext;
@@ -215,10 +215,14 @@ public class ModuleLoader implements Filter
 
         //load module instances using Spring
         _modules = loadModules(explodedModuleDirs);
+        for (Module module : _modules)
+        {
+            registerResourceLoaders(module.getResourceLoaders());
+        }
 
         //sort the modules by dependencies
         ModuleDependencySorter sorter = new ModuleDependencySorter();
-        _modules = sorter.sortModulesByDependencies(_modules);
+        _modules = sorter.sortModulesByDependencies(_modules, _resourceLoaders);
 
         //initialize each module in turn
         for(Module module : _modules)
@@ -228,12 +232,9 @@ public class ModuleLoader implements Filter
                 module.initialize();
                 moduleMap.put(module.getName(), module);
 
-                if(null != _resourceLoaders && _resourceLoaders.length > 0)
+                for(ModuleResourceLoader resLoader : _resourceLoaders)
                 {
-                    for(ModuleResourceLoader resLoader : _resourceLoaders)
-                    {
-                        resLoader.loadResources(module, module.getExplodedPath());
-                    }
+                    resLoader.loadResources(module, module.getExplodedPath());
                 }
             }
             catch(Throwable t)
@@ -1082,6 +1083,19 @@ public class ModuleLoader implements Filter
         synchronized (_folderTypes)
         {
             return Collections.unmodifiableCollection(_folderTypes.values());
+        }
+    }
+
+    public void registerResourceLoader(ModuleResourceLoader loader)
+    {
+        registerResourceLoaders(Collections.singleton(loader));
+    }
+
+    public void registerResourceLoaders(Set<ModuleResourceLoader> loaders)
+    {
+        synchronized (_resourceLoaders)
+        {
+            _resourceLoaders.addAll(loaders);
         }
     }
 

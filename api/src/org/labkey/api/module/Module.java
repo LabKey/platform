@@ -214,4 +214,12 @@ public interface Module
      * @return A list of ReportDescriptors for that key
      */
     public List<ReportDescriptor> getReportDescriptors(String key);
+
+    /**
+     * Modules can provide a set ModuleResourceLoaders which will be used
+     * to add modules dependencies between modules and load resources during initialization.
+     * @return The set of ModuleResourceLoaders this module provides.
+     */
+    public Set<ModuleResourceLoader> getResourceLoaders();
+
 }

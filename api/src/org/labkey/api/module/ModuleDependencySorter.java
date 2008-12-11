@@ -19,11 +19,11 @@ package org.labkey.api.module;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.labkey.common.util.Pair;
+import org.labkey.api.util.CaseInsensitiveHashSet;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * User: jeckels
@@ -31,12 +31,14 @@ import java.util.Set;
  */
 public class ModuleDependencySorter
 {
-    public List<Module> sortModulesByDependencies(List<Module> modules)
+    public List<Module> sortModulesByDependencies(List<Module> modules, Collection<ModuleResourceLoader> loaders)
     {
         List<Pair<Module, Set<String>>> dependencies = new ArrayList<Pair<Module, Set<String>>>();
         for (Module module : modules)
         {
-            Pair<Module, Set<String>> dependencyInfo = new Pair<Module, Set<String>>(module, new HashSet<String>(module.getModuleDependenciesAsSet()));
+            Pair<Module, Set<String>> dependencyInfo = new Pair<Module, Set<String>>(module, new CaseInsensitiveHashSet(module.getModuleDependenciesAsSet()));
+            for (ModuleResourceLoader loader : loaders)
+                dependencyInfo.second.addAll(loader.getModuleDependencies(module, module.getExplodedPath()));
             dependencies.add(dependencyInfo);
         }
 
@@ -45,7 +47,7 @@ public class ModuleDependencySorter
         {
             Module module = findModuleWithoutDependencies(dependencies);
             result.add(module);
-            String moduleName = module.getName().toLowerCase();
+            String moduleName = module.getName();
             for (Pair<Module, Set<String>> dependencyInfo : dependencies)
             {
                 dependencyInfo.getValue().remove(moduleName);
@@ -103,7 +105,7 @@ public class ModuleDependencySorter
                 testModules.add(new MockModule("a", "b"));
                 testModules.add(new MockModule("b", "a"));
                 ModuleDependencySorter sorter = new ModuleDependencySorter();
-                sorter.sortModulesByDependencies(testModules);
+                sorter.sortModulesByDependencies(testModules, Collections.<ModuleResourceLoader>emptySet());
                 fail("Should have detected a problem");
             }
             catch (IllegalArgumentException e) { /* Expected failure */ }
@@ -116,7 +118,7 @@ public class ModuleDependencySorter
                 List<Module> testModules = new ArrayList<Module>();
                 testModules.add(new MockModule("a", "a"));
                 ModuleDependencySorter sorter = new ModuleDependencySorter();
-                sorter.sortModulesByDependencies(testModules);
+                sorter.sortModulesByDependencies(testModules, Collections.<ModuleResourceLoader>emptySet());
                 fail("Should have detected a problem");
             }
             catch (IllegalArgumentException e) { /* Expected failure */ }
@@ -132,7 +134,7 @@ public class ModuleDependencySorter
                 testModules.add(new MockModule("d", "e"));
                 testModules.add(new MockModule("e"));
                 ModuleDependencySorter sorter = new ModuleDependencySorter();
-                sorter.sortModulesByDependencies(testModules);
+                sorter.sortModulesByDependencies(testModules, Collections.<ModuleResourceLoader>emptySet());
                 fail("Should have detected a problem");
             }
             catch (IllegalArgumentException e) { /* Expected failure */ }
@@ -150,7 +152,7 @@ public class ModuleDependencySorter
             testModules.add(new MockModule("g"));
             testModules.add(new MockModule("h"));
             ModuleDependencySorter sorter = new ModuleDependencySorter();
-            List<Module> sortedModules = sorter.sortModulesByDependencies(testModules);
+            List<Module> sortedModules = sorter.sortModulesByDependencies(testModules, Collections.<ModuleResourceLoader>emptySet());
             assertEquals(sortedModules.size(), testModules.size());
             assertEquals(sortedModules.get(0).getName(), "e");
             assertEquals(sortedModules.get(1).getName(), "d");
@@ -160,6 +162,36 @@ public class ModuleDependencySorter
             assertEquals(sortedModules.get(5).getName(), "c");
             assertEquals(sortedModules.get(6).getName(), "b");
             assertEquals(sortedModules.get(7).getName(), "a");
+        }
+
+        public void testResourceLoaderDependencies()
+        {
+            List<Module> testModules = new ArrayList<Module>();
+            testModules.add(new MockModule("a"));
+            testModules.add(new MockModule("b"));
+            testModules.add(new MockModule("c"));
+
+            ModuleResourceLoader loader = new ModuleResourceLoader() {
+                public Set<String> getModuleDependencies(Module module, File explodedModuleDir)
+                {
+                    if (module.getName().equals("a"))
+                        return Collections.singleton("b");
+                    if (module.getName().equals("b"))
+                        return Collections.singleton("c");
+                    return Collections.emptySet();
+                }
+
+                public void loadResources(Module module, File explodedModuleDir) throws IOException, ModuleResourceLoadException
+                {
+                }
+            };
+
+            ModuleDependencySorter sorter = new ModuleDependencySorter();
+            List<Module> sortedModules = sorter.sortModulesByDependencies(testModules, Collections.singleton(loader));
+
+            assertEquals(sortedModules.get(0).getName(), "c");
+            assertEquals(sortedModules.get(1).getName(), "b");
+            assertEquals(sortedModules.get(2).getName(), "a");
         }
 
         public static Test suite()

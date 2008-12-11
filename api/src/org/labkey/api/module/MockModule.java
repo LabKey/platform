@@ -222,6 +222,11 @@ public class MockModule implements Module
         return null;
     }
 
+    public Set<ModuleResourceLoader> getResourceLoaders()
+    {
+        return Collections.emptySet();
+    }
+
     public File getExplodedPath()
     {
         return null;
