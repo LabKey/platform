@@ -540,9 +540,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 while(ExperimentService.get().getExpExperiment(batch.getLSID()) != null);
 
                 batch.save(context.getUser());
-                batch.addRuns(context.getUser(), run);
                 savePropertyObject(batch.getLSID(), uploadSetProperties, context.getContainer());
             }
+            batch.addRuns(context.getUser(), run);
 
             if (transactionOwner)
                 scope.commitTransaction();
