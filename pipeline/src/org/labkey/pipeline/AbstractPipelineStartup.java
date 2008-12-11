@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.mule.LoggerUtil;
@@ -27,10 +28,7 @@ import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * User: jeckels
@@ -53,7 +51,7 @@ public abstract class AbstractPipelineStartup
         //load the modules and sort them by dependencies
         List<Module> modules = ModuleLoader.loadModules(moduleFiles);
         ModuleDependencySorter sorter = new ModuleDependencySorter();
-        modules = sorter.sortModulesByDependencies(modules);
+        modules = sorter.sortModulesByDependencies(modules, Collections.<ModuleResourceLoader>emptySet());
 
         Map<String, BeanFactory> result = new CaseInsensitiveHashMap<BeanFactory>();
 
