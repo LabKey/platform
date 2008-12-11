@@ -23,6 +23,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.view.*;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ModuleRReportDescriptor;
 import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.mvc.Controller;
 import org.jetbrains.annotations.Nullable;
@@ -43,6 +45,15 @@ import java.util.*;
 public abstract class DefaultModule implements Module
 {
     public static final String CORE_MODULE_NAME = "Core";
+
+    public static final String R_REPORT_EXTENSION = ".r";
+    
+    protected static final FilenameFilter rReportFilter = new FilenameFilter(){
+        public boolean accept(File dir, String name)
+        {
+            return name.toLowerCase().endsWith(R_REPORT_EXTENSION);
+        }
+    };
     private static final Set<Class> INSTANTIATED_MODULES = new HashSet<Class>();
 
     private final Map<String, Class> _pageFlowNameToClass = new LinkedHashMap<String, Class>();
@@ -487,6 +498,27 @@ public abstract class DefaultModule implements Module
             return "/src/META-INF/" + getName().toLowerCase() + "/scripts/" + dialect.getSQLScriptPath(true) + "/";
         else
             return "schemas/dbscripts/" + dialect.getSQLScriptPath(false) + "/";
+    }
+
+    public List<ReportDescriptor> getReportDescriptors(String key)
+    {
+        if(null == key)
+            return null;
+
+        //currently we support only R reports
+        File reportsDir = new File(getExplodedPath(), "reports");
+        File keyDir = new File(reportsDir, key);
+        if(keyDir.exists() && keyDir.isDirectory())
+        {
+            List<ReportDescriptor> reportDescriptors = new ArrayList<ReportDescriptor>();
+            for(File file : keyDir.listFiles(rReportFilter))
+            {
+                reportDescriptors.add(new ModuleRReportDescriptor(key, file));
+            }
+            return reportDescriptors;
+        }
+        
+        return null;
     }
 
     public InputStream getResourceStreamFromWebapp(ServletContext ctx, String path) throws FileNotFoundException

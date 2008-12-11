@@ -15,9 +15,11 @@
  */
 package org.labkey.api.module;
 
-import org.labkey.api.view.WebPartFactory;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.view.WebPartFactory;
 
+import java.io.File;
 import java.util.Collection;
 
 /*
@@ -48,8 +50,7 @@ public class SimpleModule extends DefaultModule
 
     public boolean hasScripts()
     {
-        //TODO: look for scripts directory
-        return false;
+        return new File(getSqlScriptsPath(CoreSchema.getInstance().getSqlDialect())).exists();
     }
 
     public void startup(ModuleContext moduleContext)

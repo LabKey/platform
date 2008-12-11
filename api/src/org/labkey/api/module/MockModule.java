@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SqlDialect;
 import org.labkey.api.security.User;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.common.util.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
@@ -212,6 +213,11 @@ public class MockModule implements Module
     }
 
     public String getSqlScriptsPath(@NotNull SqlDialect dialect)
+    {
+        return null;
+    }
+
+    public List<ReportDescriptor> getReportDescriptors(String key)
     {
         return null;
     }

@@ -23,6 +23,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.common.util.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
@@ -207,4 +208,10 @@ public interface Module
      */
     public String getSqlScriptsPath(@NotNull SqlDialect dialect);
 
+    /**
+     * Returns a list of report descriptors for a given key
+     * @param key The report key
+     * @return A list of ReportDescriptors for that key
+     */
+    public List<ReportDescriptor> getReportDescriptors(String key);
 }

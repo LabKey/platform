@@ -75,7 +75,7 @@ public class ModuleLoader implements Filter
     private static final Object STARTUP_LOCK = new Object();
     private boolean _startupComplete = false;
 
-    private ModuleResourceLoader[] _resourceLoaders = {new ModuleReportLoader()};
+    private ModuleResourceLoader[] _resourceLoaders = {};
 
     public enum ModuleState
     {
@@ -228,9 +228,12 @@ public class ModuleLoader implements Filter
                 module.initialize();
                 moduleMap.put(module.getName(), module);
 
-                for(ModuleResourceLoader resLoader : _resourceLoaders)
+                if(null != _resourceLoaders && _resourceLoaders.length > 0)
                 {
-                    resLoader.loadResources(module, module.getExplodedPath());
+                    for(ModuleResourceLoader resLoader : _resourceLoaders)
+                    {
+                        resLoader.loadResources(module, module.getExplodedPath());
+                    }
                 }
             }
             catch(Throwable t)
@@ -390,58 +393,6 @@ public class ModuleLoader implements Filter
         return result;
     }
 
-    private void extractModules(List<File> explodedModuleDirs, ServletContext context, Set<File> unclaimedFiles) throws ServletException, IllegalAccessException, InstantiationException, ClassNotFoundException, IOException
-    {
-        File webappContentDir = new File(context.getRealPath("")).getCanonicalFile();
-        File webInfDir = new File(context.getRealPath("WEB-INF")).getCanonicalFile();
-        File webInfJspDir = new File(context.getRealPath("WEB-INF/jsp")).getCanonicalFile();
-        File webInfClassesDir = new File(context.getRealPath("WEB-INF/classes")).getCanonicalFile();
-        ModuleFileCopyListener fileCopyListener = new ModuleFileCopyListener(unclaimedFiles);
-
-        for (File explodedModuleDir : explodedModuleDirs)
-        {
-            //copy static web resources to webapp content directory
-            File moduleWebContentDir = new File(explodedModuleDir, "web");
-            if(moduleWebContentDir.exists())
-                FileUtil.copyBranch(moduleWebContentDir, webappContentDir, true, fileCopyListener);
-
-            //copy the _pageflow directory to the web-inf/classes dir
-            //so that it ends up as web-inf/classes/_pageflow
-            File modulePageFlowDir = new File(explodedModuleDir, "lib/_pageflow");
-            if(modulePageFlowDir.exists())
-                FileUtil.copyBranch(modulePageFlowDir, webInfClassesDir, false, fileCopyListener);
-
-            //copy any JSP JARs that might exists in the module lib directory
-            File moduleLibDir = new File(explodedModuleDir, "lib");
-            if(moduleLibDir.exists())
-            {
-                for(File libFile : moduleLibDir.listFiles())
-                {
-                    if(libFile.getName().toLowerCase().endsWith("_jsp.jar"))
-                    {
-                        File destFile = new File(webInfJspDir, libFile.getName());
-                        FileUtil.copyFile(libFile, destFile);
-                        unclaimedFiles.remove(destFile);
-                    }
-                }
-            }
-
-            //copy any Spring module config XML files to web inf directory
-            File moduleConfigDir = new File(explodedModuleDir, "config");
-            if(moduleConfigDir.exists())
-            {
-                for(File configFile : moduleConfigDir.listFiles())
-                {
-                    if(configFile.getName().toLowerCase().endsWith("context.xml"))
-                    {
-                        File destFile = new File(webInfDir, configFile.getName());
-                        FileUtil.copyFile(configFile, destFile);
-                        unclaimedFiles.remove(destFile);
-                    }
-                }
-            }
-        }
-    }
 
 
     // Enumerate each jdbc DataSource in labkey.xml and attempt a (non-pooled) connection to each.  If connection fails, attempt to create
