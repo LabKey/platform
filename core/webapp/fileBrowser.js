@@ -271,7 +271,7 @@ Ext.extend(AppletFileSystem, FileSystem,
             r.set("modified", lastModified);
             r.set("size", size);
             if (!file)
-                r.set("iconfHref", this.FOLDER_IMAGE)
+                r.set("iconfHref", this.FOLDER_ICON)
             records.push(r);
         }
         this._addFiles(path, records);
@@ -376,7 +376,7 @@ var FileBrowser = function(config)
 };
 Ext.extend(FileBrowser, Ext.util.Observable,
 {
-    FOLDER_IMAGE: LABKEY.contextPath + "/" + LABKEY.extJsRoot + "/resources/images/default/tree/folder.gif",
+    FOLDER_ICON: LABKEY.contextPath + "/" + LABKEY.extJsRoot + "/resources/images/default/tree/folder.gif",
 
     // instance/config variables
     showFolders: true,

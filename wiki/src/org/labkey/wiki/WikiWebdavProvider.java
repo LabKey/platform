@@ -35,6 +35,7 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.settings.AppProps;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 
@@ -226,7 +227,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         {
             default:
             case HTML: return wiki.getName() + ".html";
-            case RADEOX: return wiki.getName() +  ".radeox";
+            case RADEOX: return wiki.getName() +  ".wiki";
             case TEXT_WITH_LINKS: return wiki.getName() + ".txt";
         }
     }
@@ -234,7 +235,8 @@ class WikiWebdavProvider implements WebdavService.Provider
     public static class WikiPageResource extends AbstractDocumentResource
     {
         WikiFolder _folder = null;
-        Wiki _wiki;
+        Wiki _wiki = null;
+        WikiVersion _version = null;
 
         WikiPageResource(WikiFolder folder, Wiki wiki, String docName)
         {
@@ -244,9 +246,16 @@ class WikiWebdavProvider implements WebdavService.Provider
             _wiki = wiki;
         }
 
+        WikiVersion getWikiVersion()
+        {
+            if (_wiki != null && _version == null)
+                _version = WikiManager.getLatestVersion(_wiki);
+            return _version;
+        }
+
         public boolean exists()
         {
-            WikiVersion version = WikiManager.getLatestVersion(_wiki);
+            WikiVersion version = getWikiVersion();
             return null != version && !StringUtils.isEmpty(version.getBody());
         }
 
@@ -272,7 +281,7 @@ class WikiWebdavProvider implements WebdavService.Provider
 
         public InputStream getInputStream(User user) throws IOException
         {
-            WikiVersion v = WikiManager.getLatestVersion(_wiki);
+            WikiVersion v = getWikiVersion();
             byte[] buf = v.getBody().getBytes("UTF-8");
             return new ByteArrayInputStream(buf);
         }
@@ -282,7 +291,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             ByteArrayOutputStream buf = new ByteArrayOutputStream();
             FileUtil.copyData(in,buf);
             long len = buf.size();
-            WikiVersion version = WikiManager.getLatestVersion(_wiki);
+            WikiVersion version = getWikiVersion();
             version.setBody(buf.toString("UTF-8"));
             try
             {
@@ -352,13 +361,13 @@ class WikiWebdavProvider implements WebdavService.Provider
 
         public long getLastModified()
         {
-            WikiVersion v = WikiManager.getLatestVersion(_wiki);
+            WikiVersion v = getWikiVersion();
             return v.getCreated().getTime();
         }
 
         public String getContentType()
         {
-            WikiVersion v = WikiManager.getLatestVersion(_wiki);
+            WikiVersion v = getWikiVersion();
             if ("HTML".equals(v.getRendererType()))
                 return "text/html";
             return "text/plain";
@@ -366,7 +375,7 @@ class WikiWebdavProvider implements WebdavService.Provider
 
         public long getContentLength()
         {
-            WikiVersion v = WikiManager.getLatestVersion(_wiki);
+            WikiVersion v = getWikiVersion();
             String txt = v.getBody();
             try
             {
@@ -387,6 +396,15 @@ class WikiWebdavProvider implements WebdavService.Provider
         public String getExecuteHref(ViewContext context)
         {
             return new ActionURL(WikiController.PageAction.class, _folder._c).addParameter("name",_wiki.getName()).toString();
+        }
+
+        @Override
+        public String getIconHref()
+        {
+            WikiVersion v = getWikiVersion();
+            if (WikiRendererType.RADEOX.toString().equals(v.getRendererType()))
+                return AppProps.getInstance().getContextPath() + "/_icons/wiki.png";
+            return super.getIconHref();
         }
     }
 
