@@ -50,4 +50,4 @@ LABKEY.writeApplet = function (applet)
 			document.write('<PARAM name="' + p + '" value="' + applet.params[p] + '">\n');
 		document.write('This feature requires the Java browser plug-in.</APPLET>');
 	}
-}
+};
