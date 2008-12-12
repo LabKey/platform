@@ -16,23 +16,14 @@
 
 package org.labkey.api.action;
 
-import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: May 17, 2007
  * Time: 12:52:55 PM
@@ -146,7 +137,7 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
      * may call throwRedirect() on success
      * 
      * handlePost() can call setReshow(false) to force record to be reselected
-     * return a view to display or null to call getView(form,true);
+     * return a view to display or null to call getView(form, true);
      */
     public abstract boolean handlePost(FORM form, BindException errors) throws Exception;
 
@@ -156,20 +147,5 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
     public ModelAndView getSuccessView(FORM form)
     {
         return null;
-    }
-
-    /**
-     * @return a map from form element name to uploaded files
-     */
-    protected Map<String, MultipartFile> getFileMap()
-    {
-        if (getViewContext().getRequest() instanceof MultipartHttpServletRequest)
-            return (Map<String, MultipartFile>)((MultipartHttpServletRequest)getViewContext().getRequest()).getFileMap();
-        return Collections.emptyMap();
-    }
-
-    protected List<AttachmentFile> getAttachmentFileList()
-    {
-        return SpringAttachmentFile.createList(getFileMap());
     }
 }

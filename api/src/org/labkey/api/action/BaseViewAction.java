@@ -30,6 +30,8 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.security.*;
+import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.SpringAttachmentFile;
 import org.springframework.beans.*;
 import org.springframework.core.MethodParameter;
 import org.springframework.validation.*;
@@ -38,15 +40,15 @@ import org.springframework.web.bind.ServletRequestParameterPropertyValues;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.BaseCommandController;
 import org.springframework.web.servlet.mvc.Controller;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -563,5 +565,20 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         boolean requiresTermsOfUse = !actionClass.isAnnotationPresent(IgnoresTermsOfUse.class);
         if (requiresTermsOfUse && !context.hasAgreedToTermsOfUse())
             throw new TermsOfUseException();
+    }
+
+    /**
+     * @return a map from form element name to uploaded files
+     */
+    protected Map<String, MultipartFile> getFileMap()
+    {
+        if (getViewContext().getRequest() instanceof MultipartHttpServletRequest)
+            return (Map<String, MultipartFile>)((MultipartHttpServletRequest)getViewContext().getRequest()).getFileMap();
+        return Collections.emptyMap();
+    }
+
+    protected List<AttachmentFile> getAttachmentFileList()
+    {
+        return SpringAttachmentFile.createList(getFileMap());
     }
 }

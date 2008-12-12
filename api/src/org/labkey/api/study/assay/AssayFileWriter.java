@@ -16,7 +16,6 @@
 
 package org.labkey.api.study.assay;
 
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.pipeline.PipeRoot;
@@ -29,7 +28,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.SQLException;
 import java.util.*;
 
 /**

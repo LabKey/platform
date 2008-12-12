@@ -841,7 +841,7 @@ public class Table
 
     public static <K> K insert(User user, TableInfo table, K fieldsIn) throws SQLException
     {
-        assert (table.getTableType() != TableInfo.TABLE_TYPE_NOT_IN_DB): (table.getName() + " is not in the physical database.");
+        assert (table.getTableType() != TableInfo.TABLE_TYPE_NOT_IN_DB): ("Table " + table.getSchema().getName() + "." + table.getName() + " is not in the physical database.");
 
         // _executeTriggers(table, fields);
 
