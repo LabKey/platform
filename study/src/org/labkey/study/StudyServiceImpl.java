@@ -28,7 +28,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
+import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.model.*;
 import org.labkey.study.query.*;
@@ -554,5 +556,16 @@ public class StudyServiceImpl implements StudyService.Service
         }
 
         return null;
+    }
+
+    public ActionURL getDatasetURL(Container container, int datasetId)
+    {
+        return new ActionURL(StudyController.DatasetAction.class, container).addParameter("datasetId", datasetId);
+    }
+
+    public String getStudyName(Container container)
+    {
+        Study study = StudyManager.getInstance().getStudy(container);
+        return study == null ? null : study.getLabel();
     }
 }
