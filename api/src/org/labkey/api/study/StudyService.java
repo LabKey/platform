@@ -16,16 +16,18 @@
 
 package org.labkey.api.study;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.User;
 import org.labkey.api.query.SchemaUpdateService;
 import org.labkey.api.query.SchemaUpdateServiceRegistry;
+import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Collection;
 
 /**
  * Created by IntelliJ IDEA.
@@ -125,6 +127,11 @@ public class StudyService
          * @param view The data view that should be filtered.
          */
         public void applyDefaultQCStateFilter(DataView view);
+
+        public ActionURL getDatasetURL(Container container, int datasetId);
+
+        @Nullable
+        public String getStudyName(Container container);
     }
 
     public static void register(Service serviceImpl)

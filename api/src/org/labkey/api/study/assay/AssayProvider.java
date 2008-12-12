@@ -21,10 +21,10 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpRunTable;
-import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
@@ -39,7 +39,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.Pair;
 
 import java.io.File;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -72,6 +71,8 @@ public interface AssayProvider extends Handler<ExpProtocol>
     HttpView getDataDescriptionView(AssayRunUploadForm form);
 
     Container getAssociatedStudyContainer(ExpProtocol protocol, Object dataId);
+
+    Set<Container> getAllAssociatedStudyContainers(ExpProtocol protocol);
 
     ActionURL getUploadWizardURL(Container container, ExpProtocol protocol);
 

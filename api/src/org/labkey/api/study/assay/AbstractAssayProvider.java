@@ -27,15 +27,18 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
-import org.labkey.api.query.*;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.query.RunDataQueryView;
 import org.labkey.api.study.query.RunListQueryView;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
 import org.labkey.common.util.Pair;
 
@@ -652,6 +655,34 @@ public abstract class AbstractAssayProvider implements AssayProvider
         if (targetStudyId != null)
             return ContainerManager.getForId(targetStudyId);
         return null;
+    }
+
+    public Set<Container> getAllAssociatedStudyContainers(ExpProtocol protocol)
+    {
+        PropertyDescriptor targetStudyColumn = getRunTargetStudyColumn(protocol);
+        if (targetStudyColumn == null)
+            return Collections.emptySet();
+
+        Set<Container> result = new HashSet<Container>();
+        for (ExpRun run : protocol.getExpRuns())
+        {
+            try
+            {
+                Map<String,Object> runProperties = getRunProperties(run);
+                String targetStudyId = (String) runProperties.get(targetStudyColumn.getPropertyURI());
+                if (targetStudyId != null)
+                {
+                    Container container = ContainerManager.getForId(targetStudyId);
+                    if (container != null)
+                        result.add(container);
+                }
+            }
+            catch (SQLException e)
+            {
+                throw UnexpectedException.wrap(e);
+            }
+        }
+        return result;
     }
 
     protected Map<String, Object> getRunProperties(ExpRun run) throws SQLException
