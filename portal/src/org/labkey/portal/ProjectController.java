@@ -30,11 +30,13 @@ import org.labkey.api.util.Search.SearchResultsView;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.attachments.Attachment;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
+import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import java.beans.PropertyDescriptor;
 import java.util.*;
@@ -881,6 +883,35 @@ public class ProjectController extends SpringActionController
             }
 
             return containersProps;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_NONE)
+    public class IconAction extends SimpleViewAction<Object>
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            String name = StringUtils.trimToEmpty(getViewContext().getRequest().getParameter("name"));
+            String path;
+            if (name.endsWith("/"))
+                path = "/" + PageFlowUtil.extJsRoot() + "/resources/images/default/tree/folder.gif";
+            else
+                path = Attachment.getFileIcon(name);
+
+            // allow caching
+            getViewContext().getResponse().setDateHeader("Expires", System.currentTimeMillis() + 1000 * 60 * 60 * 24);
+            getViewContext().getResponse().setHeader("Cache-Control", "private");
+
+            RequestDispatcher d = getViewContext().getRequest().getRequestDispatcher(path);
+            getPageConfig().setTemplate(PageConfig.Template.None);
+            d.forward(getViewContext().getRequest(), getViewContext().getResponse());
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
         }
     }
 }
