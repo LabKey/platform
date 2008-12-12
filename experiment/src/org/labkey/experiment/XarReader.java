@@ -26,6 +26,7 @@ import org.labkey.api.exp.*;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.DateUtil;
@@ -361,25 +362,19 @@ public class XarReader extends AbstractXarImporter
 
     private Domain loadDomain(DomainDescriptorType xDomain) throws SQLException, XarFormatException
     {
-        String lsid = LsidUtils.resolveLsidFromTemplate(xDomain.getDomainURI(), getRootContext(), "Domain");
+        Domain domain = PropertyService.get().createDomain(getContainer(), getRootContext(), xDomain);
+        String lsid = domain.getTypeURI();
+
         DomainDescriptor existingDomainDescriptor = OntologyManager.getDomainDescriptor(lsid, getContainer());
         DomainImpl existingDomain = existingDomainDescriptor == null ? null : new DomainImpl(existingDomainDescriptor);
-
-        DomainImpl domain = new DomainImpl(getContainer(), lsid, xDomain.getName());
-        domain.setDescription(xDomain.getDescription());
-
-        Map<String, DomainProperty> newProps = new HashMap<String, DomainProperty>();
-        if (xDomain.getPropertyDescriptorArray() != null)
-        {
-            for (PropertyDescriptorType xProp : xDomain.getPropertyDescriptorArray())
-            {
-                DomainProperty prop = loadPropertyDescriptor(domain, xProp);
-                newProps.put(prop.getPropertyURI(), prop);
-            }
-        }
-
         if (existingDomain != null)
         {
+            Map<String, DomainProperty> newProps = new HashMap<String, DomainProperty>();
+            for (DomainProperty prop : domain.getProperties())
+            {
+                newProps.put(prop.getName(), prop);
+            }
+
             List<IdentifiableEntity.Difference> diffs = new ArrayList<IdentifiableEntity.Difference>();
             IdentifiableEntity.diff(existingDomain.getName(), domain.getName(), "Name", diffs);
             Map<String, DomainProperty> oldProps = new HashMap<String, DomainProperty>();
@@ -430,72 +425,6 @@ public class XarReader extends AbstractXarImporter
         }
 
         return domain;
-    }
-
-    private DomainProperty loadPropertyDescriptor(DomainImpl domain, PropertyDescriptorType xProp)
-        throws XarFormatException
-    {
-        DomainProperty prop = domain.addProperty();
-        prop.setDescription(xProp.getDescription());
-        prop.setFormat(xProp.getFormat());
-        prop.setLabel(xProp.getLabel());
-        prop.setName(xProp.getName());
-        prop.setRangeURI(xProp.getRangeURI());
-        String propertyURI = xProp.getPropertyURI();
-        if (propertyURI != null && propertyURI.indexOf("${") != -1)
-        {
-            propertyURI = LsidUtils.resolveLsidFromTemplate(propertyURI, getRootContext());
-        }
-        prop.setPropertyURI(propertyURI);
-        if (xProp.isSetRequired())
-        {
-            prop.setRequired(xProp.getRequired());
-        }
-        prop.getPropertyDescriptor().setConceptURI(xProp.getConceptURI());
-        if (xProp.isSetOntologyURI())
-        {
-            String uri = xProp.getOntologyURI().trim();
-            if (uri.indexOf("${") != -1)
-            {
-                uri = LsidUtils.resolveLsidFromTemplate(xProp.getOntologyURI(), getRootContext());
-            }
-            prop.getPropertyDescriptor().setOntologyURI(uri);
-        }
-        prop.getPropertyDescriptor().setSearchTerms(xProp.getSearchTerms());
-        prop.getPropertyDescriptor().setSemanticType(xProp.getSemanticType());
-
-        if (xProp.getPropertyValidatorArray() != null)
-        {
-            for (PropertyValidatorType xValidator : xProp.getPropertyValidatorArray())
-            {
-                PropertyValidatorImpl validator = new PropertyValidatorImpl(new PropertyValidator());
-                validator.setContainer(prop.getContainer().getId());
-                validator.setName(xValidator.getName());
-                validator.setTypeURI(xValidator.getTypeURI());
-                if (xValidator.isSetDescription())
-                {
-                    validator.setDescription(xValidator.getDescription());
-                }
-                if (xValidator.isSetErrorMessage())
-                {
-                    validator.setErrorMessage(xValidator.getErrorMessage());
-                }
-                if (xValidator.isSetExpression())
-                {
-                    validator.setExpressionValue(xValidator.getExpression());
-                }
-                if (xValidator.getPropertyArray() != null)
-                {
-                    for (PropertyValidatorPropertyType xValidatorProperty : xValidator.getPropertyArray())
-                    {
-                        validator.setProperty(xValidatorProperty.getName(), xValidatorProperty.getValue());
-                    }
-                }
-                prop.addValidator(validator);
-            }
-        }
-
-        return prop;
     }
 
     private void deleteUniqueActions(ProtocolActionSetType[] actionDefs) throws ExperimentException, SQLException

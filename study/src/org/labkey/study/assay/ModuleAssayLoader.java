@@ -22,23 +22,20 @@ import org.labkey.api.module.ModuleResourceLoadException;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.Handler;
-import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocol.AssayDomainType;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.MothershipReport;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudyModule;
+import org.labkey.study.assay.xml.DomainDocument;
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.beanutils.DynaBean;
+import org.apache.xmlbeans.XmlException;
+import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Map;
-import java.util.Set;
-import java.util.Collections;
-import java.lang.reflect.InvocationTargetException;
+import java.util.*;
 
 /**
  * User: kevink
@@ -64,11 +61,100 @@ public class ModuleAssayLoader implements ModuleResourceLoader
         }
     }
 
-    private void loadAssayProvider(File assayProviderDir)
+    private void loadAssayProvider(File assayProviderDir) throws IOException, ModuleResourceLoadException
     {
+        File configFile = new File(assayProviderDir, "config.xml");
+
         String assayName = assayProviderDir.getName();
+
         ModuleAssayProvider assayProvider = new ModuleAssayProvider(assayName);
+
+        File domainDir = new File(assayProviderDir, "domains");
+        if (domainDir.exists())
+        {
+            for (AssayDomainType domainType : AssayDomainType.values())
+            {
+                File domainFile = new File(domainDir, domainType.name().toLowerCase() + ".xml");
+                if (!domainFile.canRead())
+                    continue;
+                DomainDescriptorType xDomain = parseDomain(domainType, domainFile);
+                if (xDomain != null)
+                    assayProvider.addDomain(domainType, xDomain);
+            }
+        }
+
+        //assayProvider.validateConfiguration();
+
         AssayService.get().registerAssayProvider(assayProvider);
     }
 
+    private DomainDescriptorType parseDomain(AssayDomainType domainType, File domainFile) throws IOException, ModuleResourceLoadException
+    {
+        try
+        {
+            DomainDocument doc = DomainDocument.Factory.parse(domainFile);
+            DomainDescriptorType xDomain = doc.getDomain();
+            if (xDomain != null && xDomain.validate())
+            {
+                if (!xDomain.isSetName())
+                    xDomain.setName(domainType.name() + " Fields");
+
+                if (!xDomain.isSetDomainURI())
+                    xDomain.setDomainURI(domainType.getLsidTemplate());
+
+                return xDomain;
+            }
+        }
+        catch (XmlException e)
+        {
+            throw new ModuleResourceLoadException(e);
+        }
+
+        return null;
+    }
+
+    public static class ModuleAssayConfig
+    {
+        public String name;
+        public String protocolLSIDPrefix;
+        public String runLSIDPrefix;
+        public DataTypeConfig dataType;
+
+        public boolean canPublish = false;
+        public boolean plateBased = false;
+    }
+
+    public static class DataTypeConfig
+    {
+        public String dataLSIDPrefix;
+        public String flaggedURL;
+        public String unflaggedURL;
+        public StringExpressionFactory.StringExpression detailsURL; // StringExpression taking ExpData?
+
+        public DataType createDataType()
+        {
+            return new DataType(dataLSIDPrefix) {
+                @Override
+                public URLHelper getDetailsURL(ExpData dataObject)
+                {
+                    try
+                    {
+                        if (detailsURL != null && dataObject != null)
+                            return new ActionURL(detailsURL.eval(BeanUtils.describe(dataObject)));
+                    }
+                    catch (Exception e)
+                    {
+                        // XXX: log to mother
+                    }
+                    return null;
+                }
+
+                @Override
+                public String urlFlag(boolean flagged)
+                {
+                    return flagged ? flaggedURL : unflaggedURL;
+                }
+            };
+        }
+    }
 }

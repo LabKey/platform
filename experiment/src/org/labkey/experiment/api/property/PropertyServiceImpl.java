@@ -17,11 +17,14 @@
 package org.labkey.experiment.api.property;
 
 import org.labkey.api.exp.property.*;
-import org.labkey.api.exp.DomainDescriptor;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.*;
+import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.data.Container;
+import org.labkey.api.util.ExceptionUtil;
+import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
+import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
+import org.fhcrc.cpas.exp.xml.PropertyValidatorType;
+import org.fhcrc.cpas.exp.xml.PropertyValidatorPropertyType;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -124,7 +127,7 @@ public class PropertyServiceImpl implements PropertyService.Interface
     {
         List<IPropertyValidator> validators = new ArrayList<IPropertyValidator>();
 
-        for (PropertyValidator v :DomainPropertyManager.get().getValidators(desc))
+        for (PropertyValidator v : DomainPropertyManager.get().getValidators(desc))
         {
             validators.add(new PropertyValidatorImpl(v));            
         }
@@ -140,4 +143,105 @@ public class PropertyServiceImpl implements PropertyService.Interface
     {
         DomainPropertyManager.get().deleteAllValidators(c);
     }
+
+    public Domain createDomain(Container c, DomainDescriptorType xDomain)
+    {
+        Domain domain = null;
+        try
+        {
+            domain = createDomain(c, null, xDomain);
+        }
+        catch (XarFormatException e)
+        {
+            // shouldn't happen: XarFormatExceptions only thrown when resolving lsids with non-null XarContext
+            ExceptionUtil.logExceptionToMothership(null, e);
+        }
+        return domain;
+    }
+
+    public Domain createDomain(Container c, XarContext context, DomainDescriptorType xDomain) throws XarFormatException
+    {
+        String lsid = xDomain.getDomainURI();
+        if (context != null)
+            lsid = LsidUtils.resolveLsidFromTemplate(lsid, context, "Domain");
+        Domain domain = createDomain(c, lsid, xDomain.getName());
+        domain.setDescription(xDomain.getDescription());
+
+        if (xDomain.getPropertyDescriptorArray() != null)
+        {
+            for (PropertyDescriptorType xProp : xDomain.getPropertyDescriptorArray())
+            {
+                loadPropertyDescriptor(domain, context, xProp);
+            }
+        }
+
+        return domain;
+    }
+
+    private static DomainProperty loadPropertyDescriptor(Domain domain, XarContext context, PropertyDescriptorType xProp)
+        throws XarFormatException
+    {
+        DomainProperty prop = domain.addProperty();
+        prop.setDescription(xProp.getDescription());
+        prop.setFormat(xProp.getFormat());
+        prop.setLabel(xProp.getLabel());
+        prop.setName(xProp.getName());
+        prop.setRangeURI(xProp.getRangeURI());
+        String propertyURI = xProp.getPropertyURI();
+        if (context != null  && propertyURI != null && propertyURI.indexOf("${") != -1)
+        {
+            propertyURI = LsidUtils.resolveLsidFromTemplate(propertyURI, context);
+        }
+        prop.setPropertyURI(propertyURI);
+        if (xProp.isSetRequired())
+        {
+            prop.setRequired(xProp.getRequired());
+        }
+        prop.getPropertyDescriptor().setConceptURI(xProp.getConceptURI());
+        if (xProp.isSetOntologyURI())
+        {
+            String uri = xProp.getOntologyURI().trim();
+            if (context != null && uri.indexOf("${") != -1)
+            {
+                uri = LsidUtils.resolveLsidFromTemplate(xProp.getOntologyURI(), context);
+            }
+            prop.getPropertyDescriptor().setOntologyURI(uri);
+        }
+        prop.getPropertyDescriptor().setSearchTerms(xProp.getSearchTerms());
+        prop.getPropertyDescriptor().setSemanticType(xProp.getSemanticType());
+
+        if (xProp.getPropertyValidatorArray() != null)
+        {
+            for (PropertyValidatorType xValidator : xProp.getPropertyValidatorArray())
+            {
+                PropertyValidatorImpl validator = new PropertyValidatorImpl(new PropertyValidator());
+                validator.setContainer(prop.getContainer().getId());
+                validator.setName(xValidator.getName());
+                validator.setTypeURI(xValidator.getTypeURI());
+                if (xValidator.isSetDescription())
+                {
+                    validator.setDescription(xValidator.getDescription());
+                }
+                if (xValidator.isSetErrorMessage())
+                {
+                    validator.setErrorMessage(xValidator.getErrorMessage());
+                }
+                if (xValidator.isSetExpression())
+                {
+                    validator.setExpressionValue(xValidator.getExpression());
+                }
+                if (xValidator.getPropertyArray() != null)
+                {
+                    for (PropertyValidatorPropertyType xValidatorProperty : xValidator.getPropertyArray())
+                    {
+                        validator.setProperty(xValidatorProperty.getName(), xValidatorProperty.getValue());
+                    }
+                }
+                prop.addValidator(validator);
+            }
+        }
+
+        return prop;
+    }
+
 }

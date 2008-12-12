@@ -16,14 +16,17 @@
 
 package org.labkey.study.assay;
 
-import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayPublishKey;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.DataType;
+import org.labkey.api.exp.api.ExpProtocol.AssayDomainType;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.XarContext;
+import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.TableInfo;
@@ -31,10 +34,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 
 import java.util.Map;
 import java.util.List;
-import java.io.File;
+import java.util.HashMap;
 
 /**
  * User: kevink
@@ -42,7 +46,9 @@ import java.io.File;
  */
 public class ModuleAssayProvider extends AbstractAssayProvider
 {
+
     private String name;
+    private Map<AssayDomainType, DomainDescriptorType> domainsDescriptors = new HashMap<ExpProtocol.AssayDomainType, DomainDescriptorType>();
 
     public ModuleAssayProvider(String name)
     {
@@ -53,6 +59,18 @@ public class ModuleAssayProvider extends AbstractAssayProvider
     public String getName()
     {
         return name;
+    }
+
+    @Override
+    public boolean canPublish()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean isPlateBased()
+    {
+        return false;
     }
 
     public ExpData getDataForDataRow(Object dataRowId)
@@ -103,5 +121,55 @@ public class ModuleAssayProvider extends AbstractAssayProvider
     public List<ParticipantVisitResolverType> getParticipantVisitResolverTypes()
     {
         return null;
+    }
+
+    public void addDomain(AssayDomainType domainType, DomainDescriptorType xDomain)
+    {
+        domainsDescriptors.put(domainType, xDomain);
+    }
+
+    protected Domain createDomain(Container c, User user, AssayDomainType domainType)
+    {
+        DomainDescriptorType xDomain = domainsDescriptors.get(domainType);
+        if (xDomain != null)
+        {
+            return PropertyService.get().createDomain(c, xDomain);
+        }
+        return null;
+    }
+
+    @Override
+    protected Domain createUploadSetDomain(Container c, User user)
+    {
+        Domain domain = createDomain(c, user, AssayDomainType.Batch);
+        if (domain != null)
+            return domain;
+        return super.createUploadSetDomain(c, user);
+    }
+
+    @Override
+    protected Domain createRunDomain(Container c, User user)
+    {
+        Domain domain = createDomain(c, user, AssayDomainType.Run);
+        if (domain != null)
+            return domain;
+        return super.createRunDomain(c, user);
+    }
+
+    protected Domain createDataDomain(Container c, User user)
+    {
+        return createDomain(c, user, AssayDomainType.Data);
+    }
+
+    @Override
+    public List<Domain> createDefaultDomains(Container c, User user)
+    {
+        List<Domain> domains = super.createDefaultDomains(c, user);
+
+        Domain dataDomain = createDataDomain(c, user);
+        if (dataDomain != null)
+            domains.add(dataDomain);
+
+        return domains;
     }
 }
