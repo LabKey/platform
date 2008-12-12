@@ -27,7 +27,10 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.*;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
-import org.labkey.api.attachments.*;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.AttachmentForm;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.*;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -44,7 +47,6 @@ import org.labkey.common.util.Pair;
 import org.labkey.wiki.model.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -3020,8 +3022,7 @@ public class WikiController extends SpringActionController
             }
 
             Map<String, Object> warnings = new HashMap<String, Object>();
-            Map<String, MultipartFile> fileMap = (Map<String, MultipartFile>)((MultipartHttpServletRequest)getViewContext().getRequest()).getFileMap();
-            List<AttachmentFile> files = SpringAttachmentFile.createList(fileMap);
+            List<AttachmentFile> files = getAttachmentFileList();
 
             //add any files as attachments
             if(null != files && files.size() > 0)

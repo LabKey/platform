@@ -59,7 +59,6 @@ public class SampleManager
 
     private static SampleManager _instance;
 
-    private final TableInfo _tableInfoRequestSpecimen;
     private final QueryHelper<SampleRequestEvent> _requestEventHelper;
     private final QueryHelper<Specimen> _specimenHelper;
     private final QueryHelper<SpecimenEvent> _specimenEventHelper;
@@ -70,15 +69,41 @@ public class SampleManager
 
     private SampleManager()
     {
-        // prevent external construction with a private default constructor
-        _tableInfoRequestSpecimen = StudySchema.getInstance().getTableInfoSampleRequestSpecimen();
-
-        _requestEventHelper = new QueryHelper<SampleRequestEvent>(StudySchema.getInstance().getTableInfoSampleRequestEvent(), SampleRequestEvent.class);
-        _specimenHelper = new QueryHelper<Specimen>(StudySchema.getInstance().getTableInfoSpecimen(), Specimen.class);
-        _specimenEventHelper = new QueryHelper<SpecimenEvent>(StudySchema.getInstance().getTableInfoSpecimenEvent(), SpecimenEvent.class);
-        _requestHelper = new QueryHelper<SampleRequest>(StudySchema.getInstance().getTableInfoSampleRequest(), SampleRequest.class);
-        _requestStatusHelper = new QueryHelper<SampleRequestStatus>(StudySchema.getInstance().getTableInfoSampleRequestStatus(),
-                SampleRequestStatus.class);
+        _requestEventHelper = new QueryHelper<SampleRequestEvent>(new TableInfoGetter()
+        {
+            public TableInfo getTableInfo()
+            {
+                return StudySchema.getInstance().getTableInfoSampleRequestEvent();
+            }
+        }, SampleRequestEvent.class);
+        _specimenHelper = new QueryHelper<Specimen>(new TableInfoGetter()
+        {
+            public TableInfo getTableInfo()
+            {
+                return StudySchema.getInstance().getTableInfoSpecimen();
+            }
+        }, Specimen.class);
+        _specimenEventHelper = new QueryHelper<SpecimenEvent>(new TableInfoGetter()
+        {
+            public TableInfo getTableInfo()
+            {
+                return StudySchema.getInstance().getTableInfoSpecimenEvent();
+            }
+        }, SpecimenEvent.class);
+        _requestHelper = new QueryHelper<SampleRequest>(new TableInfoGetter()
+        {
+            public TableInfo getTableInfo()
+            {
+                return StudySchema.getInstance().getTableInfoSampleRequest();
+            }
+        }, SampleRequest.class);
+        _requestStatusHelper = new QueryHelper<SampleRequestStatus>(new TableInfoGetter()
+        {
+            public TableInfo getTableInfo()
+            {
+                return StudySchema.getInstance().getTableInfoSampleRequestStatus();
+            }
+        }, SampleRequestStatus.class);
     }
 
     public static synchronized SampleManager getInstance()
@@ -1238,7 +1263,7 @@ public class SampleManager
                 fields.put("Container", request.getContainer().getId());
                 fields.put("SampleRequestId", request.getRowId());
                 fields.put("SpecimenGlobalUniqueId", specimen.getGlobalUniqueId());
-                Table.insert(user, _tableInfoRequestSpecimen, fields);
+                Table.insert(user, StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), fields);
                 if (createEvents)
                     createRequestEvent(user, request, RequestEventType.SPECIMEN_ADDED, specimen.getSampleDescription(), null);
             }
@@ -1306,7 +1331,7 @@ public class SampleManager
         SimpleFilter filter = new SimpleFilter("SampleRequestId", request.getRowId());
         filter.addCondition("Container", request.getContainer().getId());
         filter.addInClause("SpecimenGlobalUniqueId", globalUniqueIds);
-        Table.delete(_tableInfoRequestSpecimen, filter);
+        Table.delete(StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), filter);
         if (createEvents)
         {
             for (String description : descriptions)
@@ -1320,8 +1345,8 @@ public class SampleManager
             return new Integer[0];
         SimpleFilter filter = new SimpleFilter("SpecimenGlobalUniqueId", specimen.getGlobalUniqueId());
         filter.addCondition("Container", specimen.getContainer().getId());
-        List<ColumnInfo> cols = Arrays.asList(_tableInfoRequestSpecimen.getColumn("SampleRequestId"));
-        Table.TableResultSet rs = Table.select(_tableInfoRequestSpecimen, cols, filter, null);
+        List<ColumnInfo> cols = Arrays.asList(StudySchema.getInstance().getTableInfoSampleRequestSpecimen().getColumn("SampleRequestId"));
+        Table.TableResultSet rs = Table.select(StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), cols, filter, null);
         List<Integer> rowIdList = new ArrayList<Integer>();
         while (rs.next())
             rowIdList.add(rs.getInt(1));
@@ -1682,8 +1707,8 @@ public class SampleManager
         // UNDONE: use transaction?
         SimpleFilter containerFilter = new SimpleFilter("Container", c.getId());
 
-        Table.delete(_tableInfoRequestSpecimen, containerFilter);
-        assert set.add(_tableInfoRequestSpecimen);
+        Table.delete(StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), containerFilter);
+        assert set.add(StudySchema.getInstance().getTableInfoSampleRequestSpecimen());
         Table.delete(_requestEventHelper.getTableInfo(), containerFilter);
         assert set.add(_requestEventHelper.getTableInfo());
         Table.delete(_requestHelper.getTableInfo(), containerFilter);

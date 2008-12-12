@@ -384,6 +384,7 @@ public class StudyModule extends DefaultModule
     {
         super.afterUpdate(moduleContext);
 
-        new StudyUpgradeCode().updateAllCalculatedSpecimenData(moduleContext);
+        StudyUpgradeCode.upgradeExtensibleTables_83(moduleContext);
+        StudyUpgradeCode.updateAllCalculatedSpecimenData(moduleContext);
     }
 }

@@ -15,14 +15,14 @@
  */
 package org.labkey.study;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.security.User;
 import org.labkey.study.model.Cohort;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 
 import java.sql.SQLException;
-import java.util.List;
 
 /**
  * User: jgarms
@@ -34,7 +34,7 @@ public class StudyUpgrader
     private static final String UPGRADE_REQUIRED = "UPGRADE_REQUIRED";
 
     /**
-     * Update extensible tables during product upgrade of 8.3
+     * Update extensible tables update required for changes in 8.3
      */
     public static void upgradeExtensibleTables_83(User user) throws SQLException
     {
@@ -42,10 +42,7 @@ public class StudyUpgrader
         DbScope scope = schema.getScope();
         boolean transactionOwner = !scope.isTransactionActive();
 
-        // Retrieve studies, requesting only columns that exist at this point in the upgrade process 
-        TableInfo studyTableInfo = StudySchema.getInstance().getTableInfoStudy();
-        List<ColumnInfo> columns = studyTableInfo.getColumns("Label, Container, EntityId, DateBased, StartDate, ParticipantCohortDataSetId, ParticipantCohortProperty, SecurityType, LSID");
-        Study[] studies = Table.select(studyTableInfo, columns, null, null, Study.class);
+        Study[] studies = StudyManager.getInstance().getAllStudies();
 
         for (Study study : studies)
         {
@@ -85,5 +82,4 @@ public class StudyUpgrader
         }
 
     }
-
 }

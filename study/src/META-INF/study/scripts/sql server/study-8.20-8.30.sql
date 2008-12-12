@@ -125,9 +125,6 @@ ALTER TABLE
     ALTER COLUMN LSID NVARCHAR(200) NOT NULL
 GO
 
-EXEC core.executeJavaUpgradeCode 'upgradeExtensibleTables_83'
-GO
-
 /* study-8.23-8.24.sql */
 
 ALTER TABLE
@@ -189,7 +186,6 @@ UPDATE study.Study
   SET SecurityType = 'ADVANCED_READ'
   WHERE
   SecurityType = 'ADVANCED'
-
 GO
 
 /* study-8.27-8.28.sql */

@@ -35,7 +35,7 @@ INSERT INTO mothership.SoftwareRelease (Container, SVNRevision, Description)
 DELETE FROM mothership.SoftwareRelease WHERE SVNRevision IS NULL;
 
 INSERT INTO mothership.SoftwareRelease (Container, SVNRevision, Description)
-    SELECT Container, NULL as Revision, 'NotSVN' as Description FROM mothership.SoftwareRelease LIMIT 1;
+    SELECT Container, NULL as Revision, 'NotSVN' as Description FROM mothership.ServerSession LIMIT 1;
 
 -- Change the PK
 ALTER TABLE mothership.ServerSession ADD SoftwareReleaseId INT;

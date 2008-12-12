@@ -39,5 +39,3 @@ UPDATE study.Study
 
 ALTER TABLE study.Study
   ALTER COLUMN LSID SET NOT NULL;
-
-SELECT core.executeJavaUpgradeCode('upgradeExtensibleTables_83');

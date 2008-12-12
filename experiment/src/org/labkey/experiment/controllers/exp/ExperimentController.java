@@ -3061,7 +3061,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_INSERT)
-    public class UploadXarFileAction extends SimpleViewAction
+    public class UploadXarFileAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
@@ -3073,8 +3073,7 @@ public class ExperimentController extends SpringActionController
                 return new NoPipelineRootSetView(getContainer(), "upload a XAR");
             }
 
-            MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest)getViewContext().getRequest();
-            MultipartFile formFile = (MultipartFile)multipartRequest.getFileMap().get("uploadFile");
+            MultipartFile formFile = getFileMap().get("uploadFile");
             if (formFile == null)
             {
                 HttpView.throwRedirect(ExperimentUrlsImpl.get().getShowAddXarFileURL(getContainer(), "No file was posted by the browser."));

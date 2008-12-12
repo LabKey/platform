@@ -49,10 +49,11 @@ public class StudyUpgradeCode implements UpgradeCode
         }
     }
 
-    // Invoked at version 8.23
-    public void upgradeExtensibleTables_83(ModuleContext moduleContext)
+    // Intended for version 8.23, but invoked from afterUpdate(), NOT from script, because the code path relies
+    //  too heavily on an up-to-date schema.
+    public static void upgradeExtensibleTables_83(ModuleContext moduleContext)
     {
-        if (!moduleContext.isNewInstall())
+        if (!moduleContext.isNewInstall() && moduleContext.getInstalledVersion() < 8.23)
         {
             try
             {
@@ -131,9 +132,9 @@ public class StudyUpgradeCode implements UpgradeCode
         }
     }
 
-    // Intended for version 8.291, but invoked from afterUpdate(), NOT from script, because the code path depends
+    // Intended for version 8.291, but invoked from afterUpdate(), NOT from script, because the code path relies
     //  too heavily on an up-to-date schema. 
-    public void updateAllCalculatedSpecimenData(ModuleContext moduleContext)
+    public static void updateAllCalculatedSpecimenData(ModuleContext moduleContext)
     {
         if (!moduleContext.isNewInstall() && moduleContext.getInstalledVersion() < 8.291)
         {

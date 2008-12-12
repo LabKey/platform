@@ -40,7 +40,7 @@ DELETE FROM mothership.SoftwareRelease WHERE SVNRevision IS NULL
 GO
 
 INSERT INTO mothership.SoftwareRelease (Container, SVNRevision, Description)
-    SELECT TOP 1 Container, NULL as Revision, 'NotSVN' as Description FROM mothership.SoftwareRelease
+    SELECT TOP 1 Container, NULL as Revision, 'NotSVN' as Description FROM mothership.ServerSession
 GO
 
 -- Change the PK

@@ -16,14 +16,13 @@
 
 package org.labkey.study;
 
-import org.labkey.study.model.StudyCachable;
-import org.labkey.study.model.StudyManager;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
+import org.labkey.study.model.StudyCachable;
 
 import java.sql.SQLException;
-import java.util.Set;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -32,13 +31,13 @@ import java.util.HashSet;
  */
 public class QueryHelper<K extends StudyCachable>
 {
-    private TableInfo _tableInfo;
     private Class<K> _objectClass;
     private Set<String> _cachedFilters = new HashSet<String>();
+    private final TableInfoGetter _tableInfoGetter;
 
-    public QueryHelper(TableInfo tableInfo, Class<K> objectClass)
+    public QueryHelper(TableInfoGetter tableInfoGetter, Class<K> objectClass)
     {
-        _tableInfo = tableInfo;
+        _tableInfoGetter = tableInfoGetter;
         _objectClass = objectClass;
     }
 
@@ -62,7 +61,7 @@ public class QueryHelper<K extends StudyCachable>
         String cacheId = getCacheId(filter);
         if (sortString != null)
             cacheId += "; sort = " + sortString;
-        K[] objs = (K[])StudyCache.getCached(_tableInfo, c.getId(), cacheId);
+        K[] objs = (K[])StudyCache.getCached(getTableInfo(), c.getId(), cacheId);
         if (objs == null)
         {
             if (filter == null)
@@ -72,9 +71,9 @@ public class QueryHelper<K extends StudyCachable>
             Sort sort = null;
             if (sortString != null)
                 sort = new Sort(sortString);
-            objs = Table.select(_tableInfo, Table.ALL_COLUMNS,
+            objs = Table.select(getTableInfo(), Table.ALL_COLUMNS,
                     filter, sort, _objectClass);
-            StudyCache.cache(_tableInfo, c.getId(), cacheId, objs);
+            StudyCache.cache(getTableInfo(), c.getId(), cacheId, objs);
             _cachedFilters.add(cacheId);
         }
         return objs;
@@ -92,28 +91,28 @@ public class QueryHelper<K extends StudyCachable>
 
     public K get(Container c, int rowId, String rowIdColumnName) throws SQLException
     {
-        K obj = (K) StudyCache.getCached(_tableInfo, c.getId(), rowId);
+        K obj = (K) StudyCache.getCached(getTableInfo(), c.getId(), rowId);
         if (obj == null)
         {
             SimpleFilter filter = new SimpleFilter("Container", c.getId());
             filter.addCondition(rowIdColumnName, rowId);
-            obj = Table.selectObject(_tableInfo, Table.ALL_COLUMNS,
+            obj = Table.selectObject(getTableInfo(), Table.ALL_COLUMNS,
                     filter, null, _objectClass);
-            StudyCache.cache(_tableInfo, c.getId(), rowId, obj);
+            StudyCache.cache(getTableInfo(), c.getId(), rowId, obj);
         }
         return obj;
     }
 
     public K get(Container c, double rowId, String rowIdColumnName) throws SQLException
     {
-        K obj = (K) StudyCache.getCached(_tableInfo, c.getId(), rowId);
+        K obj = (K) StudyCache.getCached(getTableInfo(), c.getId(), rowId);
         if (obj == null)
         {
             SimpleFilter filter = new SimpleFilter("Container", c.getId());
             filter.addCondition(rowIdColumnName, rowId);
-            obj = Table.selectObject(_tableInfo, Table.ALL_COLUMNS,
+            obj = Table.selectObject(getTableInfo(), Table.ALL_COLUMNS,
                     filter, null, _objectClass);
-            StudyCache.cache(_tableInfo, c.getId(), rowId, obj);
+            StudyCache.cache(getTableInfo(), c.getId(), rowId, obj);
         }
         return obj;
     }
@@ -121,7 +120,7 @@ public class QueryHelper<K extends StudyCachable>
     public K create(User user, K obj) throws SQLException
     {
         clearCache(obj);
-        return Table.insert(user, _tableInfo, obj);
+        return Table.insert(user, getTableInfo(), obj);
     }
 
     public K update(User user, K obj) throws SQLException
@@ -132,37 +131,37 @@ public class QueryHelper<K extends StudyCachable>
     public K update(User user, K obj, Object[] pk) throws SQLException
     {
         clearCache(obj);
-        return Table.update(user, _tableInfo, obj, pk, null);
+        return Table.update(user, getTableInfo(), obj, pk, null);
     }
 
     public void delete(K obj, Object rowId, Object rowVersion) throws SQLException
     {
         clearCache(obj);
-        Table.delete(_tableInfo, rowId, rowVersion);
+        Table.delete(getTableInfo(), rowId, rowVersion);
     }
 
     public void delete(K obj) throws SQLException
     {
         clearCache(obj);
-        Table.delete(_tableInfo, obj.getPrimaryKey(), null);
+        Table.delete(getTableInfo(), obj.getPrimaryKey(), null);
     }
 
     public TableInfo getTableInfo()
     {
-        return _tableInfo;
+        return _tableInfoGetter.getTableInfo();
     }
 
     public void clearCache(Container c)
     {
-        StudyCache.clearCache(_tableInfo, c.getId());
+        StudyCache.clearCache(getTableInfo(), c.getId());
     }
 
     public void clearCache(K obj)
     {
         for (String filter : _cachedFilters)
-            StudyCache.uncache(_tableInfo, obj.getContainer().getId(), filter);
+            StudyCache.uncache(getTableInfo(), obj.getContainer().getId(), filter);
         _cachedFilters.clear();
-        StudyCache.uncache(_tableInfo, obj.getContainer().getId(), obj.getPrimaryKey().toString());
+        StudyCache.uncache(getTableInfo(), obj.getContainer().getId(), obj.getPrimaryKey().toString());
     }
 
     private String getCacheId(Filter filter)

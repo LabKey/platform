@@ -96,16 +96,51 @@ public class StudyManager
     private StudyManager()
     {
         // prevent external construction with a private default constructor
-        _studyHelper = new QueryHelper<Study>(StudySchema.getInstance().getTableInfoStudy(), Study.class);
-        _visitHelper = new QueryHelper<Visit>(StudySchema.getInstance().getTableInfoVisit(), Visit.class);
-        _siteHelper = new QueryHelper<Site>(StudySchema.getInstance().getTableInfoSite(), Site.class);
-        _cohortHelper = new QueryHelper<Cohort>(StudySchema.getInstance().getTableInfoCohort(), Cohort.class);
+        _studyHelper = new QueryHelper<Study>(new TableInfoGetter()
+            {
+                public TableInfo getTableInfo()
+                {
+                    return StudySchema.getInstance().getTableInfoStudy();
+                }
+            }, Study.class);
+
+        _visitHelper = new QueryHelper<Visit>(new TableInfoGetter()
+            {
+                public TableInfo getTableInfo()
+                {
+                    return StudySchema.getInstance().getTableInfoVisit();
+                }
+            }, Visit.class);
+
+        _siteHelper = new QueryHelper<Site>(new TableInfoGetter()
+            {
+                public TableInfo getTableInfo()
+                {
+                    return StudySchema.getInstance().getTableInfoSite();
+                }
+            }, Site.class);
+
+        _cohortHelper = new QueryHelper<Cohort>(new TableInfoGetter()
+            {
+                public TableInfo getTableInfo()
+                {
+                    return StudySchema.getInstance().getTableInfoCohort();
+                }
+            }, Cohort.class);
+
+        TableInfoGetter dataSetGetter = new TableInfoGetter()
+        {
+            public TableInfo getTableInfo()
+            {
+                return StudySchema.getInstance().getTableInfoDataSet();
+            }
+        };
 
         /* Whenever we explicitly invalidate a dataset, unmaterialize it as well
          * this is probably a little overkill, e.g. name change doesn't need to unmaterialize
          * however, this is the best choke point
          */
-        _dataSetHelper = new QueryHelper<DataSetDefinition>(StudySchema.getInstance().getTableInfoDataSet(), DataSetDefinition.class)
+        _dataSetHelper = new QueryHelper<DataSetDefinition>(dataSetGetter, DataSetDefinition.class)
         {
             public void clearCache(DataSetDefinition def)
             {
