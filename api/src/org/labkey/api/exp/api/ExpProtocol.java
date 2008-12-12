@@ -19,6 +19,7 @@ package org.labkey.api.exp.api;
 import org.labkey.api.security.User;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.ProtocolParameter;
+import org.labkey.api.study.assay.AbstractAssayProvider;
 
 import java.util.Map;
 import java.util.List;
@@ -29,9 +30,31 @@ public interface ExpProtocol extends ExpObject
     Map<String, ObjectProperty> getObjectProperties();
 
     public static final String ASSAY_DOMAIN_PREFIX = "AssayDomain-";
-    public static final String ASSAY_DOMAIN_RUN = ASSAY_DOMAIN_PREFIX + "Run";
-    public static final String ASSAY_DOMAIN_UPLOAD_SET = ASSAY_DOMAIN_PREFIX + "Batch";
-    public static final String ASSAY_DOMAIN_DATA = ASSAY_DOMAIN_PREFIX + "Data";
+    public static final String ASSAY_DOMAIN_RUN = AssayDomainType.Run.getPrefix();
+    public static final String ASSAY_DOMAIN_UPLOAD_SET = AssayDomainType.Batch.getPrefix();
+    public static final String ASSAY_DOMAIN_DATA = AssayDomainType.Data.getPrefix();
+
+    enum AssayDomainType
+    {
+        Batch, Run, Data;
+
+        private String prefix;
+
+        AssayDomainType()
+        {
+            this.prefix = ASSAY_DOMAIN_PREFIX + name();
+        }
+
+        public String getPrefix()
+        {
+            return this.prefix;
+        }
+
+        public String getLsidTemplate()
+        {
+            return AbstractAssayProvider.getPresubstitutionLsid(getPrefix());
+        }
+    }
 
     void setObjectProperties(Map<String, ObjectProperty> props);
 

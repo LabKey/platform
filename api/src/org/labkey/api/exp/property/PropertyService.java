@@ -18,7 +18,11 @@ package org.labkey.api.exp.property;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.XarContext;
+import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.security.User;
+import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.SQLException;
 
@@ -43,6 +47,15 @@ public class PropertyService
         Domain getDomain(int domainId);
         Domain[] getDomains(Container container);
         Domain createDomain(Container container, String typeURI, String name);
+
+        /**
+         * Create a Domain from the DomainDescriptorType xmlbean.
+         * @param container
+         * @param context context in which LSIDs are resolved; may be null
+         * @param xDomain the xmlbean containing the Domain description.
+         */
+        Domain createDomain(Container container, @Nullable XarContext context, DomainDescriptorType xDomain) throws XarFormatException;
+        Domain createDomain(Container container, DomainDescriptorType xDomain);
         DomainKind getDomainKind(String typeURI);
         void registerDomainKind(DomainKind type);
 
@@ -53,5 +66,6 @@ public class PropertyService
         IPropertyValidator[] getPropertyValidators(PropertyDescriptor desc);
         void deleteValidatorsForPropertyDescriptor(int descriptorId) throws SQLException;
         void deleteValidatorsForContainer(Container c) throws SQLException;
+
     }
 }
