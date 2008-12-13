@@ -435,6 +435,10 @@ api/src/org/labkey/api/query/snapshot/AbstractSnapshotProvider.java -text
 api/src/org/labkey/api/query/snapshot/QuerySnapshotDefinition.java -text
 api/src/org/labkey/api/query/snapshot/QuerySnapshotForm.java -text
 api/src/org/labkey/api/query/snapshot/QuerySnapshotService.java -text
+api/src/org/labkey/api/reports/ExternalScriptEngine.java -text
+api/src/org/labkey/api/reports/ExternalScriptEngineDefinition.java -text
+api/src/org/labkey/api/reports/ExternalScriptEngineFactory.java -text
+api/src/org/labkey/api/reports/LabkeyScriptEngineManager.java -text
 api/src/org/labkey/api/reports/Report.java -text
 api/src/org/labkey/api/reports/ReportService.java -text
 api/src/org/labkey/api/reports/actions/ReportForm.java -text
