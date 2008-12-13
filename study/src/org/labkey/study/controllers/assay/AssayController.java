@@ -60,7 +60,8 @@ public class AssayController extends SpringActionController
             DesignerAction.class,
             TemplateAction.class,
             AssayRunsAction.class,
-            AssayDataAction.class
+            AssayDataAction.class,
+            AssayDataDetailsAction.class
         );
 
     public AssayController()

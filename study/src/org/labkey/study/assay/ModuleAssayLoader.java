@@ -70,7 +70,7 @@ public class ModuleAssayLoader implements ModuleResourceLoader
         ModuleAssayProvider assayProvider = new ModuleAssayProvider(assayName);
 
         File domainDir = new File(assayProviderDir, "domains");
-        if (domainDir.exists())
+        if (domainDir.canRead())
         {
             for (AssayDomainType domainType : AssayDomainType.values())
             {
@@ -80,6 +80,23 @@ public class ModuleAssayLoader implements ModuleResourceLoader
                 DomainDescriptorType xDomain = parseDomain(domainType, domainFile);
                 if (xDomain != null)
                     assayProvider.addDomain(domainType, xDomain);
+
+//                File domainFile = new File(domainDir, domainType.name().toLowerCase() + ".tsv");
+//                if (!domainFile.canRead())
+//                    continue;
+//                GWTDomain domain = DomainUtil.fromTsv(domainFile);
+            }
+        }
+
+        File viewsDir = new File(assayProviderDir, "views");
+        if (viewsDir.canRead())
+        {
+            for (AssayDomainType domainType : new AssayDomainType[] { AssayDomainType.Run, AssayDomainType.Data })
+            {
+                File viewFile = new File(viewsDir, domainType.name().toLowerCase() + ".html");
+                if (!viewFile.canRead())
+                    continue;
+                assayProvider.addView(domainType, viewFile);
             }
         }
 

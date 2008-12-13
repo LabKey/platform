@@ -19,10 +19,7 @@ package org.labkey.study.assay;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.*;
 import org.labkey.api.data.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -49,7 +46,12 @@ public class TsvAssayProvider extends AbstractAssayProvider
 {
     public TsvAssayProvider()
     {
-        super("GeneralAssayProtocol", "GeneralAssayRun", TsvDataHandler.DATA_TYPE);
+        this("GeneralAssayProtocol", "GeneralAssayRun");
+    }
+
+    protected TsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix)
+    {
+        super(protocolLSIDPrefix, runLSIDPrefix, TsvDataHandler.DATA_TYPE);
     }
 
     public List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles)
@@ -68,15 +70,21 @@ public class TsvAssayProvider extends AbstractAssayProvider
     {
         List<Domain> result = super.createDefaultDomains(c, user);
 
+        Domain dataDomain = createDataDomain(c, user);
+        if (dataDomain != null)
+            result.add(dataDomain);
+        return result;
+    }
+
+    protected Domain createDataDomain(Container c, User user)
+    {
         Domain dataDomain = PropertyService.get().createDomain(c, "urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + ExpProtocol.ASSAY_DOMAIN_DATA + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":" + ASSAY_NAME_SUBSTITUTION, "Data Fields");
         dataDomain.setDescription("The user is prompted to enter data values for row of data associated with a run, typically done as uploading a file.  This is part of the second step of the upload process.");
         addProperty(dataDomain, SPECIMENID_PROPERTY_NAME,  SPECIMENID_PROPERTY_CAPTION, PropertyType.STRING, "When a matching specimen exists in a study, can be used to identify subject and timepoint for assay. Alternately, supply " + PARTICIPANTID_PROPERTY_NAME + " and either " + VISITID_PROPERTY_NAME + " or " + DATE_PROPERTY_NAME + ".");
         addProperty(dataDomain, PARTICIPANTID_PROPERTY_NAME, PARTICIPANTID_PROPERTY_CAPTION, PropertyType.STRING, "Used with either " + VISITID_PROPERTY_NAME + " or " + DATE_PROPERTY_NAME + " to identify subject and timepoint for assay.");
         addProperty(dataDomain, VISITID_PROPERTY_NAME,  VISITID_PROPERTY_CAPTION, PropertyType.DOUBLE, "Used with " + PARTICIPANTID_PROPERTY_NAME + " to identify subject and timepoint for assay.");
         addProperty(dataDomain, DATE_PROPERTY_NAME,  DATE_PROPERTY_CAPTION, PropertyType.DATE_TIME, "Used with " + PARTICIPANTID_PROPERTY_NAME + " to identify subject and timepoint for assay.");
-
-        result.add(dataDomain);
-        return result;
+        return dataDomain;
     }
 
     public HttpView getDataDescriptionView(AssayRunUploadForm form)
@@ -86,9 +94,27 @@ public class TsvAssayProvider extends AbstractAssayProvider
 
     public ExpData getDataForDataRow(Object dataRowId)
     {
-        if (!(dataRowId instanceof Integer))
+        if (dataRowId == null)
             return null;
-        OntologyObject dataRow = OntologyManager.getOntologyObject((Integer) dataRowId);
+
+        Integer id;
+        if (dataRowId instanceof Integer)
+        {
+            id = (Integer)dataRowId;
+        }
+        else
+        {
+            try
+            {
+                id = Integer.parseInt(dataRowId.toString());
+            }
+            catch (NumberFormatException nfe)
+            {
+                return null;
+            }
+        }
+
+        OntologyObject dataRow = OntologyManager.getOntologyObject(id);
         if (dataRow == null)
             return null;
         OntologyObject dataRowParent = OntologyManager.getOntologyObject(dataRow.getOwnerObjectId());
