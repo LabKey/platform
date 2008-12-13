@@ -1,3 +1,47 @@
+var TREESELECTION_EVENTS =
+{
+    selectionchange:"selectionchange",
+    beforeselect:"beforeselect"
+};
+
+var GRIDPANEL_EVENTS =
+{
+    click:"click",
+    dblclick:"dblclick",
+    contextmenu:"contextmenu",
+    mousedown:"mousedown",
+    mouseup:"mouseup",
+    mouseover:"mouseover",
+    mouseout:"mouseout",
+    keypress:"keypress",
+    keydown:"keydown",
+    cellmousedown:"cellmousedown",
+    rowmousedown:"rowmousedown",
+    headermousedown:"headermousedown",
+    cellclick:"cellclick",
+    celldblclick:"celldblclick",
+    rowclick:"rowclick",
+    rowdblclick:"rowdblclick",
+    headerclick:"headerclick",
+    headerdblclick:"headerdblclick",
+    rowcontextmenu:"rowcontextmenu",
+    cellcontextmenu:"cellcontextmenu",
+    headercontextmenu:"headercontextmenu",
+    bodyscroll:"bodyscroll",
+    columnresize:"columnresize",
+    columnmove:"columnmove",
+    sortchange:"sortchange"
+};
+
+var ROWSELECTION_MODEL =
+{
+    selectionchange:"selectionchange",
+    beforerowselect:"beforerowselect",
+    rowselect:"rowselect",
+    rowdeselect:"rowdeselect"
+};
+
+
 var h = Ext.util.Format.htmlEncode;
 
 
@@ -18,7 +62,7 @@ function renderIcon(value, metadata, record, rowIndex, colIndex, store)
             value = LABKEY.contextPath + "/project/icon.view?name=" + ext;
         }
     }
-    return "<img src='" + value + "'>";
+    return "<img width=16 height=16 src='" + value + "'>";
 }
 
 
@@ -80,7 +124,8 @@ Ext.extend(FileSystem, Ext.util.Observable,
     {
         if (path in this.directoryMap)
         {
-            callback(this, true, path, this.directoryMap[path]);
+            if (typeof callback == "function")
+                callback.defer(1, null, [this, true, path, this.directoryMap[path]]);
         }
         else
         {
@@ -244,12 +289,19 @@ var AppletFileSystem = function(config)
 
 Ext.extend(AppletFileSystem, FileSystem,
 {
+    retry : 0,
+    
     reloadFiles : function(directory, callback)
     {
-        if (!directory)
-            return false;
         var applet = this.getDropApplet();
         if (!applet)
+        {
+            this.retry++;
+            this.reloadFiles.defer(100, this, [directory, callback]);
+            return true;
+        }
+        this.retry = 0;
+        if (!directory)
             return false;
         if (!applet.local_changeDirectory(directory))
             return false;
@@ -257,26 +309,18 @@ Ext.extend(AppletFileSystem, FileSystem,
         var records = [];
         for (var i=0 ; i<count ; i++)
         {
-            var r = new this.FileRecord();
-            r.data = {};
             var name = applet.local_getName(i);
             var file = !applet.local_isDirectory(i);
             var path = file ? this.concatPaths(directory,name) : this.concatPaths(directory,name+"/");
-            var lastModified = applet.local_getTimestamp(i);
+            var ts = applet.local_getTimestamp(i); 
+            var lastModified = ts ? new Date(ts) : null;
             var size = applet.local_getSize(i);
-            r.id = path;
-            r.set("name", name);
-            r.set("path", path);
-            r.set("file", file);
-            r.set("modified", lastModified);
-            r.set("size", size);
-            if (!file)
-                r.set("iconfHref", this.FOLDER_ICON)
-            records.push(r);
+            var data = {id:path, name:name, path:path, file:file, modified:lastModified, size:size, iconHref:file?null:this.FOLDER_ICON};
+            records.push(new this.FileRecord(data, path));
         }
-        this._addFiles(path, records);
+        this._addFiles(directory, records);
         if (typeof callback == "function")
-            callback(this, true, path, records);
+            callback.defer(1, null, [this, true, directory, records]);
         return true;
     }
 });
@@ -285,7 +329,6 @@ Ext.extend(AppletFileSystem, FileSystem,
 //
 // FileSystemTreeLoader
 //
-
 
 var FileSystemTreeLoader = function (config)
 {
@@ -417,7 +460,7 @@ Ext.extend(FileBrowser, Ext.util.Observable,
         {
             // CONSIDER: PROPFIND to ensure this link is still good?
             var p = this.currentDirectory;
-            var dir = fileSystem.parentPath(p);
+            var dir = this.fileSystem.parentPath(p);
             this.changeDirectory(dir || "/");
         }});
     },
@@ -570,8 +613,8 @@ Ext.extend(FileBrowser, Ext.util.Observable,
                 {header: "Size", width: 80, dataIndex: 'size', sortable: true, hidden:false, align:'right', renderer:renderFileSize}
             ]
         });
-        this.grid.getSelectionModel().on('rowselect', this.Grid_onRowselect, this);
-        this.grid.on("celldblclick", this.Grid_onCelldblclick, this);
+        this.grid.getSelectionModel().on(ROWSELECTION_MODEL.rowselect, this.Grid_onRowselect, this);
+        this.grid.on(GRIDPANEL_EVENTS.celldblclick, this.Grid_onCelldblclick, this);
 
         //
         // TREE
@@ -593,7 +636,7 @@ Ext.extend(FileBrowser, Ext.util.Observable,
             border:false,
             pathSeparator:';'
         });
-        this.tree.getSelectionModel().on("selectionchange", this.Tree_onSelectionchange, this);
+        this.tree.getSelectionModel().on(TREESELECTION_EVENTS.selectionchange, this.Tree_onSelectionchange, this);
 
         //
         // LAYOUT
@@ -698,8 +741,6 @@ Ext.extend(FileBrowser, Ext.util.Observable,
         resizer.on("resize", function(o,width,height){
             border.setWidth(width);
             border.setHeight(height);
-            resizer.setWidth(border.getWidth());
-            resizer.setHeight(border.getHeight());
         });
 
         //
