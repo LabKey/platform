@@ -242,7 +242,7 @@ public class DomainUtil
             if (pd.getPropertyId() > 0)
                 continue;
 
-            if (pd.getPropertyURI() == null)
+            if (StringUtils.isEmpty(pd.getPropertyURI()))
                 pd.setPropertyURI(update.getDomainURI() + "#" + pd.getName());
 
             // UNDONE: DomainProperty does not support all PropertyDescriptor fields

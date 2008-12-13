@@ -41,6 +41,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
 import org.labkey.common.util.Pair;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
 import java.io.IOException;
@@ -973,12 +974,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return true;
     }
 
-    public RunListQueryView createRunView(ViewContext context, ExpProtocol protocol)
+    public RunListQueryView createRunQueryView(ViewContext context, ExpProtocol protocol)
     {
         return new RunListQueryView(protocol, context);
     }
 
-    public RunDataQueryView createRunDataView(ViewContext context, ExpProtocol protocol)
+    public RunDataQueryView createRunDataQueryView(ViewContext context, ExpProtocol protocol)
     {
         String name = getRunDataTableName(protocol);
         QuerySettings settings = new QuerySettings(context, name);
@@ -987,6 +988,15 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return new RunDataQueryView(protocol, context, settings);
     }
 
+    public ModelAndView createRunDataView(ViewContext context, ExpProtocol protocol)
+    {
+        return null;
+    }
+
+    public ModelAndView createDataDetailsView(ViewContext context, ExpProtocol protocol, ExpData data, Object dataRowId)
+    {
+        return null;
+    }
 
     public String getRunListTableName(ExpProtocol protocol)
     {
@@ -1025,4 +1035,5 @@ public abstract class AbstractAssayProvider implements AssayProvider
         designerURL.addParameter("providerName", getName());
         return designerURL;
     }
+
 }

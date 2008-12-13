@@ -43,13 +43,22 @@ public class AssayDataAction extends BaseAssayAction<ProtocolIdForm>
         ViewContext context = getViewContext();
         _protocol = getProtocol(form);
         AssayProvider provider = AssayService.get().getProvider(_protocol);
-        RunDataQueryView dataView = provider.createRunDataView(context, _protocol);
+
+        ModelAndView runDataView = provider.createRunDataView(context, _protocol);
+        if (runDataView != null)
+            return runDataView;
+        return getView(context, provider);
+    }
+
+    protected ModelAndView getView(ViewContext context, AssayProvider provider)
+    {
+        RunDataQueryView dataQueryView = provider.createRunDataQueryView(context, _protocol);
 
         AssayHeaderView headerView = new AssayHeaderView(
             _protocol,
             AssayService.get().getProvider(_protocol),
             false,
-            dataView.getTable().getContainerFilter());
+            dataQueryView.getTable().getContainerFilter());
 
         VBox fullView = new VBox();
         fullView.addView(headerView);
@@ -58,9 +67,7 @@ public class AssayDataAction extends BaseAssayAction<ProtocolIdForm>
         if (!provider.allowUpload(context.getUser(), context.getContainer(), _protocol))
             fullView.addView(provider.getDisallowedUploadMessageView(context.getUser(), context.getContainer(), _protocol));
 
-
-        
-        fullView.addView(dataView);
+        fullView.addView(dataQueryView);
         return fullView;
     }
 

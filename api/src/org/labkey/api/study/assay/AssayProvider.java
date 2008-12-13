@@ -37,6 +37,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.Pair;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
 import java.util.List;
@@ -118,9 +119,11 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     HttpView getDisallowedUploadMessageView(User user, Container container, ExpProtocol protocol);
 
-    RunDataQueryView createRunDataView(ViewContext context, ExpProtocol protocol);
+    RunDataQueryView createRunDataQueryView(ViewContext context, ExpProtocol protocol);
 
-    RunListQueryView createRunView(ViewContext context, ExpProtocol protocol);
+    RunListQueryView createRunQueryView(ViewContext context, ExpProtocol protocol);
+
+    ModelAndView createRunDataView(ViewContext context, ExpProtocol protocol);
 
     String getRunListTableName(ExpProtocol protocol);
 

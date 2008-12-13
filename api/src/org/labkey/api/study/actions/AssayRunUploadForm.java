@@ -70,7 +70,7 @@ public class AssayRunUploadForm extends ProtocolIdForm implements AssayRunUpload
 
         List<PropertyDescriptor> orderedColumns = new ArrayList<PropertyDescriptor>();
         // add all columns that are found in the default view in the correct order:
-        QueryView dataView = getProvider().createRunDataView(context, protocol);
+        QueryView dataView = getProvider().createRunDataQueryView(context, protocol);
         List<DisplayColumn> allColumns = dataView.getDisplayColumns();
         for (DisplayColumn dc : allColumns)
         {

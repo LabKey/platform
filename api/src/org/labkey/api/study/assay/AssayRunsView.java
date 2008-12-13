@@ -37,7 +37,7 @@ public class AssayRunsView extends VBox
         AssayProvider provider = AssayService.get().getProvider(protocol);
         ViewContext context = getViewContext();
 
-        _runsView = provider.createRunView(context, protocol);
+        _runsView = provider.createRunQueryView(context, protocol);
         AssayHeaderView headerView = new AssayHeaderView(protocol, provider, minimizeLinks, _runsView.getTable().getContainerFilter());
         if (minimizeLinks)
         {
