@@ -43,6 +43,11 @@ var ROWSELECTION_MODEL =
 
 
 var h = Ext.util.Format.htmlEncode;
+function log(o)
+{
+    if ("console" in window)
+        console.log(o);
+}
 
 
 function renderIcon(value, metadata, record, rowIndex, colIndex, store)
@@ -84,23 +89,6 @@ function renderDateTime(value, metadata, record, rowIndex, colIndex, store)
 }
 
 
-
-function treePathFromId(id)
-{
-    var dir = id.charAt(id.length-1) == '/';
-    if (dir) id = id.substring(0,id.length-1);
-    var parts = id.split("/");
-    var folder = "";;
-    var treePath = "";
-    for (var i=0 ; i<parts.length ; i++)
-    {
-        folder += parts[i] + ((i<parts.length-1 || dir) ? "/" : "");
-        treePath += ";" + folder;
-    }
-    return treePath;
-}
-
-
 //
 // FileSystem
 //
@@ -119,6 +107,9 @@ var FileSystem = function(config)
 
 Ext.extend(FileSystem, Ext.util.Observable,
 {
+    rootPath : "/",
+    pathSeparator : "/",
+    
     // causes directory listFiles to be fired
     listFiles : function(path, callback)    // callback(filesystem, success, path, records)
     {
@@ -155,15 +146,38 @@ Ext.extend(FileSystem, Ext.util.Observable,
         this.fireEvent(FILESYSTEM_EVENTS.listfiles, path, records);
     },
 
+
+    _recordFromCache : function(path)
+    {
+        if (!path || path == this.rootPath)
+            // UNDONE this.rootRecord
+            return new this.FileRecord({id:this.rootPath, path:this.rootPath, name:this.rootPath, file:false}, this.rootPath);
+        var parent = this.parentPath(path) || this.rootPath;
+        var files = this.directoryMap[parent];
+        if (!files && parent.charAt(parent.length-1) == this.pathSeparator)
+            parent = parent.substring(0,parent.length-1);
+        var files = this.directoryMap[parent];
+        if (!files)
+            return null;
+        for (var i=0 ; i<files.length ; i++)
+        {
+            var r = files[i];
+            if (r.data.path == path)
+                return r;
+        }
+        return null;
+    },
+
+    
     // util
     
     concatPaths : function(a,b)
     {
         var c = 0;
-        if (a.length > 0 && a.charAt(a.length-1)=='/') c++;
-        if (b.length > 0 && b.charAt(0)=='/') c++;
+        if (a.length > 0 && a.charAt(a.length-1)==this.pathSeparator) c++;
+        if (b.length > 0 && b.charAt(0)==this.pathSeparator) c++;
         if (c == 0)
-            return a + "/" + b;
+            return a + this.pathSeparator + b;
         else if (c == 1)
             return a + b;
         else
@@ -173,10 +187,10 @@ Ext.extend(FileSystem, Ext.util.Observable,
     parentPath : function(p)
     {
         if (!p)
-            p = "/";
-        if (p.length > 1 && p.charAt(p.length-1) == '/')
+            p = this.rootPath;
+        if (p.length > 1 && p.charAt(p.length-1) == this.pathSeparator)
             p = p.substring(0,p.length-1);
-        var i = p.lastIndexOf('/');
+        var i = p.lastIndexOf(this.pathSeparator);
         if (i > -1)
             p = p.substring(0,i+1);
         return p;
@@ -184,11 +198,11 @@ Ext.extend(FileSystem, Ext.util.Observable,
 
     fileName : function(p)
     {
-        if (!p || p == "/")
-            return "/";
-        if (p.length > 1 && p.charAt(p.length-1) == '/')
+        if (!p || p == this.rootPath)
+            return this.rootPath;
+        if (p.length > 1 && p.charAt(p.length-1) == this.pathSeparator)
             p = p.substring(0,p.length-1);
-        var i = p.lastIndexOf('/');
+        var i = p.lastIndexOf(this.pathSeparator);
         if (i > -1)
             p = p.substring(i+1);
         return p;
@@ -225,6 +239,7 @@ var WebdavFileSystem = function(config)
                     return baseUrl ? v.replace(baseUrl, "") : v;
                 }
             },
+            {name: 'href', mapping: 'href'},
             {name: 'name', mapping: 'propstat/prop/displayname'},
             {name: 'file', mapping: 'href', type: 'boolean',
                 convert : function (v, rec)
@@ -234,6 +249,7 @@ var WebdavFileSystem = function(config)
             },
             {name: 'created', mapping: 'propstat/prop/creationdate', type: 'date', dateFormat : "c"},
             {name: 'modified', mapping: 'propstat/prop/getlastmodified', type: 'date'},
+            {name: 'modifiedby', mapping: 'propstat/prop/modifiedby'},
             {name: 'size', mapping: 'propstat/prop/getcontentlength', type: 'int'},
             {name: 'iconHref'}
         ]);
@@ -246,7 +262,7 @@ Ext.extend(WebdavFileSystem, FileSystem,
 {
     reloadFiles : function(path, callback)
     {
-        var url = FileSystem.prototype.concatPaths(this.prefixUrl, path);
+        var url = this.concatPaths(this.prefixUrl, path);
         this.connection.url = url;
 
         var args = {url: url, path: path, callback:callback};
@@ -281,7 +297,7 @@ var AppletFileSystem = function(config)
     config = config || {};
     Ext.apply(this, config, {path:"/"});
     WebdavFileSystem.superclass.constructor.call(this);
-    this.FileRecord = Ext.data.Record.create(['path', 'name', 'file', 'created', 'modified', 'size', 'iconHref']);
+    this.FileRecord = Ext.data.Record.create(['path', 'name', 'file', 'created', 'modified', 'modifiedby', 'size', 'iconHref']);
     this.connection = new Ext.data.Connection({method: "GET", headers: {"Method" : "PROPFIND", "Depth" : "1,noroot"}});
     this.proxy = new Ext.data.HttpProxy(this.connection);
     this.reader = new Ext.data.XmlReader({record : "response", id : "href"}, this.FileRecord);
@@ -289,6 +305,7 @@ var AppletFileSystem = function(config)
 
 Ext.extend(AppletFileSystem, FileSystem,
 {
+    pathSeparator : "\\",    
     retry : 0,
     
     reloadFiles : function(directory, callback)
@@ -303,19 +320,30 @@ Ext.extend(AppletFileSystem, FileSystem,
         this.retry = 0;
         if (!directory)
             return false;
-        if (!applet.local_changeDirectory(directory))
-            return false;
+        var root = directory == "/";
+        if (root)
+        {
+            if (!applet.local_listRoots())
+                return false;
+        }
+        if (!root || 1==applet.local_getFileCount())
+        {
+            if (!applet.local_changeDirectory(directory))
+                return false;
+        }
         var count = applet.local_getFileCount();
         var records = [];
         for (var i=0 ; i<count ; i++)
         {
             var name = applet.local_getName(i);
+            if (name.charAt(name.length-1) == '\\')
+                name = name.substring(0,name.length-1);
             var file = !applet.local_isDirectory(i);
-            var path = file ? this.concatPaths(directory,name) : this.concatPaths(directory,name+"/");
+            var path = applet.local_getPath(i); 
             var ts = applet.local_getTimestamp(i); 
             var lastModified = ts ? new Date(ts) : null;
             var size = applet.local_getSize(i);
-            var data = {id:path, name:name, path:path, file:file, modified:lastModified, size:size, iconHref:file?null:this.FOLDER_ICON};
+            var data = {id:path, name:name, path:path, file:file, modified:lastModified, size:size, iconHref:file?null:this.FOLDER_ICON, modifiedby:null};
             records.push(new this.FileRecord(data, path));
         }
         this._addFiles(directory, records);
@@ -348,7 +376,7 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
         if (this.fireEvent("beforeload", this, node, callback) !== false)
         {
             var args = {node:node, callback:callback};
-            if (this.fileSystem.listFiles(node.id, this.listCallback.createDelegate(this, [args], true)) != false)
+            if (this.fileSystem.listFiles(node.id, this.listCallback.createDelegate(this, [args], true)))
                 return true;
         }
         if (typeof callback == "function")
@@ -364,8 +392,16 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
             if (this.fileFilter)
                 data.disabled = !this.fileFilter.test(data.text);
         }
-        var n = Ext.apply({},{id:data.path, leaf:data.file, text:data.name},data);
+        var n = Ext.apply({},{id:data.id || data.path, leaf:data.file, text:data.name, href:null}, data);
         return FileSystemTreeLoader.superclass.createNode.call(this, n);
+    },
+
+    createNodeFromRecord : function(record)
+    {
+        var n = this.createNode(record.data);
+        if (n)
+            n.record = record;
+        return n;
     },
 
     listCallback : function (filesystem, success, path, records, args)
@@ -383,8 +419,7 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
             for (var i = 0; i < records.length; i++)
             {
                 var record = records[i];
-                var data = record.data;
-                var n = this.createNode(data);
+                var n = this.createNodeFromRecord(record);
                 if (n)
                     node.appendChild(n);
             }
@@ -432,7 +467,7 @@ Ext.extend(FileBrowser, Ext.util.Observable,
     store: null,
 
     currentDirectory: null,
-    selectedPath: null,
+    selectedRecord: null,
 
     //
     // actions
@@ -447,9 +482,7 @@ Ext.extend(FileBrowser, Ext.util.Observable,
     {
         return new Ext.Action({text: 'Download', scope: this, handler: function()
             {
-                // CONSIDER: PROPFIND to ensure this link is still good?
-                var p = this.selectedPath;
-                if (p && p.charAt(p.length-1) != '/')
+                if (this.selectedRecord && this.selectedRecord.data.file)
                     window.location = this.url + p + "?contentDisposition=attachment";
             }});
     },
@@ -459,9 +492,11 @@ Ext.extend(FileBrowser, Ext.util.Observable,
         return new Ext.Action({text: 'Up', scope: this, handler: function()
         {
             // CONSIDER: PROPFIND to ensure this link is still good?
-            var p = this.currentDirectory;
-            var dir = this.fileSystem.parentPath(p);
-            this.changeDirectory(dir || "/");
+            var p = this.currentDirectory.data.path;
+            var dir = this.fileSystem.parentPath(p) || this.fileSystem.rootPath;
+            var record = this.fileSystem._recordFromCache(dir);
+            if (record)
+                this.changeDirectory(record);
         }});
     },
 
@@ -470,65 +505,74 @@ Ext.extend(FileBrowser, Ext.util.Observable,
         return new Ext.Action({text: 'Refresh', scope:this, handler: function()
         {
             if (!this.currentDirectory)
-                this.currentDirectory = "/";
-            this.fileSystem.listFiles(this.currentDirectory, function(filesystem, success, path, records)
+                return;
+            this.fileSystem.reloadFiles(this.currentDirectory.data.path, function(filesystem, success, path, records)
             {
                 this.store.removeAll();
                 this.store.add(records);
             }.createDelegate(this));
-            this.tree.getRootNode().reload();
+//            this.tree.getRootNode().reload();
             var sel = this.tree.getSelectionModel().getSelectedNode();
             if (sel)
                 sel.reload();
         }});
     },
 
-    changeDirectory : function(path)
+    changeDirectory : function(record)
     {
-        if (this.currentDirectory != path)
+        if (typeof record == "string")
         {
-            this.currentDirectory = path;
-            this.fireEvent(BROWSER_EVENTS.directorychange, path);
+            record = this.fileSystem._recordFromCache(record);
+            if (!record)
+                return;
+        }
+        if (!this.currentDirectory || this.currentDirectory.data.path != record.data.path)
+        {
+            this.currentDirectory = record;
+            this.fireEvent(BROWSER_EVENTS.directorychange, record);
         }
     },
 
-    selectPath : function(path)
+    selectRecord : function(record)
     {
-        if (this.selectedPath != path)
+        if (typeof record == "string")
         {
-            this.selectedPath = path;
-            this.fireEvent(BROWSER_EVENTS.selectionchange, path);
+            record = this.fileSystem._recordFromCache(record);
+            if (!record)
+                return;
+        }
+        var path = record.data.path;
+        if (!this.selectedRecord || this.selectedRecord.data.path != path)
+        {
+            this.selectedRecord = record;
+            this.fireEvent(BROWSER_EVENTS.selectionchange, record);
         }
     },
+
 
     //
     // event handlers
     //
-    Grid_onRowselect : function(sm, rowIdx, r)
+    Grid_onRowselect : function(sm, rowIdx, record)
     {
         if (this.tree)
             this.tree.getSelectionModel().clearSelections();
-        if (r)
-        {
-            var path = r.get("path");
-            var collection = r.get("collection");
-            if (collection && path.charAt(path.length-1) != '/')
-                path = path + "/";
-            this.selectPath(path);
-        }
+        if (record)
+            this.selectRecord(record);
     },
 
     Grid_onCelldblclick : function(grid, rowIndex, columnIndex, e)
     {
-        var p = this.selectedPath;
-        if (p.charAt(p.length-1) == '/')
+        var record = grid.getStore().getAt(rowIndex);
+        this.selectRecord(record);
+        if (!record.data.file)
         {
-            this.changeDirectory(p);
+            this.changeDirectory(record);
             if (this.tree)
             {
-                var treePath = treePathFromId(p);
+                var treePath = this.treePathFromId(record.id);
                 this.tree.expandPath(treePath);
-                var node = this.tree.getNodeById(p);
+                var node = this.tree.getNodeById(record.id);
                 if (node)
                 {
                     node.ensureVisible();
@@ -544,9 +588,8 @@ Ext.extend(FileBrowser, Ext.util.Observable,
             this.grid.getSelectionModel().clearSelections();
         if (node)
         {
-            var folder = node.id;
-            this.selectPath(folder);
-            this.changeDirectory(folder);
+            this.selectRecord(node.record);
+            this.changeDirectory(node.record);
         }
     },
 
@@ -558,39 +601,74 @@ Ext.extend(FileBrowser, Ext.util.Observable,
         el.update(h(unescape(path)));
     },
 
-    updateFileDetails : function(selectedPath)
+
+    treePathFromId : function(id)
     {
-        var el = Ext.get('file-details');
-        if (!el)
-            return;
-        var dir = this.fileSystem.parentPath(selectedPath);
-        var name = this.fileSystem.fileName(selectedPath);
-        // TODO fileSystem.listFile()??
-        this.fileSystem.listFiles(dir, function(filesystem, success, path, records)
+        var sep = this.fileSystem.pathSeparator;
+        var dir = id.charAt(id.length-1) == sep;
+        if (dir) id = id.substring(0, id.length-1);
+        var parts = id.split(sep);
+        var folder = "";;
+        var treePath = "";
+        for (var i=0 ; i<parts.length ; i++)
         {
-            if (!success)
-            {                                
-                el.update("error");
+            folder += parts[i] + ((i<parts.length-1 || dir) ? sep : "");
+            treePath += ";" + folder;
+        }
+        return treePath;
+    },
+
+    updateFileDetails : function(record)
+    {
+        try
+        {
+            var el = Ext.get('file-details');
+            if (!el)
+                return;
+            var elStyle = el.dom.style;
+            elStyle.backgroundColor = "#f0f0f0";
+            elStyle.height = "100%";
+            elStyle.width = "100%";
+            if (!record || !record.data)
+            {
+                el.update('&nbsp;');
                 return;
             }
-            var r;
-            for (var i=0 ; i<records.length; i++)
+            var html = [];
+            var data = record.data;
+            var row = function(label,value)
             {
-                r = records[i];
-                if (r.get("path") == selectedPath)
-                    break;
-            }
-            if (!r)
-            {
-                el.update("not found?!");
-                return;
-            }
-            var h = [];
-            h.push("<table><tr><td>");
-            h.push(name);
-            h.push("</td></tr></table>");
-            el.update(h.join(""));
-        });
+                html.push("<tr><th style='text-align:right; color:#404040'>");
+                html.push(label);
+                html.push(":</th><td style='font-size:110%;'>");
+                html.push(value);
+                html.push("</td></tr>");
+            };
+            html.push("<p style='font-size:133%; padding:8px;'>");
+            html.push(h(data.name));
+            html.push("</p>")
+            html.push("<table style='padding-left:30px;'>");
+            if (data.modified)
+                row("Date Modified", _longDateTime(data.modified));
+            if (data.file)
+                row("Size",data.size);
+            if (data.modifiedby)
+                row("Modified By", data.modifiedby);
+            html.push("</table>");
+            el.update(html.join(""));
+        }
+        catch (x)
+        {
+            log(x);
+        }
+    },
+
+    start : function()
+    {
+        var root = this.tree.getRootNode();
+        this.tree.getRootNode().expand();
+        this.selectRecord(root.record);
+        this.changeDirectory(root.record);
     },
 
     init : function(config)
@@ -621,13 +699,14 @@ Ext.extend(FileBrowser, Ext.util.Observable,
         //
 
         var treeloader = new FileSystemTreeLoader({fileSystem: this.fileSystem, displayFiles:false});
-        var root = treeloader.createNode({path:"/", file:false, name:"/"});
+        var rootPath = this.fileSystem.rootPath;
+        var root = treeloader.createNodeFromRecord(new Ext.data.Record({path:rootPath, file:false, name:rootPath}, rootPath));
         this.tree = new Ext.tree.TreePanel(
         {
             loader:treeloader,
             root:root,
             rootVisible:false,
-            title: 'File Browser',
+            title: 'Folders',
             useArrows:true,
             autoScroll:true,
             animate:true,
@@ -671,14 +750,13 @@ Ext.extend(FileBrowser, Ext.util.Observable,
         if (this.showDetails)
             layoutItems.push(
             {
-                title: 'South Panel',
                 region: 'south',
                 height: 100,
                 minSize: 75,
                 maxSize: 250,
                 margins: '0 5 5 5',
                 layout: 'fit',
-                items: [{html:'south', id:'file-details'}]
+                items: [{html:'<div style="background-color:#f0f0f0;height:100%;width:100%">&nbsp</div>', id:'file-details'}]
             });
         if (this.showAddressBar)
             layoutItems.push(
@@ -747,18 +825,18 @@ Ext.extend(FileBrowser, Ext.util.Observable,
         // EVENTS (tie together components)
         //
 
-        this.on(BROWSER_EVENTS.selectionchange, function(path)
+        this.on(BROWSER_EVENTS.selectionchange, function(record)
         {
-            this.updateFileDetails(path);
-            if (path.charAt(path.length-1) == '/')
-                this.actions.downloadAction.disable();
-            else
+            this.updateFileDetails(record);  //undone pass in record
+            if (record && record.data & record.data.file && record.data.href)
                 this.actions.downloadAction.enable();
+            else
+                this.actions.downloadAction.disable();
         }, this);
 
-        this.on(BROWSER_EVENTS.directorychange,function(path)
+        this.on(BROWSER_EVENTS.directorychange,function(record)
         {
-            this.fileSystem.listFiles(path, (function(filesystem, success, path, records)
+            this.fileSystem.listFiles(record.data.path, (function(filesystem, success, path, records)
             {
                 if (success)
                 {
@@ -768,9 +846,9 @@ Ext.extend(FileBrowser, Ext.util.Observable,
             }).createDelegate(this));
         }, this);
 
-        this.on(BROWSER_EVENTS.directorychange, function(path)
+        this.on(BROWSER_EVENTS.directorychange, function(record)
         {
-            this.generateAddressBar(path);
+            this.generateAddressBar(record.data.path);
         }, this);
     }
 });

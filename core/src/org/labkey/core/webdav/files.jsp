@@ -56,13 +56,7 @@ Ext.onReady(function()
     var fileSystem = new WebdavFileSystem({});
 //    var fileSystem = new AppletFileSystem({getDropApplet:getDropApplet});
     var fileBrowser = new FileBrowser({fileSystem:fileSystem, renderTo:'files'});
-
-    // let's let that layout
-    (function() {
-        fileBrowser.selectPath("/");
-        fileBrowser.changeDirectory("/");
-        fileBrowser.tree.getRootNode().expand();
-    }).defer(10);
+    fileBrowser.start.defer(10, fileBrowser);
 });
 </script>
 
