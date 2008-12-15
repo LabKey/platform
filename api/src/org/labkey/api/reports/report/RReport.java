@@ -119,13 +119,6 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
             if (!temp.exists())
                 return "The temp folder: '" + tempFolder + "' does not exist";
         }
-
-        if (RServeScriptRunner.ID.equals(scriptHandler))
-        {
-            File rserve = RServeScriptRunner.findRServeExe();
-            if (rserve == null || !rserve.exists())
-                return "Unable to locate RServe, please verify that RServe is installed correctly";
-        }
         return null;
     }
 
