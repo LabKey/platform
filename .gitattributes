@@ -1725,6 +1725,7 @@ internal/webapp/_images/button_arrow.gif -text
 internal/webapp/_images/cancel.gif -text
 internal/webapp/_images/cart.gif -text
 internal/webapp/_images/collapse_folders.gif -text
+internal/webapp/_images/computer.png -text
 internal/webapp/_images/defaultlogo.gif -text
 internal/webapp/_images/defaultlogosmall.gif -text
 internal/webapp/_images/delete.gif -text
@@ -1748,6 +1749,7 @@ internal/webapp/_images/go-next-disabled.png -text
 internal/webapp/_images/go-next.png -text
 internal/webapp/_images/go-previous-disabled.png -text
 internal/webapp/_images/go-previous.png -text
+internal/webapp/_images/labkey.png -text
 internal/webapp/_images/leaf.gif -text
 internal/webapp/_images/minus.gif -text
 internal/webapp/_images/one.gif -text

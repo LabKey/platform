@@ -1696,6 +1696,7 @@ public class PageFlowUtil
         sb.append(",path:").append(jsString(container.getPath()));
         sb.append("}"); //end container object
 
+        sb.append(",serverName:(").append(PageFlowUtil.jsString(AppProps.getInstance().getServerName())).append(" || 'LabKey Server')");
         sb.append("}"); //end config
         return sb.toString();
     }
