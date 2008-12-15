@@ -148,7 +148,7 @@ Ext.extend(FileSystem, Ext.util.Observable,
     directoryFromCache : function(path)
     {
         var files = this.directoryMap[path];
-        if (!files && path & path.length>0 && path.charAt(path.length-1) == this.separator)
+        if (!files && path && path.length>0 && path.charAt(path.length-1) == this.separator)
             path = path.substring(0,path.length-1);
         files = this.directoryMap[path];
         return files;
