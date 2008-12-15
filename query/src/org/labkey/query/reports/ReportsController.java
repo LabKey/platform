@@ -18,15 +18,16 @@ package org.labkey.query.reports;
 
 import org.apache.beehive.netui.pageflow.FormData;
 import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.labkey.api.action.*;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -34,21 +35,22 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.reports.ExternalScriptEngineDefinition;
+import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.*;
-import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.ParamReplacement;
+import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.view.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.api.admin.AdminUrls;
-import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.AdminConsole.*;
 import org.labkey.common.util.Pair;
 import org.labkey.query.reports.chart.ChartServiceImpl;
 import org.springframework.validation.BindException;
@@ -315,7 +317,7 @@ public class ReportsController extends SpringActionController
                 return;
 
             // validate the parameters
-            String error = RReport.validateConfiguration(form.getProgramPath(), form.getCommand(), form.getTempFolder(), form.getScriptHandler());
+            String error = null;//RReport.validateConfiguration(form.getProgramPath(), form.getCommand(), form.getTempFolder(), form.getScriptHandler());
             if (error != null)
                 errors.reject("RConfigurationError", error);
         }
@@ -331,12 +333,6 @@ public class ReportsController extends SpringActionController
             RReport.setRCmd(form.getCommand());
             RReport.setTempFolder(form.getTempFolder());
             RReport.setEditPermissions(form.getPermissions());
-            RReport.setRScriptHandler(form.getScriptHandler());
-
-            if (DefaultScriptRunner.ID.equals(form.getScriptHandler()))
-                RServeScriptRunner.stopRServer();
-            else if (RServeScriptRunner.ID.equals(form.getScriptHandler()))
-                RServeScriptRunner.ensureServer();
 
             return true;
         }
@@ -345,6 +341,69 @@ public class ReportsController extends SpringActionController
         {
             root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
             return root.addChild("R View Configuration");
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class ScriptEnginesSummaryAction extends ApiAction
+    {
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            List<Map<String, String>> views = new ArrayList<Map<String, String>>();
+
+            for (ExternalScriptEngineDefinition def : LabkeyScriptEngineManager.getEngineDefinitions())
+            {
+                Map<String, String> record = new HashMap<String, String>();
+
+                record.put("name", def.getName());
+                record.put("exePath", def.getExePath());
+                record.put("exeCommand", def.getExeCommand());
+
+                record.put("outputFileName", def.getOutputFileName());
+                record.put("extensions", StringUtils.join(def.getExtensions(), ','));
+                record.put("languageName", def.getLanguageName());
+                record.put("languageVersion", def.getLanguageVersion());
+
+                if (def instanceof LabkeyScriptEngineManager.EngineDefinition)
+                    record.put("key", ((LabkeyScriptEngineManager.EngineDefinition)def).getKey());
+                views.add(record);
+            }
+            return new ApiSimpleResponse("views", views);
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class ScriptEnginesSaveAction extends ExtFormAction<LabkeyScriptEngineManager.EngineDefinition>
+    {
+        @Override
+        public void validateForm(LabkeyScriptEngineManager.EngineDefinition def, Errors errors)
+        {
+            // validate definition
+            if (StringUtils.isEmpty(def.getName()))
+                errors.rejectValue("name", ERROR_MSG, "The Name field cannot be empty");
+
+            File rexe = new File(def.getExePath());
+            if (!rexe.exists())
+                errors.rejectValue("exePath", ERROR_MSG, "The program location: '" + def.getExePath() + "' does not exist");
+            if (rexe.isDirectory())
+                errors.rejectValue("exePath", ERROR_MSG, "Please specify the entire path to the program, not just the directory (e.g., 'c:/Program Files/R/R-2.7.1/bin/R.exe)");
+        }
+
+        public ApiResponse execute(LabkeyScriptEngineManager.EngineDefinition def, BindException errors) throws Exception
+        {
+            LabkeyScriptEngineManager.saveDefinition(def);
+
+            return new ApiSimpleResponse("success", true);
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class ScriptEnginesDeleteAction extends ApiAction<LabkeyScriptEngineManager.EngineDefinition>
+    {
+        public ApiResponse execute(LabkeyScriptEngineManager.EngineDefinition def, BindException errors) throws Exception
+        {
+            LabkeyScriptEngineManager.deleteDefinition(def);
+            return new ApiSimpleResponse("success", true);
         }
     }
 
@@ -990,7 +1049,7 @@ public class ReportsController extends SpringActionController
                     views.add(record);
                 }
             }
-            return new ApiSimpleResponse("views", views);
+            return new ApiSimpleResponse("views", ReportUtil.getViewsJson(getViewContext()));
         }
     }
 
@@ -1292,7 +1351,6 @@ public class ReportsController extends SpringActionController
         private String _tempFolder = RReport.getTempFolder();
         private int _perms = RReport.getEditPermissions();
         private BindException _errors;
-        private String _scriptHandler = RReport.getRScriptHandler();
 
         public void setProgramPath(String path){_programPath = path;}
         public String getProgramPath(){return _programPath;}
@@ -1304,8 +1362,6 @@ public class ReportsController extends SpringActionController
         public BindException getErrors(){return _errors;}
         public void setPermissions(int perms){_perms = perms;}
         public int getPermissions(){return _perms;}
-        public void setScriptHandler(String scriptHandler){_scriptHandler = scriptHandler;}
-        public String getScriptHandler(){return _scriptHandler;}
     }
 
     protected static class PlotView extends WebPartView
