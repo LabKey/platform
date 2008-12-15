@@ -53,15 +53,22 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
 Ext.onReady(function()
 {
     Ext.QuickTips.init();
-    var fileSystem = new WebdavFileSystem({});
-//    var fileSystem = new AppletFileSystem({getDropApplet:getDropApplet});
-    var fileBrowser = new FileBrowser({fileSystem:fileSystem, renderTo:'files'});
+//    var fileSystem = new WebdavFileSystem({});
+    var fileSystem = new AppletFileSystem({getDropApplet:getDropApplet});
+    var fileBrowser = new FileBrowser({fileSystem:fileSystem, renderTo:'files', helpEl:'help'});
+    fileBrowser.render();
     fileBrowser.start.defer(10, fileBrowser);
 });
 </script>
 
 <div class="extContainer" style="padding:20px;">
 <div id="files"/>
+</div>
+
+<div style="display:none;">
+<div id="help">
+    help helpy help.
+</div>
 </div>
 
 <script type="text/javascript">
@@ -109,6 +116,6 @@ function getDropApplet()
     <li>pipeline actions</li>
     <li>pipeline actions filtered by provider</li>
     <li>history, audit</li>
-    <li>don't we can read all the files we can list</li>
+    <li>we can't read all the files we can list</li>
 </ul>
 </ul>

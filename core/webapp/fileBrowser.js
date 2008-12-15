@@ -108,15 +108,15 @@ var FileSystem = function(config)
 Ext.extend(FileSystem, Ext.util.Observable,
 {
     rootPath : "/",
-    pathSeparator : "/",
+    separator : "/",
     
-    // causes directory listFiles to be fired
     listFiles : function(path, callback)    // callback(filesystem, success, path, records)
     {
-        if (path in this.directoryMap)
+        var files = this.directoryFromCache(path);
+        if (files)
         {
             if (typeof callback == "function")
-                callback.defer(1, null, [this, true, path, this.directoryMap[path]]);
+                callback.defer(1, null, [this, true, path, files]);
         }
         else
         {
@@ -126,7 +126,6 @@ Ext.extend(FileSystem, Ext.util.Observable,
         }
     },
 
-    // causes directory listFiles to be fired, forces refresh from underlying store
     // return false on immediate fail
     reloadFiles : function(path, callback)
     {
@@ -146,23 +145,29 @@ Ext.extend(FileSystem, Ext.util.Observable,
         this.fireEvent(FILESYSTEM_EVENTS.listfiles, path, records);
     },
 
+    directoryFromCache : function(path)
+    {
+        var files = this.directoryMap[path];
+        if (!files && path & path.length>0 && path.charAt(path.length-1) == this.separator)
+            path = path.substring(0,path.length-1);
+        files = this.directoryMap[path];
+        return files;
+    },
 
-    _recordFromCache : function(path)
+
+    recordFromCache : function(path)
     {
         if (!path || path == this.rootPath)
-            // UNDONE this.rootRecord
-            return new this.FileRecord({id:this.rootPath, path:this.rootPath, name:this.rootPath, file:false}, this.rootPath);
+            return this.rootRecord;
         var parent = this.parentPath(path) || this.rootPath;
-        var files = this.directoryMap[parent];
-        if (!files && parent.charAt(parent.length-1) == this.pathSeparator)
-            parent = parent.substring(0,parent.length-1);
-        var files = this.directoryMap[parent];
+        var name = this.fileName(path);
+        var files = this.directoryFromCache(parent);
         if (!files)
             return null;
         for (var i=0 ; i<files.length ; i++)
         {
             var r = files[i];
-            if (r.data.path == path)
+            if (r.data.name == name)
                 return r;
         }
         return null;
@@ -174,10 +179,10 @@ Ext.extend(FileSystem, Ext.util.Observable,
     concatPaths : function(a,b)
     {
         var c = 0;
-        if (a.length > 0 && a.charAt(a.length-1)==this.pathSeparator) c++;
-        if (b.length > 0 && b.charAt(0)==this.pathSeparator) c++;
+        if (a.length > 0 && a.charAt(a.length-1)==this.separator) c++;
+        if (b.length > 0 && b.charAt(0)==this.separator) c++;
         if (c == 0)
-            return a + this.pathSeparator + b;
+            return a + this.separator + b;
         else if (c == 1)
             return a + b;
         else
@@ -188,21 +193,19 @@ Ext.extend(FileSystem, Ext.util.Observable,
     {
         if (!p)
             p = this.rootPath;
-        if (p.length > 1 && p.charAt(p.length-1) == this.pathSeparator)
+        if (p.length > 1 && p.charAt(p.length-1) == this.separator)
             p = p.substring(0,p.length-1);
-        var i = p.lastIndexOf(this.pathSeparator);
-        if (i > -1)
-            p = p.substring(0,i+1);
-        return p;
+        var i = p.lastIndexOf(this.separator);
+        return i == -1 ? this.rootPath : p.substring(0,i+1);
     },
 
     fileName : function(p)
     {
         if (!p || p == this.rootPath)
             return this.rootPath;
-        if (p.length > 1 && p.charAt(p.length-1) == this.pathSeparator)
+        if (p.length > 1 && p.charAt(p.length-1) == this.separator)
             p = p.substring(0,p.length-1);
-        var i = p.lastIndexOf(this.pathSeparator);
+        var i = p.lastIndexOf(this.separator);
         if (i > -1)
             p = p.substring(i+1);
         return p;
@@ -256,6 +259,14 @@ var WebdavFileSystem = function(config)
     this.connection = new Ext.data.Connection({method: "GET", headers: {"Method" : "PROPFIND", "Depth" : "1,noroot"}});
     this.proxy = new Ext.data.HttpProxy(this.connection);
     this.reader = new Ext.data.XmlReader({record : "response", id : "href"}, this.FileRecord);
+
+    this.rootRecord = new this.FileRecord({
+        id:"/",
+        path:"/",
+        name:(LABKEY.serverName || "LabKey Server"),
+        file:false,
+        iconHref: LABKEY.contextPath + "/_images/labkey.png"
+    }, "/");
 };
 
 Ext.extend(WebdavFileSystem, FileSystem,
@@ -301,11 +312,21 @@ var AppletFileSystem = function(config)
     this.connection = new Ext.data.Connection({method: "GET", headers: {"Method" : "PROPFIND", "Depth" : "1,noroot"}});
     this.proxy = new Ext.data.HttpProxy(this.connection);
     this.reader = new Ext.data.XmlReader({record : "response", id : "href"}, this.FileRecord);
+
+    this.rootRecord = new this.FileRecord(
+    {
+        id:"/",
+        path:"/",
+        name:"My Computer",
+        file:false,
+        iconHref: LABKEY.contextPath + "/_images/computer.png"
+    }, "/");
 };
 
 Ext.extend(AppletFileSystem, FileSystem,
 {
-    pathSeparator : "\\",    
+    rootPath : "/",
+    separator : "\\",
     retry : 0,
     
     reloadFiles : function(directory, callback)
@@ -355,6 +376,42 @@ Ext.extend(AppletFileSystem, FileSystem,
 
 
 //
+// FileListMenu
+//
+var FileListMenu = function(fileSystem, path)
+{
+    this.showFiles = false;
+    this.fileSystem = fileSystem;
+    this.path = path;
+    var records = fileSystem.directoryFromCache(path);
+    var items = [];
+    if (records)
+    {
+        for (var i=0 ; i<records.length ; i++)
+        {
+            var data = records[i].data;
+            items.push({text:data.name, icon:data.iconHref});
+        }
+    }
+    else
+    {
+        fileSystem.listFiles(function(filesystem, success, path, records)
+        {
+            for (var i=0 ; i<records.length ; i++)
+            {
+                var data = records[i].data;
+                if (!this.showFiles && data.file)
+                    continue;
+                this.addMenuItem(new Ext.menu.Item({text:data.name, icon:data.iconHref}));
+            }
+        });
+    }
+    FileListMenu.superclass.constructor.call(this, {items:items});    
+};
+Ext.extend(FileListMenu, Ext.menu.Menu);
+
+
+//
 // FileSystemTreeLoader
 //
 
@@ -400,7 +457,11 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
     {
         var n = this.createNode(record.data);
         if (n)
+        {
             n.record = record;
+            if (record.data.iconHref)
+                n.attributes.icon = record.data.iconHref;
+        }
         return n;
     },
 
@@ -426,6 +487,12 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
             node.endUpdate();
             if (typeof args.callback == "function")
                 args.callback(this, node);
+            if (node.childNodes.length == 1)
+            {
+                var child = node.firstChild;
+                if (!child.isLeaf())
+                    child.expand();
+            }
         }
         catch (e)
         {
@@ -442,15 +509,14 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
 //
 //  FILE BROWSER UI
 //
-// UNDONE: convert to a proper 'class'
 
 
 var BROWSER_EVENTS = {selectionchange:"selectionchange", directorychange:"directorychange"};
 
 var FileBrowser = function(config)
 {
+    Ext.apply(this, config);
     this.addEvents( [ BROWSER_EVENTS.selectionchange, BROWSER_EVENTS.directorychange ]);
-    this.init(config);
 };
 Ext.extend(FileBrowser, Ext.util.Observable,
 {
@@ -460,7 +526,7 @@ Ext.extend(FileBrowser, Ext.util.Observable,
     showFolders: true,
     showAddressBar: true,
     showDetails: true,
-    showProperties: true,
+    showProperties: false,
 
     url: "/labkey/_webdav",
     grid: null,
@@ -494,7 +560,7 @@ Ext.extend(FileBrowser, Ext.util.Observable,
             // CONSIDER: PROPFIND to ensure this link is still good?
             var p = this.currentDirectory.data.path;
             var dir = this.fileSystem.parentPath(p) || this.fileSystem.rootPath;
-            var record = this.fileSystem._recordFromCache(dir);
+            var record = this.fileSystem.recordFromCache(dir);
             if (record)
                 this.changeDirectory(record);
         }});
@@ -518,11 +584,30 @@ Ext.extend(FileBrowser, Ext.util.Observable,
         }});
     },
 
+    helpEl : null,
+    helpWindow : null,
+
+    getHelpAction : function()
+    {
+        if (!this.helpEl)
+            return null;
+        return new Ext.Action({text: 'Help', scope:this, handler: function()
+        {
+            if (!this.helpWindow)
+            {
+                var w = new Ext.Window({contentEl:this.helpEl});
+                w.closeAction = 'hide';
+                this.helpWindow = w;
+            }
+            this.helpWindow.show();
+        }});
+    },
+
     changeDirectory : function(record)
     {
         if (typeof record == "string")
         {
-            record = this.fileSystem._recordFromCache(record);
+            record = this.fileSystem.recordFromCache(record);
             if (!record)
                 return;
         }
@@ -537,7 +622,7 @@ Ext.extend(FileBrowser, Ext.util.Observable,
     {
         if (typeof record == "string")
         {
-            record = this.fileSystem._recordFromCache(record);
+            record = this.fileSystem.recordFromCache(record);
             if (!record)
                 return;
         }
@@ -593,29 +678,57 @@ Ext.extend(FileBrowser, Ext.util.Observable,
         }
     },
 
+
+    addressBarHandler : null,
+    
     generateAddressBar : function(path)
     {
         var el = Ext.get('addressBar');
         if (!el)
             return;
-        el.update(h(unescape(path)));
+        if (this.addressBarHandler)
+        {
+            el.un("click", this.addressBarHandler);
+            this.addressBarHandler = null;
+        }
+        var text;
+        if (path == this.fileSystem.rootPath)
+            text = h(this.fileSystem.rootRecord.data.name);
+        else
+            text = h(unescape(path));
+        el.update(text);
+//        this.addressBarHandler = this.showFileListMenu.createDelegate(this, [path]);
+//        el.on("click", this.addressBarHandler);
     },
 
+    showFileListMenu : function(path)
+    {
+        var el = Ext.get('addressBar');
+        var menu = new FileListMenu(this.fileSystem, path);
+        menu.show(el);
+        menu.el.className = menu.el.className + " extContainer";
+    },
+
+    ancestry : function(id)
+    {
+        var path = id;
+        var a = [path];
+        while (true)
+        {
+            var parent = this.fileSystem.parentPath(path);
+            if (!parent || parent == path)
+                break;
+            a.push(parent);
+            path = parent;
+        }
+        a.reverse();
+        return a;
+    },
 
     treePathFromId : function(id)
     {
-        var sep = this.fileSystem.pathSeparator;
-        var dir = id.charAt(id.length-1) == sep;
-        if (dir) id = id.substring(0, id.length-1);
-        var parts = id.split(sep);
-        var folder = "";;
-        var treePath = "";
-        for (var i=0 ; i<parts.length ; i++)
-        {
-            folder += parts[i] + ((i<parts.length-1 || dir) ? sep : "");
-            treePath += ";" + folder;
-        }
-        return treePath;
+        var a = this.ancestry(id);
+        return a.join(";");
     },
 
     updateFileDetails : function(record)
@@ -671,10 +784,14 @@ Ext.extend(FileBrowser, Ext.util.Observable,
         this.changeDirectory(root.record);
     },
 
-    init : function(config)
+    renderTo : function(el)
     {
-        this.fileSystem = config.fileSystem;
+        this.renderTo = el;
+        this.render();
+    },
 
+    render : function()
+    {
         //
         // GRID
         //
@@ -699,13 +816,12 @@ Ext.extend(FileBrowser, Ext.util.Observable,
         //
 
         var treeloader = new FileSystemTreeLoader({fileSystem: this.fileSystem, displayFiles:false});
-        var rootPath = this.fileSystem.rootPath;
-        var root = treeloader.createNodeFromRecord(new Ext.data.Record({path:rootPath, file:false, name:rootPath}, rootPath));
+        var root = treeloader.createNodeFromRecord(this.fileSystem.rootRecord, this.fileSystem.rootPath);
         this.tree = new Ext.tree.TreePanel(
         {
             loader:treeloader,
             root:root,
-            rootVisible:false,
+            rootVisible:true,
             title: 'Folders',
             useArrows:true,
             autoScroll:true,
@@ -724,7 +840,8 @@ Ext.extend(FileBrowser, Ext.util.Observable,
         {
             downloadAction: this.getDownloadAction(),
             parentFolderAction: this.getParentFolderAction(),
-            refreshAction: this.getRefreshAction()
+            refreshAction: this.getRefreshAction(),
+            helpAction: this.getHelpAction()
         };
         var tbarConfig =
             [
@@ -736,6 +853,8 @@ Ext.extend(FileBrowser, Ext.util.Observable,
                 this.actions.parentFolderAction,
                 this.actions.refreshAction
             ];
+        if (this.actions.helpAction)
+            tbarConfig.push(this.actions.helpAction);
         var layoutItems = [];
         if (this.showAddressBar)
             layoutItems.push(
@@ -810,7 +929,7 @@ Ext.extend(FileBrowser, Ext.util.Observable,
             items: layoutItems
         });
 
-        border.render(config.renderTo);
+    border.render(this.renderTo);
 
         var resizer = new Ext.Resizable('borderLayout', {
             width:800, height:600,
@@ -834,6 +953,14 @@ Ext.extend(FileBrowser, Ext.util.Observable,
                 this.actions.downloadAction.disable();
         }, this);
 
+        this.on(BROWSER_EVENTS.directorychange, function(record)
+        {
+            if (record && record.data && record.data.path != this.fileSystem.rootPath)
+                this.actions.parentFolderAction.enable();
+            else
+                this.actions.parentFolderAction.disable();
+        }, this);
+        
         this.on(BROWSER_EVENTS.directorychange,function(record)
         {
             this.fileSystem.listFiles(record.data.path, (function(filesystem, success, path, records)
