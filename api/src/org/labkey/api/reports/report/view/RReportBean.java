@@ -40,6 +40,7 @@ public class RReportBean extends ReportDesignBean
     protected boolean _runInBackground;
     protected List<String> _includedReports;
     protected boolean _isDirty;
+    protected String _scriptExtension;
 
     public RReportBean(){}
     public RReportBean(QuerySettings settings)
@@ -98,6 +99,7 @@ public class RReportBean extends ReportDesignBean
             {
                 if (getScript() != null) descriptor.setProperty(RReportDescriptor.Prop.script, getScript());
                 descriptor.setProperty(RReportDescriptor.Prop.runInBackground, _runInBackground);
+                descriptor.setProperty(RReportDescriptor.Prop.scriptExtension, _scriptExtension);
                 ((RReportDescriptor)descriptor).setIncludedReports(_includedReports);
                 if (!isShareReport())
                     descriptor.setOwner(getUser().getUserId());
@@ -125,7 +127,18 @@ public class RReportBean extends ReportDesignBean
             list.add(new Pair<String, String>("isDirty", String.valueOf(_isDirty)));
         for (String report : getIncludedReports())
             list.add(new Pair<String, String>(RReportDescriptor.Prop.includedReports.toString(), report));
+        list.add(new Pair<String, String>(RReportDescriptor.Prop.scriptExtension.toString(), _scriptExtension));
 
         return list;
+    }
+
+    public String getScriptExtension()
+    {
+        return _scriptExtension;
+    }
+
+    public void setScriptExtension(String scriptExtension)
+    {
+        _scriptExtension = scriptExtension;
     }
 }

@@ -28,6 +28,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.common.util.Pair;
 
 import javax.imageio.ImageIO;
@@ -37,6 +38,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.regex.Pattern;
 import java.sql.SQLException;
 
@@ -276,5 +279,44 @@ public class ReportUtil
             }
         }
         return false;
+    }
+
+    public static List<Map<String, String>> getViewsJson(ViewContext context)
+    {
+        List<Map<String, String>> views = new ArrayList<Map<String, String>>();
+
+        for (Report r : ReportUtil.getReports(context, null, true))
+        {
+            if (!StringUtils.isEmpty(r.getDescriptor().getReportName()))
+            {
+                ReportDescriptor descriptor = r.getDescriptor();
+                Map<String, String> record = new HashMap<String, String>();
+
+                User createdBy = UserManager.getUser(descriptor.getCreatedBy());
+                boolean shared = descriptor.getOwner() == null;
+                ActionURL editUrl = r.getEditReportURL(context);
+
+                record.put("name", descriptor.getReportName());
+                record.put("displayName", "<a href=\"" + r.getRunReportURL(context) + "\">" + descriptor.getReportName() + "</a>");
+                record.put("reportId", String.valueOf(descriptor.getReportId()));
+                record.put("query", StringUtils.defaultIfEmpty(descriptor.getProperty(ReportDescriptor.Prop.queryName), "Unknown"));
+                record.put("schema", descriptor.getProperty(ReportDescriptor.Prop.schemaName));
+                record.put("owner", createdBy != null ? createdBy.getDisplayName(context) : String.valueOf(descriptor.getCreatedBy()));
+                record.put("public", String.valueOf(shared));
+                record.put("type", r.getTypeDescription());
+                record.put("editable", String.valueOf(descriptor.canEdit(context)));
+                record.put("editUrl", editUrl != null ? editUrl.toString() : null);
+                record.put("description", descriptor.getReportDescription());
+
+                String iconPath = ReportService.get().getReportIcon(context, r.getType());
+                if (!StringUtils.isEmpty(iconPath))
+                    record.put("type", "<img src=\"" + iconPath + "\">&nbsp;" + r.getTypeDescription());
+                else
+                record.put("type", r.getTypeDescription());
+
+                views.add(record);
+            }
+        }
+        return views;
     }
 }

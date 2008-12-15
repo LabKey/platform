@@ -136,6 +136,7 @@ public class RunRReportView extends RunReportView
                 form.setIncludedReports(descriptor.getIncludedReports());
                 form.setInheritable((descriptor.getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0);
                 form.setCached(BooleanUtils.toBoolean(descriptor.getProperty(ReportDescriptor.Prop.cached)));
+                form.setScriptExtension(descriptor.getProperty(RReportDescriptor.Prop.scriptExtension));
 
                 //if (descriptor.getProperty("redirectUrl") != null)
                 //    form.setRedirectUrl(descriptor.getProperty("redirectUrl"));

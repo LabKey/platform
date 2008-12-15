@@ -210,6 +210,7 @@
     <input type="hidden" name="reportId" value="<%=bean.getReportId()%>">
     <input type="hidden" name="cacheKey" value="<%=RunRReportView.getReportCacheKey(bean.getReportId(), HttpView.currentContext().getContainer())%>">
     <input type="hidden" name="showDebug" value="true">
+    <input type="hidden" name="<%=RReportDescriptor.Prop.scriptExtension%>" value="<%=bean.getScriptExtension()%>">
 
     <div style="display:none;" id="saveDialog">
         <div class="hd">Save View</div>
