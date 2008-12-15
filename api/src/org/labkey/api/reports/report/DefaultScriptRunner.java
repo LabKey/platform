@@ -19,22 +19,20 @@ package org.labkey.api.reports.report;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.r.ParamReplacement;
-import org.labkey.api.reports.report.r.ParamReplacementSvc;
-import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 
+import javax.script.*;
 import javax.servlet.ServletException;
 import java.io.*;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -84,41 +82,29 @@ public class DefaultScriptRunner extends AbstractScriptRunner
         File scriptFile = null;
         try
         {
-            scriptFile = processScript(script, inputFile, outputSubst);
-            outFile = RReport.getFile(_report, RReport.reportFile.output, null);
+            ScriptEngineManager mgr = ServiceRegistry.get().getService(ScriptEngineManager.class);
 
-            String[] params = formatCommand(scriptFile.getAbsolutePath());
-            ProcessBuilder pb = new ProcessBuilder(params);
-            pb = pb.directory(_report.getReportDir());
-
-            int resultCode = runProcess(pb, outFile);
-            if (resultCode != 0)
+            ScriptEngine engine = mgr.getEngineByExtension("r");
+            if (engine != null)
             {
-                final String error1 = "Error " + resultCode + " executing command";
-                final String error2 = PageFlowUtil.filter(PageFlowUtil.getFileContentsAsString(outFile));
+                Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
 
-                errors.add(error1);
-                errors.add(error2);
-
-                String err = "<font class=\"labkey-error\">" + error1 + "</font><pre>" + error2 + "</pre>";
-                HttpView errView = new HtmlView(err);
-                view.addView(errView);
-                ret = false;
+                //bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, _report.getReportDir().getAbsolutePath());
+                engine.eval(processScript(script, inputFile, outputSubst));
             }
+        }
+        catch (ScriptException e)
+        {
+            final String error1 = "Error executing command";
+            final String error2 = PageFlowUtil.filter(e.getMessage());
 
-            // add the console output
-            if (isDebug())
-            {
-                File consoleFile = RReport.getFile(_report, RReport.reportFile.console, null);
-                if (consoleFile.exists())
-                {
-                    ParamReplacement param = ParamReplacementSvc.get().getHandlerInstance(ConsoleOutput.ID);
-                    param.setName("console");
-                    param.setFile(consoleFile);
+            errors.add(error1);
+            errors.add(error2);
 
-                    outputSubst.add(param);
-                }
-            }
+            String err = "<font class=\"labkey-error\">" + error1 + "</font><pre>" + error2 + "</pre>";
+            HttpView errView = new HtmlView(err);
+            view.addView(errView);
+            ret = false;
         }
         catch (IOException e)
         {
@@ -134,6 +120,22 @@ public class DefaultScriptRunner extends AbstractScriptRunner
         }
         finally
         {
+            // add the console output
+            if (isDebug())
+            {
+/*
+                File consoleFile = RReport.getFile(_report, RReport.reportFile.console, null);
+                if (consoleFile.exists())
+                {
+                    ParamReplacement param = ParamReplacementSvc.get().getHandlerInstance(ConsoleOutput.ID);
+                    param.setName("console");
+                    param.setFile(consoleFile);
+
+                    outputSubst.add(param);
+                }
+*/
+            }
+
             if (_deleteTempFiles && null != outFile && outFile.exists())
                 outFile.delete();
             if (_deleteTempFiles && null != scriptFile && scriptFile.exists())
@@ -142,11 +144,13 @@ public class DefaultScriptRunner extends AbstractScriptRunner
         return ret;
     }
 
-    protected File processScript(String script, File inputFile, List<ParamReplacement> outputSubst) throws Exception
+    protected String processScript(String script, File inputFile, List<ParamReplacement> outputSubst) throws Exception
     {
         // process the primary script
-        File scriptFile = RReport.getFile(_report, RReport.reportFile.script, null);
-        createScript(script, scriptFile, inputFile, outputSubst);
+        //File scriptFile = RReport.getFile(_report, RReport.reportFile.script, null);
+        StringBuffer finalScript = new StringBuffer();
+
+        createScript(script, finalScript,/*scriptFile,*/ inputFile, outputSubst);
 
         // process any included scripts
         for (String includedReport : ((RReportDescriptor)_report.getDescriptor()).getIncludedReports())
@@ -157,12 +161,12 @@ public class DefaultScriptRunner extends AbstractScriptRunner
             {
                 final String rName = report.getDescriptor().getProperty(ReportDescriptor.Prop.reportName);
                 final String rScript = report.getDescriptor().getProperty(RReportDescriptor.Prop.script);
-                final File rScriptFile = RReport.getFile(_report, RReport.reportFile.includedScript, rName + ".R");
+                //final File rScriptFile = RReport.getFile(_report, RReport.reportFile.includedScript, rName + ".R");
 
-                createScript(rScript, rScriptFile, inputFile, outputSubst);
+                //createScript(rScript, rScriptFile, inputFile, outputSubst);
             }
         }
-        return scriptFile;
+        return finalScript.toString();
     }
 
     private boolean validateSharedPermissions(Report report)
@@ -183,7 +187,7 @@ public class DefaultScriptRunner extends AbstractScriptRunner
         return false;
     }
 
-    protected void createScript(String script, File scriptFile, File inputFile, List<ParamReplacement> outputSubst) throws Exception
+    protected void createScript(String script, /*File scriptFile*/ StringBuffer sb, File inputFile, List<ParamReplacement> outputSubst) throws Exception
     {
         if (!StringUtils.isEmpty(script))
         {
@@ -192,7 +196,9 @@ public class DefaultScriptRunner extends AbstractScriptRunner
             script = processInputReplacement(script, inputFile);
             script = processOutputReplacements(script, outputSubst);
 
+            sb.append(script);
             // write out the script file to disk
+/*
             try
             {
                 PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(scriptFile)));
@@ -204,6 +210,7 @@ public class DefaultScriptRunner extends AbstractScriptRunner
                 _log.error("prepare", e);
                 throw new ServletException(e);
             }
+*/
         }
     }
 
@@ -214,6 +221,7 @@ public class DefaultScriptRunner extends AbstractScriptRunner
     {
         if (context != null)
         {
+/*
             File resultFile = RReport.getFile(report, RReport.reportFile.inputData, null);
 
             ResultSet rs = report.generateResultSet(context);
@@ -221,9 +229,11 @@ public class DefaultScriptRunner extends AbstractScriptRunner
             tsv.write(resultFile);
 
             return resultFile;
+*/
         }
         return null;
     }
+
 
     private String[] formatCommand(String scriptFilePath)
     {
