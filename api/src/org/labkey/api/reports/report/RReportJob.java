@@ -26,11 +26,11 @@ import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 
-import java.io.*;
+import java.io.File;
+import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -125,48 +125,25 @@ public class RReportJob extends PipelineJob implements Serializable
         RReport report = getReport();
         try {
             // get the input file which should have been previously created
-            File inputFile = RReport.getFile(report, RReport.reportFile.inputData, null);
+            File inputFile = new File(report.getReportDir(), RReport.DATA_INPUT);
+            ViewContext context = new ViewContext(getInfo());
+
             if (inputFile != null && inputFile.exists())
             {
                 List<ParamReplacement> outputSubst = new ArrayList();
                 List<String> errors = new ArrayList();
 
-                RScriptRunner runner = RReport.createScriptRunner(report, new ViewContext(getInfo()));
-
-                runner.setSourceData(inputFile);
-                boolean success = runner.runScript(new VBox(), outputSubst);
+                String output = report.runScript(context, outputSubst, inputFile);
+                if (!StringUtils.isEmpty(output))
+                    info(output);
 
                 if (outputSubst.size() > 0)
                 {
-                    File file = RReport.getFile(report, RReport.reportFile.substitutionMap, null);
+                    // write the output substitution map to disk so we can render the view later
+                    File file = new File(report.getReportDir(), RReport.SUBSTITUTION_MAP);
                     ParamReplacementSvc.get().toFile(outputSubst, file);
                 }
-
-                File console = RReport.getFile(report, RReport.reportFile.console, null);
-                if (console != null && console.exists())
-                {
-                    BufferedReader br = null;
-                    try {
-                        br = new BufferedReader(new FileReader(console));
-                        String l;
-                        while ((l = br.readLine()) != null)
-                            info(l);
-                    }
-                    finally
-                    {
-                        if (br != null)
-                            try {br.close();} catch(IOException ioe) {}
-                    }
-                }
-
-                if (!success)
-                {
-                    for (String error : errors)
-                        error(error);
-                    setStatus(PipelineJob.ERROR_STATUS, "Job finished at: " + DateUtil.nowISO());
-                }
-                else
-                    setStatus(PipelineJob.COMPLETE_STATUS, "Job finished at: " + DateUtil.nowISO());
+                setStatus(PipelineJob.COMPLETE_STATUS, "Job finished at: " + DateUtil.nowISO());
             }
             else
             {

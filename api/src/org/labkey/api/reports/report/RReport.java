@@ -28,6 +28,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.view.*;
@@ -39,8 +40,13 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.*;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.common.util.Pair;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import java.io.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -48,23 +54,9 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class RReport extends AbstractReport implements AttachmentParent, Report.ResultSetGenerator
+public class RReport extends ExternalScriptEngineReport implements AttachmentParent
 {
     public static final String TYPE = "ReportService.rReport";
-    //private static Logger _log = Logger.getLogger(RReport.class);
-    public static Pattern scriptPattern = Pattern.compile("\\$\\{(.*?)\\}");
-    private File _tempFolder;
-    private boolean _tempFolderPipeline;
-
-    public static final String FILE_PREFIX = "rpt";
-    public static final String REPORT_DIR = "Reports";
-    public static final String CACHE_DIR = "cached";
-
-    public static final String SUBSTITUTION_MAP = "substitutionMap.txt";
-
-    public static final String INPUT_FILE_TSV = "input_data";
-
-    public static final String DATA_FILE_SUFFIX = "Data.tsv";
 
     public static final String DEFAULT_R_CMD = "CMD BATCH --slave";
 
@@ -72,28 +64,6 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
     private static final String R_CMD = "RReport.RCmd";
     private static final String R_TEMP_FOLDER = "RReport.TempFolder";
     private static final String R_EDIT_PERMISSIONS = "RReport.EditPermissions";
-    private static final String R_SCRIPT_HANDLER = "RReport.ScriptHandler";
-    private static final Map<Integer, ActionURL> _cachedReportURLMap = new HashMap<Integer, ActionURL>();
-
-    static {
-        ParamReplacementSvc.get().registerHandler(new ConsoleOutput());
-        ParamReplacementSvc.get().registerHandler(new TextOutput());
-        ParamReplacementSvc.get().registerHandler(new HtmlOutput());
-        ParamReplacementSvc.get().registerHandler(new TsvOutput());
-        ParamReplacementSvc.get().registerHandler(new ImageOutput());
-        ParamReplacementSvc.get().registerHandler(new PdfOutput());
-        ParamReplacementSvc.get().registerHandler(new FileOutput());
-        ParamReplacementSvc.get().registerHandler(new PostscriptOutput());
-    }
-
-    public enum reportFile {
-        script,
-        inputData,
-        console,
-        output,
-        substitutionMap,
-        includedScript,
-    }
 
     private static String getProp(String prop, String defaultValue)
     {
@@ -122,16 +92,11 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
     public static void setTempFolder(String folder) {setProp(R_TEMP_FOLDER, folder);}
     public static int getEditPermissions() {return NumberUtils.toInt(getProp(R_EDIT_PERMISSIONS, Integer.toString(org.labkey.api.security.SecurityManager.PermissionSet.ADMIN.getPermissions()))); }
     public static void setEditPermissions(int permissions) {setProp(R_EDIT_PERMISSIONS, Integer.toString(permissions));}
-    public static String getRScriptHandler()
-    {
-        //return getProp(R_SCRIPT_HANDLER, DefaultScriptRunner.ID);
-        return DefaultScriptRunner.ID;
-    }
-    public static void setRScriptHandler(String scriptHandler){setProp(R_SCRIPT_HANDLER, scriptHandler);}
 
     public static boolean isValidConfiguration()
     {
-        return validateConfiguration(getRExe(), getRCmd(), getTempFolder(), getRScriptHandler()) == null;
+        return true;
+//        return validateConfiguration(getRExe(), getRCmd(), getTempFolder(), getRScriptHandler()) == null;
     }
 
     public static String validateConfiguration(String programPath, String command, String tempFolder, String scriptHandler)
@@ -164,16 +129,6 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
         return null;
     }
 
-    public static RScriptRunner createScriptRunner(RReport report, ViewContext context)
-    {
-        final String id = getRScriptHandler();
-        if (DefaultScriptRunner.ID.equals(id))
-            return new DefaultScriptRunner(report, context);
-        else if (RServeScriptRunner.ID.equals(id))
-            return new RServeScriptRunner(report, context);
-        return null;
-    }
-
     public String getType()
     {
         return TYPE;
@@ -189,412 +144,117 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
         return RReportDescriptor.TYPE;
     }
 
-    public HttpView renderReport(ViewContext viewContext) throws Exception
+    public ScriptEngine getScriptEngine()
     {
-        VBox view = new VBox();
-        String script = getDescriptor().getProperty(RReportDescriptor.Prop.script);
+        ScriptEngineManager mgr = ServiceRegistry.get().getService(ScriptEngineManager.class);
 
-        if (validateConfiguration(getRExe(), getRCmd(), getTempFolder(), getRScriptHandler()) != null)
-        {
-            final String error = "The R program has not been configured to be used by the LabKey server yet, navigate to the <a href='" + PageFlowUtil.filter(PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()) + "'>admin console</a> to configure R.";
-            view.addView(new HtmlView("<span class=\"labkey-error\">" + error + "</span>"));
-            return view;
-        }
-
-        List<String> errors = new ArrayList<String>();
-        if (!validateScript(script, errors))
-        {
-            for (String error : errors)
-                view.addView(new HtmlView("<span class=\"labkey-error\">" + error + "</span>"));
-            return view;
-        }
-
-        List<ParamReplacement> outputSubst = new ArrayList<ParamReplacement>();
-        if (!getCachedReport(viewContext, outputSubst))
-        {
-            RScriptRunner runner = createScriptRunner(this, viewContext);
-            runner.runScript(view, outputSubst);
-            cacheResults(viewContext, outputSubst);
-        }
-        renderViews(this, view, outputSubst, false);
-
-        return view;
+        // bypass the normal discovery mechanism
+        return mgr.getEngineByExtension("r");
     }
 
-    protected void cacheResults(ViewContext context, List<ParamReplacement> replacements)
+    protected String getScriptProlog(ViewContext context)
     {
-        if (getDescriptor().getReportId() != -1 &&
-            BooleanUtils.toBoolean(getDescriptor().getProperty(ReportDescriptor.Prop.cached)))
-        {
-            synchronized(_cachedReportURLMap)
-            {
-                File cacheDir = getCacheDir();
-                try {
-                    File mapFile = new File(cacheDir, SUBSTITUTION_MAP);
-                    for (ParamReplacement param : replacements)
-                    {
-                        File src = param.getFile();
-                        File dst = new File(cacheDir, src.getName());
+        StringBuffer labkey = new StringBuffer();
+        labkey.append("labkey.data <- read.table(\"${input_data}\", header=TRUE, sep=\"\\t\", quote=\"\", comment.char=\"\")\n" +
+            "labkey.url <- function (controller, action, list){paste(labkey.url.base,controller,labkey.url.path,action,\".view?\",paste(names(list),list,sep=\"=\",collapse=\"&\"),sep=\"\")}\n" +
+            "labkey.resolveLSID <- function(lsid){paste(labkey.url.base,\"experiment/resolveLSID.view?lsid=\",lsid,sep=\"\");}\n");
+        labkey.append("labkey.user.email=\"" + context.getUser().getEmail() + "\"\n");
 
-                        if (dst.createNewFile())
-                        {
-                            FileUtil.copyFile(src, dst);
-                            if (param.getId().equals(ConsoleOutput.ID))
-                            {
-                                BufferedWriter bw = null;
-                                try {
-                                    bw = new BufferedWriter(new FileWriter(dst, true));
-                                    bw.write("\nLast cached update : " + DateUtil.formatDateTime() + "\n");
-                                }
-                                finally
-                                {
-                                    if (bw != null)
-                                        try {bw.close();} catch (IOException ioe) {}
-                                }
-                            }
-                            param.setFile(dst);
-                        }
-                    }
-                    ParamReplacementSvc.get().toFile(replacements, mapFile);
-                    _cachedReportURLMap.put(getDescriptor().getReportId(), getCacheURL(context.getActionURL()));
-                }
-                catch (Exception e)
+        ActionURL url = context.getActionURL();
+        labkey.append("labkey.url.path=\"" + url.getExtraPath() + "/\"\n");
+        labkey.append("labkey.url.base=\"" + url.getBaseServerURI() + context.getContextPath() + "/\"\n");
+
+        // url parameters
+        Pair<String, String>[] params = url.getParameters();
+        if (params.length > 0)
+        {
+            String sep = "";
+            labkey.append("labkey.url.params <- list(");
+            for (Pair<String, String> param : params)
+            {
+                labkey.append(sep);
+                labkey.append("\"");
+                labkey.append(param.getKey());
+                labkey.append("\"");
+                labkey.append("=");
+                labkey.append("\"");
+                labkey.append(param.getValue());
+                labkey.append("\"");
+                sep = ",";
+            }
+            labkey.append(")\n");
+        }
+        else
+            labkey.append("labkey.url.params <- NULL\n");
+
+        // session information
+        if (context.getRequest() != null)
+        {
+            labkey.append("labkey.sessionCookieName = \"JSESSIONID\"\n");
+            labkey.append("labkey.sessionCookieContents = \"");
+            labkey.append(PageFlowUtil.getCookieValue(context.getRequest().getCookies(), "JSESSIONID", ""));
+            labkey.append("\"\n");
+        }
+        return labkey.toString();
+    }
+
+    protected String createScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv) throws Exception
+    {
+        String script = super.createScript(context, outputSubst, inputDataTsv);
+        File inputData = new File(getReportDir(), DATA_INPUT);
+
+        /**
+         * for each included script, the source script is process for input/output replacements
+         * and the result copied into this scripts working directory so it can be loaded via the source command
+         */
+        for (String includedReport : ((RReportDescriptor)getDescriptor()).getIncludedReports())
+        {
+            Report report = ReportService.get().getReport(NumberUtils.toInt(includedReport));
+
+            if (validateSharedPermissions(context, report) && RReport.class.isAssignableFrom(report.getClass()))
+            {
+                final String rName = report.getDescriptor().getProperty(ReportDescriptor.Prop.reportName);
+                final String rScript = report.getDescriptor().getProperty(RReportDescriptor.Prop.script);
+                final File rScriptFile = new File(getReportDir(), rName + ".R");
+
+                String includedScript = processScript(context, rScript, inputData, outputSubst);
+
+                try
                 {
-                    throw new RuntimeException(e);
+                    PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(rScriptFile)));
+                    pw.write(includedScript);
+                    pw.close();
+                }
+                catch(IOException e)
+                {
+                    ExceptionUtil.logExceptionToMothership(null, e);
                 }
             }
         }
+        return script;
     }
 
-    public void clearCache()
+    private boolean validateSharedPermissions(ViewContext context, Report report)
     {
-        File cacheDir = getCacheDir();
-        if (cacheDir.exists())
-            FileUtil.deleteDir(cacheDir);
-    }
-
-    protected boolean getCachedReport(ViewContext context, List<ParamReplacement> replacements)
-    {
-        if (getDescriptor().getReportId() != -1 &&
-            BooleanUtils.toBoolean(getDescriptor().getProperty(ReportDescriptor.Prop.cached)))
+        if (report != null)
         {
-            synchronized(_cachedReportURLMap)
+            if (ReportUtil.canReadReport(report, context.getUser()))
             {
-                if (urlDirty(context.getActionURL()))
+                // if it's not in this container, check that it was shared
+                if (!context.getContainer().getId().equals(report.getDescriptor().getContainerId()))
                 {
-                    clearCache();
-                    return false;
+                    return ReportUtil.isReportInherited(context.getContainer(), report);
                 }
-                File cacheDir = getCacheDir();
-                try {
-                    for (ParamReplacement param : ParamReplacementSvc.get().fromFile(new File(cacheDir, SUBSTITUTION_MAP)))
-                    {
-                        replacements.add(param);
-                    }
-                    return !replacements.isEmpty();
-                }
-                catch (Exception e)
-                {
-                    throw new RuntimeException(e);
-                }
+                else
+                    return true;
             }
         }
         return false;
-    }
-
-    private ActionURL getCacheURL(ActionURL url)
-    {
-        return url.clone().deleteParameter(RunReportView.CACHE_PARAM).
-                deleteParameter(RunReportView.TAB_PARAM);
-    }
-
-    /**
-     * Detect whether the URL params have changed since this cached report was last rendered.
-     */
-    private boolean urlDirty(ActionURL url)
-    {
-        ActionURL cachedURL = _cachedReportURLMap.get(getDescriptor().getReportId());
-        if (cachedURL != null)
-        {
-            Map cur = PageFlowUtil.mapFromQueryString(getCacheURL(url).getQueryString());
-            Map prev = PageFlowUtil.mapFromQueryString(cachedURL.getQueryString());
-
-            return !cur.equals(prev);
-        }
-        return true;
-    }
-
-    public void beforeSave(ViewContext context)
-    {
-        super.beforeSave(context);
-        clearCache();
-    }
-
-    public void beforeDelete(ViewContext context)
-    {
-        try {
-            // clean up any temp files
-            deleteReportDir();
-            AttachmentService.get().deleteAttachments(this);
-            super.beforeDelete(context);
-        }
-        catch (SQLException se)
-        {
-            throw new RuntimeException(se);
-        }
-    }
-
-    public static void renderViews(RReport report, VBox view, List<ParamReplacement> parameters, boolean deleteTempFiles)
-    {
-        String sections = (String)HttpView.currentContext().get(renderParam.showSection.name());
-        List<String> sectionNames = Collections.emptyList();
-        if (sections != null)
-            sectionNames = Arrays.asList(sections.split("&"));
-
-        ViewContext context = HttpView.currentContext();
-        for (ParamReplacement param : parameters)
-        {
-            if (isViewable(param, sectionNames))
-            {
-                // don't show headers if not all sections are being rendered
-                if (!sectionNames.isEmpty())
-                    param.setHeaderVisible(false);
-                param.setReport(report);
-                view.addView(param.render(context));
-            }
-        }
-        if (!BooleanUtils.toBoolean(report.getDescriptor().getProperty(RReportDescriptor.Prop.runInBackground)))
-            view.addView(new TempFileCleanup(report.getReportDir().getAbsolutePath()));
-    }
-
-    private static boolean isViewable(ParamReplacement param, List<String> sectionNames)
-    {
-        File data = param.getFile();
-        if (data.exists())
-        {
-            if (!sectionNames.isEmpty())
-                return sectionNames.contains(param.getName());
-            return true;
-        }
-        return false;
-    }
-
-    public HttpView renderDataView(ViewContext context) throws Exception
-    {
-        return createQueryView(context, getDescriptor());
     }
 
     public HttpView getRunReportView(ViewContext context) throws Exception
     {
         return new RunRReportView(this);
-    }
-
-    protected QueryView createQueryView(ViewContext context, ReportDescriptor descriptor) throws Exception
-    {
-        final String schemaName = descriptor.getProperty(QueryParam.schemaName.toString());
-        final String queryName = descriptor.getProperty(QueryParam.queryName.toString());
-        final String viewName = descriptor.getProperty(QueryParam.viewName.toString());
-        final String dataRegionName = descriptor.getProperty(QueryParam.dataRegionName.toString());
-
-        if (context != null && schemaName != null)
-        {
-            UserSchema base = (UserSchema) DefaultSchema.get(context.getUser(), context.getContainer()).getSchema(schemaName);
-            QuerySettings settings = base.getSettings(context, dataRegionName);
-            settings.setSchemaName(schemaName);
-            settings.setQueryName(queryName);
-            settings.setViewName(viewName);
-            // need to reset the report id since we want to render the data grid, not the report
-            settings.setReportId(-1);
-
-            UserSchema schema = base.createView(context, settings).getSchema();
-            return new ReportQueryView(schema, settings);
-        }
-        return null;
-    }
-
-    private boolean validateScript(String text, List<String> errors)
-    {
-        if (StringUtils.isEmpty(text))
-        {
-            errors.add("An R script must be provided.");
-            return false;
-        }
-
-        Matcher m = scriptPattern.matcher(text);
-        while (m.find())
-        {
-            String value = m.group(1);
-            if (!isValidReplacement(value))
-            {
-                errors.add("Invalid template, the replacement parameter: " + value + " is unknown.");
-                return false;
-            }
-
-        }
-        return true;
-    }
-
-    private boolean isValidReplacement(String value)
-    {
-        if (INPUT_FILE_TSV.equals(value)) return true;
-
-        return ParamReplacementSvc.get().getHandler(value) != null;
-    }
-
-    public static File getFile(RReport report, RReport.reportFile type, String name)
-    {
-        switch (type)
-        {
-            case script:
-                return new File(report.getReportDir(), "script.R");
-            case inputData:
-                return new File(report.getReportDir(), RReport.FILE_PREFIX  + RReport.DATA_FILE_SUFFIX );
-            case console:
-                return new File(report.getReportDir(), "script.Rout");
-            case output:
-                return new File(report.getReportDir(), "output.out");
-            case substitutionMap:
-                return new File(report.getReportDir(), RReport.SUBSTITUTION_MAP);
-            case includedScript:
-                return new File(report.getReportDir(), name);
-        }
-        return null;
-    }
-
-    /*
-     * Create the .tsv associated with the data grid for this report.
-     */
-    public File createInputDataFile(ViewContext context) throws Exception
-    {
-        return DefaultScriptRunner.createInputDataFile(this, context);
-    }
-
-    protected File getTempRoot()
-    {
-        File tempRoot;
-        String tempFolderName = getTempFolder();
-        boolean isPipeline = BooleanUtils.toBoolean(getDescriptor().getProperty(RReportDescriptor.Prop.runInBackground));
-
-        if (StringUtils.isEmpty(tempFolderName))
-        {
-            try {
-                if (isPipeline && getDescriptor().getContainerId() != null)
-                {
-                    Container c = ContainerManager.getForId(getDescriptor().getContainerId());
-                    PipeRoot root = PipelineService.get().findPipelineRoot(c);
-                    tempRoot = root.resolvePath(REPORT_DIR);
-                    if (!tempRoot.exists())
-                        tempRoot.mkdirs();
-                }
-                else
-                {
-                    File tempDir = new File(System.getProperty("java.io.tmpdir"));
-                    tempRoot = new File(tempDir, REPORT_DIR);
-                    if (!tempRoot.exists())
-                        tempRoot.mkdirs();
-                }
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException("Error setting up temp directory", e);
-            }
-        }
-        else
-        {
-            tempRoot = new File(tempFolderName);
-        }
-        return tempRoot;
-    }
-
-    protected File getCacheDir()
-    {
-        File cacheDir = new File(getTempRoot(), "Report_" + getDescriptor().getReportId() + File.separator + CACHE_DIR);
-        if (!cacheDir.exists())
-            cacheDir.mkdirs();
-
-        return cacheDir;
-    }
-
-    public File getReportDir()
-    {
-        boolean isPipeline = BooleanUtils.toBoolean(getDescriptor().getProperty(RReportDescriptor.Prop.runInBackground));
-        if (_tempFolder == null || _tempFolderPipeline != isPipeline)
-        {
-            File tempRoot = getTempRoot();
-            if (isPipeline)
-                _tempFolder = new File(tempRoot, "Report_" + getDescriptor().getReportId());
-            else
-                _tempFolder = new File(tempRoot.getAbsolutePath() + File.separator + "Report_" + getDescriptor().getReportId(), String.valueOf(Thread.currentThread().getId()));
-
-            _tempFolderPipeline = isPipeline;
-            if (!_tempFolder.exists())
-                _tempFolder.mkdirs();
-        }
-        return _tempFolder;
-    }
-
-    public void deleteReportDir()
-    {
-        boolean isPipeline = BooleanUtils.toBoolean(getDescriptor().getProperty(RReportDescriptor.Prop.runInBackground));
-        try {
-            File dir = getReportDir();
-            if (!isPipeline)
-                dir = dir.getParentFile();
-
-            FileUtil.deleteDir(dir);
-        }
-        finally
-        {
-            _tempFolder = null;
-        }
-    }
-
-    public String getEntityId()
-    {
-        return getDescriptor().getEntityId();
-    }
-
-    public String getContainerId()
-    {
-        return getDescriptor().getContainerId();
-    }
-
-    public void setAttachments(Collection<Attachment> attachments)
-    {
-    }
-
-    public ResultSet generateResultSet(ViewContext context) throws Exception
-    {
-        ReportDescriptor descriptor = getDescriptor();
-        QueryView view = createQueryView(context, descriptor);
-        if (view != null)
-        {
-            DataView dataView = view.createDataView();
-            DataRegion rgn = dataView.getDataRegion();
-            rgn.setMaxRows(0);
-            RenderContext ctx = dataView.getRenderContext();
-
-            // temporary code until we add a more generic way to specify a filter or grouping on the chart
-            final String filterParam = descriptor.getProperty(ReportDescriptor.Prop.filterParam);
-            if (!StringUtils.isEmpty(filterParam))
-            {
-                final String filterValue = (String)context.get(filterParam);
-                if (filterValue != null)
-                {
-                    SimpleFilter filter = new SimpleFilter();
-                    filter.addCondition(filterParam, filterValue, CompareType.EQUAL);
-
-                    ctx.setBaseFilter(filter);
-                }
-            }
-            return rgn.getResultSet(ctx);
-        }
-        return null;
-    }
-
-    public ActionURL getRunReportURL(ViewContext context)
-    {
-        return ReportUtil.getRunReportURL(context, this);
     }
 
     public ActionURL getEditReportURL(ViewContext context)
@@ -604,21 +264,6 @@ public class RReport extends AbstractReport implements AttachmentParent, Report.
             return ReportUtil.getRunReportURL(context, this).addParameter(TabStripView.TAB_PARAM, RunRReportView.TAB_SOURCE);
         }
         return null;
-    }
-
-    protected static class TempFileCleanup extends HttpView
-    {
-        private String _path;
-
-        public TempFileCleanup(String path)
-        {
-            _path = path;
-        }
-
-        protected void renderInternal(Object model, PrintWriter out) throws Exception
-        {
-            FileUtil.deleteDir(new File(_path));
-        }
     }
 }
 
