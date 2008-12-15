@@ -27,12 +27,11 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.study.PlateTemplate;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.query.RunDataQueryView;
 import org.labkey.api.study.query.RunListQueryView;
 import org.labkey.api.util.DateUtil;
@@ -47,6 +46,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.*;
 
 /**
@@ -664,6 +664,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         if (targetStudyColumn == null)
             return Collections.emptySet();
 
+        // First get all the containers which were specified when uploading
         Set<Container> result = new HashSet<Container>();
         for (ExpRun run : protocol.getExpRuns())
         {
@@ -683,6 +684,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 throw UnexpectedException.wrap(e);
             }
         }
+
+        // Get the containers that have datasets that we copied into
+        result.addAll(StudyService.get().getStudyContainersForAssayProtocol(protocol.getRowId()));
+
         return result;
     }
 
@@ -1034,6 +1039,83 @@ public abstract class AbstractAssayProvider implements AssayProvider
             designerURL.addParameter("copy", "true");
         designerURL.addParameter("providerName", getName());
         return designerURL;
+    }
+
+    /**
+     * Adds columns to an assay data table, providing a link to any datasets that have
+     * had data copied into them.
+     * @return The names of the added columns that should be visible
+     */
+    protected Set<String> addCopiedToStudyColumns(AbstractTableInfo table, ExpProtocol protocol, User user, String keyColumnName, boolean setVisibleColumns)
+    {
+        Set<String> visibleColumnNames = new HashSet<String>();
+        int datasetIndex = 0;
+        Set<String> usedColumnNames = new HashSet<String>();
+        for (final Container studyContainer : getAllAssociatedStudyContainers(protocol))
+        {
+            if (!studyContainer.hasPermission(user, ACL.PERM_READ))
+                continue;
+
+            // We need the dataset ID as a separate column in order to display the URL
+            String datasetIdSQL = "(SELECT sd.datasetid FROM study.StudyData sd " +
+                "WHERE sd.container = '" + studyContainer.getId() + "' AND " +
+                "sd._key = CAST(" + ExprColumn.STR_TABLE_ALIAS + "." + keyColumnName + " AS " +
+                table.getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR) +
+                "(200)))";
+
+            final ExprColumn datasetColumn = new ExprColumn(table,
+                "dataset" + datasetIndex++,
+                new SQLFragment(datasetIdSQL),
+                Types.INTEGER);
+            datasetColumn.setIsHidden(true);
+            table.addColumn(datasetColumn);
+
+            String studyCopiedSql = "(SELECT CASE WHEN " + datasetIdSQL +
+                " IS NOT NULL THEN 'copied' ELSE NULL END)";
+
+            String studyName = StudyService.get().getStudyName(studyContainer);
+            if (studyName == null)
+                continue; // No study in that folder
+            String studyColumnName = "Copied to " + studyName;
+
+            // column names must be unique. Prevent collisions
+            while (usedColumnNames.contains(studyColumnName))
+                studyColumnName = studyColumnName + datasetIndex;
+            usedColumnNames.add(studyColumnName);
+            final String finalStudyColumnName = studyColumnName;
+
+            ExprColumn studyCopiedColumn = new ExprColumn(table,
+                studyColumnName,
+                new SQLFragment(studyCopiedSql),
+                Types.VARCHAR);
+
+            studyCopiedColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+            {
+                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                {
+                    return new StudyDisplayColumn(finalStudyColumnName, studyContainer, datasetColumn);
+                }
+            });
+
+            table.addColumn(studyCopiedColumn);
+
+            visibleColumnNames.add(studyCopiedColumn.getName());
+        }
+        if (setVisibleColumns)
+        {
+            List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
+            for (FieldKey key : table.getDefaultVisibleColumns())
+            {
+                visibleColumns.add(key);
+            }
+            for (String columnName : visibleColumnNames)
+            {
+                visibleColumns.add(new FieldKey(null, columnName));
+            }
+            table.setDefaultVisibleColumns(visibleColumns);
+        }
+
+        return visibleColumnNames;
     }
 
 }

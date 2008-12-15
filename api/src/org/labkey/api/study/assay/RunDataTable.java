@@ -16,18 +16,15 @@
 
 package org.labkey.api.study.assay;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRunTable;
 import org.labkey.api.query.*;
-import org.labkey.api.security.ACL;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.view.ActionURL;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -103,94 +100,15 @@ public class RunDataTable extends FilteredTable
         for (PropertyDescriptor prop : provider.getUploadSetColumns(protocol))
             visibleColumns.add(FieldKey.fromParts("Run", "Run Properties", prop.getName()));
 
-        // Add columns for each study that have data that we may have copied into
-        int datasetIndex = 0;
-        Set<String> usedColumnNames = new HashSet<String>();
-        for (final Container studyContainer : provider.getAllAssociatedStudyContainers(protocol))
+
+        Set<String> studyColumnNames = ((AbstractAssayProvider)provider).addCopiedToStudyColumns(this, protocol, schema.getUser(), "objectId", false);
+        for (String columnName : studyColumnNames)
         {
-            if (!studyContainer.hasPermission(schema.getUser(), ACL.PERM_READ))
-                continue;
-
-            // We need the dataset ID as a separate column in order to display the URL
-            String datasetIdSQL = "(SELECT sd.datasetid FROM study.StudyData sd " +
-                "WHERE sd.container = '" + studyContainer.getId() + "' AND " +
-                "sd._key = CAST(" + ExprColumn.STR_TABLE_ALIAS + ".objectid AS " +
-                getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR) +
-                "(200)))";
-
-            final ExprColumn datasetColumn = new ExprColumn(this,
-                "dataset" + datasetIndex++,
-                new SQLFragment(datasetIdSQL),
-                Types.INTEGER);
-            datasetColumn.setIsHidden(true);
-            addColumn(datasetColumn);
-
-            String studyCopiedSql = "(SELECT CASE WHEN " + datasetIdSQL +
-                " IS NOT NULL THEN 'copied' ELSE NULL END)";
-
-            String studyName = StudyService.get().getStudyName(studyContainer);
-            if (studyName == null)
-                continue; // No study in that folder
-            String studyColumnName = "Copied to " + studyName;
-
-            // column names must be unique. Prevent collisions
-            while (usedColumnNames.contains(studyColumnName))
-                studyColumnName = studyColumnName + datasetIndex;
-            usedColumnNames.add(studyColumnName);
-            final String finalStudyColumnName = studyColumnName;
-
-            ExprColumn studyCopiedColumn = new ExprColumn(this,
-                studyColumnName,
-                new SQLFragment(studyCopiedSql),
-                Types.VARCHAR);
-
-            studyCopiedColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-            {
-                public DisplayColumn createRenderer(ColumnInfo colInfo)
-                {
-                    return new StudyDisplayColumn(finalStudyColumnName, studyContainer, datasetColumn);
-                }
-            });
-
-            addColumn(studyCopiedColumn);
-
-            visibleColumns.add(new FieldKey(null, studyCopiedColumn.getName()));
+            visibleColumns.add(new FieldKey(null, columnName));
         }
 
         setDefaultVisibleColumns(visibleColumns);
     }
 
-    private static class StudyDisplayColumn extends DataColumn
-    {
-        private final String title;
-        private final Container container;
-
-        public StudyDisplayColumn(String title, Container container, ColumnInfo datasetIdColumn)
-        {
-            super(datasetIdColumn);
-            this.title = title;
-            this.container = container;
-        }
-
-        @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-        {
-            Integer datasetId = (Integer)getBoundColumn().getValue(ctx);
-            if (datasetId != null)
-            {
-                ActionURL url = StudyService.get().getDatasetURL(container, datasetId.intValue());
-
-                out.write("<a href=\"");
-                out.write(url.getLocalURIString());
-                out.write("\">copied</a>");
-            }
-        }
-
-        @Override
-        public void renderTitle(RenderContext ctx, Writer out) throws IOException
-        {
-            out.write(title);
-        }
-    }
 }
  

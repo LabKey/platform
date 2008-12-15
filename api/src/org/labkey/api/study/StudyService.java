@@ -28,6 +28,7 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -132,6 +133,11 @@ public class StudyService
 
         @Nullable
         public String getStudyName(Container container);
+
+        /**
+         * Returns the set of containers which have ever had data copied from the provided protocol
+         */
+        public Set<Container> getStudyContainersForAssayProtocol(int protocolId);
     }
 
     public static void register(Service serviceImpl)
