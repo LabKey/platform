@@ -58,6 +58,8 @@
 </style>
 
 <script type="text/javascript">
+    var startTime;
+
     function getXmlHttpRequest()
     {
         if(window.XMLHttpRequest)
@@ -70,6 +72,7 @@
 
     function getUrl()
     {
+        startTime = new Date();
         var url = document.getElementById("txtUrlGet").value;
         var req = getXmlHttpRequest();
         if(null == url || url.length == 0)
@@ -104,8 +107,31 @@
         }
     }
 
+    function updateStats(responseText)
+    {
+        var endTime = new Date();
+        var ms = endTime - startTime;
+        var respTime = document.getElementById("respTime");
+        if (ms < 1000)
+            respTime.innerHTML = "" + ms + "ms";
+        else
+            respTime.innerHTML = "" + (ms/1000) + "s";
+
+        var respSize = document.getElementById("respSize");
+        var sizeBytes = responseText.length;
+        var units = ['bytes', 'kb', 'mb', 'gb'];
+        var unitIndex = 0;
+        for (unitIndex = 0; unitIndex < units.length && sizeBytes > 1000; unitIndex++)
+            sizeBytes /= 1000;
+        // shift left, round to nearest int, shift right (to get two decimal places):
+        var truncated = Math.round(sizeBytes*100)/100;
+        respSize.innerHTML = '' + truncated + units[unitIndex];
+        startTime = undefined;
+    }
+
     function onError(message, responseText)
     {
+        updateStats(responseText);
         setError(message);
         var resp = document.getElementById("lblResponse");
         if(null != resp && null != responseText)
@@ -117,6 +143,7 @@
         var resp = document.getElementById("lblResponse");
         if(null != resp)
         {
+            updateStats(responseText);
             resp.innerHTML = responseText;
             setStatus("Request Complete.");
         }
@@ -126,6 +153,7 @@
 
     function postUrl()
     {
+        startTime = new Date();
         var url = document.getElementById("txtUrlPost").value;
         var req = getXmlHttpRequest();
         var postMsg = document.getElementById("txtPost").value;
@@ -228,7 +256,13 @@
 </table>
 <table width="100%">
     <tr>
-        <td>Response:</td>
+        <td>Response size: <span id="respSize" /></td>
+    </tr>
+    <tr>
+        <td>Response time: <span id="respTime" /></td>
+    </tr>
+    <tr>
+        <td>Response body:</td>
     </tr>
     <tr>
         <td width="100%"><pre id="lblResponse" class="response">&nbsp;</pre></td>
