@@ -16,19 +16,16 @@
  */
 %>
 <%@ page import="org.apache.commons.lang.StringUtils"%>
-<%@ page import="org.labkey.api.security.SecurityManager"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.admin.AdminUrls"%>
+<%@ page import="org.labkey.api.reports.report.RReport"%>
+<%@ page import="org.labkey.api.security.SecurityManager" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.query.reports.ReportsController" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.reports.report.DefaultScriptRunner" %>
-<%@ page import="org.labkey.api.reports.report.RServeScriptRunner" %>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.reports.report.RReport" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -105,18 +102,6 @@
         <tr><td class="labkey-form-label">R&nbsp;program:</td><td><input name="programPath" style="width:400px" value="<%=StringUtils.trimToEmpty(bean.getProgramPath())%>"></td><td></td></tr>
         <tr><td class="labkey-form-label">R&nbsp;command:</td><td><input name="command" style="width:400px" value="<%=StringUtils.trimToEmpty(h(bean.getCommand()))%>"></td><td></td></tr>
 
-<%--
-        <tr><td></td><td><i>Scripts can be executed by running R in batch mode or by using an RServe server:</i><br/></td></tr>
-        <tr><td class="labkey-form-label">Script&nbsp;execution:</td><td><input name="scriptHandler" value="<%=DefaultScriptRunner.ID%>" type="radio" <%=DefaultScriptRunner.ID.equals(bean.getScriptHandler()) ? "checked" : ""%>>
-            Batch mode.<%=PageFlowUtil.helpPopup("Batch mode", "A new instance of R is started up in batch mode each " +
-                "time a script is executed. Because the instance of R is run using the same privileges as the LabKey server, " +
-                "care must be taken to ensure that security settings below are set accordingly.")%></td><td></td></tr>
-        <tr><td></td><td><input name="scriptHandler" value="<%=RServeScriptRunner.ID%>" type="radio" <%=RServeScriptRunner.ID.equals(bean.getScriptHandler()) ? "checked" : ""%>>
-            RServe server.<img src="<%=HttpView.currentContext().getContextPath() + "/_images/beta.gif"%>"><%=PageFlowUtil.helpPopup("RServe server (Beta)", "RServe is a TCP/IP based server that can interact with R. " +
-                "It can improve execution performance because the server does not need to be started for every script " +
-                "that is run. Additionally, it can be configured on Unix systems to run under a specified group or user ID. RServe " +
-                "is a separate R library that must be installed by your R administrator.")%></td><td></td></tr>
---%>
         <tr><td>&nbsp;</td></tr>
 
         <tr><td></td><td><i>Specify the permissions required in order to create R Views:</i><br/></td></tr>
@@ -145,7 +130,6 @@
             the <a target="_blank" href="http://www.r-project.org/">R Project website</a>.</i>
         </tr>
     </table>
-    <input name="scriptHandler" type="hidden" value="<%=DefaultScriptRunner.ID%>" >
 </form>
 
 <script type="text/javascript">

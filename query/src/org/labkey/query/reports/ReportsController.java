@@ -895,7 +895,7 @@ public class ReportsController extends SpringActionController
             Report report = form.getReport();
             if (report instanceof RReport)
             {
-                File file = DefaultScriptRunner.createInputDataFile((RReport)report, getViewContext());
+                File file = ((RReport)report).createInputDataFile(getViewContext());
                 if (file.exists())
                 {
                     PageFlowUtil.streamFile(getViewContext().getResponse(), file, true);
