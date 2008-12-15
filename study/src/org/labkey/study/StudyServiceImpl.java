@@ -37,6 +37,7 @@ import org.labkey.study.query.*;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -45,6 +46,10 @@ import java.util.*;
  */
 public class StudyServiceImpl implements StudyService.Service
 {
+    public static final StudyServiceImpl INSTANCE = new StudyServiceImpl();
+
+    private StudyServiceImpl() {}
+
     public int getDatasetId(Container c, String datasetLabel)
     {
         Study study = StudyManager.getInstance().getStudy(c);
@@ -567,5 +572,31 @@ public class StudyServiceImpl implements StudyService.Service
     {
         Study study = StudyManager.getInstance().getStudy(container);
         return study == null ? null : study.getLabel();
+    }
+
+    public Set<Container> getStudyContainersForAssayProtocol(int protocolId)
+    {
+        TableInfo datasetTable = StudySchema.getInstance().getTableInfoDataSet();
+        SimpleFilter filter = new SimpleFilter("protocolid", new Integer(protocolId));
+        Set<Container> containers = new HashSet<Container>();
+        ResultSet rs = null;
+        try
+        {
+            rs = Table.select(datasetTable, Collections.singleton("container"), filter, null);
+            while (rs.next())
+            {
+                String containerId = rs.getString(1);
+                containers.add(ContainerManager.getForId(containerId));
+            }
+        }
+        catch (SQLException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+        finally
+        {
+            if (rs != null) try {rs.close();} catch (SQLException se) {}
+        }
+        return containers;
     }
 }
