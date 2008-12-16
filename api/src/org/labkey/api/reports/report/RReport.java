@@ -202,25 +202,29 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
          */
         for (String includedReport : ((RReportDescriptor)getDescriptor()).getIncludedReports())
         {
-            Report report = ReportService.get().getReport(NumberUtils.toInt(includedReport));
-
-            if (validateSharedPermissions(context, report) && RReport.class.isAssignableFrom(report.getClass()))
+            ReportIdentifier reportId = ReportService.get().getReportIdentifier(includedReport);
+            if (reportId != null)
             {
-                final String rName = report.getDescriptor().getProperty(ReportDescriptor.Prop.reportName);
-                final String rScript = report.getDescriptor().getProperty(RReportDescriptor.Prop.script);
-                final File rScriptFile = new File(getReportDir(), rName + ".R");
+                Report report = reportId.getReport();
 
-                String includedScript = processScript(context, rScript, inputData, outputSubst);
+                if (validateSharedPermissions(context, report) && RReport.class.isAssignableFrom(report.getClass()))
+                {
+                    final String rName = report.getDescriptor().getProperty(ReportDescriptor.Prop.reportName);
+                    final String rScript = report.getDescriptor().getProperty(RReportDescriptor.Prop.script);
+                    final File rScriptFile = new File(getReportDir(), rName + ".R");
 
-                try
-                {
-                    PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(rScriptFile)));
-                    pw.write(includedScript);
-                    pw.close();
-                }
-                catch(IOException e)
-                {
-                    ExceptionUtil.logExceptionToMothership(null, e);
+                    String includedScript = processScript(context, rScript, inputData, outputSubst);
+
+                    try
+                    {
+                        PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(rScriptFile)));
+                        pw.write(includedScript);
+                        pw.close();
+                    }
+                    catch(IOException e)
+                    {
+                        ExceptionUtil.logExceptionToMothership(null, e);
+                    }
                 }
             }
         }

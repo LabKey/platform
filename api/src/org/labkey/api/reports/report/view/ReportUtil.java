@@ -87,8 +87,8 @@ public class ReportUtil
             url.replaceParameter("redirectUrl", bean.getRedirectUrl());
         if (bean.getDataRegionName() != null)
             url.replaceParameter(QueryParam.dataRegionName.toString(), bean.getDataRegionName());
-        if (bean.getReportId() != -1)
-            url.replaceParameter(ReportDescriptor.Prop.reportId, String.valueOf(bean.getReportId()));
+        if (bean.getReportId() != null)
+            url.replaceParameter(ReportDescriptor.Prop.reportId, bean.getReportId().toString());
 
         return url;
     }
@@ -100,7 +100,7 @@ public class ReportUtil
         if (report != null)
         {
             ActionURL filterUrl = RenderContext.getSortFilterURLHelper(context);
-            url.addParameter(ReportDescriptor.Prop.reportId, String.valueOf(report.getDescriptor().getReportId()));
+            url.addParameter(ReportDescriptor.Prop.reportId, report.getDescriptor().getReportId().toString());
             for (Pair<String, String> param : filterUrl.getParameters())
                 url.addParameter(param.getKey(), param.getValue());
         }
@@ -113,8 +113,8 @@ public class ReportUtil
 
         if (report != null)
         {
-            if (report.getDescriptor().getReportId() != -1)
-                url.addParameter(ReportDescriptor.Prop.reportId, String.valueOf(report.getDescriptor().getReportId()));
+            if (null != report.getDescriptor().getReportId())
+                url.addParameter(ReportDescriptor.Prop.reportId, report.getDescriptor().getReportId().toString());
             if (context.getActionURL().getParameter("redirectUrl") != null)
                 url.addParameter("redirectUrl", context.getActionURL().getParameter("redirectUrl"));
             else
@@ -132,7 +132,7 @@ public class ReportUtil
 
         if (report != null)
         {
-            url.addParameter(ReportDescriptor.Prop.reportId, String.valueOf(report.getDescriptor().getReportId()));
+            url.addParameter(ReportDescriptor.Prop.reportId, report.getDescriptor().getReportId().toString());
             url.addParameter(FORWARD_URL, forwardURL.toString());
         }
         return url;
@@ -271,7 +271,7 @@ public class ReportUtil
 
     public static boolean isReportInherited(Container c, Report report)
     {
-        if (report.getDescriptor().getReportId() != -1)
+        if (null != report.getDescriptor().getReportId())
         {
             if ((report.getDescriptor().getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0)
             {
@@ -298,7 +298,7 @@ public class ReportUtil
 
                 record.put("name", descriptor.getReportName());
                 record.put("displayName", "<a href=\"" + r.getRunReportURL(context) + "\">" + descriptor.getReportName() + "</a>");
-                record.put("reportId", String.valueOf(descriptor.getReportId()));
+                record.put("reportId", descriptor.getReportId().toString());
                 record.put("query", StringUtils.defaultIfEmpty(descriptor.getProperty(ReportDescriptor.Prop.queryName), "Unknown"));
                 record.put("schema", descriptor.getProperty(ReportDescriptor.Prop.schemaName));
                 record.put("owner", createdBy != null ? createdBy.getDisplayName(context) : String.valueOf(descriptor.getCreatedBy()));

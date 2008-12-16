@@ -25,6 +25,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.Arrays;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.security.MessageDigest;
@@ -542,5 +543,31 @@ quickScan:
         {
             return f;
         }
+    }
+
+    private static char[] illegalChars = {'/','\\',':','?','<','>','*','|','"','^'};
+
+    public static String makeLegalName(String name)
+    {
+        //limit to 255 chars (FAT and OS X)
+        //replace illegal chars
+        //can't end with space (windows)
+        //can't end with period (windows)
+        char[] ret = new char[Math.min(255, name.length())];
+        for(int idx = 0; idx < ret.length; ++idx)
+        {
+            char ch = name.charAt(idx);
+            if(ch == '/' || ch == '?' || ch == '<' || ch == '>' || ch == '\\' || ch == ':'
+                    || ch == '*' || ch == '|' || ch == '"' || ch == '^')
+            {
+                ch = '_';
+            }
+
+            if(idx == name.length() - 1 && (ch == ' ' || ch == '.'))
+                ch = '_';
+
+            ret[idx] = ch;
+        }
+        return new String(ret);
     }
 }

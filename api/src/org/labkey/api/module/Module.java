@@ -216,6 +216,13 @@ public interface Module
     public List<ReportDescriptor> getReportDescriptors(String key);
 
     /**
+     * Returns the report descriptor for the given path
+     * @param path The report path (key + report name)
+     * @return The report descriptor or null if not found
+     */
+    public ReportDescriptor getReportDescriptor(String path);
+
+    /**
      * Modules can provide a set ModuleResourceLoaders which will be used
      * to add modules dependencies between modules and load resources during initialization.
      * @return The set of ModuleResourceLoaders this module provides.

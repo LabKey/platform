@@ -23,6 +23,8 @@ import org.apache.commons.beanutils.converters.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.reports.report.ReportIdentifierConverter;
+import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.common.tools.AbstractConvertHelper;
 import org.springframework.beans.PropertyEditorRegistrar;
 import org.springframework.beans.PropertyEditorRegistry;
@@ -91,6 +93,7 @@ public class ConvertHelper extends AbstractConvertHelper implements PropertyEdit
         _register(new LenientDateConverter(), java.util.Date.class);
         _register(new ColorConverter(), Color.class);
         _register(new StringArrayConverter(), String[].class);
+        _register(new ReportIdentifierConverter(), ReportIdentifier.class);
     }
 
 

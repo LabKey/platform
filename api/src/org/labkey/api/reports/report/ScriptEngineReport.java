@@ -90,7 +90,7 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
             settings.setQueryName(queryName);
             settings.setViewName(viewName);
             // need to reset the report id since we want to render the data grid, not the report
-            settings.setReportId(-1);
+            settings.setReportId(null);
 
             UserSchema schema = base.createView(context, settings).getSchema();
             return new ReportQueryView(schema, settings);

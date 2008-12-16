@@ -25,10 +25,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.RReport;
-import org.labkey.api.reports.report.RReportDescriptor;
-import org.labkey.api.reports.report.RReportJob;
-import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.*;
 import org.labkey.api.view.*;
 import org.labkey.common.util.Pair;
 import org.springframework.validation.BindException;
@@ -53,7 +50,7 @@ public class RunRReportView extends RunReportView
     public static final String TAB_SYNTAX = "Help";
 
     protected Report _report;
-    protected int _reportId;
+    protected ReportIdentifier _reportId;
 
     public RunRReportView(Report report)
     {
@@ -67,7 +64,7 @@ public class RunRReportView extends RunReportView
     protected void renderTitle(Object model, PrintWriter out) throws Exception
     {
         RReportBean bean = getReportForm();
-        if (bean.getReportId() != -1)
+        if (null != bean.getReportId())
         {
             ModelAndView title = new JspView<RReportBean>("/org/labkey/api/reports/report/view/reportHeader.jsp", bean);
             title.addObject("isReportInherited", isReportInherited(getReport()));
@@ -253,7 +250,7 @@ public class RunRReportView extends RunReportView
         else if (TAB_VIEW.equals(tabId))
         {
             // for now limit pipeline view to saved reports
-            if (form.getReportId() != -1 && form.isRunInBackground())
+            if (null != form.getReportId() && form.isRunInBackground())
             {
                 Report report = form.getReport();
                 if (report instanceof RReport)

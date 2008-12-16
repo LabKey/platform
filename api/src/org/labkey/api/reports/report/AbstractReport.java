@@ -39,12 +39,12 @@ public abstract class AbstractReport implements Report
         return ReportDescriptor.TYPE;
     }
 
-    public Integer getReportId()
+    public ReportIdentifier getReportId()
     {
         return getDescriptor().getReportId();
     }
 
-    public void setReportId(Integer reportId)
+    public void setReportId(ReportIdentifier reportId)
     {
         getDescriptor().setReportId(reportId);
     }

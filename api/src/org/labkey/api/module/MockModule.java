@@ -222,6 +222,11 @@ public class MockModule implements Module
         return null;
     }
 
+    public ReportDescriptor getReportDescriptor(String path)
+    {
+        return null;
+    }
+
     public Set<ModuleResourceLoader> getResourceLoaders()
     {
         return Collections.emptySet();

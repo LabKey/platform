@@ -25,6 +25,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.actions.ReportForm;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.common.util.Pair;
 
 import java.util.ArrayList;
@@ -42,7 +43,7 @@ public class ReportDesignBean extends ReportForm
     protected String _viewName;
     protected String _dataRegionName;
     protected String _filterParam;
-    protected int _reportId = -1;
+    protected ReportIdentifier _reportId;
     protected int _owner = -1;
     protected String _reportType;
     protected String _reportName;
@@ -111,12 +112,12 @@ public class ReportDesignBean extends ReportForm
         _filterParam = filterParam;
     }
 
-    public int getReportId()
+    public ReportIdentifier getReportId()
     {
         return _reportId;
     }
 
-    public void setReportId(int reportId)
+    public void setReportId(ReportIdentifier reportId)
     {
         _reportId = reportId;
     }
@@ -203,7 +204,9 @@ public class ReportDesignBean extends ReportForm
 
     public Report getReport() throws Exception
     {
-        Report report = ReportService.get().getReport(getReportId());
+        Report report = null;
+        if(null != getReportId())
+            report = getReportId().getReport();
         if (report == null)
             report = ReportService.get().createReportInstance(getReportType());
 
@@ -245,8 +248,8 @@ public class ReportDesignBean extends ReportForm
             list.add(new Pair<String, String>(ReportDescriptor.Prop.reportType.toString(), _reportType));
         if (!StringUtils.isEmpty(_reportName))
             list.add(new Pair<String, String>(ReportDescriptor.Prop.reportName.toString(), _reportName));
-        if (_reportId != -1)
-            list.add(new Pair<String, String>(ReportDescriptor.Prop.reportId.toString(), Integer.toString(_reportId)));
+        if (null != _reportId)
+            list.add(new Pair<String, String>(ReportDescriptor.Prop.reportId.toString(), _reportId.toString()));
         if (!StringUtils.isEmpty(_redirectUrl))
             list.add(new Pair<String, String>("redirectUrl", _redirectUrl));
         if (!StringUtils.isEmpty(_reportDescription))

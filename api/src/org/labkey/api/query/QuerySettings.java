@@ -24,6 +24,7 @@ import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -39,7 +40,7 @@ public class QuerySettings
     private String _queryName;
     private String _viewName;
     private String _dataRegionName;
-    private int _reportId = -1;
+    private ReportIdentifier _reportId;
     private boolean _allowChooseQuery = true;
     private boolean _allowChooseView = true;
     private boolean _allowCustomizeView = true;
@@ -184,7 +185,7 @@ public class QuerySettings
                 _ignoreUserFilter = true;
             }
 
-            setReportId(NumberUtils.toInt(_getParameter(param(QueryParam.reportId)), -1));
+            setReportId(ReportService.get().getReportIdentifier(_getParameter(param(QueryParam.reportId))));
         }
 
         if (_showRows == ShowRows.PAGINATED)
@@ -249,12 +250,12 @@ public class QuerySettings
         return _viewName;
     }
 
-    public int getReportId()
+    public ReportIdentifier getReportId()
     {
         return _reportId;
     }
 
-    public void setReportId(int reportId)
+    public void setReportId(ReportIdentifier reportId)
     {
         _reportId = reportId;
     }
@@ -337,12 +338,10 @@ public class QuerySettings
     public Report getReportView(ViewContext context)
     {
         try {
-            if (getReportId() != -1)
-            {
-                return ReportService.get().getReport(getReportId());
-            }
+            if (getReportId() != null)
+                return getReportId().getReport();
         }
-        catch (SQLException e)
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }

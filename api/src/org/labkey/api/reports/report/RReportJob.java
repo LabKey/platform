@@ -45,11 +45,11 @@ public class RReportJob extends PipelineJob implements Serializable
     private static final Logger _log = Logger.getLogger(RReportJob.class);
     public static final String PROCESSING_STATUS = "Processing";
     public static final String LOG_FILE_NAME = "report.log";
-    private int _reportId = -1;
+    private ReportIdentifier _reportId;
     private ActionURL _status = null;
     private RReportBean _form;
 
-    public RReportJob(String provider, ViewBackgroundInfo info, int reportId) throws SQLException
+    public RReportJob(String provider, ViewBackgroundInfo info, ReportIdentifier reportId) throws SQLException
     {
         super(provider, info);
         _reportId = reportId;
@@ -76,10 +76,10 @@ public class RReportJob extends PipelineJob implements Serializable
     public ActionURL getStatusHref()
     {
         File statusFile = getStatusFile();
-        if (statusFile != null && _reportId != -1)
+        if (statusFile != null && null != _reportId)
         {
             return new ActionURL("reports", "runReport", getContainer()).
-                    addParameter(ReportDescriptor.Prop.reportId.name(), _reportId);
+                    addParameter(ReportDescriptor.Prop.reportId.name(), _reportId.toString());
 /*
             ActionURL url = new ActionURL("reports", "renderBackgroundRReport", getContainer());
             url.addParameter("path", statusFile.getAbsolutePath().replace("\\", "/"));
@@ -104,8 +104,8 @@ public class RReportJob extends PipelineJob implements Serializable
     {
         try {
             Report report = null;
-            if (_reportId != -1)
-                report = ReportService.get().getReport(_reportId);
+            if (_reportId != null)
+                report = _reportId.getReport();
             else if (_form != null)
                 report = _form.getReport();
             if (report instanceof RReport)

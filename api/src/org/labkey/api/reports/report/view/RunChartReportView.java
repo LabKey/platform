@@ -17,6 +17,7 @@
 package org.labkey.api.reports.report.view;
 
 import org.labkey.api.reports.Report;
+import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.HtmlView;
@@ -33,7 +34,7 @@ import java.util.List;
 public class RunChartReportView extends RunReportView
 {
     private Report _report;
-    protected int _reportId;
+    protected ReportIdentifier _reportId;
 
     public RunChartReportView(Report report)
     {

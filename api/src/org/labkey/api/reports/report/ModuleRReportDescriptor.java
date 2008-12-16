@@ -18,6 +18,8 @@ package org.labkey.api.reports.report;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.module.DefaultModule;
+import org.labkey.api.module.Module;
+import org.labkey.api.view.ViewContext;
 
 import java.io.File;
 import java.io.FileReader;
@@ -35,22 +37,32 @@ import java.util.Map;
  */
 public class ModuleRReportDescriptor extends RReportDescriptor
 {
+    private Module _module;
+    private String _reportPath;
     private File _sourceFile;
-    private long _lastModified;
+    private long _lastModified = 0;
 
-    public ModuleRReportDescriptor(String reportKey, File sourceFile)
+    public ModuleRReportDescriptor(Module module, String reportKey, File sourceFile)
     {
-        this(reportKey, sourceFile.getName().substring(0, sourceFile.getName().length() -
-                DefaultModule.R_REPORT_EXTENSION.length()), sourceFile);
+        String name = sourceFile.getName().substring(0, sourceFile.getName().length() -
+                DefaultModule.R_REPORT_EXTENSION.length());
+
+        _module = module;
+        _sourceFile = sourceFile;
+        _reportPath = reportKey + "/" + sourceFile.getName();
+        setReportKey(reportKey);
+        setReportName(name);
+        setReportType(RReport.TYPE);
     }
 
-    public ModuleRReportDescriptor(String reportKey, String reportName, File sourceFile)
+    @Override
+    public String getProperty(ReportProperty prop)
     {
-        _sourceFile = sourceFile;
-        _lastModified = sourceFile.lastModified();
-        setReportKey(reportKey + "/" + reportName);
-        setReportName(reportName);
-        setReportType(RReport.TYPE);
+        //if the key = script, ensure we have it
+        if(prop.equals(Prop.script))
+            ensureScriptCurrent();
+
+        return super.getProperty(prop);
     }
 
     @Override
@@ -78,7 +90,10 @@ public class ModuleRReportDescriptor extends RReportDescriptor
             {
                 String script = getFileContents(_sourceFile);
                 if(null != script)
+                {
                     setProperty(Prop.script, script);
+                    _lastModified = _sourceFile.lastModified();
+                }
             }
             catch(IOException e)
             {
@@ -91,5 +106,44 @@ public class ModuleRReportDescriptor extends RReportDescriptor
     protected String getFileContents(File file) throws IOException
     {
         return IOUtils.toString(new FileReader(file));
+    }
+
+    public Module getModule()
+    {
+        return _module;
+    }
+
+    public String getReportPath()
+    {
+        return _reportPath;
+    }
+
+    public File getSourceFile()
+    {
+        return _sourceFile;
+    }
+
+    public long getLastModified()
+    {
+        return _lastModified;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "module:" + getModule().getName() + "/" + getReportPath();
+    }
+
+    @Override
+    public ReportIdentifier getReportId()
+    {
+        return new ModuleReportIdentifier(getModule(), getReportPath());
+    }
+
+    @Override
+    public boolean canEdit(ViewContext context)
+    {
+        //module reports are always un-editable.
+        return false;
     }
 }

@@ -69,7 +69,7 @@ public abstract class CustomRReport extends RReport
     public HttpView renderDataView(ViewContext context) throws Exception
     {
         QueryView view = getQueryView(context);
-        view.getSettings().setReportId(-1);
+        view.getSettings().setReportId(null);
         view.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
         return view;
     }

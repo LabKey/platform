@@ -73,7 +73,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     public static Pattern scriptPattern = Pattern.compile("\\$\\{(.*?)\\}");
     private File _tempFolder;
     private boolean _tempFolderPipeline;
-    private static final Map<Integer, ActionURL> _cachedReportURLMap = new HashMap<Integer, ActionURL>();
+    private static final Map<ReportIdentifier, ActionURL> _cachedReportURLMap = new HashMap<ReportIdentifier, ActionURL>();
 
     static {
         ParamReplacementSvc.get().registerHandler(new ConsoleOutput());
@@ -227,12 +227,14 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
 
     protected void cacheResults(ViewContext context, List<ParamReplacement> replacements)
     {
-        if (getDescriptor().getReportId() != -1 &&
+        if (getDescriptor().getReportId() != null &&
             BooleanUtils.toBoolean(getDescriptor().getProperty(ReportDescriptor.Prop.cached)))
         {
             synchronized(_cachedReportURLMap)
             {
                 File cacheDir = getCacheDir();
+                if(null == cacheDir)
+                    return;
                 try {
                     File mapFile = new File(cacheDir, SUBSTITUTION_MAP);
                     for (ParamReplacement param : replacements)
@@ -273,13 +275,13 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     public void clearCache()
     {
         File cacheDir = getCacheDir();
-        if (cacheDir.exists())
+        if (null != cacheDir && cacheDir.exists())
             FileUtil.deleteDir(cacheDir);
     }
 
     protected boolean getCachedReport(ViewContext context, List<ParamReplacement> replacements)
     {
-        if (getDescriptor().getReportId() != -1 &&
+        if (getDescriptor().getReportId() != null &&
             BooleanUtils.toBoolean(getDescriptor().getProperty(ReportDescriptor.Prop.cached)))
         {
             synchronized(_cachedReportURLMap)
@@ -290,6 +292,9 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
                     return false;
                 }
                 File cacheDir = getCacheDir();
+                if(null == cacheDir)
+                    return false;
+
                 try {
                     for (ParamReplacement param : ParamReplacementSvc.get().fromFile(new File(cacheDir, SUBSTITUTION_MAP)))
                     {
@@ -401,7 +406,10 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
 
     protected File getCacheDir()
     {
-        File cacheDir = new File(getTempRoot(), "Report_" + getDescriptor().getReportId() + File.separator + CACHE_DIR);
+        if(getDescriptor().getReportId() == null)
+            return null;
+
+        File cacheDir = new File(getTempRoot(), "Report_" + FileUtil.makeLegalName(getDescriptor().getReportId().toString()) + File.separator + CACHE_DIR);
         if (!cacheDir.exists())
             cacheDir.mkdirs();
 
@@ -415,9 +423,9 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         {
             File tempRoot = getTempRoot();
             if (isPipeline)
-                _tempFolder = new File(tempRoot, "Report_" + getDescriptor().getReportId());
+                _tempFolder = new File(tempRoot, "Report_" + FileUtil.makeLegalName(String.valueOf(getDescriptor().getReportId())));
             else
-                _tempFolder = new File(tempRoot.getAbsolutePath() + File.separator + "Report_" + getDescriptor().getReportId(), String.valueOf(Thread.currentThread().getId()));
+                _tempFolder = new File(tempRoot.getAbsolutePath() + File.separator + "Report_" + FileUtil.makeLegalName(String.valueOf(getDescriptor().getReportId())), String.valueOf(Thread.currentThread().getId()));
 
             _tempFolderPipeline = isPipeline;
             if (!_tempFolder.exists())

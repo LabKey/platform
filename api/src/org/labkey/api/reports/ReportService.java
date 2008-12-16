@@ -17,6 +17,7 @@
 package org.labkey.api.reports;
 
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
@@ -72,12 +73,14 @@ public class ReportService
          */
         public ReportDescriptor createDescriptorInstance(String typeName);
         public Report createReportInstance(String typeName);
+        public Report createReportInstance(ReportDescriptor descriptor);
 
         public void deleteReport(ViewContext context, Report report) throws SQLException;
 
         public int saveReport(ViewContext context, String key, Report report) throws SQLException;
 
         public Report getReport(int reportId) throws SQLException;
+        public ReportIdentifier getReportIdentifier(String reportId);
         public Report[] getReports(User user) throws SQLException;
         public Report[] getReports(User user, Container c) throws SQLException;
         public Report[] getReports(User user, Container c, String key) throws SQLException;

@@ -34,6 +34,7 @@
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
+<%@ page import="org.labkey.api.reports.report.ReportIdentifier" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -207,7 +208,9 @@
     <input type="hidden" name="schemaName" value="<%=bean.getSchemaName()%>">
     <input type="hidden" name="dataRegionName" value="<%=StringUtils.trimToEmpty(bean.getDataRegionName())%>">
     <input type="hidden" name="redirectUrl" value="<%=h(bean.getRedirectUrl())%>">
-    <input type="hidden" name="reportId" value="<%=bean.getReportId()%>">
+    <% if(null != bean.getReportId()) { %>
+        <input type="hidden" name="reportId" value="<%=bean.getReportId()%>">
+    <% } %>
     <input type="hidden" name="cacheKey" value="<%=RunRReportView.getReportCacheKey(bean.getReportId(), HttpView.currentContext().getContainer())%>">
     <input type="hidden" name="showDebug" value="true">
     <input type="hidden" name="<%=RReportDescriptor.Prop.scriptExtension%>" value="<%=bean.getScriptExtension()%>">
@@ -230,8 +233,8 @@
 -->
 
 <%!
-    public boolean isScriptIncluded(int id, List<String> includedScripts) {
-        return includedScripts.contains(Integer.toString(id));
+    public boolean isScriptIncluded(ReportIdentifier id, List<String> includedScripts) {
+        return includedScripts.contains(String.valueOf(id));
     }
 %>
 

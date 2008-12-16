@@ -691,10 +691,10 @@ public class QueryView extends WebPartView<Object>
         {
             for (Report report : entry.getValue())
             {
-                String viewName = String.valueOf(report.getDescriptor().getReportId());
-                NavTree item = new NavTree(report.getDescriptor().getReportName(), target.clone().replaceParameter(param(QueryParam.reportId), viewName).getLocalURIString());
+                String reportId = report.getDescriptor().getReportId().toString();
+                NavTree item = new NavTree(report.getDescriptor().getReportName(), target.clone().replaceParameter(param(QueryParam.reportId), reportId).getLocalURIString());
                 item.setId("Views:" + report.getDescriptor().getReportName());
-                if (getSettings().getReportId() == report.getDescriptor().getReportId())
+                if (report.getDescriptor().getReportId().equals(getSettings().getReportId()))
                     item.setHighlighted(true);
                 item.setImageSrc(ReportService.get().getReportIcon(getViewContext(), report.getType()));
                 menu.addMenuItem(item);

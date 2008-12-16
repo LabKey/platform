@@ -83,14 +83,14 @@ public class ReportDescriptor extends Entity
         // marker
     }
 
-    public void setReportId(int reportId)
+    public void setReportId(ReportIdentifier reportId)
     {
-        setProperty(Prop.reportId, reportId);
+        setProperty(Prop.reportId, reportId.toString());
     }
 
-    public int getReportId()
+    public ReportIdentifier getReportId()
     {
-        return NumberUtils.toInt(getProperty(Prop.reportId), -1);
+        return ReportService.get().getReportIdentifier(getProperty(Prop.reportId));
     }
 
     public void setReportKey(String key){_reportKey = key;}
@@ -454,7 +454,7 @@ public class ReportDescriptor extends Entity
 
     public boolean isInherited(Container c)
     {
-        if (getReportId() != -1)
+        if (null != getReportId())
         {
             if ((getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0)
             {

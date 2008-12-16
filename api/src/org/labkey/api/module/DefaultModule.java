@@ -25,6 +25,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ModuleRReportDescriptor;
+import org.labkey.api.reports.report.ModuleQueryRReportDescriptor;
 import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.mvc.Controller;
 import org.jetbrains.annotations.Nullable;
@@ -359,7 +360,7 @@ public abstract class DefaultModule implements Module
         {
             dependency = dependency.trim();
             if (dependency.length() > 0)
-                _moduleDependencies.add(dependency);
+                _moduleDependencies.add(dependency.toLowerCase());
         }
     }
 
@@ -506,19 +507,41 @@ public abstract class DefaultModule implements Module
             return null;
 
         //currently we support only R reports
-        File reportsDir = new File(getExplodedPath(), "reports");
-        File keyDir = new File(reportsDir, key);
+        File keyDir = new File(getQueryReportsDir(), key);
         if(keyDir.exists() && keyDir.isDirectory())
         {
             List<ReportDescriptor> reportDescriptors = new ArrayList<ReportDescriptor>();
             for(File file : keyDir.listFiles(rReportFilter))
             {
-                reportDescriptors.add(new ModuleRReportDescriptor(key, file));
+                reportDescriptors.add(new ModuleQueryRReportDescriptor(this, key, file));
             }
             return reportDescriptors;
         }
 
         return null;
+    }
+
+    public ReportDescriptor getReportDescriptor(String path)
+    {
+        if(null == path)
+            return null;
+
+        String key = path;
+        int pos = path.lastIndexOf('/');
+        if(pos != -1)
+            key = path.substring(0, pos);
+
+        File reportFile = new File(getQueryReportsDir(), path);
+        if(reportFile.exists() && reportFile.isFile())
+            return new ModuleQueryRReportDescriptor(this, key, reportFile);
+        else
+            return null;
+    }
+
+    protected File getQueryReportsDir()
+    {
+        File reportsDir = new File(getExplodedPath(), "reports");
+        return new File(reportsDir, "schemas");
     }
 
     public Set<ModuleResourceLoader> getResourceLoaders()
