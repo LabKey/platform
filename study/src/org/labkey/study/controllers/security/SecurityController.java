@@ -23,6 +23,7 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.RequiresPermission;
@@ -266,8 +267,8 @@ public class SecurityController extends SpringActionController
             else
             {
                 Report report = null;
-                if (form.getReportId() != -1)
-                    report = ReportManager.get().getReport(getContainer(), form.getReportId());
+                if (form.getReportId() != null)
+                    report = form.getReportId().getReport();
 
                 if (null == report)
                 {
@@ -291,8 +292,8 @@ public class SecurityController extends SpringActionController
         public boolean handlePost(PermissionsForm form, BindException errors) throws Exception
         {
             Report report = null;
-            if (form.getReportId() != -1)
-                report = ReportManager.get().getReport(getContainer(), form.getReportId());
+            if (form.getReportId() != null)
+                report = form.getReportId().getReport();
 
             if (null == report)
             {
@@ -418,7 +419,7 @@ public class SecurityController extends SpringActionController
 
     public static class PermissionsForm extends FormData
     {
-        private int reportId = -1;
+        private ReportIdentifier reportId;
         private Integer remove = 0;
         private Integer add = 0;
         private Set<Integer> groups = null;
@@ -454,12 +455,12 @@ public class SecurityController extends SpringActionController
             return groups;
         }
 
-        public int getReportId()
+        public ReportIdentifier getReportId()
         {
             return reportId;
         }
 
-        public void setReportId(int reportId)
+        public void setReportId(ReportIdentifier reportId)
         {
             this.reportId = reportId;
         }

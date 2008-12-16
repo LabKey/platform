@@ -61,7 +61,7 @@ public class StudyChartQueryReport extends ChartQueryReport
         {
             return new ActionURL(StudyController.DatasetReportAction.class, context.getContainer()).
                         addParameter(DataSetDefinition.DATASETKEY, datasetId).
-                        addParameter("Dataset.reportId", getDescriptor().getReportId());
+                        addParameter("Dataset.reportId", getDescriptor().getReportId().toString());
         }
         return super.getRunReportURL(context);
     }

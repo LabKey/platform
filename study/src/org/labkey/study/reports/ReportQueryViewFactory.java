@@ -67,7 +67,7 @@ public class ReportQueryViewFactory
             settings.setQueryName(queryName);
             settings.setViewName(viewName);
             // need to reset the report id since we want to render the data grid, not the report
-            settings.setReportId(-1);
+            settings.setReportId(null);
 
             ReportQueryView view = new StudyReportQueryView(schema, settings);
             final String filterParam = descriptor.getProperty("filterParam");

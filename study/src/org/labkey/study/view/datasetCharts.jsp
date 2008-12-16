@@ -75,7 +75,7 @@
     {
         ActionURL url = new ActionURL(ReportsController.PlotChartAction.class, bean.getContainer()).
                                 addParameter("datasetId", bean.getDatasetId()).
-                                addParameter("reportId", report.getDescriptor().getReportId()).
+                                addParameter("reportId", report.getDescriptor().getReportId().toString()).
                                 addParameter("chartsPerRow", bean.getChartsPerRow()).
                                 addParameter("isPlotView", String.valueOf(bean.getIsPlotView())).
                                 addParameter("participantId", bean.getParticipantId());

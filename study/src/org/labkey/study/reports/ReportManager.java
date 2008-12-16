@@ -102,7 +102,7 @@ public class ReportManager implements StudyManager.UnmaterializeListener
                 continue;
 
             String label = report.getDescriptor().getReportName();
-            labels.add(new Pair(label, String.valueOf(report.getDescriptor().getReportId())));
+            labels.add(new Pair(label, report.getDescriptor().getReportId().toString()));
         }
     }
 

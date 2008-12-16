@@ -17,11 +17,11 @@
 package org.labkey.query.reports;
 
 import org.apache.log4j.Logger;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.data.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.ReportDB;
-import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -33,7 +33,6 @@ import org.labkey.common.util.Pair;
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
 import java.util.*;
-import java.io.File;
 
 /**
  * Created by IntelliJ IDEA.
@@ -58,6 +57,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     public ReportServiceImpl()
     {
         ContainerManager.addContainerListener(this);
+        ConvertUtils.register(new ReportIdentifierConverter(), ReportIdentifier.class);
     }
 
     private DbSchema getSchema()
@@ -142,6 +142,13 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         return null;
     }
 
+    public Report createReportInstance(ReportDescriptor descriptor)
+    {
+        Report report = createReportInstance(descriptor.getReportType());
+        report.setDescriptor(descriptor);
+        return report;
+    }
+
     public TableInfo getTable()
     {
         return getSchema().getTable(TABLE_NAME);
@@ -180,6 +187,13 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
     public void deleteReport(ViewContext context, Report report) throws SQLException
     {
+        //ensure that descriptor id is a DbReportIdentifier
+        DbReportIdentifier reportId = null;
+        if(report.getDescriptor().getReportId() instanceof DbReportIdentifier)
+            reportId = (DbReportIdentifier)(report.getDescriptor().getReportId());
+        else
+            throw new RuntimeException("Can't save a report that is not stored in the database!");
+
         DbScope scope = getTable().getSchema().getScope();
         boolean ownsTransaction = !scope.isTransactionActive();
         try
@@ -189,7 +203,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
             report.beforeDelete(context);
 
             final ReportDescriptor descriptor = report.getDescriptor();
-            _deleteReport(context.getContainer(), descriptor.getReportId());
+            _deleteReport(context.getContainer(), reportId.getRowId());
             final Container c =ContainerManager.getForId(descriptor.getContainerId());
             org.labkey.api.security.SecurityManager.removeACL(c, descriptor.getEntityId());
             if (ownsTransaction)
@@ -249,9 +263,16 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
     private ReportDB _saveReport(User user, Container c, String key, ReportDescriptor descriptor) throws SQLException
     {
+        //ensure that descriptor id is a DbReportIdentifier
+        DbReportIdentifier reportId = null;
+        if(null == descriptor.getReportId() || descriptor.getReportId() instanceof DbReportIdentifier)
+            reportId = (DbReportIdentifier)(descriptor.getReportId());
+        else
+            throw new RuntimeException("Can't save a report that is not stored in the database!");
+
         ReportDB reportDB = new ReportDB(c, user.getUserId(), key, descriptor);
-        if (descriptor.getReportId() != -1 && reportExists(descriptor.getReportId()))
-            reportDB = Table.update(user, getTable(), reportDB, descriptor.getReportId(), null);
+        if (null != reportId && reportExists(reportId.getRowId()))
+            reportDB = Table.update(user, getTable(), reportDB, reportId.getRowId(), null);
         else
             reportDB = Table.insert(user, getTable(), reportDB);
 
@@ -265,7 +286,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
             ReportDescriptor descriptor = ReportDescriptor.createFromXML(r.getDescriptorXML());
             if (descriptor != null)
             {
-                descriptor.setReportId(r.getRowId());
+                descriptor.setReportId(new DbReportIdentifier(r.getRowId()));
                 descriptor.setReportKey(r.getReportKey());
                 descriptor.setContainerId(r.getContainerId());
                 descriptor.setEntityId(r.getEntityId());
@@ -297,6 +318,11 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     {
         ReportDB report = Table.selectObject(getTable(), new SimpleFilter("RowId", reportId), null, ReportDB.class);
         return _getInstance(report);
+    }
+
+    public ReportIdentifier getReportIdentifier(String reportId)
+    {
+        return AbstractReportIdentifier.fromString(reportId);
     }
 
     private Report[] _getReports(User user, SimpleFilter filter) throws SQLException
@@ -450,7 +476,8 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
         public int compare(Report o1, Report o2)
         {
-            return o1.getDescriptor().getReportId() - o2.getDescriptor().getReportId();
+            
+            return o1.getDescriptor().getReportId().toString().compareToIgnoreCase(o2.getDescriptor().getReportId().toString());
         }
     }
 }

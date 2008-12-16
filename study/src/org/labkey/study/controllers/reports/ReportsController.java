@@ -32,6 +32,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RReportBean;
@@ -118,11 +119,13 @@ public class ReportsController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            String reportId = getRequest().getParameter(ReportDescriptor.Prop.reportId.name());
+            String reportIdParam = getRequest().getParameter(ReportDescriptor.Prop.reportId.name());
+            ReportIdentifier reportId = ReportService.get().getReportIdentifier(reportIdParam);
+
             Report report = null;
 
             if (reportId != null)
-                report = ReportManager.get().getReport(getContainer(), NumberUtils.toInt(reportId));
+                report = reportId.getReport();
 
             if (report != null)
             {
@@ -498,7 +501,7 @@ public class ReportsController extends BaseStudyController
     @RequiresPermission(ACL.PERM_ADMIN)
     public class QueryConversionAction extends SimpleViewAction<SaveReportViewForm>
     {
-        private int _reportId;
+        private ReportIdentifier _reportId;
 
         public ModelAndView getView(SaveReportViewForm form, BindException errors) throws Exception
         {
@@ -516,11 +519,11 @@ public class ReportsController extends BaseStudyController
                     if (!StringUtils.isEmpty(redirect))
                     {
                         ActionURL url = new ActionURL(redirect);
-                        url.addParameter("reportId", _reportId);
+                        url.addParameter("reportId", _reportId.toString());
 
                         return HttpView.redirect(url);
                     }
-                    return HttpView.redirect(new ActionURL("Study-Reports", "manageReports.view", getContainer()));
+                    return HttpView.redirect(new ActionURL(ManageReportsAction.class, getContainer()));
                 }
             }
             HttpView.throwUnauthorized("A report of the same name already exists");
@@ -965,7 +968,7 @@ public class ReportsController extends BaseStudyController
                 if (report != null)
                 {
                     form.setLabel(report.getDescriptor().getReportName());
-                    form.setReportId(report.getDescriptor().getReportId());
+                    form.setReportId(form.getReportId());
                 }
             }
             return new JspView<UploadForm>("/org/labkey/study/view/uploadAttachmentReport.jsp", form);
@@ -1959,11 +1962,12 @@ public class ReportsController extends BaseStudyController
 
         protected Report getReport(RReportBean form) throws Exception
         {
-            String reportId = form.getViewContext().getActionURL().getParameter("Dataset.reportId");
-            if (NumberUtils.isDigits(reportId))
+            String reportIdParam = form.getViewContext().getActionURL().getParameter("Dataset.reportId");
+            ReportIdentifier reportId = ReportService.get().getReportIdentifier(reportIdParam);
+            if (null != reportId)
             {
-                form.setReportId(NumberUtils.toInt(reportId));
-                return ReportManager.get().getReport(form.getContainer(), NumberUtils.toInt(reportId));
+                form.setReportId(reportId);
+                return reportId.getReport();
             }
             return null;
         }
@@ -1978,7 +1982,7 @@ public class ReportsController extends BaseStudyController
             if (def != null && _report != null)
             {
                 ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
-                                        replaceParameter("Dataset.reportId", String.valueOf(_report.getDescriptor().getReportId())).
+                                        replaceParameter("Dataset.reportId", _report.getDescriptor().getReportId().toString()).
                                         replaceParameter(DataSetDefinition.DATASETKEY, String.valueOf(def.getDataSetId()));
 
                 return HttpView.redirect(url);

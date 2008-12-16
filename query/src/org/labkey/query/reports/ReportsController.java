@@ -183,8 +183,8 @@ public class ReportsController extends SpringActionController
             final ViewContext context = getViewContext();
             Report report = null;
 
-            if (form.getReportId() != -1)
-                report = ReportService.get().getReport(form.getReportId());
+            if (null != form.getReportId())
+                report = form.getReportId().getReport();
 
             if (report == null)
             {
@@ -218,7 +218,7 @@ public class ReportsController extends SpringActionController
             if (report != null)
             {
                 ActionURL url;
-                if (report.getDescriptor().getReportId() != -1)
+                if (null != report.getDescriptor().getReportId())
                     url = ReportUtil.getPlotChartURL(getViewContext(), form.getReport());
                 else
                 {
@@ -244,7 +244,7 @@ public class ReportsController extends SpringActionController
         private ChartDesignerBean verifyBean(ChartDesignerBean form) throws Exception
         {
             // a saved report
-            if (form.getReportId() != -1)
+            if (null != form.getReportId())
                 return form;
 
             UserSchema schema = (UserSchema) DefaultSchema.get(getUser(), getContainer()).getSchema(form.getSchemaName());
@@ -591,7 +591,9 @@ public class ReportsController extends SpringActionController
         Report _report;
         public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
         {
-            _report = ReportService.get().getReport(form.getReportId());
+            _report = null;
+            if(null != form.getReportId())
+                _report = form.getReportId().getReport();
             if (_report != null)
                 return _report.getRunReportView(getViewContext());
             
@@ -695,7 +697,7 @@ public class ReportsController extends SpringActionController
                 }
                 _report = form.getReport();
                 // on new reports, check for duplicates
-                if (_report.getDescriptor().getReportId() == -1)
+                if (null != _report.getDescriptor().getReportId())
                 {
                     if (reportNameExists(_report.getDescriptor().getReportName(), ReportUtil.getReportQueryKey(_report.getDescriptor())))
                     {
@@ -796,7 +798,7 @@ public class ReportsController extends SpringActionController
 
             Report report;
             PipelineJob job;
-            if (form.getReportId() == -1)
+            if (null == form.getReportId())
             {
                 // report not saved yet, get state from the cache
                 String key = getViewContext().getActionURL().getParameter(RunRReportView.CACHE_PARAM);
@@ -807,7 +809,7 @@ public class ReportsController extends SpringActionController
             }
             else
             {
-                report = ReportService.get().getReport(form.getReportId());
+                report = form.getReportId().getReport();
                 job = new RReportJob(ReportsPipelineProvider.NAME, info, form.getReportId());
             }
 
@@ -1030,7 +1032,7 @@ public class ReportsController extends SpringActionController
 
                     record.put("name", r.getName());
                     record.put("displayName", "<a href=\"" + r.getDisplayURL() + "\">" + r.getName() + "</a>");
-                    record.put("reportId", String.valueOf(descriptor.getReportId()));
+                    record.put("reportId", descriptor.getReportId().toString());
                     record.put("query", StringUtils.defaultIfEmpty(descriptor.getProperty(ReportDescriptor.Prop.queryName), "Unknown"));
                     record.put("schema", descriptor.getProperty(ReportDescriptor.Prop.schemaName));
                     record.put("owner", r.getCreatedBy().getDisplayName(getViewContext()));
@@ -1173,12 +1175,13 @@ public class ReportsController extends SpringActionController
 
         public void validateCommand(ReportDesignBean form, Errors errors)
         {
-            int reportId =  form.getReportId();
+            ReportIdentifier reportId =  form.getReportId();
             _newReportName =  form.getReportName();
             if (!StringUtils.isEmpty(_newReportName))
             {
                 try {
-                    _report = ReportService.get().getReport(reportId);
+                    if(null != reportId)
+                        _report = reportId.getReport();
                     if (_report != null)
                     {
                         if (!_report.getDescriptor().canEdit(getViewContext()))
@@ -1251,9 +1254,10 @@ public class ReportsController extends SpringActionController
         Report _report;
         public void validateCommand(ReportDesignBean form, Errors errors)
         {
-            int reportId =  form.getReportId();
+            ReportIdentifier reportId =  form.getReportId();
             try {
-                _report = ReportService.get().getReport(reportId);
+                if(null != reportId)
+                    _report = reportId.getReport();
                 if (_report != null)
                 {
                     if (!_report.getDescriptor().canEdit(getViewContext()))
@@ -1380,7 +1384,7 @@ public class ReportsController extends SpringActionController
             {
                 ActionURL url = getViewContext().cloneActionURL();
                 url.setAction("plotChart");
-                url.addParameter("reportId", String.valueOf(_report.getDescriptor().getReportId()));
+                url.addParameter("reportId", _report.getDescriptor().getReportId().toString());
 
                 out.write("<img src='" + url + "'>");
             }

@@ -211,9 +211,9 @@ public class EnrollmentReport extends ChartReport
 
                 ActionURL chartSrc = new ActionURL("Study-Reports", "timePlot", getViewContext().getContainer());
                 final ReportDescriptor descriptor = _report.getDescriptor();
-                if (descriptor.getReportId() != -1)
+                if (descriptor.getReportId() != null)
                 {
-                    chartSrc.addParameter("reportId", String.valueOf(descriptor.getReportId()));
+                    chartSrc.addParameter("reportId", descriptor.getReportId().toString());
                 }
                 out.println("&nbsp;<br><img src=\"" + chartSrc + "\"><br>");
 

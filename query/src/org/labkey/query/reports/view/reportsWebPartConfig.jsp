@@ -46,7 +46,7 @@
             if ("Study.attachmentReport".equals(report.getType()) || "Study.exportExcelReport".equals(report.getType()))
                 continue;
 
-            reportMap.put(String.valueOf(report.getDescriptor().getReportId()), report.getDescriptor().getReportName());
+            reportMap.put(report.getDescriptor().getReportId().toString(), report.getDescriptor().getReportName());
         }
     }
 %>

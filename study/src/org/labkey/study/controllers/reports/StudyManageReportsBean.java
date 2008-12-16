@@ -178,20 +178,20 @@ public class StudyManageReportsBean extends ManageReportsBean
             return;
         else if (ExportExcelReport.TYPE.equals(reportType))
         {
-            String permissionURL = _context.cloneActionURL().relativeUrl("reportPermissions.view", "reportId=" + r.getDescriptor().getReportId(), "Study-Security");
+            String permissionURL = _context.cloneActionURL().relativeUrl("reportPermissions.view", "reportId=" + r.getDescriptor().getReportId().toString(), "Study-Security");
             StudyReportRecordImpl rec = new StudyReportRecordImpl(r, r.getDescriptor().getReportName(),
-                    _context.cloneActionURL().relativeUrl("exportExcel.view", "reportId=" + r.getDescriptor().getReportId(), "Study-Reports"),
-                    _context.cloneActionURL().relativeUrl("deleteReport.view", "reportId=" + r.getDescriptor().getReportId(), "Study-Reports"),
+                    _context.cloneActionURL().relativeUrl("exportExcel.view", "reportId=" + r.getDescriptor().getReportId().toString(), "Study-Reports"),
+                    _context.cloneActionURL().relativeUrl("deleteReport.view", "reportId=" + r.getDescriptor().getReportId().toString(), "Study-Reports"),
                     permissionsLink(permissionURL),
                     getSharedURL(r, permissionURL));
             getList(EXCEL_EXPORT_REPORT, views).add(rec);
         }
         else if (StudyRReport.TYPE.equals(reportType) || RReport.TYPE.equals(reportType))
         {
-            String permissionURL = _context.cloneActionURL().relativeUrl("reportPermissions.view", "reportId=" + r.getDescriptor().getReportId(), "Study-Security");
+            String permissionURL = _context.cloneActionURL().relativeUrl("reportPermissions.view", "reportId=" + r.getDescriptor().getReportId().toString(), "Study-Security");
             StudyReportRecordImpl rec = new StudyReportRecordImpl(r, r.getDescriptor().getProperty(ReportDescriptor.Prop.reportName),
                     r.getRunReportURL(_context).getLocalURIString(),
-                    _context.cloneActionURL().relativeUrl("deleteReport.view", "reportId=" + r.getDescriptor().getReportId(), "Study-Reports"),
+                    _context.cloneActionURL().relativeUrl("deleteReport.view", "reportId=" + r.getDescriptor().getReportId().toString(), "Study-Reports"),
                     permissionsLink(permissionURL),
                     getSharedURL(r, permissionURL));
 
@@ -260,8 +260,8 @@ public class StudyManageReportsBean extends ManageReportsBean
         ActionURL deleteURL = new ActionURL("Study-Reports", "deleteReport.view", _context.getContainer());
         ActionURL permissionsURL = new ActionURL("Study-Security", "reportPermissions.view", _context.getContainer());
 
-        deleteURL.addParameter("reportId", String.valueOf(r.getDescriptor().getReportId()));
-        permissionsURL.addParameter("reportId", String.valueOf(r.getDescriptor().getReportId()));
+        deleteURL.addParameter("reportId", r.getDescriptor().getReportId().toString());
+        permissionsURL.addParameter("reportId", r.getDescriptor().getReportId().toString());
 
         return new StudyReportRecordImpl(r, name, displayURL, deleteURL.toString(), permissionsLink(permissionsURL.toString()),
                 getSharedURL(r, permissionsURL.toString()));

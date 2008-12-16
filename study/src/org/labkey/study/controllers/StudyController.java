@@ -419,7 +419,7 @@ public class StudyController extends BaseStudyController
             if (def != null)
             {
                 ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
-                                        replaceParameter("Dataset.reportId", String.valueOf(_report.getDescriptor().getReportId())).
+                                        replaceParameter("Dataset.reportId", _report.getDescriptor().getReportId().toString()).
                                         replaceParameter(DataSetDefinition.DATASETKEY, String.valueOf(def.getDataSetId()));
 
                 return HttpView.redirect(url);

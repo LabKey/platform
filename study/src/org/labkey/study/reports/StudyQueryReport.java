@@ -20,9 +20,7 @@ import org.apache.commons.lang.math.NumberUtils;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.QueryReport;
-import org.labkey.api.reports.report.QueryReportDescriptor;
-import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.*;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
@@ -89,9 +87,9 @@ public class StudyQueryReport extends QueryReport
         }
     }
 
-    public int renameReport(ViewContext context, String newKey, String newName) throws SQLException
+    public ReportIdentifier renameReport(ViewContext context, String newKey, String newName) throws SQLException
     {
-        int reportId = -1;
+        ReportIdentifier reportId = null;
         // delete the wrapped custom query before creating the new one
         CustomView oldView = getCustomView(context);
         List<FieldKey> columns = null;
@@ -107,7 +105,7 @@ public class StudyQueryReport extends QueryReport
             oldView.delete(context.getUser(), context.getRequest());
         }
         getDescriptor().setReportName(newName);
-        reportId = ReportService.get().saveReport(context, newKey, this);
+        reportId = new DbReportIdentifier(ReportService.get().saveReport(context, newKey, this));
 
         CustomView newView = getCustomView(context);
         if (columns != null && columns.size() > 0)
@@ -183,7 +181,7 @@ public class StudyQueryReport extends QueryReport
         {
             return new ActionURL(StudyController.DatasetReportAction.class, context.getContainer()).
                         addParameter(DataSetDefinition.DATASETKEY, datasetId).
-                        addParameter("Dataset.reportId", getDescriptor().getReportId());
+                        addParameter("Dataset.reportId", getDescriptor().getReportId().toString());
         }
 /*
         QueryDefinition def = QueryService.get().getQueryDef(context.getContainer(), getDescriptor().getProperty(QueryParam.schemaName.name()), getDescriptor().getProperty(QueryParam.queryName.name()));
