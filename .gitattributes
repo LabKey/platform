@@ -873,7 +873,6 @@ issues/src/org/labkey/issue/updateView.jsp -text
 mothership/module.properties -text
 mothership/src/META-INF/mothership.xml -text
 mothership/src/META-INF/mothership/scripts/postgresql/mothership-0.00-2.10.sql -text
-mothership/src/META-INF/mothership/scripts/postgresql/mothership-0.17-0.18.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/mothership-2.00-2.10.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/mothership-2.10-2.20.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/mothership-2.20-2.30.sql -text
@@ -888,12 +887,12 @@ mothership/src/META-INF/mothership/scripts/postgresql/obsolete/mothership-0.13-0
 mothership/src/META-INF/mothership/scripts/postgresql/obsolete/mothership-0.14-0.15.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/obsolete/mothership-0.15-0.16.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/obsolete/mothership-0.16-0.17.sql -text
+mothership/src/META-INF/mothership/scripts/postgresql/obsolete/mothership-0.17-0.18.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/obsolete/mothership-2.20-2.21.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/obsolete/mothership-2.21-2.22.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/obsolete/mothership-2.30-2.31.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/obsolete/mothership-2.31-2.32.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-0.00-2.10.sql -text
-mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-0.17-0.18.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-2.00-2.10.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-2.10-2.20.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-2.20-2.30.sql -text
@@ -908,6 +907,7 @@ mothership/src/META-INF/mothership/scripts/sql[!!-~]server/obsolete/mothership-0
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/obsolete/mothership-0.14-0.15.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/obsolete/mothership-0.15-0.16.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/obsolete/mothership-0.16-0.17.sql -text
+mothership/src/META-INF/mothership/scripts/sql[!!-~]server/obsolete/mothership-0.17-0.18.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/obsolete/mothership-2.20-2.21.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/obsolete/mothership-2.21-2.22.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/obsolete/mothership-2.30-2.31.sql -text
