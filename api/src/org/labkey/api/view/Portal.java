@@ -25,6 +25,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.util.*;
+import org.labkey.api.portal.ProjectUrls;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.beans.PropertyValues;
 import org.springframework.beans.MutablePropertyValues;
@@ -205,7 +206,7 @@ public class Portal
 
         public ActionURL getCustomizePostURL(Container container)
         {
-            ActionURL ret = new ActionURL("Project", "customizeWebPart", container.getPath());
+            ActionURL ret = PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(container);
             ret.addParameter("pageId", getPageId());
             ret.addParameter("index", Integer.toString(getIndex()));
             return ret;

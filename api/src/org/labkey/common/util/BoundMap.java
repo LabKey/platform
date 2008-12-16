@@ -31,50 +31,51 @@ import java.io.IOException;
 
 public class BoundMap extends AbstractMap<String,Object> implements Serializable
 {
-    static final HashMap<Class,HashMap<String,BoundProperty>> _savedPropertyMaps = new HashMap<Class,HashMap<String,BoundProperty>>();
+    private static final HashMap<Class, HashMap<String,BoundProperty>> _savedPropertyMaps = new HashMap<Class, HashMap<String, BoundProperty>>();
 
     protected Object _bean;
-    transient protected HashMap<String,Object> _map = new HashMap<String,Object>();
-    transient protected HashMap<String,BoundProperty> _properties;
+    transient protected HashMap<String, Object> _map = new HashMap<String, Object>();
+    transient protected HashMap<String, BoundProperty> _properties;
     transient private Object _keyDebug = null;
 
     static class BoundProperty
-        {
+    {
         BoundProperty(Method get, Method set, Class type)
-            {
+        {
             _getter = get;
             _setter = set;
             _type = type;
-            }
+        }
+
         Method _getter;
         Method _setter;
         Class _type;
-        }
+    }
 
 
     public BoundMap(Object bean)
-        {
+    {
         _bean = bean;
         initialize(_bean.getClass());
-        }
+    }
 
 
     public BoundMap()
-        {
-        }
+    {
+    }
 
 
     public void setBean(Object bean)
-        {
+    {
         _bean = bean;
         initialize(_bean.getClass());
-        }
+    }
 
 
     public Object getBean()
-        {
+    {
         return _bean;
-        }
+    }
 
     /** Magic method for deserialization */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException
@@ -86,119 +87,123 @@ public class BoundMap extends AbstractMap<String,Object> implements Serializable
     @SuppressWarnings({"CloneDoesntCallSuperClone"})
     @Override
     public Object clone() throws CloneNotSupportedException
-        {
+    {
         throw new CloneNotSupportedException();
-        }
+    }
 
 
     @Override
     public Object get(Object key)
-        {
+    {
         String sKey = (String)key;
         try
-            {
+        {
             BoundProperty bound = getBoundProperty(sKey);
             if (null != bound)
-                {
+            {
                 if (null == bound._getter)
                     throw new IllegalArgumentException("Can not get property " + sKey);
                 return bound._getter.invoke(_bean);
-                }
             }
-        catch (IllegalAccessException x)
-            {
-            throw new RuntimeException(x);
-            }
-        catch (InvocationTargetException x)
-            {
-            throw new RuntimeException(x);
-            }
-        return _map.get(sKey);
         }
+        catch (IllegalAccessException x)
+        {
+            throw new RuntimeException(x);
+        }
+        catch (InvocationTargetException x)
+        {
+            throw new RuntimeException(x);
+        }
+
+        return _map.get(sKey);
+    }
 
 
     @Override
     public Object put(String key, Object value)
-        {
+    {
         try
+        {
+            BoundProperty bound = getBoundProperty(key);
+            if (null != bound)
             {
-                BoundProperty bound = getBoundProperty(key);
-                if (null != bound)
+                Object previous = null;
+                if (null == bound._setter)
+                    throw new IllegalArgumentException("Can not set property " + key);
+                if (null != value && !bound._type.isAssignableFrom(value.getClass()))
+                    value = ConvertUtils.convert(value.toString(), bound._type);
+                if (null != bound._getter)
+                    previous = bound._getter.invoke(_bean);
+                if (value != previous)
                 {
-                    Object previous = null;
-                    if (null == bound._setter)
-                        throw new IllegalArgumentException("Can not set property " + key);
-                    if (null != value && !bound._type.isAssignableFrom(value.getClass()))
-                        value = ConvertUtils.convert(value.toString(), bound._type);
-                    if (null != bound._getter)
-                        previous = bound._getter.invoke(_bean);
-                    if (value != previous)
-                    {
-                        assert key != _keyDebug : "infinite recursion???";
-                        //noinspection ConstantConditions
-                        assert null != (_keyDebug = key);
-                        bound._setter.invoke(_bean, value);
-                    }
-                    return previous;
+                    assert key != _keyDebug : "infinite recursion???";
+                    //noinspection ConstantConditions
+                    assert null != (_keyDebug = key);
+                    bound._setter.invoke(_bean, value);
                 }
+                return previous;
             }
-            catch (IllegalAccessException x)
-            {
-                throw new RuntimeException(x);
-            }
-            catch (InvocationTargetException x)
-            {
-                throw new RuntimeException(x);
-            }
-            finally
-            {
-                //noinspection ConstantConditions
-                assert null == (_keyDebug = null);
-            }
-        return _map.put(key, value);
         }
+        catch (IllegalAccessException x)
+        {
+            throw new RuntimeException(x);
+        }
+        catch (InvocationTargetException x)
+        {
+            throw new RuntimeException(x);
+        }
+        finally
+        {
+            //noinspection ConstantConditions
+            assert null == (_keyDebug = null);
+        }
+
+        return _map.put(key, value);
+    }
 
 
     @Override
     public Set<Map.Entry<String,Object>> entrySet()
-        {
+    {
         Set<String> keys = keySet();
         Set<Map.Entry<String,Object>> entries = new HashSet<Map.Entry<String,Object>>();
+
         for (String key : keys)
-            {
+        {
             entries.add(new Entry(key));
-            }
-        return Collections.unmodifiableSet(entries);
         }
+
+        return Collections.unmodifiableSet(entries);
+    }
 
 
     private class Entry implements Map.Entry<String,Object>
-        {
+    {
         String key;
 
         Entry(String key)
-            {
+        {
             this.key = key;
-            }
-
-        public String getKey()
-            {
-            return key;
-            }
-
-        public Object getValue()
-            {
-            return get(key);
-            }
-
-        public Object setValue(Object v)
-            {
-            return put(key, v);
-            }
         }
 
-    private String convertToPropertyName(String name)
+        public String getKey()
         {
+            return key;
+        }
+
+        public Object getValue()
+        {
+            return get(key);
+        }
+
+        public Object setValue(Object v)
+        {
+            return put(key, v);
+        }
+    }
+
+    private String convertToPropertyName(String name)
+    {
         if (1 == name.length())
             return name.toLowerCase();
 
@@ -206,20 +211,20 @@ public class BoundMap extends AbstractMap<String,Object> implements Serializable
             return Character.toLowerCase(name.charAt(0)) + name.substring(1);
         else
             return name;
-        }
+    }
 
     private BoundProperty getBoundProperty(String key)
-        {
+    {
         BoundProperty bound = _properties.get(key);
         if (null == bound && Character.isUpperCase(key.charAt(0)))
             bound = _properties.get(convertToPropertyName(key));
 
         return bound;
-        }
+    }
 
     @Override
     public Set<String> keySet()
-        {
+    {
         Set<String> keys = new HashSet<String>();
         Set<String> mapKeys = _map.keySet();
         keys.addAll(mapKeys);
@@ -228,60 +233,60 @@ public class BoundMap extends AbstractMap<String,Object> implements Serializable
         keys.addAll(propKeys);
 
         return Collections.unmodifiableSet(keys);
-        }
+    }
 
 
     @Override
     public int size()
-        {
+    {
         return _map.size() + _properties.size();
-        }
+    }
 
 
     @Override
     public boolean containsKey(Object key)
-        {
+    {
         String sKey = (String)key;
         if (null != _properties.get(sKey))
             return true;
         return _map.containsKey(sKey);
-        }
+    }
 
 
     @Override
     public Object remove(Object key)
-        {
+    {
         String sKey = (String)key;
         if (null != _properties.get(sKey))
             throw new UnsupportedOperationException("can't remove property " + key);
         return _map.remove(sKey);
-        }
+    }
 
 
     public Map getExtendedProperties()
-        {
+    {
         return _map;
-        }
+    }
 
 
     private void initialize(Class beanClass)
-        {
+    {
         synchronized(_savedPropertyMaps)
-            {
-            HashMap<String,BoundProperty> props = _savedPropertyMaps.get(beanClass);
+        {
+            HashMap<String, BoundProperty> props = _savedPropertyMaps.get(beanClass);
             if (props == null)
-                {
+            {
                 try
-                    {
+                {
                     props = new HashMap<String,BoundProperty>();
                     BeanInfo beanInfo = Introspector.getBeanInfo(beanClass);
                     PropertyDescriptor[] propertyDescriptors = beanInfo.getPropertyDescriptors();
                     if (propertyDescriptors != null)
-                        {
+                    {
                         for (PropertyDescriptor propertyDescriptor : propertyDescriptors)
-                            {
+                        {
                             if (propertyDescriptor != null)
-                                {
+                            {
                                 String name = propertyDescriptor.getName();
                                 if ("class".equals(name))
                                     continue;
@@ -289,63 +294,64 @@ public class BoundMap extends AbstractMap<String,Object> implements Serializable
                                 Method writeMethod = propertyDescriptor.getWriteMethod();
                                 Class aType = propertyDescriptor.getPropertyType();
                                 props.put(name, new BoundProperty(readMethod, writeMethod, aType));
-                                }
                             }
                         }
                     }
+                }
                 catch (IntrospectionException e)
-                    {
+                {
                     Logger.getLogger(this.getClass()).error("error creating BoundMap", e);
                     throw new RuntimeException(e);
-                    }
-                _savedPropertyMaps.put(beanClass, props);
                 }
-            _properties = props;
-            }
-        }
 
+                _savedPropertyMaps.put(beanClass, props);
+            }
+
+            _properties = props;
+        }
+    }
 
 
     public static class TestBean
-        {
+    {
         private int i;
         private Integer j;
         private String s;
 
         public int getI()
-            {
+        {
             return i;
-            }
+        }
 
         public void setI(int i)
-            {
+        {
             this.i = i;
-            }
+        }
 
         public Integer getJ()
-            {
+        {
             return j;
-            }
+        }
 
         public void setJ(Integer j)
-            {
+        {
             this.j = j;
-            }
+        }
 
         public String getS()
-            {
+        {
             return s;
-            }
+        }
 
         public void setS(String s)
-            {
+        {
             this.s = s;
-            }
         }
+    }
 
 
     public static void main(String[] args)
-        {
+    {
         TestBean bean = new TestBean();
         Map<String,Object> m = new BoundMap(bean);
 
@@ -370,5 +376,5 @@ public class BoundMap extends AbstractMap<String,Object> implements Serializable
         System.out.println("j=" + bean.j);
         System.out.println("s=" + bean.s);
         System.out.println("t=" + m.get("t"));
-        }
     }
+}

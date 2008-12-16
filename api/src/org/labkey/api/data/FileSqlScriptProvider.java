@@ -223,8 +223,8 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         private static final int TO_INDEX = 2;
         private static final Pattern _scriptFileNamePattern = Pattern.compile("\\w+-[0-9]\\.[0-9]{2,3}-[0-9]\\.[0-9]{2,3}.sql");
 
-        private FileSqlScriptProvider _provider = null;
-        private String _fileName = null;
+        private final FileSqlScriptProvider _provider;
+        private final String _fileName;
         private String _schemaName = null;
         private double _fromVersion = 0;
         private double _toVersion = 0;
@@ -233,14 +233,14 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
         public FileSqlScript(FileSqlScriptProvider provider, String fileName)
         {
+            _provider = provider;
+            _fileName = fileName;
+
             if (!_scriptFileNamePattern.matcher(fileName).matches())
             {
                 _log.debug(provider.getProviderName() + ", ignoring file " + fileName + ": wrong format");
                 return;
             }
-
-            _provider = provider;
-            _fileName = fileName;
 
             String[] parts = _fileName.substring(0, _fileName.length() - 4).split("-");
 
@@ -349,6 +349,11 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         public String createFilename(String schema, double fromVersion, double toVersion)
         {
             return schema + "-" + ModuleContext.formatVersion(fromVersion) + "-" + ModuleContext.formatVersion(toVersion) + ".sql"; 
+        }
+
+        public int compareTo(SqlScript script)
+        {
+            return getDescription().compareTo(script.getDescription());
         }
     }
 }

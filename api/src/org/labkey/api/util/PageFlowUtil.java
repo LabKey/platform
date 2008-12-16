@@ -1884,7 +1884,7 @@ public class PageFlowUtil
     static public ActionURL urlFor(Enum action, Container container)
     {
         String pageFlowName = ModuleLoader.getInstance().getPageFlowForPackage(action.getClass().getPackage());
-        return new ActionURL(pageFlowName, action.toString(), container.getPath());
+        return new ActionURL(pageFlowName, action.toString(), container);
     }
 
     /**

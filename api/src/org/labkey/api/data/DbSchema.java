@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleContext;
 import org.labkey.api.ms2.MS2Service;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CaseInsensitiveHashMap;
@@ -444,6 +445,27 @@ public class DbSchema
         synchronized (loadedSchemas)
         {
             loadedSchemas.clear();
+        }
+    }
+
+
+    // Once a module is done with its upgrade then all database schemas it owns are upgraded.  This clears out only
+    // schemas of modules that are not upgraded, so we don't, for example, reload core, prop, etc. after they're
+    // complete.
+    public static void invalidateIncompleteSchemas()
+    {
+        synchronized (loadedSchemas)
+        {
+            List<String> schemaNames = new ArrayList<String>(loadedSchemas.keySet());
+
+            for (String schemaName : schemaNames)
+            {
+                Module module = getModuleForSchemaName(schemaName);
+                ModuleContext context = ModuleLoader.getInstance().getModuleContext(module);
+
+                if (!context.isInstallComplete())
+                    loadedSchemas.remove(schemaName);
+            }
         }
     }
 

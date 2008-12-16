@@ -103,7 +103,7 @@ public class SqlScriptRunner
         }
         
         //invalidate the schemas so that we pick up changes made by the upgrade scripts
-        DbSchema.invalidateSchemas();
+        DbSchema.invalidateIncompleteSchemas();
 
         synchronized(SCRIPT_LOCK)
         {
@@ -245,7 +245,7 @@ public class SqlScriptRunner
     }
 
 
-    public interface SqlScript
+    public interface SqlScript extends Comparable<SqlScript>
     {
         public String getSchemaName();
         public double getFromVersion();

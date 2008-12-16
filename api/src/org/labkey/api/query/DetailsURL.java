@@ -44,8 +44,8 @@ public class DetailsURL
         String strAction = pathParts[1];
         if (!strAction.endsWith(".view"))
             throw new MetadataException("Action name should end with '.view'");
-        ActionURL baseURL = new ActionURL(strPageFlow, strAction.substring(0, strAction.length() - 5), container.getPath());
-        Map <String, String> params = new HashMap();
+        ActionURL baseURL = new ActionURL(strPageFlow, strAction.substring(0, strAction.length() - 5), container);
+        Map<String, String> params = new HashMap<String, String>();
         for (String param : queryParams)
         {
             String[] pair = StringUtils.split(param, "=");

@@ -79,7 +79,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     public static final String ERROR_REQUIRED = "requiredError";
     public static final String ERROR_UNIQUE = "uniqueConstraint";
 
-    private static Map<Class<? extends Controller>, ActionDescriptor> _classToDescriptor = new HashMap<Class<? extends Controller>, ActionDescriptor>();
+    private static final Map<Class<? extends Controller>, ActionDescriptor> _classToDescriptor = new HashMap<Class<? extends Controller>, ActionDescriptor>();
 
     private static final Logger _log = Logger.getLogger(SpringActionController.class);
 

@@ -18,6 +18,8 @@ package org.labkey.api.view;
 
 import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.UserUrls;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.io.PrintWriter;
 
@@ -67,7 +69,7 @@ public class ContactWebPart extends WebPartView
         gridView.setContainer(c.getProject());
 
         if (!getViewContext().getUser().isGuest())
-            gridView.setTitleHref(ActionURL.toPathString("User", "showUsers", ""));
+            gridView.setTitleHref(PageFlowUtil.urlProvider(UserUrls.class).getSiteUsersURL());
 
         include(gridView);
     }
@@ -79,7 +81,7 @@ public class ContactWebPart extends WebPartView
 
         rgn.setColumns(CoreSchema.getInstance().getTableInfoContacts().getColumns("Name,DisplayName,Email,Phone,UserId"));
         DisplayColumn nameDC = rgn.getDisplayColumn("name");
-        nameDC.setURL(ActionURL.toPathString("User", "details.view", "") + "?userId=${UserId}");
+        nameDC.setURL(PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(ContainerManager.getRoot()).toString() + "?userId=${UserId}");
         nameDC.setHtmlFiltered(false);
 
         rgn.getDisplayColumn("Email").setURL("mailto:${Email}");

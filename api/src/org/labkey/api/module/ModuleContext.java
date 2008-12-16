@@ -71,6 +71,11 @@ public class ModuleContext implements Cloneable
         return _newInstall;
     }
 
+    public boolean isInstallComplete()
+    {
+        return ModuleLoader.ModuleState.ReadyToRun == _moduleState || ModuleLoader.ModuleState.Running == _moduleState;
+    }
+
     public String getClassName()
     {
         return _className;

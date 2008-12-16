@@ -20,6 +20,8 @@ import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.view.ActionURL;
 
+import javax.servlet.http.HttpServletRequest;
+
 /**
  * User: jeckels
  * Date: Jan 27, 2008
@@ -53,4 +55,6 @@ public interface ExperimentUrls extends UrlProvider
     ActionURL getDomainEditorURL(Container container, int domainId);
 
     ActionURL getShowFileURL(Container container, ExpData data, boolean inline);
+
+    ActionURL getSetFlagURL(HttpServletRequest request);
 }

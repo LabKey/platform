@@ -26,4 +26,5 @@ public interface ProjectUrls extends UrlProvider
 {
     ActionURL getStartURL(Container container);
     ActionURL getHomeURL();
+    ActionURL getCustomizeWebPartURL(Container c);
 }

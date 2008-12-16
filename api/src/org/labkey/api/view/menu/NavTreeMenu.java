@@ -42,7 +42,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
         setFrame(FrameType.LEFT_NAVIGATION);
         _collapseId = collapseId;
         if (titleHref != null)
-            setTitleHref(titleHref.getLocalURIString());
+            setTitleHref(titleHref);
         _elements = elements;
         // assume we're collapsed:
         setCollapsed(collapseByDefault);

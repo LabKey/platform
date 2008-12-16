@@ -262,7 +262,7 @@ public abstract class DefaultModule implements Module
 
     public ActionURL getTabURL(Container c, User user)
     {
-        return new ActionURL(getPageFlowNameToClass().keySet().iterator().next(), "begin", c == null ? null : c.getPath());
+        return new ActionURL(getPageFlowNameToClass().keySet().iterator().next(), "begin", c);
     }
 
     public TabDisplayMode getTabDisplayMode()

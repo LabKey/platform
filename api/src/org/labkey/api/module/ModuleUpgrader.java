@@ -16,7 +16,6 @@
 package org.labkey.api.module;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.data.DbSchema;
 
 import java.util.List;
 import java.util.ListIterator;

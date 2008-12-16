@@ -67,7 +67,7 @@ public class SqlScriptManager
         // script is run.  In either case, invalidate to force reloading schema from database meta data.
         if (_core.getTableInfoSqlScripts().getTableType() == TableInfo.TABLE_TYPE_NOT_IN_DB)
         {
-            DbSchema.invalidateSchemas();
+            DbSchema.invalidateIncompleteSchemas();
             return null;
         }
 

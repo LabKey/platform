@@ -24,7 +24,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.ContextListener;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.HttpView;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanFactory;

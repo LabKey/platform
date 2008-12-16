@@ -185,7 +185,7 @@ public class SqlScriptParser
                 assert null != _upgradeCode;
                 assert null != _methodName;
 
-                DbSchema.invalidateSchemas();
+                DbSchema.invalidateIncompleteSchemas();
                 Method method = _upgradeCode.getClass().getMethod(_methodName, ModuleContext.class);
                 method.invoke(_upgradeCode, _moduleContext);
             }

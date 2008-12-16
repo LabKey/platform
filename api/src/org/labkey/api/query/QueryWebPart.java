@@ -54,7 +54,7 @@ public class QueryWebPart extends WebPartView
                 url.deleteParameters();
             }
 
-            setTitleHref(url.toString());
+            setTitleHref(url);
             if (title == null)
             {
                 if (_settings.getQueryName() != null)
@@ -71,11 +71,11 @@ public class QueryWebPart extends WebPartView
         else
         {
             title = "Query";
-            setTitleHref(QueryService.get().urlQueryDesigner(getContainer(), null).toString());
+            setTitleHref(QueryService.get().urlQueryDesigner(getContainer(), null));
         }
         if (url != null)
         {
-            setTitleHref(url.toString());
+            setTitleHref(url);
         }
         setTitle(title);
     }

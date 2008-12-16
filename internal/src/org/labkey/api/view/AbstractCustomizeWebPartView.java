@@ -18,6 +18,8 @@ package org.labkey.api.view;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.ACL;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.portal.ProjectUrls;
 
 import javax.servlet.ServletException;
 
@@ -37,7 +39,7 @@ public abstract class AbstractCustomizeWebPartView<ModelBean> extends GroovyView
     {
         super.prepareWebPart(model);
         Container c = getViewContext().getContainer(ACL.PERM_UPDATE);
-        addObject("postURL", ActionURL.toPathString("Project", "customizeWebPart", c.getPath()));
+        addObject("postURL", PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(c).toString());
         Portal.WebPart webPart = (Portal.WebPart) getViewContext().get("webPart");
         if (null != webPart)
             setTitle("Customize " + webPart.getName() + " Web Part");
