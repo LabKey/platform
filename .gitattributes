@@ -359,7 +359,6 @@ core/src/org/labkey/core/CoreUpgradeCode.java -text
 core/src/org/labkey/core/SqlDialectPostgreSQL.java -text
 core/src/org/labkey/core/admin/AdminController.java -text
 core/src/org/labkey/core/admin/TestNetworkDriveBean.java -text
-core/src/org/labkey/core/admin/ViewHandler.java -text
 core/src/org/labkey/core/admin/admin.jsp -text
 core/src/org/labkey/core/admin/checkDatabase.jsp -text
 core/src/org/labkey/core/admin/confirmProjectMove.jsp -text
@@ -382,6 +381,7 @@ core/src/org/labkey/core/admin/renameFolder.jsp -text
 core/src/org/labkey/core/admin/reorderFolders.jsp -text
 core/src/org/labkey/core/admin/sql/ShowRunningScriptsPage.java -text
 core/src/org/labkey/core/admin/sql/SqlScriptController.java -text
+core/src/org/labkey/core/admin/sql/ViewHandler.java -text
 core/src/org/labkey/core/admin/sql/showRunningScripts.jsp -text
 core/src/org/labkey/core/admin/testNetworkDrive.jsp -text
 core/src/org/labkey/core/admin/threads.jsp -text
@@ -874,6 +874,7 @@ mothership/module.properties -text
 mothership/src/META-INF/mothership.xml -text
 mothership/src/META-INF/mothership/scripts/postgresql/mothership-0.00-2.10.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/mothership-0.17-0.18.sql -text
+mothership/src/META-INF/mothership/scripts/postgresql/mothership-2.00-2.10.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/mothership-2.10-2.20.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/mothership-2.20-2.30.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/mothership-2.30-8.10.sql -text
@@ -893,6 +894,7 @@ mothership/src/META-INF/mothership/scripts/postgresql/obsolete/mothership-2.30-2
 mothership/src/META-INF/mothership/scripts/postgresql/obsolete/mothership-2.31-2.32.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-0.00-2.10.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-0.17-0.18.sql -text
+mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-2.00-2.10.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-2.10-2.20.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-2.20-2.30.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-2.30-8.10.sql -text

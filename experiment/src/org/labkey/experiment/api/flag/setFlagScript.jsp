@@ -15,20 +15,19 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.exp.api.ExperimentUrls"%>
+<%@ page import="org.labkey.api.settings.AppProps"%>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <% 
-   ActionURL urlSet = new ActionURL("Experiment", "setFlag", "");
-    urlSet.addParameter("flagSessionId", request.getSession().getId());
+    ActionURL setFlagUrl = urlProvider(ExperimentUrls.class).getSetFlagURL(request);
 %>
 
 <script type="text/javascript">
     var defaultComment = "Flagged for review";
     function setFlag(flagId)
     {
-        var urlSet = <%=q(urlSet.toString())%> + '&lsid=' + escape(flagId);
+        var urlSet = <%=q(setFlagUrl.toString())%> + '&lsid=' + escape(flagId);
         var images = [];
         var allImages = document.images;
         var allImageCount = allImages.length;

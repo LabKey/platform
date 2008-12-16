@@ -78,7 +78,7 @@ public class SamplesGridView extends GridView
         private String getHistoryLink(RenderContext ctx)
         {
             if (_historyLinkBase == null)
-                _historyLinkBase = ActionURL.toPathString("Study-Samples", "sampleEvents", ctx.getContainer().getPath()) + "?id=";
+                _historyLinkBase = ActionURL.toPathString("Study-Samples", "sampleEvents", ctx.getContainer()) + "?id=";
             Integer specimenId = (Integer) ctx.getRow().get("RowId");
             return _historyLinkBase + specimenId;
         }
@@ -227,7 +227,7 @@ public class SamplesGridView extends GridView
 
         if (allowRegionLinks)
         {
-            String eventsBase = ActionURL.toPathString("Study-Samples", "sampleEvents", container.getPath());
+            String eventsBase = ActionURL.toPathString("Study-Samples", "sampleEvents", container);
             rgn.addDisplayColumn(0, new SimpleDisplayColumn(
                     "<a href=\"" + eventsBase + "?id=${rowid}\">[history]</a>"));
         }

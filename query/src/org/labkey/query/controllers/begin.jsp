@@ -38,7 +38,7 @@
         {
             if (currentSchema == null || !schemaName.equals(currentSchema.getSchemaName()))
             {
-                ActionURL urlSchema = new ActionURL("query", QueryAction.schema.name(), context.getContainer().getPath());
+                ActionURL urlSchema = new ActionURL("query", QueryAction.schema.name(), context.getContainer());
                 urlSchema.addParameter(QueryParam.schemaName, schemaName);
     %>
                 <labkey:link text="<%=schemaName%>" href="<%=urlSchema%>"/>

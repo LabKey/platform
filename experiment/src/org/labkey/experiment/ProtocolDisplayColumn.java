@@ -50,7 +50,7 @@ public class ProtocolDisplayColumn extends SimpleDisplayColumn
         }
         else
         {
-            ActionURL url = new ActionURL("Experiment", "protocolDetails", ctx.getContainer().getPath());
+            ActionURL url = new ActionURL("Experiment", "protocolDetails", ctx.getContainer());
             url.addParameter("rowId", Integer.toString(_protocol.getRowId()));
             out.write("<a href=\"" + url.toString() + "\">" + _protocol.getName() + "</a>");
         }

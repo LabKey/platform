@@ -41,7 +41,7 @@ public class ListWebPart extends WebPartView<ViewContext>
         setTitle("Lists");
         if (getModelBean().hasPermission(ACL.PERM_UPDATE))
         {
-            setTitleHref(ListController.getBeginURL(getViewContext().getContainer()).toString());
+            setTitleHref(ListController.getBeginURL(getViewContext().getContainer()));
         }
     }
 

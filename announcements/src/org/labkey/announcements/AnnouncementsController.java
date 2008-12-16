@@ -2283,12 +2283,11 @@ public class AnnouncementsController extends SpringActionController
 
     public static class AnnouncementWebPart extends JspView<AnnouncementWebPart.MessagesBean>
     {
-
         public AnnouncementWebPart(Container c, ActionURL url, User user, Settings settings, boolean displayAll) throws SQLException, ServletException
         {
             super("/org/labkey/announcements/announcementWebPart.jsp", new MessagesBean(c, url, user, settings, displayAll));
             setTitle(settings.getBoardName());
-            setTitleHref(getBeginURL(c).getEncodedLocalURIString());
+            setTitleHref(getBeginURL(c));
         }
 
         public AnnouncementWebPart(ViewContext ctx) throws SQLException, ServletException
@@ -2401,7 +2400,7 @@ public class AnnouncementsController extends SpringActionController
             DataRegion rgn = getDataRegion(perm, settings);
 
             setTitle(settings.getBoardName() + " List");
-            setTitleHref(getListURL(c).getEncodedLocalURIString());
+            setTitleHref(getListURL(c));
 
             TableInfo tinfo = _comm.getTableInfoThreads();
             DisplayColumn title = new DataColumn(tinfo.getColumn("Title"));

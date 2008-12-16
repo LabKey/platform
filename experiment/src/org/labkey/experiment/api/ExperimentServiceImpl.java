@@ -663,7 +663,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         view.setTitle("Experiment Runs");
         ActionURL url = new ActionURL(ExperimentController.ShowRunsAction.class, context.getContainer());
         url.addParameter("experimentRunFilter", type.getDescription());
-        view.setTitleHref(url.toString());
+        view.setTitleHref(url);
         return view;
     }
 

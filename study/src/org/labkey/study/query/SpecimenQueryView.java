@@ -79,7 +79,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         private String getHistoryLink(RenderContext ctx)
         {
             if (_historyLinkBase == null)
-                _historyLinkBase = ActionURL.toPathString("Study-Samples", "sampleEvents", ctx.getContainer().getPath()) + "?id=";
+                _historyLinkBase = ActionURL.toPathString("Study-Samples", "sampleEvents", ctx.getContainer()) + "?id=";
             Integer specimenId = (Integer) ctx.getRow().get("RowId");
             return _historyLinkBase + specimenId;
         }
@@ -531,7 +531,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
             rgn.setRecordSelectorValueColumns("RowId");
             if (_showHistoryLinks)
             {
-                String eventsBase = ActionURL.toPathString("Study-Samples", "sampleEvents", getContainer().getPath());
+                String eventsBase = ActionURL.toPathString("Study-Samples", "sampleEvents", getContainer());
                 rgn.addDisplayColumn(0, new SimpleDisplayColumn("<a href=\"" + eventsBase + "?selected=" +
                         Boolean.toString(_participantVisitFiltered) + "&id=${rowid}\">[history]</a>"));
             }

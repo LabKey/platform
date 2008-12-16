@@ -2204,7 +2204,7 @@ public class WikiController extends SpringActionController
 
                 if (bHasCopy)
                 {
-                    URLHelper copyUrl = new ActionURL("Wiki", "copyWikiLocation", cToc.getPath());
+                    URLHelper copyUrl = new ActionURL(CopyWikiLocationAction.class, cToc);
                     //pass in source container as a param.
                     copyUrl.addParameter("sourceContainer", cToc.getPath());
 
@@ -2216,7 +2216,7 @@ public class WikiController extends SpringActionController
                 if (bHasPrint)
                 {
                     out.print("[<a href=\"");
-                    out.print(PageFlowUtil.filter(ActionURL.toPathString("Wiki", "printAll", cToc.getPath())));
+                    out.print(PageFlowUtil.filter(new ActionURL(PrintAllAction.class, cToc)));
                     out.print("\" target=\"_blank\">print all</a>]");
                 }
 

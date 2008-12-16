@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.core.admin;
+package org.labkey.core.admin.sql;
 
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;

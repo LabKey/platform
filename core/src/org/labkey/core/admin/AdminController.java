@@ -30,7 +30,6 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.*;
 import org.labkey.api.data.*;
 import org.labkey.api.data.ContainerManager.ContainerParent;
-import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.jsp.FormPage;
 import org.labkey.api.module.*;
@@ -38,6 +37,7 @@ import org.labkey.api.ms2.MS2Service;
 import org.labkey.api.ms2.SearchClient;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.*;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.util.*;
@@ -48,7 +48,6 @@ import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.common.util.Pair;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.data.xml.TablesDocument;
@@ -104,7 +103,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "environment variables", new ActionURL(EnvironmentVariablesAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "system properties", new ActionURL(SystemPropertiesAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Diagnostics, "scripts", new ActionURL(ScriptsAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Diagnostics, "scripts", new ActionURL(SqlScriptController.ScriptsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "groovy templates", new ActionURL(GroovyAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors", new ActionURL(ShowAllErrorsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors since reset", new ActionURL(ShowErrorsSinceMarkAction.class, root));
@@ -114,7 +113,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "credits", new ActionURL(CreditsAction.class, root));
     }
 
-    public AdminController() throws Exception
+    public AdminController()
     {
         setActionResolver(_actionResolver);
     }
@@ -136,6 +135,7 @@ public class AdminController extends SpringActionController
             root.addChild("Admin Console", getShowAdminURL()).addChild(childTitle);
         else
             root.addChild("Admin Console", getShowAdminURL()).addChild(childTitle, new ActionURL(action, getContainer()));
+
         return root;
     }
 
@@ -263,9 +263,9 @@ public class AdminController extends SpringActionController
             return new ActionURL(CreateFolderAction.class, ContainerManager.getRoot());
         }
 
-        public NavTree appendAdminNavTrail(NavTree root, String childTitle)
+        public NavTree appendAdminNavTrail(NavTree root, String childTitle, ActionURL childURL)
         {
-            root.addChild("Admin Console", getAdminConsoleURL()).addChild(childTitle);
+            root.addChild("Admin Console", getAdminConsoleURL()).addChild(childTitle, childURL);
             return root;
         }
 
@@ -277,411 +277,6 @@ public class AdminController extends SpringActionController
         public ActionURL getMemTrackerURL()
         {
             return new ActionURL(MemTrackerAction.class, ContainerManager.getRoot());
-        }
-    }
-
-
-    private ActionURL getConsolidateScriptsURL(double fromVersion, double toVersion)
-    {
-        ActionURL url = new ActionURL(ConsolidateScriptsAction.class, ContainerManager.getRoot());
-        url.addParameter("fromVersion", Double.toString(fromVersion));
-        url.addParameter("toVersion", Double.toString(toVersion));
-
-        return url;
-    }
-
-
-    @RequiresSiteAdmin
-    public class ConsolidateScriptsAction extends SimpleViewAction<ConsolidateForm>
-    {
-        public ModelAndView getView(ConsolidateForm form, BindException errors) throws Exception
-        {
-            List<Module> modules = ModuleLoader.getInstance().getModules();
-            List<ScriptConsolidator> consolidators = new ArrayList<ScriptConsolidator>();
-
-            double fromVersion = form.getFromVersion();
-            double toVersion = form.getToVersion();
-
-            for (Module module : modules)
-            {
-                if (module instanceof DefaultModule)
-                {
-                    DefaultModule defModule = (DefaultModule)module;
-
-                    if (defModule.hasScripts())
-                    {
-                        FileSqlScriptProvider provider = new FileSqlScriptProvider(defModule);
-                        Set<String> schemaNames = provider.getSchemaNames();
-
-                        for (String schemaName : schemaNames)
-                        {
-                            ScriptConsolidator consolidator = new ScriptConsolidator(provider, schemaName, fromVersion, toVersion);
-
-                            if (!consolidator.getScripts().isEmpty())
-                                consolidators.add(consolidator);
-                        }
-                    }
-                }
-            }
-
-            StringBuilder formHtml = new StringBuilder();
-
-            formHtml.append("<form method=\"get\">\n");
-            formHtml.append("  <table>\n");
-            formHtml.append("    <tr><td>From:</td><td><input name=\"fromVersion\" size=\"10\" value=\"");
-            formHtml.append(ModuleContext.formatVersion(fromVersion));
-            formHtml.append("\"/></td></tr>\n");
-            formHtml.append("    <tr><td>To:</td><td><input name=\"toVersion\" size=\"10\" value=\"");
-            formHtml.append(ModuleContext.formatVersion(toVersion));
-            formHtml.append("\"/></td></tr>\n");
-            formHtml.append("    <tr><td colspan=2>");
-            formHtml.append(PageFlowUtil.generateSubmitButton("Update"));
-            formHtml.append("</td></tr>\n");
-            formHtml.append("  </table>\n");
-            formHtml.append("</form><br>\n");
-
-            StringBuilder html = new StringBuilder();
-
-            for (ScriptConsolidator consolidator : consolidators)
-            {
-                List<SqlScript> scripts = consolidator.getScripts();
-                String filename = consolidator.getFilename();
-
-                if (1 == scripts.size() && scripts.get(0).getDescription().equals(filename))
-                    continue;  // No consolidation to do on this schema
-
-                ActionURL url = getConsolidateSchemaURL(consolidator.getModuleName(), consolidator.getSchemaName(), fromVersion, toVersion);
-                html.append("<b>Schema ").append(consolidator.getSchemaName()).append("</b><br>\n");
-
-                for (SqlScript script : scripts)
-                    html.append(script.getDescription()).append("<br>\n");
-
-                html.append("<br>\n");
-                html.append("[<a href=\"").append(url.getEncodedLocalURIString()).append("\">").append(1 == consolidator.getScripts().size() ? "copy" : "consolidate").append(" to ").append(filename).append("</a>]<br><br>\n");
-            }
-
-            if (0 == html.length())
-                html.append("No schemas require consolidation in this range");
-
-            html.insert(0, formHtml);
-
-            return new HtmlView(html.toString());
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            new ScriptsAction().appendNavTrail(root);
-            root.addChild("Consolidate Scripts");
-            return root;
-        }
-    }
-
-
-    private static class ScriptConsolidator
-    {
-        private FileSqlScriptProvider _provider;
-        private String _schemaName;
-        private List<SqlScript> _scripts = new ArrayList<SqlScript>();
-        private double _fromVersion;
-        private double _toVersion;
-
-        private ScriptConsolidator(FileSqlScriptProvider provider, String schemaName, double fromVersion, double toVersion) throws SqlScriptRunner.SqlScriptException
-        {
-            _provider = provider;
-            _schemaName = schemaName;
-            _fromVersion = fromVersion;
-            _toVersion = toVersion;
-            _scripts = SqlScriptRunner.getRecommendedScripts(provider.getScripts(schemaName), fromVersion, toVersion);
-        }
-
-        private List<SqlScript> getScripts()
-        {
-            return _scripts;
-        }
-
-        private String getSchemaName()
-        {
-            return _schemaName;
-        }
-
-        private double getFromVersion()
-        {
-            return _fromVersion;
-        }
-
-        private double getToVersion()
-        {
-            return _toVersion;
-        }
-
-        private String getFilename()
-        {
-            return getSchemaName() + "-" + ModuleContext.formatVersion(getFromVersion()) + "-" + ModuleContext.formatVersion(getToVersion()) + ".sql";
-        }
-
-        private String getModuleName()
-        {
-            return _provider.getProviderName();
-        }
-
-        // Concatenate all the recommended scripts together, removing all but the first copyright notice
-        private String getConsolidatedScript()
-        {
-            Pattern copyrightPattern = Pattern.compile("^/\\*\\s*\\*\\s*Copyright.*under the License.\\s*\\*/\\s*", Pattern.CASE_INSENSITIVE + Pattern.DOTALL + Pattern.MULTILINE);
-            StringBuilder sb = new StringBuilder();
-            boolean firstScript = true;
-
-            for (SqlScript script : getScripts())
-            {
-                String contents = script.getContents().trim();
-                Matcher licenseMatcher = copyrightPattern.matcher(contents);
-
-                if (firstScript)
-                {
-                    int contentStartIndex = 0;
-
-                    if (licenseMatcher.lookingAt())
-                    {
-                        contentStartIndex = licenseMatcher.end();
-                        sb.append(contents.substring(0, contentStartIndex));
-                    }
-
-                    sb.append("/* ").append(script.getDescription()).append(" */\n\n");
-                    sb.append(contents.substring(contentStartIndex, contents.length()));
-                    firstScript = false;
-                }
-                else
-                {
-                    sb.append("\n\n");
-                    sb.append("/* ").append(script.getDescription()).append(" */\n\n");
-                    sb.append(licenseMatcher.replaceFirst(""));    // Remove license
-                }
-            }
-
-            return sb.toString();
-        }
-
-        public void saveScript() throws IOException
-        {
-            _provider.saveScript(getFilename(), getConsolidatedScript());
-        }
-    }
-
-
-    public static class ConsolidateForm
-    {
-        private String _module;
-        private String _schema;
-        private double _fromVersion = Math.floor(ModuleLoader.getInstance().getCoreModule().getVersion() * 10) / 10;
-        private double _toVersion = _fromVersion + 0.1;
-
-        public String getModule()
-        {
-            return _module;
-        }
-
-        public void setModule(String module)
-        {
-            _module = module;
-        }
-
-        public String getSchema()
-        {
-            return _schema;
-        }
-
-        public void setSchema(String schema)
-        {
-            _schema = schema;
-        }
-
-        public double getFromVersion()
-        {
-            return _fromVersion;
-        }
-
-        public void setFromVersion(double fromVersion)
-        {
-            _fromVersion = fromVersion;
-        }
-
-        public double getToVersion()
-        {
-            return _toVersion;
-        }
-
-        public void setToVersion(double toVersion)
-        {
-            _toVersion = toVersion;
-        }
-    }
-
-
-    private ActionURL getConsolidateSchemaURL(String moduleName, String schemaName, double fromVersion, double toVersion)
-    {
-        ActionURL url = new ActionURL(ConsolidateSchemaAction.class, ContainerManager.getRoot());
-        url.addParameter("module", moduleName);
-        url.addParameter("schema", schemaName);
-        url.addParameter("fromVersion", String.valueOf(fromVersion));
-        url.addParameter("toVersion", String.valueOf(toVersion));
-        return url;
-    }
-
-
-    @RequiresSiteAdmin
-    public class ConsolidateSchemaAction extends FormViewAction<ConsolidateForm>
-    {
-        private String _schemaName;
-
-        public void validateCommand(ConsolidateForm target, Errors errors)
-        {
-        }
-
-        public ModelAndView getView(ConsolidateForm form, boolean reshow, BindException errors) throws Exception
-        {
-            _schemaName = form.getSchema();
-            ScriptConsolidator consolidator = getConsolidator(form);
-
-            StringBuilder html = new StringBuilder("<pre>\n");
-            html.append(consolidator.getConsolidatedScript());
-            html.append("</pre>\n");
-
-            html.append("<form method=\"post\">");
-            html.append(PageFlowUtil.generateSubmitButton("Save to " + consolidator.getFilename()));
-            html.append(PageFlowUtil.generateButton("Back", getSuccessURL(form)));
-            html.append("</form>");
-
-            return new HtmlView(html.toString());
-        }
-
-        public boolean handlePost(ConsolidateForm form, BindException errors) throws Exception
-        {
-            ScriptConsolidator consolidator = getConsolidator(form);
-            consolidator.saveScript();
-
-            return true;
-        }
-
-        public ActionURL getSuccessURL(ConsolidateForm form)
-        {
-            return getConsolidateScriptsURL(form.getFromVersion(), form.getToVersion());
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Consolidate Scripts for Schema " + _schemaName);
-        }
-
-        private ScriptConsolidator getConsolidator(ConsolidateForm form) throws SqlScriptRunner.SqlScriptException
-        {
-            DefaultModule module = (DefaultModule)ModuleLoader.getInstance().getModule(form.getModule());
-            FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
-            return new ScriptConsolidator(provider, form.getSchema(), form.getFromVersion(), form.getToVersion());
-        }
-    }
-
-
-    @RequiresPermission(ACL.PERM_ADMIN)
-    public class ExtractViewsAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            getPageConfig().setTemplate(Template.None);
-
-            String type = getViewContext().getActionURL().getParameter("type");
-
-            if ("drop".equals(type))
-                return new ExtractDropView();
-            else if ("create".equals(type))
-                return new ExtractCreateView();
-            else if ("clear".equals(type))
-                return new ClearView();
-
-            return new HtmlView("Error: must specify type parameter (\"drop\", \"create\", or \"clear\")");
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-
-        private abstract class ExtractView extends HttpView
-        {
-            abstract List<Module> getModules();
-            abstract ViewHandler getHandler(FileSqlScriptProvider provider, String schemaName);
-
-            @Override
-            protected void renderInternal(Object model, PrintWriter out) throws Exception
-            {
-                int totalScriptLines = 0;
-
-                out.println("<pre>");
-
-                for (Module module : getModules())
-                {
-                    if (module instanceof DefaultModule)
-                    {
-                        DefaultModule defModule = (DefaultModule)module;
-
-                        if (defModule.hasScripts())
-                        {
-                            FileSqlScriptProvider provider = new FileSqlScriptProvider(defModule);
-                            Set<String> schemaNames = provider.getSchemaNames();
-
-                            for (String schemaName : schemaNames)
-                            {
-                                ViewHandler handler = getHandler(provider, schemaName);
-                                handler.handle(out);
-                                totalScriptLines += handler.getScriptLines();
-                            }
-                        }
-                    }
-                }
-
-                out.println("Total lines processed: " + totalScriptLines);
-                out.println("</pre>");
-            }
-        }
-
-        private class ExtractDropView extends ExtractView
-        {
-            List<Module> getModules()
-            {
-                List<Module> modules = new ArrayList<Module>(ModuleLoader.getInstance().getModules());
-                Collections.reverse(modules);
-                return modules;
-            }
-
-            ViewHandler getHandler(FileSqlScriptProvider provider, String schemaName)
-            {
-                return new ViewHandler.ViewExtractor(provider, schemaName, true, false);
-            }
-        }
-
-        private class ExtractCreateView extends ExtractView
-        {
-            List<Module> getModules()
-            {
-                return ModuleLoader.getInstance().getModules();
-            }
-
-            ViewHandler getHandler(FileSqlScriptProvider provider, String schemaName)
-            {
-                return new ViewHandler.ViewExtractor(provider, schemaName, false, true);
-            }
-        }
-
-        private class ClearView extends ExtractView
-        {
-            List<Module> getModules()
-            {
-                return ModuleLoader.getInstance().getModules();
-            }
-
-            ViewHandler getHandler(FileSqlScriptProvider provider, String schemaName)
-            {
-                return new ViewHandler.ViewClearer(provider, schemaName);
-            }
         }
     }
 
@@ -2571,99 +2166,6 @@ public class AdminController extends SpringActionController
         {
             return appendAdminNavTrail(root, "Groovy Templates", this.getClass());
         }
-    }
-
-
-    @RequiresSiteAdmin
-    public class ScriptsAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            TableInfo tinfo = CoreSchema.getInstance().getTableInfoSqlScripts();
-            List<String> allRun = Arrays.asList(Table.executeArray(tinfo, tinfo.getColumn("FileName"), null, new Sort("FileName"), String.class));
-            List<String> incrementalRun = new ArrayList<String>();
-
-            for (String filename : allRun)
-                if (isIncrementalScript(filename))
-                    incrementalRun.add(filename);
-
-            StringBuilder html = new StringBuilder();
-            if (AppProps.getInstance().isDevMode())
-                html.append("[<a href='consolidateScripts.view'>consolidate scripts</a>]<p/>");
-            html.append("<table><tr><td colspan=2>Scripts that have run on this server</td><td colspan=2>Scripts that have not run on this server</td></tr>");
-            html.append("<tr><td>All</td><td>Incremental</td><td>All</td><td>Incremental</td></tr>");
-
-            html.append("<tr valign=top>");
-
-            appendFilenames(html, allRun);
-            appendFilenames(html, incrementalRun);
-
-            List<String> allNotRun = new ArrayList<String>();
-            List<String> incrementalNotRun = new ArrayList<String>();
-            List<Module> modules = ModuleLoader.getInstance().getModules();
-
-            for (Module module : modules)
-            {
-                if (module instanceof DefaultModule)
-                {
-                    DefaultModule defModule = (DefaultModule)module;
-
-                    if (defModule.hasScripts())
-                    {
-                        SqlScriptRunner.SqlScriptProvider provider = new FileSqlScriptProvider(defModule);
-                        List<SqlScriptRunner.SqlScript> scripts = provider.getScripts(null);
-
-                        for (SqlScriptRunner.SqlScript script : scripts)
-                            if (!allRun.contains(script.getDescription()))
-                                allNotRun.add(script.getDescription());
-                    }
-                }
-            }
-
-            for (String filename : allNotRun)
-                if (isIncrementalScript(filename))
-                    incrementalNotRun.add(filename);
-
-            appendFilenames(html, allNotRun);
-            appendFilenames(html, incrementalNotRun);
-
-            html.append("</tr></table>");
-
-            return new HtmlView(html.toString());
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return appendAdminNavTrail(root, "SQL Scripts", this.getClass());
-        }
-    }
-
-
-    private boolean isIncrementalScript(String filename)
-    {
-        String[] parts = filename.split("-|\\.sql");
-
-        double startVersion = Double.parseDouble(parts[1]) * 10;
-        double endVersion = Double.parseDouble(parts[2]) * 10;
-
-        return (Math.floor(startVersion) != startVersion || Math.floor(endVersion) != endVersion);
-    }
-
-
-    private void appendFilenames(StringBuilder html, List<String> filenames)
-    {
-        html.append("<td>\n");
-
-        if (filenames.size() > 0)
-        {
-            Object[] filenameArray = filenames.toArray();
-            Arrays.sort(filenameArray);
-            html.append(StringUtils.join(filenameArray, "<br>\n"));
-        }
-        else
-            html.append("None");
-
-        html.append("</td>\n");
     }
 
 

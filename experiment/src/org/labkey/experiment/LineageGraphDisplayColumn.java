@@ -66,7 +66,7 @@ public class LineageGraphDisplayColumn extends SimpleDisplayColumn
         }
         else
         {
-            ActionURL url = new ActionURL("Experiment", "showRunGraphDetail", ctx.getContainer().getPath());
+            ActionURL url = new ActionURL("Experiment", "showRunGraphDetail", ctx.getContainer());
             url.addParameter("rowId", Integer.toString(_runId));
             url.addParameter("detail", "true");
             url.addParameter("focus", _focus);

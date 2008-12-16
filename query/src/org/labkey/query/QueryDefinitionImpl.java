@@ -348,7 +348,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public ActionURL urlFor(QueryAction action, Container container)
     {
-        ActionURL url = new ActionURL("query", action.toString(), container.getPath());
+        ActionURL url = new ActionURL("query", action.toString(), container);
         url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, getName());
         url.addParameter(QueryParam.schemaName.toString(), getSchemaName());
         return url;

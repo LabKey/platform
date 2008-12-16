@@ -63,7 +63,7 @@ public class AssayDetailsWebPartFactory extends BaseWebPartFactory
         {
             AssayRunsView runsView = new AssayRunsView(protocol, !showButtons);
 
-            runsView.setTitleHref(AssayService.get().getAssayRunsURL(portalCtx.getContainer(), protocol).getLocalURIString());
+            runsView.setTitleHref(AssayService.get().getAssayRunsURL(portalCtx.getContainer(), protocol));
             runsView.setTitle(protocol.getName() + " Runs");
             view = runsView;
         }

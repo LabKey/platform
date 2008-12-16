@@ -44,7 +44,7 @@ public class ProtocolSuccessorPredecessorView extends GridView
         getDataRegion().setColumns(cols);
         getDataRegion().addDisplayColumn(0, new ProtocolNameDisplayColumn(lsidSelectColumn, _protocolCache, "Name"));
         getDataRegion().addDisplayColumn(new ProtocolDescriptionDisplayColumn(lsidSelectColumn, _protocolCache));
-        getDataRegion().getDisplayColumn(0).setURL(ActionURL.toPathString("Experiment", "protocolPredecessors", c.getPath()) + "?ParentLSID=" + parentProtocolLSID + "&Sequence=${" + sequenceSelectColumn + "}");
+        getDataRegion().getDisplayColumn(0).setURL(ActionURL.toPathString("Experiment", "protocolPredecessors", c) + "?ParentLSID=" + parentProtocolLSID + "&Sequence=${" + sequenceSelectColumn + "}");
         getDataRegion().getDisplayColumn(0).setTextAlign("left");
 
         SimpleFilter filter = new SimpleFilter();

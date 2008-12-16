@@ -31,6 +31,7 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.pipeline.PipelineController;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
@@ -347,7 +348,7 @@ public class StatusController extends SpringActionController
             }
 
             if (c != null)
-                HttpView.throwRedirect(ActionURL.toPathString("Project", "begin", c.getPath()));
+                HttpView.throwRedirect(PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c));
 
             return urlDetails(c, form.getRowId());
         }

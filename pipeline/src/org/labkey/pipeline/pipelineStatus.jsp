@@ -25,6 +25,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.pipeline.PipelineController" %>
+<%@ page import="org.labkey.pipeline.status.StatusController" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 private Object outputJob(String status, PipelineJob job,
@@ -100,4 +102,4 @@ private Object outputJob(String status, PipelineJob job,
         } %>
         </table><%
     } %>
-    <%=PageFlowUtil.generateButton("Grid", ActionURL.toPathString("Pipeline-Status", "showList", "/"))%>
+    <%=PageFlowUtil.generateButton("Grid", StatusController.urlShowList(ContainerManager.getRoot(), false))%>

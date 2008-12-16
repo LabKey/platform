@@ -49,6 +49,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
 import javax.imageio.ImageIO;
 import java.io.*;
 import java.net.URI;
@@ -63,8 +64,7 @@ import java.awt.image.BufferedImage;
 public class ExperimentController extends SpringActionController
 {
     private static final Logger _log = Logger.getLogger(ExperimentController.class);
-
-    private static DefaultActionResolver _actionResolver = new DefaultActionResolver(ExperimentController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ExperimentController.class);
 
     public static final String GUEST_DIRECTORY_NAME = "guest";
     
@@ -3409,5 +3409,11 @@ public class ExperimentController extends SpringActionController
             return result;
         }
 
+        public ActionURL getSetFlagURL(HttpServletRequest request)
+        {
+            ActionURL url = new ActionURL(SetFlagAction.class, ContainerManager.getRoot());
+            url.addParameter("flagSessionId", request.getSession().getId());
+            return url;
+        }
     }
 }

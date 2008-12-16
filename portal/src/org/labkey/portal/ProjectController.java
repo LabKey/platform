@@ -46,7 +46,7 @@ public class ProjectController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ProjectController.class);
 
-    public static class PipelineUrlsImp implements ProjectUrls
+    public static class ProjectUrlsImpl implements ProjectUrls
     {
         public ActionURL getStartURL(Container container)
         {
@@ -56,6 +56,11 @@ public class ProjectController extends SpringActionController
         public ActionURL getHomeURL()
         {
             return getStartURL(ContainerManager.getHomeContainer());
+        }
+
+        public ActionURL getCustomizeWebPartURL(Container c)
+        {
+            return new ActionURL(CustomizeWebPartAction.class, c);
         }
     }
 
@@ -587,13 +592,12 @@ public class ProjectController extends SpringActionController
             super("/org/labkey/portal/customizeSearchWebPart.gm");
         }
 
-
         @Override
         public void prepareWebPart(Object model) throws ServletException
         {
             super.prepareWebPart(model);
             Container c = getViewContext().getContainer(ACL.PERM_UPDATE);
-            addObject("postURL", ActionURL.toPathString("Project", "customizeSearchWebPart", c.getPath()));  // TODO: Change to custom post action once subclassing of actions works
+            addObject("postURL", PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(c).toString());  // TODO: Change to custom post action once subclassing of actions works
         }
     }
 

@@ -36,7 +36,7 @@ public class AssayListWebPartFactory extends BaseWebPartFactory
         QueryView listView = AssayService.get().createAssayListView(portalCtx, true);
         ActionURL url = new ActionURL(AssayController.BeginAction.class, portalCtx.getContainer());
         listView.setTitle("Assay List");
-        listView.setTitleHref(url.getLocalURIString());
+        listView.setTitleHref(url);
         return listView;
     }
 }

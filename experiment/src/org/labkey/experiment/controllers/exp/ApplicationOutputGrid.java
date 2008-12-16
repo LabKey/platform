@@ -34,7 +34,7 @@ public class ApplicationOutputGrid extends GridView
         List<ColumnInfo> cols = ti.getColumns("RowId,Name,LSID");
         getDataRegion().setColumns(cols);
         getDataRegion().getDisplayColumn(0).setVisible(false);
-        getDataRegion().getDisplayColumn(1).setURL(ActionURL.toPathString("Experiment", "resolveLSID", c.getPath()) + "?lsid=${LSID}");
+        getDataRegion().getDisplayColumn(1).setURL(ActionURL.toPathString("Experiment", "resolveLSID", c) + "?lsid=${LSID}");
         getDataRegion().getDisplayColumn(2).setWidth("400");
         getDataRegion().getDisplayColumn(2).setTextAlign("left");
         getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
