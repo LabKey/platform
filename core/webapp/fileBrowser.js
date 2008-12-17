@@ -1,3 +1,8 @@
+document.write(
+        "<style>" +
+        ".refreshIcon {background-image: url(" + LABKEY.contextPath + "/_images/reload.png)}"+
+        "</style>");
+
 var TREESELECTION_EVENTS =
 {
     selectionchange:"selectionchange",
@@ -48,7 +53,14 @@ function log(o)
     if ("console" in window)
         console.log(o);
 }
-
+function startsWith(s, f)
+{
+    var len = f.length;
+    if (s.length < len) return false;
+    if (len == 0)
+        return true;
+    return s.charAt(0) == f.charAt(0) && s.charAt(len-1) == f.charAt(len-1) && s.indexOf(f) == 0;
+}
 
 function renderIcon(value, metadata, record, rowIndex, colIndex, store)
 {
@@ -160,7 +172,7 @@ Ext.extend(FileSystem, Ext.util.Observable,
         if (!path || path == this.rootPath)
             return this.rootRecord;
         var parent = this.parentPath(path) || this.rootPath;
-        var name = this.fileName(path);
+        var name = unescape(this.fileName(path));
         var files = this.directoryFromCache(parent);
         if (!files)
             return null;
@@ -222,24 +234,28 @@ Ext.extend(FileSystem, Ext.util.Observable,
 // config
 // baseUrl: root of the webdav tree (http://localhost:8080/labkey/_webdav)
 // rootPath: root of the tree we want to browse e.g. /home/@pipeline/
+// rootName: display name for the root
 
 var WebdavFileSystem = function(config)
 {
     config = config || {};
     Ext.apply(this, config, {
         baseUrl: LABKEY.contextPath + "/_webdav",
-        rootPath: "/"
+        rootPath: "/",
+        rootName : (LABKEY.serverName || "LabKey Server")
     });
-    this.prefixUrl = this.concatPaths(this.baseUrl, this.rootPath);
+    var prefix = this.concatPaths(this.baseUrl, this.rootPath);
+    if (prefix.length > 0 && prefix.charAt(prefix.length-1) == this.separator)
+        prefix = prefix.substring(0,prefix.length-1);
+    this.prefixUrl = prefix;
     WebdavFileSystem.superclass.constructor.call(this);
 
-    var baseUrl = this.baseUrl;
     this.FileRecord = Ext.data.Record.create(
         [
             {name: 'path', mapping: 'href',
                 convert : function (v, rec)
                 {
-                    return baseUrl ? v.replace(baseUrl, "") : v;
+                    return prefix ? v.replace(prefix, "") : v;
                 }
             },
             {name: 'href', mapping: 'href'},
@@ -263,7 +279,7 @@ var WebdavFileSystem = function(config)
     this.rootRecord = new this.FileRecord({
         id:"/",
         path:"/",
-        name:(LABKEY.serverName || "LabKey Server"),
+        name: this.rootName,
         file:false,
         iconHref: LABKEY.contextPath + "/_images/labkey.png"
     }, "/");
@@ -302,11 +318,16 @@ Ext.extend(WebdavFileSystem, FileSystem,
 // AppletFileSystem
 //
 
-// getDropApplet=function()
+// CONFIG
+//  required
+//      getDropApplet : function()
 var AppletFileSystem = function(config)
 {
     config = config || {};
-    Ext.apply(this, config, {path:"/"});
+    Ext.apply(this, config, {
+        path:"/",
+        rootName: "My Computer"
+    });
     WebdavFileSystem.superclass.constructor.call(this);
     this.FileRecord = Ext.data.Record.create(['path', 'name', 'file', 'created', 'modified', 'modifiedby', 'size', 'iconHref']);
     this.connection = new Ext.data.Connection({method: "GET", headers: {"Method" : "PROPFIND", "Depth" : "1,noroot"}});
@@ -378,35 +399,36 @@ Ext.extend(AppletFileSystem, FileSystem,
 //
 // FileListMenu
 //
-var FileListMenu = function(fileSystem, path)
+var FileListMenu = function(fileSystem, path, fn)
 {
+    FileListMenu.superclass.constructor.call(this, {items:[]});
     this.showFiles = false;
     this.fileSystem = fileSystem;
     this.path = path;
     var records = fileSystem.directoryFromCache(path);
-    var items = [];
-    if (records)
-    {
-        for (var i=0 ; i<records.length ; i++)
-        {
-            var data = records[i].data;
-            items.push({text:data.name, icon:data.iconHref});
-        }
-    }
-    else
-    {
-        fileSystem.listFiles(function(filesystem, success, path, records)
+    var populate = function(filesystem, success, path, records)
         {
             for (var i=0 ; i<records.length ; i++)
             {
-                var data = records[i].data;
+                var record = records[i];
+                var data = record.data;
                 if (!this.showFiles && data.file)
                     continue;
-                this.addMenuItem(new Ext.menu.Item({text:data.name, icon:data.iconHref}));
+                this.addMenuItem(new Ext.menu.Item({text:data.name, icon:data.iconHref, record:record}));
             }
+        };
+    if (records)
+        populate.call(this, null, true, path, records);
+    else
+        fileSystem.listFiles(path, populate.createDelegate(this));
+    if (typeof fn == "function")
+    {
+        this.on("click", function(menu,item,event)
+        {
+            var record = item.initialConfig.record;
+            fn(record.data.path);
         });
     }
-    FileListMenu.superclass.constructor.call(this, {items:items});    
 };
 Ext.extend(FileListMenu, Ext.menu.Menu);
 
@@ -513,9 +535,24 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
 
 var BROWSER_EVENTS = {selectionchange:"selectionchange", directorychange:"directorychange"};
 
+// configuration
+//  required
+//      filesystem
+//  optional
+//      resizable : true
+//      resizable : true,
+//      showFolders: true,
+//      showAddressBar: true,
+//      showDetails: true,
+//      showProperties: false,
+//
 var FileBrowser = function(config)
 {
+    config = config || {};
+    Ext.apply(this.actions, config.actions || {});
+    delete config.actions;
     Ext.apply(this, config);
+    
     this.addEvents( [ BROWSER_EVENTS.selectionchange, BROWSER_EVENTS.directorychange ]);
 };
 Ext.extend(FileBrowser, Ext.util.Observable,
@@ -523,12 +560,12 @@ Ext.extend(FileBrowser, Ext.util.Observable,
     FOLDER_ICON: LABKEY.contextPath + "/" + LABKEY.extJsRoot + "/resources/images/default/tree/folder.gif",
 
     // instance/config variables
+    resizable : true,
     showFolders: true,
     showAddressBar: true,
     showDetails: true,
-    showProperties: false,
+    showProperties: true,
 
-    url: "/labkey/_webdav",
     grid: null,
     store: null,
 
@@ -539,6 +576,8 @@ Ext.extend(FileBrowser, Ext.util.Observable,
     // actions
     //
 
+    actions : {},
+    
     action : new Ext.Action({text: 'Alert', iconCls: 'blist', scope: this, handler: function()
     {
         window.alert('Click','You clicked on "Action 1".');
@@ -548,8 +587,8 @@ Ext.extend(FileBrowser, Ext.util.Observable,
     {
         return new Ext.Action({text: 'Download', scope: this, handler: function()
             {
-                if (this.selectedRecord && this.selectedRecord.data.file)
-                    window.location = this.url + p + "?contentDisposition=attachment";
+                if (this.selectedRecord && this.selectedRecord.data.file && this.selectedRecord.data.href)
+                    window.location = this.selectedRecord.data.href + "?contentDisposition=attachment";
             }});
     },
 
@@ -560,15 +599,13 @@ Ext.extend(FileBrowser, Ext.util.Observable,
             // CONSIDER: PROPFIND to ensure this link is still good?
             var p = this.currentDirectory.data.path;
             var dir = this.fileSystem.parentPath(p) || this.fileSystem.rootPath;
-            var record = this.fileSystem.recordFromCache(dir);
-            if (record)
-                this.changeDirectory(record);
+            this.changeDirectory(dir);
         }});
     },
 
     getRefreshAction : function()
     {
-        return new Ext.Action({text: 'Refresh', scope:this, handler: function()
+        return new Ext.Action({text: 'Refresh', scope:this, iconCls:'refreshIcon', handler: function()
         {
             if (!this.currentDirectory)
                 return;
@@ -607,11 +644,21 @@ Ext.extend(FileBrowser, Ext.util.Observable,
     {
         if (typeof record == "string")
         {
-            record = this.fileSystem.recordFromCache(record);
+            var path = record;
+            record = this.fileSystem.recordFromCache(path);
             if (!record)
-                return;
+            {
+                var parent = this.fileSystem.parentPath(path);
+                this.fileSystem.listFiles(parent, function(filesystem, success, parentPath, records)
+                {
+                    record = this.fileSystem.recordFromCache(path);
+                    if (record)
+                        this.changeDirectory(record);
+                }.createDelegate(this));
+            }
         }
-        if (!this.currentDirectory || this.currentDirectory.data.path != record.data.path)
+
+        if (record && !record.data.file && this.currentDirectory != record)
         {
             this.currentDirectory = record;
             this.fireEvent(BROWSER_EVENTS.directorychange, record);
@@ -622,12 +669,14 @@ Ext.extend(FileBrowser, Ext.util.Observable,
     {
         if (typeof record == "string")
         {
-            record = this.fileSystem.recordFromCache(record);
+            var path = record;
+            record = this.fileSystem.recordFromCache(path);
             if (!record)
-                return;
+            {
+                // UNDONE
+            }
         }
-        var path = record.data.path;
-        if (!this.selectedRecord || this.selectedRecord.data.path != path)
+        if (!this.selectedRecord || this.selectedRecord.data.path != record.data.path)
         {
             this.selectedRecord = record;
             this.fireEvent(BROWSER_EVENTS.selectionchange, record);
@@ -681,7 +730,7 @@ Ext.extend(FileBrowser, Ext.util.Observable,
 
     addressBarHandler : null,
     
-    generateAddressBar : function(path)
+    updateAddressBar : function(path)
     {
         var el = Ext.get('addressBar');
         if (!el)
@@ -697,14 +746,14 @@ Ext.extend(FileBrowser, Ext.util.Observable,
         else
             text = h(unescape(path));
         el.update(text);
-//        this.addressBarHandler = this.showFileListMenu.createDelegate(this, [path]);
-//        el.on("click", this.addressBarHandler);
+        this.addressBarHandler = this.showFileListMenu.createDelegate(this, [path]);
+        el.on("click", this.addressBarHandler);
     },
 
     showFileListMenu : function(path)
     {
         var el = Ext.get('addressBar');
-        var menu = new FileListMenu(this.fileSystem, path);
+        var menu = new FileListMenu(this.fileSystem, path, this.changeDirectory.createDelegate(this));
         menu.show(el);
         menu.el.className = menu.el.className + " extContainer";
     },
@@ -759,7 +808,7 @@ Ext.extend(FileBrowser, Ext.util.Observable,
             };
             html.push("<p style='font-size:133%; padding:8px;'>");
             html.push(h(data.name));
-            html.push("</p>")
+            html.push("</p>");
             html.push("<table style='padding-left:30px;'>");
             if (data.modified)
                 row("Date Modified", _longDateTime(data.modified));
@@ -776,12 +825,20 @@ Ext.extend(FileBrowser, Ext.util.Observable,
         }
     },
 
-    start : function()
+    start : function(wd)
     {
         var root = this.tree.getRootNode();
-        this.tree.getRootNode().expand();
-        this.selectRecord(root.record);
-        this.changeDirectory(root.record);
+        root.expand();
+        if (typeof wd == "string")
+        {
+            this.changeDirectory(wd);
+            this.selectRecord(wd);
+        }
+        else
+        {
+            this.selectRecord(root.record);
+            this.changeDirectory(root.record);
+        }
     },
 
     renderTo : function(el)
@@ -947,7 +1004,7 @@ Ext.extend(FileBrowser, Ext.util.Observable,
         this.on(BROWSER_EVENTS.selectionchange, function(record)
         {
             this.updateFileDetails(record);  //undone pass in record
-            if (record && record.data & record.data.file && record.data.href)
+            if (record && record.data && record.data.file && record.data.href)
                 this.actions.downloadAction.enable();
             else
                 this.actions.downloadAction.disable();
@@ -963,9 +1020,10 @@ Ext.extend(FileBrowser, Ext.util.Observable,
         
         this.on(BROWSER_EVENTS.directorychange,function(record)
         {
+            this.store.removeAll();
             this.fileSystem.listFiles(record.data.path, (function(filesystem, success, path, records)
             {
-                if (success)
+                if (success && this.currentDirectory.data.path == path)
                 {
                     this.store.removeAll();
                     this.store.add(records);
@@ -975,7 +1033,7 @@ Ext.extend(FileBrowser, Ext.util.Observable,
 
         this.on(BROWSER_EVENTS.directorychange, function(record)
         {
-            this.generateAddressBar(record.data.path);
+            this.updateAddressBar(record.data.path);
         }, this);
     }
 });
