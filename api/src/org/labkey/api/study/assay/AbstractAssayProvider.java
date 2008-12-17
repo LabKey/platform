@@ -1118,4 +1118,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return visibleColumnNames;
     }
 
+    public boolean hasUsefulDetailsPage()
+    {
+        return true;
+    }
 }

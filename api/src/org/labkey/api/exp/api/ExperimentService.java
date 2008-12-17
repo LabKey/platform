@@ -58,7 +58,7 @@ public class ExperimentService
     {
         public static final String SAMPLE_DERIVATION_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:SampleDerivationProtocol";
 
-        ExpObject findObjectFromLSID(String lsid) throws Exception;
+        ExpObject findObjectFromLSID(String lsid);
 
         ExpRun getExpRun(int rowid);
         ExpRun getExpRun(String lsid);

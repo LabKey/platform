@@ -139,4 +139,11 @@ public interface AssayProvider extends Handler<ExpProtocol>
      * @return
      */
     ActionURL getDesignerURL(Container container, ExpProtocol protocol, boolean copy);
+
+    /**
+     * Returns true if the given provider can display a useful details page for dataset data that has been copied.
+     * If a provider is a simple GPAT, then it does not have a useful details page
+     * @return
+     */
+    boolean hasUsefulDetailsPage();
 }
