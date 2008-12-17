@@ -289,4 +289,10 @@ public class TsvAssayProvider extends AbstractAssayProvider
         // intentionally do NOT require any columns exist for a TSV-based assay:
         return Collections.emptyMap();
     }
+
+    @Override
+    public boolean hasUsefulDetailsPage()
+    {
+        return false;
+    }
 }

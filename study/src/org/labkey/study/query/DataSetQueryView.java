@@ -17,8 +17,8 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.*;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
@@ -27,6 +27,7 @@ import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -134,7 +135,7 @@ public class DataSetQueryView extends QueryView
         {
             if (sourceLsidDisplayCol != null)
                 sourceLsidDisplayCol.setVisible(false);
-            if (_showSourceLinks)
+            if (_showSourceLinks && hasUsefulDetailsPage())
             {
                 view.getDataRegion().addDisplayColumn(0, new DatasetDetailsColumn(sourceLsidCol, getUser()));
             }
@@ -158,6 +159,25 @@ public class DataSetQueryView extends QueryView
         return view;
     }
 
+    private boolean hasUsefulDetailsPage()
+    {
+        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(
+            StudyManager.getInstance().getStudy(getContainer()), _datasetId);
+
+        Integer protocolId = def.getProtocolId();
+        if (protocolId == null)
+            return true; // we don't know
+
+        ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId.intValue());
+        if (protocol == null)
+            return true;
+
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        if (provider == null)
+            return true;
+        return provider.hasUsefulDetailsPage();
+    }
+
     private class DatasetDetailsColumn extends SimpleDisplayColumn
     {
         private final ColumnInfo _sourceLsidColumn;
@@ -176,18 +196,15 @@ public class DataSetQueryView extends QueryView
             Object lsid = ctx.get(_sourceLsidColumn.getName());
             if (lsid != null)
             {
-                ExpRun run = ExperimentService.get().getExpRun(lsid.toString());
-                if (run != null)
+                ExpObject obj = ExperimentService.get().findObjectFromLSID(lsid.toString());
+                if (obj != null && obj.getContainer().hasPermission(_user, ACL.PERM_READ))
                 {
-                    ExpProtocol protocol = run.getProtocol();
-                    if (protocol != null && run.getContainer().hasPermission(_user, ACL.PERM_READ))
-                    {
-                        ActionURL dataURL = AssayService.get().getAssayDataURL(run.getContainer(), protocol, run.getRowId());
-                        out.write("[<a href=\"");
-                        out.write(dataURL.getLocalURIString());
-                        out.write("\">details</a>]");
-                        return;
-                    }
+                    ActionURL dataURL = new ActionURL(StudyController.DatasetItemDetailsAction.class, getContainer());
+                    dataURL.addParameter("sourceLsid", lsid.toString());
+                    out.write("[<a href=\"");
+                    out.write(dataURL.getLocalURIString());
+                    out.write("\">details</a>]");
+                    return;
                 }
             }
             out.write("&nbsp;");

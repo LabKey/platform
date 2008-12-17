@@ -16,37 +16,29 @@
 
 package org.labkey.study.assay;
 
-import org.labkey.api.study.assay.AbstractAssayProvider;
-import org.labkey.api.study.assay.AssayPublishKey;
-import org.labkey.api.study.assay.ParticipantVisitResolverType;
-import org.labkey.api.study.assay.RunDataTable;
-import org.labkey.api.study.actions.AssayRunUploadForm;
-import org.labkey.api.study.actions.AssayDataDetailsAction;
+import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocol.AssayDomainType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.XarContext;
-import org.labkey.api.exp.XarFormatException;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.HtmlView;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.study.actions.AssayDataDetailsAction;
+import org.labkey.api.study.assay.RunDataTable;
 import org.labkey.api.util.PageFlowUtil;
-import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.Map;
-import java.util.List;
+import java.io.File;
 import java.util.HashMap;
-import java.io.*;
+import java.util.Map;
 
 /**
  * User: kevink
@@ -168,4 +160,9 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return new HtmlView(PageFlowUtil.getFileContentsAsString(dataDetailsView));
     }
 
+    @Override
+    public boolean hasUsefulDetailsPage()
+    {
+        return true;
+    }
 }

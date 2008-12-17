@@ -546,7 +546,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return generateLSID(container, type.getNamespacePrefix(), name);
     }
 
-    public ExpObject findObjectFromLSID(String lsid) throws Exception
+    public ExpObject findObjectFromLSID(String lsid)
     {
         Identifiable id = LsidManager.get().getObject(lsid);
         if (id instanceof ExpObject)
