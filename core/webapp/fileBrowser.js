@@ -3,6 +3,60 @@ document.write(
         ".refreshIcon {background-image: url(" + LABKEY.contextPath + "/_images/reload.png)}"+
         "</style>");
 
+
+/*
+	parseUri 1.2.1
+	(c) 2007 Steven Levithan <stevenlevithan.com>
+	MIT License
+*/
+function parseUri(str)
+{
+    var	o   = parseUri.options;
+    var m   = o.parser[o.strictMode ? "strict" : "loose"].exec(str);
+    var uri = {};
+    var i   = 14;
+
+    while (i--)
+        uri[o.key[i]] = m[i] || "";
+
+    if (!uri.protocol)
+    {
+        var l = window.location;
+        uri.protocol = uri.protocol || l.protocol;
+        uri.port = uri.port || l.port;
+        uri.hostname = uri.hostname || l.hostname;
+        uri.host = uri.host || l.host;
+    }
+
+    uri[o.q.name] = {};
+    uri[o.key[12]].replace(o.q.parser, function ($0, $1, $2)
+    {
+        if ($1) uri[o.q.name][$1] = $2;
+    });
+    uri.toString = function()
+    {
+        return this.protocol + "://" + this.host + this.pathname + this.search;
+    };
+    uri.href = uri.toString();
+    return uri;
+}
+parseUri.options =
+{
+	strictMode: false,
+	key: ["source","protocol","host","userInfo","user","password","hostname","port","relative","pathname","directory","file","search","hash"],
+	q:
+    {
+		name:   "query",
+		parser: /(?:^|&)([^&=]*)=?([^&]*)/g
+	},
+	parser:
+    {
+		strict: /^(?:([^:\/?#]+):)?(?:\/\/((?:(([^:@]*):?([^:@]*))?@)?([^:\/?#]*)(?::(\d*))?))?((((?:[^?#\/]*\/)*)([^?#]*))(?:\?([^#]*))?(?:#(.*))?)/,
+		loose:  /^(?:(?![^:@]+:[^:@\/]*@)([^:\/?#.]+):)?(?:\/\/)?((?:(([^:@]*):?([^:@]*))?@)?([^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/
+	}
+};
+/* end parseUri */
+
 var TREESELECTION_EVENTS =
 {
     selectionchange:"selectionchange",
@@ -106,7 +160,7 @@ function renderDateTime(value, metadata, record, rowIndex, colIndex, store)
 //
 
 // FileRecord should look like
-//      path (string), name (string), file (bool), created (date), modified (date), size (int), iconHref(string)
+//      uri (string, urlencoded), path (string, not encoded), name (string), file (bool), created (date), modified (date), size (int), iconHref(string)
 
 var FILESYSTEM_EVENTS = {listfiles:"listfiles"};
 
@@ -171,13 +225,12 @@ Ext.extend(FileSystem, Ext.util.Observable,
         return files;
     },
 
-
     recordFromCache : function(path)
     {
         if (!path || path == this.rootPath)
             return this.rootRecord;
         var parent = this.parentPath(path) || this.rootPath;
-        var name = unescape(this.fileName(path));
+        var name = this.fileName(path);
         var files = this.directoryFromCache(parent);
         if (!files)
             return null;
@@ -255,20 +308,40 @@ var WebdavFileSystem = function(config)
     this.prefixUrl = prefix;
     WebdavFileSystem.superclass.constructor.call(this);
 
+    var getURI = function(v,rec)
+    {
+        if (!rec.uriOBJECT)
+            rec.uriOBJECT = parseUri(v);
+        return rec.uriOBJECT;
+    };
+
     this.FileRecord = Ext.data.Record.create(
         [
+            {name: 'uri', mapping: 'href',
+                convert : function(v, rec)
+                {
+                    var uri = getURI(v,rec);
+                    return uri ? uri.href : "";
+                }
+            },
             {name: 'path', mapping: 'href',
                 convert : function (v, rec)
                 {
-                    return prefix ? v.replace(prefix, "") : v;
+                    var uri = getURI(v,rec);
+                    var path = uri.pathname;
+                    if (prefix)
+                        path = path.replace(prefix, "");
+                    return decodeURI(path);
                 }
             },
-            {name: 'href', mapping: 'href'},
             {name: 'name', mapping: 'propstat/prop/displayname'},
             {name: 'file', mapping: 'href', type: 'boolean',
                 convert : function (v, rec)
                 {
-                    return v.length > 0 && v.charAt(v.length-1) != '/';
+                    // UNDONE: look for <collection>
+                    var uri = getURI(v, rec);
+                    var path = uri.pathname;
+                    return path.length > 0 && path.charAt(path.length-1) != '/';
                 }
             },
             {name: 'created', mapping: 'propstat/prop/creationdate', type: 'date', dateFormat : "c"},
@@ -324,7 +397,7 @@ Ext.extend(WebdavFileSystem, FileSystem,
 
     reloadFiles : function(path, callback)
     {
-        var url = this.concatPaths(this.prefixUrl, path);
+        var url = this.concatPaths(this.prefixUrl, encodeURI(path));
         this.connection.url = url;
 
         var args = {url: url, path: path, callback:callback};
@@ -364,10 +437,10 @@ var AppletFileSystem = function(config)
         rootName: "My Computer"
     });
     WebdavFileSystem.superclass.constructor.call(this);
-    this.FileRecord = Ext.data.Record.create(['path', 'name', 'file', 'created', 'modified', 'modifiedby', 'size', 'iconHref']);
+    this.FileRecord = Ext.data.Record.create(['uri', 'path', 'name', 'file', 'created', 'modified', 'modifiedby', 'size', 'iconHref']);
     this.connection = new Ext.data.Connection({method: "GET", headers: {"Method" : "PROPFIND", "Depth" : "1,noroot"}});
     this.proxy = new Ext.data.HttpProxy(this.connection);
-    this.reader = new Ext.data.XmlReader({record : "response", id : "href"}, this.FileRecord);
+    this.reader = new Ext.data.XmlReader({record : "response", id : "path"}, this.FileRecord);
 
     this.rootRecord = new this.FileRecord(
     {
@@ -424,10 +497,11 @@ Ext.extend(AppletFileSystem, FileSystem,
                 name = name.substring(0,name.length-1);
             var file = !applet.local_isDirectory(i);
             var path = applet.local_getPath(i);
+            var uri = applet.local_getUri(i);
             var ts = applet.local_getTimestamp(i);
             var lastModified = ts ? new Date(ts) : null;
             var size = applet.local_getSize(i);
-            var data = {id:path, name:name, path:path, file:file, modified:lastModified, size:size, iconHref:file?null:this.FOLDER_ICON, modifiedby:null};
+            var data = {id:path, uri:uri, path:path, name:name, file:file, modified:lastModified, size:size, iconHref:file?null:this.FOLDER_ICON, modifiedby:null};
             records.push(new this.FileRecord(data, path));
         }
         this._addFiles(directory, records);
@@ -443,7 +517,7 @@ Ext.extend(AppletFileSystem, FileSystem,
 //
 var FileListMenu = function(fileSystem, path, fn)
 {
-    FileListMenu.superclass.constructor.call(this, {items:[]});
+    FileListMenu.superclass.constructor.call(this, {items:[], cls:'extContainer'});
     this.showFiles = false;
     this.fileSystem = fileSystem;
     this.path = path;
@@ -629,8 +703,8 @@ Ext.extend(FileBrowser, Ext.Panel,
     {
         return new Ext.Action({text: 'Download', scope: this, handler: function()
             {
-                if (this.selectedRecord && this.selectedRecord.data.file && this.selectedRecord.data.href)
-                    window.location = this.selectedRecord.data.href + "?contentDisposition=attachment";
+                if (this.selectedRecord && this.selectedRecord.data.file && this.selectedRecord.data.uri)
+                    window.location = this.selectedRecord.data.uri + "?contentDisposition=attachment";
             }});
     },
 
@@ -829,7 +903,7 @@ Ext.extend(FileBrowser, Ext.Panel,
         if (path == this.fileSystem.rootPath)
             text = h(this.fileSystem.rootRecord.data.name);
         else
-            text = h(unescape(path));
+            text = h(path);
         el.update(text);
         this.addressBarHandler = this.showFileListMenu.createDelegate(this, [path]);
         el.on("click", this.addressBarHandler);
@@ -840,7 +914,6 @@ Ext.extend(FileBrowser, Ext.Panel,
         var el = Ext.get('addressBar');
         var menu = new FileListMenu(this.fileSystem, path, this.changeDirectory.createDelegate(this));
         menu.show(el);
-        menu.el.className = menu.el.className + " extContainer";
     },
 
     ancestry : function(id)
@@ -986,7 +1059,7 @@ Ext.extend(FileBrowser, Ext.Panel,
             [
                 {
                     text: 'Action Menu',
-                    menu: [this.action]
+                    menu: { cls: 'extContainer', items: [this.action] }
                 },
                 this.actions.createDirectory,
                 this.actions.download,
@@ -1081,7 +1154,7 @@ Ext.extend(FileBrowser, Ext.Panel,
         this.on(BROWSER_EVENTS.selectionchange, function(record)
         {
             this.updateFileDetails(record);
-            if (record && record.data && record.data.file && record.data.href)
+            if (record && record.data && record.data.file && record.data.uri)
                 this.actions.download.enable();
             else
                 this.actions.download.disable();
