@@ -17,7 +17,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.*;
-import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.*;
@@ -166,15 +166,15 @@ public class DataSetQueryView extends QueryView
 
         Integer protocolId = def.getProtocolId();
         if (protocolId == null)
-            return true; // we don't know
+            return true; // we don't have a protocol at all, so we don't know if we have useful details
 
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId.intValue());
         if (protocol == null)
-            return true;
+            return false; // We have a protocol, but it's been deleted
 
         AssayProvider provider = AssayService.get().getProvider(protocol);
         if (provider == null)
-            return true;
+            return false; // Unlikely, but possible -- provider no longer available
         return provider.hasUsefulDetailsPage();
     }
 
@@ -196,8 +196,8 @@ public class DataSetQueryView extends QueryView
             Object lsid = ctx.get(_sourceLsidColumn.getName());
             if (lsid != null)
             {
-                ExpObject obj = ExperimentService.get().findObjectFromLSID(lsid.toString());
-                if (obj != null && obj.getContainer().hasPermission(_user, ACL.PERM_READ))
+                Container container = LsidManager.get().getContainer(lsid.toString());
+                if (container != null && container.hasPermission(_user, ACL.PERM_READ))
                 {
                     ActionURL dataURL = new ActionURL(StudyController.DatasetItemDetailsAction.class, getContainer());
                     dataURL.addParameter("sourceLsid", lsid.toString());

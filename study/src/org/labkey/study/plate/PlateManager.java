@@ -16,30 +16,28 @@
 
 package org.labkey.study.plate;
 
-import org.labkey.api.study.*;
-import org.labkey.api.study.Plate;
-import org.labkey.api.data.*;
-import org.labkey.api.security.User;
-import org.labkey.api.exp.*;
-import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.Cache;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
+import org.apache.struts.upload.FormFile;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DownloadURL;
 import org.labkey.api.attachments.StrutsAttachmentFile;
+import org.labkey.api.data.*;
+import org.labkey.api.exp.*;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.query.ValidationException;
-import org.apache.struts.upload.FormFile;
-
-import java.util.*;
-import java.sql.SQLException;
-import java.sql.ResultSet;
-import java.io.IOException;
-
+import org.labkey.api.security.User;
+import org.labkey.api.study.*;
+import org.labkey.api.util.Cache;
+import org.labkey.api.util.GUID;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.plate.query.PlateSchema;
+
+import java.io.IOException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
 
 /**
  * User: brittp
@@ -582,6 +580,21 @@ public class PlateManager implements PlateService.Service
         {
             throw new UnsupportedOperationException("Not Yet Implemented.");
         }
+
+        public Container getContainer(Lsid lsid)
+        {
+            try
+            {
+                PlateImpl plate = PlateManager.get().getPlate(lsid.toString());
+                if (plate == null)
+                    return null;
+                return plate.getContainer();
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+        }
     }
 
     private static class WellGroupLsidHandler implements LsidManager.LsidHandler
@@ -604,6 +617,21 @@ public class PlateManager implements PlateService.Service
         public ExpObject getObject(Lsid lsid)
         {
             throw new UnsupportedOperationException("Not Yet Implemented.");
+        }
+
+        public Container getContainer(Lsid lsid)
+        {
+            try
+            {
+                WellGroup wellGroup = PlateManager.get().getWellGroup(lsid.toString());
+                if (wellGroup == null)
+                    return null;
+                return wellGroup.getContainer();
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
         }
     }
     

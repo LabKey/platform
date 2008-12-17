@@ -19,6 +19,7 @@ package org.labkey.experiment.api;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
@@ -30,31 +31,34 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.util.*;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.settings.AppProps;
 import org.labkey.experiment.ExperimentRunGraph;
 import org.labkey.experiment.XarReader;
-import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.controllers.exp.ExperimentController;
-import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
+import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
+import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 public class ExperimentServiceImpl implements ExperimentService.Interface
 {
@@ -546,6 +550,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return generateLSID(container, type.getNamespacePrefix(), name);
     }
 
+    @Nullable
     public ExpObject findObjectFromLSID(String lsid)
     {
         Identifiable id = LsidManager.get().getObject(lsid);
@@ -553,7 +558,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             return (ExpObject)id;
         }
-        throw new IllegalArgumentException("Unsupported type : " + id);
+        return null;
     }
 
     public ExpSampleSetImpl getSampleSet(Container container, String name)

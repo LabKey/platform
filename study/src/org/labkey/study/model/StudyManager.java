@@ -2690,6 +2690,11 @@ public class StudyManager
             throw new UnsupportedOperationException();
         }
 
+        public Container getContainer(Lsid lsid)
+        {
+            throw new UnsupportedOperationException();
+        }
+
         public String getDisplayURL(Lsid lsid)
         {
             String fullNamespace = lsid.getNamespace();
