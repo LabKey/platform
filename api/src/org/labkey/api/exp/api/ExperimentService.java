@@ -16,25 +16,26 @@
 
 package org.labkey.api.exp.api;
 
+import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.*;
-import org.labkey.api.security.User;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.apache.log4j.Logger;
+import org.labkey.api.security.User;
+import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ViewContext;
 
-import java.util.Map;
-import java.util.List;
-import java.util.Set;
-import java.sql.SQLException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class ExperimentService
 {
@@ -58,6 +59,7 @@ public class ExperimentService
     {
         public static final String SAMPLE_DERIVATION_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:SampleDerivationProtocol";
 
+        @Nullable
         ExpObject findObjectFromLSID(String lsid);
 
         ExpRun getExpRun(int rowid);

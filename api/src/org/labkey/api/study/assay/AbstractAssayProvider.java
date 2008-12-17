@@ -115,6 +115,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 ActionURL dataURL = AssayService.get().getAssayDataURL(run.getContainer(), protocol, run.getRowId());
                 return dataURL.getLocalURIString();
             }
+
+            public Container getContainer(Lsid lsid)
+            {
+                ExpRun run = getObject(lsid);
+                return run == null ? null : run.getContainer();
+            }
         });
     }
 

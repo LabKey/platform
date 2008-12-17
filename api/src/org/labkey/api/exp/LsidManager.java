@@ -15,11 +15,12 @@
  */
 package org.labkey.api.exp;
 
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.settings.AppProps;
 
-import java.util.HashMap;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -47,6 +48,8 @@ public class LsidManager
         Identifiable getObject(Lsid lsid);
 
         String getDisplayURL(Lsid lsid);
+
+        Container getContainer(Lsid lsid);
     }
 
     public void registerHandler(String prefix, LsidHandler handler, String authority)
@@ -74,6 +77,19 @@ public class LsidManager
     public Identifiable getObject(String identifier)
     {
         return getObject(new Lsid(identifier));
+    }
+
+    public Container getContainer(Lsid lsid)
+    {
+        LsidHandler handler = findHandler(lsid);
+        if (null != handler)
+            return handler.getContainer(lsid);
+        return null;
+    }
+
+    public Container getContainer(String lsid)
+    {
+        return getContainer(new Lsid(lsid));
     }
 
     private String getDefaultAuthority()
