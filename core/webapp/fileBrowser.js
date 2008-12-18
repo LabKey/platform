@@ -62,7 +62,40 @@ var TREESELECTION_EVENTS =
     selectionchange:"selectionchange",
     beforeselect:"beforeselect"
 };
-
+var PANEL_EVENTS =
+{
+	active:'activate',
+	add:'add',
+	afterlayout:'afterlayout',
+	beforeadd:'beforeadd',
+	beforeclose:'beforeclose',
+	beforecollapse:'beforecollapse',
+	beforedestroy:'beforedestroy',
+	beforeexpand:'beforeexpand',
+	beforehide:'beforehide',
+	beforeremove:'beforeremove',
+	beforerender:'beforerender',
+	beforeshow:'beforeshow',
+	beforestaterestore:'beforestaterestore',
+	beforestatesave:'beforestatesave',
+	bodyresize:'bodyresize',
+	close:'close',
+	collapse:'collapse',
+	deactivate:'deactivate',
+	destroy:'destroy',
+	disable:'disable',
+	enable:'enable',
+	expand:'expand',
+	hide:'hide',
+	move:'move',
+	remove:'remove',
+	render:'render',
+	resize:'resize',
+	show:'show',
+	staterestore:'staterestore',
+	statesave:'statesave',
+	titlechange:'titlechange'
+};
 var GRIDPANEL_EVENTS =
 {
     click:"click",
@@ -91,6 +124,7 @@ var GRIDPANEL_EVENTS =
     columnmove:"columnmove",
     sortchange:"sortchange"
 };
+Ext.apply(GRIDPANEL_EVENTS,PANEL_EVENTS);
 
 var ROWSELECTION_MODEL =
 {
@@ -457,7 +491,6 @@ Ext.extend(AppletFileSystem, FileSystem,
     rootPath : "/",
     separator : "/",
     retry : 0,
-
 
     createDirectory : function(path, callback)
     {
@@ -1005,7 +1038,7 @@ Ext.extend(FileBrowser, Ext.Panel,
         //
         // GRID
         //
-        this.store = new Ext.data.Store();
+        this.store = new Ext.data.Store({recordType:this.fileSystem.FileRecord});
         this.grid = new Ext.grid.GridPanel(
         {
             store: this.store,
@@ -1021,6 +1054,11 @@ Ext.extend(FileBrowser, Ext.Panel,
         this.grid.getSelectionModel().on(ROWSELECTION_MODEL.rowselect, this.Grid_onRowselect, this);
         this.grid.on(GRIDPANEL_EVENTS.celldblclick, this.Grid_onCelldblclick, this);
         this.grid.on(GRIDPANEL_EVENTS.keypress, this.Grid_onKeypress, this);
+        this.grid.on(PANEL_EVENTS.render, function()
+        {
+            this.getView().hmenu.getEl().addClass("extContainer");
+            this.getView().colMenu.getEl().addClass("extContainer");
+        }, this.grid);
 
         //
         // TREE
