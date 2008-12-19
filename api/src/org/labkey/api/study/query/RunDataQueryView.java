@@ -31,10 +31,6 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.Pair;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-
 /**
  * User: brittp
  * Date: Jun 29, 2007
@@ -102,44 +98,26 @@ public class RunDataQueryView extends AssayBaseQueryView
 
     private void handleUploadButton(AssayProvider provider, ButtonBar buttonBar)
     {
-        if (getTable().getContainerFilter() == null)
+        if (_protocol.getContainer().equals(getContainer()) && getContainer().isProject())
         {
-            if (provider.allowUpload(getUser(), getContainer(), _protocol))
+            // We're in the project container, and so is the protocol,
+            // so offer up choices in the import button
+            ActionButton importButton = AssayService.get().getImportButton(
+                "Import Runs", _protocol, getUser(), getContainer());
+            if (importButton != null)
+                buttonBar.add(importButton);
+        }
+        else
+        {
+            // We're in some other container, so just offer up where we are
+            Container container = getContainer();
+            if (provider.allowUpload(getUser(), container, _protocol) &&
+                    container.hasPermission(getUser(), ACL.PERM_INSERT))
             {
-                ActionButton uploadRuns = new ActionButton(provider.getUploadWizardURL(getContainer(), _protocol).getLocalURIString(),
-                        "Import Runs", DataRegion.MODE_GRID, ActionButton.Action.GET);
-                buttonBar.add(uploadRuns);
+                ActionButton uploadButton = new ActionButton("Import Runs", AssayService.get().getUploadWizardURL(container, _protocol));
+                buttonBar.add(uploadButton);
             }
-            return;
         }
-        Collection<String> containersFromFilter = getTable().getContainerFilter().getIds(getContainer(), getUser());
-        Set<Container> allowedContainers = new HashSet<Container>();
-        for (String id : containersFromFilter)
-        {
-            Container c = ContainerManager.getForId(id);
-            if (c == null || !provider.allowUpload(getUser(), c, _protocol) || !c.hasPermission(getUser(), ACL.PERM_INSERT))
-                continue;
-            allowedContainers.add(c);
-        }
-
-        if (allowedContainers.isEmpty())
-            return;
-        if (allowedContainers.size() == 1)
-        {
-            ActionButton uploadRuns = new ActionButton(provider.getUploadWizardURL(getContainer(), _protocol).getLocalURIString(),
-                "Import Runs", DataRegion.MODE_GRID, ActionButton.Action.GET);
-            buttonBar.add(uploadRuns);
-            return;
-        }
-
-        // We have multiple containers
-        MenuButton uploadButton = new MenuButton("Import Runs");
-        for(Container container : allowedContainers)
-        {
-            ActionURL url = provider.getUploadWizardURL(container, _protocol);
-            uploadButton.addMenuItem(container.getName(), url);
-        }
-        buttonBar.add(uploadButton);
 
     }
 

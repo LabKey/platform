@@ -37,7 +37,7 @@ import java.util.*;
  *
  * CONSIDER: extend org.labkey.api.data.Entity
  */
-public class Container implements Serializable
+public class Container implements Serializable, Comparable<Container>
 {
     static Logger _log = Logger.getLogger(Container.class);
 
@@ -48,6 +48,8 @@ public class Container implements Serializable
     Date _created;
 
     int _rowId; //Unique for this installation
+
+    /** Used to arbitrarily reorder siblings within a container. */
     private int _sortOrder;
     private transient Module _defaultModule;
     private transient Set<Module> _activeModules;
@@ -332,6 +334,7 @@ public class Container implements Serializable
                 return helper;
         }
 
+        //noinspection deprecation
         return new ActionURL("Project", "begin", this);
     }
 
@@ -484,6 +487,7 @@ public class Container implements Serializable
     @Deprecated
     public ActionURL urlFor(Enum action)
     {
+        //noinspection deprecation
         return PageFlowUtil.urlFor(action, this);
     }
 
@@ -616,5 +620,63 @@ public class Container implements Serializable
         {
             super(message, t);
         }
+    }
+
+    private int compareSiblings(Container c1, Container c2)
+    {
+        int result = c1.getSortOrder() - c2.getSortOrder();
+        if (result != 0)
+            return result;
+        return c1.getName().compareToIgnoreCase(c2.getName());
+    }
+
+    // returns in order from the root (e.g. /project/folder/)
+    private List<Container> getPathAsList()
+    {
+        List<Container> containerList = new ArrayList<Container>();
+        Container current = this;
+        while (!current.isRoot())
+        {
+            containerList.add(current);
+            current = current.getParent();
+        }
+        Collections.reverse(containerList);
+        return containerList;
+    }
+
+    public int compareTo(Container other)
+    {
+        // Container returns itself as a parent if it's root, so we need to special case that
+        if (isRoot())
+        {
+            if (other.isRoot())
+                return 0;
+            else
+                return -1;
+        }
+        if (other.isRoot())
+        {
+            return 1;
+        }
+
+        // Special case siblings which is common
+        if (getParent().equals(other.getParent()))
+        {
+            return compareSiblings(this, other);
+        }
+
+        List<Container> myPath = getPathAsList();
+        List<Container> otherPath = other.getPathAsList();
+        for (int i=0; i<Math.min(myPath.size(), otherPath.size()); i++)
+        {
+            Container myContainer = myPath.get(i);
+            Container otherContainer = otherPath.get(i);
+            if (myContainer.equals(otherContainer))
+                continue;
+            return compareSiblings(myContainer, otherContainer);
+        }
+
+        // They're equal up to the end, but one is longer. E.g. /a/b/c vs /a/b
+        return myPath.size() - otherPath.size();
     }
 }

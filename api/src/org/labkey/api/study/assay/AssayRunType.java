@@ -16,20 +16,15 @@
 
 package org.labkey.api.study.assay;
 
-import org.labkey.api.data.*;
-import org.labkey.api.exp.ExperimentRunType;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.security.ACL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * User: brittp
@@ -58,58 +53,27 @@ public class AssayRunType extends ExperimentRunType
     @Override
     public void populateButtonBar(ViewContext context, ButtonBar bar, DataView view, ContainerFilter filter)
     {
-        Set<Container> containers;
-        if (filter != null && filter != ContainerFilter.Filters.CURRENT)
+        if (_protocol.getContainer().equals(context.getContainer()) && context.getContainer().isProject())
         {
-            Collection<String> containerIds = filter.getIds(context.getContainer(), context.getUser());
-            Set<Container> filterContainers = new HashSet<Container>();
-            for (String containerId : containerIds)
-            {
-                filterContainers.add(ContainerManager.getForId(containerId));
-            }
-
-            ExpRun[] expRuns = _protocol.getExpRuns();
-            containers = new HashSet<Container>();
-            for (ExpRun run : expRuns)
-                containers.add(run.getContainer());
-
-            containers.retainAll(filterContainers); // Use only the intersection of runs and containers from the filter
+            // We're in the project container, and so is the protocol,
+            // so offer up choices in the import button
+            ActionButton importButton = AssayService.get().getImportButton(
+                "Import Runs", _protocol, context.getUser(), context.getContainer());
+            if (importButton != null)
+                bar.add(importButton);
         }
         else
         {
-            containers = Collections.singleton(context.getContainer());
-        }
-        if (containers.isEmpty())
-            return;
-
-        AssayProvider provider = AssayService.get().getProvider(_protocol);
-        if (containers.size() == 1)
-        {
-            Container container = containers.iterator().next();
-
+            // We're in some other container, so just offer up where we are
+            Container container = context.getContainer();
+            AssayProvider provider = AssayService.get().getProvider(_protocol);
             if (provider.allowUpload(context.getUser(), container, _protocol) &&
-                    context.hasPermission(ACL.PERM_INSERT) &&
                     container.hasPermission(context.getUser(), ACL.PERM_INSERT))
             {
                 ActionButton uploadButton = new ActionButton("Import Runs", AssayService.get().getUploadWizardURL(container, _protocol));
                 bar.add(uploadButton);
             }
-
-            return;
         }
-
-        MenuButton uploadButton = new MenuButton("Import Runs");
-        for (Container container : containers)
-        {
-            if (provider.allowUpload(context.getUser(), container, _protocol) &&
-                    context.hasPermission(ACL.PERM_INSERT) &&
-                    container.hasPermission(context.getUser(), ACL.PERM_INSERT))
-            {
-                ActionURL url = AssayService.get().getUploadWizardURL(container, _protocol);
-                uploadButton.addMenuItem(container.getName(), url);
-            }
-        }
-        bar.add(uploadButton);
     }
 
     public Priority getPriority(ExpProtocol protocol)

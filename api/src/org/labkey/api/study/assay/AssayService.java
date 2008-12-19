@@ -18,6 +18,7 @@ package org.labkey.api.study.assay;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ActionButton;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRunTable;
 import org.labkey.api.query.QueryView;
@@ -25,6 +26,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -76,5 +78,7 @@ public class AssayService
         ActionURL getAssayDataURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... runIds);
         ActionURL getUploadWizardURL(Container container, ExpProtocol protocol);
 
+        @Nullable
+        public ActionButton getImportButton(String label, ExpProtocol protocol, User user, Container currentContainer);
     }
 }

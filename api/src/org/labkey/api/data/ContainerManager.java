@@ -747,16 +747,7 @@ public class ContainerManager
 
         Container[] folders = ContainerManager.getAllChildren(project);
 
-        Arrays.sort(folders, new Comparator<Container>()
-        {
-            public int compare(Container a, Container b)
-            {
-                int sortOrder = a.getSortOrder() - b.getSortOrder();
-                if (sortOrder == 0)
-                    sortOrder = a.getName().compareToIgnoreCase(b.getName());
-                return sortOrder;
-            }
-        });
+        Arrays.sort(folders);
 
         ActionURL url = new ActionURL();
         url.setPageFlow("project");
@@ -1211,16 +1202,7 @@ public class ContainerManager
             for (Object key : mm.keySet())
             {
                 List<Container> siblings = new ArrayList<Container>(mm.get(key));
-                Collections.sort(siblings, new Comparator<Container>()
-                {
-                    public int compare(Container a, Container b)
-                    {
-                        int sortOrder = a.getSortOrder() - b.getSortOrder();
-                        if (sortOrder == 0)
-                            sortOrder = a.getName().compareToIgnoreCase(b.getName());
-                        return sortOrder;
-                    }
-                });
+                Collections.sort(siblings);
             }
         }
         catch (SQLException x)
