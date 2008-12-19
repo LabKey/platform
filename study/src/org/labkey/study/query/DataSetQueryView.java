@@ -144,7 +144,7 @@ public class DataSetQueryView extends QueryView
         User user = getUser();
         // Only show link to edit if permission allows it
         if (_showEditLinks && !_forExport &&
-                StudyManager.getInstance().getDataSetDefinition(StudyManager.getInstance().getStudy(c), _datasetId).canWrite(user) &&
+                getDefinition().canWrite(user) &&
                 c.getAcl().hasPermission(user, ACL.PERM_UPDATE)
             )
         {
@@ -159,12 +159,18 @@ public class DataSetQueryView extends QueryView
         return view;
     }
 
-    private boolean hasUsefulDetailsPage()
+    private DataSetDefinition getDefinition()
     {
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(
             StudyManager.getInstance().getStudy(getContainer()), _datasetId);
+        if (def == null)
+            throw new IllegalStateException("Could not find dataset definition for id " + _datasetId);
+        return def;
+    }
 
-        Integer protocolId = def.getProtocolId();
+    private boolean hasUsefulDetailsPage()
+    {
+        Integer protocolId = getDefinition().getProtocolId();
         if (protocolId == null)
             return true; // we don't have a protocol at all, so we don't know if we have useful details
 

@@ -16,20 +16,20 @@
 
 package org.labkey.study.assay;
 
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRunTable;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.security.User;
+import org.labkey.api.security.ACL;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.ActionURL;
@@ -38,9 +38,7 @@ import org.labkey.study.assay.query.AssayListPortalView;
 import org.labkey.study.assay.query.AssayListQueryView;
 import org.labkey.study.assay.query.AssaySchema;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * User: brittp
@@ -260,5 +258,57 @@ public class AssayManager implements AssayService.Interface
         if (containerFilter != null)
             result.addParameter(protocol.getName() + " Data." + QueryParam.containerFilterName, containerFilter.name());
         return result;
+    }
+
+    public ActionButton getImportButton(String label, ExpProtocol protocol, User user, Container currentContainer)
+    {
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        assert provider != null : "Could not find a provider for protocol: " + protocol;
+        // First find all the containers that have contributed data to this protocol
+        ExpRun[] runs = protocol.getExpRuns();
+        Set<Container> dataContainers = new HashSet<Container>();
+        for (ExpRun run : runs)
+            dataContainers.add(run.getContainer());
+
+        // If there are none, include the container of the protocol itself
+        if (dataContainers.size() == 0)
+            dataContainers.add(protocol.getContainer());
+
+        // Check for write permission
+        for (Iterator<Container> iter = dataContainers.iterator(); iter.hasNext();)
+        {
+            Container container = iter.next();
+            if (!container.hasPermission(user, ACL.PERM_INSERT) || !provider.allowUpload(user, container, protocol))
+            {
+                iter.remove();
+            }
+        }
+        if (dataContainers.size() == 0)
+            return null; // Nowhere to upload to, no button
+
+        if (dataContainers.size() == 1)
+        {
+            Container c = dataContainers.iterator().next();
+            // If it's the current container, we want a simple button
+            if (c.equals(currentContainer))
+            {
+                ActionURL url = AssayService.get().getUploadWizardURL(dataContainers.iterator().next(), protocol);
+                return new ActionButton(url, label);
+            }
+            // It's not the current container, so fall through to show a submenu even though there's
+            // only one item, in order to indicate that the user is going to be redirected elsewhere
+        }
+
+        // Sort by path
+        Set<Container> sortedContainers = new TreeSet<Container>(dataContainers);
+
+        MenuButton uploadButton = new MenuButton(label);
+        for(Container container : sortedContainers)
+        {
+            ActionURL url = AssayService.get().getUploadWizardURL(container, protocol);
+            uploadButton.addMenuItem(container.getPath(), url);
+        }
+
+        return uploadButton;
     }
 }

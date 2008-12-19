@@ -35,7 +35,6 @@ import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -61,7 +60,6 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.*;
@@ -671,43 +669,14 @@ public class StudyController extends BaseStudyController
                 }
                 else
                 {
-                    ExpRun[] runs = protocol.getExpRuns();
-                    Set<Container> runContainers = new HashSet<Container>();
-                    for (ExpRun run : runs)
-                        runContainers.add(run.getContainer());
-                    for (Iterator<Container> iter = runContainers.iterator(); iter.hasNext();)
-                    {
-                        Container c = iter.next();
-                        if (!c.hasPermission(getUser(), ACL.PERM_INSERT))
-                        {
-                            iter.remove();
-                        }
-                    }
-
-                    if (runContainers.size() > 1)
-                    {
-                        MenuButton uploadButton = new MenuButton("Upload Data");
-                        for(Container container : runContainers)
-                        {
-                            ActionURL url = new ActionURL(UploadWizardAction.class, container);
-                            url.addParameter("rowId", protocol.getRowId());
-                            uploadButton.addMenuItem(container.getName(), url);
-                        }
+                    ActionButton uploadButton = AssayService.get().getImportButton("Upload Data", protocol, getUser(), getContainer());
+                    if (uploadButton != null)
                         buttonBar.add(uploadButton);
-                    }
-                    else if (runContainers.size() == 1)
-                    {
-                        ActionURL url = new ActionURL(UploadWizardAction.class, runContainers.iterator().next());
-                        url.addParameter("rowId", protocol.getRowId());
-                        ActionButton uploadButton = new ActionButton(url, "Upload Data");
-                        buttonBar.add(uploadButton);
-                    }
 
                     ActionButton deleteRows = new ActionButton("button", "Recall Selected");
                     ActionURL deleteRowsURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
                     deleteRowsURL.addParameter("protocolId", protocol.getRowId());
-
-
+                    
                     deleteRows.setScript("return confirm(\"Recall selected rows of this dataset?\") && verifySelected(this.form, \"" + deleteRowsURL.getLocalURIString() + "\", \"post\", \"rows\")");
                     deleteRows.setActionType(ActionButton.Action.GET);
                     deleteRows.setDisplayPermission(ACL.PERM_DELETE);
