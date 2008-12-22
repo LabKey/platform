@@ -74,7 +74,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
     {
         try
         {
-            return OntologyManager.getProperties(getContainerId(), getLSID());
+            return OntologyManager.getProperties(getContainer(), getLSID());
         }
         catch (SQLException e)
         {
@@ -128,7 +128,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
 
             if (value != null)
             {
-                ObjectProperty oprop = new ObjectProperty(getLSID(), getContainerId(), pd.getPropertyURI(), value, pd.getPropertyType());
+                ObjectProperty oprop = new ObjectProperty(getLSID(), getContainer(), pd.getPropertyURI(), value, pd.getPropertyType());
                 oprop.setPropertyId(pd.getPropertyId());
                 OntologyManager.insertProperties(getContainer(), getOwnerObjectLSID(), oprop);
             }
@@ -167,7 +167,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
             return null;
         try
         {
-            Map<String, Object> properties = OntologyManager.getProperties(getContainerId(), getLSID());
+            Map<String, Object> properties = OntologyManager.getProperties(getContainer(), getLSID());
             Object value = properties.get(pd.getPropertyURI());
             if (value == null)
                 return null;
@@ -190,7 +190,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
         if (getProperty(pd) != null)
             throw new IllegalArgumentException("Property already exists");
         String objectURI = GUID.makeURN();
-        ObjectProperty oprop = new ObjectProperty(getLSID(), getContainerId(), pd.getPropertyURI(), objectURI);
+        ObjectProperty oprop = new ObjectProperty(getLSID(), getContainer(), pd.getPropertyURI(), objectURI);
         OntologyManager.insertProperties(getContainer(), getOwnerObjectLSID(), oprop);
         return new ExpChildObjectImpl(getOwnerObject(), this, pd, objectURI);
     }

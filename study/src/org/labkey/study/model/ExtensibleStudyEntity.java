@@ -57,7 +57,7 @@ public abstract class ExtensibleStudyEntity<E> extends AbstractStudyEntity<E>
         String ownerLsid = getLsid();
         String classLsid = getDomainURI();
 
-        Map<String, ObjectProperty> resourceProperties = OntologyManager.getPropertyObjects(container.getId(), ownerLsid);
+        Map<String, ObjectProperty> resourceProperties = OntologyManager.getPropertyObjects(container, ownerLsid);
         if (resourceProperties != null && !resourceProperties.isEmpty())
         {
             OntologyManager.deleteOntologyObject(ownerLsid, container, false);
@@ -68,9 +68,9 @@ public abstract class ExtensibleStudyEntity<E> extends AbstractStudyEntity<E>
         {
             String propertyURI = Lsid.isLsid(entry.getKey()) ? entry.getKey() : classLsid + "#" + entry.getKey();
             if (entry.getValue() != null)
-                objectProperties[idx++] = new ObjectProperty(ownerLsid, container.getId(), propertyURI, entry.getValue());
+                objectProperties[idx++] = new ObjectProperty(ownerLsid, container, propertyURI, entry.getValue());
             else
-                objectProperties[idx++] = new ObjectProperty(ownerLsid, container.getId(), propertyURI, entry.getValue(), PropertyType.STRING);
+                objectProperties[idx++] = new ObjectProperty(ownerLsid, container, propertyURI, entry.getValue(), PropertyType.STRING);
         }
         if (objectProperties.length > 0)
             OntologyManager.insertProperties(container, ownerLsid, objectProperties);

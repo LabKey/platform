@@ -208,7 +208,7 @@ public class PlateManager implements PlateService.Service
 
     private void setProperties(Container container, PropertySetImpl propertySet) throws SQLException
     {
-        Map<String, ObjectProperty> props = OntologyManager.getPropertyObjects(container.getId(), propertySet.getLSID());
+        Map<String, ObjectProperty> props = OntologyManager.getPropertyObjects(container, propertySet.getLSID());
         for (ObjectProperty prop : props.values())
             propertySet.setProperty(prop.getName(), prop.value());
     }
@@ -256,7 +256,7 @@ public class PlateManager implements PlateService.Service
         for (PositionImpl position : positions)
         {
             positionArray[position.getRow()][position.getColumn()] = position;
-            Map<String, Object> props = OntologyManager.getProperties(plate.getContainer().getId(), position.getLsid());
+            Map<String, Object> props = OntologyManager.getProperties(plate.getContainer(), position.getLsid());
             // this is a bit counter-intuitive: the groups to which a position belongs are indicated by the values of the properties
             // associated with the position:
             for (Map.Entry<String, Object> entry : props.entrySet())
@@ -397,7 +397,7 @@ public class PlateManager implements PlateService.Service
     private void savePropertyBag(Container container, String ownerLsid,
                                  String classLsid, Map<String, Object> props) throws SQLException
     {
-        Map<String, ObjectProperty> resourceProperties = OntologyManager.getPropertyObjects(container.getId(), ownerLsid);
+        Map<String, ObjectProperty> resourceProperties = OntologyManager.getPropertyObjects(container, ownerLsid);
         if (resourceProperties != null && !resourceProperties.isEmpty())
             throw new IllegalStateException("Did not expect to find property set for new plate.");
         ObjectProperty[] objectProperties = new ObjectProperty[props.size()];
@@ -406,9 +406,9 @@ public class PlateManager implements PlateService.Service
         {
             String propertyURI = Lsid.isLsid(entry.getKey()) ? entry.getKey() : classLsid + "#" + entry.getKey();
             if (entry.getValue() != null)
-                objectProperties[idx++] = new ObjectProperty(ownerLsid, container.getId(), propertyURI, entry.getValue());
+                objectProperties[idx++] = new ObjectProperty(ownerLsid, container, propertyURI, entry.getValue());
             else
-                objectProperties[idx++] = new ObjectProperty(ownerLsid, container.getId(), propertyURI, entry.getValue(), PropertyType.STRING);
+                objectProperties[idx++] = new ObjectProperty(ownerLsid, container, propertyURI, entry.getValue(), PropertyType.STRING);
         }
         try {
             if (objectProperties.length > 0)

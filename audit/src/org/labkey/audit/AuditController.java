@@ -150,7 +150,7 @@ public class AuditController extends SpringActionController
             if(null == event)
                 throw new NotFoundException("Could not find the audit log event with id '" + form.getId().toString() + "'!");
 
-            Map<String, Object> eventProps = OntologyManager.getProperties(ContainerManager.getSharedContainer().getId(), event.getLsid());
+            Map<String, Object> eventProps = OntologyManager.getProperties(ContainerManager.getSharedContainer(), event.getLsid());
 
             //create the model and view
             SiteSettingsAuditDetailsModel model = new SiteSettingsAuditDetailsModel(event, eventProps);

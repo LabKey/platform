@@ -1061,14 +1061,14 @@ public class SampleManager
             String setItemLsid = ensureOntologyManagerSetItem(container, defaultObjectLsid, getTitle());
             Map<Integer, String> siteToValue = new HashMap<Integer, String>();
 
-            Map<String, ObjectProperty> defaultValueProperties = OntologyManager.getPropertyObjects(container.getId(), setItemLsid);
+            Map<String, ObjectProperty> defaultValueProperties = OntologyManager.getPropertyObjects(container, setItemLsid);
             if (defaultValueProperties != null)
             {
                 for (Map.Entry<String, ObjectProperty> defaultValue : defaultValueProperties.entrySet())
                 {
                     String siteIdString = defaultValue.getKey().substring(defaultValue.getKey().lastIndexOf(".") + 1);
                     int siteId = Integer.parseInt(siteIdString);
-                    siteToValue.put(siteId, defaultValue.getValue().getEitherStringValue());
+                    siteToValue.put(siteId, defaultValue.getValue().getStringValue());
                 }
             }
             _siteToDefaultValue = siteToValue;
@@ -1086,7 +1086,7 @@ public class SampleManager
 
                 String setItemLsid = ensureOntologyManagerSetItem(container, parentObjectLsid, getTitle());
                 String propertyId = parentObjectLsid + "." + siteId;
-                ObjectProperty defaultValueProperty = new ObjectProperty(setItemLsid, container.getId(), propertyId, value);
+                ObjectProperty defaultValueProperty = new ObjectProperty(setItemLsid, container, propertyId, value);
                 OntologyManager.deleteProperty(setItemLsid, propertyId, container, container);
                 OntologyManager.insertProperties(container, setItemLsid, defaultValueProperty);
             }
@@ -1105,7 +1105,7 @@ public class SampleManager
     private SpecimenRequestInput[] getNewSpecimenRequestInputs(Container container, boolean createIfMissing) throws SQLException
     {
         String parentObjectLsid = getRequestInputObjectLsid(container);
-        Map<String,ObjectProperty> resourceProperties = OntologyManager.getPropertyObjects(container.getId(), parentObjectLsid);
+        Map<String,ObjectProperty> resourceProperties = OntologyManager.getPropertyObjects(container, parentObjectLsid);
         SpecimenRequestInput[] inputs = null;
         if (resourceProperties == null || resourceProperties.size() == 0)
         {
@@ -1129,10 +1129,10 @@ public class SampleManager
                 int displayOrder = Integer.parseInt(resourcePropertyLsid.substring(resourcePropertyLsid.lastIndexOf('.') + 1));
 
                 Map<String, ObjectProperty> inputProperties = parentPropertyEntry.getValue().retrieveChildProperties();
-                String title = inputProperties.get(parentObjectLsid + ".Title").getEitherStringValue();
+                String title = inputProperties.get(parentObjectLsid + ".Title").getStringValue();
                 String helpText = null;
                 if (inputProperties.get(parentObjectLsid + ".HelpText") != null)
-                    helpText = inputProperties.get(parentObjectLsid + ".HelpText").getEitherStringValue();
+                    helpText = inputProperties.get(parentObjectLsid + ".HelpText").getStringValue();
                 boolean rememberSiteValue = inputProperties.get(parentObjectLsid + ".RememberSiteValue").getFloatValue() == 1;
                 boolean required = inputProperties.get(parentObjectLsid + ".Required").getFloatValue() == 1;
                 boolean multiLine = inputProperties.get(parentObjectLsid + ".MultiLine").getFloatValue() == 1;
@@ -1155,20 +1155,20 @@ public class SampleManager
     private static String ensureOntologyManagerSetItem(Container container, String lsidBase, String uniqueItemId) throws SQLException
     {
         try {
-            Integer listParentObjectId = OntologyManager.ensureObject(container.getId(), lsidBase);
+            Integer listParentObjectId = OntologyManager.ensureObject(container, lsidBase);
             String listItemReferenceLsidPrefix = lsidBase + "#objectResource.";
             String listItemObjectLsid = lsidBase + "#" + uniqueItemId;
             String listItemPropertyReferenceLsid = listItemReferenceLsidPrefix + uniqueItemId;
 
             // ensure the object that corresponds to a single list item:
-            OntologyManager.ensureObject(container.getId(), listItemObjectLsid, listParentObjectId);
+            OntologyManager.ensureObject(container, listItemObjectLsid, listParentObjectId);
 
             // check to make sure that the list item is wired up to the top-level list object via a property:
-            Map<String, ObjectProperty> properties = OntologyManager.getPropertyObjects(container.getId(), lsidBase);
+            Map<String, ObjectProperty> properties = OntologyManager.getPropertyObjects(container, lsidBase);
             if (!properties.containsKey(listItemPropertyReferenceLsid))
             {
                 // create the resource property that links the parent object to the list item object:
-                ObjectProperty resourceProperty = new ObjectProperty(lsidBase, container.getId(),
+                ObjectProperty resourceProperty = new ObjectProperty(lsidBase, container,
                         listItemPropertyReferenceLsid, listItemObjectLsid, PropertyType.RESOURCE);
                 OntologyManager.insertProperties(container, lsidBase, resourceProperty);
             }
@@ -1195,11 +1195,11 @@ public class SampleManager
                 SpecimenRequestInput input = inputs[i];
                 String setItemLsid = ensureOntologyManagerSetItem(container, parentObjectLsid, "" + i);
                 ObjectProperty[] props = new ObjectProperty[5];
-                props[0] = new ObjectProperty(setItemLsid, container.getId(), parentObjectLsid + ".HelpText", input.getHelpText());
-                props[1] = new ObjectProperty(setItemLsid, container.getId(), parentObjectLsid + ".Required", input.isRequired() ? 1 : 0);
-                props[2] = new ObjectProperty(setItemLsid, container.getId(), parentObjectLsid + ".RememberSiteValue", input.isRememberSiteValue() ? 1 : 0);
-                props[3] = new ObjectProperty(setItemLsid, container.getId(), parentObjectLsid + ".Title", input.getTitle());
-                props[4] = new ObjectProperty(setItemLsid, container.getId(), parentObjectLsid + ".MultiLine", input.isMultiLine() ? 1 : 0);
+                props[0] = new ObjectProperty(setItemLsid, container, parentObjectLsid + ".HelpText", input.getHelpText());
+                props[1] = new ObjectProperty(setItemLsid, container, parentObjectLsid + ".Required", input.isRequired() ? 1 : 0);
+                props[2] = new ObjectProperty(setItemLsid, container, parentObjectLsid + ".RememberSiteValue", input.isRememberSiteValue() ? 1 : 0);
+                props[3] = new ObjectProperty(setItemLsid, container, parentObjectLsid + ".Title", input.getTitle());
+                props[4] = new ObjectProperty(setItemLsid, container, parentObjectLsid + ".MultiLine", input.isMultiLine() ? 1 : 0);
                 OntologyManager.insertProperties(container, setItemLsid, props);
             }
         }

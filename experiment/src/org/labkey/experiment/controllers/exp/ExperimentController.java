@@ -2988,13 +2988,13 @@ public class ExperimentController extends SpringActionController
     {
         public ModelAndView getView(ShowExternalDocsForm form, BindException errors) throws Exception
         {
-            Map<String, ObjectProperty> props = OntologyManager.getPropertyObjects(getContainer().getId(), form.getObjectURI());
+            Map<String, ObjectProperty> props = OntologyManager.getPropertyObjects(getContainer(), form.getObjectURI());
             ObjectProperty prop = props.get(form.getPropertyURI());
-            if (prop == null || !getContainer().getId().equals(prop.getContainer()))
+            if (prop == null || !getContainer().equals(prop.getContainer()))
             {
                 throw new NotFoundException();
             }
-            URI uri = new URI(prop.getEitherStringValue());
+            URI uri = new URI(prop.getStringValue());
             File f = new File(uri);
             if (!f.exists())
             {

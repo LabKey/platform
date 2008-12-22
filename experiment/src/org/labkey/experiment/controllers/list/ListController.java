@@ -799,7 +799,7 @@ public class ListController extends SpringActionController
             AuditLogEvent event = AuditLogService.get().getEvent(id);
             if (event != null && event.getLsid() != null)
             {
-                Map<String, Object> dataMap = OntologyManager.getProperties(ContainerManager.getSharedContainer().getId(), event.getLsid());
+                Map<String, Object> dataMap = OntologyManager.getProperties(ContainerManager.getSharedContainer(), event.getLsid());
                 if (dataMap != null)
                 {
                     String oldRecord;

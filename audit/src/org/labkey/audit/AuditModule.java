@@ -111,7 +111,7 @@ public class AuditModule extends DefaultModule
 
             for (AuditLogEvent event : LogManager.get().getEvents(filter))
             {
-                Map<String, ObjectProperty> dataMap = OntologyManager.getPropertyObjects(objectContainer.getId(), event.getLsid());
+                Map<String, ObjectProperty> dataMap = OntologyManager.getPropertyObjects(objectContainer, event.getLsid());
                 if (dataMap != null)
                 {
                     Map<String, Object> newDataMap = new HashMap<String, Object>();

@@ -402,10 +402,10 @@ public class AssayController extends SpringActionController
             OntologyObject obj = OntologyManager.getOntologyObject(form.getObjectId());
             if (obj == null)
                 HttpView.throwNotFound();
-            if (!obj.getContainer().equals(getContainer().getId()))
+            if (!obj.getContainer().equals(getContainer()))
             {
                 ActionURL correctedURL = getViewContext().getActionURL().clone();
-                Container objectContainer = ContainerManager.getForId(obj.getContainer());
+                Container objectContainer = obj.getContainer();
                 if (objectContainer == null)
                     HttpView.throwNotFound();
                 correctedURL.setExtraPath(objectContainer.getPath());

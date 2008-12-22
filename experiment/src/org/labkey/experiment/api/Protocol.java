@@ -359,7 +359,7 @@ public class Protocol extends IdentifiableEntity
         {
             try
             {
-                _objectProperties = Collections.unmodifiableMap(OntologyManager.getPropertyObjects(getLSID()));
+                _objectProperties = Collections.unmodifiableMap(OntologyManager.getPropertyObjects(ContainerManager.getForId(getContainer()), getLSID()));
             }
             catch (SQLException e)
             {

@@ -276,7 +276,7 @@ public class ExpRunImpl extends ExpIdentifiableBaseImpl<ExperimentRun> implement
     {
         try
         {
-            return OntologyManager.getPropertyObjects(getContainer().getId(), getLSID());
+            return OntologyManager.getPropertyObjects(getContainer(), getLSID());
         }
         catch (SQLException e)
         {

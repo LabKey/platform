@@ -34,8 +34,6 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.experiment.api.*;
 import org.labkey.experiment.api.property.DomainImpl;
-import org.labkey.experiment.api.property.PropertyValidatorImpl;
-import org.labkey.experiment.api.property.PropertyValidator;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExpander;
 import org.labkey.experiment.xar.AbstractXarImporter;
@@ -1152,19 +1150,19 @@ public class XarReader extends AbstractXarImporter
 
         if (null != contact.getContactId() && !contact.getContactId().equals(""))
         {
-            childProps.put(CONTACT_ID_PROPERTY, new ObjectProperty(propertyURI, getContainer().getId(), CONTACT_ID_PROPERTY, trimString(contact.getContactId()), "Contact Id"));
+            childProps.put(CONTACT_ID_PROPERTY, new ObjectProperty(propertyURI, getContainer(), CONTACT_ID_PROPERTY, trimString(contact.getContactId()), "Contact Id"));
         }
         if (null != contact.getEmail() && !contact.getEmail().equals(""))
         {
-            childProps.put(CONTACT_EMAIL_PROPERTY, new ObjectProperty(propertyURI, getContainer().getId(), CONTACT_EMAIL_PROPERTY, trimString(contact.getEmail()), "Contact Email"));
+            childProps.put(CONTACT_EMAIL_PROPERTY, new ObjectProperty(propertyURI, getContainer(), CONTACT_EMAIL_PROPERTY, trimString(contact.getEmail()), "Contact Email"));
         }
         if (null != contact.getFirstName() && !contact.getFirstName().equals(""))
         {
-            childProps.put(CONTACT_FIRST_NAME_PROPERTY, new ObjectProperty(propertyURI, getContainer().getId(), CONTACT_FIRST_NAME_PROPERTY, trimString(contact.getFirstName()), "Contact First Name"));
+            childProps.put(CONTACT_FIRST_NAME_PROPERTY, new ObjectProperty(propertyURI, getContainer(), CONTACT_FIRST_NAME_PROPERTY, trimString(contact.getFirstName()), "Contact First Name"));
         }
         if (null != contact.getLastName() && !contact.getLastName().equals(""))
         {
-            childProps.put(CONTACT_LAST_NAME_PROPERTY, new ObjectProperty(propertyURI, getContainer().getId(), CONTACT_LAST_NAME_PROPERTY, trimString(contact.getLastName()), "Contact Last Name"));
+            childProps.put(CONTACT_LAST_NAME_PROPERTY, new ObjectProperty(propertyURI, getContainer(), CONTACT_LAST_NAME_PROPERTY, trimString(contact.getLastName()), "Contact Last Name"));
         }
 
         if (childProps.isEmpty())
@@ -1172,7 +1170,7 @@ public class XarReader extends AbstractXarImporter
             return null;
         }
 
-        ObjectProperty contactProperty = new ObjectProperty(parentLSID, getContainer().getId(), CONTACT_PROPERTY, new IdentifiableBase(propertyURI), "Contact");
+        ObjectProperty contactProperty = new ObjectProperty(parentLSID, getContainer(), CONTACT_PROPERTY, new IdentifiableBase(propertyURI), "Contact");
         contactProperty.setChildProperties(childProps);
 
         return contactProperty;
@@ -1197,7 +1195,7 @@ public class XarReader extends AbstractXarImporter
     private Map<String, ObjectProperty> readPropertyCollection(PropertyCollectionType xbValues,
                                                                String parentLSID, boolean checkForDuplicates) throws SQLException, XarFormatException
     {
-        Map<String, ObjectProperty> existingProps = OntologyManager.getPropertyObjects(getContainer().getId(), parentLSID);
+        Map<String, ObjectProperty> existingProps = OntologyManager.getPropertyObjects(getContainer(), parentLSID);
         Map<String, ObjectProperty> result = new HashMap<String, ObjectProperty>();
 
         for (SimpleValueType simpleProp : xbValues.getSimpleValArray())
@@ -1214,7 +1212,7 @@ public class XarReader extends AbstractXarImporter
             {
                 ontologyEntryURI = LsidUtils.resolveLsidFromTemplate(simpleProp.getOntologyEntryURI(), getRootContext());
             }
-            ObjectProperty objectProp = new ObjectProperty(parentLSID, getContainer().getId(), ontologyEntryURI, value, propType, simpleProp.getName());
+            ObjectProperty objectProp = new ObjectProperty(parentLSID, getContainer(), ontologyEntryURI, value, propType, simpleProp.getName());
             setPropertyId(objectProp);
 
             if (ExternalDocsURLCustomPropertyRenderer.URI.equals(trimString(objectProp.getPropertyURI())))
@@ -1270,10 +1268,8 @@ public class XarReader extends AbstractXarImporter
                 throw new XarFormatException("Duplicate nested property for ParentURI " + parentLSID + ", OntologyEntryURI = " + propObjDecl.getOntologyEntryURI());
             }
 
-            String containerId = getContainer().getId();
-            assert null != containerId;
             String uri = GUID.makeURN();
-            ObjectProperty childProperty = new ObjectProperty(parentLSID, containerId, ontologyEntryURI, new IdentifiableBase(uri), propObjDecl.getName());
+            ObjectProperty childProperty = new ObjectProperty(parentLSID, getContainer(), ontologyEntryURI, new IdentifiableBase(uri), propObjDecl.getName());
             setPropertyId(childProperty);
             childProperty.setChildProperties(readPropertyCollection(xbPropObject.getChildProperties(), uri, checkForDuplicates));
             result.put(ontologyEntryURI, childProperty);
@@ -1662,7 +1658,7 @@ public class XarReader extends AbstractXarImporter
                     }
                 }
 
-                OntologyManager.insertProperties(getContainer(), run.getLSID(), new ObjectProperty(parentLSID, propertyURI, stringValue, propertyType));
+                OntologyManager.insertProperties(getContainer(), run.getLSID(), new ObjectProperty(parentLSID, getContainer(), propertyURI, stringValue, propertyType));
             }
             catch (Exception e)
             {

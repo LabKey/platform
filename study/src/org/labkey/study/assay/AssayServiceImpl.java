@@ -206,7 +206,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         {
             if (!props.containsKey(uri))
             {
-                ObjectProperty prop = new ObjectProperty(protocol.getLSID(), protocol.getContainer().getId(), uri, uri);
+                ObjectProperty prop = new ObjectProperty(protocol.getLSID(), protocol.getContainer(), uri, uri);
                 props.put(prop.getPropertyURI(), prop);
             }
         }

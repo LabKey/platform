@@ -721,7 +721,7 @@ public class XarExporter
 
     private PropertyCollectionType getProperties(String lsid, Container parentContainer, String... ignoreProperties) throws ExperimentException
     {
-        Map<String, ObjectProperty> properties = getObjectProperties(lsid);
+        Map<String, ObjectProperty> properties = getObjectProperties(parentContainer, lsid);
 
         Set<String> ignoreSet = new HashSet<String>();
         ignoreSet.addAll(Arrays.asList(ignoreProperties));
@@ -768,7 +768,7 @@ public class XarExporter
                         break;
                     case FILE_LINK:
                         simpleValue.setValueType(SimpleTypeNames.FILE_LINK);
-                        simpleValue.setStringValue(value.getEitherStringValue());
+                        simpleValue.setStringValue(value.getStringValue());
                         break;
                     case INTEGER:
                         simpleValue.setValueType(SimpleTypeNames.INTEGER);
@@ -780,7 +780,7 @@ public class XarExporter
                         simpleValue.setValueType(SimpleTypeNames.STRING);
                         if (ExternalDocsURLCustomPropertyRenderer.URI.equals(value.getPropertyURI()))
                         {
-                            String link = value.getEitherStringValue();
+                            String link = value.getStringValue();
                             try
                             {
                                 URI uri = new URI(link);
@@ -798,8 +798,8 @@ public class XarExporter
                         }
                         else
                         {
-                            simpleValue.setStringValue(relativizeLSIDPropertyValue(value.getEitherStringValue(), SimpleTypeNames.STRING));
-                            Domain domain = PropertyService.get().getDomain(parentContainer, value.getEitherStringValue());
+                            simpleValue.setStringValue(relativizeLSIDPropertyValue(value.getStringValue(), SimpleTypeNames.STRING));
+                            Domain domain = PropertyService.get().getDomain(parentContainer, value.getStringValue());
                             if (domain != null)
                             {
                                 addDomain(domain);
@@ -819,11 +819,11 @@ public class XarExporter
         return result;
     }
 
-    private Map<String, ObjectProperty> getObjectProperties(String lsid)
+    private Map<String, ObjectProperty> getObjectProperties(Container container, String lsid)
     {
         try
         {
-            return OntologyManager.getPropertyObjects(lsid);
+            return OntologyManager.getPropertyObjects(container, lsid);
         }
         catch (SQLException e)
         {
@@ -909,14 +909,14 @@ public class XarExporter
 
     private ContactType getContactType(String parentLSID, Container parentContainer) throws ExperimentException
     {
-        Map<String, Object> parentProperties = getProperties(parentLSID);
+        Map<String, Object> parentProperties = getProperties(parentContainer, parentLSID);
         Object contactLSIDObject = parentProperties.get(XarReader.CONTACT_PROPERTY);
         if (!(contactLSIDObject instanceof String))
         {
             return null;
         }
         String contactLSID = (String)contactLSIDObject;
-        Map<String, Object> contactProperties = getProperties(contactLSID);
+        Map<String, Object> contactProperties = getProperties(parentContainer, contactLSID);
 
         Object contactIdObject = contactProperties.get(XarReader.CONTACT_ID_PROPERTY);
         Object emailObject = contactProperties.get(XarReader.CONTACT_EMAIL_PROPERTY);
@@ -948,11 +948,11 @@ public class XarExporter
         return contactType;
     }
 
-    private Map<String, Object> getProperties(String contactLSID)
+    private Map<String, Object> getProperties(Container container, String contactLSID)
     {
         try
         {
-            return OntologyManager.getProperties(contactLSID);
+            return OntologyManager.getProperties(container, contactLSID);
         }
         catch (SQLException e)
         {

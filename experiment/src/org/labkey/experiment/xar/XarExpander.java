@@ -27,6 +27,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.common.util.Pair;
 import org.labkey.experiment.api.*;
 
@@ -740,7 +741,7 @@ public class XarExpander extends AbstractXarImporter
             loadProtocolElementProperties(stepProtocol);
 
             // overlay properties in the props table
-            _properties = OntologyManager.getProperties(stepProtocol.getContainer(), stepProtocolLSID);
+            _properties = OntologyManager.getProperties(ContainerManager.getForId(stepProtocol.getContainer()), stepProtocolLSID);
         }
 
         private void loadProtocolElementProperties(ProtocolActionStepDetail stepProtocol)

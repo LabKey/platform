@@ -928,7 +928,7 @@ public class StudyManager
         // delete extended properties
         Container container = cohort.getContainer();
         String lsid = cohort.getLsid();
-        Map<String, ObjectProperty> resourceProperties = OntologyManager.getPropertyObjects(container.getId(), lsid);
+        Map<String, ObjectProperty> resourceProperties = OntologyManager.getPropertyObjects(container, lsid);
         if (resourceProperties != null && !resourceProperties.isEmpty())
         {
             OntologyManager.deleteOntologyObject(lsid, container, false);

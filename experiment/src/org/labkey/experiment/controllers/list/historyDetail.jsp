@@ -29,7 +29,7 @@
     JspView<AuditLogEvent> me = (JspView<AuditLogEvent>) HttpView.currentView();
     AuditLogEvent bean = me.getModelBean();
 
-    Map<String, Object> dataMap = OntologyManager.getProperties(ContainerManager.getSharedContainer().getId(), bean.getLsid());
+    Map<String, Object> dataMap = OntologyManager.getProperties(ContainerManager.getSharedContainer(), bean.getLsid());
 %>
 
 

@@ -300,7 +300,7 @@ public class UploadSamplesHelper
         Container c = getContainer();
 
         //Parent object is the MaterialSet type
-        int ownerObjectId = OntologyManager.ensureObject(c.getId(), cpasType);
+        int ownerObjectId = OntologyManager.ensureObject(c, cpasType);
         Timestamp createDate = new Timestamp(System.currentTimeMillis());
         OntologyManager.ImportHelper helper = new MaterialImportHelper(c.getId(), cpasType, createDate, idCols, objectPrefix, _form.getUser(), reusedMaterialLSIDs);
 

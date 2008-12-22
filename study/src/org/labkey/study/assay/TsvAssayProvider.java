@@ -192,7 +192,7 @@ public class TsvAssayProvider extends AbstractAssayProvider
                 Map<String, Object> runProperties = runPropertyCache.get(run.getRowId());
                 if (runProperties == null)
                 {
-                    runProperties = OntologyManager.getProperties(run.getContainer().getId(), run.getLSID());
+                    runProperties = OntologyManager.getProperties(run.getContainer(), run.getLSID());
                     runPropertyCache.put(run.getRowId(), runProperties);
                 }
 

@@ -191,8 +191,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
             map = new CaseInsensitiveHashMap<Object>(map);
             addObjectProperties((String)map.get(OBJECT_XML_KEY), map);
         }
-        K event = ObjectFactory.Registry.getFactory(clz).fromMap(map);
-        return event;
+        return ObjectFactory.Registry.getFactory(clz).fromMap(map);
     }
 
     private void addObjectProperties(String objectXML, Map<String, Object> map)
@@ -415,7 +414,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
             DomainProperty prop = domain.getPropertyByName(entry.getKey());
             if (prop != null)
             {
-                properties[i++] = new ObjectProperty(null, c.getId(), prop.getPropertyURI(), entry.getValue());
+                properties[i++] = new ObjectProperty(null, c, prop.getPropertyURI(), entry.getValue());
             }
             else
             {
