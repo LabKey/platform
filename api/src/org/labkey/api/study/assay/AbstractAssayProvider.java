@@ -589,7 +589,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             {
                 PropertyDescriptor pd = entry.getKey();
                 ObjectProperty property = new ObjectProperty(parentLSID,
-                        container.getId(), pd.getPropertyURI(),
+                        container, pd.getPropertyURI(),
                         entry.getValue(), pd.getPropertyType());
                 property.setName(pd.getName());
                 objProperties[i++] = property;
@@ -699,7 +699,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     protected Map<String, Object> getRunProperties(ExpRun run) throws SQLException
     {
-        return OntologyManager.getProperties(run.getContainer().getId(), run.getLSID());
+        return OntologyManager.getProperties(run.getContainer(), run.getLSID());
     }
 
     public abstract ExpData getDataForDataRow(Object dataRowId);

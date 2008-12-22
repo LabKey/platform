@@ -15,6 +15,8 @@
  */
 package org.labkey.api.exp;
 
+import org.labkey.api.data.Container;
+
 /**
  * User: migra
  * Date: Oct 25, 2005
@@ -23,7 +25,7 @@ package org.labkey.api.exp;
 public class OntologyObject
 {
     private int ObjectId;
-    private String container;
+    private Container container;
     private String objectURI;
     private Integer ownerObjectId;
 
@@ -37,12 +39,12 @@ public class OntologyObject
         ObjectId = objectId;
     }
 
-    public String getContainer()
+    public Container getContainer()
     {
         return container;
     }
 
-    public void setContainer(String container)
+    public void setContainer(Container container)
     {
         this.container = container;
     }

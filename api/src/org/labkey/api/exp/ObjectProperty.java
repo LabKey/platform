@@ -17,6 +17,7 @@
 package org.labkey.api.exp;
 
 import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.Container;
 import org.labkey.api.attachments.AttachmentFile;
 import org.apache.commons.beanutils.ConvertUtils;
 
@@ -38,7 +39,7 @@ public class ObjectProperty extends OntologyManager.PropertyRow
 
     // Object fields
 //    private int objectId = 0;
-    private String container;
+    private Container container;
     private String objectURI;
     private Integer objectOwnerId;
 
@@ -64,66 +65,66 @@ public class ObjectProperty extends OntologyManager.PropertyRow
     }
 
 
-    public ObjectProperty(String objectURI, String container, String propertyURI, String value)
+    public ObjectProperty(String objectURI, Container container, String propertyURI, String value)
     {
         init(objectURI, container, propertyURI, PropertyType.STRING);
         this.stringValue = value;
     }
 
-    public ObjectProperty(String objectURI, String container, String propertyURI, File value)
+    public ObjectProperty(String objectURI, Container container, String propertyURI, File value)
     {
         init(objectURI, container, propertyURI, PropertyType.FILE_LINK);
         this.stringValue = value.getPath();
     }
 
-    public ObjectProperty(String objectURI, String container, String propertyURI, Date value)
+    public ObjectProperty(String objectURI, Container container, String propertyURI, Date value)
     {
         init(objectURI, container, propertyURI, PropertyType.DATE_TIME);
         this.dateTimeValue = value;
     }
 
-    public ObjectProperty(String objectURI, String container, String propertyURI, Double value)
+    public ObjectProperty(String objectURI, Container container, String propertyURI, Double value)
     {
         init(objectURI, container, propertyURI, PropertyType.DOUBLE);
         this.floatValue = value;
     }
 
-    public ObjectProperty(String objectURI, String container, String propertyURI, Integer value)
+    public ObjectProperty(String objectURI, Container container, String propertyURI, Integer value)
     {
         init(objectURI, container, propertyURI, PropertyType.INTEGER);
         this.floatValue = value.doubleValue();
     }
 
-    public ObjectProperty(String objectURI, String container, String propertyURI, Identifiable value)
+    public ObjectProperty(String objectURI, Container container, String propertyURI, Identifiable value)
     {
         init(objectURI, container, propertyURI, PropertyType.RESOURCE);
         this.stringValue = value.getLSID();
         this.objectValue = value;
     }
 
-    public ObjectProperty(String objectURI, String container, String propertyURI, Object value)
+    public ObjectProperty(String objectURI, Container container, String propertyURI, Object value)
     {
         this(objectURI, container, propertyURI, value, (String)null);
     }
 
-    public ObjectProperty(String objectURI, String container, String propertyURI, Object value, String name)
+    public ObjectProperty(String objectURI, Container container, String propertyURI, Object value, String name)
     {
         this(objectURI, container, propertyURI, value, PropertyType.getFromClass(value.getClass()), name);
     }
 
-    public ObjectProperty(String objectURI, String container, String propertyURI, Object value, PropertyType propertyType)
+    public ObjectProperty(String objectURI, Container container, String propertyURI, Object value, PropertyType propertyType)
     {
         this(objectURI, container, propertyURI, value, propertyType, null);
     }
 
-    public ObjectProperty(String objectURI, String container, String propertyURI, Object value, PropertyType propertyType, String name)
+    public ObjectProperty(String objectURI, Container container, String propertyURI, Object value, PropertyType propertyType, String name)
     {
         init(objectURI, container, propertyURI, propertyType, value);
         setName(name);
     }
 
 
-    private void init(String objectURI, String container, String propertyURI, PropertyType propertyType)
+    private void init(String objectURI, Container container, String propertyURI, PropertyType propertyType)
     {
         this.objectURI = objectURI;
         this.container = container;
@@ -135,7 +136,7 @@ public class ObjectProperty extends OntologyManager.PropertyRow
 
 
     // UNODNE: part of this is duplicate with PropertyRow()
-    private void init(String objectURI, String container, String propertyURI, PropertyType propertyType, Object value)
+    private void init(String objectURI, Container container, String propertyURI, PropertyType propertyType, Object value)
     {
         this.objectURI = objectURI;
         this.container = container;
@@ -208,19 +209,19 @@ public class ObjectProperty extends OntologyManager.PropertyRow
         {
             case STRING:
             case MULTI_LINE:
-                return getEitherStringValue();
+                return getStringValue();
 
             case XML_TEXT:
-                return getEitherStringValue();
+                return getStringValue();
 
             case DATE_TIME:
                 return dateTimeValue;
 
             case ATTACHMENT:
-                return getEitherStringValue();
+                return getStringValue();
 
             case FILE_LINK:
-                String value = getEitherStringValue();
+                String value = getStringValue();
                 return value == null ? null : new File(value);
 
             case INTEGER:
@@ -236,7 +237,7 @@ public class ObjectProperty extends OntologyManager.PropertyRow
                 if (null != objectValue)
                     return objectValue;
                 else
-                    return getEitherStringValue();
+                    return getStringValue();
         }
 
         throw new IllegalStateException("Unknown data type: " + rangeURI);
@@ -247,22 +248,12 @@ public class ObjectProperty extends OntologyManager.PropertyRow
         return PropertyType.getFromURI(getConceptURI(), getRangeURI());
     }
 
-    public int getObjectId()
-    {
-        return objectId;
-    }
-
-    public void setObjectId(int objectId)
-    {
-        this.objectId = objectId;
-    }
-
-    public String getContainer()
+    public Container getContainer()
     {
         return container;
     }
 
-    public void setContainer(String container)
+    public void setContainer(Container container)
     {
         this.container = container;
     }
@@ -315,52 +306,6 @@ public class ObjectProperty extends OntologyManager.PropertyRow
     public void setRangeURI(String datatypeURI)
     {
         this.rangeURI = datatypeURI;
-    }
-
-    public char getTypeTag()
-    {
-        return typeTag;
-    }
-
-    public void setTypeTag(char typeTag)
-    {
-        this.typeTag = typeTag;
-    }
-
-    public Double getFloatValue()
-    {
-        return floatValue;
-    }
-
-    public void setFloatValue(Double floatValue)
-    {
-        this.floatValue = floatValue;
-    }
-
-    public String getStringValue()
-    {
-        return stringValue;
-    }
-
-    public void setStringValue(String stringValue)
-    {
-        this.stringValue = stringValue;
-    }
-
-    /** @deprecated */
-    public String getEitherStringValue()
-    {
-        return getStringValue();
-    }
-
-    public Date getDateTimeValue()
-    {
-        return dateTimeValue;
-    }
-
-    public void setDateTimeValue(Date dateTimeValue)
-    {
-        this.dateTimeValue = dateTimeValue;
     }
 
     public String getFormat()
@@ -433,19 +378,8 @@ public class ObjectProperty extends OntologyManager.PropertyRow
         return _childProperties;
     }
 
-	public int getPropertyId()
-	{
-		return propertyId;
-	}
-
-	public void setPropertyId(int propertyId)
-	{
-		this.propertyId = propertyId;
-	}
-
 	public static class ObjectPropertyObjectFactory extends BeanObjectFactory<ObjectProperty>
 	{
-
 		public ObjectPropertyObjectFactory()
 		{
 			super(ObjectProperty.class);

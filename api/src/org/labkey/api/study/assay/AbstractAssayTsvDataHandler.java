@@ -58,7 +58,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             ExpProtocol protocol = run.getProtocol();
 
             Container container = data.getContainer();
-            Integer id = OntologyManager.ensureObject(container.getId(), data.getLSID());
+            Integer id = OntologyManager.ensureObject(container, data.getLSID());
             AssayProvider provider = AssayService.get().getProvider(protocol);
             PropertyDescriptor[] columns = provider.getRunDataColumns(protocol);
 
@@ -67,7 +67,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             allProps.addAll(Arrays.asList(provider.getUploadSetColumns(protocol)));
             allProps.addAll(Arrays.asList(provider.getRunPropertyColumns(protocol)));
 
-            Map<String, Object> runProps = OntologyManager.getProperties(info.getContainer().getId(), run.getLSID());
+            Map<String, Object> runProps = OntologyManager.getProperties(info.getContainer(), run.getLSID());
             ParticipantVisitResolver resolver = null;
 
             Container targetContainer = null;
