@@ -697,7 +697,7 @@ public class XarExporter
         {
             xExperiment.setComments(experiment.getComments());
         }
-        ContactType contactType = getContactType(experiment.getLSID(), ContainerManager.getForId(experiment.getContainer()));
+        ContactType contactType = getContactType(experiment.getLSID(), experiment.getContainer());
         if (contactType != null)
         {
             xExperiment.setContact(contactType);
@@ -712,7 +712,7 @@ public class XarExporter
         }
         xExperiment.setName(experiment.getName());
 
-        PropertyCollectionType xProperties = getProperties(experiment.getLSID(), ContainerManager.getForId(experiment.getContainer()), XarReader.CONTACT_PROPERTY);
+        PropertyCollectionType xProperties = getProperties(experiment.getLSID(), experiment.getContainer(), XarReader.CONTACT_PROPERTY);
         if (xProperties != null)
         {
             xExperiment.setProperties(xProperties);

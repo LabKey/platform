@@ -40,8 +40,6 @@ import java.util.List;
 
 public class ExpSampleSetImpl extends ExpIdentifiableBaseImpl<MaterialSource> implements ExpSampleSet
 {
-    static final private Logger _log = Logger.getLogger(ExpSampleSetImpl.class);
-
     public ExpSampleSetImpl(MaterialSource ms)
     {
         super(ms);
@@ -59,7 +57,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableBaseImpl<MaterialSource> im
         return UserManager.getUser(_object.getCreatedBy());
     }
 
-    public String getContainerId()
+    public Container getContainer()
     {
         return _object.getContainer();
     }
@@ -258,9 +256,9 @@ public class ExpSampleSetImpl extends ExpIdentifiableBaseImpl<MaterialSource> im
     }
 
 
-    public void setContainerId(String containerId)
+    public void setContainer(Container container)
     {
-        _object.setContainer(containerId);
+        _object.setContainer(container);
     }
 
     public static ExpSampleSetImpl[] fromMaterialSources(MaterialSource[] sources)

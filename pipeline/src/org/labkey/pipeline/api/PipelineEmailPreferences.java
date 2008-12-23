@@ -26,8 +26,6 @@ import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.pipeline.api.PipelineStatusFileImpl;
-import org.labkey.pipeline.api.PipelineStatusManager;
 
 import javax.servlet.ServletContextEvent;
 import java.sql.SQLException;
@@ -234,38 +232,53 @@ public class PipelineEmailPreferences
 
     private String _getProperty(Container c, String name)
     {
-        try {
+        try
+        {
             // allow properties to be set site-wide or per pipeline root level
-            String prop = PipelineService.get().getPipelineProperty(c, name);
-            if (prop == null && !c.isRoot())
-                prop = PipelineService.get().getPipelineProperty(ContainerManager.getRoot(), name);
+            do
+            {
+                String prop = PipelineService.get().getPipelineProperty(c, name);
+                if (prop != null)
+                {
+                    return prop;
+                }
+                c = c.getParent();
+            }
+            while (!c.isRoot());
 
-            return prop;
+            return PipelineService.get().getPipelineProperty(ContainerManager.getRoot(), name);
         }
         catch (SQLException e)
         {
-            _log.error("Failed to getInternal pipeline property", e);
+            throw new RuntimeSQLException(e);
         }
-        return null;
     }
 
-    private Container _findContainerFor(Container initialScope, String name)
+    private Container _findContainerFor(Container c, String name)
     {
-        try {
+        try
+        {
             // allow properties to be set site-wide or per pipeline root level
-            String prop = PipelineService.get().getPipelineProperty(initialScope, name);
-            if (prop != null)
-                return initialScope;
+            do
+            {
+                String prop = PipelineService.get().getPipelineProperty(c, name);
+                if (prop != null)
+                {
+                    return c;
+                }
+                c = c.getParent();
+            }
+            while (!c.isRoot());
 
-            prop = PipelineService.get().getPipelineProperty(ContainerManager.getRoot(), name);
+            String prop = PipelineService.get().getPipelineProperty(ContainerManager.getRoot(), name);
             if (prop != null)
                 return ContainerManager.getRoot();
+            return null;
         }
         catch (SQLException e)
         {
-            _log.error("Failed to getInternal pipeline property", e);
+            throw new RuntimeSQLException(e);
         }
-        return null;
     }
 
     private void _setProperty(Container c, String name, String value)

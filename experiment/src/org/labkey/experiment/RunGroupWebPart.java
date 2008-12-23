@@ -59,6 +59,8 @@ public class RunGroupWebPart extends QueryView
             setShowRecordSelectors(true);
             setButtonBarPosition(DataRegion.ButtonBarPosition.BOTTOM);
             setShowExportButtons(false);
+            setShowBorders(true);
+            setShadeAlternatingRows(true);
         }
         setTitle("Run Groups");
     }

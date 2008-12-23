@@ -18,7 +18,7 @@ package org.labkey.audit.query;
 
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.query.AuditDisplayColumnFactory;
-import org.labkey.api.audit.query.ContainerForeignKey;
+import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;

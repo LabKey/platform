@@ -741,7 +741,7 @@ public class XarExpander extends AbstractXarImporter
             loadProtocolElementProperties(stepProtocol);
 
             // overlay properties in the props table
-            _properties = OntologyManager.getProperties(ContainerManager.getForId(stepProtocol.getContainer()), stepProtocolLSID);
+            _properties = OntologyManager.getProperties(stepProtocol.getContainer(), stepProtocolLSID);
         }
 
         private void loadProtocolElementProperties(ProtocolActionStepDetail stepProtocol)

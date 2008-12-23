@@ -23,6 +23,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.apache.log4j.Logger;
@@ -39,7 +40,7 @@ public class ExpExperimentImpl extends ExpIdentifiableBaseImpl<Experiment> imple
         super(experiment);
     }
 
-    public String getContainerId()
+    public Container getContainer()
     {
         return _object.getContainer();
     }
@@ -91,7 +92,7 @@ public class ExpExperimentImpl extends ExpIdentifiableBaseImpl<Experiment> imple
                     + " WHERE PA.ProtocolLSID = ? ) ");
                 sql.add(childProtocol.getLSID());
             }
-            ExperimentRun[] runs = Table.executeQuery(ExperimentService.get().getSchema(), sql.getSQL(), sql.getParams().toArray(new Object[0]), ExperimentRun.class);
+            ExperimentRun[] runs = Table.executeQuery(ExperimentService.get().getSchema(), sql.getSQL(), sql.getParams().toArray(new Object[sql.getParams().size()]), ExperimentRun.class);
             return ExpRunImpl.fromRuns(runs);
         }
         catch (SQLException e)
@@ -128,8 +129,8 @@ public class ExpExperimentImpl extends ExpIdentifiableBaseImpl<Experiment> imple
         }
     }
 
-    public void setContainerId(String containerId)
+    public void setContainer(Container container)
     {
-        _object.setContainer(containerId);
+        _object.setContainer(container);
     }
 }

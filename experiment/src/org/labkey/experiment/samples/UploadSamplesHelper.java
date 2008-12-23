@@ -199,7 +199,7 @@ public class UploadSamplesHelper
             {
                 source = new MaterialSource();
                 String setName = PageFlowUtil.encode(_form.getName());
-                source.setContainer(_form.getContainer().getId());
+                source.setContainer(_form.getContainer());
                 source.setDescription("Samples uploaded by " + _form.getUser().getEmail());
                 Lsid lsid = ExperimentServiceImpl.get().getSampleSetLsid(_form.getName(), _form.getContainer());
                 source.setLSID(lsid.toString());
@@ -302,14 +302,14 @@ public class UploadSamplesHelper
         //Parent object is the MaterialSet type
         int ownerObjectId = OntologyManager.ensureObject(c, cpasType);
         Timestamp createDate = new Timestamp(System.currentTimeMillis());
-        OntologyManager.ImportHelper helper = new MaterialImportHelper(c.getId(), cpasType, createDate, idCols, objectPrefix, _form.getUser(), reusedMaterialLSIDs);
+        OntologyManager.ImportHelper helper = new MaterialImportHelper(c, cpasType, createDate, idCols, objectPrefix, _form.getUser(), reusedMaterialLSIDs);
 
         OntologyManager.insertTabDelimited(c, ownerObjectId, helper, descriptors, rows, false);
     }
 
     class MaterialImportHelper implements OntologyManager.ImportHelper
     {
-        String containerId;
+        Container container;
         String cpasType;
         Timestamp createDate;
         List<String> idCols;
@@ -318,9 +318,9 @@ public class UploadSamplesHelper
         private final Set<String> _reusedMaterialLSIDs;
 
 
-        MaterialImportHelper(String containerId, String cpasType, Timestamp createDate, List<String> idCols, String objectPrefix, User user, Set<String> reusedMaterialLSIDs)
+        MaterialImportHelper(Container container, String cpasType, Timestamp createDate, List<String> idCols, String objectPrefix, User user, Set<String> reusedMaterialLSIDs)
         {
-            this.containerId = containerId;
+            this.container = container;
             this.cpasType = cpasType;
             this.createDate = createDate;
             this.idCols = idCols;
@@ -337,7 +337,7 @@ public class UploadSamplesHelper
             if (!_reusedMaterialLSIDs.contains(lsid))
             {
                 Material mat = new Material();
-                mat.setContainer(containerId);
+                mat.setContainer(container);
                 mat.setCpasType(cpasType);
                 mat.setCreated(createDate);
 

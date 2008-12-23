@@ -174,7 +174,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
      * This allows us to quickly tell if the task is already complete by checking for the XAR file. If it exists, we're
      * done. If the temporary file exists, we can skip directly to step 5 above. 
      */
-    public List<RecordedAction> run() throws PipelineJobException
+    public RecordedActionSet run() throws PipelineJobException
     {
         try
         {
@@ -203,7 +203,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
                 ExperimentService.get().rollbackTransaction();
             }
         }
-        return Collections.emptyList();
+        return new RecordedActionSet();
     }
 
     private void insertRun() throws SQLException, PipelineJobException
@@ -213,7 +213,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
         {
             XarSource source = new XarGeneratorSource(getJob(), _factory.getXarFile(getJob()));
             RecordedActionSet actionSet = getJob().getActionSet();
-            List<RecordedAction> actions = new ArrayList<RecordedAction>(actionSet.getActions());
+            Set<RecordedAction> actions = new LinkedHashSet<RecordedAction>(actionSet.getActions());
 
             Map<String, ExpProtocol> protocolCache = new HashMap<String, ExpProtocol>();
             List<String> protocolSequence = new ArrayList<String>();
@@ -315,7 +315,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
         getJob().clearActionSet(run);
     }
 
-    private ExpRunImpl insertRun(List<RecordedAction> actions, XarSource source, Map<URI, String> runOutputsWithRoles, Map<URI, String> runInputsWithRoles, ExpProtocol parentProtocol)
+    private ExpRunImpl insertRun(Set<RecordedAction> actions, XarSource source, Map<URI, String> runOutputsWithRoles, Map<URI, String> runInputsWithRoles, ExpProtocol parentProtocol)
         throws SQLException, PipelineJobException
     {
         ExpRunImpl run = ExperimentServiceImpl.get().createExperimentRun(getJob().getContainer(), getJob().getDescription());

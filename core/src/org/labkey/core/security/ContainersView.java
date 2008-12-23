@@ -77,7 +77,7 @@ public class ContainersView extends WebPartView
             if (null != url)
             {
                 html.append("<a href=\"");
-                url.setExtraPath(c.getPath());
+                url.setContainer(c);
                 html.append(url.getEncodedLocalURIString());
                 html.append("\">");
                 if (c.isInheritedAcl())

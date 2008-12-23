@@ -19,6 +19,7 @@ package org.labkey.experiment.api;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.ProtocolParameter;
 import org.labkey.api.exp.api.*;
@@ -110,7 +111,7 @@ public class ExpProtocolImpl extends ExpIdentifiableBaseImpl<Protocol> implement
         return Arrays.<ExpProtocolAction>asList(ExpProtocolActionImpl.fromProtocolActions(ExperimentServiceImpl.get().getProtocolActions(getRowId())));
     }
 
-    public String getContainerId()
+    public Container getContainer()
     {
         return _object.getContainer();
     }
@@ -157,9 +158,9 @@ public class ExpProtocolImpl extends ExpIdentifiableBaseImpl<Protocol> implement
         return ExperimentServiceImpl.get().getParentProtocols(getRowId());        
     }
 
-    public void setContainerId(String containerId)
+    public void setContainer(Container container)
     {
-        _object.setContainer(containerId);
+        _object.setContainer(container);
     }
 
     public Map<String, ProtocolParameter> getProtocolParameters()

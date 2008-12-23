@@ -73,7 +73,7 @@
         <% if (!query.getContainer().equals(context.getContainer()))
         {
             ActionURL urlSchema = currentSchema.urlFor(QueryAction.schema);
-            urlSchema.setExtraPath(query.getContainer().getPath());
+            urlSchema.setContainer(query.getContainer());
         %>
         <td colspan="4">
             Inherited from

@@ -15,7 +15,6 @@
  */
 package org.labkey.experiment.api;
 
-import java.util.Date;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URI;
@@ -27,46 +26,11 @@ import java.net.URI;
  */
 public class Data extends ProtocolOutput
 {
-    private int rowId;
-    private String _cpasType = "Data";
-    private Integer sourceApplicationId;
     private String dataFileUrl;
-    private Integer runId;
-    private Date created;
-    private String sourceProtocolLSID;
-    private String container;
+
     public Data()
     {
-    }
-
-    public int getRowId()
-    {
-        return rowId;
-    }
-
-    public void setRowId(int rowId)
-    {
-        this.rowId = rowId;
-    }
-
-    public String getCpasType()
-    {
-        return _cpasType;
-    }
-
-    public void setCpasType(String cpasType)
-    {
-        _cpasType = cpasType;
-    }
-
-    public Integer getSourceApplicationId()
-    {
-        return sourceApplicationId;
-    }
-
-    public void setSourceApplicationId(Integer sourceApplicationId)
-    {
-        this.sourceApplicationId = sourceApplicationId;
+        setCpasType("Data");
     }
 
     public String getDataFileUrl()
@@ -77,46 +41,6 @@ public class Data extends ProtocolOutput
     public void setDataFileUrl(String dataFileUrl)
     {
         this.dataFileUrl = dataFileUrl;
-    }
-
-    public Integer getRunId()
-    {
-        return runId;
-    }
-
-    public void setRunId(Integer runId)
-    {
-        this.runId = runId;
-    }
-
-    public Date getCreated()
-    {
-        return created;
-    }
-
-    public void setCreated(Date created)
-    {
-        this.created = created;
-    }
-
-    public String getSourceProtocolLSID()
-    {
-        return this.sourceProtocolLSID;
-    }
-
-    public void setSourceProtocolLSID(String s)
-    {
-        this.sourceProtocolLSID = s;
-    }
-
-    public void setContainer(String parent)
-    {
-        this.container = parent;
-    }
-
-    public String getContainer()
-    {
-        return container;
     }
 
     public File getFile()
@@ -143,11 +67,6 @@ public class Data extends ProtocolOutput
 
         Data data = (Data) o;
 
-        return !(rowId == 0 || rowId != data.rowId);
-    }
-
-    public int hashCode()
-    {
-        return rowId;
+        return !(getRowId() == 0 || getRowId() != data.getRowId());
     }
 }

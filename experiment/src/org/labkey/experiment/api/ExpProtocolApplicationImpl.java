@@ -19,6 +19,7 @@ package org.labkey.experiment.api;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
@@ -49,12 +50,12 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         return null == protocol ? null : protocol.getCreatedBy();
     }
 
-    public String getContainerId()
+    public Container getContainer()
     {
-        return getRun().getContainer().getId();
+        return getRun().getContainer();
     }
     
-    public void setContainerId(String containerId)
+    public void setContainer(Container container)
     {
         throw new UnsupportedOperationException();
     }

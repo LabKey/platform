@@ -91,7 +91,7 @@ public class XarImportTask extends PipelineJob.Task<XarImportTask.Factory>
         return getJob().getJobSupport(FileAnalysisJobSupport.class);
     }
 
-    public List<RecordedAction> run()
+    public RecordedActionSet run()
     {
         String baseName = getJobSupport().getBaseName();
         File dirAnalysis = getJobSupport().getAnalysisDirectory();
@@ -109,6 +109,6 @@ public class XarImportTask extends PipelineJob.Task<XarImportTask.Factory>
             }
         }
 
-        return Collections.emptyList();
+        return new RecordedActionSet();
     }
 }

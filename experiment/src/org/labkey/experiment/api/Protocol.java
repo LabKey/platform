@@ -16,7 +16,6 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
@@ -34,7 +33,6 @@ import java.util.*;
  */
 public class Protocol extends IdentifiableEntity
 {
-    private int _rowId;
     private String _applicationType;
     private String _contact;
     private String _instrument;
@@ -76,16 +74,6 @@ public class Protocol extends IdentifiableEntity
             throw new RuntimeException(e);
         }
 
-    }
-
-    public int getRowId()
-    {
-        return _rowId;
-    }
-
-    public void setRowId(int rowId)
-    {
-        this._rowId = rowId;
     }
 
     public String getApplicationType()
@@ -295,7 +283,7 @@ public class Protocol extends IdentifiableEntity
         diff(_protocolDescription, other._protocolDescription, "Protocol Description", result);
         diff(_software, other._software, "Software", result);
         diff(getName(), other.getName(), "Name", result);
-        diff(ContainerManager.getForId(getContainer()), ContainerManager.getForId(other.getContainer()), "Container", result);
+        diff(getContainer(), other.getContainer(), "Container", result);
 
         // Diff the protocol parameters
         Map<String, ProtocolParameter> thisParams = retrieveProtocolParameters();
@@ -359,7 +347,7 @@ public class Protocol extends IdentifiableEntity
         {
             try
             {
-                _objectProperties = Collections.unmodifiableMap(OntologyManager.getPropertyObjects(ContainerManager.getForId(getContainer()), getLSID()));
+                _objectProperties = Collections.unmodifiableMap(OntologyManager.getPropertyObjects(getContainer(), getLSID()));
             }
             catch (SQLException e)
             {

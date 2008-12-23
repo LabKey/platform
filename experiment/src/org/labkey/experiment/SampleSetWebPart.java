@@ -44,14 +44,17 @@ public class SampleSetWebPart extends WebPartView<Object>
     {
         _narrow = narrow;
         setTitle("Sample Sets");
-        setTitleHref(viewContext.getActionURL().relativeUrl("listMaterialSources", null, "Experiment"));
+        setTitleHref(new ActionURL(ExperimentController.ListMaterialSourcesAction.class, viewContext.getContainer()));
     }
 
     public DataRegion getMaterialSourceWithProjectRegion(ViewContext model) throws Exception
     {
         DataRegion result = getMaterialSourceRegion(model, ExperimentServiceImpl.get().getTinfoMaterialSourceWithProject());
-        ActionURL url = new ActionURL("Experiment", "listMaterialSources", "dummyContainer");
-        result.addDisplayColumn(new ContainerDisplayColumn(ExperimentServiceImpl.get().getTinfoMaterialSourceWithProject().getColumn("Container"), url));
+        ActionURL url = new ActionURL(ExperimentController.ListMaterialSourcesAction.class, model.getContainer());
+        ColumnInfo containerColumnInfo = ExperimentServiceImpl.get().getTinfoMaterialSourceWithProject().getColumn("Container");
+        ContainerDisplayColumn displayColumn = new ContainerDisplayColumn(containerColumnInfo, true, url);
+        displayColumn.setEntityIdColumn(containerColumnInfo);
+        result.addDisplayColumn(displayColumn);
 
         if (_narrow)
         {
@@ -82,9 +85,8 @@ public class SampleSetWebPart extends WebPartView<Object>
         dr.getDisplayColumn("idcol2").setVisible(false);
         dr.getDisplayColumn("idcol3").setVisible(false);
 
-        ActionURL url = model.cloneActionURL();
-        url.setPageFlow("Experiment");
-        dr.getDisplayColumn(1).setURL(url.relativeUrl("showMaterialSource", "rowId=${RowId}"));
+        ActionURL url = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, model.getContainer());
+        dr.getDisplayColumn(1).setURL(url.toString() + "rowId=${RowId}");
         dr.setShowRecordSelectors(model.hasPermission(ACL.PERM_DELETE) || model.hasPermission(ACL.PERM_UPDATE));
         dr.addDisplayColumn(0, new ActiveSampleSetColumn(model.getContainer()));
 
@@ -99,11 +101,8 @@ public class SampleSetWebPart extends WebPartView<Object>
         bb.add(deleteButton);
 
         ActionButton uploadMaterialsButton = new ActionButton("showUploadMaterials.view", "Import Sample Set", DataRegion.MODE_GRID, ActionButton.Action.LINK);
-        ActionURL uploadURL = model.cloneActionURL();
-        uploadURL.setPageFlow("Experiment");
-        uploadURL.setAction("showUploadMaterials.view");
-        uploadURL.deleteParameters();
-        uploadMaterialsButton.setURL(uploadURL.toString());
+        ActionURL uploadURL = new ActionURL(ExperimentController.ShowUploadMaterialsAction.class, model.getContainer());
+        uploadMaterialsButton.setURL(uploadURL);
         uploadMaterialsButton.setDisplayPermission(ACL.PERM_UPDATE);
         bb.add(uploadMaterialsButton);
         bb.add(new ActionButton("showUpdateMaterialSource.view", "Update", DataRegion.MODE_DETAILS, ActionButton.Action.GET));
@@ -111,27 +110,24 @@ public class SampleSetWebPart extends WebPartView<Object>
         bb.add(new ActionButton("listMaterialSources.view", "Show Sample Sets", DataRegion.MODE_DETAILS, ActionButton.Action.LINK));
 
         ActionURL setAsActiveURL = model.cloneActionURL();
-        setAsActiveURL.setPageFlow("Experiment");
-        setAsActiveURL.setAction("setActiveSampleSet.view");
+        setAsActiveURL.setAction(ExperimentController.SetActiveSampleSetAction.class);
         ActionButton setAsActiveButton = new ActionButton(setAsActiveURL.toString(), "Set as Active", DataRegion.MODE_GRID | DataRegion.MODE_DETAILS);
-        setAsActiveButton.setURL(setAsActiveURL.toString());
+        setAsActiveButton.setURL(setAsActiveURL);
         setAsActiveButton.setActionType(ActionButton.Action.POST);
         setAsActiveButton.setDisplayPermission(ACL.PERM_UPDATE);
         bb.add(setAsActiveButton);
 
         ActionURL showAllURL = model.cloneActionURL();
-        showAllURL.setPageFlow("Experiment");
-        showAllURL.setAction("showAllMaterials.view");
+        showAllURL.setAction(ExperimentController.ShowAllMaterialsAction.class);
         ActionButton showAllButton = new ActionButton(showAllURL.toString(), "Show All Materials", DataRegion.MODE_GRID | DataRegion.MODE_DETAILS);
-        showAllButton.setURL(showAllURL.toString());
+        showAllButton.setURL(showAllURL);
         showAllButton.setDisplayPermission(ACL.PERM_READ);
         bb.add(showAllButton);
 
         ActionURL editTypeURL = model.cloneActionURL();
-        editTypeURL.setPageFlow("Experiment");
-        editTypeURL.setAction("editSampleSetType.view");
+        editTypeURL.setAction(ExperimentController.EditSampleSetTypeAction.class);
         ActionButton editTypeButton = new ActionButton(editTypeURL.toString(), "Edit Property List", DataRegion.MODE_DETAILS);
-        editTypeButton.setURL(editTypeURL.toString());
+        editTypeButton.setURL(editTypeURL);
         editTypeButton.setDisplayPermission(ACL.PERM_UPDATE);
         bb.add(editTypeButton);
 

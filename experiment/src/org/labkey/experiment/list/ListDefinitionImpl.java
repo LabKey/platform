@@ -19,10 +19,7 @@ package org.labkey.experiment.list;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
-import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
@@ -272,7 +269,7 @@ public class ListDefinitionImpl implements ListDefinition
         }
     }
 
-    public void delete(User user) throws Exception
+    public void delete(User user) throws SQLException, DomainNotFoundException
     {
         boolean fTransaction = false;
         try

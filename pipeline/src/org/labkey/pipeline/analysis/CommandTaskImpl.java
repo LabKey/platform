@@ -344,7 +344,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         }
     }
 
-    public List<RecordedAction> run() throws PipelineJobException
+    public RecordedActionSet run() throws PipelineJobException
     {
         try
         {
@@ -379,7 +379,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             List<String> args = pb.command();
 
             if (args.size() == 0)
-                return Collections.emptyList();
+                return new RecordedActionSet();
 
             String commandLine = StringUtils.join(args, " ");
             
@@ -389,7 +389,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
                 getJob().header(args.get(0) + " output");
                 getJob().info(commandLine);
 
-                return Collections.emptyList();
+                return new RecordedActionSet();
             }
 
             // Check if output file is to be generated from the stdout
@@ -441,7 +441,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
                     fileInput.delete();
             }
             action.addParameter(RecordedAction.COMMAND_LINE_PARAM, commandLine);
-            return Collections.singletonList(action);
+            return new RecordedActionSet(action);
         }
         catch (IOException e)
         {

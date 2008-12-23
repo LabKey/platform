@@ -15,7 +15,6 @@
  */
 package org.labkey.experiment.api;
 
-import org.labkey.experiment.api.IdentifiableEntity;
 import org.labkey.api.exp.api.ExperimentService;
 
 /**
@@ -25,20 +24,9 @@ import org.labkey.api.exp.api.ExperimentService;
  */
 public class ExperimentRun extends IdentifiableEntity
 {
-    private int rowId;
     private String protocolLSID;
     private String filePathRoot;
     private String comments;
-
-    public int getRowId()
-    {
-        return rowId;
-    }
-
-    public void setRowId(int rowId)
-    {
-        this.rowId = rowId;
-    }
 
     public String getProtocolLSID()
     {
@@ -88,7 +76,7 @@ public class ExperimentRun extends IdentifiableEntity
 
         ExperimentRun that = (ExperimentRun) o;
 
-        if (rowId != that.rowId) return false;
+        if (getRowId() != that.getRowId()) return false;
         if (protocolLSID != null ? !protocolLSID.equals(that.protocolLSID) : that.protocolLSID != null) return false;
 
         return true;
@@ -97,7 +85,7 @@ public class ExperimentRun extends IdentifiableEntity
     public int hashCode()
     {
         int result = super.hashCode();
-        result = 31 * result + rowId;
+        result = 31 * result + getRowId();
         result = 31 * result + (protocolLSID != null ? protocolLSID.hashCode() : 0);
         return result;
     }

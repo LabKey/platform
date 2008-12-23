@@ -22,7 +22,6 @@ package org.labkey.experiment.api;
  */
 public class MaterialSource extends IdentifiableEntity
 {
-    private int rowId;
     private String materialLSIDPrefix;
     private String description;
     /** PropertyURI */
@@ -31,16 +30,6 @@ public class MaterialSource extends IdentifiableEntity
     private String _idCol2;
     /** PropertyURI */
     private String _idCol3;
-
-    public int getRowId()
-    {
-        return rowId;
-    }
-
-    public void setRowId(int rowId)
-    {
-        this.rowId = rowId;
-    }
 
     public String getMaterialLSIDPrefix()
     {

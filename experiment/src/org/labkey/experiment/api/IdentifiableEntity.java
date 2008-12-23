@@ -16,13 +16,11 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.GUID;
 import org.labkey.api.security.User;
 import org.labkey.api.exp.IdentifiableBase;
 import org.labkey.api.exp.Identifiable;
 
-import javax.ejb.Transient;
 import java.util.*;
 
 /**
@@ -32,12 +30,13 @@ import java.util.*;
  */
 public class IdentifiableEntity extends IdentifiableBase implements Identifiable
 {
+    private int rowId;
     protected String entityId;
     private int createdBy;
     private long created = 0;
     private int modifiedBy;
     private long modified;
-    private String containerId;
+    private Container container;
 
     protected IdentifiableEntity()
     {
@@ -63,7 +62,7 @@ public class IdentifiableEntity extends IdentifiableBase implements Identifiable
     public void beforeUpdate(User user, IdentifiableEntity cur)
     {
         entityId = cur.entityId;
-        containerId = cur.containerId;
+        container = cur.container;
         createdBy = cur.createdBy;
         created = cur.created;
 
@@ -74,7 +73,7 @@ public class IdentifiableEntity extends IdentifiableBase implements Identifiable
     {
         if (null == entityId)
             entityId = GUID.makeGUID();
-        containerId = container.getId();
+        this.container = container;
         if (user != null)
             createdBy = user.getUserId();
         created = System.currentTimeMillis();
@@ -82,18 +81,15 @@ public class IdentifiableEntity extends IdentifiableBase implements Identifiable
         modified = created;
     }
 
-
     public int getCreatedBy()
     {
         return createdBy;
     }
 
-
     public void setCreatedBy(int createdBy)
     {
         this.createdBy = createdBy;
     }
-
 
     public Date getCreated()
     {
@@ -102,46 +98,50 @@ public class IdentifiableEntity extends IdentifiableBase implements Identifiable
         return new Date(created);
     }
 
-
     public void setCreated(Date created)
     {
         this.created = created.getTime();
     }
-
 
     public int getModifiedBy()
     {
         return modifiedBy;
     }
 
-
     public void setModifiedBy(int modifiedBy)
     {
         this.modifiedBy = modifiedBy;
     }
-
 
     public Date getModified()
     {
         return new Date(modified);
     }
 
-
     public void setModified(Date modified)
     {
         this.modified = modified.getTime();
     }
 
-
-    public String getContainer()
+    public int getRowId()
     {
-        return containerId;
+        return rowId;
+    }
+
+    public void setRowId(int rowId)
+    {
+        this.rowId = rowId;
+    }
+
+    public Container getContainer()
+    {
+        return container;
     }
 
     // for Table layer
-    public void setContainer(String containerId)
+    public void setContainer(Container container)
     {
-        this.containerId = containerId;
+        this.container = container;
     }
 
     public String getEntityId()
@@ -154,18 +154,6 @@ public class IdentifiableEntity extends IdentifiableBase implements Identifiable
         if (this.entityId != null && !this.entityId.equals(entityId))
             throw new IllegalStateException("can't change entityid");
         this.entityId = entityId;
-    }
-
-    @Transient
-    public String getContainerPath()
-    {
-        if (null != containerId)
-        {
-            Container c = ContainerManager.getForId(containerId);
-            if (null != c)
-                return c.getPath();
-        }
-        return "";
     }
 
     public static boolean diff(int i1, int i2, String name, List<Difference> diffs)

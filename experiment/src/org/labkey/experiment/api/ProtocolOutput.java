@@ -16,6 +16,9 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.exp.IdentifiableBase;
+import org.labkey.api.data.Container;
+
+import java.util.Date;
 
 /**
  * Output of a protocol, like a data file or a material
@@ -24,25 +27,86 @@ import org.labkey.api.exp.IdentifiableBase;
  */
 public abstract class ProtocolOutput extends IdentifiableBase
 {
-    public abstract Integer getSourceApplicationId();
+    private Container _container;
+    private Integer _runId;
+    private int _rowId;
+    private Date _created;
+    private String _sourceProtocolLSID;
+    private String _cpasType;
+    private Integer _sourceApplicationId;
 
-    public abstract void setSourceApplicationId(Integer sourceApplicationId);
+    public int getRowId()
+    {
+        return _rowId;
+    }
 
-    public abstract Integer getRunId();
+    public void setRowId(int rowId)
+    {
+        this._rowId = rowId;
+    }
 
-    public abstract void setRunId(Integer runId);
+    public void setContainer(Container parent)
+    {
+        this._container = parent;
+    }
 
-    public abstract String getSourceProtocolLSID();
+    public Container getContainer()
+    {
+        return _container;
+    }
 
-    public abstract void setSourceProtocolLSID(String s);
+    public Integer getRunId()
+    {
+        return _runId;
+    }
 
-    public abstract int getRowId();
+    public void setRunId(Integer runId)
+    {
+        this._runId = runId;
+    }
 
-    public abstract void setCpasType(String cpasType);
+    public Date getCreated()
+    {
+        return _created;
+    }
 
-    public abstract String getCpasType();
+    public void setCreated(Date created)
+    {
+        this._created = created;
+    }
 
-    public abstract String getContainer();
+    public String getSourceProtocolLSID()
+    {
+        return this._sourceProtocolLSID;
+    }
 
-    public abstract void setContainer(String container);
+    public void setSourceProtocolLSID(String s)
+    {
+        this._sourceProtocolLSID = s;
+    }
+
+    public String getCpasType()
+    {
+        return _cpasType;
+    }
+
+    public void setCpasType(String cpasType)
+    {
+        _cpasType = cpasType;
+    }
+
+    public Integer getSourceApplicationId()
+    {
+        return _sourceApplicationId;
+    }
+
+    public void setSourceApplicationId(Integer sourceApplicationId)
+    {
+        this._sourceApplicationId = sourceApplicationId;
+    }
+
+    public int hashCode()
+    {
+        return _rowId + getClass().hashCode();
+    }
 }

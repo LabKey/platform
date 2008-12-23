@@ -148,7 +148,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         ExperimentRun run = new ExperimentRun();
         run.setName(name);
         run.setLSID(generateGuidLSID(container, "Run"));
-        run.setContainer(container.getId());
+        run.setContainer(container);
         return new ExpRunImpl(run);
     }
 
@@ -281,7 +281,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         data.setLSID(lsid);
         data.setName(name);
         data.setCpasType("Data");
-        data.setContainer(container.getId());
+        data.setContainer(container);
         return new ExpDataImpl(data);
     }
 
@@ -375,7 +375,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public ExpExperiment createExpExperiment(Container container, String name)
     {
         Experiment exp = new Experiment();
-        exp.setContainer(container.getId());
+        exp.setContainer(container);
         exp.setName(name);
         exp.setLSID(generateLSID(container, ExpExperiment.class, name));
         return new ExpExperimentImpl(exp);
@@ -459,7 +459,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         Protocol protocol = new Protocol();
         protocol.setName(name);
         protocol.setLSID(lsid);
-        protocol.setContainer(container.getId());
+        protocol.setContainer(container);
         protocol.setApplicationType(type.toString());
         protocol.setOutputDataType("Data");
         protocol.setOutputMaterialType("Material");
@@ -1232,7 +1232,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             matSource.setLSID(ExperimentService.get().getDefaultSampleSetLsid());
             matSource.setName(DEFAULT_MATERIAL_SOURCE_NAME);
             matSource.setMaterialLSIDPrefix(new Lsid("Sample", "Unspecified").toString() + "#");
-            matSource.setContainer(ContainerManager.getSharedContainer().getId());
+            matSource.setContainer(ContainerManager.getSharedContainer());
             matSource = insertMaterialSource(null, matSource, null);
         }
 
@@ -1589,7 +1589,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             for (Protocol protocol : protocols)
             {
-                if (!protocol.getContainer().equals(c.getId()))
+                if (!protocol.getContainer().equals(c))
                 {
                     throw new SQLException("Attemping to delete a Protocol from another container");
                 }
@@ -1659,7 +1659,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             for (Material material : materials)
             {
-                if (!material.getContainer().equals(container.getId()))
+                if (!material.getContainer().equals(container))
                 {
                     throw new SQLException("Attemping to delete a Material from another container");
                 }
@@ -1684,7 +1684,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public void deleteDataByRowIds(Container container, int... selectedDataIds) throws SQLException
+    public void deleteDataByRowIds(Container container, int... selectedDataIds)
     {
         if (selectedDataIds.length == 0)
             return;
@@ -1692,37 +1692,44 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         String dataIds = StringUtils.join(toIntegers(selectedDataIds), ",");
 
         String sql = "SELECT * FROM exp.Data WHERE RowId IN (" + dataIds + ");";
-        Data[] datas = Table.executeQuery(getExpSchema(), sql, new Object[]{}, Data.class);
-        boolean containingTrans = getExpSchema().getScope().isTransactionActive();
-
         try
         {
-            if (!containingTrans)
-                getExpSchema().getScope().beginTransaction();
+            Data[] datas = Table.executeQuery(getExpSchema(), sql, new Object[]{}, Data.class);
+            boolean containingTrans = getExpSchema().getScope().isTransactionActive();
 
-            beforeDeleteData(ExpDataImpl.fromDatas(datas));
-            for (Data data : datas)
+            try
             {
-                if (!data.getContainer().equals(container.getId()))
-                {
-                    throw new SQLException("Attemping to delete a Data from another container");
-                }
-                OntologyManager.deleteOntologyObjects(container, data.getLSID());
-            }
-            sql = "  DELETE FROM exp.Data WHERE RowId IN (" + dataIds + ");";
-            Table.execute(getExpSchema(), sql, new Object[]{});
+                if (!containingTrans)
+                    getExpSchema().getScope().beginTransaction();
 
-            if (!containingTrans)
-                getExpSchema().getScope().commitTransaction();
+                beforeDeleteData(ExpDataImpl.fromDatas(datas));
+                for (Data data : datas)
+                {
+                    if (!data.getContainer().equals(container))
+                    {
+                        throw new SQLException("Attemping to delete a Data from another container");
+                    }
+                    OntologyManager.deleteOntologyObjects(container, data.getLSID());
+                }
+                sql = "  DELETE FROM exp.Data WHERE RowId IN (" + dataIds + ");";
+                Table.execute(getExpSchema(), sql, new Object[]{});
+
+                if (!containingTrans)
+                    getExpSchema().getScope().commitTransaction();
+            }
+            finally
+            {
+                if (!containingTrans)
+                    getExpSchema().getScope().closeConnection();
+            }
         }
-        finally
+        catch (SQLException e)
         {
-            if (!containingTrans)
-                getExpSchema().getScope().closeConnection();
+            throw new RuntimeSQLException(e);
         }
     }
 
-    public void deleteAllExpObjInContainer(Container c, User user) throws Exception
+    public void deleteAllExpObjInContainer(Container c, User user) throws SQLException, ExperimentException
     {
         if (null == c)
             return;
@@ -1927,18 +1934,17 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     {
         assert 0 == source.getRowId();
         source = Table.insert(user, getTinfoMaterialSource(), source);
-        Container container = ContainerManager.getForId(source.getContainer());
         if (dd == null)
         {
-            Domain domain = PropertyService.get().getDomain(container, source.getLSID());
+            Domain domain = PropertyService.get().getDomain(source.getContainer(), source.getLSID());
             if (domain == null)
             {
-                domain = PropertyService.get().createDomain(container, source.getLSID(), source.getName());
+                domain = PropertyService.get().createDomain(source.getContainer(), source.getLSID(), source.getName());
                 try
                 {
                     domain.save(user);
                 }
-                catch (Exception e)
+                catch (ChangePropertyDescriptorException e)
                 {
                     throw (SQLException)new SQLException().initCause(e);
                 }
@@ -1946,10 +1952,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
 
         getMaterialSourceCache().put(String.valueOf(source.getRowId()), source);
-        ExpSampleSet activeSampleSet = lookupActiveSampleSet(container);
+        ExpSampleSet activeSampleSet = lookupActiveSampleSet(source.getContainer());
         if (activeSampleSet == null)
         {
-            setActiveSampleSet(container, new ExpSampleSetImpl(source));
+            setActiveSampleSet(source.getContainer(), new ExpSampleSetImpl(source));
         }
         return source;
     }
@@ -2540,7 +2546,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 loadParameter(user, param, getTinfoProtocolParameter(), "ProtocolId", protocol.getRowId());
             }
 
-            savePropertyCollection(protocol.retrieveObjectProperties(), protocol.getLSID(), ContainerManager.getForId(protocol.getContainer()), !newProtocol);
+            savePropertyCollection(protocol.retrieveObjectProperties(), protocol.getLSID(), protocol.getContainer(), !newProtocol);
             return result;
         }
         catch (SQLException e)

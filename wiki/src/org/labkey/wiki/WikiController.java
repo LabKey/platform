@@ -2382,7 +2382,7 @@ public class WikiController extends SpringActionController
         if (recurse)
         {
             for (Container child : c.getChildren())
-                testLinksForAllPages(child, baseURL.clone().setExtraPath(child.getPath()), sb, true);
+                testLinksForAllPages(child, baseURL.clone().setContainer(child), sb, true);
         }
     }
 

@@ -19,7 +19,6 @@ package org.labkey.study.controllers.assay;
 import org.labkey.api.action.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -125,13 +124,11 @@ public class AssayController extends SpringActionController
 
         public boolean matches(ExpProtocol protocol, AssayProvider provider)
         {
-            if (_id != null && protocol.getRowId() != _id)
+            if (_id != null && protocol.getRowId() != _id.intValue())
                 return false;
             if (_name != null && !_name.equals(protocol.getName()))
                 return false;
-            if (_type != null && !_type.equals(provider.getName()))
-                return false;
-            return true;
+            return !(_type != null && !_type.equals(provider.getName()));
         }
     }
 
@@ -264,7 +261,7 @@ public class AssayController extends SpringActionController
 
         public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception
         {
-            _protocol = form.getRowId() != null ? ExperimentService.get().getExpProtocol(form.getRowId()) : null;
+            _protocol = form.getRowId() != null ? ExperimentService.get().getExpProtocol(form.getRowId().intValue()) : null;
             if (_protocol == null)
             {
                 HttpView.throwNotFound();
@@ -399,7 +396,7 @@ public class AssayController extends SpringActionController
         {
             if (form.getPropertyId() == null || form.getObjectId() == null)
                 HttpView.throwNotFound();
-            OntologyObject obj = OntologyManager.getOntologyObject(form.getObjectId());
+            OntologyObject obj = OntologyManager.getOntologyObject(form.getObjectId().intValue());
             if (obj == null)
                 HttpView.throwNotFound();
             if (!obj.getContainer().equals(getContainer()))
@@ -408,7 +405,7 @@ public class AssayController extends SpringActionController
                 Container objectContainer = obj.getContainer();
                 if (objectContainer == null)
                     HttpView.throwNotFound();
-                correctedURL.setExtraPath(objectContainer.getPath());
+                correctedURL.setContainer(objectContainer);
                 HttpView.throwRedirect(correctedURL);
             }
 

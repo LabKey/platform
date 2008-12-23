@@ -15,8 +15,6 @@
  */
 package org.labkey.experiment.api;
 
-import org.labkey.experiment.api.IdentifiableEntity;
-
 import java.io.Serializable;
 
 /**
@@ -26,8 +24,6 @@ import java.io.Serializable;
  */
 public class Experiment extends IdentifiableEntity implements Serializable
 {
-    private int rowId;
-    private String ProtocolLSID;
     private String hypothesis;
     private String experimenter;
     private String experimentLSIDAuthority;
@@ -35,26 +31,6 @@ public class Experiment extends IdentifiableEntity implements Serializable
     private String experimentDescriptionURL;
     private String comments;
     private String contactId;
-
-    public int getRowId()
-    {
-        return rowId;
-    }
-
-    public void setRowId(int rowId)
-    {
-        this.rowId = rowId;
-    }
-
-    public String getProtocolLSID()
-    {
-        return ProtocolLSID;
-    }
-
-    public void setProtocolLSID(String protocolLSID)
-    {
-        ProtocolLSID = protocolLSID;
-    }
 
     public String getHypothesis()
     {

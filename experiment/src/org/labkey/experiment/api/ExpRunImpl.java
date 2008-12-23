@@ -16,10 +16,7 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.security.User;
@@ -63,7 +60,7 @@ public class ExpRunImpl extends ExpIdentifiableBaseImpl<ExperimentRun> implement
         return new ActionURL(ExperimentController.ShowRunGraphAction.class, getContainer()).addParameter("rowId", getRowId());
     }
 
-    public String getContainerId()
+    public Container getContainer()
     {
         return _object.getContainer();
     }
@@ -229,9 +226,9 @@ public class ExpRunImpl extends ExpIdentifiableBaseImpl<ExperimentRun> implement
     }
 
 
-    public void setContainerId(String containerId)
+    public void setContainer(Container container)
     {
-        _object.setContainer(containerId);
+        _object.setContainer(container);
     }
 
     public void setProtocolApplications(ExpProtocolApplicationImpl[] protocolSteps)
@@ -318,7 +315,7 @@ public class ExpRunImpl extends ExpIdentifiableBaseImpl<ExperimentRun> implement
         List<ExpData> listD = new ArrayList<ExpData>();
         List<ExpProtocolApplication> ancestorPAStack = new ArrayList<ExpProtocolApplication>();
         List<ExpProtocolApplication> descendantPAStack = new ArrayList<ExpProtocolApplication>();
-        ExpProtocolApplication [] apps = getProtocolApplications();
+        ExpProtocolApplicationImpl[] apps = getProtocolApplications();
 
         boolean found = false;
 
@@ -460,14 +457,14 @@ public class ExpRunImpl extends ExpIdentifiableBaseImpl<ExperimentRun> implement
             listPA.add(pa);
         }
 
-        ArrayList<ExpProtocolApplication> allPA = new ArrayList<ExpProtocolApplication>();
+        ArrayList<ExpProtocolApplicationImpl> allPA = new ArrayList<ExpProtocolApplicationImpl>();
         ArrayList<ExpProtocolApplication> deletePA;
         ArrayList<ExpMaterial> deleteM;
         ArrayList<ExpData> deleteD;
 
         setProtocolApplications(null);
 
-        for (ExpProtocolApplication app : apps)
+        for (ExpProtocolApplicationImpl app : apps)
         {
             if (listPA.contains(app))
             {

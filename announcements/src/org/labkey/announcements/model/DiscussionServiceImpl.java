@@ -57,8 +57,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
         form.set("title", title);
         form.set("discussionSrcIdentifier", identifier);
         form.set("discussionSrcURL", toSaved(pageURL));
-        WebPartView view = new AnnouncementsController.InsertMessageView(form, viewTitle, null, false, cancelURL, true, allowMultipleDiscussions);
-        return view;
+        return new AnnouncementsController.InsertMessageView(form, viewTitle, null, false, cancelURL, true, allowMultipleDiscussions);
     }
 
 
@@ -67,7 +66,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
         Container c = ContainerManager.getForPath(url.getExtraPath());
         ActionURL saveURL = url.clone();
         if (null != c)
-            saveURL.setExtraPath(c.getId());
+            saveURL.setContainer(c);
         String saved=saveURL.getLocalURIString();
 
         String contextPath = AppProps.getInstance().getContextPath();
@@ -85,7 +84,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
         String id = StringUtils.strip(url.getExtraPath(), "/");
         Container c = ContainerManager.getForId(id);
         if (null != c)
-            url.setExtraPath(c.getPath());
+            url.setContainer(c);
         return url;
     }
 
@@ -93,8 +92,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
     public Announcement[] getDiscussions(Container c, String identifier)
     {
         SimpleFilter filter = new SimpleFilter("discussionSrcIdentifier", identifier);
-        Announcement[] announcements = AnnouncementManager.getBareAnnouncements(c, filter, new Sort("Created"));
-        return announcements;
+        return AnnouncementManager.getBareAnnouncements(c, filter, new Sort("Created"));
     }
 
 
@@ -103,8 +101,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
         try
         {
             // NOTE: don't pass in Announcement, it came from getBareAnnouncements()
-            AnnouncementsController.ThreadView threadView = new AnnouncementsController.ThreadView(c, currentURL, user, null, ann.getEntityId());
-            return threadView;
+            return new AnnouncementsController.ThreadView(c, currentURL, user, null, ann.getEntityId());
         }
         catch (ServletException x)
         {

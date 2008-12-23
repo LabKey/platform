@@ -252,7 +252,7 @@ public class CoreController extends SpringActionController
             url.deleteParameter("containerId");
             url.setPageFlow(form.getPageflow());
             url.setAction(form.getAction());
-            url.setExtraPath(targetContainer.getPath());
+            url.setContainer(targetContainer);
 
             return url;
         }

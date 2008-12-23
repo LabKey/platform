@@ -61,7 +61,7 @@ public class StudyDesignsWebPart extends GridView
                 if (value)
                 {
                     Container c = ContainerManager.getForId((String) ctx.get("Container"));
-                    studyFolderUrl.setExtraPath(c.getPath());
+                    studyFolderUrl.setContainer(c);
                     out.write("[<a style='white-space:nowrap' href='");
                     out.write(PageFlowUtil.filter(studyFolderUrl));
                     out.write("'>Go To Study Folder</a>]");

@@ -16,8 +16,6 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpChildObject;
@@ -42,23 +40,6 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
     static final private Logger _log = Logger.getLogger(ExpObjectImpl.class);
     static public final String s_urlFlagged = AppProps.getInstance().getContextPath() + "/Experiment/flagDefault.gif";
     static public final String s_urlUnflagged = AppProps.getInstance().getContextPath() + "/Experiment/unflagDefault.gif";
-    abstract public String getContainerId();
-    abstract public void setContainerId(String containerId);
-
-    public Container getContainer()
-    {
-        return ContainerManager.getForId(getContainerId());
-    }
-    
-    public void setContainer(Container container)
-    {
-        setContainerId(container.getId());
-    }
-
-    public String getContainerPath()
-    {
-        return getContainer().getPath();
-    }
 
     public String getLSIDNamespacePrefix()
     {

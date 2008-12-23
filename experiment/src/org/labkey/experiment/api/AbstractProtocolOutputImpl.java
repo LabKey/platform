@@ -20,6 +20,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.User;
+import org.labkey.api.data.Container;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -137,7 +138,7 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
         }
         _object.setSourceApplicationId(app == null ? null : app.getRowId());
         _object.setSourceProtocolLSID(app == null ? null : app.getProtocol().getLSID());
-        _object.setContainer(getContainer().getId());
+        _object.setContainer(getContainer());
         _object.setRunId(app == null ? null : app.getRun().getRowId());
     }
 
@@ -164,13 +165,13 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
         _object.setCpasType(type);
     }
 
-    public String getContainerId()
+    public Container getContainer()
     {
         return _object.getContainer();
     }
 
-    public void setContainerId(String containerId)
+    public void setContainer(Container container)
     {
-        _object.setContainer(containerId);
+        _object.setContainer(container);
     }
 }

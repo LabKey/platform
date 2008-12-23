@@ -16,7 +16,7 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.audit.query.ContainerForeignKey;
+import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -28,6 +28,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.api.flag.FlagColumnRenderer;
 import org.labkey.experiment.api.flag.FlagForeignKey;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.sql.Types;
 import java.util.Map;
@@ -49,12 +50,10 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
     protected ColumnInfo addContainerColumn(C containerCol)
     {
         ColumnInfo result = addColumn(containerCol);
+        ContainerForeignKey.initColumn(result);
         result.setIsHidden(true);
-        result.setFk(new ContainerForeignKey());
         return result;
     }
-
-
 
     final public ColumnInfo addColumn(C column)
     {

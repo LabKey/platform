@@ -326,7 +326,7 @@ public class XarReader extends AbstractXarImporter
         materialSource.setDescription(sampleSet.getDescription());
         materialSource.setName(sampleSet.getName());
         materialSource.setLSID(lsid);
-        materialSource.setContainer(getContainer().getId());
+        materialSource.setContainer(getContainer());
         materialSource.setMaterialLSIDPrefix(LsidUtils.resolveLsidFromTemplate(sampleSet.getMaterialLSIDPrefix(), getRootContext(), "Material"));
 
         if (existingMaterialSource != null)
@@ -529,7 +529,7 @@ public class XarReader extends AbstractXarImporter
                 experiment.setContactId(exp.getContact().getContactId());
             experiment.setExperimentDescriptionURL(trimString(exp.getExperimentDescriptionURL()));
             experiment.setComments(trimString(exp.getComments()));
-            experiment.setContainer(getContainer().getId());
+            experiment.setContainer(getContainer());
 
             experiment = Table.insert(getUser(), tiExperiment, experiment);
 
@@ -541,10 +541,9 @@ public class XarReader extends AbstractXarImporter
         }
         else
         {
-            if (!experiment.getContainer().equals(getContainer().getId()))
+            if (!experiment.getContainer().equals(getContainer()))
             {
-                Container container = ContainerManager.getForId(experiment.getContainer());
-                throw new XarFormatException("This experiment already exists in another folder, " + (container == null ? "" : container.getPath()));
+                throw new XarFormatException("This experiment already exists in another folder, " + experiment.getContainer().getPath());
             }
         }
 
@@ -640,7 +639,7 @@ public class XarReader extends AbstractXarImporter
             vals.setComments(trimString(a.getComments()));
 
             vals.setFilePathRoot(_xarSource.getRoot().getPath());
-            vals.setContainer(getContainer().getId());
+            vals.setContainer(getContainer());
 
             run = Table.insert(getUser(), tiExperimentRun, vals);
         }
@@ -885,7 +884,7 @@ public class XarReader extends AbstractXarImporter
             if (null != run)
                 m.setRunId(run.getRowId());
 
-            m.setContainer(getContainer().getId());
+            m.setContainer(getContainer());
 
             if (null != sourceApplicationId)
                 m.setSourceApplicationId(sourceApplicationId);
@@ -1038,7 +1037,7 @@ public class XarReader extends AbstractXarImporter
                 sourceProtocolLSID = LsidUtils.resolveLsidFromTemplate(sourceProtocolLSID, context, "Protocol");
                 data.setSourceProtocolLSID(sourceProtocolLSID);
             }
-            data.setContainer(getContainer().getId());
+            data.setContainer(getContainer());
 
             if (null != sourceApplicationId)
             {
@@ -1519,7 +1518,7 @@ public class XarReader extends AbstractXarImporter
         if (null != p.getContact())
             protocol.setContactId(p.getContact().getContactId());
 
-        protocol.setContainer(getContainer().getId());
+        protocol.setContainer(getContainer());
 
         // Protocol parameters
         List<ProtocolParameter> params = Collections.emptyList();

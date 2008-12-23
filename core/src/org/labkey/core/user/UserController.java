@@ -983,7 +983,7 @@ public class UserController extends SpringActionController
                     doneButton = new ActionButton("", "Go to " + doneContainer.getName());
                     doneButton.setActionType(ActionButton.Action.LINK);
                     ActionURL doneURL = getViewContext().cloneActionURL();
-                    doneURL.setExtraPath(doneContainer.getPath()).setPageFlow("Project").setAction("start.view");
+                    doneURL.setContainer(doneContainer).setPageFlow("Project").setAction("start.view");
                     doneButton.setURL(doneURL.getLocalURIString());
                 }
 

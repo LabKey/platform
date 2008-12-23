@@ -23,6 +23,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.security.User;
+import org.labkey.api.data.Container;
 
 public class ExpChildObjectImpl extends ExpObjectImpl implements ExpChildObject
 {
@@ -38,12 +39,12 @@ public class ExpChildObjectImpl extends ExpObjectImpl implements ExpChildObject
         _objectURI = objectURI;
     }
 
-    public String getContainerId()
+    public Container getContainer()
     {
-        return _owner.getContainer().getId();
+        return _owner.getContainer();
     }
     
-    public void setContainerId(String containerId)
+    public void setContainer(Container container)
     {
         throw new UnsupportedOperationException();
     }

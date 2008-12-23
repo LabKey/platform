@@ -99,7 +99,7 @@ public class XarTemplateSubstitutionTask extends WorkDirectoryTask<XarTemplateSu
         return getJob().getJobSupport(XarTemplateSubstitutionId.JobSupport.class);
     }
 
-    public List<RecordedAction> run() throws PipelineJobException
+    public RecordedActionSet run() throws PipelineJobException
     {
         try
         {
@@ -143,7 +143,7 @@ public class XarTemplateSubstitutionTask extends WorkDirectoryTask<XarTemplateSu
         {
             throw new PipelineJobException(e);
         }
-        return Collections.emptyList();
+        return new RecordedActionSet();
     }
 
     protected void replaceString(StringBuilder sb, String oldString, String newString)

@@ -18,6 +18,7 @@ package org.labkey.experiment.pipeline;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -57,7 +58,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
         super(factory, job);
     }
 
-    public List<RecordedAction> run() throws PipelineJobException
+    public RecordedActionSet run() throws PipelineJobException
     {
         MoveRunsPipelineJob job = (MoveRunsPipelineJob)getJob();
 
@@ -88,7 +89,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
                 job.error("Underlying exception", ((BatchUpdateException)t).getNextException());
             }
         }
-        return Collections.emptyList();
+        return new RecordedActionSet();
     }
 
     private void moveRun(MoveRunsPipelineJob job, ExpRunImpl experimentRun) throws SQLException, ExperimentException, IOException

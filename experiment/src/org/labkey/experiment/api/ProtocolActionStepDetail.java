@@ -15,20 +15,16 @@
  */
 package org.labkey.experiment.api;
 
-import org.labkey.experiment.api.IdentifiableEntity;
-
 /**
  * User: jeckels
  * Date: Sep 28, 2005
  */
 public class ProtocolActionStepDetail extends IdentifiableEntity
 {
-
     private String _parentProtocolLSID;
     private String _childProtocolLSID;
     private int _actionSequence;
     private int _actionId;
-    private int _rowId;
     private String _protocolDescription;
     private String _applicationType;
     private Integer _maxInputMaterialPerInstance;
@@ -79,16 +75,6 @@ public class ProtocolActionStepDetail extends IdentifiableEntity
     public void setActionId(int actionId)
     {
         _actionId = actionId;
-    }
-
-    public int getRowId()
-    {
-        return _rowId;
-    }
-
-    public void setRowId(int rowId)
-    {
-        _rowId = rowId;
     }
 
     public String getProtocolDescription()

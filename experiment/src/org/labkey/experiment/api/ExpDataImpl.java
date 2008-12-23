@@ -200,7 +200,7 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
         return super.urlFlag(flagged);
     }
 
-    public void delete(User user) throws Exception
+    public void delete(User user)
     {
         ExperimentService.get().deleteDataByRowIds(getContainer(), getRowId());
     }

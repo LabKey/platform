@@ -79,7 +79,7 @@ public class ExperimentController extends SpringActionController
         if (!requestContainer.equals(objectContainer))
         {
             ActionURL url = viewContext.cloneActionURL();
-            url.setExtraPath(objectContainer.getPath());
+            url.setContainer(objectContainer);
             HttpView.throwRedirect(url);
         }
     }
@@ -149,7 +149,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_READ) @ActionNames("showRunGroups, showExperiments")
-    public class ShowExperimentsAction extends SimpleViewAction
+    public class ShowRunGroupsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
@@ -181,7 +181,7 @@ public class ExperimentController extends SpringActionController
 
             if (!_experiment.getContainer().equals(getViewContext().getContainer()))
             {
-                HttpView.throwRedirect(getViewContext().cloneActionURL().setExtraPath(_experiment.getContainer().getPath()));
+                HttpView.throwRedirect(getViewContext().cloneActionURL().setContainer(_experiment.getContainer()));
             }
 
             form.setBean(_experiment.getDataObject());
@@ -1313,7 +1313,7 @@ public class ExperimentController extends SpringActionController
             super("Data");
         }
 
-        protected void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException, ServletException
+        protected void deleteObjects(DeleteForm deleteForm) throws ExperimentException, ServletException
         {
             ExperimentService.get().deleteDataByRowIds(getContainer(), deleteForm.getIds(true));
         }
@@ -2371,7 +2371,7 @@ public class ExperimentController extends SpringActionController
             }
             if (!materials.get(0).getContainer().equals(getContainer()))
             {
-                ActionURL redirectURL = getViewContext().cloneActionURL().setExtraPath(materials.get(0).getContainer().getPath());
+                ActionURL redirectURL = getViewContext().cloneActionURL().setContainer(materials.get(0).getContainer());
                 HttpView.throwRedirect(redirectURL);
             }
 
@@ -2788,7 +2788,7 @@ public class ExperimentController extends SpringActionController
                 }
                 while (ExperimentService.get().getExpExperiment(lsid) != null);
                 exp.setLSID(lsid);
-                exp.setContainer(getContainer().getId());
+                exp.setContainer(getContainer());
 
                 if (errors.getErrorCount() == 0)
                 {
@@ -3302,7 +3302,7 @@ public class ExperimentController extends SpringActionController
 
         public ActionURL getShowExperimentsURL(Container c)
         {
-            return new ActionURL(ShowExperimentsAction.class, c);
+            return new ActionURL(ShowRunGroupsAction.class, c);
         }
 
         public ActionURL getShowSampleSetListURL(Container c)
@@ -3317,7 +3317,7 @@ public class ExperimentController extends SpringActionController
 
         public ActionURL getExperimentListURL(Container container)
         {
-            return new ActionURL(ShowExperimentsAction.class, container);
+            return new ActionURL(ShowRunGroupsAction.class, container);
         }
 
 

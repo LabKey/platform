@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2008 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2008 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,27 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.experiment.api;
 
-/**
- * User: migra
- * Date: Jun 14, 2005
- * Time: 2:49:46 PM
- */
-public class Material extends ProtocolOutput
-{
-    public Material()
-    {
-        setCpasType("Material");
-    }
+UPDATE pipeline.StatusFiles SET JobParent = NULL WHERE JobParent NOT IN (SELECT EntityId FROM pipeline.StatusFiles);
 
-    public boolean equals(Object o)
-    {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+ALTER TABLE pipeline.StatusFiles ADD CONSTRAINT UQ_StatusFiles_EntityId UNIQUE (EntityId);
 
-        Material material = (Material) o;
-
-        return !(getRowId() == 0 || getRowId() != material.getRowId());
-    }
-}
+ALTER TABLE pipeline.StatusFiles
+    ADD CONSTRAINT FK_StatusFiles_JobParent FOREIGN KEY (JobParent) REFERENCES pipeline.StatusFiles(EntityId);
