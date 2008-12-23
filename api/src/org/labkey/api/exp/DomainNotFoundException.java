@@ -20,7 +20,7 @@ package org.labkey.api.exp;
  * User: jeckels
 * Date: Mar 10, 2008
 */
-public class DomainNotFoundException extends Exception
+public class DomainNotFoundException extends ExperimentException
 {
     public DomainNotFoundException(String uri)
     {

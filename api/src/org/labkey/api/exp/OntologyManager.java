@@ -579,7 +579,7 @@ public class OntologyManager
             {
                 //also need list of owner objects whose subobjects are going to be deleted
                 // Seems cheaper but less correct to delete the subobjects then cleanup any owner objects with no children
-                sep="";
+                sep = "";
                 sqlIN = new StringBuilder();
                 for (Integer id : objIdsToDelete)
                 {
@@ -744,7 +744,7 @@ public class OntologyManager
 		{
 			if (ownTransaction)
 				getExpSchema().getScope().beginTransaction();
-            if (!containerid.equals(projectContainer.getId()))
+            if (!c.equals(projectContainer))
             {
                 copyDescriptors(c, projectContainer);
             }
@@ -2782,6 +2782,7 @@ public class OntologyManager
     {
         return getExpSchema().getTable("ObjectPropertiesView");
     }
+
     public static String doProjectColumnCheck(boolean bFix) throws SQLException
     {
         StringBuilder msgBuffer = new StringBuilder();
@@ -2798,8 +2799,7 @@ public class OntologyManager
         return msgBuffer.toString();
     }
 
-
-    public static void doProjectColumnCheck(String descriptorTable, String uriColumn, String idColumn, StringBuilder msgBuffer, boolean bFix) throws SQLException
+    private static void doProjectColumnCheck(String descriptorTable, String uriColumn, String idColumn, StringBuilder msgBuffer, boolean bFix) throws SQLException
     {
         ResultSet rs =null;
         String projectId;
@@ -2822,7 +2822,7 @@ public class OntologyManager
                    if  (bFix)
                    {
                        try {
-                            fixProjectColumn(descriptorTable, uriColumn, idColumn, containerId, projectId, newProjectId);
+                            fixProjectColumn(descriptorTable, uriColumn, idColumn, container, projectId, newProjectId);
                            msgBuffer.append("<br/>&nbsp;&nbsp;&nbsp;Fixed inconsistent project ids found for " + descriptorTable
                                    + " in folder " + ContainerManager.getForId(containerId).getPath());
 
@@ -2833,7 +2833,7 @@ public class OntologyManager
                    }
                    else
                         msgBuffer.append("<br/>&nbsp;&nbsp;&nbsp;ERROR:  Inconsistent project ids found for " + descriptorTable + " in folder " +
-                               ContainerManager.getForId(containerId).getPath());
+                               container.getPath());
                 }
             }
         }
@@ -2843,11 +2843,11 @@ public class OntologyManager
         }
 
     }
-    private static void fixProjectColumn(String descriptorTable, String uriColumn, String idColumn, String containerId, String projectId, String newProjId) throws SQLException
+    private static void fixProjectColumn(String descriptorTable, String uriColumn, String idColumn, Container container, String projectId, String newProjId) throws SQLException
     {
         String sql =  "UPDATE " + descriptorTable + " SET Project= ? WHERE Project = ? AND Container=? AND " + uriColumn + " NOT IN " +
                 "(SELECT " + uriColumn + " FROM " + descriptorTable + " WHERE Project = ?)" ;
-        Table.execute(getExpSchema(), sql, new Object[]{newProjId, projectId, containerId, newProjId});
+        Table.execute(getExpSchema(), sql, new Object[]{newProjId, projectId, container.getId(), newProjId});
 
         // now check to see if there is already an existing descriptor in the target (correct) project.
         // this can happen if a folder containning a descriptor is moved to another project
@@ -2862,7 +2862,7 @@ public class OntologyManager
         String delSql =   " DELETE FROM " + descriptorTable + " WHERE " + idColumn + " = ? ";
         ResultSet rs = null;
         try {
-            rs = Table.executeQuery(getExpSchema(), sql, new Object[]{newProjId, projectId, containerId});
+            rs = Table.executeQuery(getExpSchema(), sql, new Object[]{newProjId, projectId, container.getId()});
             while (rs.next())
             {
                 int prevPropId=rs.getInt(1);

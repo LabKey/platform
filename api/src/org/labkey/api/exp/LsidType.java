@@ -206,7 +206,7 @@ public enum LsidType
         helper.setPageFlow("Experiment");
 
         if (null != c)
-            helper.setExtraPath(c.getPath());
+            helper.setContainer(c);
 
         return helper;
     }
@@ -216,7 +216,7 @@ public enum LsidType
         ActionURL helper = new ActionURL();
         helper.setPageFlow("Experiment");
 
-        helper.setExtraPath(run.getContainer().getPath());
+        helper.setContainer(run.getContainer());
         return helper;
     }
 

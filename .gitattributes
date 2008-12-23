@@ -86,7 +86,6 @@ api/src/org/labkey/api/audit/DefaultAuditProvider.java -text
 api/src/org/labkey/api/audit/SimpleAuditViewFactory.java -text
 api/src/org/labkey/api/audit/query/AuditDisplayColumnFactory.java -text
 api/src/org/labkey/api/audit/query/AuditLogQueryView.java -text
-api/src/org/labkey/api/audit/query/ContainerForeignKey.java -text
 api/src/org/labkey/api/audit/query/DefaultAuditQueryView.java -text
 api/src/org/labkey/api/audit/query/DefaultAuditSchema.java -text
 api/src/org/labkey/api/audit/query/SimpleAuditColumnFactory.java -text
@@ -102,8 +101,10 @@ api/src/org/labkey/api/data/CacheableWriter.java -text
 api/src/org/labkey/api/data/CachedRowSetImpl.java -text
 api/src/org/labkey/api/data/CompareType.java -text
 api/src/org/labkey/api/data/ConnectionWrapper.java -text
+api/src/org/labkey/api/data/ContainerDisplayColumn.java -text
 api/src/org/labkey/api/data/ContainerFilter.java -text
 api/src/org/labkey/api/data/ContainerFilterable.java -text
+api/src/org/labkey/api/data/ContainerForeignKey.java -text
 api/src/org/labkey/api/data/ContainerManager.java -text
 api/src/org/labkey/api/data/ContainerTable.java -text
 api/src/org/labkey/api/data/CoreSchema.java -text
@@ -1616,7 +1617,6 @@ internal/src/org/labkey/api/announcements/CommSchema.java -text
 internal/src/org/labkey/api/announcements/DiscussionService.java -text
 internal/src/org/labkey/api/attachments/ImageServlet.java -text
 internal/src/org/labkey/api/data/ButtonBarLineBreak.java -text
-internal/src/org/labkey/api/data/ContainerDisplayColumn.java -text
 internal/src/org/labkey/api/data/Crosstab.java -text
 internal/src/org/labkey/api/data/DataSourceSessionFactory.archive -text
 internal/src/org/labkey/api/data/DropDownList.java -text

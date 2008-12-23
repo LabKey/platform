@@ -185,4 +185,30 @@ public class RecordedAction
     {
         return _description + " Inputs: " + _inputs + " Outputs: " + _outputs;
     }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        RecordedAction that = (RecordedAction) o;
+
+        if (_description != null ? !_description.equals(that._description) : that._description != null) return false;
+        if (_inputs != null ? !_inputs.equals(that._inputs) : that._inputs != null) return false;
+        if (_name != null ? !_name.equals(that._name) : that._name != null) return false;
+        if (_outputs != null ? !_outputs.equals(that._outputs) : that._outputs != null) return false;
+        return !(_params != null ? !_params.equals(that._params) : that._params != null);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = _inputs != null ? _inputs.hashCode() : 0;
+        result = 31 * result + (_outputs != null ? _outputs.hashCode() : 0);
+        result = 31 * result + (_params != null ? _params.hashCode() : 0);
+        result = 31 * result + (_name != null ? _name.hashCode() : 0);
+        result = 31 * result + (_description != null ? _description.hashCode() : 0);
+        return result;
+    }
 }

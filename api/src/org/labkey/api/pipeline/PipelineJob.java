@@ -119,7 +119,7 @@ abstract public class PipelineJob extends Job implements Serializable
             return _job;
         }
 
-        public abstract List<RecordedAction> run() throws PipelineJobException;
+        public abstract RecordedActionSet run() throws PipelineJobException;
     }
 
     /*
@@ -604,7 +604,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
             setActiveTaskStatus(TaskStatus.running);
             WorkDirectory workDirectory = null;
-            List<RecordedAction> actions;
+            RecordedActionSet actions;
 
             boolean success = false;
             try
@@ -632,6 +632,7 @@ abstract public class PipelineJob extends Job implements Serializable
                     if (success)
                     {
                         // Don't let this cleanup error mask an original error that causes the job to fail
+                        // noinspection ThrowFromFinallyBlock
                         throw e;
                     }
                     else
@@ -895,7 +896,7 @@ abstract public class PipelineJob extends Job implements Serializable
      */
     public void mergeSplitJob(PipelineJob job)
     {
-        // Add experiment actions recored.
+        // Add experiment actions recorded.
         _actionSet.add(job.getActionSet());
 
         // Add any errors that happened in the split job.

@@ -14,15 +14,10 @@
  * limitations under the License.
  */
 
-package org.labkey.api.audit.query;
+package org.labkey.api.data;
 
-import org.labkey.api.data.*;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.util.PageFlowUtil;
-
-import java.io.IOException;
-import java.io.Writer;
 
 /**
  * Created by IntelliJ IDEA.
@@ -38,7 +33,9 @@ public class ContainerForeignKey extends LookupForeignKey
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
-                return new ContainerDisplayColumn(colInfo);
+                ContainerDisplayColumn displayColumn = new ContainerDisplayColumn(colInfo, false);
+                displayColumn.setEntityIdColumn(colInfo);
+                return displayColumn;
             }
         });
         return column;
@@ -52,38 +49,29 @@ public class ContainerForeignKey extends LookupForeignKey
 
     public TableInfo getLookupTableInfo()
     {
-        TableInfo tinfoUsersData = CoreSchema.getInstance().getTableInfoContainers();
-        FilteredTable ret = new FilteredTable(tinfoUsersData);
-        ret.addWrapColumn(tinfoUsersData.getColumn("EntityId"));
-        ret.addColumn(ret.wrapColumn("Name", tinfoUsersData.getColumn("Name")));
+        TableInfo containersTable = CoreSchema.getInstance().getTableInfoContainers();
+        FilteredTable ret = new FilteredTable(containersTable);
+        ColumnInfo nameColumn = ret.addWrapColumn(containersTable.getColumn("Name"));
+        nameColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new ContainerDisplayColumn(colInfo, false);
+            }
+        });
+
+        ColumnInfo pathColumn = ret.wrapColumn("Path", containersTable.getColumn("Name"));
+        pathColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new ContainerDisplayColumn(colInfo, true);
+            }
+        });
+        ret.addColumn(pathColumn);
+        ret.addWrapColumn(containersTable.getColumn("EntityId")).setIsHidden(true);
+        ret.addWrapColumn(containersTable.getColumn("RowId")).setIsHidden(true);
         ret.setTitleColumn("Name");
         return ret;
-    }
-
-    private static class ContainerDisplayColumn extends DataColumn
-    {
-        public ContainerDisplayColumn(ColumnInfo col)
-        {
-            super(col);
-        }
-
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-        {
-            String id = (String)getBoundColumn().getValue(ctx);
-            Container c = ContainerManager.getForId(id);
-            if (c != null)
-            {
-                out.write("<a href=\"" + c.getStartURL(ctx.getViewContext()).getLocalURIString() + "\">");
-/*
-                if (c.isRoot())
-                    out.write("root");
-                else
-*/
-                    out.write(PageFlowUtil.filter(c.getName()));
-                out.write("</a>");
-                return;
-            }
-            out.write("&nbsp;");
-        }
     }
 }

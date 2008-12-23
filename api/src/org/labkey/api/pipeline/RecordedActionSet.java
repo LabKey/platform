@@ -25,17 +25,21 @@ import java.net.URI;
  */
 public class RecordedActionSet
 {
-    private final List<RecordedAction> _actions;
+    private final Set<RecordedAction> _actions;
     private final Map<URI, String> _otherInputs;
 
-    public RecordedActionSet()
+    public RecordedActionSet(RecordedAction... actions)
     {
-        this(new ArrayList<RecordedAction>());
+        this(Arrays.asList(actions));
     }
 
-    public RecordedActionSet(List<RecordedAction> actions)
+    public RecordedActionSet(Iterable<RecordedAction> actions)
     {
-        _actions = actions;
+        _actions = new LinkedHashSet();
+        for (RecordedAction action : actions)
+        {
+            _actions.add(action);
+        }
         _otherInputs = new LinkedHashMap<URI, String>();
     }
 
@@ -45,7 +49,7 @@ public class RecordedActionSet
         add(actionSet);
     }
 
-    public List<RecordedAction> getActions()
+    public Set<RecordedAction> getActions()
     {
         return _actions;
     }
@@ -55,11 +59,6 @@ public class RecordedActionSet
         return _otherInputs;
     }
 
-    public void add(List<RecordedAction> actions)
-    {
-        _actions.addAll(actions);
-    }
-
     public void add(File inputFile, String inputRole)
     {
         _otherInputs.put(inputFile.toURI(), inputRole);
@@ -67,7 +66,7 @@ public class RecordedActionSet
 
     public void add(RecordedActionSet set)
     {
-        add(set.getActions());
+        _actions.addAll(set.getActions());
         _otherInputs.putAll(set.getOtherInputs());
     }
 }

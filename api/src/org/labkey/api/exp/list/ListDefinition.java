@@ -19,6 +19,7 @@ package org.labkey.api.exp.list;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -161,7 +162,7 @@ public interface ListDefinition
 
     void save(User user) throws Exception;
     void deleteListItems(User user, Collection keys) throws SQLException;
-    void delete(User user) throws Exception;
+    void delete(User user) throws SQLException, DomainNotFoundException;
 
     ListItem createListItem();
     ListItem getListItem(Object key);

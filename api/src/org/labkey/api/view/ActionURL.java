@@ -427,6 +427,10 @@ public class ActionURL extends URLHelper implements Cloneable
         return _path.size() > indexContextPath ? (String) _path.get(indexContextPath) : null;
     }
 
+    public ActionURL setContainer(Container c)
+    {
+        return setExtraPath(c.getPath());
+    }
 
     public ActionURL setExtraPath(String extraPath)
     {

@@ -18,9 +18,15 @@ package org.labkey.api.data;
 
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 
 import java.io.Writer;
 import java.io.IOException;
+import java.util.Set;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * User: adam
@@ -31,22 +37,51 @@ public class ContainerDisplayColumn extends DataColumn
 {
     private Container _c;
     private ActionURL _url;
+    private final boolean _showPath;
+    private ColumnInfo _entityIdColumn;
 
-    public ContainerDisplayColumn(ColumnInfo col)
+    /**
+     * @param showPath if true, show the container's full path. If false, show just its name
+     */
+    public ContainerDisplayColumn(ColumnInfo col, boolean showPath)
     {
-        super(col);
+        this(col, showPath, PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(ContainerManager.getRoot()));
     }
 
-    public ContainerDisplayColumn(ColumnInfo column, ActionURL actionURL)
+    /**
+     * @param showPath if true, show the container's full path. If false, show just its name
+     */
+    public ContainerDisplayColumn(ColumnInfo col, boolean showPath, ActionURL actionURL)
     {
-        this(column);
+        super(col);
+        _showPath = showPath;
         _url = actionURL.clone();
+    }
+
+    public void setEntityIdColumn(ColumnInfo entityIdColumn)
+    {
+        _entityIdColumn = entityIdColumn;
+    }
+
+    @Override
+    public void addQueryColumns(Set<ColumnInfo> columns)
+    {
+        super.addQueryColumns(columns);
+        if (_entityIdColumn == null)
+        {
+            FieldKey key = FieldKey.fromString(getBoundColumn().getName());
+            FieldKey entityKey = new FieldKey(key.getParent(), "EntityId");
+            Map<FieldKey,ColumnInfo> cols = QueryService.get().getColumns(getBoundColumn().getParentTable(), Collections.singleton(entityKey));
+            _entityIdColumn = cols.get(entityKey);
+            assert _entityIdColumn != null : "Couldn't find entityId column";
+            columns.add(_entityIdColumn);
+        }
     }
 
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         // Get the container for this row; stash the path in the context so urls can use it
-        String id = (String)ctx.get(getColumnInfo().getAlias());
+        String id = (String)_entityIdColumn.getValue(ctx);
         _c = ContainerManager.getForId(id);
 
         // Don't render link if container is deleted
@@ -56,6 +91,10 @@ public class ContainerDisplayColumn extends DataColumn
         }
         else
         {
+            if (_url != null)
+            {
+                _url.setContainer(_c);
+            }
             ctx.put("ContainerPath", _c.getPath());  // TODO: Encoded path?
             super.renderGridCellContents(ctx, out);
         }
@@ -66,12 +105,18 @@ public class ContainerDisplayColumn extends DataColumn
         StringBuilder sb = new StringBuilder();
         if (_url != null)
         {
-            _url.setExtraPath(_c.getPath());
             sb.append("<a href=\"");
             sb.append(_url.getLocalURIString());
             sb.append("\">");
         }
-        sb.append(PageFlowUtil.filter(null == _c ? "<deleted>" : _c.getPath()));
+        if (_c == null)
+        {
+            sb.append(PageFlowUtil.filter("<deleted>"));
+        }
+        else
+        {
+            sb.append(PageFlowUtil.filter(_showPath ? _c.getPath() : _c.getName()));
+        }
         if (_url != null)
         {
             sb.append("</a>");
@@ -81,6 +126,6 @@ public class ContainerDisplayColumn extends DataColumn
 
     public boolean isFilterable()
     {
-        return false;
+        return !_showPath;
     }
 }

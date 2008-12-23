@@ -185,6 +185,6 @@ public class ContainerTree
 
     protected void addContainerToURL(ActionURL url, Container c)
     {
-        url.setExtraPath(c.getPath());
+        url.setContainer(c);
     }
 }

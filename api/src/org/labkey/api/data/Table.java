@@ -1202,7 +1202,7 @@ public class Table
 
         for (ColumnInfo column : columns)
         {
-            assert column.getParentTable() == table : "Column is from the wrong table: " + column.getParentTable() + " instead of " + table;
+            assert column.getParentTable() == table : "Column " + column + " is from the wrong table: " + column.getParentTable() + " instead of " + table;
             column.declareJoins(joins);
             selectFrag.append(strComma);
             selectFrag.append(column.getSelectSql());

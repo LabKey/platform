@@ -34,7 +34,7 @@ public interface ExpData extends ExpProtocolOutput
     DataType getDataType();
     URI getDataFileURI();
     File getDataFile();
-    void delete(User user) throws Exception;
+    void delete(User user);
 
     void setDataFileURI(URI uri);
     void save(User user);

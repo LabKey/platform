@@ -426,7 +426,7 @@ public class ViewController extends PageFlowControllerFIXED
 
         //Now fix up the path so user ends up in right location
         ActionURL helper = cloneActionURL();
-        helper.setExtraPath(c.getPath());
+        helper.setContainer(c);
         HttpView.throwRedirect(helper.getLocalURIString());
     }
 

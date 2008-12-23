@@ -392,13 +392,13 @@ public class ViewServlet extends HttpServlet
             c = ContainerManager.getForPathAlias(path);
             if (c != null)
             {
-                url.setExtraPath(c.getPath());
+                url.setContainer(c);
                 if (request.getMethod().equals("GET"))
                     throw new RedirectException(url.getLocalURIString());
             }
         }
         if (null != c)
-            url.setExtraPath(c.getPath());
+            url.setContainer(c);
         
         boolean expandLastFilter = ColumnInfo.booleanFromString(url.getParameter(DataRegion.LAST_FILTER_PARAM));
         if (expandLastFilter)

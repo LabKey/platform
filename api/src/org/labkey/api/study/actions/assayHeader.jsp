@@ -36,7 +36,7 @@
                 {
                     Container assayContainer = bean.getProtocol().getContainer();
                     ActionURL assayLink = getViewContext().cloneActionURL();
-                    assayLink.setExtraPath(assayContainer.getPath());
+                    assayLink.setContainer(assayContainer);
                     assayLink.setPageFlow("assay");
             %>
             <p>This assay design is defined in folder <b><%= h(assayContainer.getPath())%></b>.  To manage this assay design, you must

@@ -266,5 +266,9 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         return false;
     }
 
-
+    @Override
+    public String toString()
+    {
+        return "FilteredTable over " + _rootTable;
+    }
 }
