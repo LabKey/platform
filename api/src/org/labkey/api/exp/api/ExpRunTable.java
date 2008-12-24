@@ -36,16 +36,11 @@ public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
         CreatedBy,
         Modified,
         ModifiedBy,
-        Container,
+        Folder,
         FilePathRoot,
         Flag,
         Links,
-        RunGroups;
-
-        public String getColumnName()
-        {
-            return name();
-        }
+        RunGroups,
     }
 
     /**

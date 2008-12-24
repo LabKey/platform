@@ -472,6 +472,13 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             PipelineJobService.get().getStatusWriter().setStatusFile(this, status, info);
         }
+        catch (RuntimeException e)
+        {
+            File f = getStatusFile();
+            error("Failed to set status to '" + status + "' for '" +
+                    (f == null ? "" : f.getPath()) + "'.", e);
+            throw e;
+        }
         catch (Exception e)
         {
             File f = getStatusFile();

@@ -32,7 +32,7 @@ public interface ExpDataTable extends ExpTable<ExpDataTable.Column>
         DataFileUrl,
         Run,
         Created,
-        Container,
+        Folder,
         Flag,
         DownloadLink,
         ContentLink,

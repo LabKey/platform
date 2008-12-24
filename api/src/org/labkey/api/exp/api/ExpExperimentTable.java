@@ -35,7 +35,7 @@ public interface ExpExperimentTable extends ExpTable<ExpExperimentTable.Column>
         Modified,
         ModifiedBy,
         RunCount,
-        Container,
+        Folder,
     }
 
     ColumnInfo createRunCountColumn(String alias, ExpProtocol parentProtocol, ExpProtocol childProtocol);

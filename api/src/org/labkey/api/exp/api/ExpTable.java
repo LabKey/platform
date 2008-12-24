@@ -28,7 +28,6 @@ abstract public interface ExpTable<C extends Enum> extends TableInfo
     static public final String COLUMN_DATAINPUT_DATAID = "exp.datainput.dataid";
     public Container getContainer();
     public void setContainerFilter(ContainerFilter filter, User user);
-    public ContainerFilter getContainerFilter();
 
     public ColumnInfo addColumn(C column);
     public ColumnInfo addColumn(String alias, C column);
@@ -51,7 +50,6 @@ abstract public interface ExpTable<C extends Enum> extends TableInfo
     public void addLSIDCondition(SQLFragment lsidCondition);
 
     public void setDetailsURL(DetailsURL detailsURL);
-    public void setDefaultVisibleColumns(Iterable<FieldKey> columns);
 
     public void setEditHelper(TableEditHelper helper);
 

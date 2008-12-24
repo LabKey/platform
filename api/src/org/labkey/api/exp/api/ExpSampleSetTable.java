@@ -31,6 +31,6 @@ public interface ExpSampleSetTable extends ExpTable<ExpSampleSetTable.Column>
         MaterialLSIDPrefix,
         Created,
         Modified,
-        Container,
+        Folder,
     }
 }

@@ -219,6 +219,10 @@ abstract public class AbstractTableInfo implements TableInfo
         return resolveColumn(name);
     }
 
+    /**
+     * If a column wasn't found in the standard column list, give the table a final chance to locate it.
+     * Useful for preserving backwards compatibility with saved queries when a column is renamed.
+     */
     protected ColumnInfo resolveColumn(String name)
     {
         return null;
