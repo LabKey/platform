@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-UPDATE pipeline.StatusFiles SET JobParent = NULL WHERE JobParent NOT IN (SELECT EntityId FROM pipeline.StatusFiles);
+UPDATE pipeline.StatusFiles SET JobParent = NULL WHERE JobParent NOT IN (SELECT Job FROM pipeline.StatusFiles);
 
 ALTER TABLE pipeline.StatusFiles ADD CONSTRAINT UQ_StatusFiles_EntityId UNIQUE (EntityId);
 
