@@ -156,6 +156,9 @@ public class ConvertHelper extends AbstractConvertHelper implements PropertyEdit
             if (o instanceof String)
                 return o;
 
+            if (o instanceof Container)
+                return ((Container)o).getId();
+
             if (o instanceof Date)
             {
                 return DateUtil.toISO(((Date)o).getTime(), false);
@@ -197,10 +200,17 @@ public class ConvertHelper extends AbstractConvertHelper implements PropertyEdit
             if ("".equals(str))
                 return null;
 
-            Container c = null;
+            Container c;
 
             if (str.startsWith("/"))
                 c = ContainerManager.getForPath(str);
+            else if (str.startsWith(Container.class.getName() + "@") && str.indexOf(" ") != -1)
+            {
+                // Sometimes we get called with a Container.toString() value since the Apache conversion code
+                // doesn't appear to handle a no-op conversion on Containers - it calls toString() to force us to convert
+                String id = str.substring(str.lastIndexOf(' ') + 1);
+                c = ContainerManager.getForId(id);
+            }
             else
                 c = ContainerManager.getForId(str);
 
@@ -383,17 +393,9 @@ public class ConvertHelper extends AbstractConvertHelper implements PropertyEdit
             else
                 setValue(ConvertUtils.convert(text, _class));
             }
-            catch (IllegalArgumentException x)
-            {
-                throw x;
-            }
             catch (ConversionException x)
             {
                 throw new IllegalArgumentException(x.getMessage(), x);
-            }
-            catch (RuntimeException x)
-            {
-                throw x;
             }
         }
 
