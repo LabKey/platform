@@ -45,7 +45,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
     {
         switch (column)
         {
-            case Container:
+            case Folder:
                 return wrapColumn(alias, _rootTable.getColumn("Container"));
             case LSID:
                 return wrapColumn(alias, _rootTable.getColumn("LSID"));
@@ -137,19 +137,32 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             setContainerFilter(new ContainerFilter.CurrentPlusExtras(ss.getContainer()), _schema.getUser());
         }
 
-        addColumn(ExpMaterialTable.Column.RowId);
+        addColumn(ExpMaterialTable.Column.RowId).setIsHidden(true);
         addColumn(ExpMaterialTable.Column.Name);
-        addColumn(ExpMaterialTable.Column.CpasType);
-        addContainerColumn(ExpMaterialTable.Column.Container);
+        ColumnInfo typeColumnInfo = addColumn(Column.CpasType);
+        typeColumnInfo.setFk(new LookupForeignKey("lsid")
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return new ExpSchema(_schema.getUser(), _schema.getContainer()).createSampleSetTable(null);
+            }
+        });
+        addContainerColumn(ExpMaterialTable.Column.Folder);
         addColumn(ExpMaterialTable.Column.Run).setFk(new ExpSchema(_schema.getUser(), getContainer()).getRunIdForeignKey());
         ColumnInfo colLSID = addColumn(ExpMaterialTable.Column.LSID);
         colLSID.setIsHidden(true);
+
+        List<FieldKey> defaultCols = new ArrayList<FieldKey>();
+        defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Name));
+        defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Run));
+        defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.CpasType));
+
         if (ss != null)
         {
             addColumn(ExpMaterialTable.Column.Flag);
+            defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Flag));
             setSampleSet(ss, filter);
-
-            addSampleSetColumns(ss);
+            addSampleSetColumns(ss, defaultCols);
         }
         else
         {
@@ -157,7 +170,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             if (activeSource != null)
             {
                 setSampleSet(activeSource, false);
-                addSampleSetColumns(_ss);
+                addSampleSetColumns(_ss, defaultCols);
             }
         }
         if (_ss != null)
@@ -168,12 +181,14 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         ActionURL url = new ActionURL(ExperimentController.ShowMaterialAction.class, getContainer());
         setDetailsURL(new DetailsURL(url, Collections.singletonMap("rowId", "RowId")));
         setTitleColumn(Column.Name.toString());
+
+        setDefaultVisibleColumns(defaultCols);
+
     }
 
-    private void addSampleSetColumns(ExpSampleSet ss)
+    private void addSampleSetColumns(ExpSampleSet ss, List<FieldKey> visibleColumns)
     {
         addColumn(Column.Property);
-        List<FieldKey> visibleColumns = new ArrayList<FieldKey>(getDefaultVisibleColumns());
         visibleColumns.remove(FieldKey.fromParts("Run"));
         FieldKey keyProp = new FieldKey(null, "Property");
         for (PropertyDescriptor pd : ss.getPropertiesForType())

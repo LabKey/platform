@@ -105,7 +105,7 @@ public class RunGroupWebPart extends QueryView
         else
         {
             List<FieldKey> fieldKeys = new ArrayList<FieldKey>(result.getDefaultVisibleColumns());
-            fieldKeys.add(FieldKey.fromParts(ExpExperimentTable.Column.Container.toString()));
+            fieldKeys.add(FieldKey.fromParts(ExpExperimentTable.Column.Folder));
             result.setDefaultVisibleColumns(fieldKeys);
         }
         return result;

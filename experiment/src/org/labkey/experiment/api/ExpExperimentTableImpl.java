@@ -42,7 +42,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         {
             case Comments:
                 return wrapColumn(alias, _rootTable.getColumn("Comments"));
-            case Container:
+            case Folder:
                 return wrapColumn(alias, _rootTable.getColumn("Container"));
             case Created:
                 return wrapColumn(alias, _rootTable.getColumn("Created"));
@@ -105,7 +105,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         addColumn(Column.Modified);
         addColumn(Column.ModifiedBy);
         addColumn(Column.RunCount);
-        addContainerColumn(Column.Container);
+        addContainerColumn(Column.Folder);
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
         defaultCols.add(FieldKey.fromParts(Column.Name.toString()));
         defaultCols.add(FieldKey.fromParts(Column.Hypothesis.toString()));

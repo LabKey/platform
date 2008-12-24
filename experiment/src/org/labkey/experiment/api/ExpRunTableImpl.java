@@ -179,7 +179,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         {
             case Comments:
                 return wrapColumn(alias, _rootTable.getColumn("Comments"));
-            case Container:
+            case Folder:
                 return wrapColumn(alias, _rootTable.getColumn("Container"));
             case Created:
                 return wrapColumn(alias, _rootTable.getColumn("Created"));
@@ -326,7 +326,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addColumn(Column.Comments);
         addColumn(Column.Created);
         addColumn(Column.CreatedBy);
-        addContainerColumn(Column.Container);
+        addContainerColumn(Column.Folder);
         addColumn(Column.FilePathRoot).setIsHidden(true);
         addColumn(Column.LSID).setIsHidden(true);
         addColumn(Column.Protocol).setFk(schema.getProtocolLSIDForeignKey());
@@ -339,7 +339,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("LSID", "LSID")));
 
         List<FieldKey> defaultVisibleColumns = new ArrayList<FieldKey>(getDefaultVisibleColumns());
-        defaultVisibleColumns.remove(FieldKey.fromParts(Column.Comments.getColumnName()));
+        defaultVisibleColumns.remove(FieldKey.fromParts(Column.Comments));
+        defaultVisibleColumns.remove(FieldKey.fromParts(Column.Folder));
         setDefaultVisibleColumns(defaultVisibleColumns);
     }
 

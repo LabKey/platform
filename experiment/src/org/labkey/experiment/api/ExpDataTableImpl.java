@@ -57,7 +57,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         addColumn(Column.ContentLink);
         addColumn(Column.Thumbnail);
         addColumn(Column.Protocol).setIsHidden(true);
-        addContainerColumn(Column.Container);
+        addContainerColumn(Column.Folder);
 
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
         defaultCols.add(FieldKey.fromParts(Column.Name));
@@ -75,7 +75,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
     {
         switch (column)
         {
-            case Container:
+            case Folder:
                 return wrapColumn(alias, _rootTable.getColumn("Container"));
             case Created:
                 return wrapColumn(alias, _rootTable.getColumn("Created"));

@@ -988,6 +988,7 @@ pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-8.24-8.25.sql -text
 pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-8.261-8.27.sql -text
 pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-8.30-8.31.sql -text
 pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-8.31-8.32.sql -text
+pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-8.32-8.33.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/obsolete/cpas-0.00-0.58.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/obsolete/cpas-0.00-0.64.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/obsolete/cpas-0.63-0.64.sql -text
@@ -1017,6 +1018,7 @@ pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.24-8.25.sql -t
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.261-8.27.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.30-8.31.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.31-8.32.sql -text
+pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.32-8.33.sql -text
 pipeline/src/org/labkey/pipeline/AbstractPipelineStartup.java -text
 pipeline/src/org/labkey/pipeline/DirectoryView.java -text
 pipeline/src/org/labkey/pipeline/FileContentPipelineProvider.java -text

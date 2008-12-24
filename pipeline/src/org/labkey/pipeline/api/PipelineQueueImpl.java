@@ -54,17 +54,10 @@ public class PipelineQueueImpl implements PipelineQueue
             throw new NullPointerException();
         _logDebug("PENDING:   " + job.toString());
 
-        try
-        {
-            // Make sure status file path and Job ID are in synch.
-            File statusFile = job.getStatusFile();
-            if (statusFile != null)
-                PipelineStatusManager.resetJobId(job.getStatusFile().getAbsolutePath(), job.getJobGUID());
-        }
-        catch (SQLException e)
-        {
-            _log.warn(e);  // This is not currently a hard dependency.
-        }
+        // Make sure status file path and Job ID are in synch.
+        File statusFile = job.getStatusFile();
+        if (statusFile != null)
+            PipelineStatusManager.resetJobId(job.getStatusFile().getAbsolutePath(), job.getJobGUID());
 
         if (job.setQueue(this, PipelineJob.WAITING_STATUS))
         {

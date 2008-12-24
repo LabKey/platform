@@ -28,7 +28,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.api.flag.FlagColumnRenderer;
 import org.labkey.experiment.api.flag.FlagForeignKey;
-import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.sql.Types;
 import java.util.Map;
@@ -47,11 +46,21 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
         _schema = schema;
     }
 
+    @Override
+    protected ColumnInfo resolveColumn(String name)
+    {
+        ColumnInfo result = super.resolveColumn(name);
+        if (result == null && "Container".equalsIgnoreCase(name))
+        {
+            return getColumn("Folder");
+        }
+        return result;
+    }
+
     protected ColumnInfo addContainerColumn(C containerCol)
     {
         ColumnInfo result = addColumn(containerCol);
         ContainerForeignKey.initColumn(result);
-        result.setIsHidden(true);
         return result;
     }
 

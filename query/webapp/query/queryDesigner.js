@@ -1430,7 +1430,11 @@ function ViewDesigner(tableInfoService)
         var dnField = XMLUtil.getChildWithTagName(dnValue, 'field', nsQuery);
         var field = XMLUtil.getInnerText(dnField);
         var oField = this.fieldInfo(field);
-        return oField.label;
+        if (oField)
+        {
+            return oField.label;
+        }
+        return field;
     }
     ret.getColumnTitle = function(dn)
     {

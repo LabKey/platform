@@ -36,12 +36,12 @@ import java.io.IOException;
  */
 public class PipelineStatusManager
 {
-    private static PipelineSchema pipeline = PipelineSchema.getInstance();
+    private static PipelineSchema _schema = PipelineSchema.getInstance();
     private static Logger _log = Logger.getLogger(PipelineStatusManager.class);
 
     public static TableInfo getTableInfo()
     {
-        return pipeline.getTableInfoStatusFiles();
+        return _schema.getTableInfoStatusFiles();
     }
 
     /**
@@ -99,7 +99,7 @@ public class PipelineStatusManager
     private static PipelineStatusFileImpl getStatusFile(Filter filter) throws SQLException
     {
         PipelineStatusFileImpl[] asf =
-                Table.select(pipeline.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
+                Table.select(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
 
         if (asf.length == 0)
             return null;
@@ -128,7 +128,7 @@ public class PipelineStatusManager
         if (null == sfExist)
         {
             sfSet.beforeInsert(user, c.getId());
-            PipelineStatusFileImpl sfNew = Table.insert(user, pipeline.getTableInfoStatusFiles(), sfSet);
+            PipelineStatusFileImpl sfNew = Table.insert(user, _schema.getTableInfoStatusFiles(), sfSet);
 
             // Make sure rowID is correct, since it might be used in email.
             sfSet.setRowId(sfNew.getRowId());
@@ -136,7 +136,7 @@ public class PipelineStatusManager
         else
         {
             sfSet.beforeUpdate(user, sfExist);
-            Table.update(user, pipeline.getTableInfoStatusFiles(), sfSet,
+            Table.update(user, _schema.getTableInfoStatusFiles(), sfSet,
                     new Integer(sfExist.getRowId()), null);
         }
 
@@ -149,7 +149,7 @@ public class PipelineStatusManager
     }
 
     public static void setStatusFile(PipelineJob job, PipelineStatusFileImpl sf)
-            throws SQLException, Container.ContainerException
+            throws Container.ContainerException
     {
         String status = sf.getStatus();
         String info = sf.getInfo();
@@ -170,7 +170,14 @@ public class PipelineStatusManager
                     eio.getMessage());
         }
 
-        setStatusFile(job.getInfo(), sf, isNotifyOnError(job));
+        try
+        {
+            setStatusFile(job.getInfo(), sf, isNotifyOnError(job));
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
 
         if (PipelineJob.ERROR_STATUS.equals(status))
         {
@@ -211,18 +218,54 @@ public class PipelineStatusManager
     public static void updateStatusFile(PipelineStatusFileImpl sf) throws SQLException
     {
         sf.beforeUpdate(null, sf);
-        Table.update(null, pipeline.getTableInfoStatusFiles(), sf, new Integer(sf.getRowId()), null);
+        Table.update(null, _schema.getTableInfoStatusFiles(), sf, new Integer(sf.getRowId()), null);
     }
 
-    public static void resetJobId(String path, String jobId) throws SQLException
+    /**
+     * If there is an existing status entry for this file, make sure it has the
+     * right job GUID, updating children as needed
+     */
+    public static void resetJobId(String path, String jobId)
     {
-        // If there is an existing status entry for this file, make sure it has the
-        // right job GUID.
-        PipelineStatusFileImpl sfExist = getStatusFile(path);
-        if (sfExist != null)
+        boolean transaction = !_schema.getSchema().getScope().isTransactionActive();
+        try
         {
-            sfExist.setJob(jobId);
-            updateStatusFile(sfExist);
+            if (transaction)
+            {
+                _schema.getSchema().getScope().beginTransaction();
+            }
+            PipelineStatusFileImpl sfExist = getStatusFile(path);
+            if (sfExist != null)
+            {
+                PipelineStatusFileImpl[] children = getSplitStatusFiles(sfExist.getJobId());
+                for (PipelineStatusFileImpl child : children)
+                {
+                    child.setJobParent(null);
+                    updateStatusFile(child);
+                }
+                sfExist.setJob(jobId);
+                updateStatusFile(sfExist);
+                for (PipelineStatusFileImpl child : children)
+                {
+                    child.setJobParent(jobId);
+                    updateStatusFile(child);
+                }
+            }
+            if (transaction)
+            {
+                _schema.getSchema().getScope().commitTransaction();
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            if (transaction)
+            {
+                _schema.getSchema().getScope().closeConnection();
+            }
         }
     }
 
@@ -247,11 +290,11 @@ public class PipelineStatusManager
             throw new SQLException("Status for the job " + jobId + " was not found.");
 
         StringBuffer sql = new StringBuffer();
-        sql.append("UPDATE ").append(pipeline.getTableInfoStatusFiles())
+        sql.append("UPDATE ").append(_schema.getTableInfoStatusFiles())
                 .append(" SET JobStore = ?")
                 .append(" WHERE RowId = ?");
 
-        Table.execute(pipeline.getSchema(), sql.toString(),
+        Table.execute(_schema.getSchema(), sql.toString(),
                 new Object[] { xml, new Integer(sfExist.getRowId()) });
     }
 
@@ -262,11 +305,11 @@ public class PipelineStatusManager
             throw new SQLException("Status for the job " + jobId + " was not found.");
 
         StringBuffer sql = new StringBuffer();
-        sql.append("UPDATE ").append(pipeline.getTableInfoStatusFiles())
+        sql.append("UPDATE ").append(_schema.getTableInfoStatusFiles())
                 .append(" SET JobStore = NULL")
                 .append(" WHERE RowId = ?");
 
-        Table.execute(pipeline.getSchema(), sql.toString(),
+        Table.execute(_schema.getSchema(), sql.toString(),
                 new Object[] { new Integer(sfExist.getRowId()) });
 
         return sfExist.getJobStore();
@@ -277,7 +320,7 @@ public class PipelineStatusManager
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition("JobParent", parentId, CompareType.EQUAL);
 
-        return Table.select(pipeline.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
+        return Table.select(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
     }
 
     /**
@@ -294,7 +337,7 @@ public class PipelineStatusManager
         filter.addCondition("Status", PipelineJob.COMPLETE_STATUS, CompareType.NEQ);
         filter.addCondition("JobParent", parentId, CompareType.EQUAL);
 
-        return Table.select(pipeline.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
+        return Table.select(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
     }
 
     public static List<PipelineStatusFileImpl> getStatusFilesForLocation(String location, boolean includeJobsOnQueue)
@@ -337,7 +380,7 @@ public class PipelineStatusManager
             SimpleFilter filter = createQueueFilter();
             filter.addCondition("ActiveTaskId", activeTaskId, CompareType.EQUAL);
 
-            return Table.select(pipeline.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
+            return Table.select(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
         }
         catch (SQLException e)
         {
@@ -350,14 +393,14 @@ public class PipelineStatusManager
         SimpleFilter filter = createQueueFilter();
         filter.addCondition("Container", c.getId(), CompareType.EQUAL);
 
-        return Table.select(pipeline.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
+        return Table.select(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
     }
 
     public static PipelineStatusFileImpl[] getQueuedStatusFiles() throws SQLException
     {
         SimpleFilter filter = createQueueFilter();
         
-        return Table.select(pipeline.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
+        return Table.select(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
     }
 
     private static SimpleFilter createQueueFilter()
@@ -377,7 +420,7 @@ public class PipelineStatusManager
 
         StringBuffer sql = new StringBuffer();
 
-        sql.append("DELETE FROM ").append(pipeline.getTableInfoStatusFiles())
+        sql.append("DELETE FROM ").append(_schema.getTableInfoStatusFiles())
                 .append(" WHERE FilePath = ?");
 
         Container c = info.getContainer();
@@ -386,12 +429,12 @@ public class PipelineStatusManager
 
         if (c.isRoot())
         {
-            Table.execute(pipeline.getSchema(), sql.toString(), new Object[] { filePath });
+            Table.execute(_schema.getSchema(), sql.toString(), new Object[] { filePath });
         }
         else
         {
             sql.append(" AND Container = ?");
-            Table.execute(pipeline.getSchema(), sql.toString(), new Object[] { filePath, c.getId() });
+            Table.execute(_schema.getSchema(), sql.toString(), new Object[] { filePath, c.getId() });
         }
     }
 
@@ -419,64 +462,68 @@ public class PipelineStatusManager
         }
     }
 
-    public static void deleteStatus(ViewBackgroundInfo info, int[] rowIds)
-            throws Exception
+    public static void deleteStatus(ViewBackgroundInfo info, int[] rowIds) throws SQLException, PipelineProvider.StatusUpdateException
     {
         if (rowIds.length == 0)
         {
             return;
         }
 
-        // Allow the provider for the status to do any necessary clean-up,
-        // or veto the deletion.
-        ArrayList<Integer> rowIdsDeleted = new ArrayList<Integer>();
+        ArrayList<PipelineStatusFile> deleteable = new ArrayList<PipelineStatusFile>();
         for (int rowId : rowIds)
         {
             PipelineStatusFile sf = getStatusFile(rowId);
 
-            // First check that it still exists in the database and that it isn't running anymore, or it's waiting
-            // for its children and they've all been deleted
-            if (sf != null && !sf.isActive() &&
-                (!PipelineJob.SPLIT_STATUS.equals(sf.getStatus()) || PipelineStatusManager.getSplitStatusFiles(sf.getJobId()).length == 0))
+            // First check that it still exists in the database and that it isn't running anymore
+            if (sf != null && !sf.isActive())
             {
-                PipelineProvider provider = PipelineService.get().getPipelineProvider(sf.getProvider());
-                if (provider != null)
-                    provider.preDeleteStatusFile(sf);
-                rowIdsDeleted.add(new Integer(rowId));
+                // Check if the job has any children
+                PipelineStatusFileImpl[] children = PipelineStatusManager.getSplitStatusFiles(sf.getJobId());
+                boolean hasActiveChildren = false;
+                for (PipelineStatusFileImpl child : children)
+                {
+                    hasActiveChildren |= child.isActive();
+                }
+
+                if (!hasActiveChildren)
+                {
+                    // Delete all the children too if nothing's active
+                    deleteable.addAll(Arrays.asList(children));
+                    deleteable.add(sf);
+                }
             }
         }
 
-        if (rowIdsDeleted.size() > 0)
+        if (!deleteable.isEmpty())
         {
             Container c = info.getContainer();
             StringBuffer sql = new StringBuffer();
-            sql.append("DELETE FROM ").append(pipeline.getTableInfoStatusFiles())
-                    .append(" ").append("WHERE RowId IN (SELECT RowId FROM ")
-                    .append(pipeline.getTableInfoStatusFiles())
-                    .append(" WHERE ");
+            sql.append("DELETE FROM ").append(_schema.getTableInfoStatusFiles())
+                    .append(" ").append("WHERE RowId IN (");
+
+            String separator = "";
+            List<Object> params = new ArrayList<Object>();
+            for (PipelineStatusFile pipelineStatusFile : deleteable)
+            {
+                // Allow the provider to do any necessary clean-up, or veto the deletion.
+                PipelineProvider provider = PipelineService.get().getPipelineProvider(pipelineStatusFile.getProvider());
+                if (provider != null)
+                    provider.preDeleteStatusFile(pipelineStatusFile);
+
+                sql.append(separator);
+                separator = ", ";
+                sql.append("?");
+                params.add(pipelineStatusFile.getRowId());
+            }
+            sql.append(")");
 
             if (!c.isRoot())
             {
-                sql.append("Container = ? AND ");
-            }
-
-            sql.append("RowId IN (");
-            for (int i = 0; i < rowIdsDeleted.size() - 1; i++)
-                sql.append("?,");
-            sql.append("?))");
-
-            if (c.isRoot())
-            {
-                Table.execute(pipeline.getSchema(), sql.toString(),
-                        rowIdsDeleted.toArray(new Integer[rowIdsDeleted.size()]));
-            }
-            else
-            {
-                ArrayList<Object> params = new ArrayList<Object>();
+                sql.append(" AND Container = ?");
                 params.add(c.getId());
-                params.addAll(rowIdsDeleted);
-                Table.execute(pipeline.getSchema(), sql.toString(), params.toArray());
             }
+            Table.execute(_schema.getSchema(), sql.toString(), params.toArray());
+
             // If we deleted anything, try recursing since we may have deleted all the child jobs which would
             // allow a parent job to be deleted
             deleteStatus(info, rowIds);

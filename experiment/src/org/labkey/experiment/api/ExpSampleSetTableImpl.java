@@ -19,6 +19,10 @@ package org.labkey.experiment.api;
 import org.labkey.api.exp.api.ExpSampleSetTable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.FieldKey;
+
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * User: jeckels
@@ -35,7 +39,8 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
     {
         switch (column)
         {
-            case Container:
+            case Folder:
+                return wrapColumn(alias, _rootTable.getColumn("Container"));
             case Created:
             case Modified:
             case Description:
@@ -57,5 +62,11 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
         addColumn(ExpSampleSetTable.Column.LSID).setIsHidden(true);
         addColumn(ExpSampleSetTable.Column.MaterialLSIDPrefix).setIsHidden(true);
         addColumn(ExpSampleSetTable.Column.Created);
+        addColumn(ExpSampleSetTable.Column.Folder);
+
+        List<FieldKey> defaultVisibleColumns = new ArrayList<FieldKey>(getDefaultVisibleColumns());
+        defaultVisibleColumns.remove(FieldKey.fromParts(ExpSampleSetTable.Column.Folder));
+        setDefaultVisibleColumns(defaultVisibleColumns);
+
     }
 }
