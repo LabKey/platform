@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+SELECT core.fn_dropifexists('StatusFiles', 'pipeline', 'CONSTRAINT', 'UQ_StatusFiles_Job');
+
 ALTER TABLE pipeline.StatusFiles ADD CONSTRAINT UQ_StatusFiles_Job UNIQUE (Job);
 
 ALTER TABLE pipeline.StatusFiles
