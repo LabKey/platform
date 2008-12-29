@@ -30,19 +30,28 @@ public interface ExpProtocol extends ExpObject
     Map<String, ObjectProperty> getObjectProperties();
 
     public static final String ASSAY_DOMAIN_PREFIX = "AssayDomain-";
-    public static final String ASSAY_DOMAIN_RUN = AssayDomainType.Run.getPrefix();
-    public static final String ASSAY_DOMAIN_UPLOAD_SET = AssayDomainType.Batch.getPrefix();
-    public static final String ASSAY_DOMAIN_DATA = AssayDomainType.Data.getPrefix();
+    public static final String ASSAY_DOMAIN_RUN = AssayDomainTypes.Run.getPrefix();
+    public static final String ASSAY_DOMAIN_UPLOAD_SET = AssayDomainTypes.Batch.getPrefix();
+    public static final String ASSAY_DOMAIN_DATA = AssayDomainTypes.Data.getPrefix();
 
-    enum AssayDomainType
+    /**
+     * List of well-known domain types.  AssayProviders may
+     * contain other domain types not listed in this enumeration.
+     */
+    enum AssayDomainTypes implements IAssayDomainType
     {
         Batch, Run, Data;
 
         private String prefix;
 
-        AssayDomainType()
+        AssayDomainTypes()
         {
             this.prefix = ASSAY_DOMAIN_PREFIX + name();
+        }
+
+        public String getName()
+        {
+            return name();
         }
 
         public String getPrefix()
