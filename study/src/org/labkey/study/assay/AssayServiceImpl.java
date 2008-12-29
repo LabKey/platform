@@ -44,9 +44,11 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.Pair;
 import org.labkey.study.StudySchema;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
+import org.apache.commons.lang.StringUtils;
 
 import java.sql.SQLException;
 import java.util.*;
+import java.io.File;
 
 /**
  * User: brittp
@@ -138,6 +140,14 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                 result.setSelectedPlateTemplate(plateTemplate.getName());
             setPlateTemplateList(provider, result);
         }
+
+        List<File> scripts = provider.getValidationAndAnalysisScripts(protocol);
+        if (scripts.size() > 1)
+            throw new IllegalStateException("Only a single validation script is available for this release");
+
+        if (scripts.size() == 1)
+            result.setValidationScriptFile(scripts.get(0).getAbsolutePath());
+        
         return result;
     }
 
@@ -281,6 +291,12 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                         throw new AssayException("The selected plate template could not be found.  Perhaps it was deleted by another user?");
                 }
 
+                List<File> validationScripts = Collections.emptyList();
+
+                if (!StringUtils.isBlank(assay.getValidationScriptFile()))
+                    validationScripts = Collections.singletonList(new File(assay.getValidationScriptFile()));
+
+                provider.setValidationAndAnalysisScripts(protocol, validationScripts);
                 protocol.save(getUser());
 
                 StringBuilder errors = new StringBuilder();
