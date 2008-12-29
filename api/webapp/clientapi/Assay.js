@@ -27,7 +27,7 @@ LABKEY.Assay = new function()
     {
         Ext.Ajax.request({
             url : LABKEY.ActionURL.buildURL("assay", "assayList", containerPath),
-            method : 'GET',
+            method : 'POST',
             success: successCallback,
             failure: failureCallback,
             jsonData : parameters,
