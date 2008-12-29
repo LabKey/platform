@@ -17,28 +17,35 @@
 package org.labkey.study.assay;
 
 import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpProtocol.AssayDomainType;
+import org.labkey.api.exp.api.IAssayDomainType;
+import org.labkey.api.exp.api.ExpProtocol.AssayDomainTypes;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.actions.AssayDataDetailsAction;
 import org.labkey.api.study.assay.RunDataTable;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.*;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import org.springframework.web.servlet.ModelAndView;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import java.sql.SQLException;
 
 /**
  * User: kevink
@@ -48,8 +55,8 @@ public class ModuleAssayProvider extends TsvAssayProvider
 {
 
     private String name;
-    private Map<AssayDomainType, DomainDescriptorType> domainsDescriptors = new HashMap<AssayDomainType, DomainDescriptorType>();
-    private Map<AssayDomainType, File> viewFiles = new HashMap<AssayDomainType, File>();
+    private Map<IAssayDomainType, DomainDescriptorType> domainsDescriptors = new HashMap<IAssayDomainType, DomainDescriptorType>();
+    private Map<IAssayDomainType, File> viewFiles = new HashMap<IAssayDomainType, File>();
 
     public ModuleAssayProvider(String name)
     {
@@ -74,12 +81,12 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return false;
     }
 
-    public void addDomain(AssayDomainType domainType, DomainDescriptorType xDomain)
+    public void addDomain(IAssayDomainType domainType, DomainDescriptorType xDomain)
     {
         domainsDescriptors.put(domainType, xDomain);
     }
 
-    protected Domain createDomain(Container c, User user, AssayDomainType domainType)
+    protected Domain createDomain(Container c, User user, IAssayDomainType domainType)
     {
         DomainDescriptorType xDomain = domainsDescriptors.get(domainType);
         if (xDomain != null)
@@ -92,7 +99,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     @Override
     protected Domain createUploadSetDomain(Container c, User user)
     {
-        Domain domain = createDomain(c, user, AssayDomainType.Batch);
+        Domain domain = createDomain(c, user, AssayDomainTypes.Batch);
         if (domain != null)
             return domain;
         return super.createUploadSetDomain(c, user);
@@ -101,7 +108,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     @Override
     protected Domain createRunDomain(Container c, User user)
     {
-        Domain domain = createDomain(c, user, AssayDomainType.Run);
+        Domain domain = createDomain(c, user, AssayDomainTypes.Run);
         if (domain != null)
             return domain;
         return super.createRunDomain(c, user);
@@ -110,7 +117,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     @Override
     protected Domain createDataDomain(Container c, User user)
     {
-        Domain domain = createDomain(c, user, AssayDomainType.Data);
+        Domain domain = createDomain(c, user, AssayDomainTypes.Data);
         if (domain != null)
             return domain;
         return super.createDataDomain(c, user);
@@ -122,7 +129,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         RunDataTable table = (RunDataTable)super.createDataTable(schema, alias, protocol);
         if (table == null)
             return null;
-        File dataDetailsView = viewFiles.get(AssayDomainType.Data);
+        File dataDetailsView = viewFiles.get(AssayDomainTypes.Data);
         if (dataDetailsView != null)
         {
             ActionURL dataDetailsURL = new ActionURL(AssayDataDetailsAction.class, schema.getContainer());
@@ -134,7 +141,32 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return table;
     }
 
-    public void addView(AssayDomainType domainType, File viewFile)
+    /**
+     * Get a single row from the data table as a Map.
+     */
+    protected Map<String, Object> getDataRow(User user, Container container, ExpProtocol protocol, Object objectId)
+    {
+        UserSchema schema = AssayService.get().createSchema(user, container);
+        TableInfo table = createDataTable(schema, null, protocol);
+        List<ColumnInfo> columns = new ArrayList<ColumnInfo>(QueryService.get().getColumns(table, table.getDefaultVisibleColumns()).values());
+        SimpleFilter filter = new SimpleFilter("ObjectId", objectId);
+
+        Map<String, Object>[] maps = null;
+        try
+        {
+            maps = (Map<String, Object>[]) Table.select(table, columns, filter, null, Map.class);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
+        if (maps == null || maps.length == 0)
+            return null;
+        return maps[0];
+    }
+
+    public void addView(IAssayDomainType domainType, File viewFile)
     {
         viewFiles.put(domainType, viewFile);
     }
@@ -142,22 +174,45 @@ public class ModuleAssayProvider extends TsvAssayProvider
     @Override
     public ModelAndView createRunDataView(ViewContext context, ExpProtocol protocol)
     {
-        File runDataView = viewFiles.get(AssayDomainType.Run);
+        File runDataView = viewFiles.get(AssayDomainTypes.Run);
         if (runDataView == null || !runDataView.canRead())
             return null;
 
         return new HtmlView(PageFlowUtil.getFileContentsAsString(runDataView));
     }
 
+    public static class DataDetailsModel
+    {
+        public ExpProtocol expProtocol;
+        public ExpData expData;
+        public Object objectId;
+
+//        public GWTDomain dataDomain;
+//        public Map<String, Object> values;
+    }
+
     @Override
     public ModelAndView createDataDetailsView(ViewContext context, ExpProtocol protocol, ExpData data, Object objectId)
     {
-        File dataDetailsView = viewFiles.get(AssayDomainType.Data);
+        File dataDetailsView = viewFiles.get(AssayDomainTypes.Data);
         if (dataDetailsView == null || !dataDetailsView.canRead())
             HttpView.throwNotFound("assay data details view not found");
-        // module.getResourceStreamIfChanged(path, prevous);
 
-        return new HtmlView(PageFlowUtil.getFileContentsAsString(dataDetailsView));
+        DataDetailsModel model = new DataDetailsModel();
+        model.expProtocol = protocol;
+        model.expData = data;
+        model.objectId = objectId;
+
+//        String domainURI = getDomainURIForPrefix(protocol, AssayDomainTypes.Data.getPrefix());
+////        model.dataDomain = PropertyService.get().getDomain(context.getContainer(), domainURI);
+//        model.dataDomain = DomainUtil.getDomainDescriptor(domainURI, context.getContainer());
+//        model.values = getDataRow(context.getUser(), context.getContainer(), protocol, objectId);
+//        if (model.values == null)
+//            HttpView.throwNotFound("Data values for '" + data.getRowId() + "' not found");
+
+        JspView<DataDetailsModel> view = new JspView<DataDetailsModel>("/org/labkey/study/assay/view/dataDetails.jsp", model);
+        view.setView("nested", new HtmlView(PageFlowUtil.getFileContentsAsString(dataDetailsView)));
+        return view;
     }
 
     @Override

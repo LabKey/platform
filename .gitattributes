@@ -1858,6 +1858,7 @@ study/src/org/labkey/study/assay/query/AssayListTable.java -text
 study/src/org/labkey/study/assay/query/AssaySchema.java -text
 study/src/org/labkey/study/assay/query/TypeDisplayColumn.java -text
 study/src/org/labkey/study/assay/view/chooseAssayType.jsp -text
+study/src/org/labkey/study/assay/view/dataDetails.jsp -text
 study/src/org/labkey/study/assay/view/dataUpload.jsp -text
 study/src/org/labkey/study/assay/view/newUploadSet.jsp -text
 study/src/org/labkey/study/assay/view/publishChooseStudy.jsp -text

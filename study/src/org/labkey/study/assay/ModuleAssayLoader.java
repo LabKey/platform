@@ -23,7 +23,8 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpProtocol.AssayDomainType;
+import org.labkey.api.exp.api.ExpProtocol.AssayDomainTypes;
+import org.labkey.api.exp.api.IAssayDomainType;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -72,9 +73,9 @@ public class ModuleAssayLoader implements ModuleResourceLoader
         File domainDir = new File(assayProviderDir, "domains");
         if (domainDir.canRead())
         {
-            for (AssayDomainType domainType : AssayDomainType.values())
+            for (IAssayDomainType domainType : AssayDomainTypes.values())
             {
-                File domainFile = new File(domainDir, domainType.name().toLowerCase() + ".xml");
+                File domainFile = new File(domainDir, domainType.getName().toLowerCase() + ".xml");
                 if (!domainFile.canRead())
                     continue;
                 DomainDescriptorType xDomain = parseDomain(domainType, domainFile);
@@ -91,9 +92,9 @@ public class ModuleAssayLoader implements ModuleResourceLoader
         File viewsDir = new File(assayProviderDir, "views");
         if (viewsDir.canRead())
         {
-            for (AssayDomainType domainType : new AssayDomainType[] { AssayDomainType.Run, AssayDomainType.Data })
+            for (IAssayDomainType domainType : new IAssayDomainType[] { AssayDomainTypes.Run, AssayDomainTypes.Data })
             {
-                File viewFile = new File(viewsDir, domainType.name().toLowerCase() + ".html");
+                File viewFile = new File(viewsDir, domainType.getName().toLowerCase() + ".html");
                 if (!viewFile.canRead())
                     continue;
                 assayProvider.addView(domainType, viewFile);
@@ -105,7 +106,7 @@ public class ModuleAssayLoader implements ModuleResourceLoader
         AssayService.get().registerAssayProvider(assayProvider);
     }
 
-    private DomainDescriptorType parseDomain(AssayDomainType domainType, File domainFile) throws IOException, ModuleResourceLoadException
+    private DomainDescriptorType parseDomain(IAssayDomainType domainType, File domainFile) throws IOException, ModuleResourceLoadException
     {
         try
         {
@@ -114,7 +115,7 @@ public class ModuleAssayLoader implements ModuleResourceLoader
             if (xDomain != null && xDomain.validate())
             {
                 if (!xDomain.isSetName())
-                    xDomain.setName(domainType.name() + " Fields");
+                    xDomain.setName(domainType.getName() + " Fields");
 
                 if (!xDomain.isSetDomainURI())
                     xDomain.setDomainURI(domainType.getLsidTemplate());

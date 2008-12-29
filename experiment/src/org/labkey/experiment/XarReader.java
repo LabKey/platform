@@ -370,7 +370,7 @@ public class XarReader extends AbstractXarImporter
             Map<String, DomainProperty> newProps = new HashMap<String, DomainProperty>();
             for (DomainProperty prop : domain.getProperties())
             {
-                newProps.put(prop.getName(), prop);
+                newProps.put(prop.getPropertyURI(), prop);
             }
 
             List<IdentifiableEntity.Difference> diffs = new ArrayList<IdentifiableEntity.Difference>();
