@@ -134,6 +134,28 @@ public class ParamReplacementSvc
     }
 
     /**
+     * Replaces an input replacement symbol with the full path name of the specified input file.
+     */
+    public String processInputReplacement(String script, String replacementParam, File inputFile) throws Exception
+    {
+        Matcher m = scriptPattern.matcher(script);
+        String inputFileName = inputFile.getAbsolutePath();
+        inputFileName = inputFileName.replaceAll("\\\\", "/");
+
+        while (m.find())
+        {
+            String value = m.group(1);
+
+            if (replacementParam.equals(value))
+            {
+                script = m.replaceFirst(inputFileName);
+                m = scriptPattern.matcher(script);
+            }
+        }
+        return script;
+    }
+
+    /**
      * Finds and processes all replacement parameters for a given script block. The
      * returned string will have all valid replacement references converted.
      *

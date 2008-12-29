@@ -30,18 +30,18 @@ import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.query.RunDataQueryView;
 import org.labkey.api.study.query.RunListQueryView;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -553,11 +553,16 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 savePropertyObject(batch.getLSID(), uploadSetProperties, context.getContainer());
             }
             batch.addRuns(context.getUser(), run);
+            validate(context, run);
 
             if (transactionOwner)
                 scope.commitTransaction();
 
             return new Pair<ExpRun, ExpExperiment>(run, batch);
+        }
+        catch (ValidationException e)
+        {
+            throw new ExperimentException(e);
         }
         catch (SQLException e)
         {
@@ -1127,5 +1132,51 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public boolean hasUsefulDetailsPage()
     {
         return true;
+    }
+
+    public void setValidationAndAnalysisScripts(ExpProtocol protocol, List<File> scripts) throws ExperimentException
+    {
+        if (scripts.size() > 1)
+            throw new ExperimentException("Only one script is supported for this release");
+
+        Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.getObjectProperties());
+        String propertyURI = protocol.getLSID() + "#ValidationScript";
+
+        if (scripts.isEmpty())
+            props.remove(propertyURI);
+        else
+        {
+            File scriptFile = scripts.get(0);
+            if (scriptFile.exists())
+            {
+                String ext = FileUtil.getExtension(scriptFile);
+                ScriptEngine engine = ServiceRegistry.get().getService(ScriptEngineManager.class).getEngineByExtension(ext);
+                if (engine != null)
+                {
+                    ObjectProperty prop = new ObjectProperty(protocol.getLSID(), protocol.getContainer(),
+                            propertyURI, scriptFile.getAbsolutePath());
+                    props.put(propertyURI, prop);
+                }
+                else
+                    throw new ExperimentException("Script engine for the extension : " + ext + " has not been registered");
+            }
+            else
+                throw new ExperimentException("The validation script is invalid or does not exist");
+        }
+        protocol.setObjectProperties(props);
+    }
+
+    public List<File> getValidationAndAnalysisScripts(ExpProtocol protocol)
+    {
+        ObjectProperty prop = protocol.getObjectProperties().get(protocol.getLSID() + "#ValidationScript");
+        if (prop != null)
+        {
+            return Collections.singletonList(new File(prop.getStringValue()));
+        }
+        return Collections.emptyList();
+    }
+
+    public void validate(AssayRunUploadContext context, ExpRun run) throws ValidationException
+    {
     }
 }

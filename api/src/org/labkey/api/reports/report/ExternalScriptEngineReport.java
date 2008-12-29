@@ -517,21 +517,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
 
     protected String processInputReplacement(String script, File inputFile) throws Exception
     {
-        Matcher m = scriptPattern.matcher(script);
-        String inputFileName = inputFile.getAbsolutePath();
-        inputFileName = inputFileName.replaceAll("\\\\", "/");
-
-        while (m.find())
-        {
-            String value = m.group(1);
-
-            if (INPUT_FILE_TSV.equals(value))
-            {
-                script = m.replaceFirst(inputFileName);
-                m = scriptPattern.matcher(script);
-            }
-        }
-        return script;
+        return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, inputFile);
     }
 
     protected String processOutputReplacements(String script, List<ParamReplacement> replacements) throws Exception

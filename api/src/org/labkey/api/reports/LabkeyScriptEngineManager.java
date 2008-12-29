@@ -163,22 +163,27 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
 
             if (key == null)
             {
-                // new definition
+                // new engine definition
                 key = makeKey(def);
-                if (getProp(key, SCRIPT_ENGINE_MAP) == null)
-                {
-                    setProp(key, key, SCRIPT_ENGINE_MAP);
+                if (getProp(key, SCRIPT_ENGINE_MAP) != null)
+                    throw new IllegalArgumentException("An existing definition is already mapped to those file extensions");
 
-                    setProp(Props.key.name(), key, key);
-                    setProp(Props.name.name(), def.getName(), key);
-                    setProp(Props.extensions.name(), StringUtils.join(def.getExtensions(), ','), key);
-                    setProp(Props.languageName.name(), def.getLanguageName(), key);
-                    setProp(Props.languageVersion.name(), def.getLanguageVersion(), key);
-                    setProp(Props.exePath.name(), def.getExePath(), key);
-                    setProp(Props.exeCommand.name(), def.getExeCommand(), key);
-                    setProp(Props.outputFileName.name(), def.getOutputFileName(), key);
-                }
+                setProp(key, key, SCRIPT_ENGINE_MAP);
             }
+
+            if (getProp(key, SCRIPT_ENGINE_MAP) != null)
+            {
+                setProp(Props.key.name(), key, key);
+                setProp(Props.name.name(), def.getName(), key);
+                setProp(Props.extensions.name(), StringUtils.join(def.getExtensions(), ','), key);
+                setProp(Props.languageName.name(), def.getLanguageName(), key);
+                setProp(Props.languageVersion.name(), def.getLanguageVersion(), key);
+                setProp(Props.exePath.name(), def.getExePath(), key);
+                setProp(Props.exeCommand.name(), def.getExeCommand(), key);
+                setProp(Props.outputFileName.name(), def.getOutputFileName(), key);
+            }
+            else
+                throw new IllegalArgumentException("Existing definition does not exist in the DB");
         }
         else
             throw new IllegalArgumentException("Engine definition must be an instance of LabkeyScriptEngineManager.EngineDefinition");

@@ -42,6 +42,7 @@ public class GWTProtocol implements IsSerializable
     private List<String> _availablePlateTemplates;
 
     private String _selectedPlateTemplate;
+    private String _validationScriptFile;
 
     public GWTProtocol()
     {
@@ -126,5 +127,15 @@ public class GWTProtocol implements IsSerializable
     public void setSelectedPlateTemplate(String selectedPlateTemplate)
     {
         _selectedPlateTemplate = selectedPlateTemplate;
+    }
+
+    public String getValidationScriptFile()
+    {
+        return _validationScriptFile;
+    }
+
+    public void setValidationScriptFile(String qcScript)
+    {
+        _validationScriptFile = qcScript;
     }
 }

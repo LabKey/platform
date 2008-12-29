@@ -121,6 +121,22 @@ public class FileUtil
     }
 
     /**
+     * Returns the file name extension without the dot, null if there
+     * isn't one.
+     * @param file
+     * @return
+     */
+    public static String getExtension(File file)
+    {
+        String name = file.getName();
+        if (name.lastIndexOf('.') != -1)
+        {
+            return name.substring(name.lastIndexOf('.') + 1, name.length());
+        }
+        return null;
+    }
+
+    /**
      * Get relative path of File 'file' with respect to 'home' directory
      * <p><pre>
      * example : home = /a/b/c

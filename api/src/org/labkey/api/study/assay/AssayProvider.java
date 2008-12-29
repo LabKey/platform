@@ -28,6 +28,7 @@ import org.labkey.api.exp.api.ExpRunTable;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.actions.AssayRunUploadForm;
@@ -146,4 +147,16 @@ public interface AssayProvider extends Handler<ExpProtocol>
      * @return
      */
     boolean hasUsefulDetailsPage();
+
+    /**
+     * File based QC and analysis scripts can be added to a protocol and invoked when the validate
+     * method is called. Set to an empty list if no scripts exist.
+     * @param protocol
+     * @param scripts
+     */
+    void setValidationAndAnalysisScripts(ExpProtocol protocol, List<File> scripts) throws ExperimentException;
+
+    List<File> getValidationAndAnalysisScripts(ExpProtocol protocol);
+
+    void validate(AssayRunUploadContext context, ExpRun run) throws ValidationException;
 }

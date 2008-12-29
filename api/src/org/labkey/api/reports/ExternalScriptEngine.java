@@ -38,7 +38,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine
      */
     public static final String WORKING_DIRECTORY = "external.script.engine.workingDirectory";
 
-    private static final String DEFAULT_WORKING_DIRECTORY = "ExternalScript";
+    public static final String DEFAULT_WORKING_DIRECTORY = "ExternalScript";
     private static final Pattern scriptCmdPattern = Pattern.compile("'([^']+)'|\\\"([^\\\"]+)\\\"|(^[^\\s]+)|(\\s[^\\s^'^\\\"]+)");
 
     private File _workingDirectory;
@@ -163,24 +163,29 @@ public class ExternalScriptEngine extends AbstractScriptEngine
         String scriptFilePath = scriptFile.getAbsolutePath();
 
         // see if the command contains parameter substitutions
-        int idx = cmd.indexOf('%');
-        if (idx != -1)
-            cmd = String.format(cmd, scriptFilePath);
-
-        Matcher m = scriptCmdPattern.matcher(cmd);
-        while (m.find())
+        if (cmd != null)
         {
-            String value = m.group().trim();
-            if (value.startsWith("'"))
-                value = m.group(1).trim();
-            else if (value.startsWith("\""))
-                value = m.group(2).trim();
+            int idx = cmd.indexOf('%');
+            if (idx != -1)
+                cmd = String.format(cmd, scriptFilePath);
 
-            params.add(value);
+            Matcher m = scriptCmdPattern.matcher(cmd);
+            while (m.find())
+            {
+                String value = m.group().trim();
+                if (value.startsWith("'"))
+                    value = m.group(1).trim();
+                else if (value.startsWith("\""))
+                    value = m.group(2).trim();
+
+                params.add(value);
+            }
+
+            // append the script file, if it wasn't part of the command
+            if (idx == -1)
+                params.add(scriptFilePath);
         }
-
-        // append the script file, if it wasn't part of the command
-        if (idx == -1)
+        else
             params.add(scriptFilePath);
 
         return params.toArray(new String[params.size()]);
