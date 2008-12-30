@@ -95,11 +95,12 @@ public class ExperimentService
         ExpSampleSet lookupActiveSampleSet(Container container);
         void setActiveSampleSet(Container container, ExpSampleSet sampleSet);
 
+        ExpExperiment createHiddenRunGroup(Container container, User user, ExpRun... runs);
+
         ExpExperiment createExpExperiment(Container container, String name);
         ExpExperiment getExpExperiment(int rowid);
         ExpExperiment getExpExperiment(String lsid);
         ExpExperiment[] getExperiments(Container container, User user, boolean includeOtherContainers);
-        ExpExperiment[] getExpExperimentsForRun(String lsid);
 
         ExpProtocol getExpProtocol(int rowid);
         ExpProtocol getExpProtocol(String lsid);
@@ -230,8 +231,6 @@ public class ExperimentService
         public void registerDataType(DataType type);
         public void registerProtocolImplementation(ProtocolImplementation impl);
 
-        public Set<ExperimentDataHandler> getExperimentDataHandlers();
-        public Set<RunExpansionHandler> getRunExpansionHandlers();
         public ProtocolImplementation getProtocolImplementation(String name);
 
         ExpProtocolApplication getExpProtocolApplication(int rowId);

@@ -773,6 +773,7 @@ api/webapp/clientapi/Assay.js -text
 api/webapp/clientapi/Chart.js -text
 api/webapp/clientapi/Domain.js -text
 api/webapp/clientapi/EditorGridPanel.js -text
+api/webapp/clientapi/Experiment.js -text
 api/webapp/clientapi/ExtJsConfig.js -text
 api/webapp/clientapi/Filter.js -text
 api/webapp/clientapi/GridView.js -text
