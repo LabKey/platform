@@ -21,13 +21,11 @@ import org.fhcrc.cpas.exp.xml.ExperimentRunType;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.Replacer;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.common.util.Pair;
 import org.labkey.experiment.api.*;
 
@@ -402,7 +400,7 @@ public class XarExpander extends AbstractXarImporter
         }
         RunExpansionHandler bestHandler = null;
         Handler.Priority bestPriority = null;
-        for (RunExpansionHandler handler : ExperimentService.get().getRunExpansionHandlers())
+        for (RunExpansionHandler handler : ExperimentServiceImpl.get().getRunExpansionHandlers())
         {
             Handler.Priority priority = handler.getPriority(cpasType);
             if (priority != null)

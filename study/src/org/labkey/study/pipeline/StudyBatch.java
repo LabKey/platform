@@ -29,6 +29,7 @@ import java.util.List;
 
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.controllers.StudyController;
 
 /**
  * User: brittp
@@ -64,7 +65,7 @@ public abstract class StudyBatch extends PipelineJob implements Serializable
     public ActionURL getStatusHref()
     {
         // where should this go???
-        return new ActionURL("Study", "overview", getInfo().getContainer());
+        return new ActionURL(StudyController.OverviewAction.class, getInfo().getContainer());
     }
 
     public String getDescription()

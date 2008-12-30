@@ -17,7 +17,6 @@ package org.labkey.pipeline.mule;
 
 import org.labkey.api.pipeline.*;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.mule.extras.client.MuleClient;
@@ -31,7 +30,6 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 import javax.jms.*;
 import java.io.IOException;
 import java.io.File;
-import java.sql.SQLException;
 import java.util.*;
 
 /**

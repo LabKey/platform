@@ -131,14 +131,34 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         {
             // TODO: Safer way to do this.
             FileAnalysisJobSupport support = (FileAnalysisJobSupport) job;
+            int outputCount = 0;
+            boolean hasOptional = false;
             for (TaskPath tp : getOutputPaths().values())
             {
                 // TODO: Join somehow with code in CommandTaskImpl
                 FileType type = tp.getType();
                 File result = support.findOutputFile(type != null ?
                         type.getName(support.getBaseName()) : tp.getName());
-                if (!result.exists())
-                    return false;
+                if (tp.isOptional())
+                {
+                    hasOptional = true;
+                }
+                else
+                {
+                    if(!result.exists())
+                    {
+                        return false;
+                    }
+                }
+                if (result.exists())
+                {
+                    outputCount++;
+                }
+            }
+
+            if (hasOptional)
+            {
+                return outputCount > 0;
             }
 
             // If there were no output paths, then the command is run for some
@@ -195,12 +215,6 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         public Map<String, TaskPath> getInputPaths()
         {
             return _inputPaths;
-        }
-
-        public FileType getOutputType()
-        {
-            TaskPath tp = _outputPaths.get(WorkDirectory.Function.output.toString());
-            return (tp == null ? null : tp.getType());
         }
 
         public Map<String, TaskPath> getOutputPaths()
@@ -339,8 +353,12 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
                 }
             }
 
-            File f = _wd.outputFile(fileWork);
-            action.addOutput(f, role, false);
+            if (!tp.isOptional() || fileWork.exists())
+            {
+                // Add it as an output if it's non-optional, or if it's optional and the file exists
+                File f = _wd.outputFile(fileWork);
+                action.addOutput(f, role, false);
+            }
         }
     }
 

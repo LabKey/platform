@@ -372,7 +372,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return null;
     }
 
-    public ExpExperiment createExpExperiment(Container container, String name)
+    public ExpExperimentImpl createExpExperiment(Container container, String name)
     {
         Experiment exp = new Experiment();
         exp.setContainer(container);
@@ -391,7 +391,22 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpExperimentImpl[] getExpExperimentsForRun(String lsid)
     {
-        Experiment[] experiments = getExperimentsForRun(lsid);
+        Experiment[] experiments1;
+        try
+        {
+            final String sql= " SELECT E.* FROM " + getTinfoExperiment() + " E "
+                            + " INNER JOIN " + getTinfoRunList() + " RL ON (E.RowId = RL.ExperimentId) "
+                            + " INNER JOIN " + getTinfoExperimentRun() + " ER ON (ER.RowId = RL.ExperimentRunId) "
+                            + " WHERE ER.LSID = ? AND E.Hidden = ?;"  ;
+
+            experiments1 = Table.executeQuery(getExpSchema(), sql, new Object[]{lsid, Boolean.FALSE}, Experiment.class);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+
+        Experiment[] experiments = experiments1;
         ExpExperimentImpl[] ret = new ExpExperimentImpl[experiments.length];
         for (int i = 0; i < experiments.length; i ++)
         {
@@ -611,6 +626,62 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     String sql = "UPDATE " + getTinfoActiveMaterialSource() + " SET MaterialSourceLSID = ? WHERE Container = ?";
                     Table.execute(getExpSchema(), sql, new Object[] { materialSourceLSID, container.getId() });
                 }
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+    public ExpExperiment createHiddenRunGroup(Container container, User user, ExpRun... runs)
+    {
+        if (runs.length == 0)
+        {
+            return null;
+        }
+
+        // Try to find an existing run group with the same set of runs.
+        // An identical group will have the same total run count, and the same total count when the runs
+        // are restricted to just the runs of interest
+        SQLFragment sql = new SQLFragment("SELECT E.* FROM ");
+        sql.append(getTinfoExperiment() + " E, (SELECT ExperimentId, COUNT(ExperimentRunId) AS C FROM ");
+        sql.append(getTinfoRunList() + " WHERE ExperimentRunId IN (");
+        String separator = "";
+        for (ExpRun run : runs)
+        {
+            sql.append(separator);
+            separator = ", ";
+            sql.append("?");
+            sql.add(run.getRowId());
+        }
+        sql.append(") GROUP BY ExperimentId) IncludedRuns, ");
+        sql.append("(SELECT ExperimentId, COUNT(ExperimentRunId) AS C FROM " + getTinfoRunList());
+        sql.append(" GROUP BY ExperimentId) AllRuns ");
+        sql.append(" WHERE IncludedRuns.C = ? AND AllRuns.C = ? AND ");
+        sql.append(" E.RowId = AllRuns.ExperimentId AND E.RowId = IncludedRuns.ExperimentId AND E.Container = ? AND E.Hidden = ?");
+        sql.add(runs.length);
+        sql.add(runs.length);
+        sql.add(container);
+        sql.add(Boolean.TRUE);
+
+        try
+        {
+            Experiment[] exp = Table.executeQuery(getSchema(), sql.toString(), sql.getParamsArray(), Experiment.class);
+            if (exp.length > 0)
+            {
+                return new ExpExperimentImpl(exp[0]);
+            }
+            else
+            {
+                ExpExperimentImpl result = createExpExperiment(container, GUID.makeGUID());
+                result.setHidden(true);
+                result.save(user);
+                for (ExpRun run : runs)
+                {
+                    result.addRuns(user, run);
+                }
+                return result;
             }
         }
         catch (SQLException e)
@@ -996,45 +1067,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpExperiment[] getExperiments(Container container, User user, boolean includeOtherContainers)
     {
-        Experiment[] experiments;
         try
         {
             SimpleFilter filter = createContainerFilter(container, user, includeOtherContainers);
+            filter.addCondition("Hidden", Boolean.FALSE);
             Sort sort = new Sort("Name");
             sort.insertSort(new Sort("RowId"));
-            experiments = Table.select(getTinfoExperiment(), Table.ALL_COLUMNS, filter, sort, Experiment.class);
+            return ExpExperimentImpl.fromExperiments(Table.select(getTinfoExperiment(), Table.ALL_COLUMNS, filter, sort, Experiment.class));
         }
         catch (SQLException x)
         {
             throw new RuntimeSQLException(x);
         }
-
-        ExpExperiment[] ret = new ExpExperiment[experiments.length];
-        for (int i = 0; i < experiments.length; i ++)
-        {
-            ret[i] = new ExpExperimentImpl(experiments[i]);
-        }
-        return ret;
-    }
-
-    public Experiment[] getExperimentsForRun(String runLsid)
-    {
-        Experiment[] experiments;
-        try
-        {
-            final String sql= " SELECT E.* FROM " + getTinfoExperiment() + " E "
-                            + " INNER JOIN " + getTinfoRunList() + " RL ON (E.RowId = RL.ExperimentId) "
-                            + " INNER JOIN " + getTinfoExperimentRun() + " ER ON (ER.RowId = RL.ExperimentRunId) "
-                            + " WHERE ER.LSID = ? ;"  ;
-
-            experiments = Table.executeQuery(getExpSchema(), sql, new Object[]{runLsid}, Experiment.class);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-
-        return experiments;
     }
 
     public ExperimentRun getExperimentRun(String LSID)
@@ -1100,7 +1144,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         try
         {
             final String sql = "SELECT * FROM exp.ExperimentRunDataInputs WHERE RunLsid = ?";
-            Map[] maps = Table.executeQuery(getExpSchema(), sql, new Object[]{runLSID}, Map.class);
+            Map<String, Object>[] maps = Table.executeQuery(getExpSchema(), sql, new Object[]{runLSID}, Map.class);
             Map<String, List<Data>> data = getRunInputData(maps);
             List<Data> result = data.get(runLSID);
             if (result == null)
@@ -1115,11 +1159,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    private Map<String, List<Data>> getRunInputData(Map[] maps)
+    private Map<String, List<Data>> getRunInputData(Map<String, Object>[] maps)
     {
-        Map<String, List<Data>>  outputMap = new HashMap<String, List<Data>>();
+        Map<String, List<Data>> outputMap = new HashMap<String, List<Data>>();
         BeanObjectFactory<Data> f = new BeanObjectFactory<Data>(Data.class);
-        for (Map map : maps)
+        for (Map<String, Object> map : maps)
         {
             String runLSID = (String) map.get("RunLSID");
             List<Data> list = outputMap.get(runLSID);
@@ -1139,7 +1183,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         try
         {
             final String sql = "SELECT * FROM " + getTinfoExperimentRunMaterialInputs() + " Where RunLSID = ?";
-            Map[] maps = Table.executeQuery(getExpSchema(), sql, new Object[]{runLSID}, Map.class);
+            Map<String, Object>[] maps = Table.executeQuery(getExpSchema(), sql, new Object[]{runLSID}, Map.class);
             Map<String, List<Material>> material = getRunInputMaterial(maps);
             List<Material> result = material.get(runLSID);
             if (result == null)
@@ -1155,11 +1199,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     }
 
 
-    private Map<String, List<Material>> getRunInputMaterial(Map[] maps)
+    private Map<String, List<Material>> getRunInputMaterial(Map<String, Object>[] maps)
     {
-        Map<String, List<Material>>  outputMap = new HashMap<String, List<Material>>();
+        Map<String, List<Material>> outputMap = new HashMap<String, List<Material>>();
         BeanObjectFactory<Material> f = new BeanObjectFactory<Material>(Material.class);
-        for (Map map : maps)
+        for (Map<String, Object> map : maps)
         {
             String runLSID = (String) map.get("RunLSID");
             List<Material> list = outputMap.get(runLSID);
@@ -2280,7 +2324,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
                     if (dat == null)
                     {
-                        dat = getExpData(datId);
+                        dat = getExpData(datId.intValue());
                         dat.markSuccessorAppsAsPopulated();
                     }
 
@@ -2320,7 +2364,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         Integer successorRunId = materialOutputRS.getInt("RunId");
                         Integer matId = materialOutputRS.getInt("MaterialId");
                         ExpMaterialImpl mat = outputMaterialMap.get(matId);
-                        mat.addSuccessorRunId(successorRunId);
+                        mat.addSuccessorRunId(successorRunId.intValue());
                     }
                 }
                 finally
@@ -2348,7 +2392,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         Integer successorRunId = dataOutputRS.getInt("RunId");
                         Integer datId = dataOutputRS.getInt("DataId");
                         ExpDataImpl dat = outputDataMap.get(datId);
-                        dat.addSuccessorRunId(successorRunId);
+                        dat.addSuccessorRunId(successorRunId.intValue());
                     }
                 }
                 finally
@@ -2760,7 +2804,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     protApp1 = Table.insert(user, getTinfoProtocolApplication(), protApp1);
 
                     addDataInputs(inputDatas, protApp1, user);
-                    addMaterialInputs(inputMaterials, runContainer, protApp1, user);
+                    addMaterialInputs(inputMaterials, protApp1, user);
 
                     ProtocolAction action2 = actions[1];
                     assert action2.getSequence() == 10;
@@ -2784,7 +2828,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     protApp2 = Table.insert(user, getTinfoProtocolApplication(), protApp2);
 
                     addDataInputs(inputDatas, protApp2, user);
-                    addMaterialInputs(inputMaterials, runContainer, protApp2, user);
+                    addMaterialInputs(inputMaterials, protApp2, user);
 
                     for (ExpMaterial outputMaterial : outputMaterials.keySet())
                     {
@@ -2849,7 +2893,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     protApp3 = Table.insert(user, getTinfoProtocolApplication(), protApp3);
 
                     addDataInputs(outputDatas, protApp3, user);
-                    addMaterialInputs(outputMaterials, runContainer, protApp3, user);
+                    addMaterialInputs(outputMaterials, protApp3, user);
 
                     if (transactionOwner)
                         getSchema().getScope().commitTransaction();
@@ -3025,7 +3069,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return job;
     }
 
-    private void addMaterialInputs(Map<ExpMaterial, String> inputMaterials, Container c, ProtocolApplication protApp1, User user)
+    private void addMaterialInputs(Map<ExpMaterial, String> inputMaterials, ProtocolApplication protApp1, User user)
             throws SQLException
     {
         for (Map.Entry<ExpMaterial, String> entry : inputMaterials.entrySet())

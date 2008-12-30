@@ -128,9 +128,29 @@ public class ExpExperimentImpl extends ExpIdentifiableBaseImpl<Experiment> imple
             throw new UnsupportedOperationException();
         }
     }
+    
+    public void setHidden(boolean hidden)
+    {
+        _object.setHidden(hidden);
+    }
+    
+    public boolean isHidden()
+    {
+        return _object.isHidden();
+    }
 
     public void setContainer(Container container)
     {
         _object.setContainer(container);
+    }
+
+    public static ExpExperimentImpl[] fromExperiments(Experiment[] experiments)
+    {
+        ExpExperimentImpl[] result = new ExpExperimentImpl[experiments.length];
+        for (int i = 0; i < experiments.length; i++)
+        {
+            result[i] = new ExpExperimentImpl(experiments[i]);
+        }
+        return result;
     }
 }

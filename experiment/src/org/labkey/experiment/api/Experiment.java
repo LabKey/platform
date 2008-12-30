@@ -24,81 +24,70 @@ import java.io.Serializable;
  */
 public class Experiment extends IdentifiableEntity implements Serializable
 {
-    private String hypothesis;
-    private String experimenter;
-    private String experimentLSIDAuthority;
-    private String experimentNS;
-    private String experimentDescriptionURL;
-    private String comments;
-    private String contactId;
+    private String _hypothesis;
+    private String _experimenter;
+    private String _experimentDescriptionURL;
+    private String _comments;
+    private String _contactId;
+    private boolean _hidden;
 
     public String getHypothesis()
     {
-        return hypothesis;
+        return _hypothesis;
     }
 
     public void setHypothesis(String hypothesis)
     {
-        this.hypothesis = hypothesis;
+        this._hypothesis = hypothesis;
     }
 
     public String getExperimenter()
     {
-        return experimenter;
+        return _experimenter;
     }
 
     public void setExperimenter(String experimenter)
     {
-        this.experimenter = experimenter;
-    }
-
-    public String getExperimentLSIDAuthority()
-    {
-        return experimentLSIDAuthority;
-    }
-
-    public void setExperimentLSIDAuthority(String experimentLSIDAuthority)
-    {
-        this.experimentLSIDAuthority = experimentLSIDAuthority;
-    }
-
-    public String getExperimentNS()
-    {
-        return experimentNS;
-    }
-
-    public void setExperimentNS(String experimentNS)
-    {
-        this.experimentNS = experimentNS;
+        this._experimenter = experimenter;
     }
 
     public String getExperimentDescriptionURL()
     {
-        return experimentDescriptionURL;
+        return _experimentDescriptionURL;
     }
 
     public void setExperimentDescriptionURL(String experimentDescriptionURL)
     {
-        this.experimentDescriptionURL = experimentDescriptionURL;
+        this._experimentDescriptionURL = experimentDescriptionURL;
     }
 
     public String getComments()
     {
-        return comments;
+        return _comments;
     }
 
     public void setComments(String comments)
     {
-        this.comments = comments;
+        this._comments = comments;
     }
 
     public String getContactId()
     {
-        return contactId;
+        return _contactId;
     }
 
     public void setContactId(String contactId)
     {
-        this.contactId = contactId;
+        this._contactId = contactId;
+    }
+
+    public boolean isHidden()
+    {
+        return _hidden;
+    }
+
+    public void setHidden(boolean hidden)
+    {
+        _hidden = hidden;
     }
 }

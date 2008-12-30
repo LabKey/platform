@@ -34,6 +34,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
     public ExpExperimentTableImpl(String name, String alias, UserSchema schema)
     {
         super(name, alias, ExperimentServiceImpl.get().getTinfoExperiment(), schema);
+        addCondition(new SQLFragment("Hidden = ?", Boolean.FALSE), "Hidden");
     }
 
     public ColumnInfo createColumn(String alias, Column column)

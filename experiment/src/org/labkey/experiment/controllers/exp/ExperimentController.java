@@ -47,6 +47,7 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
+import org.json.JSONArray;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -159,6 +160,28 @@ public class ExperimentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return appendRootNavTrail(root).addChild("Run Groups");
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class CreateHiddenRunGroupAction extends ApiAction<SimpleApiJsonForm>
+    {
+        public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
+        {
+            List<ExpRun> runs = new ArrayList<ExpRun>();
+            JSONArray runIds = form.getJsonObject().getJSONArray("runIds");
+            for (int i = 0; i < runIds.length(); i++)
+            {
+                runs.add(ExperimentServiceImpl.get().getExpRun(runIds.getInt(i)));
+            }
+            if (runs.isEmpty())
+            {
+                HttpView.throwNotFound();
+            }
+            ExpExperiment group = ExperimentService.get().createHiddenRunGroup(getContainer(), getUser(), runs.toArray(new ExpRun[runs.size()]));
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.putBean(group, "rowId", "LSID", "name", "hidden");
+            return response;
         }
     }
 

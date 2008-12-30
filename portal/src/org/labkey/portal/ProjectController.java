@@ -868,8 +868,8 @@ public class ProjectController extends SpringActionController
             containerProps.put("sortOrder", container.getSortOrder());
             containerProps.put("userPermissions", container.getAcl().getPermissions(user));
 
-            //recurse into children
-            if (recurse && container.hasChildren())
+            //recurse into children if requested
+            if (recurse)
                 containerProps.put("children", getContainers(container, user, recurse));
 
             return containerProps;

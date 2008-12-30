@@ -26,7 +26,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineJob;
-import org.apache.log4j.Logger;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -37,7 +36,6 @@ import java.io.File;
 
 public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements ExpData
 {
-    static final private Logger _log = Logger.getLogger(ExpDataImpl.class);
 
     /**
      * Temporary mapping until experiment.xml contains the mime type
@@ -169,7 +167,7 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
 
     public ExperimentDataHandler findDataHandler()
     {
-        return Handler.Priority.findBestHandler(ExperimentService.get().getExperimentDataHandlers(), (ExpData)this);
+        return Handler.Priority.findBestHandler(ExperimentServiceImpl.get().getExperimentDataHandlers(), (ExpData)this);
     }
 
     public String getDataFileUrl()
