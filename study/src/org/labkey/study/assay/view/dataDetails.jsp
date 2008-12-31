@@ -84,10 +84,10 @@
     Ext.onReady(function () {
         LABKEY.Assay.getById(
                 function (assayDesigns) {
-                    if (!assayDesigns)
+                    if (!assayDesigns || assayDesigns.length != 1) {
                         showErrorMessage("Expected an assay design for assay id <%=model.expProtocol.getRowId()%>");
-                    if (assayDesigns.length == 0)
-                        showErrorMessage("Expected a single assay design for assay id <%=model.expProtocol.getRowId()%>");
+                        return;
+                    }
                     assay = assayDesigns[0];
                     fireDataReady();
                 },
@@ -105,6 +105,10 @@
                 showErrorMessage(errorInfo);
             },
             successCallback: function (data, options, response) {
+                if (!data || data.rowCount != 1) {
+                    showErrorMessage("Expected data row for ObjectId=<%=model.objectId%>.");
+                    return;
+                }
                 dataDetails = data;
                 fireDataReady();
             }
@@ -118,8 +122,4 @@
         throw new IllegalStateException("expected nested view");
     me.include(me.getView("nested"), out);
 %>
-</p>
-
-<p>
-End hosting page.
 </p>
