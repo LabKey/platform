@@ -158,7 +158,8 @@ public class PageConfig
         return null;
     }
 
-    @Deprecated  // Use setFocusId() instead
+    /** Use setFocusId() instead */
+    @Deprecated
     public void setFocus(String focus)
     {
         _focus = focus;

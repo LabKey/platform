@@ -52,7 +52,7 @@ LABKEY.DataRegion = function (config)
             this._showSelectMessage("Showing only <em>unselected</em> rows.");
             break;
     }
-}
+};
 
 LABKEY.DataRegion.prototype = {
     // private
@@ -268,7 +268,7 @@ LABKEY.DataRegion.prototype = {
         }
     },
 
-    /** Returns true if all rows are checked on this page. */
+    /** Returns true if all rows are checked on this page and at least one row is present on the page. */
     isPageSelected : function ()
     {
         if (!this.form)
