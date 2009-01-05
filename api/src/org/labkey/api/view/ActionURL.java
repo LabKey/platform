@@ -270,7 +270,7 @@ public class ActionURL extends URLHelper implements Cloneable
 
         setContextPath(request.getContextPath());
         setExtraPath(m.group(indexExtraPath));
-        setPageFlow(m.group(indexPageFlow));
+        setPageFlow(m.group(indexPageFlow).toLowerCase());
         setAction(m.group(indexAction));
         setRawQuery(request.getQueryString());
 

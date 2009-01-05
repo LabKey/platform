@@ -16,29 +16,32 @@
 package org.labkey.api.module;
 
 import junit.framework.TestCase;
+import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.*;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
-import org.labkey.api.security.User;
-import org.labkey.api.util.CaseInsensitiveHashSet;
-import org.labkey.api.view.*;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.reports.report.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.ModuleQueryRReportDescriptor;
+import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.CaseInsensitiveHashSet;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.*;
 import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.mvc.Controller;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.sql.SQLException;
 import java.util.*;
 
 /**
- * This handles modules that are implemented using Beehive controllers
- *
  * User: migra
  * Date: Jul 14, 2005
  * Time: 11:42:09 AM
@@ -49,6 +52,8 @@ public abstract class DefaultModule implements Module
 
     public static final String R_REPORT_EXTENSION = ".r";
 
+    static final Logger _log = Logger.getLogger(DefaultModule.class);
+
     protected static final FilenameFilter rReportFilter = new FilenameFilter(){
         public boolean accept(File dir, String name)
         {
@@ -57,8 +62,8 @@ public abstract class DefaultModule implements Module
     };
     private static final Set<Class> INSTANTIATED_MODULES = new HashSet<Class>();
 
-    private final Map<String, Class> _pageFlowNameToClass = new LinkedHashMap<String, Class>();
-    private final Map<Class, String> _pageFlowClassToName = new HashMap<Class, String>();
+    private final Map<String, Class<? extends Controller>> _pageFlowNameToClass = new LinkedHashMap<String, Class<? extends Controller>>();
+    private final Map<Class<? extends Controller>, String> _pageFlowClassToName = new HashMap<Class<? extends Controller>, String>();
     private final Collection<? extends WebPartFactory> _webPartFactories;
 
     private boolean _loadFromSource;
@@ -143,9 +148,9 @@ public abstract class DefaultModule implements Module
         return "/" + getClass().getPackage().getName().replaceAll("\\.", "/");
     }
 
-    protected void addController(String primaryName, Class cl, String... aliases)
+    protected void addController(String primaryName, Class<? extends Controller> cl, String... aliases)
     {
-        if (!ViewController.class.isAssignableFrom(cl) && !Controller.class.isAssignableFrom(cl))
+        if (!Controller.class.isAssignableFrom(cl))
             throw new IllegalArgumentException(cl.toString());
 
         // Map controller class to canonical name
@@ -159,7 +164,7 @@ public abstract class DefaultModule implements Module
 
 
     // Map controller class to canonical name
-    private void addPageFlowClass(Class controllerClass, String primaryName)
+    private void addPageFlowClass(Class<? extends Controller> controllerClass, String primaryName)
     {
         assert !_pageFlowNameToClass.values().contains(controllerClass) : "Controller class '" + controllerClass + "' is already registered";
 
@@ -168,7 +173,7 @@ public abstract class DefaultModule implements Module
 
 
     // Map all names to controller class
-    private void addPageFlowName(String pageFlowName, Class controllerClass)
+    private void addPageFlowName(String pageFlowName, Class<? extends Controller> controllerClass)
     {
         assert null == _pageFlowNameToClass.get(pageFlowName) : "Page flow name '" + pageFlowName + "' is already registered";
 
@@ -250,13 +255,13 @@ public abstract class DefaultModule implements Module
     }
 
 
-    public final Map<String, Class> getPageFlowNameToClass()
+    public final Map<String, Class<? extends Controller>> getPageFlowNameToClass()
     {
         return _pageFlowNameToClass;
     }
 
 
-    public final Map<Class, String> getPageFlowClassToName()
+    public final Map<Class<? extends Controller>, String> getPageFlowClassToName()
     {
         return _pageFlowClassToName;
     }
@@ -581,7 +586,7 @@ public abstract class DefaultModule implements Module
     {
         //first try to get this from the exploded/source directory,
         //and if not found, try the class loader
-        File file = null;
+        File file;
         if(_loadFromSource)
             file = new File(_sourcePath, path);
         else
@@ -603,5 +608,91 @@ public abstract class DefaultModule implements Module
     public UpgradeCode getUpgradeCode()
     {
         return null;
+    }
+
+
+    public void dispatch(HttpServletRequest request, HttpServletResponse response, ActionURL url)
+            throws ServletException, IOException
+    {
+        int stackSize = -1;
+        Controller controller = getController(request, url.getPageFlow());
+
+        if (controller == null)
+        {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        try
+        {
+            stackSize = HttpView.getStackSize();
+
+            ViewContext rootContext = new ViewContext(request, response, url);
+
+            response.setContentType("text/html;charset=UTF-8");
+            response.setHeader("Expires", "Sun, 01 Jan 2000 00:00:00 GMT");
+
+            HttpView.initForRequest(rootContext, request, response);
+            assert rootContext == HttpView.currentContext();
+
+            // Store the original URL in case we need to redirect for authentication
+            if (request.getAttribute(ViewServlet.ORIGINAL_URL) == null)
+            {
+                URLHelper helper = new URLHelper(request);
+                request.setAttribute(ViewServlet.ORIGINAL_URL, helper.getURIString());
+            }
+            request.setAttribute(ViewServlet.REQUEST_URL, url);
+
+            if (controller instanceof HasViewContext)
+                ((HasViewContext)controller).setViewContext(rootContext);
+            controller.handleRequest(request, response);
+        }
+        catch (ServletException x)
+        {
+            _log.error("error", x);
+            throw x;
+        }
+        catch (IOException x)
+        {
+            _log.error("error", x);
+            throw x;
+        }
+        catch (Throwable x)
+        {
+            _log.error("error", x);
+            throw new ServletException(x);
+        }
+        finally
+        {
+            assert HttpView.getStackSize() == stackSize + 1;
+            HttpView.resetStackSize(stackSize);
+        }
+    }
+
+    
+    public Controller getController(HttpServletRequest request, String name)
+    {
+        Class cls = _pageFlowNameToClass.get(name);
+        if (null == cls)
+            return null;
+
+        return getController(request, cls);
+    }
+
+
+    public Controller getController(HttpServletRequest request, Class cls)
+    {
+        try
+        {
+            return (Controller)cls.newInstance();
+        }
+        catch (IllegalAccessException x)
+        {
+            throw new RuntimeException(x);
+        }
+        catch (InstantiationException x)
+        {
+            throw new RuntimeException(x);
+        }
     }
 }

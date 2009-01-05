@@ -26,16 +26,21 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.common.util.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.util.*;
 import java.io.InputStream;
 import java.io.FileNotFoundException;
 import java.io.File;
+import java.io.IOException;
 import java.text.DecimalFormat;
 
 import junit.framework.TestCase;
 
 import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /*
 * User: Dave
@@ -118,12 +123,12 @@ public class MockModule implements Module
         return null;
     }
 
-    public Map<String, Class> getPageFlowNameToClass()
+    public Map<String, Class<? extends Controller>> getPageFlowNameToClass()
     {
         return null;
     }
 
-    public Map<Class, String> getPageFlowClassToName()
+    public Map<Class<? extends Controller>, String> getPageFlowClassToName()
     {
         return null;
     }
@@ -235,5 +240,9 @@ public class MockModule implements Module
     public File getExplodedPath()
     {
         return null;
+    }
+
+    public void dispatch(HttpServletRequest request, HttpServletResponse response, ActionURL url) throws ServletException, IOException
+    {
     }
 }

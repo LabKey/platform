@@ -17,8 +17,6 @@ package org.labkey.api.view;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -29,7 +27,6 @@ import org.labkey.api.module.SpringModule;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.URLHelper;
 import org.labkey.common.util.Pair;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -131,73 +128,36 @@ public class ViewServlet extends HttpServlet
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
-        _dispatchActionURL(request, response, url);
-    }
 
-
-    /* this expects request parameters and url parameters to match */
-    private static void _dispatchActionURL(HttpServletRequest request, HttpServletResponse response, ActionURL url)
-            throws ServletException, IOException
-    {
-        int stackSize = -1;
-        Class controllerClass = getControllerClass(url.getPageFlow());
-        if (controllerClass == null)
+        Module module = ModuleLoader.getInstance().getModuleForPageFlow(url.getPageFlow());
+        if (module == null)
         {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
 
-        try
-        {
-            stackSize = HttpView.getStackSize();
+        module.dispatch(request, response, url);
 
-            if (Controller.class.isAssignableFrom(controllerClass))
-            {
-                // TODO: Eliminate need to pass in module?
-                Module module = ModuleLoader.getInstance().getModuleForPageFlow(url.getPageFlow());
-                dispatchActionController(request, response, url, module, controllerClass);
-            }
-            else
-            {
-                dispatchBeehive(request, response, url, controllerClass);
-            }
-        }
-        catch (ServletException x)
+        if (_debug)
         {
-            _log("error", x);
-            throw x;
-        }
-        catch (IOException x)
-        {
-            _log("error", x);
-            throw x;
-        }
-        catch (Throwable x)
-        {
-            _log("error", x);
-            throw new ServletException(x);
-        }
-        finally
-        {
-            assert HttpView.getStackSize() == stackSize + 1;
-            HttpView.resetStackSize(stackSize);
-
-            if (_debug)
-            {
-                _log.debug("<< " + request.getMethod());
-            }
+            _log.debug("<< " + request.getMethod());
         }
     }
 
 
-    /**
+    /*
      *  Forward to the controller action defined by url
      *  acts like a GET on the provided URL
      */
     public static void forwardActionURL(HttpServletRequest request, HttpServletResponse response, ActionURL url)
             throws IOException, ServletException
     {
-        _dispatchActionURL(new ForwardWrapper(request, url), response, url);
+        Module module = ModuleLoader.getInstance().getModuleForPageFlow(url.getPageFlow());
+        if (module == null)
+        {
+            throw new IllegalArgumentException(url.toString());
+        }
+        module.dispatch(request, response, url);
     }
 
 
@@ -291,78 +251,12 @@ public class ViewServlet extends HttpServlet
     }
 
 
-    private static void dispatchActionController(HttpServletRequest request, HttpServletResponse response, ActionURL url, Module module, Class controllerClass)
-            throws Exception
-    {
-        ViewContext rootContext = new ViewContext(request, response, url);
-
-        response.setContentType("text/html;charset=UTF-8");
-        response.setHeader("Expires", "Sun, 01 Jan 2000 00:00:00 GMT");
-
-        HttpView.initForRequest(rootContext, request, response);
-        assert rootContext == HttpView.currentContext();
-
-        // Store the original URL in case we need to redirect for authentication
-        if (request.getAttribute(ViewServlet.ORIGINAL_URL) == null)
-        {
-            URLHelper helper = new URLHelper(request);
-            request.setAttribute(ViewServlet.ORIGINAL_URL, helper.getURIString());
-        }
-        request.setAttribute(REQUEST_URL, url);
-
-        Controller controller = getController(module, controllerClass);
-        if (null == controller)
-        {
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            return;
-        }
-        if (controller instanceof HasViewContext)
-            ((HasViewContext)controller).setViewContext(rootContext);
-        controller.handleRequest(request, response);
-    }
-
-
     public static Controller getController(Module module, Class controllerClass) throws IllegalAccessException, InstantiationException
     {
         if (module instanceof SpringModule)
-            return ((SpringModule)module).getController(controllerClass);
+            return ((SpringModule)module).getController(null, controllerClass);
         else
             return (Controller)controllerClass.newInstance();
-    }
-
-
-    private static void dispatchBeehive(HttpServletRequest request, HttpServletResponse response, ActionURL url, Class controllerClass)
-            throws ServletException, IOException
-    {
-        ViewContext rootContext = new ViewContext(request, response, url);
-        String pageFlow = controllerClass.getPackage().getName().replace('.', '/');
-        String dispatchUrl = "/" + pageFlow + "/" + url.getAction() + ".do";
-
-        response.setContentType("text/html;charset=UTF-8");
-        response.setHeader("Expires", "Sun, 01 Jan 2000 00:00:00 GMT");
-
-        HttpView.initForRequest(rootContext, request, response);
-        assert rootContext == HttpView.currentContext();
-
-        // Store the original URL in case we need to redirect for authentication
-        if (request.getAttribute(ViewServlet.ORIGINAL_URL) == null)
-        {
-            URLHelper helper = new URLHelper(request);
-            request.setAttribute(ViewServlet.ORIGINAL_URL, helper.getURIString());
-        }
-        request.setAttribute(REQUEST_URL, url);
-
-        // Defer to spring controller to determine if we need to redirect to upgrade, maintenance, or initial user page.
-        ActionURL redirectURL = SpringActionController.getUpgradeMaintenanceRedirect(request, null);
-
-        if (null != redirectURL)
-        {
-            response.sendRedirect(redirectURL.toString());
-            return;
-        }
-
-        RequestDispatcher r = request.getRequestDispatcher(dispatchUrl);
-        r.forward(request, response);
     }
 
 
@@ -370,9 +264,6 @@ public class ViewServlet extends HttpServlet
             throws ServletException
     {
         ActionURL url = new ActionURL(request);
-
-        // canonicalize controller
-        url.setPageFlow(url.getPageFlow().toLowerCase());
 
         // canonicalize container
         String path = StringUtils.trimToEmpty(url.getExtraPath());
@@ -461,7 +352,8 @@ public class ViewServlet extends HttpServlet
             HttpView.resetStackSize(stackSize);
         }
 
-        String html = mockResponse.getContentAsString();
+        String html;
+        html = mockResponse.getContentAsString();
         return html;
     }
 
@@ -501,7 +393,8 @@ public class ViewServlet extends HttpServlet
 
     public static long getRequestStartTime(HttpServletRequest request)
     {
-        return (Long)request.getAttribute(REQUEST_STARTTIME);
+        Long ms = (Long)request.getAttribute(REQUEST_STARTTIME);
+        return ms == null ? 0 : ms.longValue();
     }
 
 

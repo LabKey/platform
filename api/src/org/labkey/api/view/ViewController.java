@@ -28,11 +28,15 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.template.HomeTemplate;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
+import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -44,8 +48,11 @@ import java.util.Map;
  * User: matthewb
  * Date: Mar 20, 2005
  * Time: 1:26:34 PM
+ * 
+ * @deprecated use SpringActionController
  */
-public class ViewController extends PageFlowControllerFIXED
+@Deprecated
+public class ViewController extends PageFlowControllerFIXED implements Controller
 {
     static private final Logger _log = Logger.getLogger(ViewController.class);
     HttpView _view = null;
@@ -475,5 +482,21 @@ public class ViewController extends PageFlowControllerFIXED
         {
             throw UnexpectedException.wrap(e);
         }
+    }
+
+    public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception
+    {
+        ActionURL redirectURL = SpringActionController.getUpgradeMaintenanceRedirect(request, null);
+        if (null != redirectURL)
+        {
+            response.sendRedirect(redirectURL.toString());
+            return null;
+        }
+
+        String pageFlow = getClass().getPackage().getName().replace('.', '/');
+        String dispatchUrl = "/" + pageFlow + "/" + HttpView.currentContext().getActionURL().getAction() + ".do";
+        RequestDispatcher r = request.getRequestDispatcher(dispatchUrl);
+        r.forward(request, response);
+        return null;
     }
 }

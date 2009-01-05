@@ -27,11 +27,16 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.common.util.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletRequest;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -129,9 +134,9 @@ public interface Module
      *
      * @return A map of pageflow name to controller class
      */
-    public Map<String, Class> getPageFlowNameToClass();
+    public Map<String, Class<? extends Controller>> getPageFlowNameToClass();
 
-    public Map<Class, String> getPageFlowClassToName();
+    public Map<Class<? extends Controller>, String> getPageFlowClassToName();
 
     /**
      * Returns the url that will be the target of a click on the module's tab.
@@ -229,4 +234,12 @@ public interface Module
      */
     public Set<ModuleResourceLoader> getResourceLoaders();
 
+    /**
+     * handle a http request
+     *
+     * @param request as provided by Servlet.service
+     * @param response as provided by Servlet.service
+     * @param url parsed ActionURL for a .view/.post requests
+     */
+    public void dispatch(HttpServletRequest request, HttpServletResponse response, ActionURL url) throws ServletException, IOException;
 }

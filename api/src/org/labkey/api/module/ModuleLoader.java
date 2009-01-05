@@ -28,6 +28,7 @@ import org.labkey.api.view.HttpView;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanFactory;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.naming.*;
 import javax.servlet.Filter;
@@ -892,7 +893,7 @@ public class ModuleLoader implements Filter
             for (Module module : allModules)
             {
                 TreeSet<String> set = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
-                for (Map.Entry<String, Class> entry : module.getPageFlowNameToClass().entrySet())
+                for (Map.Entry<String, Class<? extends Controller>> entry : module.getPageFlowNameToClass().entrySet())
                 {
                     String key = entry.getKey();
                     if (!set.add(key))

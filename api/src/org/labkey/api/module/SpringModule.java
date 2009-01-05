@@ -27,11 +27,13 @@ import org.springframework.web.context.ContextLoader;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.web.servlet.mvc.Controller;
+import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.Servlet;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -49,7 +51,7 @@ import java.util.*;
  * SpringModule knows how to load spring application context information (applicationContext.xml etc)
  */
 public abstract class SpringModule extends DefaultModule implements ServletContext
-{
+{                              
     /**
      * The name of the init parameter on the <code>ServletContext</code> specifying
      * the path where Spring configuration files may be found.
@@ -65,24 +67,28 @@ public abstract class SpringModule extends DefaultModule implements ServletConte
      * </ul>
      */
     public enum ContextType { none, context, config }
-    
-    public Controller getController(Class<? extends Controller> controllerClass)
+
+
+    @Override
+    public Controller getController(@Nullable HttpServletRequest request, Class controllerClass)
     {
         try
         {
-            Controller con = controllerClass.newInstance();
+            Controller con = (Controller)controllerClass.newInstance();
             if (con instanceof SpringActionController)
                 ((SpringActionController)con).setWebApplicationContext(getWebApplicationContext());
             return con;
         }
-        catch (InstantiationException e1)
+        catch (IllegalAccessException x)
         {
+            throw new RuntimeException(x);
         }
-        catch (IllegalAccessException e1)
+        catch (InstantiationException x)
         {
+            throw new RuntimeException(x);
         }
-        return null;
     }
+ 
 
     /**
      * Override and return 'context' or 'config' to specify Spring context
