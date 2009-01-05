@@ -15,21 +15,22 @@
  */
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.api.ExpProtocolApplication;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.*;
 import org.labkey.api.security.User;
-import org.labkey.api.data.Container;
+import org.labkey.api.data.*;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Collections;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 /*
 * User: jeckels
 * Date: Jul 28, 2008
 */
-public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> extends ExpIdentifiableBaseImpl<Type>
+public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> extends ExpIdentifiableBaseImpl<Type> implements ExpProtocolOutput
 {
     private ExpProtocolApplicationImpl _sourceApp;
     private List<ExpProtocolApplication> _successorAppList;
@@ -173,5 +174,52 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
     public void setContainer(Container container)
     {
         _object.setContainer(container);
+    }
+
+    public Date getCreated()
+    {
+        return _object.getCreated();
+    }
+
+    protected ExpProtocolApplication[] getTargetApplications(SimpleFilter filter, TableInfo inputTable)
+    {
+        ResultSet rs = null;
+        try
+        {
+            rs = Table.select(inputTable, Collections.singleton("TargetApplicationId"), filter, null);
+            List<ExpProtocolApplication> ret = new ArrayList<ExpProtocolApplication>();
+            while (rs.next())
+            {
+                ret.add(ExperimentService.get().getExpProtocolApplication(rs.getInt(1)));
+            }
+            return ret.toArray(new ExpProtocolApplication[ret.size()]);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            if (rs != null) { try { rs.close(); } catch (SQLException e) {} }
+        }
+    }
+
+    protected ExpRun[] getTargetRuns(TableInfo inputTable, String rowIdColumnName)
+    {
+        try
+        {
+            SQLFragment sql = new SQLFragment("SELECT r.* FROM " + ExperimentService.get().getTinfoExperimentRun() + " r " +
+                    "\nWHERE r.RowId IN " +
+                    "\n(SELECT pa.RunId" +
+                    "\nFROM " + ExperimentServiceImpl.get().getTinfoProtocolApplication() + " pa " +
+                    "\nINNER JOIN " + inputTable + " i ON pa.RowId = i.TargetApplicationId AND i." + rowIdColumnName + " = ?)");
+            sql.add(getRowId());
+            ExperimentRun[] runs = Table.executeQuery(ExperimentService.get().getSchema(), sql.getSQL(), sql.getParams().toArray(new Object[sql.getParams().size()]), ExperimentRun.class);
+            return ExpRunImpl.fromRuns(runs);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 }

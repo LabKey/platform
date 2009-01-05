@@ -119,14 +119,7 @@ public class ExpExperimentImpl extends ExpIdentifiableBaseImpl<Experiment> imple
 
     public void save(User user)
     {
-        if (getRowId() == 0)
-        {
-            _object = ExperimentServiceImpl.get().insertExperiment(user, _object);
-        }
-        else
-        {
-            throw new UnsupportedOperationException();
-        }
+        save(user, ExperimentServiceImpl.get().getTinfoExperiment());
     }
     
     public void setHidden(boolean hidden)

@@ -36,4 +36,10 @@ public class Material extends ProtocolOutput
 
         return !(getRowId() == 0 || getRowId() != material.getRowId());
     }
+
+    @Override
+    public int hashCode()
+    {
+        return getRowId();
+    }
 }

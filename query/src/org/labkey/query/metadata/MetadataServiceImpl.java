@@ -37,6 +37,7 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.ColumnType;
 import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlOptions;
 
 import java.util.*;
 import java.sql.SQLException;
@@ -233,6 +234,11 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             xmlTable.addNewColumns();
         }
 
+        if (xmlTable.getTableDbType() == null)
+        {
+            xmlTable.setTableDbType("NOT_IN_DB");
+        }
+
         Map<String, ColumnType> columnsToDelete = new CaseInsensitiveHashMap<ColumnType>();
         for (ColumnType columnType : xmlTable.getColumns().getColumnArray())
         {
@@ -345,7 +351,9 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             removeColumn(xmlTable, columnType);
         }
 
-        queryDef.setMetaData(doc.xmlText());
+        XmlOptions xmlOptions = new XmlOptions();
+        xmlOptions.setSavePrettyPrint();
+        queryDef.setMetaData(doc.xmlText(xmlOptions));
         try
         {
             if (queryDef.getQueryDefId() == 0)

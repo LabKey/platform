@@ -72,11 +72,11 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
 
 
-    public void delete(User user) throws Exception
+    public void delete(User user) throws SQLException
     {
         if (!canEdit(user))
         {
-            throw new IllegalAccessException("Access denied");
+            throw new IllegalArgumentException("Access denied");
         }
         QueryManager.get().delete(user, _queryDef);
         _queryDef = null;
@@ -295,7 +295,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         _dirty = true;
     }
 
-    public void save(User user, Container container) throws Exception
+    public void save(User user, Container container) throws SQLException
     {
         setContainer(container);
         if (!_dirty)
@@ -543,5 +543,10 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     public boolean isTableQueryDefinition()
     {
         return false;
+    }
+
+    public boolean isMetadataEditable()
+    {
+        return true;
     }
 }

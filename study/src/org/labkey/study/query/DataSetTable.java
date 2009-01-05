@@ -247,4 +247,9 @@ public class DataSetTable extends FilteredTable
         getColumn("ParticipantVisit").setIsHidden(true);
     }
 
+    @Override
+    public boolean isMetadataOverrideable()
+    {
+        return false;
+    }
 }

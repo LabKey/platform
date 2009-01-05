@@ -62,6 +62,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.DialogTemplate;
@@ -669,9 +670,8 @@ public class StudyController extends BaseStudyController
                 }
                 else
                 {
-                    ActionButton uploadButton = AssayService.get().getImportButton("Upload Data", protocol, getUser(), getContainer());
-                    if (uploadButton != null)
-                        buttonBar.add(uploadButton);
+                    List<ActionButton> buttons = AssayService.get().getImportButtons(protocol, getUser(), getContainer(), true);
+                    buttonBar.addAll(buttons);
 
                     ActionButton deleteRows = new ActionButton("button", "Recall Selected");
                     ActionURL deleteRowsURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
@@ -722,7 +722,7 @@ public class StudyController extends BaseStudyController
                 Container c = protocol.getContainer();
                 if (c.hasPermission(getUser(), ACL.PERM_READ))
                 {
-                    ActionURL url = AssayService.get().getAssayRunsURL(c, protocol, ContainerFilter.Filters.CURRENT_AND_SUBFOLDERS);
+                    ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, protocol, ContainerFilter.Filters.CURRENT_AND_SUBFOLDERS);
                     ActionButton viewAssayButton = new ActionButton("View Source Assay", url);
                     buttonBar.add(viewAssayButton);
                 }

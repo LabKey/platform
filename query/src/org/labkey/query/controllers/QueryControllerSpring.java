@@ -153,7 +153,7 @@ public class QueryControllerSpring extends SpringActionController
             customQueriesView.setTitle("User-Defined Queries");
             customQueriesView.setFrame(WebPartView.FrameType.PORTAL);
             JspView<QueryForm> builtInTablesView = new JspView<QueryForm>(QueryControllerSpring.class, "builtInTablesList.jsp", form, errors);
-            builtInTablesView.setTitle("Built-In Queries");
+            builtInTablesView.setTitle("Built-In Tables");
             builtInTablesView.setFrame(WebPartView.FrameType.PORTAL);
             return new VBox(customQueriesView, builtInTablesView);
         }
@@ -342,11 +342,25 @@ public class QueryControllerSpring extends SpringActionController
             {
                 QueryDefinition query = form.getQueryDef();
                 query.setSql(form.ff_queryText);
-                query.setMetadataXml(form.ff_metadataText);
-                query.save(getUser(), getContainer());
+                if (query.isTableQueryDefinition() && StringUtils.trimToNull(form.ff_metadataText) == null)
+                {
+                    if (QueryManager.get().getQueryDef(getContainer(), form.getSchemaName(), form.getQueryName(), false) != null)
+                    {
+                        // Remember the URL and redirect immediately because the form won't be able to create
+                        // the URL again after the query definition is deleted
+                        ActionURL redirect = _form.getForwardURL();
+                        query.delete(getUser());
+                        HttpView.throwRedirect(redirect);
+                    }
+                }
+                else
+                {
+                    query.setMetadataXml(form.ff_metadataText);
+                    query.save(getUser(), getContainer());
+                }
                 return true;
             }
-            catch (Exception e)
+            catch (SQLException e)
             {
                 errors.reject("An exception occurred: " + e);
                 Logger.getLogger(QueryControllerSpring.class).error("Error", e);
@@ -568,7 +582,7 @@ public class QueryControllerSpring extends SpringActionController
             else
             {
                 url = getViewContext().cloneActionURL();
-                url.setAction("excelWebQuery.view");
+                url.setAction(ExcelWebQueryAction.class);
             }
             getViewContext().getResponse().setContentType("text/x-ms-iqy");
             String filename =  form.getQueryName() + "_" + DateUtil.toISO(System.currentTimeMillis()) + ".iqy";
@@ -758,6 +772,8 @@ public class QueryControllerSpring extends SpringActionController
             Map<String, String> props = new HashMap<String, String>();
             props.put("schemaName", form.getSchemaName());
             props.put("queryName", form.getQueryName());
+            props.put("xmlActionURL", _form.getQueryDef().urlFor(QueryAction.sourceQuery, getContainer()).toString());
+
             return new GWTView(MetadataEditor.class, props);
         }
 
@@ -1135,7 +1151,6 @@ public class QueryControllerSpring extends SpringActionController
         private Integer _limit;
         private String _sort;
         private String _dir;
-        private boolean _lookups = true;
 
         public Integer getStart()
         {
@@ -1685,18 +1700,17 @@ public class QueryControllerSpring extends SpringActionController
         public ModelAndView getView(DbUserSchemaForm form, boolean reshow, BindException errors) throws Exception
         {
             InsertView view = new InsertView(form, errors);
-            Map<String, Object> initialValues = new HashMap<String, Object>();
-            initialValues.put("DbContainer", getContainer().getId());
-            view.setInitialValues(initialValues);
             ButtonBar bb = new ButtonBar();
             bb.add(new ActionButton("adminNewDbUserSchema.post", "Create"));
             bb.add(new ActionButton("Cancel", getSuccessURL(form)));
             view.getDataRegion().setButtonBar(bb);
+            view.getDataRegion().removeColumns("DbContainer", "DbUserSchemaId");
             return view;
         }
 
         public boolean handlePost(DbUserSchemaForm form, BindException errors) throws Exception
         {
+            form.setTypedValue("DbContainer", getContainer().getId());
             form.doInsert();
             return true;
         }
@@ -1729,10 +1743,11 @@ public class QueryControllerSpring extends SpringActionController
             ButtonBar bb = new ButtonBar();
             bb.add(new ActionButton("adminEditDbUserSchema.post", "Update"));
             bb.add(new ActionButton("Cancel", getSuccessURL(form)));
-            ActionURL urlDelete = new ActionURL("query", "adminDeleteDbUserSchema", form.getContainer());
+            ActionURL urlDelete = new ActionURL(AdminDeleteDbUserSchemaAction.class, form.getContainer());
             urlDelete.addParameter("dbUserSchemaId", Integer.toString(form.getBean().getDbUserSchemaId()));
             bb.add(new ActionButton("Delete", urlDelete));
             view.getDataRegion().setButtonBar(bb);
+            view.getDataRegion().removeColumns("DbContainer", "DbUserSchemaId");
 
             HtmlView help = new HtmlView("Only tables with primary keys defined are editable.  The 'editable' option above may be used to disable editing for all tables in this schema.");
 
@@ -1811,7 +1826,7 @@ public class QueryControllerSpring extends SpringActionController
         {
             form.refreshFromDb(false);
             DbUserSchemaDef def = form.getBean();
-            ActionURL fwd = new ActionURL("query", "admin", form.getContainer());
+            ActionURL fwd = new ActionURL(AdminAction.class, form.getContainer());
             fwd.addParameter("reloadedSchema", def.getUserSchemaName());
             QueryManager.get().reloadDbUserSchema(def);
             return HttpView.redirect(getSuccessURL(form));
@@ -1983,7 +1998,7 @@ public class QueryControllerSpring extends SpringActionController
 
         public ActionURL getSuccessURL(InternalViewForm internalViewForm)
         {
-            return new ActionURL("query", "manageViews", getContainer());
+            return new ActionURL(ManageViewsAction.class, getContainer());
         }
     }
 
@@ -2014,7 +2029,7 @@ public class QueryControllerSpring extends SpringActionController
 
         public ActionURL getSuccessURL(InternalSourceViewForm form)
         {
-            return new ActionURL("query", "manageViews", getViewContext().getContainer());
+            return new ActionURL(ManageViewsAction.class, getViewContext().getContainer());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -2098,7 +2113,7 @@ public class QueryControllerSpring extends SpringActionController
 
         public ActionURL getSuccessURL(InternalNewViewForm form)
         {
-            ActionURL forward = new ActionURL("query", "internalSourceView", getContainer());
+            ActionURL forward = new ActionURL(InternalSourceViewAction.class, getContainer());
             forward.addParameter("customViewId", Integer.toString(_customViewId));
             return forward;
         }

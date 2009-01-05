@@ -39,6 +39,11 @@ public class CustomQueryDefinitionImpl extends QueryDefinitionImpl
         edit().setSql(sql);
     }
 
+    public boolean isMetadataEditable()
+    {
+        return true;
+    }
+
     public String getSql()
     {
         return _queryDef.getSql();

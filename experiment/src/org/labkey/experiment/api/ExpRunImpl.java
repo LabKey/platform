@@ -157,21 +157,7 @@ public class ExpRunImpl extends ExpIdentifiableBaseImpl<ExperimentRun> implement
 
     public void save(User user)
     {
-        try
-        {
-            if (_object.getRowId() == 0)
-            {
-                _object = Table.insert(user, ExperimentServiceImpl.get().getTinfoExperimentRun(), _object);
-            }
-            else
-            {
-                _object = Table.update(user, ExperimentServiceImpl.get().getTinfoExperimentRun(), _object, _object.getRowId(), null);
-            }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        save(user, ExperimentServiceImpl.get().getTinfoExperimentRun());
     }
 
     public void setProtocol(ExpProtocol protocol)
@@ -264,6 +250,28 @@ public class ExpRunImpl extends ExpIdentifiableBaseImpl<ExperimentRun> implement
     {
         ensureFullyPopulated();
         return _protocolSteps;
+    }
+
+    public ExpProtocolApplication getInputProtocolApplication()
+    {
+        return findProtocolApplication(ExpProtocol.ApplicationType.ExperimentRun);
+    }
+
+    private ExpProtocolApplication findProtocolApplication(ExpProtocol.ApplicationType type)
+    {
+        for (ExpProtocolApplicationImpl expProtocolApplication : getProtocolApplications())
+        {
+            if (type.equals(expProtocolApplication.getApplicationType()))
+            {
+                return expProtocolApplication;
+            }
+        }
+        return null;
+    }
+
+    public ExpProtocolApplication getOutputProtocolApplication()
+    {
+        return findProtocolApplication(ExpProtocol.ApplicationType.ExperimentRunOutput);
     }
 
     /**

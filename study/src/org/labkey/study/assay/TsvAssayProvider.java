@@ -114,7 +114,7 @@ public class TsvAssayProvider extends AbstractAssayProvider
             }
         }
 
-        OntologyObject dataRow = OntologyManager.getOntologyObject(id);
+        OntologyObject dataRow = OntologyManager.getOntologyObject(id.intValue());
         if (dataRow == null)
             return null;
         OntologyObject dataRowParent = OntologyManager.getOntologyObject(dataRow.getOwnerObjectId());
@@ -123,7 +123,7 @@ public class TsvAssayProvider extends AbstractAssayProvider
         return ExperimentService.get().getExpData(dataRowParent.getObjectURI());
     }
 
-    public ActionURL publish(User user, ExpProtocol protocol, Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors)
+    public ActionURL copyToStudy(User user, ExpProtocol protocol, Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors)
     {
         try
         {

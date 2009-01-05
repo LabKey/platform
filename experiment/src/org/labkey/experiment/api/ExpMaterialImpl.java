@@ -21,6 +21,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.security.User;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.sql.SQLException;
@@ -84,9 +85,29 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
         return values;
     }
 
+    public ExpProtocolApplication[] getTargetApplications()
+    {
+        return getTargetApplications(new SimpleFilter("MaterialId", getRowId()), ExperimentServiceImpl.get().getTinfoMaterialInput());
+    }
+
     public String getCpasType()
     {
         String result = _object.getCpasType();
         return result == null ? "Material" : result;
+    }
+
+    public void save(User user)
+    {
+        save(user, ExperimentServiceImpl.get().getTinfoMaterial());
+    }
+
+    public void delete(User user)
+    {
+        ExperimentService.get().deleteMaterialByRowIds(getContainer(), getRowId());
+    }
+
+    public ExpRun[] getTargetRuns()
+    {
+        return getTargetRuns(ExperimentServiceImpl.get().getTinfoMaterialInput(), "MaterialId");
     }
 }

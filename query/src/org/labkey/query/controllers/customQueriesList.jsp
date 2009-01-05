@@ -46,9 +46,6 @@
         <td>
             <a href="<%= h(currentSchema.urlFor(QueryAction.executeQuery, query))%>"><%=h(query.getName())%></a>
         </td>
-        <td>
-            <labkey:button text="Run" href="<%=currentSchema.urlFor(QueryAction.executeQuery, query)%>"/>
-        </td>
         <% if (!query.getContainer().equals(context.getContainer()))
         {
             ActionURL urlSchema = currentSchema.urlFor(QueryAction.begin);
@@ -63,19 +60,17 @@
         else
         { %>
         <td>
-            <labkey:button text="Design" alt="<%="Design " + query.getName()%>" href="<%=currentSchema.urlFor(QueryAction.designQuery, query)%>"/>
+            [<a title="<%="Design " + query.getName()%>" href="<%=currentSchema.urlFor(QueryAction.designQuery, query)%>">design query</a>]
         </td>
         <td>
-            <labkey:button text="Source" alt="<%="Source " + query.getName()%>" href="<%=currentSchema.urlFor(QueryAction.sourceQuery, query)%>"/>
+            [<a title="<%="Source " + query.getName()%>" href="<%=currentSchema.urlFor(QueryAction.sourceQuery, query)%>">edit source</a>]
         </td>
         <td><% if (query.canEdit(context.getUser()))
         { %>
-            <labkey:button text="Delete" alt="<%="Delete " + query.getName()%>" href="<%=currentSchema.urlFor(QueryAction.deleteQuery, query)%>"/>
+            [<a title="<%="Delete " + query.getName()%>" href="<%=currentSchema.urlFor(QueryAction.deleteQuery, query)%>">delete</a>]
             <% } %></td>
         <td>
-            <labkey:button text="Properties"
-                         alt="<%="Properties " + query.getName()%>"
-                         href="<%=currentSchema.urlFor(QueryAction.propertiesQuery, query)%>"/>
+            [<a title="<%="Properties " + query.getName()%>" href="<%=currentSchema.urlFor(QueryAction.propertiesQuery, query)%>">edit properties</a>]
         </td>
         <% } %>
         <td>
@@ -102,7 +97,8 @@
     </tr>
     <% } %>
 </table>
-
 <% if (form.getSchema().getTableAndQueryNames(false).size() > 0) { %>
-    <labkey:button text="Create New Query" href="<%=currentSchema.urlFor(QueryAction.newQuery)%>"/>
+<p>
+    [<a title="Create New Query" href="<%=currentSchema.urlFor(QueryAction.newQuery)%>">create new query</a>]
+</p>
 <%  } %>

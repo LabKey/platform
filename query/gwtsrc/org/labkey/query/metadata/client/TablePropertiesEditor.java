@@ -38,7 +38,7 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
     {
         if (_wrapFieldButton == null)
         {
-            _wrapFieldButton = new ImageButton("Add Field", new ClickListener()
+            _wrapFieldButton = new ImageButton("Alias Field", new ClickListener()
             {
                 public void onClick(Widget sender)
                 {

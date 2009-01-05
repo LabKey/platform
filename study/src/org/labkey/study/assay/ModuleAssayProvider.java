@@ -70,7 +70,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     }
 
     @Override
-    public boolean canPublish()
+    public boolean canCopyToStudy()
     {
         return false;
     }

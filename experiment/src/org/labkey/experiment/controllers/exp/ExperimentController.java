@@ -555,6 +555,10 @@ public class ExperimentController extends SpringActionController
                     return table;
                 }
             };
+            predecessorMaterialView.setShowBorders(true);
+            predecessorMaterialView.setShowExportButtons(false);
+            predecessorMaterialView.setShadeAlternatingRows(true);
+            predecessorMaterialView.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTTOM);
             predecessorMaterialView.setTitle("Materials from which this material is derived");
             vbox.addView(predecessorMaterialView);
             return vbox;
@@ -2815,11 +2819,12 @@ public class ExperimentController extends SpringActionController
 
                 if (errors.getErrorCount() == 0)
                 {
-                    ExperimentServiceImpl.get().insertExperiment(getUser(), exp);
+                    ExpExperimentImpl wrapper = new ExpExperimentImpl(exp);
+                    wrapper.save(getUser());
 
                     if (form.isAddSelectedRuns())
                     {
-                        addSelectedRunsToExperiment(new ExpExperimentImpl(exp));
+                        addSelectedRunsToExperiment(wrapper);
                     }
 
                     if (form.getReturnURL() != null)

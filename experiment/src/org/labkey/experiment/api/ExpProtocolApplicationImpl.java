@@ -23,6 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.sql.SQLException;
@@ -60,11 +61,13 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         throw new UnsupportedOperationException();
     }
 
+    @NotNull
     public ExpDataRunInput[] getDataInputs()
     {
         return ExpDataRunInputImpl.fromInputs(ExperimentServiceImpl.get().getDataInputsForApplication(getRowId()));
     }
 
+    @NotNull
     public List<ExpData> getInputDatas()
     {
         if (_inputDatas == null)
@@ -80,6 +83,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         return _inputDatas;
     }
 
+    @NotNull
     public List<ExpMaterial> getInputMaterials()
     {
         if (_inputMaterials == null)
@@ -95,6 +99,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         return _inputMaterials;
     }
 
+    @NotNull
     public List<ExpData> getOutputDatas()
     {
         if (_outputDatas == null)
@@ -105,11 +110,13 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         return _outputDatas;
     }
 
+    @NotNull
     public ExpMaterialRunInput[] getMaterialInputs()
     {
         return ExpMaterialRunInputImpl.fromInputs(ExperimentServiceImpl.get().getMaterialInputsForApplication(getRowId()));
     }
 
+    @NotNull
     public List<ExpMaterial> getOutputMaterials()
     {
         if (_outputMaterials == null)
@@ -158,21 +165,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
 
     public void save(User user)
     {
-        try
-        {
-            if (getRowId() == 0)
-            {
-                _object = Table.insert(user, ExperimentServiceImpl.get().getTinfoProtocolApplication(), _object);
-            }
-            else
-            {
-                _object = Table.update(user, ExperimentServiceImpl.get().getTinfoProtocolApplication(), _object, getRowId(), null);
-            }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        save(user, ExperimentServiceImpl.get().getTinfoProtocolApplication());
     }
 
     public void setInputMaterials(List<ExpMaterial> inputMaterialList)

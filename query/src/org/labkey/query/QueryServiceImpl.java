@@ -376,10 +376,10 @@ public class QueryServiceImpl extends QueryService
     @Override
     public TableInfo overlayMetadata(TableInfo tableInfo, String tableName, UserSchema schema)
     {
-        if (tableInfo instanceof AbstractTableInfo)
+        if (tableInfo instanceof AbstractTableInfo && tableInfo.isMetadataOverrideable())
         {
             QueryDef queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), tableName, false);
-            if (queryDef != null)
+            if (queryDef != null && queryDef.getMetaData() != null)
             {
                 try
                 {

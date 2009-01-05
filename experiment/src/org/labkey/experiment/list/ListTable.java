@@ -183,4 +183,10 @@ public class ListTable extends FilteredTable
     {
         return ListSchema.NAME;
     }
+
+    @Override
+    public boolean isMetadataOverrideable()
+    {
+        return false;
+    }
 }

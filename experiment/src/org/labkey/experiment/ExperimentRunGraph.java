@@ -184,8 +184,12 @@ public class ExperimentRunGraph
                         dg.setFocus(focusId, typeCode);
 
                     // add starting inputs to graph if they need grouping
-                    List<ExpMaterial> inputMaterials = new ArrayList<ExpMaterial>(run.getMaterialInputs().keySet());
-                    List<ExpData> inputDatas = new ArrayList<ExpData>(run.getDataInputs().keySet());
+                    Map<ExpMaterial, String> materialRoles = run.getMaterialInputs();
+                    List<ExpMaterial> inputMaterials = new ArrayList<ExpMaterial>(materialRoles.keySet());
+                    Collections.sort(inputMaterials, new RoleAndNameComparator<ExpMaterial>(materialRoles));
+                    Map<ExpData, String> dataRoles = run.getDataInputs();
+                    List<ExpData> inputDatas = new ArrayList<ExpData>(dataRoles.keySet());
+                    Collections.sort(inputDatas, new RoleAndNameComparator<ExpData>(dataRoles));
                     int groupId = run.getProtocolApplications()[0].getRowId();
                     addStartingInputs(inputMaterials, inputDatas, groupId, dg, run.getRowId(), ctrlProps);
                     generateDetailGraph(run, dg, ctrlProps);
@@ -376,6 +380,38 @@ public class ExperimentRunGraph
         }
     }
 
+    /**
+     * Sort first by role, if present, and then by name.
+     */
+    private static class RoleAndNameComparator<Type extends ExpProtocolOutput> implements Comparator<Type>
+    {
+        private final Map<Type, String> _roles;
+
+        private RoleAndNameComparator(Map<Type, String> roles)
+        {
+            _roles = roles;
+        }
+
+        public int compare(Type o1, Type o2)
+        {
+            String role1 = _roles.get(o1);
+            String role2 = _roles.get(o2);
+            if (role1 != null && role2 != null)
+            {
+                return role1.compareTo(role2);
+            }
+            else if (role1 == null && role2 != null)
+            {
+                return -1;
+            }
+            else if (role1 != null)
+            {
+                return 1;
+            }
+            return o1.getName().compareTo(o2.getName());
+        }
+    }
+
     private static void generateDetailGraph(ExpRunImpl expRun, DotGraph dg, GraphCtrlProps ctrlProps)
     {
         int countPAForSeq = 0;
@@ -389,7 +425,7 @@ public class ExperimentRunGraph
         boolean firstApp = true;
         for (ExpProtocolApplicationImpl protApp : expRun.getProtocolApplications())
         {
-            Integer rowIdPA = protApp.getRowId();
+            int rowIdPA = protApp.getRowId();
             String namePA = protApp.getName();
             int sequence = protApp.getActionSequence();
 
@@ -410,6 +446,9 @@ public class ExperimentRunGraph
             List<ExpMaterial> outputMaterials = protApp.getOutputMaterials();
             List<ExpData> outputDatas = protApp.getOutputDatas();
 
+            Collections.sort(inputMaterials, new RoleAndNameComparator<ExpMaterial>(runMaterialInputs));
+            Collections.sort(inputDatas, new RoleAndNameComparator<ExpData>(runDataInputs));
+
             if (sequence != prevseq)
             {
                 dg.flushPending();
@@ -418,95 +457,83 @@ public class ExperimentRunGraph
                 groupIdPA = null;
             }
 
-            if (inputMaterials != null)
+            for (ExpMaterial material : inputMaterials)
             {
-                for (ExpMaterial material : inputMaterials)
-                {
-                    Integer groupId = dg.getMGroupId(material.getRowId());
-                    dg.addMaterial(material, groupId, sequence, expRun.getMaterialOutputs().contains(material));
+                Integer groupId = dg.getMGroupId(material.getRowId());
+                dg.addMaterial(material, groupId, sequence, expRun.getMaterialOutputs().contains(material));
 
-                    // check if we need to start or stop grouping at this level of PAs
-                    // first, if the number of nodesat this level is less than the max,
-                    // don't group even if input is grouped
-                    // else if the parent (input) is not grouped but we're at the width limit, start a new group
-                    if (ctrlProps.getPACountForSequence(sequence) <= ctrlProps.maxSiblingNodes)
-                        groupId = null;
-                    else if ((null==groupId) && (countPAForSeq >= ctrlProps.maxSiblingNodes - 1))
-                    {
-                        if (null==groupIdPA)
-                            groupIdPA = rowIdPA;
-                        groupId = groupIdPA;
-                    }
-                    if (cpasTypePA == ExpProtocol.ApplicationType.ExperimentRunOutput)
-                        dg.addOutputNode(groupId, rowIdPA, namePA, sequence);
-                    else
-                        dg.addProtApp(groupId, rowIdPA, namePA, sequence);
-                    // We only want to show the label once, so remove it from the map
-                    String label = runMaterialInputs.remove(material);
-                    dg.connectMaterialToProtocolApp(material.getRowId(), rowIdPA, label);
+                // check if we need to start or stop grouping at this level of PAs
+                // first, if the number of nodes at this level is less than the max,
+                // don't group even if input is grouped
+                // else if the parent (input) is not grouped but we're at the width limit, start a new group
+                if (ctrlProps.getPACountForSequence(sequence) <= ctrlProps.maxSiblingNodes)
+                    groupId = null;
+                else if ((null==groupId) && (countPAForSeq >= ctrlProps.maxSiblingNodes - 1))
+                {
+                    if (null==groupIdPA)
+                        groupIdPA = rowIdPA;
+                    groupId = groupIdPA;
                 }
+                if (cpasTypePA == ExpProtocol.ApplicationType.ExperimentRunOutput)
+                    dg.addOutputNode(groupId, rowIdPA, namePA, sequence);
+                else
+                    dg.addProtApp(groupId, rowIdPA, namePA, sequence);
+                // We only want to show the label once, so remove it from the map
+                String label = runMaterialInputs.remove(material);
+                dg.connectMaterialToProtocolApp(material.getRowId(), rowIdPA, label);
             }
 
-            if (inputDatas != null)
+            for (ExpData data : inputDatas)
             {
-                for (ExpData data : inputDatas)
+                Integer groupId = dg.getDGroupId(data.getRowId());
+                dg.addData(data, groupId, sequence, expRun.getDataOutputs().contains(data));
+
+                // same check as above
+                if (ctrlProps.getPACountForSequence(sequence) <= ctrlProps.maxSiblingNodes)
+                    groupId = null;
+                else if ((null==groupId) && (countPAForSeq >= ctrlProps.maxSiblingNodes - 1))
                 {
-                    Integer groupId = dg.getDGroupId(data.getRowId());
-                    dg.addData(data, groupId, sequence, expRun.getDataOutputs().contains(data));
-
-                    // same check as above
-                    if (ctrlProps.getPACountForSequence(sequence) <= ctrlProps.maxSiblingNodes)
-                        groupId = null;
-                    else if ((null==groupId) && (countPAForSeq >= ctrlProps.maxSiblingNodes - 1))
-                    {
-                        if (null==groupIdPA)
-                            groupIdPA = rowIdPA;
-                        groupId = groupIdPA;
-                    }
-
-                    if (cpasTypePA == ExpProtocol.ApplicationType.ExperimentRunOutput)
-                        dg.addOutputNode(groupId, rowIdPA, namePA, sequence);
-                    else
-                        dg.addProtApp(groupId, rowIdPA, namePA, sequence);
-                    // We only want to show the label once, so remove it from the map
-                    String label = runDataInputs.remove(data);
-                    dg.connectDataToProtocolApp(data.getRowId(), rowIdPA, label);
+                    if (null==groupIdPA)
+                        groupIdPA = rowIdPA;
+                    groupId = groupIdPA;
                 }
+
+                if (cpasTypePA == ExpProtocol.ApplicationType.ExperimentRunOutput)
+                    dg.addOutputNode(groupId, rowIdPA, namePA, sequence);
+                else
+                    dg.addProtApp(groupId, rowIdPA, namePA, sequence);
+                // We only want to show the label once, so remove it from the map
+                String label = runDataInputs.remove(data);
+                dg.connectDataToProtocolApp(data.getRowId(), rowIdPA, label);
             }
 
 
-            if (outputMaterials != null)
+            for (int i = 0; i < outputMaterials.size(); i++)
             {
-                for (int i = 0; i < outputMaterials.size(); i++)
-                {
-                    ExpMaterial material = outputMaterials.get(i);
-                    // determine group membership for output nodes.  Either we are starting
-                    // a new group because we are exceeding Max siblings, or
-                    // we are inheriting a group from above.
-                    Integer groupId = dg.getPAGroupId(rowIdPA);
-                    if ((null == groupId) &&
-                            (outputMaterials.size() > ctrlProps.maxSiblingNodes) && (i >= ctrlProps.maxSiblingNodes - 1))
-                        groupId = rowIdPA;
+                ExpMaterial material = outputMaterials.get(i);
+                // determine group membership for output nodes.  Either we are starting
+                // a new group because we are exceeding Max siblings, or
+                // we are inheriting a group from above.
+                Integer groupId = dg.getPAGroupId(rowIdPA);
+                if ((null == groupId) &&
+                        (outputMaterials.size() > ctrlProps.maxSiblingNodes) && (i >= ctrlProps.maxSiblingNodes - 1))
+                    groupId = rowIdPA;
 
-                    dg.addMaterial(material, groupId, sequence, expRun.getMaterialOutputs().contains(material));
-                    dg.connectProtocolAppToMaterial(rowIdPA, material.getRowId());
-                }
+                dg.addMaterial(material, groupId, sequence, expRun.getMaterialOutputs().contains(material));
+                dg.connectProtocolAppToMaterial(rowIdPA, material.getRowId());
             }
 
-            if (outputDatas != null)
+            for (int i = 0; i < outputDatas.size(); i++)
             {
-                for (int i = 0; i < outputDatas.size(); i++)
-                {
-                    ExpData data = outputDatas.get(i);
-                    Integer groupId = dg.getPAGroupId(rowIdPA);
-                    if ((null == groupId) &&
-                            (outputDatas.size() > ctrlProps.maxSiblingNodes) && (i >= ctrlProps.maxSiblingNodes - 1))
-                        groupId = rowIdPA;
+                ExpData data = outputDatas.get(i);
+                Integer groupId = dg.getPAGroupId(rowIdPA);
+                if ((null == groupId) &&
+                        (outputDatas.size() > ctrlProps.maxSiblingNodes) && (i >= ctrlProps.maxSiblingNodes - 1))
+                    groupId = rowIdPA;
 
-                    dg.addData(data, groupId, sequence, expRun.getDataOutputs().contains(data));
-                    dg.connectProtocolAppToData(rowIdPA, data.getRowId());
+                dg.addData(data, groupId, sequence, expRun.getDataOutputs().contains(data));
+                dg.connectProtocolAppToData(rowIdPA, data.getRowId());
 
-                }
             }
             countPAForSeq++;
         }

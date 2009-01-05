@@ -19,7 +19,7 @@ package org.labkey.study.controllers.assay;
 import org.labkey.api.action.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
@@ -31,15 +31,17 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.actions.*;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
+import org.labkey.api.query.QueryParam;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.assay.AssayServiceImpl;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.springframework.validation.BindException;
-import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.File;
 import java.util.*;
@@ -60,7 +62,8 @@ public class AssayController extends SpringActionController
             TemplateAction.class,
             AssayRunsAction.class,
             AssayDataAction.class,
-            AssayDataDetailsAction.class
+            AssayDataDetailsAction.class,
+            ShowSelectedDataAction.class
         );
 
     public AssayController()
@@ -82,7 +85,7 @@ public class AssayController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Assay List", getUrl("begin"));
+            return root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
         }
     }
 
@@ -129,51 +132,6 @@ public class AssayController extends SpringActionController
             if (_name != null && !_name.equals(protocol.getName()))
                 return false;
             return !(_type != null && !_type.equals(provider.getName()));
-        }
-    }
-
-    @RequiresPermission(ACL.PERM_READ)
-    public class ShowSelectedDataAction extends RedirectAction<ShowSelectedForm>
-    {
-        public ActionURL getSuccessURL(ShowSelectedForm form)
-        {
-            Set<String> selection = DataRegionSelection.getSelected(getViewContext(), true);
-            int[] selectedIds = new int[selection.size()];
-            int i = 0;
-            for (String id : selection)
-                selectedIds[i++] = Integer.parseInt(id);
-            ContainerFilter containerFilter = null;
-            if (form.getContainerFilterName() != null)
-                containerFilter = ContainerFilter.Filters.valueOf(form.getContainerFilterName());
-
-            ActionURL url = AssayService.get().getAssayDataURL(getContainer(), form.getProtocol(), containerFilter, selectedIds);
-            if (form.getContainerFilterName() != null)
-                url.addParameter("containerFilterName", form.getContainerFilterName());
-            return url;
-        }
-
-        public boolean doAction(ShowSelectedForm form, BindException errors) throws Exception
-        {
-            return true;
-        }
-
-        public void validateCommand(ShowSelectedForm target, Errors errors)
-        {
-        }
-    }
-
-    public static class ShowSelectedForm extends ProtocolIdForm
-    {
-        private String containerFilterName;
-
-        public String getContainerFilterName()
-        {
-            return containerFilterName;
-        }
-
-        public void setContainerFilterName(String containerFilterName)
-        {
-            this.containerFilterName = containerFilterName;
         }
     }
 
@@ -273,7 +231,7 @@ public class AssayController extends SpringActionController
                 @Override
                 protected void renderCellContents(StringBuilder html, Container c, ActionURL url)
                 {
-                    ActionURL copyURL = AssayService.get().getDesignerURL(c, _protocol, true);
+                    ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(c, _protocol, true);
                     html.append("<a href=\"");
                     html.append(copyURL.getEncodedLocalURIString());
                     html.append("\">");
@@ -281,19 +239,19 @@ public class AssayController extends SpringActionController
                     html.append("</a>");
                 }
             };
-            ActionURL copyHereURL = AssayService.get().getDesignerURL(form.getContainer(), _protocol, true);
+            ActionURL copyHereURL = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(form.getContainer(), _protocol, true);
             HtmlView fileTree = new HtmlView("<table><tr><td><b>Select destination folder:</b></td></tr>" +
                     tree.render().toString() + "</table>");
             HtmlView bbar = new HtmlView(
-                    PageFlowUtil.generateButton("Cancel", getUrl("assayRuns").addParameter("rowId", _protocol.getRowId())) + " " +
+                    PageFlowUtil.generateButton("Cancel", new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId())) + " " +
                     (form.getContainer().hasPermission(getUser(), ACL.PERM_INSERT) ? PageFlowUtil.generateButton("Copy to Current Folder", copyHereURL) : ""));
             return new VBox(bbar, fileTree, bbar);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Assay List", getUrl("begin")).addChild(_protocol.getName(),
-                    getUrl("assayRuns").addParameter("rowId", _protocol.getRowId())).addChild("Copy Assay Design");
+            return root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer())).addChild(_protocol.getName(),
+                    new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId())).addChild("Copy Assay Design");
         }
     }
 
@@ -303,7 +261,7 @@ public class AssayController extends SpringActionController
         public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception
         {
             ExpProtocol protocol = getProtocol(form);
-            HttpView.throwRedirect(AssayService.get().getAssayRunsURL(getContainer(), protocol));
+            HttpView.throwRedirect(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), protocol));
             return null;
         }
 
@@ -318,7 +276,7 @@ public class AssayController extends SpringActionController
     {
         public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception
         {
-            ActionURL designerURL = AssayService.get().getDesignerURL(getContainer(), form.getProviderName());
+            ActionURL designerURL = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getContainer(), form.getProviderName());
             HttpView.throwRedirect(designerURL);
             return null;
         }
@@ -409,7 +367,7 @@ public class AssayController extends SpringActionController
                 HttpView.throwRedirect(correctedURL);
             }
 
-            PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(form.getPropertyId());
+            PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(form.getPropertyId().intValue());
             if (pd == null)
                 HttpView.throwNotFound();
 
@@ -449,8 +407,8 @@ public class AssayController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Assay List", getUrl("begin")).addChild(_protocol.getName(),
-                    getUrl("assayRuns").addParameter("rowId", _protocol.getRowId())).addChild("Copy-to-Study History");
+            return root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer())).addChild(_protocol.getName(),
+                    new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId())).addChild("Copy-to-Study History");
         }
     }
 
@@ -468,4 +426,106 @@ public class AssayController extends SpringActionController
             this.containerFilterName = containerFilterName;
         }
     }
+
+    public static class AssayUrlsImpl implements AssayUrls
+    {
+        public ActionURL getProtocolURL(Container container, ExpProtocol protocol, Class<? extends Controller> action)
+        {
+            ActionURL url = new ActionURL(action, container);
+            if (protocol != null)
+                url.addParameter("rowId", protocol.getRowId());
+            return url;
+        }
+
+        public ActionURL getDesignerURL(Container container, ExpProtocol protocol, boolean copy)
+        {
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+            if (provider == null)
+                return null;
+            ActionURL url = getProtocolURL(container, protocol, provider.getDesignerAction());
+            if (copy)
+                url.addParameter("copy", "true");
+            url.addParameter("providerName", provider.getName());
+            return url;
+        }
+
+        public ActionURL getDesignerURL(Container container, String providerName)
+        {
+            AssayProvider provider = AssayService.get().getProvider(providerName);
+            if (provider == null)
+            {
+                return null;
+            }
+            ActionURL url = getProtocolURL(container, null, provider.getDesignerAction());
+            url.addParameter("providerName", provider.getName());
+            return url;
+        }
+
+        public ActionURL getCopyToStudyConfirmURL(Container container, ExpProtocol protocol)
+        {
+            return getProtocolURL(container, protocol, PublishConfirmAction.class);
+        }
+
+        public ActionURL getAssayRunsURL(Container container, ExpProtocol protocol)
+        {
+            return getAssayRunsURL(container, protocol, null);
+        }
+
+        public ActionURL getAssayRunsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter)
+        {
+            ActionURL url = getProtocolURL(container, protocol, AssayRunsAction.class);
+            if (containerFilter != null)
+            {
+                url.addParameter(protocol.getName() + " Runs." + QueryParam.containerFilterName, containerFilter.name());
+            }
+            return url;
+        }
+
+        public ActionURL getAssayListURL(Container container)
+        {
+            return getProtocolURL(container, null, AssayController.BeginAction.class);
+        }
+
+        public ActionURL getAssayDataURL(Container container, ExpProtocol protocol, int... runIds)
+        {
+            return getAssayDataURL(container, protocol, null, runIds);
+        }
+
+        public ActionURL getAssayDataURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... runIds)
+        {
+            ActionURL result = getProtocolURL(container, protocol, AssayDataAction.class);
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+            if (runIds.length > 1)
+            {
+                String sep = "";
+                StringBuilder filterValue = new StringBuilder();
+                for (int runId : runIds)
+                {
+                    filterValue.append(sep).append(runId);
+                    sep = ";";
+                }
+                result.addFilter(provider.getRunDataTableName(protocol),
+                        provider.getRunIdFieldKeyFromDataRow(), CompareType.IN, filterValue.toString());
+            }
+            else if (runIds.length == 1)
+            {
+                result.addFilter(provider.getRunDataTableName(protocol),
+                        provider.getRunIdFieldKeyFromDataRow(), CompareType.EQUAL, runIds[0]);
+            }
+            if (containerFilter != null)
+                result.addParameter(protocol.getName() + " Data." + QueryParam.containerFilterName, containerFilter.name());
+            return result;
+        }
+
+        public ActionURL getChooseCopyDestinationURL(ExpProtocol protocol, Container container)
+        {
+            return getProtocolURL(container, protocol, ChooseCopyDestinationAction.class);
+        }
+
+        public ActionURL getDeleteDesignURL(Container container, ExpProtocol protocol)
+        {
+            return getProtocolURL(container, protocol, DeleteAction.class);
+        }
+    }
+
 }

@@ -16,7 +16,6 @@
 
 package org.labkey.experiment.api;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;

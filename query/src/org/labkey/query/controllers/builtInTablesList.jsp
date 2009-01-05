@@ -46,10 +46,8 @@
         %>
         <tr>
             <td><a href="<%= h(def.urlFor(QueryAction.executeQuery, context.getContainer()) )%>"><%=h(name)%></a></td>
-            <td><labkey:button text="Run" href="<%= def.urlFor(QueryAction.executeQuery, context.getContainer()) %>"/></td>
-            <% if (context.hasPermission(ACL.PERM_ADMIN)) { %>
-                <td><labkey:button text="Edit Metadata as XML" href="<%= def.urlFor(QueryAction.sourceQuery, context.getContainer()) %>"/></td>
-                <td><labkey:button text="Edit Metadata with GUI" href="<%= def.urlFor(QueryAction.metadataQuery, context.getContainer()) %>"/></td>
+            <% if (context.hasPermission(ACL.PERM_ADMIN) && def.isMetadataEditable()) { %>
+                <td>[<a href="<%= def.urlFor(QueryAction.metadataQuery, context.getContainer()) %>">override metadata</a>]</td>
             <% } %>
             <td>
                 <% if (def.getDescription() != null) { %>
@@ -64,5 +62,5 @@
 
 <% if (context.getContainer().hasPermission(context.getUser(), ACL.PERM_ADMIN))
 {%>
-    <labkey:link href="<%=new ActionURL(QueryControllerSpring.AdminAction.class, context.getContainer())%>" text="Schema Administration" />
+    [<a href="<%=new ActionURL(QueryControllerSpring.AdminAction.class, context.getContainer())%>">schema administration</a>]
 <% } %>

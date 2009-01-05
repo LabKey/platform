@@ -29,7 +29,9 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.util.Collections;
 import java.util.List;
@@ -101,7 +103,7 @@ public class AssayDomainKind extends DomainKind
         ExpProtocol protocol = findProtocol(domain);
         if (protocol != null)
         {
-            return AssayService.get().getAssayRunsURL(domain.getContainer(), protocol);
+            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(domain.getContainer(), protocol);
         }
         return null;
     }
@@ -112,7 +114,7 @@ public class AssayDomainKind extends DomainKind
         ExpProtocol protocol = findProtocol(domain);
         if (protocol != null)
         {
-            return AssayService.get().getDesignerURL(domain.getContainer(), protocol, false);
+            return PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(domain.getContainer(), protocol, false);
         }
         return null;
     }

@@ -21,7 +21,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.User;
 import org.labkey.query.data.Query;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QueryDef;
@@ -78,5 +77,10 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     public boolean isTableQueryDefinition()
     {
         return true;
+    }
+
+    public boolean isMetadataEditable()
+    {
+        return _table.isMetadataOverrideable();
     }
 }

@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.query.persist.DbUserSchemaDef" %>
 <%@ page import="org.labkey.query.persist.QueryManager" %>
+<%@ page import="org.labkey.query.controllers.QueryControllerSpring" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <p>
@@ -42,19 +43,25 @@ if (null != StringUtils.trimToNull(reloadedSchema))
     </div><br>
     <%
     }
+    %>
+<table>
+    <%
     for (DbUserSchemaDef def : defs)
     {
-        ActionURL urlEdit = new ActionURL("query", "adminEditDbUserSchema", getContainer());
+        ActionURL urlEdit = new ActionURL(QueryControllerSpring.AdminEditDbUserSchemaAction.class, getContainer());
         urlEdit.addParameter("dbUserSchemaId", Integer.toString(def.getDbUserSchemaId()));
-        ActionURL urlView = new ActionURL("query", "schema", getContainer());
+        ActionURL urlView = new ActionURL(QueryControllerSpring.SchemaAction.class, getContainer());
         urlView.addParameter("schemaName", def.getUserSchemaName());
         ActionURL urlReload = urlEdit.clone();
-        urlReload.setAction("adminReloadDbUserSchema.view");
+        urlReload.setAction(QueryControllerSpring.AdminReloadDbUserSchemaAction.class);
 %>
-        <labkey:link text="<%=def.getUserSchemaName()%>" href="<%=urlView%>" />
-        <%if (getUser().isAdministrator()) {%><labkey:link text="Edit" href="<%=urlEdit%>" /><%}%>
-        <labkey:link text="Reload" href="<%=urlReload%>" />
-        <br>
-<% }} %>
+        <tr>
+            <td><a href="<%=urlView%>"><%=h(def.getUserSchemaName())%></a></td>
+            <td><%if (getUser().isAdministrator()) {%><labkey:link text="edit" href="<%=urlEdit%>" /><%}%></td>
+            <td><labkey:link text="reload" href="<%=urlReload%>" /></td>
+        </tr>
+    <% } %>
+    </table>
+<% } %>
 <br>
-<%if (getUser().isAdministrator()) {%><labkey:link href="<%= new ActionURL("query", "adminNewDbUserSchema", getContainer())%>" text="Define New Schema"/><%}%>
+<%if (getUser().isAdministrator()) {%><labkey:link href="<%= new ActionURL(QueryControllerSpring.AdminNewDbUserSchemaAction.class, getContainer())%>" text="define new schema"/><%}%>

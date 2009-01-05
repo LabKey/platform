@@ -30,7 +30,6 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.study.assay.AbstractAssayTsvDataHandler;
-import org.labkey.api.study.assay.ParticipantVisitResolver;
 import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.common.tools.TabLoader;
 
@@ -61,7 +60,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler
         return false;
     }
 
-    protected Map<String, Object>[] loadFileData(PropertyDescriptor[] columns, File inputfile, ParticipantVisitResolver resolver) throws IOException, ExperimentException
+    protected Map<String, Object>[] loadFileData(PropertyDescriptor[] columns, File inputfile) throws IOException, ExperimentException
     {
         if (inputfile.getName().toLowerCase().endsWith(".xls"))
             return loadXls(columns, inputfile);

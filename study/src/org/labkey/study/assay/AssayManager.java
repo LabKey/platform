@@ -27,16 +27,18 @@ import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.QueryParam;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.assay.query.AssayListPortalView;
 import org.labkey.study.assay.query.AssayListQueryView;
 import org.labkey.study.assay.query.AssaySchema;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.util.*;
 
@@ -173,109 +175,29 @@ public class AssayManager implements AssayService.Interface
         return new AssayListQueryView(context, settings);
     }
 
-    public ActionURL getProtocolURL(Container container, ExpProtocol protocol, String action)
-    {
-        ActionURL url = new ActionURL("assay", action, container);
-        if (protocol != null)
-            url.addParameter("rowId", protocol.getRowId());
-        return url;
-    }
-
-    public ActionURL getDesignerURL(Container container, ExpProtocol protocol, boolean copy)
-    {
-        AssayProvider provider = AssayService.get().getProvider(protocol);
-        if (provider == null)
-            return null;
-        return provider.getDesignerURL(container, protocol, copy);
-    }
-
-    public ActionURL getDesignerURL(Container container, String providerName)
-    {
-        AssayProvider provider = getProvider(providerName);
-        if (provider == null)
-        {
-            return null;
-        }
-        return provider.getDesignerURL(container, null, false);
-    }
-
-    public ActionURL getPublishConfirmURL(Container container, ExpProtocol protocol)
-    {
-        return getProtocolURL(container, protocol, "publishConfirm");
-    }
-
-    public ActionURL getAssayRunsURL(Container container, ExpProtocol protocol)
-    {
-        return getAssayRunsURL(container, protocol, null);
-    }
-
-    public ActionURL getAssayRunsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter)
-    {
-        ActionURL url = getProtocolURL(container, protocol, "assayRuns");
-        if (containerFilter != null)
-        {
-            url.addParameter(protocol.getName() + " Runs." + QueryParam.containerFilterName, containerFilter.name());
-        }
-        return url;
-    }
-
-    public ActionURL getAssayListURL(Container container)
-    {
-        return getProtocolURL(container, null, "begin");
-    }
-
-    public ActionURL getUploadWizardURL(Container container, ExpProtocol protocol)
-    {
-        return getProvider(protocol).getUploadWizardURL(container, protocol);
-    }
-
-    public ActionURL getAssayDataURL(Container container, ExpProtocol protocol, int... runIds)
-    {
-        return getAssayDataURL(container, protocol, null, runIds);
-    }
-
-    public ActionURL getAssayDataURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... runIds)
-    {
-        ActionURL result = getProtocolURL(container, protocol, "assayData");
-        AssayProvider provider = getProvider(protocol);
-        if (runIds.length > 1)
-        {
-            String sep = "";
-            StringBuilder filterValue = new StringBuilder();
-            for (int runId : runIds)
-            {
-                filterValue.append(sep).append(runId);
-                sep = ";";
-            }
-            result.addFilter(provider.getRunDataTableName(protocol),
-                    provider.getRunIdFieldKeyFromDataRow(), CompareType.IN, filterValue.toString());
-        }
-        else if (runIds.length == 1)
-        {
-            result.addFilter(provider.getRunDataTableName(protocol),
-                    provider.getRunIdFieldKeyFromDataRow(), CompareType.EQUAL, runIds[0]);
-        }
-        if (containerFilter != null)
-            result.addParameter(protocol.getName() + " Data." + QueryParam.containerFilterName, containerFilter.name());
-        return result;
-    }
-
-    public ActionButton getImportButton(String label, ExpProtocol protocol, User user, Container currentContainer)
+    public List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean includeOtherContainers)
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
         assert provider != null : "Could not find a provider for protocol: " + protocol;
-        // First find all the containers that have contributed data to this protocol
-        ExpRun[] runs = protocol.getExpRuns();
-        Set<Container> dataContainers = new HashSet<Container>();
-        for (ExpRun run : runs)
-            dataContainers.add(run.getContainer());
+        Set<Container> containers = new TreeSet<Container>();
+        if (includeOtherContainers)
+        {
+            // First find all the containers that have contributed data to this protocol
+            ExpRun[] runs = protocol.getExpRuns();
+            for (ExpRun run : runs)
+                containers.add(run.getContainer());
 
-        // If there are none, include the container of the protocol itself
-        if (dataContainers.size() == 0)
-            dataContainers.add(protocol.getContainer());
+            // If there are none, include the container of the protocol itself
+            if (containers.size() == 0)
+                containers.add(protocol.getContainer());
+        }
+        else
+        {
+            containers.add(currentContainer);
+        }
 
         // Check for write permission
-        for (Iterator<Container> iter = dataContainers.iterator(); iter.hasNext();)
+        for (Iterator<Container> iter = containers.iterator(); iter.hasNext();)
         {
             Container container = iter.next();
             if (!container.hasPermission(user, ACL.PERM_INSERT) || !provider.allowUpload(user, container, protocol))
@@ -283,32 +205,39 @@ public class AssayManager implements AssayService.Interface
                 iter.remove();
             }
         }
-        if (dataContainers.size() == 0)
-            return null; // Nowhere to upload to, no button
+        if (containers.size() == 0)
+            return Collections.emptyList(); // Nowhere to upload to, no button
 
-        if (dataContainers.size() == 1)
+        List<ActionButton> result = new ArrayList<ActionButton>();
+
+        if (containers.size() == 1)
         {
-            Container c = dataContainers.iterator().next();
+            Container c = containers.iterator().next();
             // If it's the current container, we want a simple button
             if (c.equals(currentContainer))
             {
-                ActionURL url = AssayService.get().getUploadWizardURL(dataContainers.iterator().next(), protocol);
-                return new ActionButton(url, label);
+                for (Map.Entry<String, Class<? extends Controller>> entry : provider.getImportActions().entrySet())
+                {
+                    result.add(new ActionButton(PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(c, protocol, entry.getValue()), entry.getKey()));
+                }
             }
+        }
+        else
+        {
             // It's not the current container, so fall through to show a submenu even though there's
             // only one item, in order to indicate that the user is going to be redirected elsewhere
+            for (Map.Entry<String, Class<? extends Controller>> entry : provider.getImportActions().entrySet())
+            {
+                MenuButton uploadButton = new MenuButton(entry.getKey());
+                for(Container container : containers)
+                {
+                    ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, entry.getValue());
+                    uploadButton.addMenuItem(container.getPath(), url);
+                }
+                result.add(uploadButton);
+            }
         }
 
-        // Sort by path
-        Set<Container> sortedContainers = new TreeSet<Container>(dataContainers);
-
-        MenuButton uploadButton = new MenuButton(label);
-        for(Container container : sortedContainers)
-        {
-            ActionURL url = AssayService.get().getUploadWizardURL(container, protocol);
-            uploadButton.addMenuItem(container.getPath(), url);
-        }
-
-        return uploadButton;
+        return result;
     }
 }

@@ -27,9 +27,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineJob;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.io.File;
@@ -64,47 +62,12 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
 
     public ExpProtocolApplication[] getTargetApplications()
     {
-        ResultSet rs = null;
-        try
-        {
-            SimpleFilter filter = new SimpleFilter();
-            filter.addCondition("DataId", getRowId());
-            rs = Table.select(ExperimentServiceImpl.get().getTinfoDataInput(), Collections.singleton("TargetApplicationId"), filter, null);
-            List<ExpProtocolApplication> ret = new ArrayList<ExpProtocolApplication>();
-            while (rs.next())
-            {
-                ret.add(ExperimentService.get().getExpProtocolApplication(rs.getInt(1)));
-            }
-            return ret.toArray(new ExpProtocolApplication[ret.size()]);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            if (rs != null) { try { rs.close(); } catch (SQLException e) {} }
-        }
+        return getTargetApplications(new SimpleFilter("DataId", getRowId()), ExperimentServiceImpl.get().getTinfoDataInput());
     }
 
     public ExpRun[] getTargetRuns()
     {
-        try
-        {
-            SQLFragment sql = new SQLFragment("SELECT exp.ExperimentRun.* FROM exp.ExperimentRun" +
-                    "\nWHERE exp.ExperimentRun.RowId IN " +
-                    "\n(SELECT exp.ProtocolApplication.RunId" +
-                    "\nFROM exp.ProtocolApplication" +
-                    "\nINNER JOIN exp.DataInput ON exp.ProtocolApplication.RowId = exp.DataInput.TargetApplicationId AND exp.DataInput.DataId = ?)");
-            sql.add(getRowId());
-            ExperimentRun[] runs = Table.executeQuery(ExperimentService.get().getSchema(), sql.getSQL(), sql.getParams().toArray(new Object[sql.getParams().size()]), ExperimentRun.class);
-            return ExpRunImpl.fromRuns(runs);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-
+        return getTargetRuns(ExperimentServiceImpl.get().getTinfoDataInput(), "DataId");
     }
 
     public DataType getDataType()
@@ -158,11 +121,6 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
     public File getDataFile()
     {
         return _object.getFile();
-    }
-
-    public Date getCreated()
-    {
-        return _object.getCreated();
     }
 
     public ExperimentDataHandler findDataHandler()

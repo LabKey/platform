@@ -22,21 +22,36 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <% PropertiesForm form = (PropertiesForm) HttpView.currentModel(); %>
 <form method="POST" action="<%=form.urlFor(QueryAction.propertiesQuery)%>">
-    <p>Name: <%=h(form.getQueryDef().getName())%></p>
-    <p>Description:<br>
-        <textarea name="ff_description" rows="5" cols="40"><%=h(form.ff_description)%></textarea>
-    </p>
-    <p>Should this query be available in child folders of this one?<br>
-        <select name="ff_inheritable">
-            <option value="true"<%=form.ff_inheritable ? " selected" : ""%>>Yes</option>
-            <option value="false"<%=!form.ff_inheritable ? " selected" : ""%>>No</option>
-        </select>
-    </p>
-    <p>Should this query be hidden from the user?<br>
-        <select name="ff_hidden">
-            <option value="true"<%=form.ff_hidden ? " selected" : ""%>>Yes</option>
-            <option value="false"<%=!form.ff_hidden ? " selected" : ""%>>No</option>
-        </select>
-    </p>
-    <labkey:button text="update" />
+    <table width="100%">
+        <tr>
+            <td class="labkey-form-label">Name:</td>
+            <td><%=h(form.getQueryDef().getName())%></td>
+        </tr>
+        <tr>
+            <td class="labkey-form-label">Description:</td>
+            <td width="100%"><textarea style="width: 100%;" name="ff_description" rows="5" cols="40"><%=h(form.ff_description)%></textarea></td>
+        </tr>
+        <tr>
+            <td class="labkey-form-label" nowrap="true">Available in child folders?</td>
+            <td>
+                <select name="ff_inheritable">
+                    <option value="true"<%=form.ff_inheritable ? " selected" : ""%>>Yes</option>
+                    <option value="false"<%=!form.ff_inheritable ? " selected" : ""%>>No</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td class="labkey-form-label" nowrap="true">Hidden from the user?</td>
+            <td>
+                <select name="ff_hidden">
+                    <option value="true"<%=form.ff_hidden ? " selected" : ""%>>Yes</option>
+                    <option value="false"<%=!form.ff_hidden ? " selected" : ""%>>No</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td/>
+            <td><labkey:button text="Save" /></td>
+        </tr>
+    </table>
 </form>

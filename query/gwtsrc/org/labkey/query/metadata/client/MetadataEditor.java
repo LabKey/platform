@@ -66,34 +66,18 @@ public class MetadataEditor implements EntryPoint
         {
             public void onClick(Widget sender)
             {
-                List<String> errors = _editor.validate();
-
-                if (errors.size() > 0)
+                save(new AsyncCallback<GWTTableInfo>()
                 {
-                    String errorString = "";
-                    for (int i = 0; i < errors.size(); i++)
+                    public void onFailure(Throwable caught)
                     {
-                        if (i > 0)
-                            errorString += "\n";
-                        errorString += errors.get(i);
+                        WindowUtil.reportException("Failed to save", caught);
                     }
-                    Window.alert(errorString);
-                }
-                else
-                {
-                    getService().saveMetadata(_editor.getUpdates(), _schemaName, new AsyncCallback<GWTTableInfo>()
-                    {
-                        public void onFailure(Throwable caught)
-                        {
-                            WindowUtil.reportException("Failed to save metadata", caught);
-                        }
 
-                        public void onSuccess(GWTTableInfo newTableInfo)
-                        {
-                            _editor.init(newTableInfo);
-                        }
-                    });
-                }
+                    public void onSuccess(GWTTableInfo newTableInfo)
+                    {
+                        _editor.init(newTableInfo);
+                    }
+                });
             }
         }));
         _editor.addButton(new ImageButton("Reset to Default", new ClickListener()
@@ -114,12 +98,103 @@ public class MetadataEditor implements EntryPoint
                 });
             }
         }));
+        final String xmlActionURL = PropertyUtil.getServerProperty("xmlActionURL");
+        if (xmlActionURL != null)
+        {
+            _editor.addButton(new ImageButton("Edit as XML", new ClickListener()
+            {
+                public void onClick(Widget sender)
+                {
+                    if (_editor.isDirty())
+                    {
+                        final DialogBox confirmDialog = new DialogBox(false, true);
+                        confirmDialog.setText("Save Changes?");
+                        VerticalPanel panel = new VerticalPanel();
+                        panel.add(new Label("Do you want to save your changes?"));
+                        HorizontalPanel buttonPanel = new HorizontalPanel();
+                        ImageButton saveButton = new ImageButton("Save", new ClickListener()
+                        {
+                            public void onClick(Widget sender)
+                            {
+                                save(new AsyncCallback<GWTTableInfo>()
+                                {
+                                    public void onFailure(Throwable caught)
+                                    {
+                                        WindowUtil.reportException("Failed to save", caught);
+                                    }
+
+                                    public void onSuccess(GWTTableInfo result)
+                                    {
+                                        Window.Location.replace(xmlActionURL);
+                                    }
+                                });
+                            }
+                        });
+                        buttonPanel.add(saveButton);
+
+                        ImageButton discardButton = new ImageButton("Discard", new ClickListener()
+                        {
+                            public void onClick(Widget sender)
+                            {
+                                Window.Location.replace(xmlActionURL);
+                            }
+                        });
+                        buttonPanel.add(discardButton);
+
+                        ImageButton cancelButton = new ImageButton("Cancel", new ClickListener()
+                        {
+                            public void onClick(Widget sender)
+                            {
+                                confirmDialog.hide();
+                            }
+                        });
+                        buttonPanel.add(cancelButton);
+
+                        panel.add(buttonPanel);
+                        confirmDialog.add(panel);
+                        confirmDialog.show();
+                        WindowUtil.centerDialog(confirmDialog);
+                    }
+                    else
+                    {
+                        Window.Location.replace(xmlActionURL);
+                    }
+                }
+            }));
+        }
         panel.add(_editor.getWidget());
 
         rootPanel.clear();
         rootPanel.add(panel);
         
         _editor.init(tableInfo);
+    }
+
+    /**
+     * Save happens asynchronously, callback gets notified
+     * @return if a save was attempted or if it failed instantly.
+     */
+    private boolean save(AsyncCallback<GWTTableInfo> callback)
+    {
+        List<String> errors = _editor.validate();
+
+        if (errors.size() > 0)
+        {
+            String errorString = "";
+            for (int i = 0; i < errors.size(); i++)
+            {
+                if (i > 0)
+                    errorString += "\n";
+                errorString += errors.get(i);
+            }
+            Window.alert(errorString);
+            return false;
+        }
+        else
+        {
+            getService().saveMetadata(_editor.getUpdates(), _schemaName, callback);
+            return true;
+        }
     }
 
     private MetadataServiceAsync getService()

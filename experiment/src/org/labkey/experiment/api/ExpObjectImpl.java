@@ -17,6 +17,8 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpChildObject;
 import org.labkey.api.exp.api.ExperimentService;

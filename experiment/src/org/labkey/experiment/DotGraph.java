@@ -168,14 +168,12 @@ public class DotGraph
         {
             gnode = groupNodes.get(groupId);
             gnode.addNode(node);
-            node = gnode;
         }
         else
         {
             if (null == actionseq) actionseq = 0;
             gnode = new GroupedNode(groupId, actionseq, node);
             groupNodes.put(groupId, gnode);
-            node = gnode;
         }
         return gnode;
     }
@@ -212,7 +210,7 @@ public class DotGraph
         pendingDNodes.put(d.getRowId(), node);
     }
 
-    public void addProtApp(Integer groupId, Integer rowId, String name, Integer actionseq)
+    public void addProtApp(Integer groupId, int rowId, String name, Integer actionseq)
     {
         if (writtenProcNodes.containsKey(rowId) || pendingProcNodes.containsKey(rowId))
             return;
@@ -224,7 +222,7 @@ public class DotGraph
         pendingProcNodes.put(rowId, node);
     }
 
-    public void addOutputNode(Integer groupId, Integer rowId, String name, Integer actionseq)
+    public void addOutputNode(Integer groupId, int rowId, String name, Integer actionseq)
     {
         if (writtenProcNodes.containsKey(rowId) || pendingProcNodes.containsKey(rowId))
             return;
@@ -318,7 +316,7 @@ public class DotGraph
             else
                 connect += trgt.key + "[arrowsize = 2]";
         }
-        if (label != null)
+        if (label != null && !(src instanceof GroupedNode) && !(trgt instanceof GroupedNode))
         {
             connect += " [ style=\"setlinewidth(3)\" label = \"" + label + "\" fontname=\"" + LABEL_FONT + "\" fontsize=" + LABEL_SMALL_FONTSIZE + " ]";
         }
@@ -597,10 +595,8 @@ public class DotGraph
 
         public void save(PrintWriter out, ActionURL url)
         {
-            Set<Integer> paIds = new HashSet<Integer>();
             String sep = "";
             StringBuffer sbIn = new StringBuffer();
-            String objtype = gMap.get(gMap.firstKey()).type;
             for (Integer rowid : gMap.keySet())
             {
                 sbIn.append(sep + rowid);

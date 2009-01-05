@@ -19,8 +19,9 @@ package org.labkey.study.view;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.study.assay.AssayRunsView;
-import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.view.*;
+import org.labkey.api.util.PageFlowUtil;
 
 /**
  * User: jeckels
@@ -63,7 +64,7 @@ public class AssayDetailsWebPartFactory extends BaseWebPartFactory
         {
             AssayRunsView runsView = new AssayRunsView(protocol, !showButtons);
 
-            runsView.setTitleHref(AssayService.get().getAssayRunsURL(portalCtx.getContainer(), protocol));
+            runsView.setTitleHref(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(portalCtx.getContainer(), protocol));
             runsView.setTitle(protocol.getName() + " Runs");
             view = runsView;
         }

@@ -1685,7 +1685,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return result;
     }
 
-    public void deleteMaterialByRowIds(Container container, int... selectedMaterialIds) throws SQLException
+    public void deleteMaterialByRowIds(Container container, int... selectedMaterialIds)
     {
         if (selectedMaterialIds.length == 0)
             return;
@@ -1693,11 +1693,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         String materialIds = StringUtils.join(toIntegers(selectedMaterialIds), ",");
 
         String sql = "SELECT * FROM exp.Material WHERE RowId IN (" + materialIds + ");";
-        Material[] materials = Table.executeQuery(getExpSchema(), sql, new Object[]{}, Material.class);
         boolean containingTrans = getExpSchema().getScope().isTransactionActive();
 
         try
         {
+            Material[] materials = Table.executeQuery(getExpSchema(), sql, new Object[]{}, Material.class);
+
             if (!containingTrans)
                 getExpSchema().getScope().beginTransaction();
 
@@ -1720,6 +1721,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             if (!containingTrans)
                 getExpSchema().getScope().commitTransaction();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
         }
         finally
         {
@@ -2680,18 +2685,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return (ExperimentServiceImpl)ExperimentService.get();
     }
 
-    public Experiment insertExperiment(User user, Experiment exp)
-    {
-        try
-        {
-            return Table.insert(user, getTinfoExperiment(), exp);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-    }
-
     /** @return all the Data objects from this run */
     private List<ExpData> ensureSimpleExperimentRunParameters(Collection<ExpMaterial> inputMaterials,
                                                      Collection<ExpData> inputDatas, Collection<ExpMaterial> outputMaterials,
@@ -2737,10 +2730,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public ExpRun insertSimpleExperimentRun(ExpRun baseRun, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException
     {
         ExpRunImpl run = (ExpRunImpl)baseRun;
-        if (inputMaterials.isEmpty() && inputDatas.isEmpty())
-        {
-            throw new IllegalArgumentException("You must have at least one input to the run");
-        }
         if (outputMaterials.isEmpty() && outputDatas.isEmpty())
         {
             throw new IllegalArgumentException("You must have at least one output to the run");
@@ -2768,7 +2757,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     {
                         run.setContainer(info.getContainer());
                     }
-                    Container runContainer = run.getContainer();
                     Table.insert(user, getTinfoExperimentRun(), run.getDataObject());
                     insertedDatas = ensureSimpleExperimentRunParameters(inputMaterials.keySet(), inputDatas.keySet(), outputMaterials.keySet(), outputDatas.keySet(), user);
 
@@ -2911,6 +2899,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         insertedData.findDataHandler().importFile(getExpData(insertedData.getRowId()), insertedData.getFile(), info, log, context);
                     }
                 }
+
+                ExpRun reloadedRun = getExpRun(run.getRowId());
+                if (reloadedRun.getDataInputs().isEmpty() && reloadedRun.getMaterialInputs().isEmpty())
+                {
+                    throw new IllegalArgumentException("You must have at least one input to the run");
+                }
+
 
                 return run;
             }

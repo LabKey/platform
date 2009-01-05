@@ -18,6 +18,12 @@ package org.labkey.experiment.api;
 
 import org.labkey.api.exp.IdentifiableBase;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.security.User;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.RuntimeSQLException;
+
+import java.sql.SQLException;
 
 /**
  * User: jeckels
@@ -78,5 +84,24 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
         int result = super.hashCode();
         result = 31 * result + (_object.getLSID() != null ? _object.getLSID().hashCode() : 0);
         return result;
+    }
+
+    protected void save(User user, TableInfo table)
+    {
+        try
+        {
+            if (getRowId() == 0)
+            {
+                _object = Table.insert(user, table, _object);
+            }
+            else
+            {
+                _object = Table.update(user, table, _object, getRowId(), null);
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 }
