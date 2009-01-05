@@ -53,6 +53,29 @@ public class ModuleRReportDescriptor extends RReportDescriptor
         setReportKey(reportKey);
         setReportName(name);
         setReportType(RReport.TYPE);
+        loadMetaData(sourceFile);
+    }
+
+    protected void loadMetaData(File sourceFile)
+    {
+        //look for a file with the same base name but with an .xml extension
+        File metaDataFile = new File(sourceFile.getParentFile(), getReportName() + ".xml");
+        if(metaDataFile.exists() && metaDataFile.isFile())
+        {
+            try
+            {
+                String xml = getFileContents(metaDataFile);
+                Map<String,String> props = createPropsFromXML(xml);
+
+                if(null != props)
+                    setProperties(props);
+            }
+            catch(IOException e)
+            {
+                Logger.getLogger(ModuleRReportDescriptor.class).warn("Unable to load report metadata from file "
+                        + metaDataFile.getPath(), e);
+            }
+        }
     }
 
     @Override

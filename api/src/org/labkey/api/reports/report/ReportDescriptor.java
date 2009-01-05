@@ -17,21 +17,23 @@
 package org.labkey.api.reports.report;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.log4j.Logger;
 import org.apache.xerces.util.DOMUtil;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
-import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.reports.ReportService;
 import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.Pair;
-import org.w3c.dom.*;
+import org.w3c.dom.CDATASection;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -131,6 +133,7 @@ public class ReportDescriptor extends Entity
     }
 
     public void setProperty(String key, String value){_props.put(key, value);}
+    public void setProperties(Map<String,String> props) {_props.putAll(props);}
 
     public String getProperty(String key){return (String)_props.get(key);}
 
@@ -191,6 +194,11 @@ public class ReportDescriptor extends Entity
         _flags = flags;
     }
 
+    protected void init(Map<String,String> props)
+    {
+        _props.putAll(props);
+    }
+
     protected void init(Pair<String, String>[] params)
     {
         Map<String, Object> m = mapFromQueryString(params);
@@ -236,20 +244,12 @@ public class ReportDescriptor extends Entity
         sb.append(PageFlowUtil.encode(String.valueOf(value)));
     }
 
-    protected static ReportDescriptor create(Pair<String, String>[] params)
+    protected static ReportDescriptor create(Map<String,String> props)
     {
-        String type = null;
-        for (Pair<String, String> param : params)
-        {
-            if (Prop.descriptorType.toString().equals(param.getKey()))
-            {
-                type = param.getValue();
-                break;
-            }
-        }
+        String type = props.get(Prop.descriptorType.name());
         ReportDescriptor descriptor = ReportService.get().createDescriptorInstance(type);
         if (descriptor != null)
-            descriptor.init(params);
+            descriptor.init(props);
         
         return descriptor;
     }
@@ -358,6 +358,12 @@ public class ReportDescriptor extends Entity
 
     public static ReportDescriptor createFromXML(String xmlString)
     {
+        Map<String,String> props = createPropsFromXML(xmlString);
+        return create(props);
+    }
+
+    public static Map<String,String> createPropsFromXML(String xmlString)
+    {
         try
         {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -369,34 +375,32 @@ public class ReportDescriptor extends Entity
             {
                 Element root = DOMUtil.getFirstChildElement(doc);
 
-                String type = root.getAttribute(Prop.descriptorType.toString());
-                if (type != null)
+                Map<String,String> props = new HashMap<String,String>();
+
+                Element propsElem = DOMUtil.getFirstChildElement(root);
+                if(null == propsElem)
+                    return null;
+
+                //need to iterate elements here, not just child nodes, as \r\n get parsed into text nodes
+                //and module-based reports will likely have those between property elements
+                for (Element propElem = DOMUtil.getFirstChildElement(propsElem); null != propElem; propElem = DOMUtil.getNextSiblingElement(propElem))
                 {
-                    List<Pair> props = new ArrayList<Pair>();
-
-                    Element propNode = DOMUtil.getFirstChildElement(root);
-                    NodeList children = propNode.getChildNodes();
-
-                    for (int i=0; i < children.getLength(); i++)
+                    final String key = propElem.getAttribute("name");
+                    String value = "";
+                    if (RReportDescriptor.Prop.script.toString().equals(key))
                     {
-                        final Element node = (Element)children.item(i);
-                        final String key = node.getAttribute("name");
-                        String value = "";
-                        if (RReportDescriptor.Prop.script.toString().equals(key))
+                        Node cdata = propElem.getFirstChild();
+                        if (cdata != null && CDATASection.class.isAssignableFrom(cdata.getClass()))
                         {
-                            Node cdata = node.getFirstChild();
-                            if (cdata != null && CDATASection.class.isAssignableFrom(cdata.getClass()))
-                            {
-                                value = ((CDATASection)cdata).getWholeText();
-                            }
+                            value = ((CDATASection)cdata).getWholeText();
                         }
-                        else
-                            value = DOMUtil.getChildText(node);
-
-                        props.add(new Pair(key, value));
                     }
-                    return create(props.toArray(new Pair[0]));
+                    else
+                        value = DOMUtil.getChildText(propElem);
+
+                    props.put(key, value);
                 }
+                return props;
             }
         }
         catch (Exception e)

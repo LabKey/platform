@@ -60,7 +60,7 @@ public abstract class DefaultModule implements Module
             return name.toLowerCase().endsWith(R_REPORT_EXTENSION);
         }
     };
-    private static final Set<Class> INSTANTIATED_MODULES = new HashSet<Class>();
+    private static final Set<Pair<Class,String>> INSTANTIATED_MODULES = new HashSet<Pair<Class,String>>();
 
     private final Map<String, Class<? extends Controller>> _pageFlowNameToClass = new LinkedHashMap<String, Class<? extends Controller>>();
     private final Map<Class<? extends Controller>, String> _pageFlowClassToName = new HashMap<Class<? extends Controller>, String>();
@@ -112,10 +112,13 @@ public abstract class DefaultModule implements Module
     {
         synchronized (INSTANTIATED_MODULES)
         {
-            if (INSTANTIATED_MODULES.contains(getClass()))
-                throw new IllegalStateException("An instance of " + getClass() + " has already been created. Modules should be singletons");
+            //simple modules all use the same Java class, so we need to also include
+            //the module name in the instantiated modules set
+            Pair<Class,String> reg = new Pair<Class,String>(getClass(), getName());
+            if (INSTANTIATED_MODULES.contains(reg))
+                throw new IllegalStateException("An instance of module " + getClass() +  " with name '" + getName() + "' has already been created. Modules should be singletons");
             else
-                INSTANTIATED_MODULES.add(getClass());
+                INSTANTIATED_MODULES.add(reg);
         }
 
         ModuleLoader.getInstance().registerResourcePrefix(getResourcePath(), this);

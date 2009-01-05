@@ -56,4 +56,9 @@ public class SimpleModule extends DefaultModule
     public void startup(ModuleContext moduleContext)
     {
     }
+
+    protected String getResourcePath()
+    {
+        return null;
+    }
 }
