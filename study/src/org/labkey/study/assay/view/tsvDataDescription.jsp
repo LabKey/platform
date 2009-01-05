@@ -19,9 +19,9 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.study.actions.AssayRunUploadForm" %>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
-<%@ page import="org.labkey.api.study.assay.AssayService" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.api.study.actions.TemplateAction" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.study.assay.AssayUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AssayRunUploadForm> me = (JspView<org.labkey.api.study.actions.AssayRunUploadForm>) HttpView.currentView();
@@ -42,7 +42,7 @@
         %>
             </table>
             <%= textLink("download spreadsheet template",
-                    AssayService.get().getProtocolURL(bean.getContainer(), bean.getProtocol(), TemplateAction.class))%>
+                    PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(bean.getContainer(), bean.getProtocol(), TemplateAction.class))%>
             <br>After downloading and editing the spreadsheet template, paste it into the text area below or save the spreadsheet and upload it as a file.
         </td>
     </tr>
