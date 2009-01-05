@@ -20,6 +20,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.attachments.Attachment;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -130,7 +132,9 @@ public abstract class AbstractResource implements WebdavResolver.Resource
 
     public String getIconHref()
     {
-        return null;
+        if (isCollection())
+            return AppProps.getInstance().getContextPath() + "/" + PageFlowUtil.extJsRoot() + "/resources/images/default/tree/folder.gif";
+        return AppProps.getInstance().getContextPath() + Attachment.getFileIcon(getName());
     }
 
     public String getETag()

@@ -110,14 +110,6 @@ public class FileSystemResource extends AbstractResource
         return _file;
     }
 
-    @Override
-    public String getIconHref()
-    {
-        if (isCollection())
-            return AppProps.getInstance().getContextPath() + "/" + PageFlowUtil.extJsRoot() + "/resources/images/default/tree/folder.gif";
-        return AppProps.getInstance().getContextPath() + Attachment.getFileIcon(getName());
-    }
-
     public InputStream getInputStream(User user) throws IOException
     {
         if (null == _file || !_file.exists())
