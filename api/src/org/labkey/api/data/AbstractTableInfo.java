@@ -369,6 +369,7 @@ abstract public class AbstractTableInfo implements TableInfo
 
     protected void initColumnFromXml(QuerySchema schema, ColumnInfo column, ColumnType xbColumn, Collection<QueryException> qpe)
     {
+        column.setName(xbColumn.getColumnName());
         if (xbColumn.getColumnTitle() != null)
         {
             column.setCaption(xbColumn.getColumnTitle());
