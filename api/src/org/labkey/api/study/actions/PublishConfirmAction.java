@@ -56,6 +56,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         private String[] _participantId;
         private String[] _visitId;
         private String[] _date;
+        private Integer[] _objectId;
         private boolean _attemptPublish;
         private boolean _validate;
         private String _dataRegionSelectionKey;
@@ -128,6 +129,16 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             _date = date;
         }
 
+        public Integer[] getObjectId()
+        {
+            return _objectId;
+        }
+
+        public void setObjectId(Integer[] objectId)
+        {
+            _objectId = objectId;
+        }
+
         public void setAttemptPublish(boolean attemptPublish)
         {
             _attemptPublish = attemptPublish;
@@ -159,7 +170,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         ViewContext context = getViewContext();
         _protocol = getProtocol(publishConfirmForm);
         AssayProvider provider = AssayService.get().getProvider(_protocol);
-        List<Integer> objectIds = getCheckboxIds(false);
+        List<Integer> selectedObjects = getCheckboxIds(false);
         Container targetStudy = ContainerManager.getForId(publishConfirmForm.getTargetStudy());
         Map<Object, String> postedVisits = null;
         Map<Object, String> postedPtids = null;
@@ -173,15 +184,24 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             String[] participantIds = publishConfirmForm.getParticipantId();
             String[] visitIds = publishConfirmForm.getVisitId();
             String[] dates = publishConfirmForm.getDate();
+            Integer[] objects = publishConfirmForm.getObjectId(); // all objects
             boolean missingPtid = false;
             boolean missingVisitId = false;
             boolean missingDate = false;
             boolean badVisitIds = false;
             boolean badDates = false;
-            for (int i = 0; i < objectIds.size(); i++)
+            int index = 0;
+            for (int selectedObjectId : selectedObjects)
             {
-                Integer objectId = objectIds.get(i);
-                String participantId = participantIds != null && participantIds.length > i ? participantIds[i] : null;
+                // Our form contains *all* data, but we only want to process
+                // the selected rows. Skip ahead until we find a match
+                while (!objects[index].equals(selectedObjectId) && index < objects.length)
+                    index++;
+
+                if (index == objects.length)
+                    continue; // we've walked off the end
+
+                String participantId = participantIds != null && participantIds.length > index ? participantIds[index] : null;
                 if (participantId == null || participantId.trim().length() == 0)
                     missingPtid = true;
                 else
@@ -189,7 +209,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
 
                 if (AssayPublishService.get().getTimepointType(targetStudy) == TimepointType.VISIT)
                 {
-                    String visitIdStr = visitIds != null && visitIds.length > i ? visitIds[i] : null;
+                    String visitIdStr = visitIds != null && visitIds.length > index ? visitIds[index] : null;
                     Float visitId = null;
                     if (visitIdStr == null || visitIdStr.trim().length() == 0)
                         missingVisitId = true;
@@ -205,14 +225,14 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
                             badVisitIds = true;
                         }
                     }
-                    postedPtids.put(objectId, participantId);
-                    postedVisits.put(objectId, visitIdStr);
+                    postedPtids.put(selectedObjectId, participantId);
+                    postedVisits.put(selectedObjectId, visitIdStr);
                     if (visitId != null)
-                        publishData.put(objectId, new AssayPublishKey(participantId,  visitId.floatValue(),  objectId.intValue()));
+                        publishData.put(selectedObjectId, new AssayPublishKey(participantId,  visitId.floatValue(),  selectedObjectId));
                 }
                 else // TimepointType.DATE
                 {
-                    String dateStr = dates != null && dates.length > i ? dates[i] : null;
+                    String dateStr = dates != null && dates.length > index ? dates[index] : null;
                     Date date = null;
                     if (dateStr == null || dateStr.trim().length() == 0)
                         missingDate = true;
@@ -228,10 +248,10 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
                             badDates = true;
                         }
                     }
-                    postedPtids.put(objectId, participantId);
-                    postedVisits.put(objectId, dateStr);
+                    postedPtids.put(selectedObjectId, participantId);
+                    postedVisits.put(selectedObjectId, dateStr);
                     if (date != null)
-                        publishData.put(objectId, new AssayPublishKey(participantId,  date,  objectId.intValue()));
+                        publishData.put(selectedObjectId, new AssayPublishKey(participantId,  date,  selectedObjectId));
                 }
             }
             if (missingPtid)
@@ -265,7 +285,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         settings.setQueryName(name);
         settings.setAllowChooseView(false);
         PublishRunDataQueryView queryView = new PublishRunDataQueryView(_protocol, context, settings,
-                objectIds, targetStudy, postedVisits, postedPtids);
+                selectedObjects, targetStudy, postedVisits, postedPtids);
 
         if (publishConfirmForm.getContainerFilterName() != null)
             queryView.getSettings().setContainerFilterName(publishConfirmForm.getContainerFilterName());

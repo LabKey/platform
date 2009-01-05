@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.query;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ObjectProperty;
@@ -25,16 +26,15 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.*;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.reports.ReportService;
-import org.apache.commons.beanutils.ConversionException;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -134,6 +134,7 @@ public class PublishRunDataQueryView extends RunDataQueryView
             if (hiddenCols.contains(current.getCaption()))
                 it.remove();
         }
+        dr.setShowRecordSelectors(true);
         return dr;
     }
 
@@ -179,6 +180,7 @@ public class PublishRunDataQueryView extends RunDataQueryView
                         }
                         catch (ExperimentException e)
                         {
+                            //noinspection ThrowableInstanceNeverThrown
                             throw (IOException)new IOException().initCause(e);
                         }
                     }
@@ -279,6 +281,7 @@ public class PublishRunDataQueryView extends RunDataQueryView
             }
             catch (SQLException e)
             {
+                //noinspection ThrowableInstanceNeverThrown
                 throw (IOException)new IOException().initCause(e);
             }
         }
@@ -411,7 +414,7 @@ public class PublishRunDataQueryView extends RunDataQueryView
     {
         public ObjectIDDataInputColumn(String completionBase, ResolverHelper resolverHelper, ColumnInfo objectIdCol)
         {
-            super("Object ID", DataRegion.SELECT_CHECKBOX_NAME, false, completionBase, resolverHelper, objectIdCol);
+            super("Object ID", "objectId", false, completionBase, resolverHelper, objectIdCol);
         }
 
         protected Object calculateValue(RenderContext ctx)
@@ -477,6 +480,8 @@ public class PublishRunDataQueryView extends RunDataQueryView
 
         columns.add(new ValidParticipantVisitDisplayColumn(resolverHelper));
 
+        columns.add(new RunDataLinkDisplayColumn(_protocol, runIdCol));
+
         columns.add(new ObjectIDDataInputColumn(null, resolverHelper, objectIdCol));
 
         String ptidCompletionBase = SpecimenService.get().getCompletionURLBase(_targetStudyContainer,
@@ -491,11 +496,6 @@ public class PublishRunDataQueryView extends RunDataQueryView
             columns.add(new DateDataInputColumn(null, resolverHelper, visitIdCol));
 
         return columns;
-    }
-
-    protected boolean showControls()
-    {
-        return false;
     }
 
     public void setButtons(List<ActionButton> buttons)

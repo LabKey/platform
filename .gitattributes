@@ -608,6 +608,7 @@ api/src/org/labkey/api/study/assay/thawListSelector.jsp -text
 api/src/org/labkey/api/study/query/AssayBaseQueryView.java -text
 api/src/org/labkey/api/study/query/PlateBasedAssayRunDataTable.java -text
 api/src/org/labkey/api/study/query/PublishRunDataQueryView.java -text
+api/src/org/labkey/api/study/query/RunDataLinkDisplayColumn.java -text
 api/src/org/labkey/api/study/query/RunDataQueryView.java -text
 api/src/org/labkey/api/study/query/RunListQueryView.java -text
 api/src/org/labkey/api/study/query/ValidParticipantVisitDisplayColumn.java -text

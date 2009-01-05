@@ -728,6 +728,7 @@ public class DataRegion extends DisplayElement
     {
         out.write("<script type=\"text/javascript\">\n");
         out.write("LABKEY.requiresScript('DataRegion.js');\n");
+        out.write("LABKEY.requiresScript('clientapi/ActionURL.js');\n");
         out.write("</script>\n");
         out.write("<script type=\"text/javascript\">\n");
         out.write("Ext.lib.Event.onAvailable('" + PageFlowUtil.encodeJavascriptStringLiteral("dataregion_" + getName()) + "',\n");
