@@ -854,7 +854,7 @@ public class DataRegion extends DisplayElement
         {
             colCount++;
         }
-        out.write("<tr><td colspan=\"" + colCount + "\"><i>");
+        out.write("<tr><td colspan=\"" + colCount + "\" nowrap=\"true\"><i>");
         out.write(getNoRowsMessage());
         out.write("</i></td></tr>\n");
     }

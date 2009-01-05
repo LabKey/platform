@@ -25,10 +25,12 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.util.PageFlowUtil;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 
@@ -65,9 +67,9 @@ public class AssayDataDetailsAction extends BaseAssayAction<DataDetailsForm>
     {
         Container c = getContainer();
         ExpRun run = _data.getRun();
-        ActionURL assayListURL = AssayService.get().getAssayListURL(c);
-        ActionURL runListURL = AssayService.get().getAssayRunsURL(c, _protocol);
-        ActionURL runDataURL = AssayService.get().getAssayDataURL(c, _protocol, _data.getRowId());
+        ActionURL assayListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(c);
+        ActionURL runListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, _protocol);
+        ActionURL runDataURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayDataURL(c, _protocol, _data.getRowId());
 
         return root
             .addChild("Assay List", assayListURL)

@@ -63,7 +63,7 @@ LABKEY.Experiment = new function()
          * </li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
-         * @param {int[]} config.runIds An array of integer ids for the runs to be members of the group.
+         * @param {Integer[]} config.runIds An array of integer ids for the runs to be members of the group.
          * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This
          * function will be passed the following parameters:
          * <ul>

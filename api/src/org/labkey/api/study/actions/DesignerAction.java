@@ -21,8 +21,10 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.ACL;
 import org.labkey.api.view.GWTView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.util.PageFlowUtil;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 
@@ -83,9 +85,9 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
         if (!_form.isCopy() && _form.getRowId() != null && _form.getProtocol() != null)
         {
             ExpProtocol protocol = _form.getProtocol(!_form.isCopy());
-            result.addChild(protocol.getName(), AssayService.get().getAssayRunsURL(getContainer(), protocol));
+            result.addChild(protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), protocol));
         }
-        result.addChild(_form.getProviderName() + " Assay Designer", getUrl("designer"));
+        result.addChild(_form.getProviderName() + " Assay Designer", new ActionURL(DesignerAction.class, getContainer()));
         return result;
     }
 }

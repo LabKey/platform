@@ -123,7 +123,8 @@ public class ExpSchema extends AbstractExpSchema
 
     static public void register()
     {
-        DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider() {
+        DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider()
+        {
             public QuerySchema getSchema(DefaultSchema schema)
             {
                 return new ExpSchema(schema.getUser(), schema.getContainer());

@@ -20,11 +20,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.SpecimenService;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.SQLException;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * User: jeckels
@@ -37,9 +36,10 @@ public class StudyParticipantVisitResolver extends AbstractParticipantVisitResol
         super(runContainer, targetStudyContainer);
     }
 
+    @NotNull
     protected ParticipantVisit resolveParticipantVisit(String specimenID, String participantID, Double visitID, Date date)
     {
-        ParticipantVisitImpl originalInfo = new ParticipantVisitImpl(specimenID, participantID, visitID, date);
+        ParticipantVisitImpl originalInfo = new ParticipantVisitImpl(specimenID, participantID, visitID, date, getRunContainer());
 
         if (getTargetStudyContainer() != null)
         {

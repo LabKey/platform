@@ -24,10 +24,12 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.assay.AssayRunType;
-import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.actions.ShowSelectedDataAction;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.util.PageFlowUtil;
 
 /**
  * User: brittp
@@ -71,7 +73,7 @@ public class RunListQueryView extends ExperimentRunListView
     {
         super.populateButtonBar(view, bar);
 
-        ActionURL target = AssayService.get().getProtocolURL(getContainer(), _protocol, "showSelectedData");
+        ActionURL target = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(getContainer(), _protocol, ShowSelectedDataAction.class);
         if (getTable().getContainerFilter() != null)
             target.addParameter("containerFilterName", getTable().getContainerFilter().name());
         ActionButton viewSelectedButton = new ActionButton(target, "Show Data For Runs");

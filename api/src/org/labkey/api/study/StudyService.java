@@ -117,11 +117,6 @@ public class StudyService
          */
         public Map<String, Object>[] getDatasetRows(User u, Container c, int datasetId, Collection<String> lsids) throws SQLException;
 
-        public void beginTransaction() throws SQLException;
-        public void commitTransaction() throws SQLException;
-        public void rollbackTransaction();
-        public boolean isTransactionActive();
-
         /**
          * Applies the administrator-configured default QC filter for a dataset data view.
          * This ensures that users do not see data that should be hidden in the specified view.

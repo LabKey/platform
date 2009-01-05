@@ -81,7 +81,7 @@ LABKEY.Domain = new function()
 	{
 		var html = '';
 
-	    html += '&lt;b&gt;' + domainDesign.name + ':&lt;/b&gt;&lt;br&gt; ';
+		html += '&lt;b&gt;' + domainDesign.name + ':&lt;/b&gt;&lt;br&gt; ';
 		for (var i in domainDesign.fields)
 		{
 			html += '   ' + domainDesign.fields[i].name + '&lt;br&gt;';

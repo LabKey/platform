@@ -21,8 +21,9 @@ import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -47,7 +48,7 @@ public class RunDataLinkDisplayColumn extends SimpleDisplayColumn
     {
         int runId = ((Integer)runIdCol.getValue(ctx)).intValue();
         ExpRun run = ExperimentService.get().getExpRun(runId);
-        ActionURL runURL = AssayService.get().getAssayDataURL(run.getContainer(), protocol, runId);
+        ActionURL runURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayDataURL(run.getContainer(), protocol, runId);
         out.write("<a href=\"");
         out.write(runURL.getLocalURIString());
         out.write("\" onclick=\"return confirm('Are you sure you wish to leave this page?\\n\\nAny changes you have made will be lost.');\">View Run</a>");

@@ -18,18 +18,25 @@ package org.labkey.api.exp.api;
 
 import org.labkey.api.security.User;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Date;
 import java.util.List;
 
 public interface ExpProtocolApplication extends ExpObject
 {
+    @NotNull
     public ExpDataRunInput[] getDataInputs();
+    @NotNull
     public List<ExpData> getInputDatas();
+    @NotNull
     public List<ExpData> getOutputDatas();
+    @NotNull
     public ExpMaterialRunInput[] getMaterialInputs();
+    @NotNull
     public List<ExpMaterial> getInputMaterials();
 
+    @NotNull
     List<ExpMaterial> getOutputMaterials();
 
     public ExpProtocol getProtocol();

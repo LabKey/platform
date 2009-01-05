@@ -33,12 +33,15 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.actions.UploadWizardAction;
+import org.labkey.api.study.actions.DesignerAction;
 import org.labkey.api.study.query.RunDataQueryView;
 import org.labkey.api.study.query.RunListQueryView;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -72,6 +75,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public static final String SPECIMENID_PROPERTY_CAPTION = "Specimen ID";
     public static final String DATE_PROPERTY_NAME = "Date";
     public static final String DATE_PROPERTY_CAPTION = "Date";
+
+    public static final String IMPORT_DATA_LINK_NAME = "Import Data";
 
     protected final String _protocolLSIDPrefix;
     protected final String _runLSIDPrefix;
@@ -112,7 +117,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 ExpProtocol protocol = run.getProtocol();
                 if (protocol == null)
                     return null;
-                ActionURL dataURL = AssayService.get().getAssayDataURL(run.getContainer(), protocol, run.getRowId());
+                ActionURL dataURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayDataURL(run.getContainer(), protocol, run.getRowId());
                 return dataURL.getLocalURIString();
             }
 
@@ -171,14 +176,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     protected void addInputMaterials(AssayRunUploadContext context, Map<ExpMaterial, String> inputMaterials, ParticipantVisitResolverType resolverType) throws ExperimentException
     {
-        Collection<String> sampleIds = context.getSampleIds();
-        int sampleNumber = 1;
-        for (String sampleId : sampleIds)
-        {
-            String roleName = "Sample" + (sampleIds.size() == 1 ? "" : sampleNumber);
-            inputMaterials.put(createSampleMaterial(context.getContainer(), context.getProtocol(), sampleId), roleName);
-            sampleNumber++;
-        }
     }
 
     protected ExpMaterial createSampleMaterial(Container currentContainer, ExpProtocol protocol, String sampleId)
@@ -710,11 +707,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public abstract ExpData getDataForDataRow(Object dataRowId);
 
 
-    public ActionURL getUploadWizardURL(Container container, ExpProtocol protocol)
+    public Map<String, Class<? extends Controller>> getImportActions()
     {
-        return AssayService.get().getProtocolURL(container, protocol, "uploadWizard");
+        return Collections.<String, Class<? extends Controller>>singletonMap(IMPORT_DATA_LINK_NAME, UploadWizardAction.class);
     }
-
+    
     public ExpRunTable createRunTable(UserSchema schema, String alias, ExpProtocol protocol)
     {
         final ExpRunTable runTable = new ExpSchema(schema.getUser(), schema.getContainer()).createRunsTable(alias);
@@ -952,7 +949,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             html.append("<b>This assay design does not reference a valid plate template.</b> ");
             if (container.hasPermission(user, ACL.PERM_INSERT))
             {
-                ActionURL designerURL = AssayService.get().getDesignerURL(container, protocol, false);
+                ActionURL designerURL = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(container, protocol, false);
                 html.append("[<a href=\"").append(designerURL.getLocalURIString()).append("\">edit assay design</a>]");
             }
             else
@@ -985,7 +982,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
     }
 
-    public boolean canPublish()
+    public boolean canCopyToStudy()
     {
         return true;
     }
@@ -1043,13 +1040,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
     }
 
-    public ActionURL getDesignerURL(Container container, ExpProtocol protocol, boolean copy)
+    public Class<? extends Controller> getDesignerAction()
     {
-        ActionURL designerURL = AssayService.get().getProtocolURL(container, protocol, "designer");
-        if (copy)
-            designerURL.addParameter("copy", "true");
-        designerURL.addParameter("providerName", getName());
-        return designerURL;
+        return DesignerAction.class;
     }
 
     /**
@@ -1127,6 +1120,26 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
 
         return visibleColumnNames;
+    }
+
+    /** Adds the materials as inputs to the run as a whole, plus as inputs for the "work" node for the run. */
+    public static void addInputMaterials(ExpRun expRun, User user, Set<ExpMaterial> materialInputs)
+    {
+        for (ExpProtocolApplication protApp : expRun.getProtocolApplications())
+        {
+            if (!protApp.getApplicationType().equals(ExpProtocol.ApplicationType.ExperimentRunOutput))
+            {
+                Set<ExpMaterial> newInputs = new LinkedHashSet<ExpMaterial>();
+                newInputs.addAll(materialInputs);
+                newInputs.removeAll(protApp.getInputMaterials());
+                int index = 1;
+                for (ExpMaterial newInput : newInputs)
+                {
+                    protApp.addMaterialInput(user, newInput, "Sample" + (index == 1 ? "" : Integer.toString(index)));
+                    index++;
+                }
+            }
+        }
     }
 
     public boolean hasUsefulDetailsPage()

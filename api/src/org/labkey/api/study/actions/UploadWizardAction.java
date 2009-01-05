@@ -30,6 +30,7 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
@@ -99,8 +100,9 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         {
             //FIX: 4014. ensure that the pipeline root path actually exists before starting the first
             //step of the wizard (if it doesn't, the upload will eventually fail)
-            File root = PipelineService.get().findPipelineRoot(getContainer()).getRootPath();
-            if(!NetworkDrive.exists(root)) //NetworkDrive.exists() will ensure that a \\server\share path gets mounted
+            PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
+            File root = pipeRoot == null ? null : pipeRoot.getRootPath();
+            if(root != null && !NetworkDrive.exists(root)) //NetworkDrive.exists() will ensure that a \\server\share path gets mounted
             {
                 StringBuilder msg = new StringBuilder("<p class='labkey-error'>The pipeline directory (");
                 msg.append(root.getAbsolutePath());
@@ -157,7 +159,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         for (PropertyDescriptor pd : propertyDescriptors.keySet())
             pds[i++] = pd;
 
-        InsertView view = new InsertView(createDataRegion(baseTable, lsidCol, pds, null, uploadStepName), errors);
+        InsertView view = new InsertView(createDataRegion(baseTable, lsidCol, pds, null), errors);
         if (resetDefaultValues)
         {
             clearDefaultValues(uploadStepName);
@@ -410,7 +412,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
     {
         ActionURL helper = getSummaryLink(_protocol);
         NavTree result = super.appendNavTrail(root);
-        result.addChild(_protocol.getName(), AssayService.get().getAssayRunsURL(getContainer(), _protocol));
+        result.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
         String finalChild = "Data Import";
         if (_stepDescription != null)
         {
@@ -592,7 +594,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         {
             if (getCompletedUploadAttemptIDs().contains(form.getUploadAttemptID()))
             {
-                HttpView.throwRedirect(AssayService.get().getUploadWizardURL(getContainer(), _protocol));
+                HttpView.throwRedirect(getViewContext().getActionURL());
             }
 
             if (!form.isResetDefaultValues() && validatePost(form, errors))

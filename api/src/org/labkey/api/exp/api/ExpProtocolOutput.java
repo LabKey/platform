@@ -16,11 +16,10 @@
 package org.labkey.api.exp.api;
 
 import org.labkey.api.security.User;
-import org.labkey.api.exp.PropertyDescriptor;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
+import java.util.Date;
 
 /*
 * User: jeckels
@@ -34,6 +33,9 @@ public interface ExpProtocolOutput extends ExpObject
 
     ExpRun getRun();
 
+    ExpProtocolApplication[] getTargetApplications();
+    ExpRun[] getTargetRuns();
+
     void setSourceApplication(ExpProtocolApplication sourceApplication);
     ExpProtocolApplication getSourceApplication();
 
@@ -45,6 +47,11 @@ public interface ExpProtocolOutput extends ExpObject
 
     List<ExpRun> getSuccessorRuns();
 
-    public String getCpasType();
+    String getCpasType();
     void setCpasType(String type);
+
+    void save(User user);
+    void delete(User user);
+
+    Date getCreated();
 }

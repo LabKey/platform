@@ -17,6 +17,8 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.study.ParticipantVisit;
+import org.labkey.api.data.Container;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Date;
 import java.util.Map;
@@ -30,19 +32,22 @@ public class ThawListFileResolver implements ParticipantVisitResolver
     private final ParticipantVisitResolver _childResolver;
 
     private Map<String, ParticipantVisit> _aliases;
+    private final Container _runContainer;
 
-    public ThawListFileResolver(ParticipantVisitResolver childResolver, Map<String, ParticipantVisit> aliases)
+    public ThawListFileResolver(ParticipantVisitResolver childResolver, Map<String, ParticipantVisit> aliases, Container runContainer)
     {
         _childResolver = childResolver;
         _aliases = aliases;
+        _runContainer = runContainer;
     }
-
+    
+    @NotNull
     public ParticipantVisit resolve(String specimenID, String participantID, Double visitID, Date date)
     {
         ParticipantVisit values = _aliases.get(specimenID);
         if (values == null)
         {
-            return new ParticipantVisitImpl(null, null, null, null);
+            return new ParticipantVisitImpl(_runContainer);
         }
         return _childResolver.resolve(values.getSpecimenID(), values.getParticipantID(), values.getVisitID(), date);
     }

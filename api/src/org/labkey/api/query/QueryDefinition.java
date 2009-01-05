@@ -23,6 +23,7 @@ import org.labkey.api.view.ActionURL;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 import java.util.List;
+import java.sql.SQLException;
 
 public interface QueryDefinition
 {
@@ -59,8 +60,8 @@ public interface QueryDefinition
     void setContainer(Container container);
 
     boolean canEdit(User user);
-    void save(User user, Container container) throws Exception;
-    void delete(User user) throws Exception;
+    void save(User user, Container container) throws SQLException;
+    void delete(User user) throws SQLException;
 
     List<QueryException> getParseErrors(QuerySchema schema);
 
@@ -72,4 +73,6 @@ public interface QueryDefinition
      * Returns whether this is a table-based query definition (versus a custom query).
      */
     boolean isTableQueryDefinition();
+
+    boolean isMetadataEditable();
 }

@@ -17,7 +17,11 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.study.ParticipantVisit;
+import org.labkey.api.data.Container;
+import org.labkey.api.util.DateUtil;
 
 import java.util.Date;
 
@@ -31,15 +35,23 @@ public class ParticipantVisitImpl implements ParticipantVisit
     private String _participantID;
     private Double _visitID;
     private String _specimenID;
+    private Container _container;
     private ExpMaterial _material;
     private Date _date;
 
-    public ParticipantVisitImpl(String specimenID, String participantID, Double visitID, Date date)
+    /** Used for completely unspecified participant visit information */
+    public ParticipantVisitImpl(Container runContainer)
+    {
+        this(null, null, null, null, runContainer);
+    }
+
+    public ParticipantVisitImpl(String specimenID, String participantID, Double visitID, Date date, Container runContainer)
     {
         _specimenID = specimenID;
         _participantID = participantID;
         _visitID = visitID;
         _date = date;
+        _container = runContainer;
     }
 
     public String getParticipantID()
@@ -59,12 +71,57 @@ public class ParticipantVisitImpl implements ParticipantVisit
 
     public ExpMaterial getMaterial()
     {
-        return _material;
-    }
+        if (_material == null)
+        {
+            StringBuilder name = new StringBuilder();
+            if (_participantID != null)
+            {
+                name.append("Participant-");
+                name.append(_participantID);
+            }
+            if (_visitID != null)
+            {
+                if (name.length() > 0)
+                {
+                    name.append(".");
+                }
+                name.append("Visit-");
+                name.append(_visitID);
+            }
+            if (_date != null)
+            {
+                if (name.length() > 0)
+                {
+                    name.append(".");
+                }
+                name.append("Date-");
+                name.append(DateUtil.formatDate(_date));
+            }
+            if (_specimenID != null)
+            {
+                if (name.length() > 0)
+                {
+                    name.append(".");
+                }
+                name.append("SpecimenID-");
+                name.append(_specimenID);
+            }
 
-    public void setMaterial(ExpMaterial material)
-    {
-        _material = material;
+            if (name.length() == 0)
+            {
+                name.append("Unknown");
+            }
+
+            // the study couldn't find a good material, so we'll have to mock one up
+            String lsid = new Lsid("AssayRunMaterial", "Folder-" + _container.getRowId(), name.toString()).toString();
+            _material = ExperimentService.get().getExpMaterial(lsid);
+            if (_material == null)
+            {
+                _material = ExperimentService.get().createExpMaterial(_container, lsid, name.toString());
+                _material.save(null);
+            }
+        }
+        return _material;
     }
 
     public Date getDate()
@@ -88,9 +145,7 @@ public class ParticipantVisitImpl implements ParticipantVisit
         if (_participantID != null ? !_participantID.equals(that._participantID) : that._participantID != null)
             return false;
         if (_specimenID != null ? !_specimenID.equals(that._specimenID) : that._specimenID != null) return false;
-        if (_visitID != null ? !_visitID.equals(that._visitID) : that._visitID != null) return false;
-
-        return true;
+        return !(_visitID != null ? !_visitID.equals(that._visitID) : that._visitID != null);
     }
 
     public int hashCode()

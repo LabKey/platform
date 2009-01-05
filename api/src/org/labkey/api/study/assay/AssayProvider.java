@@ -39,6 +39,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.File;
 import java.util.List;
@@ -76,7 +77,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     Set<Container> getAllAssociatedStudyContainers(ExpProtocol protocol);
 
-    ActionURL getUploadWizardURL(Container container, ExpProtocol protocol);
+    Map<String, Class<? extends Controller>> getImportActions();
 
     TableInfo createDataTable(UserSchema schema, String alias, ExpProtocol protocol);
 
@@ -92,9 +93,9 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     FieldKey getSpecimenIDFieldKey();
 
-    ActionURL publish(User user, ExpProtocol protocol, Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors);
+    ActionURL copyToStudy(User user, ExpProtocol protocol, Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors);
 
-    boolean canPublish();
+    boolean canCopyToStudy();
 
     List<ParticipantVisitResolverType> getParticipantVisitResolverTypes();
 
@@ -133,13 +134,9 @@ public interface AssayProvider extends Handler<ExpProtocol>
     void deleteProtocol(ExpProtocol protocol, User user) throws ExperimentException;
 
     /**
-     * Get a URL to the assay designer
-     * @param container container in which the assay definition should live
-     * @param protocol if null, start a new design from scratch. If not null, either the design to edit or the design to copy
-     * @param copy if true, create a copy of the protocol that's passed in and start editing it
-     * @return
+     * Get the action that implements the assay designer for this type
      */
-    ActionURL getDesignerURL(Container container, ExpProtocol protocol, boolean copy);
+    Class<? extends Controller> getDesignerAction();
 
     /**
      * Returns true if the given provider can display a useful details page for dataset data that has been copied.

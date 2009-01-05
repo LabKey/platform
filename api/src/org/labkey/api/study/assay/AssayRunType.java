@@ -22,9 +22,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.security.ACL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
+
+import java.util.List;
 
 /**
  * User: brittp
@@ -53,27 +54,12 @@ public class AssayRunType extends ExperimentRunType
     @Override
     public void populateButtonBar(ViewContext context, ButtonBar bar, DataView view, ContainerFilter filter)
     {
-        if (_protocol.getContainer().equals(context.getContainer()) && context.getContainer().isProject())
-        {
-            // We're in the project container, and so is the protocol,
-            // so offer up choices in the import button
-            ActionButton importButton = AssayService.get().getImportButton(
-                "Import Runs", _protocol, context.getUser(), context.getContainer());
-            if (importButton != null)
-                bar.add(importButton);
-        }
-        else
-        {
-            // We're in some other container, so just offer up where we are
-            Container container = context.getContainer();
-            AssayProvider provider = AssayService.get().getProvider(_protocol);
-            if (provider.allowUpload(context.getUser(), container, _protocol) &&
-                    container.hasPermission(context.getUser(), ACL.PERM_INSERT))
-            {
-                ActionButton uploadButton = new ActionButton("Import Runs", AssayService.get().getUploadWizardURL(container, _protocol));
-                bar.add(uploadButton);
-            }
-        }
+        // If we're in the project container, and so is the protocol,
+        // allow choices in the import button
+        boolean includeOtherContainers = _protocol.getContainer().equals(context.getContainer()) && context.getContainer().isProject();
+        List<ActionButton> buttons = AssayService.get().getImportButtons(
+                _protocol, context.getUser(), context.getContainer(), includeOtherContainers);
+        bar.addAll(buttons);
     }
 
     public Priority getPriority(ExpProtocol protocol)

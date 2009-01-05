@@ -180,7 +180,7 @@ public class ExperimentService
         List<ExpRun> runsDeletedWithInput(ExpRun[] runs) throws SQLException;
 
         void deleteProtocolByRowIds(Container container, User user, int... rowIds) throws SQLException, ExperimentException;
-        void deleteMaterialByRowIds(Container c, int... materialRowIds) throws SQLException;
+        void deleteMaterialByRowIds(Container c, int... materialRowIds);
         void deleteDataByRowIds(Container container, int... dataRowIds);
         void deleteAllExpObjInContainer(Container container, User user) throws Exception;
         void deleteSampleSet(int rowId, Container c, User user) throws SQLException, ExperimentException;

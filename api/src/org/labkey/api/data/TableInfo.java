@@ -124,4 +124,6 @@ public interface TableInfo
     public boolean needsContainerClauseAdded();
 
     public ContainerFilter getContainerFilter();
+
+    public boolean isMetadataOverrideable();
 }

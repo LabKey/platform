@@ -28,12 +28,10 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayPublishKey;
-import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.*;
 import org.labkey.api.study.query.PublishRunDataQueryView;
 import org.labkey.api.view.*;
+import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -266,7 +264,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             if (errors.getErrorCount() == 0 && !publishConfirmForm.isValidate())
             {
                 List<String> publishErrors = new ArrayList<String>();
-                ActionURL successURL  = provider.publish(context.getUser(), _protocol, targetStudy, publishData, publishErrors);
+                ActionURL successURL  = provider.copyToStudy(context.getUser(), _protocol, targetStudy, publishData, publishErrors);
                 if (publishErrors.isEmpty())
                 {
                     DataRegionSelection.clearAll(getViewContext(), publishConfirmForm.getDataRegionSelectionKey());
@@ -338,13 +336,13 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
 
     protected ActionURL getPublishHandlerURL(ExpProtocol protocol)
     {
-        return AssayService.get().getPublishConfirmURL(getContainer(), protocol).deleteParameters();
+        return PageFlowUtil.urlProvider(AssayUrls.class).getCopyToStudyConfirmURL(getContainer(), protocol).deleteParameters();
     }
 
     public NavTree appendNavTrail(NavTree root)
     {
         NavTree result = super.appendNavTrail(root);
-        result.addChild(_protocol.getName(), AssayService.get().getAssayRunsURL(getContainer(), _protocol));
+        result.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
         result.addChild("Copy to Study: " + _protocol.getName() + ": Verify Data");
         return result;
     }

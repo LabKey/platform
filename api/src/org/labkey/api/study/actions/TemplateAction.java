@@ -46,7 +46,7 @@ public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
         AssayProvider provider = AssayService.get().getProvider(protocol);
         PropertyDescriptor[] columns = provider.getRunDataColumns(protocol);
         Map<String, String> colNameToPdname = new CaseInsensitiveHashMap<String>();
-        DataRegion dr = createDataRegion(OntologyManager.getTinfoObject(), "ObjectURI", columns, colNameToPdname, "Template");
+        DataRegion dr = createDataRegion(OntologyManager.getTinfoObject(), "ObjectURI", columns, colNameToPdname);
         SimpleFilter filter = new SimpleFilter();
         filter.addWhereClause("0 = 1", new Object[]{});
 

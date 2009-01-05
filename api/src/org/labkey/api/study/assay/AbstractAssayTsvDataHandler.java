@@ -26,6 +26,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ActionURL;
 
@@ -42,7 +43,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 {
     protected static final Object ERROR_VALUE = new Object();
 
-    protected abstract boolean allowEmptyData(); 
+    protected abstract boolean allowEmptyData();
 
     public void importFile(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context) throws ExperimentException
     {
@@ -103,7 +104,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 resolver = new StudyParticipantVisitResolver(container, targetContainer);
             }
 
-            Map<String, Object>[] rawData = loadFileData(columns, dataFile, resolver);
+            Map<String, Object>[] rawData = loadFileData(columns, dataFile);
 
             if (rawData.length == 0)
             {
@@ -117,7 +118,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
             }
 
-            checkData(columns, rawData, resolver);
+            Set<ExpMaterial> inputMaterials = checkData(columns, rawData, resolver);
             Map<String, PropertyDescriptor> propertyNameToDescriptor = OntologyManager.createImportPropertyMap(columns);
             Map<String, Object>[] fileData = convertPropertyNamesToURIs(rawData, propertyNameToDescriptor);
 
@@ -129,6 +130,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             OntologyManager.insertTabDelimited(container, id,
                     new SimpleAssayDataImportHelper(data.getLSID()), columns, fileData, false);
+
+            if (inputMaterials.isEmpty())
+            {
+                throw new ExperimentException("Could not find any input samples in the data");
+            }
+
+            AbstractAssayProvider.addInputMaterials(run, info.getUser(), inputMaterials);
 
             if (transaction)
             {
@@ -157,7 +165,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     }
 
-    protected abstract Map<String, Object>[] loadFileData(PropertyDescriptor[] columns, File dataFile, ParticipantVisitResolver resolver)  throws IOException, ExperimentException;
+    protected abstract Map<String, Object>[] loadFileData(PropertyDescriptor[] columns, File dataFile)  throws IOException, ExperimentException;
 
     private void checkColumns(PropertyDescriptor[] expected, Set<String> actual, List<String> missing, List<String> unexpected, Map<String, Object>[] rawData, boolean strict)
     {
@@ -214,8 +222,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             rawData[i] = filteredMap;
         }
     }
-    
-    private void checkData(PropertyDescriptor[] columns, Map<String, Object>[] rawData, ParticipantVisitResolver resolver) throws IOException, ExperimentException
+
+    /**
+     * @return the set of materials that are inputs to this run
+     */
+    private Set<ExpMaterial> checkData(PropertyDescriptor[] columns, Map<String, Object>[] rawData, ParticipantVisitResolver resolver) throws IOException, ExperimentException
     {
         List<String> missing = new ArrayList<String>();
         List<String> unexpected = new ArrayList<String>();
@@ -282,6 +293,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         StringBuilder errorSB = new StringBuilder();
 
+        Set<ExpMaterial> materialInputs = new LinkedHashSet<ExpMaterial>();
+
         for (int i = 0; i < rawData.length; i++)
         {
             Map<String, Object> map = new CaseInsensitiveHashMap<Object>(rawData[i]);
@@ -337,11 +350,16 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 map.put(datePD.getName(), participantVisit.getDate());
                 rawData[i] = map;
             }
+
+            materialInputs.add(participantVisit.getMaterial());
         }
+        
         if (errorSB.length() != 0)
         {
             throw new ExperimentException("There are errors in the uploaded data: " + errorSB.toString());
         }
+
+        return materialInputs;
     }
 
     private Map<String, Object>[] convertPropertyNamesToURIs(Map<String, Object>[] dataMaps, Map<String, PropertyDescriptor> propertyNamesToUris)
@@ -384,7 +402,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         if (run != null)
         {
             ExpProtocol protocol = run.getProtocol();
-            return AssayService.get().getAssayDataURL(container, protocol, run.getRowId());
+            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayDataURL(container, protocol, run.getRowId());
         }
         return null;
     }

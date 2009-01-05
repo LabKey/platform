@@ -26,10 +26,15 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.actions.PublishStartAction;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.common.util.Pair;
+
+import java.util.List;
 
 /**
  * User: brittp
@@ -65,9 +70,9 @@ public class RunDataQueryView extends AssayBaseQueryView
 
                 AssayProvider provider = AssayService.get().getProvider(_protocol);
 
-                handleUploadButton(provider, bbar);
+                handleUploadButton(bbar);
 
-                ActionURL publishURL = AssayService.get().getProtocolURL(getContainer(), _protocol, "publishStart");
+                ActionURL publishURL = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(getContainer(), _protocol, PublishStartAction.class);
                 for (Pair<String, String> param : publishURL.getParameters())
                 {
                     if (!"rowId".equalsIgnoreCase(param.getKey()))
@@ -78,7 +83,7 @@ public class RunDataQueryView extends AssayBaseQueryView
                 if (getTable().getContainerFilter() != null)
                     publishURL.addParameter("containerFilterName", getTable().getContainerFilter().name());
 
-                if (provider.canPublish())
+                if (provider.canCopyToStudy())
                 {
                     ActionButton publishButton = new ActionButton(publishURL.getLocalURIString(),
                             "Copy Selected to Study", DataRegion.MODE_GRID, ActionButton.Action.POST);
@@ -96,29 +101,14 @@ public class RunDataQueryView extends AssayBaseQueryView
         return view;
     }
 
-    private void handleUploadButton(AssayProvider provider, ButtonBar buttonBar)
+    private void handleUploadButton(ButtonBar buttonBar)
     {
-        if (_protocol.getContainer().equals(getContainer()) && getContainer().isProject())
-        {
-            // We're in the project container, and so is the protocol,
-            // so offer up choices in the import button
-            ActionButton importButton = AssayService.get().getImportButton(
-                "Import Runs", _protocol, getUser(), getContainer());
-            if (importButton != null)
-                buttonBar.add(importButton);
-        }
-        else
-        {
-            // We're in some other container, so just offer up where we are
-            Container container = getContainer();
-            if (provider.allowUpload(getUser(), container, _protocol) &&
-                    container.hasPermission(getUser(), ACL.PERM_INSERT))
-            {
-                ActionButton uploadButton = new ActionButton("Import Runs", AssayService.get().getUploadWizardURL(container, _protocol));
-                buttonBar.add(uploadButton);
-            }
-        }
-
+        // If we're in the project container, and so is the protocol,
+        // allow choices in the import button
+        boolean includeOtherContainers = _protocol.getContainer().equals(getViewContext().getContainer()) && getViewContext().getContainer().isProject();
+        List<ActionButton> buttons = AssayService.get().getImportButtons(
+                _protocol, getViewContext().getUser(), getViewContext().getContainer(), includeOtherContainers);
+        buttonBar.addAll(buttons);
     }
 
     protected TSVGridWriter.ColumnHeaderType getColumnHeaderType()

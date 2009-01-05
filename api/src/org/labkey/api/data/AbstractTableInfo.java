@@ -494,4 +494,13 @@ abstract public class AbstractTableInfo implements TableInfo
     {
         return null;
     }
+
+    /**
+     * @return whether this table allows its metadata to be overriden. User-defined tables typically allow
+     * direct editing of their metadata, so they don't need the override functionality.
+     */
+    public boolean isMetadataOverrideable()
+    {
+        return true;
+    }
 }

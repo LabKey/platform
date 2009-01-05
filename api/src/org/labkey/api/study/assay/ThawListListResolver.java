@@ -25,10 +25,10 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.util.DateUtil;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.SQLException;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 
@@ -39,7 +39,6 @@ import java.util.List;
 public class ThawListListResolver extends AbstractParticipantVisitResolver
 {
     private TableInfo _tableInfo;
-    private Map<String, ParticipantVisit> _cache = new HashMap<String, ParticipantVisit>();
     private final ParticipantVisitResolver _childResolver;
 
     public ThawListListResolver(Container runContainer, Container targetStudyContainer,
@@ -59,6 +58,7 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
         }
     }
 
+    @NotNull
     protected ParticipantVisit resolveParticipantVisit(String specimenID, String participantID, Double visitID, Date date)
     {
         List<String> pkNames = _tableInfo.getPkColumnNames();
@@ -72,7 +72,7 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
         catch (ConversionException e)
         {
             // It's OK, there just won't be a match for this row
-            return new ParticipantVisitImpl(specimenID, participantID, visitID, date);
+            return new ParticipantVisitImpl(specimenID, participantID, visitID, date, getRunContainer());
         }
 
         try
@@ -81,7 +81,7 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
             assert rows.length <= 1;
             if (rows.length == 0)
             {
-                return new ParticipantVisitImpl(specimenID, participantID, visitID, date);
+                return new ParticipantVisitImpl(specimenID, participantID, visitID, date, getRunContainer());
             }
             else
             {

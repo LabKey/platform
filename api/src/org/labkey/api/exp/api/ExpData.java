@@ -29,16 +29,11 @@ import java.sql.SQLException;
 
 public interface ExpData extends ExpProtocolOutput
 {
-    ExpProtocolApplication[] getTargetApplications();
-    ExpRun[] getTargetRuns();
     DataType getDataType();
     URI getDataFileURI();
     File getDataFile();
-    void delete(User user);
 
     void setDataFileURI(URI uri);
-    void save(User user);
-    Date getCreated();
 
     ExperimentDataHandler findDataHandler();
 

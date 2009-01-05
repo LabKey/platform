@@ -17,10 +17,8 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.study.ParticipantVisit;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Date;
 import java.util.Map;
@@ -53,7 +51,12 @@ public abstract class AbstractParticipantVisitResolver implements ParticipantVis
         return _runContainer;
     }
 
-    public ParticipantVisit resolve(String specimenID, String participantID, Double visitID, Date date)
+    /**
+     * Looks up the specimen information, caching results to be used for future lookups as needed. Defers to subclasses
+     * to do the actual resolution.
+     */
+    @NotNull
+    public final ParticipantVisit resolve(String specimenID, String participantID, Double visitID, Date date)
     {
         specimenID = specimenID == null ? null : specimenID.trim();
         if (specimenID != null && specimenID.length() == 0)
@@ -65,37 +68,18 @@ public abstract class AbstractParticipantVisitResolver implements ParticipantVis
         {
             participantID = null;
         }
-        ParticipantVisit cacheKey = new ParticipantVisitImpl(specimenID, participantID, visitID, date);
+        ParticipantVisit cacheKey = new ParticipantVisitImpl(specimenID, participantID, visitID, date, _runContainer);
         ParticipantVisit result = _cache.get(cacheKey);
         if (result != null)
         {
             return result;
         }
         result = resolveParticipantVisit(specimenID, participantID, visitID, date);
-        assert result != null;
 
-        if (result.getMaterial() == null)
-        {
-            // the study couldn't find a good material, so we'll have to mock one up:
-            result = new ParticipantVisitImpl(result.getSpecimenID(), result.getParticipantID(), result.getVisitID(), result.getDate());
-            ((ParticipantVisitImpl)result).setMaterial(createDummyMaterial(_runContainer, _targetStudyContainer, result.getSpecimenID(),
-                    result.getParticipantID(), result.getVisitID()));
-        }
         _cache.put(cacheKey, result);
         return result;
     }
 
-    public static ExpMaterial createDummyMaterial(Container runContainer, Container targetStudyContainer, String specimenID, String participantID, Double visitID)
-    {
-        String name = "Participant" + (participantID != null ? participantID : "Unknown") + "Visit" + (visitID != null ? visitID : "Unknown");
-        String lsid = new Lsid("AssayRunMaterial", "Folder-" + runContainer.getRowId(), name).toString();
-        ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
-        if (material == null)
-        {
-            material = ExperimentService.get().createExpMaterial(runContainer, lsid, name);
-        }
-        return material;
-    }
-
+    @NotNull
     protected abstract ParticipantVisit resolveParticipantVisit(String specimenID, String participantID, Double visitID, Date date);
 }

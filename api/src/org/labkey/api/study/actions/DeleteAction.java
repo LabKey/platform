@@ -22,7 +22,8 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.study.assay.AssayUrls;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -42,7 +43,7 @@ public class DeleteAction extends BaseAssayAction<ProtocolIdForm>
             HttpView.throwUnauthorized("You do not have sufficient permissions to delete this assay design.");
 
         ExperimentService.get().deleteProtocolByRowIds(getViewContext().getContainer(), getViewContext().getUser(), protocolIdForm.getProtocol().getRowId());
-        HttpView.throwRedirect(new ActionURL("assay", "begin", getViewContext().getContainer()));
+        HttpView.throwRedirect(PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getViewContext().getContainer()));
         return null;
     }
 

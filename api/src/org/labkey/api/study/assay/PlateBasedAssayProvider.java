@@ -19,7 +19,6 @@ package org.labkey.api.study.assay;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.ExperimentException;
@@ -137,7 +136,7 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
                     }
                     catch (NumberFormatException e)
                     {
-                        // this shouldn't ever happen if form validation is working properly
+                        assert false : "this shouldn't ever happen if form validation is working properly";
                     }
                 }
                 else if (SPECIMENID_PROPERTY_NAME.equals(property.getKey().getName()))
@@ -151,11 +150,7 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
                     {
                         date = (Date) ConvertUtils.convert(property.getValue(), Date.class);
                     }
-                    catch (ConversionException x)
-                    {
-
-                    }
-
+                    catch (ConversionException x) {}
                 }
             }
 
@@ -164,27 +159,15 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
             if (resolver != null)
             {
                 ParticipantVisit pv = resolver.resolve(specimenID, participantID, visitID, date);
-                if (pv != null)
-                {
-                    originalMaterial = pv.getMaterial();
-                    Map<PropertyDescriptor, String> wellgroupProperties = materialProperties.get(entry.getKey());
-                    if (specimenIDProperty != null)
-                        wellgroupProperties.put(specimenIDProperty, pv.getSpecimenID());
-                    if (participantProperty != null)
-                        wellgroupProperties.put(participantProperty, pv.getParticipantID());
-                    if (visitProperty != null)
-                        wellgroupProperties.put(visitProperty, pv.getVisitID() != null ? "" + pv.getVisitID() : null);
-                }
+                originalMaterial = pv.getMaterial();
+                Map<PropertyDescriptor, String> wellgroupProperties = materialProperties.get(entry.getKey());
+                if (specimenIDProperty != null)
+                    wellgroupProperties.put(specimenIDProperty, pv.getSpecimenID());
+                if (participantProperty != null)
+                    wellgroupProperties.put(participantProperty, pv.getParticipantID());
+                if (visitProperty != null)
+                    wellgroupProperties.put(visitProperty, pv.getVisitID() != null ? "" + pv.getVisitID() : null);
             }
-            PropertyDescriptor targetStudyPD = getRunTargetStudyColumn(context.getProtocol());
-            String targetStudyID = context.getUploadSetProperties().get(targetStudyPD);
-            if (targetStudyID == null || targetStudyID.length() == 0)
-                targetStudyID = context.getRunProperties().get(targetStudyPD);
-            Container targetStudyContainer = null;
-            if (targetStudyID != null && targetStudyID.length() > 0)
-                targetStudyContainer = ContainerManager.getForId(targetStudyID);
-            if (originalMaterial == null)
-                originalMaterial = AbstractParticipantVisitResolver.createDummyMaterial(context.getContainer(), targetStudyContainer, specimenID, participantID, visitID);
             originalMaterials.put(wellgroup, originalMaterial);
         }
         Map<ExpMaterial, String> newMaterials = createDerivedMaterials(context, originalMaterials, materialProperties);
@@ -256,11 +239,6 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
         return derivedMaterials;
     }
 
-
-    protected void addInputMaterials(AssayRunUploadContext context, Map<ExpMaterial, String> inputMaterials, ParticipantVisitResolverType resolverType) throws ExperimentException
-    {
-        // no-op; we'll add our materials during 'resolveExtraRunData'.
-    }
 
     public PropertyDescriptor[] getSampleWellGroupColumns(ExpProtocol protocol)
     {

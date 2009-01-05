@@ -144,9 +144,9 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
                     throw new ExperimentException("The Date column in the thaw list must be a date.");
                 }
                 Date date = (Date) dateObject;
-                values.put(index == null ? null : index.toString(), new ParticipantVisitImpl(specimenID, participantID, visitID, date));
+                values.put(index == null ? null : index.toString(), new ParticipantVisitImpl(specimenID, participantID, visitID, date, runContainer));
             }
-            return new ThawListFileResolver(childResolver, values);
+            return new ThawListFileResolver(childResolver, values, runContainer);
         }
     }
 

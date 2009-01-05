@@ -18,10 +18,12 @@ package org.labkey.api.query;
 
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.security.User;
 import org.labkey.api.util.MemTracker;
 
 import java.util.*;
+import java.sql.SQLException;
 
 abstract public class AbstractSchema implements QuerySchema
 {
@@ -61,5 +63,32 @@ abstract public class AbstractSchema implements QuerySchema
     {
         return _container;
     }
+
+    public void beginTransaction() throws SQLException
+    {
+        DbScope scope = _dbSchema.getScope();
+        if(!scope.isTransactionActive())
+            scope.beginTransaction();
+    }
+
+    public void commitTransaction() throws SQLException
+    {
+        DbScope scope = _dbSchema.getScope();
+        if(scope.isTransactionActive())
+            scope.commitTransaction();
+    }
+
+    public void rollbackTransaction()
+    {
+        DbScope scope = _dbSchema.getScope();
+        if(scope.isTransactionActive())
+            scope.rollbackTransaction();
+    }
+
+    public boolean isTransactionActive()
+    {
+        return _dbSchema.getScope().isTransactionActive();
+    }
+
 
 }

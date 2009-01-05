@@ -39,7 +39,6 @@ public abstract class AbstractExpSchema extends UserSchema
     {
         table.setContainerFilter(_containerFilter, _user);
         table.populate();
-        QueryService.get().overlayMetadata(table, table.getPublicName(), this);
         return table;
     }
 

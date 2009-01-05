@@ -24,9 +24,10 @@ import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.security.ACL;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -58,16 +59,14 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
             {
                 if (allowUpdate(protocol))
                 {
-                    manageMenu.addChild("edit assay design", AssayService.get().getDesignerURL(getViewContext().getContainer(), _protocol, false).toString());
-                    ActionURL copyURL = new ActionURL("assay", "chooseCopyDestination",
-                            getViewContext().getContainer()).addParameter("rowId", _protocol.getRowId());
+                    manageMenu.addChild("edit assay design", PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getViewContext().getContainer(), _protocol, false).toString());
+                    ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getChooseCopyDestinationURL(_protocol, getViewContext().getContainer());
                     manageMenu.addChild("copy assay design", copyURL.toString());
                 }
 
                 if (allowDelete(protocol))
                 {
-                    ActionURL deleteURL = new ActionURL("assay", "delete", getViewContext().getContainer());
-                    deleteURL.addParameter("rowId", _protocol.getRowId());
+                    ActionURL deleteURL = PageFlowUtil.urlProvider(AssayUrls.class).getDeleteDesignURL(getViewContext().getContainer(), _protocol);
                     manageMenu.addChild("delete assay design", "javascript: if (window.confirm('Are you sure you want to delete the assay design and all of its runs?')) { window.location = '" + deleteURL + "' }");
                 }
 
@@ -81,16 +80,19 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
                 _managePopupView.setButtonStyle(PopupMenu.ButtonStyle.TEXTBUTTON);
             }
 
-            _links.put("view all runs", AssayService.get().getAssayRunsURL(getViewContext().getContainer(), _protocol, containerFilter));
-            _links.put("view all data", AssayService.get().getAssayDataURL(getViewContext().getContainer(), _protocol, containerFilter));
+            _links.put("view all runs", PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getViewContext().getContainer(), _protocol, containerFilter));
+            _links.put("view all data", PageFlowUtil.urlProvider(AssayUrls.class).getAssayDataURL(getViewContext().getContainer(), _protocol, containerFilter));
 
-            if (AuditLogService.get().isViewable() && _provider.canPublish())
+            if (AuditLogService.get().isViewable() && _provider.canCopyToStudy())
                 _links.put("view copy-to-study history", AssayPublishService.get().getPublishHistory(getViewContext().getContainer(), protocol, containerFilter));
         }
         else
         {
-            _links.put("manage", AssayService.get().getAssayRunsURL(getViewContext().getContainer(), protocol));
-            _links.put("upload runs", AssayService.get().getUploadWizardURL(getViewContext().getContainer(), protocol));
+            _links.put("manage", PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getViewContext().getContainer(), protocol));
+            for (Map.Entry<String, Class<? extends Controller>> entry : _provider.getImportActions().entrySet())
+            {
+                _links.put(entry.getKey().toLowerCase(), PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(getViewContext().getContainer(), _protocol, entry.getValue()));
+            }
         }
     }
 

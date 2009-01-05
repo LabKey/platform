@@ -41,8 +41,6 @@ public interface AssayRunUploadContext
 
     Map<PropertyDescriptor, String> getRunProperties();
 
-    Collection<String> getSampleIds();
-
     Map<PropertyDescriptor, String> getUploadSetProperties();
 
     String getComments();

@@ -59,7 +59,7 @@ public class AssayDataLinkDisplayColumn extends DataColumn
                 protocol = ExperimentService.get().getExpProtocol(protocolId.intValue());
                 _protocols.put(protocolId, protocol);
             }
-            ActionURL url = AssayService.get().getAssayDataURL(ctx.getContainer(), protocol, _containerFilter, runId.intValue());
+            ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayDataURL(ctx.getContainer(), protocol, _containerFilter, runId.intValue());
 
             out.write("<a href=\"" + url.getLocalURIString() + "\" title=\"View the data for just this run\">" +
                     PageFlowUtil.filter(getDisplayColumn().getValue(ctx)) + "</a>");

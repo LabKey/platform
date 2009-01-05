@@ -24,9 +24,11 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,17 +52,9 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
         super(formClass);
     }
 
-    protected ActionURL getUrl(String action)
-    {
-        ActionURL copy = getViewContext().cloneActionURL();
-        copy.deleteParameters();
-        copy.setAction(action);
-        return copy;
-    }
-
     public ActionURL getSummaryLink(ExpProtocol protocol)
     {
-        return AssayService.get().getAssayRunsURL(getContainer(), protocol);
+        return PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), protocol);
     }
 
     public static ExpProtocol getProtocol(ProtocolIdForm form)
@@ -72,7 +66,7 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
     {
         if (form.getRowId() == null)
             HttpView.throwNotFound("Assay ID not specified.");
-        ExpProtocol protocol = ExperimentService.get().getExpProtocol(form.getRowId());
+        ExpProtocol protocol = ExperimentService.get().getExpProtocol(form.getRowId().intValue());
         if (protocol == null || (validateContainer && !protocol.getContainer().equals(form.getContainer()) &&
                 !protocol.getContainer().equals(form.getContainer().getProject())))
         {
@@ -93,7 +87,7 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
         return getViewContext().getContainer();
     }
 
-    protected DataRegion createDataRegion(TableInfo baseTable, String lsidCol, PropertyDescriptor[] propertyDescriptors, Map<String, String> columnNameToPropertyName, String uploadStepName)
+    protected DataRegion createDataRegion(TableInfo baseTable, String lsidCol, PropertyDescriptor[] propertyDescriptors, Map<String, String> columnNameToPropertyName)
     {
         DataRegion rgn = new DataRegion();
         rgn.setTable(baseTable);
@@ -114,7 +108,7 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
 
     public NavTree appendNavTrail(NavTree root)
     {
-        return root.addChild("Assay List", new ActionURL("assay", "begin.view", getContainer()));
+        return root.addChild("Assay List", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getContainer()));
     }
 
     protected List<Integer> getCheckboxIds(boolean clear)

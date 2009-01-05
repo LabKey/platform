@@ -563,6 +563,7 @@ api/src/org/labkey/api/study/actions/ParticipantVisitResolverChooser.java -text
 api/src/org/labkey/api/study/actions/ProtocolIdForm.java -text
 api/src/org/labkey/api/study/actions/PublishConfirmAction.java -text
 api/src/org/labkey/api/study/actions/PublishStartAction.java -text
+api/src/org/labkey/api/study/actions/ShowSelectedDataAction.java -text
 api/src/org/labkey/api/study/actions/TemplateAction.java -text
 api/src/org/labkey/api/study/actions/UploadWizardAction.java -text
 api/src/org/labkey/api/study/actions/assayHeader.jsp -text
@@ -583,6 +584,7 @@ api/src/org/labkey/api/study/assay/AssayRunType.java -text
 api/src/org/labkey/api/study/assay/AssayRunUploadContext.java -text
 api/src/org/labkey/api/study/assay/AssayRunsView.java -text
 api/src/org/labkey/api/study/assay/AssayService.java -text
+api/src/org/labkey/api/study/assay/AssayUrls.java -text
 api/src/org/labkey/api/study/assay/AssayWarningsDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/FileLinkDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/FileUploadDataCollector.java -text

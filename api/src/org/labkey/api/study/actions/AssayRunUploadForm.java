@@ -43,8 +43,6 @@ public class AssayRunUploadForm extends ProtocolIdForm implements AssayRunUpload
 {
     private Map<PropertyDescriptor, String> _uploadSetProperties = null;
     private Map<PropertyDescriptor, String> _runProperties = null;
-    private Map<String, String> _runSamplesByCaption = null;
-    private Map<String, String> _runSamplesByFormElementName = null;
     private String _comments;
     private String _name;
     private String _dataCollectorName;
@@ -115,54 +113,6 @@ public class AssayRunUploadForm extends ProtocolIdForm implements AssayRunUpload
     public String getFormElementName(PropertyDescriptor pd)
     {
         return ColumnInfo.propNameFromName(pd.getName());
-    }
-
-    public Map<String, String> getRunSamplesByCaption()
-    {
-        if (_runSamplesByCaption == null)
-        {
-            _runSamplesByCaption = new HashMap<String, String>();
-            // We've been creating bad assay definitions into the database - they all have MaxInputMaterialPerInstance
-            // set to 0 when they should be set to 1, but it was masked by a bug where getMaxInputMaterialPerInstance()
-            // used to return the value for getMaxInputDataPerInstance(). For now, assume that there should be at
-            // least one material input.
-            Integer protocolInputCount = getProtocol().getMaxInputMaterialPerInstance();
-            int inputCount = 1;
-            if (protocolInputCount != null && protocolInputCount.intValue() > 1)
-            {
-                inputCount = protocolInputCount.intValue();
-            }
-            for (int i = 0; i < inputCount; i++)
-            {
-                String value = getRequest().getParameter("_sampleId" + i);
-                if (value == null)
-                    value = "Unknown";
-                _runSamplesByCaption.put("Sample Id " + i, value);
-            }
-        }
-        return _runSamplesByCaption;
-    }
-
-    public Map<String, String> getRunSamplesByFormElementName()
-    {
-        if (_runSamplesByFormElementName == null)
-        {
-            _runSamplesByFormElementName = new HashMap<String, String>();
-            for (int i = 0; i < getProtocol().getMaxInputMaterialPerInstance(); i++)
-            {
-                String elementName = "_sampleId" + i;
-                String value = getRequest().getParameter(elementName);
-                if (value == null)
-                    value = "Unknown";
-                _runSamplesByFormElementName.put(elementName, value);
-            }
-        }
-        return _runSamplesByFormElementName;
-    }
-
-    public Collection<String> getSampleIds()
-    {
-        return getRunSamplesByCaption().values();
     }
 
     /** @return property descriptor to value */

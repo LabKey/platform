@@ -24,6 +24,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Collection;
 
 public class ButtonBar extends DisplayElement
 {
@@ -75,6 +76,12 @@ public class ButtonBar extends DisplayElement
     {
         super.lock();
         _elementList = Collections.unmodifiableList(_elementList);
+    }
+
+    public ButtonBar addAll(Collection<? extends DisplayElement> elements)
+    {
+        _elementList.addAll(elements);
+        return this;
     }
 
     public ButtonBar add(DisplayElement element)
