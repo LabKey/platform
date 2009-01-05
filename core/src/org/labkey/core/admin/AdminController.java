@@ -1966,7 +1966,7 @@ public class AdminController extends SpringActionController
 
             for (Module module : modules)
             {
-                Map<String, Class> pageFlows = module.getPageFlowNameToClass();
+                Map<String, Class<? extends Controller>> pageFlows = module.getPageFlowNameToClass();
                 Set<Class> controllerClasses = new HashSet<Class>(pageFlows.values());
 
                 for (Class controllerClass : controllerClasses)
