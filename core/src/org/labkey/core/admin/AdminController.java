@@ -3713,6 +3713,13 @@ public class AdminController extends SpringActionController
                 HttpView.throwNotFound();
 
             String[] modules = form.getActiveModules();
+
+            if (modules.length == 0)
+            {
+                errors.reject(null, "At least one module must be selected");
+                return false;
+            }
+
             Set<Module> activeModules = new HashSet<Module>();
             for (String moduleName : modules)
             {
