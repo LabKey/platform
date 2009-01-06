@@ -157,7 +157,7 @@ public class ViewServlet extends HttpServlet
         {
             throw new IllegalArgumentException(url.toString());
         }
-        module.dispatch(request, response, url);
+        module.dispatch(new ForwardWrapper(request, url), response, url);
     }
 
 
