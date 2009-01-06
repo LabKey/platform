@@ -15,16 +15,14 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.ActionURL"%>
+<%@ page import="org.labkey.api.reports.report.view.ScriptReportBean"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.reports.Report" %>
-<%@ page import="org.labkey.api.reports.report.view.RReportBean" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
-    JspView<RReportBean> me = (JspView<RReportBean>) HttpView.currentView();
-    RReportBean bean = me.getModelBean();
+    JspView<ScriptReportBean> me = (JspView<ScriptReportBean>) HttpView.currentView();
+    ScriptReportBean bean = me.getModelBean();
 %>
 
 <script type="text/javascript">

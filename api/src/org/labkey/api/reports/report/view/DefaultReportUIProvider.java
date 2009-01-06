@@ -16,11 +16,14 @@
 package org.labkey.api.reports.report.view;
 
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.Report;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.query.QuerySettings;
 
-import java.util.Map;/*
+import java.util.Map;
+import java.util.List;
+import java.util.Collections;/*
  * User: Karl Lum
  * Date: May 16, 2008
  * Time: 4:11:33 PM
@@ -28,8 +31,9 @@ import java.util.Map;/*
 
 public class DefaultReportUIProvider implements ReportService.UIProvider
 {
-    public void getReportDesignURL(ViewContext context, QuerySettings settings, Map<String, String> designers)
+    public List<ReportService.DesignerInfo> getReportDesignURL(ViewContext context, QuerySettings settings)
     {
+        return Collections.emptyList();
     }
 
     public String getReportIcon(ViewContext context, String reportType)
@@ -48,7 +52,7 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
         return url;
     }
 
-    protected void addDesignerURL(ViewContext context, QuerySettings settings, Map<String, String> designers, String type, String[] params)
+    protected void addDesignerURL(ViewContext context, QuerySettings settings, List<ReportService.DesignerInfo> designers, String type, String[] params)
     {
         RReportBean bean = new RReportBean(settings);
         bean.setReportType(type);
@@ -57,6 +61,37 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
         ActionURL designerURL = ReportUtil.getRReportDesignerURL(context, bean);
         designerURL = addForwardParams(designerURL, context, params);
 
-        designers.put(type, designerURL.getLocalURIString());
+        Report report = ReportService.get().createReportInstance(type);
+        if (report != null)
+            designers.add(new DesignerInfoImpl(type, report.getTypeDescription(), designerURL));
+    }
+
+    public static class DesignerInfoImpl implements ReportService.DesignerInfo
+    {
+        private String _reportType;
+        private String _label;
+        private ActionURL _designerURL;
+
+        public DesignerInfoImpl(String reportType, String label, ActionURL designerURL)
+        {
+            _reportType = reportType;
+            _label = label;
+            _designerURL = designerURL;
+        }
+
+        public String getReportType()
+        {
+            return _reportType;
+        }
+
+        public String getLabel()
+        {
+            return _label;
+        }
+
+        public ActionURL getDesignerURL()
+        {
+            return _designerURL;
+        }
     }
 }

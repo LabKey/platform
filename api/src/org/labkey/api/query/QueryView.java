@@ -598,36 +598,28 @@ public class QueryView extends WebPartView<Object>
 
         if (_report == null)
         {
-            Map<String, String> menuItems = new HashMap<String, String>();
+            List<ReportService.DesignerInfo> reportDesigners = new ArrayList<ReportService.DesignerInfo>();
+
             getSettings().setSchemaName(getSchema().getSchemaName());
             for (ReportService.UIProvider provider : ReportService.get().getUIProviders())
             {
-                provider.getReportDesignURL(getViewContext(), getSettings(), menuItems);
+                reportDesigners.addAll(provider.getReportDesignURL(getViewContext(), getSettings()));
             }
             NavTree submenu = null;
-            for (Map.Entry<String, String> entry : menuItems.entrySet())
+            for (ReportService.DesignerInfo designer : reportDesigners)
             {
-                if (_itemFilter.accept(entry.getKey(), entry.getValue()))
+                if (_itemFilter.accept(designer.getReportType(), designer.getLabel()))
                 {
-                    Report report = ReportService.get().createReportInstance(entry.getKey());
                     if (submenu == null)
                     {
                         submenu = menu.addChild("Create");
                         submenu.setId("Views:Create");
                     }
 
-                    NavTree item;
-                    if (report != null)
-                    {
-                        item = new NavTree(report.getTypeDescription(), entry.getValue());
-                        item.setId("Views:Create:" + report.getTypeDescription());
-                        item.setImageSrc(ReportService.get().getReportIcon(getViewContext(), report.getType()));
-                    }
-                    else
-                    {
-                        item = new NavTree(entry.getKey(), entry.getValue());
-                        item.setId("Views:Create:" + entry.getKey());
-                    }
+                    NavTree item = new NavTree(designer.getLabel(), designer.getDesignerURL().getLocalURIString());
+                    item.setId("Views:Create:" + designer.getLabel());
+                    item.setImageSrc(ReportService.get().getReportIcon(getViewContext(), designer.getReportType()));
+
                     submenu.addChild(item);
                 }
             }
@@ -698,38 +690,6 @@ public class QueryView extends WebPartView<Object>
                     item.setHighlighted(true);
                 item.setImageSrc(ReportService.get().getReportIcon(getViewContext(), report.getType()));
                 menu.addMenuItem(item);
-            }
-        }
-    }
-
-    protected void addCreateViewItems(NavTree menu)
-    {
-        if (_report == null)
-        {
-            Map<String, String> reportDesigners = new HashMap<String, String>();
-            getSettings().setSchemaName(getSchema().getSchemaName());
-            for (ReportService.UIProvider provider : ReportService.get().getUIProviders())
-            {
-                provider.getReportDesignURL(getViewContext(), getSettings(), reportDesigners);
-            }
-
-            List<Pair<String, String>> menuItems = new ArrayList<Pair<String, String>>();
-            for (Map.Entry<String, String> entry : reportDesigners.entrySet())
-            {
-                if (_itemFilter.accept(entry.getKey(), entry.getValue()))
-                {
-                    Report report = ReportService.get().createReportInstance(entry.getKey());
-                    if (report != null)
-                        menuItems.add(new Pair<String,String>(report.getTypeDescription(), entry.getValue()));
-                        //submenu.addChild(report.getTypeDescription(), entry.getValue());
-                }
-            }
-
-            NavTree submenu = (menuItems.size() > 1) ? menu.addChild("Create") : menu;
-            String prefix = (menuItems.size() > 1) ? "" : "Create ";
-            for (Pair<String, String> item : menuItems)
-            {
-                submenu.addChild(prefix + item.getKey(), item.getValue());
             }
         }
     }

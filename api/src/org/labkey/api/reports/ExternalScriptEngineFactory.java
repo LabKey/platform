@@ -93,4 +93,9 @@ public class ExternalScriptEngineFactory implements ScriptEngineFactory
     {
         return new ExternalScriptEngine(_def);
     }
+
+    public ExternalScriptEngineDefinition getDefinition()
+    {
+        return _def;
+    }
 }

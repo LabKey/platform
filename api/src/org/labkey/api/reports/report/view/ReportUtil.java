@@ -27,6 +27,7 @@ import org.labkey.api.reports.report.*;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.TabStripView;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.common.util.Pair;
@@ -68,6 +69,15 @@ public class ReportUtil
     {
         ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlCreateRReport(context.getContainer());
         url.addParameters(context.getActionURL().getParameters());
+
+        return _getChartDesignerURL(url, bean);
+    }
+
+    public static ActionURL getScriptReportDesignerURL(ViewContext context, ScriptReportBean bean)
+    {
+        ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlCreateScriptReport(context.getContainer());
+        url.addParameters(context.getActionURL().getParameters());
+        url.replaceParameter(RReportDescriptor.Prop.scriptExtension.name(), bean.getScriptExtension());
 
         return _getChartDesignerURL(url, bean);
     }

@@ -19,28 +19,20 @@ package org.labkey.api.reports.report.view;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.RReportDescriptor;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.common.util.Pair;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.BooleanUtils;
 
 import java.util.List;
 import java.util.Collections;
-import java.util.ArrayList;
 
 /**
  * Created by IntelliJ IDEA.
 * User: Karl Lum
 * Date: Dec 4, 2007
 */
-public class RReportBean extends ReportDesignBean
+public class RReportBean extends ScriptReportBean
 {
-    protected String _script;
-    protected boolean _runInBackground;
     protected List<String> _includedReports;
-    protected boolean _isDirty;
-    protected String _scriptExtension;
 
     public RReportBean(){}
     public RReportBean(QuerySettings settings)
@@ -48,26 +40,6 @@ public class RReportBean extends ReportDesignBean
         super(settings);
     }
     
-    public String getScript()
-    {
-        return _script;
-    }
-
-    public void setScript(String script)
-    {
-        _script = script;
-    }
-
-    public boolean isRunInBackground()
-    {
-        return _runInBackground;
-    }
-
-    public void setRunInBackground(boolean runInBackground)
-    {
-        _runInBackground = runInBackground;
-    }
-
     public void setIncludedReports(List<String> includedReports)
     {
         _includedReports = includedReports;
@@ -76,16 +48,6 @@ public class RReportBean extends ReportDesignBean
     public List<String> getIncludedReports()
     {
         return _includedReports != null ? _includedReports : Collections.EMPTY_LIST;
-    }
-
-    public boolean getIsDirty()
-    {
-        return _isDirty;
-    }
-
-    public void setIsDirty(boolean dirty)
-    {
-        _isDirty = dirty;
     }
 
     public Report getReport() throws Exception
@@ -97,17 +59,7 @@ public class RReportBean extends ReportDesignBean
             ReportDescriptor descriptor = report.getDescriptor();
             if (RReportDescriptor.class.isAssignableFrom(descriptor.getClass()))
             {
-                if (getScript() != null) descriptor.setProperty(RReportDescriptor.Prop.script, getScript());
-                descriptor.setProperty(RReportDescriptor.Prop.runInBackground, _runInBackground);
-                descriptor.setProperty(RReportDescriptor.Prop.scriptExtension, _scriptExtension);
                 ((RReportDescriptor)descriptor).setIncludedReports(_includedReports);
-                if (!isShareReport())
-                    descriptor.setOwner(getUser().getUserId());
-                else
-                    descriptor.setOwner(null);
-
-                if (getRedirectUrl() != null)
-                    descriptor.setProperty("redirectUrl", getRedirectUrl());
             }
             else
                 return null;
@@ -119,26 +71,9 @@ public class RReportBean extends ReportDesignBean
     {
         List<Pair<String, String>> list = super.getParameters();
 
-        if (!StringUtils.isEmpty(_script))
-            list.add(new Pair<String, String>(RReportDescriptor.Prop.script.toString(), _script));
-        if (_runInBackground)
-            list.add(new Pair<String, String>(RReportDescriptor.Prop.runInBackground.toString(), String.valueOf(_runInBackground)));
-        if (_isDirty)
-            list.add(new Pair<String, String>("isDirty", String.valueOf(_isDirty)));
         for (String report : getIncludedReports())
             list.add(new Pair<String, String>(RReportDescriptor.Prop.includedReports.toString(), report));
-        list.add(new Pair<String, String>(RReportDescriptor.Prop.scriptExtension.toString(), _scriptExtension));
 
         return list;
-    }
-
-    public String getScriptExtension()
-    {
-        return _scriptExtension;
-    }
-
-    public void setScriptExtension(String scriptExtension)
-    {
-        _scriptExtension = scriptExtension;
     }
 }

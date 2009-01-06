@@ -15,28 +15,27 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang.StringUtils"%>
 <%@ page import="org.labkey.api.query.CustomView"%>
 <%@ page import="org.labkey.api.query.QueryDefinition"%>
 <%@ page import="org.labkey.api.query.QueryService"%>
-<%@ page import="org.labkey.api.query.UserSchema"%>
+<%@ page import="org.labkey.api.query.UserSchema" %>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
-<%@ page import="org.labkey.api.reports.report.view.RReportBean" %>
+<%@ page import="org.labkey.api.reports.report.view.ScriptReportBean" %>
+<%@ page import="org.labkey.api.reports.report.view.RunReportView" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.apache.commons.lang.StringUtils" %>
-<%@ page import="org.labkey.api.reports.report.view.RunReportView" %>
-<%@ page import="org.labkey.api.reports.report.view.RunRReportView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
-    JspView<RReportBean> me = (JspView<RReportBean>) HttpView.currentView();
-    RReportBean form = me.getModelBean();
+    JspView<ScriptReportBean> me = (JspView<ScriptReportBean>) HttpView.currentView();
+    ScriptReportBean form = me.getModelBean();
     ViewContext context = HttpView.currentContext();
 
     String reportName = form.getReportName();

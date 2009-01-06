@@ -487,6 +487,7 @@ api/src/org/labkey/api/reports/report/r/view/ROutputView.java -text
 api/src/org/labkey/api/reports/report/r/view/TextOutput.java -text
 api/src/org/labkey/api/reports/report/r/view/TsvOutput.java -text
 api/src/org/labkey/api/reports/report/view/ChartDesignerBean.java -text
+api/src/org/labkey/api/reports/report/view/CreateScriptReportView.java -text
 api/src/org/labkey/api/reports/report/view/DefaultReportUIProvider.java -text
 api/src/org/labkey/api/reports/report/view/ManageReportsBean.java -text
 api/src/org/labkey/api/reports/report/view/RReportBean.java -text
@@ -497,11 +498,14 @@ api/src/org/labkey/api/reports/report/view/ReportUtil.java -text
 api/src/org/labkey/api/reports/report/view/RunChartReportView.java -text
 api/src/org/labkey/api/reports/report/view/RunRReportView.java -text
 api/src/org/labkey/api/reports/report/view/RunReportView.java -text
+api/src/org/labkey/api/reports/report/view/RunScriptReportView.java -text
+api/src/org/labkey/api/reports/report/view/ScriptReportBean.java -text
 api/src/org/labkey/api/reports/report/view/rReportDesigner.jsp -text
 api/src/org/labkey/api/reports/report/view/rReportDesignerSyntaxRef.jsp -text
 api/src/org/labkey/api/reports/report/view/rReportRenderBackground.jsp -text
 api/src/org/labkey/api/reports/report/view/rReportTabHandler.jsp -text
 api/src/org/labkey/api/reports/report/view/reportHeader.jsp -text
+api/src/org/labkey/api/reports/report/view/scriptReportDesigner.jsp -text
 api/src/org/labkey/api/security/ActionNames.java -text
 api/src/org/labkey/api/security/AuthenticationManager.java -text
 api/src/org/labkey/api/security/AuthenticationProvider.java -text

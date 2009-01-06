@@ -106,14 +106,23 @@ public class ReportService
         public HttpView createView(ViewContext context, RReportBean bean);
     }
 
+    public interface DesignerInfo
+    {
+        /** the report type this builder is associated with */
+        public String getReportType();
+
+        public ActionURL getDesignerURL();
+
+        /** the label to appear on any UI */
+        public String getLabel();
+    }
+
     public interface UIProvider
     {
         /**
          * Allows providers to add to the UI for creating reports (eg: the create view button).
-         * Providers should add entries to map report type to the URL of the view to create that
-         * report.
          */
-        public void getReportDesignURL(ViewContext context, QuerySettings settings, Map<String, String> designers);
+        public List<DesignerInfo> getReportDesignURL(ViewContext context, QuerySettings settings);
 
         /**
          * Returns the icon path to display for the specified report type

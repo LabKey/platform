@@ -148,14 +148,14 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
                 Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
 
                 bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir().getAbsolutePath());
-                String output = engine.eval(createScript(context, outputSubst, inputDataTsv)).toString();
+                Object output = engine.eval(createScript(context, outputSubst, inputDataTsv));
 
                 // render the output into the console
-                if (!StringUtils.isEmpty(output))
+                if (output != null)
                 {
                     File console = new File(getReportDir(), CONSOLE_OUTPUT);
                     PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(console)));
-                    pw.write(output);
+                    pw.write(output.toString());
                     pw.close();
 
                     ParamReplacement param = ParamReplacementSvc.get().getHandlerInstance(ConsoleOutput.ID);
@@ -164,7 +164,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
 
                     outputSubst.add(param);
                 }
-                return output;
+                return output != null ? output.toString() : "";
             }
             catch(Exception e)
             {
