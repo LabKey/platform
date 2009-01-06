@@ -1008,7 +1008,32 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public ModelAndView createDataDetailsView(ViewContext context, ExpProtocol protocol, ExpData data, Object dataRowId)
     {
-        return null;
+        QueryView queryView = createRunDataQueryView(context, protocol);
+
+        DataRegion region = new DataRegion();
+
+        // remove the DetailsColumn from the column list
+        List<DisplayColumn> columns = queryView.getDisplayColumns();
+        ListIterator<DisplayColumn> iter = columns.listIterator();
+        while (iter.hasNext())
+        {
+            DisplayColumn column = iter.next();
+            if (column instanceof DetailsColumn)
+                iter.remove();
+        }
+        region.setDisplayColumns(columns);
+
+        ExpRun run = data.getRun();
+        ActionURL runUrl = PageFlowUtil.urlProvider(AssayUrls.class).getAssayDataURL(
+            context.getContainer(), protocol,
+            queryView.getTable().getContainerFilter(), run.getRowId());
+
+        ButtonBar bb = new ButtonBar();
+        bb.getList().add(new ActionButton("Show Run", runUrl));
+        region.setButtonBar(bb, DataRegion.MODE_DETAILS);
+
+        DetailsView details = new DetailsView(region, dataRowId);
+        return details;
     }
 
     public String getRunListTableName(ExpProtocol protocol)

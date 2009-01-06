@@ -69,12 +69,12 @@ public class AssayDataDetailsAction extends BaseAssayAction<DataDetailsForm>
         ExpRun run = _data.getRun();
         ActionURL assayListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(c);
         ActionURL runListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, _protocol);
-        ActionURL runDataURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayDataURL(c, _protocol, _data.getRowId());
+        ActionURL runDataURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayDataURL(c, _protocol, run.getRowId());
 
         return root
             .addChild("Assay List", assayListURL)
             .addChild(_protocol.getName() + " Runs", runListURL)
-            .addChild(run.getName() + " Data", runDataURL)
+            .addChild(run.getName() + " Run", runDataURL)
             .addChild(_dataRowId + " Details");
     }
 }
