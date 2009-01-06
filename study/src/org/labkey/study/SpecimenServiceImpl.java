@@ -71,10 +71,28 @@ public class SpecimenServiceImpl implements SpecimenService.Service
 
         public ExpMaterial getMaterial()
         {
-            if (_material == null && _specimenID != null)
+            if (_material == null)
             {
-                Lsid lsid = getSpecimenMaterialLsid(_container, _specimenID);
-                _material = ExperimentService.get().getExpMaterial(lsid.toString());
+                if (_specimenID != null)
+                {
+                    Lsid lsid = getSpecimenMaterialLsid(_container, _specimenID);
+                    _material = ExperimentService.get().getExpMaterial(lsid.toString());
+                    if (_material == null)
+                    {
+                        _material = ExperimentService.get().createExpMaterial(_container, lsid.toString(), _specimenID);
+                        _material.save(null);
+                    }
+                }
+                else
+                {
+                    String lsid = new Lsid("AssayRunMaterial", "Folder-" + _container.getRowId(), "Unknown").toString();
+                    _material = ExperimentService.get().getExpMaterial(lsid);
+                    if (_material == null)
+                    {
+                        _material = ExperimentService.get().createExpMaterial(_container, lsid, "Unknown");
+                        _material.save(null);
+                    }
+                }
             }
             return _material;
         }

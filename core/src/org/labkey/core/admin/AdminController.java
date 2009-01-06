@@ -1971,7 +1971,7 @@ public class AdminController extends SpringActionController
 
                 for (Class controllerClass : controllerClasses)
                 {
-                    if (Controller.class.isAssignableFrom(controllerClass))
+                    if (SpringActionController.class.isAssignableFrom(controllerClass))
                     {
                         SpringActionController controller = (SpringActionController)ViewServlet.getController(module, controllerClass);
                         ActionResolver ar = controller.getActionResolver();
