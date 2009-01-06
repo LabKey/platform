@@ -29,7 +29,9 @@ import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.apache.commons.lang.math.NumberUtils;
 
-import java.util.Map;/*
+import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;/*
  * User: Karl Lum
  * Date: May 16, 2008
  * Time: 5:19:28 PM
@@ -51,12 +53,14 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                 }
             };
 
-    public void getReportDesignURL(ViewContext context, QuerySettings settings, Map<String, String> designers)
+    public List<ReportService.DesignerInfo> getReportDesignURL(ViewContext context, QuerySettings settings)
     {
+        List<ReportService.DesignerInfo> designers = new ArrayList<ReportService.DesignerInfo>();
+
         // crosstab designer
         ActionURL crossTabURL = context.getActionURL().clone();
         crossTabURL.setAction(ReportsController.ParticipantCrosstabAction.class);
-        designers.put(StudyCrosstabReport.TYPE, crossTabURL.getLocalURIString());
+        designers.add(new DesignerInfoImpl(StudyCrosstabReport.TYPE, "Crosstab View", crossTabURL));
 
         // chart designer
         ChartDesignerBean chartBean = new ChartDesignerBean(settings);
@@ -66,33 +70,23 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         url.addParameter(DataSetDefinition.DATASETKEY, NumberUtils.toInt(context.getActionURL().getParameter(DataSetDefinition.DATASETKEY), 0));
         url.setAction(ReportsController.DesignChartAction.class);
 
-        designers.put(StudyChartQueryReport.TYPE, url.getLocalURIString());
+        designers.add(new DesignerInfoImpl(StudyChartQueryReport.TYPE, "Chart View", url));
 
         // r report
-        if (RReport.isValidConfiguration())
-        {
-            int perms = RReport.getEditPermissions();
-            if (context.hasPermission(perms))
-            {
-                RReportBean rBean = new RReportBean(settings);
-                rBean.setReportType(StudyRReport.TYPE);
-                rBean.setRedirectUrl(context.getActionURL().getLocalURIString());
+        RReportBean rBean = new RReportBean(settings);
+        rBean.setReportType(StudyRReport.TYPE);
+        rBean.setRedirectUrl(context.getActionURL().getLocalURIString());
 
-                designers.put(StudyRReport.TYPE, ReportUtil.getRReportDesignerURL(context, rBean).getLocalURIString());
-            }
-            else
-                designers.put(StudyRReport.TYPE, "javascript:alert('You do not have the required authorization to create R Views.')");
-        }
-        else
-            designers.put(StudyRReport.TYPE, "javascript:alert('The R Program has not been configured properly, please request that an administrator configure R in the Admin Console.')");
+        designers.add(new DesignerInfoImpl(StudyRReport.TYPE, "R View", ReportUtil.getRReportDesignerURL(context, rBean)));
 
         // external report
         if (context.getUser().isAdministrator())
         {
             ActionURL buttonURL = context.getActionURL().clone();
             buttonURL.setAction(ReportsController.ExternalReportAction.class);
-            designers.put(ExternalReport.TYPE, buttonURL.getLocalURIString());
+            designers.add(new DesignerInfoImpl(ExternalReport.TYPE, "Advanced View", buttonURL));
         }
+        return designers;
     }
 
     public String getReportIcon(ViewContext context, String reportType)

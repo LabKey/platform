@@ -35,10 +35,7 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.reports.ExternalScriptEngineDefinition;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
-import org.labkey.api.reports.Report;
-import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.*;
 import org.labkey.api.reports.report.*;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
@@ -47,6 +44,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.util.PageFlowUtil;
@@ -57,6 +55,8 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.script.ScriptEngineFactory;
+import javax.script.ScriptEngineManager;
 import javax.servlet.ServletException;
 import java.io.File;
 import java.io.PrintWriter;
@@ -107,6 +107,16 @@ public class ReportsController extends SpringActionController
             return new ActionURL(CreateRReportAction.class, c);
         }
 
+        public ActionURL urlCreateScriptReport(Container c)
+        {
+            return new ActionURL(CreateScriptReportAction.class, c);
+        }
+
+        public ActionURL urlRenderScriptReport(Container c)
+        {
+            return new ActionURL(RenderScriptReportAction.class, c);
+        }
+
         public ActionURL urlStreamFile(Container c)
         {
             return new ActionURL(StreamFileAction.class, c);
@@ -142,6 +152,7 @@ public class ReportsController extends SpringActionController
     public static void registerAdminConsoleLinks()
     {
         AdminConsole.addLink(SettingsLinkType.Configuration, "R view configuration", new ActionURL(ConfigureRReportAction.class, ContainerManager.getRoot()));
+        //AdminConsole.addLink(SettingsLinkType.Configuration, "reports and scripting", new ActionURL(ConfigureReportsAndScriptsAction.class, ContainerManager.getRoot()));
     }
 
     @RequiresPermission(ACL.PERM_READ)
@@ -345,27 +356,49 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
+    public class ConfigureReportsAndScriptsAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView("/org/labkey/query/reports/view/configReportsAndScripts.jsp");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
+            return root.addChild("Reports and Scripting Configuration");
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
     public class ScriptEnginesSummaryAction extends ApiAction
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
             List<Map<String, String>> views = new ArrayList<Map<String, String>>();
 
-            for (ExternalScriptEngineDefinition def : LabkeyScriptEngineManager.getEngineDefinitions())
+            ScriptEngineManager manager = ServiceRegistry.get().getService(ScriptEngineManager.class);
+
+            for (ScriptEngineFactory factory : manager.getEngineFactories())
             {
                 Map<String, String> record = new HashMap<String, String>();
 
-                record.put("name", def.getName());
-                record.put("exePath", def.getExePath());
-                record.put("exeCommand", def.getExeCommand());
+                record.put("name", factory.getEngineName());
+                record.put("extensions", StringUtils.join(factory.getExtensions(), ','));
+                record.put("languageName", factory.getLanguageName());
+                record.put("languageVersion", factory.getLanguageVersion());
 
-                record.put("outputFileName", def.getOutputFileName());
-                record.put("extensions", StringUtils.join(def.getExtensions(), ','));
-                record.put("languageName", def.getLanguageName());
-                record.put("languageVersion", def.getLanguageVersion());
+                if (factory instanceof ExternalScriptEngineFactory)
+                {
+                    // extra metadata for external engines
+                    ExternalScriptEngineDefinition def = ((ExternalScriptEngineFactory)factory).getDefinition();
 
-                if (def instanceof LabkeyScriptEngineManager.EngineDefinition)
-                    record.put("key", ((LabkeyScriptEngineManager.EngineDefinition)def).getKey());
+                    if (def instanceof LabkeyScriptEngineManager.EngineDefinition)
+                        record.put("key", ((LabkeyScriptEngineManager.EngineDefinition)def).getKey());
+                    record.put("exePath", def.getExePath());
+                    record.put("exeCommand", def.getExeCommand());
+                    record.put("outputFileName", def.getOutputFileName());
+                }
                 views.add(record);
             }
             return new ApiSimpleResponse("views", views);
@@ -468,8 +501,8 @@ public class ReportsController extends SpringActionController
             String currentTab = url.getParameter(TAB_PARAM);
             boolean saveChanges = currentTab == null || TAB_SOURCE.equals(currentTab);
 
-            tabs.add(new RTabInfo(TAB_SOURCE, TAB_SOURCE, url, saveChanges));
-            tabs.add(new RTabInfo(TAB_SYNTAX, TAB_SYNTAX, url, saveChanges));
+            tabs.add(new ScriptTabInfo(TAB_SOURCE, TAB_SOURCE, url, saveChanges));
+            tabs.add(new ScriptTabInfo(TAB_SYNTAX, TAB_SYNTAX, url, saveChanges));
 
             return tabs;
         }
@@ -545,9 +578,56 @@ public class ReportsController extends SpringActionController
             List<NavTree> tabs = new ArrayList<NavTree>();
             boolean saveChanges = TAB_SOURCE.equals(url.getParameter(TAB_PARAM));
 
-            tabs.add(new RTabInfo(TAB_VIEW, TAB_VIEW, url, saveChanges));
-            tabs.add(new RTabInfo(TAB_SOURCE, TAB_SOURCE, url, saveChanges));
-            tabs.add(new RTabInfo(TAB_SYNTAX, TAB_SYNTAX, url, saveChanges));
+            tabs.add(new ScriptTabInfo(TAB_VIEW, TAB_VIEW, url, saveChanges));
+            tabs.add(new ScriptTabInfo(TAB_SOURCE, TAB_SOURCE, url, saveChanges));
+            tabs.add(new ScriptTabInfo(TAB_SYNTAX, TAB_SYNTAX, url, saveChanges));
+
+            return tabs;
+        }
+    }
+
+    /**
+     * The view used to render external reports in design mode.
+     */
+    protected static class RenderExternalReportView extends RunScriptReportView
+    {
+        public RenderExternalReportView(Report report)
+        {
+            super(report);
+            if (_report == null)
+            {
+                _report = initFromCache();
+                if (_report != null)
+                    _reportId = _report.getDescriptor().getReportId();
+            }
+        }
+
+        private Report initFromCache()
+        {
+            try {
+                RReportBean form = new RReportBean();
+                form.reset(null, getViewContext().getRequest());
+                form.setErrors(new BindException(form, "form"));
+                initReportCache(form);
+
+                return form.getReport();
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public List<NavTree> getTabList()
+        {
+            ActionURL url = getViewContext().cloneActionURL().
+                    replaceParameter(CACHE_PARAM, String.valueOf(_reportId));
+
+            List<NavTree> tabs = new ArrayList<NavTree>();
+            boolean saveChanges = TAB_SOURCE.equals(url.getParameter(TAB_PARAM));
+
+            tabs.add(new ScriptTabInfo(TAB_VIEW, TAB_VIEW, url, saveChanges));
+            tabs.add(new ScriptTabInfo(TAB_SOURCE, TAB_SOURCE, url, saveChanges));
 
             return tabs;
         }
@@ -582,6 +662,37 @@ public class ReportsController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("R View Builder");
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_NONE)
+    public class CreateScriptReportAction extends FormViewAction<ScriptReportBean>
+    {
+        public void validateCommand(ScriptReportBean target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(ScriptReportBean form, boolean reshow, BindException errors) throws Exception
+        {
+            CreateScriptReportView view = new CreateScriptReportView(form.getReport());
+            view.setErrors(errors);
+
+            return view;
+        }
+
+        public boolean handlePost(ScriptReportBean form, BindException errors) throws Exception
+        {
+            return true;
+        }
+
+        public ActionURL getSuccessURL(ScriptReportBean form)
+        {
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Script View Builder");
         }
     }
 
@@ -669,6 +780,18 @@ public class ReportsController extends SpringActionController
         public ModelAndView getView(RReportBean form, boolean reshow, BindException errors) throws Exception
         {
             RenderRReportView view = new RenderRReportView(form.getReport());
+            view.setErrors(errors);
+
+            return view;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class RenderScriptReportAction extends CreateScriptReportAction
+    {
+        public ModelAndView getView(ScriptReportBean form, boolean reshow, BindException errors) throws Exception
+        {
+            RenderExternalReportView view = new RenderExternalReportView(form.getReport());
             view.setErrors(errors);
 
             return view;

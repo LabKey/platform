@@ -15,18 +15,22 @@
  */
 package org.labkey.query.reports.view;
 
-import org.labkey.api.reports.report.view.DefaultReportUIProvider;
-import org.labkey.api.reports.report.view.ChartDesignerBean;
-import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.reports.report.view.RReportBean;
+import org.labkey.api.reports.report.view.*;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.ExternalScriptEngineReport;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
+import org.labkey.api.services.ServiceRegistry;
 
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptEngineFactory;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 
 /*
  * User: Karl Lum
@@ -36,37 +40,42 @@ import java.util.Map;
 
 public class ReportUIProvider extends DefaultReportUIProvider
 {
-    public void getReportDesignURL(ViewContext context, QuerySettings settings, Map<String, String> designers)
+    public List<ReportService.DesignerInfo> getReportDesignURL(ViewContext context, QuerySettings settings)
     {
+        List<ReportService.DesignerInfo> designers = new ArrayList<ReportService.DesignerInfo>();
+
         ChartDesignerBean chartBean = new ChartDesignerBean(settings);
         chartBean.setReportType(ChartQueryReport.TYPE);
         chartBean.setRedirectUrl(context.getActionURL().getLocalURIString());
+        designers.add(new DesignerInfoImpl(ChartQueryReport.TYPE, "Chart View", ReportUtil.getChartDesignerURL(context, chartBean)));
 
-        designers.put(ChartQueryReport.TYPE, ReportUtil.getChartDesignerURL(context, chartBean).getLocalURIString());
+        RReportBean rBean = new RReportBean(settings);
+        rBean.setReportType(RReport.TYPE);
+        rBean.setRedirectUrl(context.getActionURL().getLocalURIString());
+        designers.add(new DesignerInfoImpl(RReport.TYPE, "R View", ReportUtil.getRReportDesignerURL(context, rBean)));
 
-        if (RReport.isValidConfiguration())
+        ScriptEngineManager manager = ServiceRegistry.get().getService(ScriptEngineManager.class);
+
+        for (ScriptEngineFactory factory : manager.getEngineFactories())
         {
-            int perms = RReport.getEditPermissions();
-            if (context.hasPermission(perms))
+            // don't add an entry for R, since we have a specific report type above.
+            if (!factory.getLanguageName().equalsIgnoreCase("R"))
             {
-                RReportBean rBean = new RReportBean(settings);
-                rBean.setReportType(RReport.TYPE);
-                rBean.setRedirectUrl(context.getActionURL().getLocalURIString());
+                ScriptReportBean bean = new ScriptReportBean(settings);
+                bean.setReportType(ExternalScriptEngineReport.TYPE);
+                bean.setRedirectUrl(context.getActionURL().getLocalURIString());
+                bean.setScriptExtension(factory.getExtensions().get(0));
 
-                designers.put(RReport.TYPE, ReportUtil.getRReportDesignerURL(context, rBean).getLocalURIString());
+                designers.add(new DesignerInfoImpl(ExternalScriptEngineReport.TYPE, factory.getLanguageName() + " View", ReportUtil.getScriptReportDesignerURL(context, bean)));
             }
-            else
-                designers.put(RReport.TYPE, "javascript:alert('You do not have the required authorization to create R Views.')");
         }
-        else
-            designers.put(RReport.TYPE, "javascript:alert('The R Program has not been configured properly, please request that an administrator configure R in the Admin Console.')");
 
         // query snapshot
         QuerySnapshotService.I provider = QuerySnapshotService.get(settings.getSchemaName());
         if (provider != null && !QueryService.get().isQuerySnapshot(context.getContainer(), settings.getSchemaName(), settings.getQueryName()))
-        {
-            designers.put(QuerySnapshotService.TYPE, provider.getCreateWizardURL(settings, context).getLocalURIString());
-        }
+            designers.add(new DesignerInfoImpl(QuerySnapshotService.TYPE, "Query Snapshot", provider.getCreateWizardURL(settings, context)));
+
+        return designers;
     }
 
     public String getReportIcon(ViewContext context, String reportType)

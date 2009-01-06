@@ -1488,6 +1488,7 @@ query/src/org/labkey/query/reports/chart/XYChartRenderer.java -text
 query/src/org/labkey/query/reports/view/ReportUIProvider.java -text
 query/src/org/labkey/query/reports/view/ReportsWebPart.java -text
 query/src/org/labkey/query/reports/view/ReportsWebPartConfig.java -text
+query/src/org/labkey/query/reports/view/configReportsAndScripts.jsp -text
 query/src/org/labkey/query/reports/view/manageViews.jsp -text
 query/src/org/labkey/query/reports/view/queryReportHeader.jsp -text
 query/src/org/labkey/query/reports/view/rReportConfiguration.jsp -text
