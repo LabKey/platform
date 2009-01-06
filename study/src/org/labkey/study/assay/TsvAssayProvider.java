@@ -27,8 +27,10 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.security.User;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.study.actions.AssayRunUploadForm;
+import org.labkey.api.study.actions.AssayDataDetailsAction;
 import org.labkey.api.study.TimepointType;
 
 import javax.servlet.ServletException;
@@ -248,7 +250,18 @@ public class TsvAssayProvider extends AbstractAssayProvider
 
     public TableInfo createDataTable(UserSchema schema, String alias, ExpProtocol protocol)
     {
-        return new RunDataTable(schema, alias, protocol);
+        RunDataTable table = new RunDataTable(schema, alias, protocol);
+        if (table == null)
+            return null;
+
+        // XXX: consider adding a .getDataDetailsURL() to AbstractAssayProvider
+        ActionURL dataDetailsURL = new ActionURL(AssayDataDetailsAction.class, schema.getContainer());
+        dataDetailsURL.addParameter("rowId", protocol.getRowId());
+        Map<String, String> params = new HashMap<String, String>();
+        // map ObjectId to url parameter DataDetailsForm.dataRowId
+        params.put("dataRowId", "ObjectId");
+        table.addDetailsURL(new DetailsURL(dataDetailsURL, params));
+        return table;
     }
 
     public FieldKey getParticipantIDFieldKey()

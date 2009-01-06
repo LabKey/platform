@@ -123,24 +123,6 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return super.createDataDomain(c, user);
     }
 
-    @Override
-    public TableInfo createDataTable(UserSchema schema, String alias, ExpProtocol protocol)
-    {
-        RunDataTable table = (RunDataTable)super.createDataTable(schema, alias, protocol);
-        if (table == null)
-            return null;
-        File dataDetailsView = viewFiles.get(AssayDomainTypes.Data);
-        if (dataDetailsView != null)
-        {
-            ActionURL dataDetailsURL = new ActionURL(AssayDataDetailsAction.class, schema.getContainer());
-            dataDetailsURL.addParameter("rowId", protocol.getRowId());
-            Map<String, String> params = new HashMap<String, String>();
-            params.put("dataRowId", "ObjectId"); // map from parameter->column?
-            table.addDetailsURL(new DetailsURL(dataDetailsURL, params));
-        }
-        return table;
-    }
-
     /**
      * Get a single row from the data table as a Map.
      */
@@ -196,7 +178,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     {
         File dataDetailsView = viewFiles.get(AssayDomainTypes.Data);
         if (dataDetailsView == null || !dataDetailsView.canRead())
-            HttpView.throwNotFound("assay data details view not found");
+            return super.createDataDetailsView(context, protocol, data, objectId);
 
         DataDetailsModel model = new DataDetailsModel();
         model.expProtocol = protocol;
