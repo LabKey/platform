@@ -20,12 +20,15 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.attachments.Attachment;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+import java.util.Collections;
 
 /**
  * Created by IntelliJ IDEA.
@@ -209,5 +212,18 @@ public abstract class AbstractResource implements WebdavResolver.Resource
     public long copyFrom(User user, WebdavResolver.Resource r) throws IOException
     {
         return copyFrom(user, r.getInputStream(user));
+    }
+
+
+    @NotNull
+    public List<WebdavResolver.History> getHistory()
+    {
+        return Collections.EMPTY_LIST;
+    }
+
+    @NotNull
+    public List<NavTree> getActions()
+    {
+        return Collections.EMPTY_LIST;
     }
 }

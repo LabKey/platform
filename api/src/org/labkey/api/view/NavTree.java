@@ -19,14 +19,26 @@ import org.labkey.common.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
 
+/**
+ * NavTree can be used three ways in different places in the product
+ *
+ * 1) as a single navigation element (no children)
+ * 2) as a list of navigatin elements (ignore the root node, use children as list of elements)
+ * 3) as a tree, may be rendered as an tree, or menu
+ */
+
 public class NavTree extends Pair<String, String> implements Collapsible
 {
     /*package*/ static final NavTree MENU_SEPARATOR = new NavTree("-");
-    
+
+    //noinspection unchecked
+    static final List<NavTree> EMPTY_LIST = Collections.EMPTY_LIST;
+
     String imageSrc = null;
     private boolean _selected = false;
     private boolean _collapsed = false;
@@ -154,16 +166,25 @@ public class NavTree extends Pair<String, String> implements Collapsible
         return children.toArray(new NavTree[children.size()]);
     }
 
-    public boolean hasChildren()
+    @NotNull
+    public List<NavTree> getChildList()
     {
-        return null != children;
+        if (null == children)
+            //noinspection unchecked
+            return EMPTY_LIST;
+        return Collections.unmodifiableList(children);
     }
 
+    public boolean hasChildren()
+    {
+        return null != children && !children.isEmpty();
+    }
 
     // Sort children by name, case-insensitive
     public void sort()
     {
         if (null != children)
+        {
             Collections.sort(children, new Comparator<NavTree>()
             {
                 public int compare(NavTree a, NavTree b)
@@ -171,6 +192,7 @@ public class NavTree extends Pair<String, String> implements Collapsible
                     return a.getKey().compareToIgnoreCase(b.getKey());
                 }
             });
+        }
     }
 
 
@@ -365,4 +387,3 @@ public class NavTree extends Pair<String, String> implements Collapsible
         return sb;
     }
 }
-

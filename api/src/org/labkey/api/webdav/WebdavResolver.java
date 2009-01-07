@@ -18,6 +18,7 @@ package org.labkey.api.webdav;
 
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.NavTree;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -101,6 +102,9 @@ public interface WebdavResolver
         @NotNull
         List<History> getHistory();
 
+        @NotNull
+        List<NavTree> getActions();
+
         /** user may read properties of this resource */
         boolean canList(User user);
 
@@ -121,8 +125,12 @@ public interface WebdavResolver
         User getUser();
         Date getDate();
         String getMessage();
+        String getHref();       // optional detail link
     }
-    
+
+
+
+
     // marker interfaces for web folder, see FtpConnectorImpl
     public static interface WebFolder
     {

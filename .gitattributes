@@ -714,6 +714,7 @@ api/src/org/labkey/api/view/template/PrintTemplate.java -text
 api/src/org/labkey/api/view/template/TemplateHeaderView.java -text
 api/src/org/labkey/api/view/template/dialogTemplate.jsp -text
 api/src/org/labkey/api/view/template/header.jsp -text
+api/src/org/labkey/api/webdav/HistoryImpl.java -text
 api/src/org/labkey/api/webdav/WebdavResolver.java -text
 api/src/org/labkey/api/webdav/WebdavService.java -text
 api/src/org/labkey/api/wiki/FormattedHtml.java -text

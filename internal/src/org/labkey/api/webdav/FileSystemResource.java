@@ -17,18 +17,19 @@ package org.labkey.api.webdav;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditLogEvent;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -257,8 +258,18 @@ public class FileSystemResource extends AbstractResource
     @NotNull
     public List<WebdavResolver.History> getHistory()
     {
-        return Collections.EMPTY_LIST;
+        SimpleFilter filter = new SimpleFilter("EventType",  "FileSystem"); // FileSystemAuditViewFactory.EVENT_TYPE);
+        filter.addCondition("Key1", _file.getParent());
+        filter.addCondition("Key2", _file.getName());
+        List<AuditLogEvent> logs = AuditLogService.get().getEvents(filter);
+        if (null == logs)
+            return Collections.EMPTY_LIST;
+        List<WebdavResolver.History> history = new ArrayList<WebdavResolver.History>(logs.size());
+        for (AuditLogEvent e : logs)
+            history.add(new HistoryImpl(e.getCreatedBy(), e.getCreated(), e.getComment(), null));
+        return history;
     }
+
 
     /*
     * not part of Resource interface, but used by FtpConnector

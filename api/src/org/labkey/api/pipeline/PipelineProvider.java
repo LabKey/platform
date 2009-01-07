@@ -550,6 +550,8 @@ abstract public class PipelineProvider
      * @param context The ViewContext for the current request
      * @param pr the <code>PipeRoot</code> object for the current context
      * @param entries List of directories to scan for possible actions
+     *
+     * this API is only ever called with entries.size() == 1
      */
     public void updateFileProperties(ViewContext context, PipeRoot pr, List<FileEntry> entries)
     {
