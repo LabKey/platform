@@ -820,7 +820,7 @@ public class ReportsController extends SpringActionController
                 }
                 _report = form.getReport();
                 // on new reports, check for duplicates
-                if (null != _report.getDescriptor().getReportId())
+                if (null == _report.getDescriptor().getReportId())
                 {
                     if (reportNameExists(_report.getDescriptor().getReportName(), ReportUtil.getReportQueryKey(_report.getDescriptor())))
                     {
