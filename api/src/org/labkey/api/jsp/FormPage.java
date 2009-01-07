@@ -17,47 +17,47 @@
 package org.labkey.api.jsp;
 
 import org.labkey.api.view.JspView;
-import org.labkey.api.view.ViewFormData;
+import org.labkey.api.action.HasViewContext;
 import org.springframework.validation.BindException;
 
-abstract public class FormPage<FROM extends ViewFormData> extends ContextPage
+abstract public class FormPage<FORM extends HasViewContext> extends ContextPage
 {
-    public FROM __form;
+    public FORM __form;
     
-    static public <F extends ViewFormData> FormPage<F> get(Class clazzPackage, F form, String name)
+    static public <F extends HasViewContext> FormPage<F> get(Class clazzPackage, F form, String name)
     {
-        FormPage<F> ret = (FormPage<F>) JspLoader.createPage(form.getRequest(), clazzPackage, name);
+        FormPage<F> ret = (FormPage<F>) JspLoader.createPage(form.getViewContext().getRequest(), clazzPackage, name);
         ret.setForm(form);
         return ret;
     }
 
-    static public <F extends ViewFormData> JspView<F> getView(Class clazzPackage, F form, BindException errors, String name)
+    static public <F extends HasViewContext> JspView<F> getView(Class clazzPackage, F form, BindException errors, String name)
     {
         return get(clazzPackage, form, name).createView(errors);
     }
 
-    static public <F extends ViewFormData> JspView<F> getView(Class clazzPackage, F form, String name)
+    static public <F extends HasViewContext> JspView<F> getView(Class clazzPackage, F form, String name)
     {
         return get(clazzPackage, form, name).createView();
     }
 
-    public JspView<FROM> createView(BindException errors)
+    public JspView<FORM> createView(BindException errors)
     {
-        return new JspView<FROM>(this, null, errors);
+        return new JspView<FORM>(this, null, errors);
     }
 
-    public JspView<FROM> createView()
+    public JspView<FORM> createView()
     {
-        return new JspView<FROM>(this);
+        return new JspView<FORM>(this);
     }
 
-    public void setForm(FROM form)
+    public void setForm(FORM form)
     {
         setViewContext(form.getViewContext());
         __form = form;
     }
 
-    protected FROM getForm()
+    protected FORM getForm()
     {
         return __form;
     }
