@@ -20,11 +20,13 @@ import org.apache.log4j.Logger;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.view.ViewContext;
+import org.labkey.common.util.Pair;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Map;
+import java.util.List;
 
 /*
 * User: Dave
@@ -65,7 +67,7 @@ public class ModuleRReportDescriptor extends RReportDescriptor
             try
             {
                 String xml = getFileContents(metaDataFile);
-                Map<String,String> props = createPropsFromXML(xml);
+                List<Pair<String,String>> props = createPropsFromXML(xml);
 
                 if(null != props)
                     setProperties(props);

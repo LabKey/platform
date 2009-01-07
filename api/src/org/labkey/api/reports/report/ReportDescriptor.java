@@ -133,7 +133,10 @@ public class ReportDescriptor extends Entity
     }
 
     public void setProperty(String key, String value){_props.put(key, value);}
-    public void setProperties(Map<String,String> props) {_props.putAll(props);}
+    public void setProperties(List<Pair<String,String>> props)
+    {
+        init(props.toArray(new Pair[0]));
+    }
 
     public String getProperty(String key){return (String)_props.get(key);}
 
@@ -194,10 +197,12 @@ public class ReportDescriptor extends Entity
         _flags = flags;
     }
 
+/*
     protected void init(Map<String,String> props)
     {
         _props.putAll(props);
     }
+*/
 
     protected void init(Pair<String, String>[] params)
     {
@@ -244,12 +249,20 @@ public class ReportDescriptor extends Entity
         sb.append(PageFlowUtil.encode(String.valueOf(value)));
     }
 
-    protected static ReportDescriptor create(Map<String,String> props)
+    protected static ReportDescriptor create(List<Pair<String,String>> props)
     {
-        String type = props.get(Prop.descriptorType.name());
+        String type = null;
+        for (Pair<String, String> param : props)
+        {
+            if (Prop.descriptorType.toString().equals(param.getKey()))
+            {
+                type = param.getValue();
+                break;
+            }
+        }
         ReportDescriptor descriptor = ReportService.get().createDescriptorInstance(type);
         if (descriptor != null)
-            descriptor.init(props);
+            descriptor.init(props.toArray(new Pair[0]));
         
         return descriptor;
     }
@@ -358,11 +371,11 @@ public class ReportDescriptor extends Entity
 
     public static ReportDescriptor createFromXML(String xmlString)
     {
-        Map<String,String> props = createPropsFromXML(xmlString);
+        List<Pair<String,String>> props = createPropsFromXML(xmlString);
         return create(props);
     }
 
-    public static Map<String,String> createPropsFromXML(String xmlString)
+    public static List<Pair<String, String>> createPropsFromXML(String xmlString)
     {
         try
         {
@@ -375,7 +388,7 @@ public class ReportDescriptor extends Entity
             {
                 Element root = DOMUtil.getFirstChildElement(doc);
 
-                Map<String,String> props = new HashMap<String,String>();
+                List<Pair<String,String>> props = new ArrayList<Pair<String,String>>();
 
                 Element propsElem = DOMUtil.getFirstChildElement(root);
                 if(null == propsElem)
@@ -398,7 +411,7 @@ public class ReportDescriptor extends Entity
                     else
                         value = DOMUtil.getChildText(propElem);
 
-                    props.put(key, value);
+                    props.add(new Pair(key, value));
                 }
                 return props;
             }
