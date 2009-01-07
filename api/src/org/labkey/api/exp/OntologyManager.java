@@ -1132,16 +1132,16 @@ public class OntologyManager
         }
         return pd;
 	}
-    
 
-    private static List<String>  comparePropertyDescriptors(PropertyDescriptor pdIn, PropertyDescriptor pd) throws SQLException
+
+    private static List<String> comparePropertyDescriptors(PropertyDescriptor pdIn, PropertyDescriptor pd) throws SQLException
     {
         List<String> colDiffs = new ArrayList<String>();
         String val;
 
         // if the returned pd is in a different project, it better be the shared project
         if (!pd.getProject().equals(pdIn.getProject()) && !pd.getProject().equals(_sharedContainer))
-                colDiffs.add("Project");
+            colDiffs.add("Project");
 
         // check the pd values that can't change
         if (!pd.getRangeURI().equals(pdIn.getRangeURI()))
@@ -1149,40 +1149,43 @@ public class OntologyManager
         if (!pd.getPropertyType().equals(pdIn.getPropertyType()))
             colDiffs.add("PropertyType");
 
-        if (pdIn.getPropertyId() !=0 && !(pd.getPropertyId() == pdIn.getPropertyId()))
+        if (pdIn.getPropertyId() != 0 && !(pd.getPropertyId() == pdIn.getPropertyId()))
             colDiffs.add("PropertyId");
 
-        val=pdIn.getName();
-            if (null!= val && (pd.getName() == null || !pd.getName().equals(val)))
+        val = pdIn.getName();
+        if (null != val && (pd.getName() == null || !pd.getName().equals(val)))
             colDiffs.add("Name");
 
-        val=pdIn.getConceptURI();
-            if (null!= val && (pd.getConceptURI() == null || !pd.getConceptURI().equals(val)))
+        val = pdIn.getConceptURI();
+        if (null != val && (pd.getConceptURI() == null || !pd.getConceptURI().equals(val)))
             colDiffs.add("ConceptURI");
 
-        val=pdIn.getDescription();
-            if (null!= val && (pd.getDescription() == null || !pd.getDescription().equals(val)))
+        val = pdIn.getDescription();
+        if (null != val && (pd.getDescription() == null || !pd.getDescription().equals(val)))
             colDiffs.add("Description");
 
-        val=pdIn.getFormat();
-            if (null!= val && (pd.getFormat() == null || !pd.getFormat().equals(val)))
+        val = pdIn.getFormat();
+        if (null != val && (pd.getFormat() == null || !pd.getFormat().equals(val)))
             colDiffs.add("Format");
 
-        val=pdIn.getLabel();
-            if (null!= val && (pd.getLabel() == null || !pd.getLabel().equals(val)))
+        val = pdIn.getLabel();
+        if (null != val && (pd.getLabel() == null || !pd.getLabel().equals(val)))
             colDiffs.add("Label");
 
-        val=pdIn.getOntologyURI();
-            if (null!= val && (pd.getOntologyURI() == null || !pd.getOntologyURI().equals(val)))
+        val = pdIn.getOntologyURI();
+        if (null != val && (pd.getOntologyURI() == null || !pd.getOntologyURI().equals(val)))
             colDiffs.add("OntologyURI");
 
-        val=pdIn.getSearchTerms();
-            if (null!= val && (pd.getSearchTerms() == null || !pd.getSearchTerms().equals(val)))
+        val = pdIn.getSearchTerms();
+        if (null != val && (pd.getSearchTerms() == null || !pd.getSearchTerms().equals(val)))
             colDiffs.add("SearchTerms");
 
-        val=pdIn.getSemanticType();
-            if (null!= val && (pd.getSemanticType() == null || !pd.getSemanticType().equals(val)))
+        val = pdIn.getSemanticType();
+        if (null != val && (pd.getSemanticType() == null || !pd.getSemanticType().equals(val)))
             colDiffs.add("SemanticType");
+
+        if (pd.isQcEnabled() != pdIn.isQcEnabled())
+            colDiffs.add("QcEnabled");
 
         return colDiffs;
     }

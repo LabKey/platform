@@ -26,10 +26,7 @@ import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.gwt.client.util.IPropertyWrapper;
 import org.labkey.api.gwt.client.util.StringProperty;
-import org.labkey.api.gwt.client.ui.property.FormatItem;
-import org.labkey.api.gwt.client.ui.property.RequiredItem;
-import org.labkey.api.gwt.client.ui.property.DescriptionItem;
-import org.labkey.api.gwt.client.ui.property.ValidatorItem;
+import org.labkey.api.gwt.client.ui.property.*;
 
 import java.util.*;
 
@@ -217,7 +214,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     {
         PropertyPane<DomainType, FieldType> propertyPane = new PropertyPane<DomainType, FieldType>(propertyDock.getElement(), this);
         propertyPane.addItem(new FormatItem<DomainType, FieldType>(propertyPane));
-        propertyPane.addItem(new RequiredItem<DomainType, FieldType>(propertyPane));
+        RequiredItem<DomainType, FieldType> requiredItem = new RequiredItem<DomainType, FieldType>(propertyPane);
+        propertyPane.addItem(requiredItem);
+        propertyPane.addItem(new QcEnabledItem<DomainType, FieldType>(propertyPane, requiredItem));
         propertyPane.addItem(new DescriptionItem<DomainType, FieldType>(propertyPane));
         propertyPane.addItem(new ValidatorItem<DomainType, FieldType>(propertyPane));
         return propertyPane;

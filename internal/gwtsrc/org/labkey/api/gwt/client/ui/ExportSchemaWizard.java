@@ -76,6 +76,7 @@ public class ExportSchemaWizard extends DialogBox
         sb.append("RangeURI").append("\t");
         sb.append("Format").append("\t");
         sb.append("NotNull").append("\t");
+        sb.append("QcEnabled").append("\t");
         sb.append("Description").append("\n");
 
         int numProps = propertiesEditor.getPropertyCount();
@@ -88,6 +89,7 @@ public class ExportSchemaWizard extends DialogBox
             sb.append(getStringValue(prop.getRangeURI())).append("\t");
             sb.append(getStringValue(prop.getFormat())).append("\t");
             sb.append(getStringValue(prop.isRequired())).append("\t");
+            sb.append(getStringValue(prop.isQcEnabled())).append("\t");
             sb.append(getStringValue(prop.getDescription())).append("\n");
         }
 

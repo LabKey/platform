@@ -80,8 +80,11 @@ public class ColumnInfo
     private String metaDataName = null;
     private String selectName = null;
     private String description = null;
-    protected ColumnInfo _displayField;
+    protected ColumnInfo displayField;
     private String propertyURI = null;
+
+    // Only set if we have an associated qc column for this column
+    private String qcColumnName = null;
 
     private static Logger _log = Logger.getLogger(ColumnInfo.class);
 
@@ -162,9 +165,10 @@ public class ColumnInfo
         // We also do not copy URL since the column aliases do not get fixed up.
         // Instead, set the URL on the FK
 
-
         // Consider: it does not always make sense to preserve the "isKeyField" property.
         setKeyField(col.isKeyField());
+
+        setQcColumnName(col.getQcColumnName());
     }
 
 
@@ -324,8 +328,8 @@ public class ColumnInfo
 
     public ColumnInfo getDisplayField()
     {
-        if (_displayField != null)
-            return _displayField;
+        if (displayField != null)
+            return displayField;
         ForeignKey fk = getFk();
         if (fk == null)
             return null;
@@ -363,7 +367,7 @@ public class ColumnInfo
 
     public void setDisplayField(ColumnInfo field)
     {
-        _displayField = field;
+        displayField = field;
     }
 
     public boolean getNullable()
@@ -972,13 +976,13 @@ public class ColumnInfo
 
     public DisplayColumn getRenderer()
     {
-        if (_displayField == null || _displayField == this)
+        if (displayField == null || displayField == this)
         {
             return _displayColumnFactory.createRenderer(this);
         }
         else
         {
-            return _displayField.getRenderer();
+            return displayField.getRenderer();
         }
     }
 
@@ -1407,6 +1411,21 @@ public class ColumnInfo
     public void setIsHidden(boolean hidden)
     {
         isHidden = hidden;
+    }
+
+    public boolean isQcEnabled()
+    {
+        return qcColumnName != null;
+    }
+
+    public String getQcColumnName()
+    {
+        return qcColumnName;
+    }
+
+    public void setQcColumnName(String qcColumnName)
+    {
+        this.qcColumnName = qcColumnName;
     }
 
     /**

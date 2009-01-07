@@ -38,6 +38,7 @@ public interface DomainProperty
     Domain getDomain();
     IPropertyType getType();
     boolean isRequired();
+    boolean isQcEnabled();
 
     void delete();
 
@@ -49,6 +50,7 @@ public interface DomainProperty
     void setRangeURI(String uri);
     void setFormat(String s);
     void setRequired(boolean b);
+    void setQcEnabled(boolean qc);
 
     void initColumn(User user, ColumnInfo column);
 
@@ -61,7 +63,6 @@ public interface DomainProperty
 
     void setLookup(Lookup lookup);
 
-    @Deprecated
     PropertyDescriptor getPropertyDescriptor();
 
     IPropertyValidator[] getValidators();

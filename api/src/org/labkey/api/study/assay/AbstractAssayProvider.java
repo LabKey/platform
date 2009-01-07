@@ -833,6 +833,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 propCopy.setDescription(propSrc.getDescription());
                 propCopy.setType(propSrc.getType());
                 propCopy.setRequired(propSrc.isRequired());
+                propCopy.setQcEnabled(propSrc.isQcEnabled());
                 // check to see if we're moving a lookup column to another container:
                 Lookup lookup = propSrc.getLookup();
                 if (lookup != null && !toCopy.getContainer().equals(targetContainer))

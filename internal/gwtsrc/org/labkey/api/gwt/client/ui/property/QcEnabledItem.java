@@ -23,52 +23,59 @@ import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.FlexTable;
 
 /**
- * User: jeckels
- * Date: Nov 14, 2008
+ * User: jgarms
+ * Date: Jan 7, 2009
  */
-public class RequiredItem<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> extends PropertyPaneItem<DomainType, FieldType>
+public class QcEnabledItem<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> extends PropertyPaneItem<DomainType, FieldType>
 {
-    private CheckBox _requiredCheckBox = new CheckBox();
+    private final CheckBox qcCheckbox = new CheckBox();
+    private final RequiredItem requiredItem;
 
-    public RequiredItem(PropertyPane<DomainType, FieldType> propertyPane)
+    public QcEnabledItem(PropertyPane<DomainType, FieldType> propertyPane, RequiredItem requiredItem)
     {
         super(propertyPane);
+        this.requiredItem = requiredItem;
     }
 
     public int addToTable(FlexTable flexTable, int row)
     {
-        flexTable.setWidget(row, LABEL_COLUMN, new Label("Required"));
-        flexTable.setWidget(row, INPUT_COLUMN, _requiredCheckBox);
+        flexTable.setWidget(row, LABEL_COLUMN, new Label("QC Enabled"));
+        flexTable.setWidget(row, INPUT_COLUMN, qcCheckbox);
 
-        _requiredCheckBox.addClickListener(createClickListener());
-        _requiredCheckBox.addKeyboardListener(createKeyboardListener());
+        qcCheckbox.addClickListener(createClickListener());
+        qcCheckbox.addKeyboardListener(createKeyboardListener());
 
         return ++row;
     }
 
     public boolean copyValuesToPropertyDescriptor(FieldType field)
     {
-        if (_requiredCheckBox.isEnabled())
+        // Called when clicked or keyed
+
+        if (qcCheckbox.isEnabled())
         {
-            boolean changed = !field.isRequired() == _requiredCheckBox.isChecked();
-            field.setRequired(_requiredCheckBox.isChecked());
-            return changed;
+            if (!field.isQcEnabled() == qcCheckbox.isChecked())
+            {
+                if (requiredItem.isChecked())
+                {
+                    // TODO: A required item can't have QC. This needs to pop a dialog or disable itself
+                }
+                field.setQcEnabled(qcCheckbox.isChecked());
+                return true;
+            }
+            // No change
+            return false;
         }
         return false;
     }
 
     public void enabledChanged()
     {
-        _requiredCheckBox.setEnabled(isEnabled());
+        qcCheckbox.setEnabled(isEnabled());
     }
 
     public void showPropertyDescriptor(DomainType domain, FieldType field)
     {
-        _requiredCheckBox.setChecked(field.isRequired());
-    }
-
-    public boolean isChecked()
-    {
-        return _requiredCheckBox.isChecked();
+        qcCheckbox.setChecked(field.isQcEnabled());
     }
 }

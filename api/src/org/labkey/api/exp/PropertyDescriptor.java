@@ -51,6 +51,7 @@ public class PropertyDescriptor implements Serializable, Cloneable
     private String lookupContainer;
     private String lookupSchema;
     private String lookupQuery;
+    private boolean qcEnabled;
 
     public String getLookupContainer()
     {
@@ -288,6 +289,16 @@ public class PropertyDescriptor implements Serializable, Cloneable
     public void setRequired(boolean required)
     {
         this.required = required;
+    }
+
+    public boolean isQcEnabled()
+    {
+        return qcEnabled;
+    }
+
+    public void setQcEnabled(boolean qcEnabled)
+    {
+        this.qcEnabled = qcEnabled;
     }
 
     @Override
