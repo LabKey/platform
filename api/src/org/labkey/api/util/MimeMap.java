@@ -33,7 +33,6 @@ import junit.framework.TestSuite;
  */
 public class MimeMap implements FileNameMap
 {
-
     static Hashtable<String, MimeType> mimeTypeMap = new Hashtable<String, MimeType>(101);
     static Map<String,MimeType> extensionMap = new HashMap<String, MimeType>();
     
@@ -124,8 +123,9 @@ public class MimeMap implements FileNameMap
     private MimeType getMimeType(String extn)
     {
         extn = extn.toLowerCase();
-        MimeType type = map.get(extn.toLowerCase());
-        if (type == null) type = extensionMap.get(extn.toLowerCase());
+        MimeType type = map.get(extn);
+        if (type == null)
+            type = extensionMap.get(extn);
         return type;
     }
 
