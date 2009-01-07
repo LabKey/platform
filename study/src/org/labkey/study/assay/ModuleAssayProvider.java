@@ -54,14 +54,26 @@ import java.sql.SQLException;
 public class ModuleAssayProvider extends TsvAssayProvider
 {
 
+    private File baseDir;
+    private File viewsDir;
     private String name;
     private Map<IAssayDomainType, DomainDescriptorType> domainsDescriptors = new HashMap<IAssayDomainType, DomainDescriptorType>();
-    private Map<IAssayDomainType, File> viewFiles = new HashMap<IAssayDomainType, File>();
+//    private Map<IAssayDomainType, File> viewFiles = new HashMap<IAssayDomainType, File>();
 
-    public ModuleAssayProvider(String name)
+    public ModuleAssayProvider(File baseDir, String name)
     {
         super(name + "Protocol", name + "Run");
+        this.baseDir = baseDir;
         this.name = name;
+
+        init();
+    }
+
+    protected void init()
+    {
+        viewsDir = new File(baseDir, "views");
+        if (!viewsDir.isDirectory() || !viewsDir.canRead())
+            viewsDir = null;
     }
 
     public String getName()
@@ -123,6 +135,26 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return super.createDataDomain(c, user);
     }
 
+    @Override
+    public TableInfo createDataTable(UserSchema schema, String alias, ExpProtocol protocol)
+    {
+        RunDataTable table = (RunDataTable)super.createDataTable(schema, alias, protocol);
+        if (table == null)
+            return null;
+
+        if (hasView(AssayDomainTypes.Data))
+        {
+            // XXX: consider adding a .getDataDetailsURL() to AbstractAssayProvider or TsvAssayProvider
+            ActionURL dataDetailsURL = new ActionURL(AssayDataDetailsAction.class, schema.getContainer());
+            dataDetailsURL.addParameter("rowId", protocol.getRowId());
+            Map<String, String> params = new HashMap<String, String>();
+            // map ObjectId to url parameter DataDetailsForm.dataRowId
+            params.put("dataRowId", "ObjectId");
+            table.addDetailsURL(new DetailsURL(dataDetailsURL, params));
+        }
+        return table;
+    }
+
     /**
      * Get a single row from the data table as a Map.
      */
@@ -148,19 +180,38 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return maps[0];
     }
 
-    public void addView(IAssayDomainType domainType, File viewFile)
+    // XXX: consider moving to TsvAssayProvider
+    protected boolean hasView(IAssayDomainType domainType)
     {
-        viewFiles.put(domainType, viewFile);
+        if (viewsDir != null)
+        {
+            File viewFile = new File(viewsDir, domainType.getName().toLowerCase() + ".html");
+            if (viewFile.canRead())
+                return true;
+        }
+        return false;
+    }
+
+    // XXX: consider moving to TsvAssayProvider
+    protected ModelAndView getView(IAssayDomainType domainType)
+    {
+        if (viewsDir != null)
+        {
+            File viewFile = new File(viewsDir, domainType.getName().toLowerCase() + ".html");
+            if (viewFile.canRead())
+                return new HtmlView(PageFlowUtil.getFileContentsAsString(viewFile));
+        }
+        return null;
     }
 
     @Override
     public ModelAndView createRunDataView(ViewContext context, ExpProtocol protocol)
     {
-        File runDataView = viewFiles.get(AssayDomainTypes.Run);
-        if (runDataView == null || !runDataView.canRead())
+        ModelAndView runDataView = getView(AssayDomainTypes.Run);
+        if (runDataView == null)
             return null;
 
-        return new HtmlView(PageFlowUtil.getFileContentsAsString(runDataView));
+        return runDataView;
     }
 
     public static class DataDetailsModel
@@ -176,8 +227,8 @@ public class ModuleAssayProvider extends TsvAssayProvider
     @Override
     public ModelAndView createDataDetailsView(ViewContext context, ExpProtocol protocol, ExpData data, Object objectId)
     {
-        File dataDetailsView = viewFiles.get(AssayDomainTypes.Data);
-        if (dataDetailsView == null || !dataDetailsView.canRead())
+        ModelAndView dataDetailsView = getView(AssayDomainTypes.Data);
+        if (dataDetailsView == null)
             return super.createDataDetailsView(context, protocol, data, objectId);
 
         DataDetailsModel model = new DataDetailsModel();
@@ -193,7 +244,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
 //            HttpView.throwNotFound("Data values for '" + data.getRowId() + "' not found");
 
         JspView<DataDetailsModel> view = new JspView<DataDetailsModel>("/org/labkey/study/assay/view/dataDetails.jsp", model);
-        view.setView("nested", new HtmlView(PageFlowUtil.getFileContentsAsString(dataDetailsView)));
+        view.setView("nested", dataDetailsView);
         return view;
     }
 

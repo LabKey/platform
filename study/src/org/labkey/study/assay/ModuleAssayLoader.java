@@ -68,7 +68,7 @@ public class ModuleAssayLoader implements ModuleResourceLoader
 
         String assayName = assayProviderDir.getName();
 
-        ModuleAssayProvider assayProvider = new ModuleAssayProvider(assayName);
+        ModuleAssayProvider assayProvider = new ModuleAssayProvider(assayProviderDir, assayName);
 
         File domainDir = new File(assayProviderDir, "domains");
         if (domainDir.canRead())
@@ -86,18 +86,6 @@ public class ModuleAssayLoader implements ModuleResourceLoader
 //                if (!domainFile.canRead())
 //                    continue;
 //                GWTDomain domain = DomainUtil.fromTsv(domainFile);
-            }
-        }
-
-        File viewsDir = new File(assayProviderDir, "views");
-        if (viewsDir.canRead())
-        {
-            for (IAssayDomainType domainType : new IAssayDomainType[] { AssayDomainTypes.Run, AssayDomainTypes.Data })
-            {
-                File viewFile = new File(viewsDir, domainType.getName().toLowerCase() + ".html");
-                if (!viewFile.canRead())
-                    continue;
-                assayProvider.addView(domainType, viewFile);
             }
         }
 

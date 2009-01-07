@@ -250,18 +250,7 @@ public class TsvAssayProvider extends AbstractAssayProvider
 
     public TableInfo createDataTable(UserSchema schema, String alias, ExpProtocol protocol)
     {
-        RunDataTable table = new RunDataTable(schema, alias, protocol);
-        if (table == null)
-            return null;
-
-        // XXX: consider adding a .getDataDetailsURL() to AbstractAssayProvider
-        ActionURL dataDetailsURL = new ActionURL(AssayDataDetailsAction.class, schema.getContainer());
-        dataDetailsURL.addParameter("rowId", protocol.getRowId());
-        Map<String, String> params = new HashMap<String, String>();
-        // map ObjectId to url parameter DataDetailsForm.dataRowId
-        params.put("dataRowId", "ObjectId");
-        table.addDetailsURL(new DetailsURL(dataDetailsURL, params));
-        return table;
+        return new RunDataTable(schema, alias, protocol);
     }
 
     public FieldKey getParticipantIDFieldKey()
