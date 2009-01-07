@@ -365,7 +365,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     public Report[] getReports(User user, Container c, String key) throws SQLException
     {
         List<ReportDescriptor> moduleReportDescriptors = new ArrayList<ReportDescriptor>();
-        for(Module module : ModuleLoader.getInstance().getModules())
+        for(Module module : c.getActiveModules())
         {
             List<ReportDescriptor> descriptors = module.getReportDescriptors(key);
             if(null != descriptors)
