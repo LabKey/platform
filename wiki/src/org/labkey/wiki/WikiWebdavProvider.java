@@ -24,6 +24,7 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
@@ -312,16 +313,19 @@ class WikiWebdavProvider implements WebdavService.Provider
             WikiVersion[] versions = WikiManager.getAllVersions(_wiki);
             List<WebdavResolver.History> list = new ArrayList<WebdavResolver.History>();
             for (WikiVersion v : versions)
-                list.add(new WikiHistory(v));
+                list.add(new WikiHistory(_wiki, v));
             return list;
         }
 
 
         public static class WikiHistory implements WebdavResolver.History
         {
+            Wiki w;
             WikiVersion v;
-            WikiHistory(WikiVersion v)
+
+            WikiHistory(Wiki w, WikiVersion v)
             {
+                this.w = w;
                 this.v = v;    
             }
 
@@ -338,6 +342,14 @@ class WikiWebdavProvider implements WebdavService.Provider
             public String getMessage()
             {
                 return "version " + v.getVersion();
+            }
+
+            public String getHref()
+            {
+                ActionURL url = new ActionURL(WikiController.VersionAction.class, ContainerManager.getForId(w.getContainerId()));
+                url.addParameter("name", w.getName());
+                url.addParameter("version", String.valueOf(v.getVersion()));
+                return url.toString();
             }
         }
 

@@ -28,10 +28,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.*;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewServlet;
@@ -437,7 +434,7 @@ public class DavController extends SpringActionController
             WebdavResolver.Resource resource = resolvePath();
             if (null != resource)
             {
-                StringBuffer methodsAllowed = determineMethodsAllowed(resource);
+                StringBuilder methodsAllowed = determineMethodsAllowed(resource);
                 getResponse().setMethodsAllowed(methodsAllowed);
             }
             return WebdavStatus.SC_METHOD_NOT_ALLOWED;
@@ -544,7 +541,7 @@ public class DavController extends SpringActionController
     public class PropfindAction extends DavAction
     {
         boolean defaultListRoot = true; // return root node when depth>0?
-        int defaultDepth = INFINITY;
+        int defaultDepth = 1;
         
         public PropfindAction()
         {
@@ -561,28 +558,25 @@ public class DavController extends SpringActionController
             return resolvePath();
         }
 
-        // "0", "1", "1,noroot" or "infinity"
         Pair<Integer, Boolean> getDepthParameter()
         {
+            String depthStr = getRequest().getHeader("Depth");
+            if (null == depthStr)
+                depthStr = getRequest().getParameter("depth");
+            if (null == depthStr)
+                return new Pair<Integer, Boolean>(defaultDepth, defaultListRoot);
+            int depth = defaultDepth;
+            boolean noroot = depthStr.endsWith(",noroot");
+            if (noroot)
+                depthStr = depthStr.substring(0,depthStr.length()-",noroot".length());
             try
             {
-                String depthStr = getRequest().getHeader("Depth");
-                if (null == depthStr)
-                    depthStr = getViewContext().getActionURL().getParameter("depth");
-                if (null == depthStr)
-                    return new Pair<Integer, Boolean>(defaultDepth, defaultListRoot);
-                if ("0".equals(depthStr))
-                    return new Pair<Integer, Boolean>(0, false);
-                if ("1".equals(depthStr))
-                    return new Pair<Integer, Boolean>(1, false);
-                if ("1,noroot".equals(depthStr))
-                    return new Pair<Integer, Boolean>(1, true);
-                return new Pair<Integer, Boolean>(INFINITY, false);
+                depth = Math.min(INFINITY, Math.max(0,Integer.parseInt(depthStr.trim())));
             }
             catch (NumberFormatException x)
             {
             }
-            return new Pair<Integer, Boolean>(INFINITY, false);
+            return new Pair<Integer,Boolean>(depth, depth>0 && noroot);
         }
 
         public WebdavStatus doMethod() throws DavException, IOException
@@ -685,7 +679,6 @@ public class DavController extends SpringActionController
                                 {
                                     propertyName = nodeName;
                                 }
-                                // href is a live property which is handled differently
                                 properties.add(propertyName);
                                 break;
                         }
@@ -1094,7 +1087,7 @@ public class DavController extends SpringActionController
 //										  + "<locktype><write/></locktype>"
 //										  + "</lockentry>" + "<lockentry>"
 //										  + "<lockscope><shared/></lockscope>"
-//										  + "<locktype><write/></locktype>"
+//										  + "<locktype><write/>meth</locktype>"
 //										  + "</lockentry>";
 //								generatedXML.writeElement(null, "supportedlock", XMLWriter.OPENING);
 //								generatedXML.writeText(supportedLocks);
@@ -1127,16 +1120,32 @@ public class DavController extends SpringActionController
                                 xml.writeElement(null, "md5sum", XMLWriter.CLOSING);
                             }
                         }
-//                        else if (property.equals("history"))
-//                        {
-//                            xml.writeElement(null, "history", XMLWriter.OPENING);
-//                            List<WebdavResolver.History> list = resource.getHistory();
-//                            for (WebdavResolver.History history : list)
-//                            {
-//
-//                            }
-//                            xml.writeElement(null, "history", XMLWriter.CLOSING);
-//                        }
+                        else if (property.equals("history"))
+                        {
+                            xml.writeElement(null, "history", XMLWriter.OPENING);
+                            List<WebdavResolver.History> list = resource.getHistory();
+                            for (WebdavResolver.History history : list)
+                            {
+                                xml.writeElement(null, "entry", XMLWriter.OPENING);
+                                xml.writeElement(null, "date", XMLWriter.OPENING);
+                                  xml.writeText(DateUtil.toISO(history.getDate()));
+                                xml.writeElement(null, "date", XMLWriter.CLOSING);
+                                xml.writeElement(null, "user", XMLWriter.OPENING);
+                                  xml.writeText(h(history.getUser().getDisplayName(null)));
+                                xml.writeElement(null, "user", XMLWriter.CLOSING);
+                                xml.writeElement(null, "message", XMLWriter.OPENING);
+                                  xml.writeText(h(history.getMessage()));
+                                xml.writeElement(null, "message", XMLWriter.CLOSING);
+                                if (null != history.getHref())
+                                {
+                                    xml.writeElement(null, "href", XMLWriter.OPENING);
+                                      xml.writeText(h(history.getHref()));
+                                    xml.writeElement(null, "href", XMLWriter.CLOSING);
+                                }
+                                xml.writeElement(null, "entry", XMLWriter.CLOSING);
+                            }
+                            xml.writeElement(null, "history", XMLWriter.CLOSING);
+                        }
                         else
                         {
                             propertiesNotFound.add(property);
@@ -1468,7 +1477,7 @@ public class DavController extends SpringActionController
             if (exists)
             {
                 // Get allowed methods
-                StringBuffer methodsAllowed = determineMethodsAllowed(resource);
+                StringBuilder methodsAllowed = determineMethodsAllowed(resource);
                 getResponse().setMethodsAllowed(methodsAllowed);
                 throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED);
             }
@@ -2009,7 +2018,7 @@ public class DavController extends SpringActionController
         {
             WebdavResponse response = getResponse();
             response.addOptionsHeaders();
-            StringBuffer methodsAllowed = determineMethodsAllowed();
+            StringBuilder methodsAllowed = determineMethodsAllowed();
             response.setMethodsAllowed(methodsAllowed);
             return WebdavStatus.SC_OK;
         }
@@ -2245,27 +2254,36 @@ public class DavController extends SpringActionController
     }
 
 
-    private StringBuffer determineMethodsAllowed() throws DavException
+    private StringBuilder determineMethodsAllowed() throws DavException
     {
         WebdavResolver.Resource resource = resolvePath();
         if (resource == null)
-            return new StringBuffer();
+            return new StringBuilder();
         return determineMethodsAllowed(resource);
     }
 
 
-    private StringBuffer determineMethodsAllowed(WebdavResolver.Resource resource)
+    private StringBuilder determineMethodsAllowed(WebdavResolver.Resource resource)
     {
-        StringBuffer methodsAllowed = new StringBuffer();
+        User user = getUser();
+        StringBuilder methodsAllowed = new StringBuilder("OPTIONS");
         if (!resource.exists())
         {
-            methodsAllowed.append("OPTIONS, MKCOL, PUT");
+            if (resource.canCreate(user))
+                methodsAllowed.append(", MKCOL, PUT");
             if (_locking)
                 methodsAllowed.append(", LOCK");
         }
         else
         {
-            methodsAllowed.append("OPTIONS, GET, HEAD, POST, DELETE, COPY, MOVE"); // TRACE PROPPATCH
+            boolean read = resource.canRead(user);
+            boolean delete = resource.canDelete(user);
+            if (read)
+                methodsAllowed.append(", GET, HEAD, POST, COPY");
+            if (delete)
+                methodsAllowed.append(", DELETE");
+            if (delete && read)
+                methodsAllowed.append(", MOVE");
             if (_locking)
                 methodsAllowed.append(", LOCK, UNLOCK");
             if (_listings)
@@ -2881,7 +2899,7 @@ public class DavController extends SpringActionController
             page.resource = resource;
             page.loginURL = getLoginURL();
 
-            if (1==1)
+            if (0==1)
             {
                 JspView<ListPage> v = new JspView<ListPage>(DavController.class,  "list.jsp", page);
                 v.setFrame(WebPartView.FrameType.NONE);

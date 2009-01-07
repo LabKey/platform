@@ -238,7 +238,7 @@ Ext.extend(FileSystem, Ext.util.Observable,
         return false;
     },
 
-    getHistory : function(path, callback)
+    getHistory : function(path, callback) // callback(filesystem, success, path, history[])
     {
     },
 
@@ -349,6 +349,9 @@ var WebdavFileSystem = function(config)
         return rec.uriOBJECT;
     };
 
+    this.HistoryRecord = Ext.data.Record.create(['user', 'date', 'message', 'href']);
+    this.historyReader = new Ext.data.XmlReader({record : "entry"}, this.HistoryRecord);
+    
     this.FileRecord = Ext.data.Record.create(
         [
             {name: 'uri', mapping: 'href',
@@ -399,6 +402,24 @@ var WebdavFileSystem = function(config)
 
 Ext.extend(WebdavFileSystem, FileSystem,
 {
+    getHistory : function(path, callback) // calback(filesystem, success, path, history[])
+    {
+        var body =  "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<propfind xmlns=\"DAV:\"><prop><history></prop></propfind>";
+
+        var proxy = new Ext.data.HttpProxy(
+            {
+                url: this.concatPaths(this.prefixUrl, path),
+                xmlData : body,
+                method: "GET",
+                headers: {"Method" : "PROPFIND", "Depth" : "0"}
+            });
+        var cb = function(response, args, success)
+        {
+            callback.call(args.filesystem, success, args.path, response.records);
+        }
+        proxy.load({method:"PROPFIND", depth:"0"}, this.historyReader, cb, this, {filesystem:this, path:path});
+    },
+
     createDirectory : function(path, callback)
     {
         try
@@ -489,7 +510,7 @@ var AppletFileSystem = function(config)
 Ext.extend(AppletFileSystem, FileSystem,
 {
     rootPath : "/",
-    separator : "/",
+    separator : Ext.isWindows ? "\\" : "/",
     retry : 0,
 
     createDirectory : function(path, callback)
@@ -554,6 +575,12 @@ var FileListMenu = function(fileSystem, path, fn)
     this.showFiles = false;
     this.fileSystem = fileSystem;
     this.path = path;
+
+    if (path && path != fileSystem.rootPath)
+    {
+        this.addMenuItem(new Ext.menu.Item({text: '[up]', path:this.fileSystem.parentPath(path)}));
+    }
+
     var records = fileSystem.directoryFromCache(path);
     var populate = function(filesystem, success, path, records)
         {
@@ -563,7 +590,7 @@ var FileListMenu = function(fileSystem, path, fn)
                 var data = record.data;
                 if (!this.showFiles && data.file)
                     continue;
-                this.addMenuItem(new Ext.menu.Item({text:data.name, icon:data.iconHref, record:record}));
+                this.addMenuItem(new Ext.menu.Item({text:data.name, icon:data.iconHref, path:record.data.path}));
             }
         };
     if (records)
@@ -574,8 +601,8 @@ var FileListMenu = function(fileSystem, path, fn)
     {
         this.on("click", function(menu,item,event)
         {
-            var record = item.initialConfig.record;
-            fn(record.data.path);
+            var path = item.initialConfig.path;
+            fn(path);
         });
     }
 };
@@ -697,11 +724,21 @@ var BROWSER_EVENTS = {selectionchange:"selectionchange", directorychange:"direct
 //
 var FileBrowser = function(config)
 {
-    config = config || {};
+    this.actions =
+    {
+        download: this.getDownloadAction(),
+        parentFolder: this.getParentFolderAction(),
+        refresh: this.getRefreshAction(),
+        help: this.getHelpAction(),
+        createDirectory: this.getCreateDirectoryAction(),
+        showHistory : this.getShowHistoryAction()
+    };
+    this.addEvents( [ BROWSER_EVENTS.selectionchange, BROWSER_EVENTS.directorychange ]);
+
+    config = config || {};                                                                 
     Ext.apply(this.actions, config.actions || {});
     delete config.actions;
     Ext.apply(this, config);
-    this.addEvents( [ BROWSER_EVENTS.selectionchange, BROWSER_EVENTS.directorychange ]);
     this.__init__(config);
 };
 Ext.extend(FileBrowser, Ext.Panel,
@@ -726,6 +763,7 @@ Ext.extend(FileBrowser, Ext.Panel,
     //
 
     actions : {},
+    tbar : null,
 
     action : new Ext.Action({text: 'Alert', iconCls: 'blist', scope: this, handler: function()
     {
@@ -809,6 +847,30 @@ Ext.extend(FileBrowser, Ext.Panel,
             this.helpWindow.show();
         }});
     },
+
+
+    getShowHistoryAction : function()
+    {
+        return new Ext.Action({text: 'Show History', scope:this, handler: function()
+        {
+            if (!this.history || this.history.length == 0)
+                return;
+            var items = this.history;
+            var html = [];
+            for (var i=0 ; i<items.length ; i++)
+            {
+                var item = items[i];
+                html.push("<b>"); html.push(item.date); html.push("</b><br>");
+                html.push(h(item.user)); html.push("<br>");
+                html.push(h(item.message));
+                if (html.href)
+                {
+                    html.push("<a color=green href='"); html.push(h(html.href)); html.push("'>link</a><br>");
+                }
+            }
+        }});
+    },
+
 
     changeDirectory : function(record)
     {
@@ -922,11 +984,34 @@ Ext.extend(FileBrowser, Ext.Panel,
 
     addressBarHandler : null,
 
+
+    history : null,
+    
+    _historyCallback : function(filesystem, path, success, records)
+    {
+        if (path == this.selectedRecord.data.path)
+        {
+            this.history = records;
+            if (this.actions.showHistory)
+                this.actions.showHistory.enable();
+        }
+    },
+
+    getHistory : function(path)
+    {
+        this.fileSystem.getHistory(path, this._history.createDelegate(this));
+    },
+
     updateAddressBar : function(path)
     {
         var el = Ext.get('addressBar');
         if (!el)
             return;
+        var elStyle = el.dom.style;
+        elStyle.backgroundColor = "#f0f0f0";                                           
+        elStyle.height = "100%";
+        elStyle.width = "100%";
+        
         if (this.addressBarHandler)
         {
             el.un("click", this.addressBarHandler);
@@ -937,7 +1022,7 @@ Ext.extend(FileBrowser, Ext.Panel,
             text = h(this.fileSystem.rootRecord.data.name);
         else
             text = h(path);
-        el.update(text);
+        el.update('<table height=100% width=100%><tr><td height=100% width=100% valign=middle align=left>' + text + '</td></tr></table>');
         this.addressBarHandler = this.showFileListMenu.createDelegate(this, [path]);
         el.on("click", this.addressBarHandler);
     },
@@ -1085,27 +1170,38 @@ Ext.extend(FileBrowser, Ext.Panel,
         //
         // LAYOUT
         //
-        this.actions =
+
+        var tbarConfig;
+        if (!this.tbar)
         {
-            download: this.getDownloadAction(),
-            parentFolder: this.getParentFolderAction(),
-            refresh: this.getRefreshAction(),
-            help: this.getHelpAction(),
-            createDirectory: this.getCreateDirectoryAction()
-        };
-        var tbarConfig =
+            tbarConfig =
             [
-                {
-                    text: 'Action Menu',
-                    menu: { cls: 'extContainer', items: [this.action] }
-                },
+//                {
+//                    text: 'Action Menu',
+//                    menu: { cls: 'extContainer', items: [this.action] }
+//                },
                 this.actions.createDirectory,
                 this.actions.download,
                 this.actions.parentFolder,
-                this.actions.refresh
+                this.actions.refresh,
+                this.actions.showHistory
             ];
-        if (this.actions.help)
-            tbarConfig.push(this.actions.help);
+            if (this.actions.help)
+                tbarConfig.push(this.actions.help);
+        }
+        else
+        {
+            tbarConfig = [];
+            for (var i=0 ; i<this.tbar.length ; i++)
+            {
+                var item = this.tbar[i];
+                if (typeof item == "string" && typeof this.actions[item] == "object")
+                    tbarConfig.push(this.actions[item]);
+                else
+                    tbarConfig.push(item);
+            }
+        }
+
         var layoutItems = [];
         if (this.showAddressBar)
             layoutItems.push(
@@ -1114,8 +1210,8 @@ Ext.extend(FileBrowser, Ext.Panel,
                 height: 24,
                 margins: '5 5 0 5',
                 layout: 'fit',
-                border: false,
-                items: [{id:'addressBar', html: 'address bar'}]
+                border: true,
+                items: [{id:'addressBar', html: '<div style="background-color:#f0f0f0;height:100%;width:100%">&nbsp</div>'}]
             });
         if (this.showDetails)
             layoutItems.push(
@@ -1191,8 +1287,12 @@ Ext.extend(FileBrowser, Ext.Panel,
 
         this.on(BROWSER_EVENTS.selectionchange, function(record)
         {
+            this.history = null;
+            if (this.actions.showHistory)
+                this.actions.showHistory.disable();
+
             this.updateFileDetails(record);
-            if (record && record.data && record.data.file && record.data.uri)
+            if (record && record.data && record.data.file && startsWith(record.data.uri,"http"))
                 this.actions.download.enable();
             else
                 this.actions.download.disable();
@@ -1223,9 +1323,6 @@ Ext.extend(FileBrowser, Ext.Panel,
         {
             this.updateAddressBar(record.data.path);
         }, this);
-
-        if (renderTo)
-            this.render(renderTo);
     }
 });
 

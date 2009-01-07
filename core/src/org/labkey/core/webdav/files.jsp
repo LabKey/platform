@@ -50,13 +50,15 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
 </script>
 
 <script type="text/javascript">
+Ext.BLANK_IMAGE_URL = LABKEY.contextPath + "/_.gif";
+                                                  
 Ext.onReady(function()
 {
     Ext.QuickTips.init();
 //    var fileSystem = new WebdavFileSystem({});
     var fileSystem = new AppletFileSystem({getDropApplet:getDropApplet});
-    var fileBrowser = new FileBrowser({fileSystem:fileSystem, renderTo:'files', helpEl:'help'});
-    fileBrowser.render();
+    var fileBrowser = new FileBrowser({fileSystem:fileSystem, helpEl:'help'});
+    fileBrowser.render('files');
     fileBrowser.start.defer(10, fileBrowser);
 });
 </script>

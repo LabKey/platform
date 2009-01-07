@@ -187,12 +187,12 @@ function _updateDropUI()
                             var img = tdStatus.getElementsByTagName("IMG");
                             if (img && img[0] && img[1])
                             {
-                                img[0].style.width = "" + (2*percent) + "px"
-                                img[1].style.width = "" + (2*(100-percent)) + "px"
+                                img[0].style.width = "" + (2*percent) + "px";
+                                img[1].style.width = "" + (2*(100-percent)) + "px";
                             }
                             else
                             {
-                                tdStatus.innerHTML = "<table border=1 cellpadding=0 cellspacing=0><tr><td><img src='" + LABKEY.contextPath + "/_.gif' style='background:black; width:" + (2*percent) + "; height:5; border-width:0px;'></td><td><img src='" + LABKEY.contextPath + "/_.gif' style='background;#202020; width:" + (2*(100-percent)) + "; height:5;; border-width:0px;'></td></tr></table>"
+                                tdStatus.innerHTML = "<table border=1 cellpadding=0 cellspacing=0><tr><td><img src='" + LABKEY.contextPath + "/_.gif' style='background:black; width:" + (2*percent) + "; height:5; border-width:0px;'></td><td><img src='" + LABKEY.contextPath + "/_.gif' style='background;#202020; width:" + (2*(100-percent)) + "; height:5;; border-width:0px;'></td></tr></table>";
                             }
                         }
                     }
@@ -266,7 +266,7 @@ function _updateDropUI()
 
     var ftpLocation = _id("ftpLocation");
     //if (ftpLocation && dropApplet)
-    //    ftpLocation.innerHTML = h(dropApplet.getFtpLocation());
+    //    ftpLocation.innerHTML = h(dropApplet.getTargetURI());
 
     var ftpCountUpdate = _id("ftpCountUpdate");
     if (ftpCountUpdate)
@@ -456,7 +456,7 @@ function _div(node) { var div = document.createElement("DIV"); if (node) div.app
 function _tbody() { return document.createElement("TBODY"); }
 function _tr() { return document.createElement("TR"); }
 function _td(node) { var td = document.createElement("TD"); if (node) td.appendChild(node); return td;}
-function _text(s) {return document.createTextNode(s)};
+function _text(s) {return document.createTextNode(s);};
 function _button(s,onclickFN)
 {
 //    var img = document.createElement("IMG");
@@ -465,7 +465,7 @@ function _button(s,onclickFN)
 //    return img;
     var a = document.createElement("A");
     a.href = "#";
-    a.onclick = function() {eval(onclickFN)};
+    a.onclick = function() {eval(onclickFN);};
     a.appendChild(_text('['+s+']'));
     return a;
 }
@@ -480,7 +480,7 @@ var mkdirDialog;
 function showMkdirDialog()
 {
     if (!mkdirDialog)
-        mkdirDialog = new LABKEY.widget.DialogBox("renameDialog",{width:"300px", height:"100px"});
+        mkdirDialog = new LABKEY.widget.DialogBox("mkdirDialog",{width:"300px", height:"100px"});
     mkdirDialog.render();
     mkdirDialog.center();
     mkdirDialog.show();
