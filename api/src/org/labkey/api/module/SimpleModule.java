@@ -17,7 +17,10 @@ package org.labkey.api.module;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.Container;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.security.User;
 
 import java.io.File;
 import java.util.Collection;
@@ -59,6 +62,14 @@ public class SimpleModule extends DefaultModule
 
     protected String getResourcePath()
     {
+        return null;
+    }
+
+    public ActionURL getTabURL(Container c, User user)
+    {
+        //simple modules will not have tabs for now
+        //once we develop a SimpleController for simple modules
+        //we can register a page flow name and a begin action
         return null;
     }
 }

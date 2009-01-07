@@ -124,7 +124,9 @@ public class PopupAdminView extends PopupMenuView
                 if (null == module || module.equals(defaultModule))
                     continue;
 
-                goToModuleMenu.addChild(module.getTabName(context), module.getTabURL(c, user));
+                ActionURL tabUrl = module.getTabURL(c, user);
+                if(null != tabUrl)
+                    goToModuleMenu.addChild(module.getTabName(context), tabUrl);
             }
 
             if (goToModuleMenu.hasChildren())
