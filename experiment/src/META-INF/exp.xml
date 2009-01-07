@@ -252,9 +252,10 @@
       <ns:column columnName="Format"/>
       <ns:column columnName="Container"/>
       <ns:column columnName="Project"/>
-      <ns:column columnName="LookupContainer" />
-      <ns:column columnName="LookupSchema" />
-      <ns:column columnName="LookupQuery" />
+      <ns:column columnName="LookupContainer"/>
+      <ns:column columnName="LookupSchema"/>
+      <ns:column columnName="LookupQuery"/>
+      <ns:column columnName="QcEnabled"/>
   </ns:columns>
   </ns:table>
   <ns:table tableName="DomainDescriptor" tableDbType="TABLE">
@@ -290,6 +291,7 @@
       <ns:column columnName="FloatValue"/>
       <ns:column columnName="DateTimeValue"/>
       <ns:column columnName="StringValue"/>
+      <ns:column columnName="QcValue"/>  
     </ns:columns>
   </ns:table>
   <ns:table tableName="Protocol" tableDbType="TABLE">

@@ -112,6 +112,11 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.isRequired();
     }
 
+    public boolean isQcEnabled()
+    {
+        return _pd.isQcEnabled();
+    }
+
     public void delete()
     {
         _deleted = true;
@@ -162,6 +167,13 @@ public class DomainPropertyImpl implements DomainProperty
         if (required == isRequired())
             return;
         edit().setRequired(required);
+    }
+
+    public void setQcEnabled(boolean qc)
+    {
+        if (qc == isQcEnabled())
+            return;
+        edit().setQcEnabled(qc);
     }
 
     private PropertyDescriptor edit()

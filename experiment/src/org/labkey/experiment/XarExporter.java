@@ -23,18 +23,17 @@ import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.exp.xml.*;
 import org.fhcrc.cpas.exp.xml.ExperimentRunType;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.experiment.api.*;
-import org.labkey.experiment.xar.XarExportSelection;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
+import org.labkey.experiment.xar.XarExportSelection;
 import org.w3c.dom.Document;
 
 import javax.xml.namespace.QName;
@@ -455,10 +454,11 @@ public class XarExporter
         {
             xProp.setSearchTerms(prop.getSearchTerms());
         }
-        if( prop.getSemanticType() != null)
+        if(prop.getSemanticType() != null)
         {
             xProp.setSemanticType(prop.getSemanticType());
         }
+        xProp.setQcEnabled(domainProp.isQcEnabled());
 
         for (IPropertyValidator validator : domainProp.getValidators())
         {
