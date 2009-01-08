@@ -151,8 +151,7 @@ public class ReportsController extends SpringActionController
 
     public static void registerAdminConsoleLinks()
     {
-        AdminConsole.addLink(SettingsLinkType.Configuration, "R view configuration", new ActionURL(ConfigureRReportAction.class, ContainerManager.getRoot()));
-        //AdminConsole.addLink(SettingsLinkType.Configuration, "reports and scripting", new ActionURL(ConfigureReportsAndScriptsAction.class, ContainerManager.getRoot()));
+        AdminConsole.addLink(SettingsLinkType.Configuration, "reports and scripting", new ActionURL(ConfigureReportsAndScriptsAction.class, ContainerManager.getRoot()));
     }
 
     @RequiresPermission(ACL.PERM_READ)
@@ -303,55 +302,6 @@ public class ReportsController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
-        }
-    }
-
-    @RequiresPermission(ACL.PERM_ADMIN)
-    public class ConfigureRReportAction extends FormViewAction<ConfigureRForm>
-    {
-        public ModelAndView getView(ConfigureRForm form, boolean reshow, BindException errors) throws Exception
-        {
-            form.setErrors(errors);
-            JspView<ConfigureRForm> view = new JspView<ConfigureRForm>("/org/labkey/query/reports/view/rReportConfiguration.jsp", form);
-            VBox v = new VBox();
-            if (!errors.hasErrors() && reshow)
-                v.addView(new HtmlView("The R View configuration has been updated."));
-            v.addView(view);
-
-            return v;
-        }
-
-        public void validateCommand(ConfigureRForm form, Errors errors)
-        {
-            // will allow a blank path to allow removal of R Reporting
-            if (StringUtils.isEmpty(form.getProgramPath()))
-                return;
-
-            // validate the parameters
-            String error = null;//RReport.validateConfiguration(form.getProgramPath(), form.getCommand(), form.getTempFolder(), form.getScriptHandler());
-            if (error != null)
-                errors.reject("RConfigurationError", error);
-        }
-
-        public ActionURL getSuccessURL(ConfigureRForm rChartBean)
-        {
-            return null;
-        }
-
-        public boolean handlePost(ConfigureRForm form, BindException errors) throws Exception
-        {
-            RReport.setRExe(form.getProgramPath());
-            RReport.setRCmd(form.getCommand());
-            RReport.setTempFolder(form.getTempFolder());
-            RReport.setEditPermissions(form.getPermissions());
-
-            return true;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
-            return root.addChild("R View Configuration");
         }
     }
 
@@ -800,9 +750,8 @@ public class ReportsController extends SpringActionController
 
     protected void validatePermissions() throws Exception
     {
-        int perms = RReport.getEditPermissions();
-        if (!getViewContext().hasPermission(perms))
-            HttpView.throwUnauthorized();
+        if (!getViewContext().getUser().isDeveloper())
+            HttpView.throwUnauthorized("Only members of the Site Developers group are allowed to create and edit R views.");
     }
 
     @RequiresPermission(ACL.PERM_NONE)
@@ -1469,26 +1418,6 @@ public class ReportsController extends SpringActionController
             }
             return response;
         }
-    }
-
-    public static class ConfigureRForm extends FormData
-    {
-        private String _programPath = RReport.getRExe();
-        private String _command = RReport.getRCmd();
-        private String _tempFolder = RReport.getTempFolder();
-        private int _perms = RReport.getEditPermissions();
-        private BindException _errors;
-
-        public void setProgramPath(String path){_programPath = path;}
-        public String getProgramPath(){return _programPath;}
-        public void setCommand(String command){_command = command;}
-        public String getCommand(){return _command;}
-        public void setTempFolder(String folder){_tempFolder = folder;}
-        public String getTempFolder(){return _tempFolder;}
-        public void setErrors(BindException errors){_errors = errors;}
-        public BindException getErrors(){return _errors;}
-        public void setPermissions(int perms){_perms = perms;}
-        public int getPermissions(){return _perms;}
     }
 
     protected static class PlotView extends WebPartView

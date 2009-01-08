@@ -109,7 +109,7 @@
             buttons: [
                 {text:'Add', id: 'btn_addEngine', iconCls: 'bmenu', menu: newMenu, tooltip: {text:'Configure a new external script engine', title:'Add Engine'}},
                 {text:'Delete', id: 'btn_deleteEngine', tooltip: {text:'Delete the selected script engine', title:'Delete Engine'}, listeners:{click:function(button, event) {deleteSelected(grid);}}},
-                {text:'Edit', id: 'btn_editEngine', tooltip: {text:'Edit and existing script engine', title:'Edit Engine'}, listeners:{click:function(button, event) {editSelected(button, grid);}}}
+                {text:'Edit', id: 'btn_editEngine', tooltip: {text:'Edit an existing script engine', title:'Edit Engine'}, listeners:{click:function(button, event) {editSelected(button, grid);}}}
             ],
             buttonAlign:'center'
         });
@@ -130,6 +130,11 @@
         var record = selections[0].data;
         var params = [];
 
+        if (record.exePath.length == 0)
+        {
+            Ext.Msg.alert("Delete Engine Configuration", "Java 6 script engines cannot be deleted but you can disable them.");
+            return false;
+        }
         params.push("key=" + record.key);
         params.push("extensions=" + record.extensions);
 
@@ -293,7 +298,8 @@
     <tr class="labkey-wp-header"><th colspan=2>Scripting Engine Configurations</th></tr>
     <tr><td><i>A scripting engine enables the execution of scripting code in a report or a QC validation script.
         A scripting engine can be exposed as a <a href="https://scripting.dev.java.net/" target="_blank">Java 6 script engine implementation</a>,<br/>
-        or as an external script engine. For example scripting languages like R and Perl
+        or as an external script engine. Java 6 script engine implementations are exposed by configuring the Java runtime the webserver is running
+        against. External engine implementations are added in this view. For example scripting languages like R and Perl
         can be configured here in order to create and run scripts and reports using these languages.</i></td>
     </tr>
     <tr><td>&nbsp;</td></tr>
