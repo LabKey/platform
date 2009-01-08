@@ -68,8 +68,7 @@ public class RReportDescriptor extends ReportDescriptor
 
     public boolean canEdit(ViewContext context)
     {
-        int perms = RReport.getEditPermissions();
-        if (context.hasPermission(perms))
+        if (context.getUser().isDeveloper())
         {
             return super.canEdit(context);
         }

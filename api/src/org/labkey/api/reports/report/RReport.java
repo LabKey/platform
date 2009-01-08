@@ -60,39 +60,6 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
 
     public static final String DEFAULT_R_CMD = "CMD BATCH --slave";
 
-    private static final String R_EXE = "RReport.RExe";
-    private static final String R_CMD = "RReport.RCmd";
-    private static final String R_TEMP_FOLDER = "RReport.TempFolder";
-    private static final String R_EDIT_PERMISSIONS = "RReport.EditPermissions";
-
-    private static String getProp(String prop, String defaultValue)
-    {
-        Map<String, String> map = UserManager.getUserPreferences(false);
-        if (map != null)
-        {
-            String ret = map.get(prop);
-            if (!StringUtils.isEmpty(ret))
-                return ret;
-        }
-        return defaultValue;
-    }
-
-    private static void setProp(String prop, String value)
-    {
-        Map<String, String> map = UserManager.getUserPreferences(true);
-        map.put(prop, value);
-        PropertyManager.saveProperties(map);
-    }
-
-    public static String getRExe() {return getProp(R_EXE, null);}
-    public static void setRExe(String programPath) {setProp(R_EXE, programPath);}
-    public static String getRCmd() {return getProp(R_CMD, DEFAULT_R_CMD);}
-    public static void setRCmd(String command) {setProp(R_CMD, command);}
-    public static String getTempFolder() {return getProp(R_TEMP_FOLDER, null);}
-    public static void setTempFolder(String folder) {setProp(R_TEMP_FOLDER, folder);}
-    public static int getEditPermissions() {return NumberUtils.toInt(getProp(R_EDIT_PERMISSIONS, Integer.toString(org.labkey.api.security.SecurityManager.PermissionSet.ADMIN.getPermissions()))); }
-    public static void setEditPermissions(int permissions) {setProp(R_EDIT_PERMISSIONS, Integer.toString(permissions));}
-
     public static boolean isValidConfiguration()
     {
         return true;
