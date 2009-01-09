@@ -1170,6 +1170,12 @@ public class QueryView extends WebPartView<Object>
         _customView = customView;
     }
 
+    public void setCustomView(String viewName)
+    {
+        _settings.setViewName(viewName);
+        _customView = _settings.getCustomView(getViewContext(), _queryDef);
+    }
+
     protected TableInfo createTable()
     {
         return _queryDef.getTable(null, _schema, _errors);

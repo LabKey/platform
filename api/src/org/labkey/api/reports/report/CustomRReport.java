@@ -57,7 +57,16 @@ public abstract class CustomRReport extends RReport
 
     protected QueryView createQueryView(ViewContext context, ReportDescriptor descriptor) throws Exception
     {
-        return getQueryView(context);
+        QueryView view = getQueryView(context);
+
+        //need to apply view name if defined in the descriptor
+        //the URL to run the report does not contain the viewName parameter in the query string
+        //so QuerySettings.init() won't automatically apply it
+        String customViewName = descriptor.getProperty(ReportDescriptor.Prop.viewName);
+        if(null != customViewName)
+            view.setCustomView(customViewName);
+        
+        return view;
     }
 
     public ActionURL getDownloadDataURL(ViewContext context)
@@ -68,7 +77,7 @@ public abstract class CustomRReport extends RReport
 
     public HttpView renderDataView(ViewContext context) throws Exception
     {
-        QueryView view = getQueryView(context);
+        QueryView view = createQueryView(context, getDescriptor());
         view.getSettings().setReportId(null);
         view.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
         return view;
