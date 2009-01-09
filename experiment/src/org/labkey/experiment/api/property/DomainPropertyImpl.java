@@ -193,6 +193,11 @@ public class DomainPropertyImpl implements DomainProperty
         return PropertyForeignKey.getValueSql(_pd.getPropertyType());
     }
 
+    public SQLFragment getQCValueSQL()
+    {
+        return PropertyForeignKey.getQCValueSQL();
+    }
+
     public int getSqlType()
     {
         return _pd.getPropertyType().getSqlType();

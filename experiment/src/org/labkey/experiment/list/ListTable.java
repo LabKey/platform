@@ -84,6 +84,10 @@ public class ListTable extends FilteredTable
             column.setInputType(property.getInputType());
             column.setDescription(property.getDescription());
             property.initColumn(user, column);
+            if (property.isQcEnabled())
+            {
+                column = QCDisplayColumnFactory.addQCColumns(this, column, property, colObjectId);
+            }
             safeAddColumn(column);
             defaultVisible.add(FieldKey.fromParts(column.getName()));
 
