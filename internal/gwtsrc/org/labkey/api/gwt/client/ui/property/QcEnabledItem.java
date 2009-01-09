@@ -39,7 +39,7 @@ public class QcEnabledItem<DomainType extends GWTDomain<FieldType>, FieldType ex
 
     public int addToTable(FlexTable flexTable, int row)
     {
-        flexTable.setWidget(row, LABEL_COLUMN, new Label("QC Enabled"));
+        flexTable.setWidget(row, LABEL_COLUMN, new Label("Allows QC"));
         flexTable.setWidget(row, INPUT_COLUMN, qcCheckbox);
 
         qcCheckbox.addClickListener(createClickListener());

@@ -55,6 +55,7 @@ public interface DomainProperty
     void initColumn(User user, ColumnInfo column);
 
     SQLFragment getValueSQL();
+    SQLFragment getQCValueSQL();
     int getSqlType();
     int getScale();
     String getInputType();

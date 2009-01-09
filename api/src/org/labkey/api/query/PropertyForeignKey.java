@@ -93,6 +93,11 @@ public class PropertyForeignKey extends AbstractForeignKey
         return new SQLFragment("exp.ObjectProperty.StringValue");
     }
 
+    static public SQLFragment getQCValueSQL()
+    {
+        return new SQLFragment("exp.ObjectProperty.QcValue");
+    }
+
     static public SQLFragment getValueSql(ColumnInfo parent, SQLFragment value, int propertyId, boolean parentIsLSID)
     {
         return getValueSql(parent.getValueSql(), value, propertyId, parentIsLSID);

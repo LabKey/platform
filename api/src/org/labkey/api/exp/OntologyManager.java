@@ -1184,9 +1184,6 @@ public class OntologyManager
         if (null != val && (pd.getSemanticType() == null || !pd.getSemanticType().equals(val)))
             colDiffs.add("SemanticType");
 
-        if (pd.isQcEnabled() != pdIn.isQcEnabled())
-            colDiffs.add("QcEnabled");
-
         return colDiffs;
     }
 
