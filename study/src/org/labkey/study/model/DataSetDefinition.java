@@ -258,13 +258,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             HttpView.throwUnauthorized();
 
         if (materialized)
-            return getMaterializedTempTableInfo();
+            return getMaterializedTempTableInfo(user);
         else
-            return getJoinTableInfo();
+            return getJoinTableInfo(user);
     }
 
 
-    public void materializeInBackground()
+    public void materializeInBackground(final User user)
     {
         Runnable task = new Runnable()
         {
@@ -275,7 +275,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                         {
                             public void run()
                             {
-                                getMaterializedTempTableInfo();
+                                getMaterializedTempTableInfo(user);
                             }
                         });
             }
@@ -336,7 +336,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     private static final Map<String, MaterializedLockObject> materializedCache = new HashMap<String,MaterializedLockObject>();
 
-    private synchronized TableInfo getMaterializedTempTableInfo()
+    private synchronized TableInfo getMaterializedTempTableInfo(User user)
     {
         String tempName = getCacheString();
 
@@ -373,7 +373,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
                 if (tinfoMat != null)
                 {
-                    TableInfo tinfoFrom = getJoinTableInfo();
+                    TableInfo tinfoFrom = getJoinTableInfo(user);
                     if (!tinfoProp.getColumnNameSet().equals(tinfoFrom.getColumnNameSet()))
                     {
                         StringBuilder msg = new StringBuilder("unexpected difference in columns sets\n");
@@ -385,7 +385,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 }
                 if (tinfoMat == null)
                 {
-                    TableInfo tinfoFrom = getJoinTableInfo();
+                    TableInfo tinfoFrom = getJoinTableInfo(user);
                     tinfoMat = materialize(tinfoFrom, tempName);
 
                     mlo.tinfoFrom = tinfoFrom;
@@ -476,10 +476,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-    private synchronized TableInfo getJoinTableInfo()
+    private synchronized TableInfo getJoinTableInfo(User user)
     {
         if (null == _tableInfoProperties)
-            _tableInfoProperties = new StudyDataTableInfo(this);
+            _tableInfoProperties = new StudyDataTableInfo(this, user);
         return _tableInfoProperties;
     }
 
@@ -605,7 +605,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     {
         int _datasetId;
 
-        StudyDataTableInfo(DataSetDefinition def)
+        StudyDataTableInfo(DataSetDefinition def, User user)
         {
             super("StudyData_" + def.getDataSetId(), StudySchema.getInstance().getSchema());
             Container c = def.getContainer();
@@ -661,7 +661,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             columns.add(qcStateCol);
 
             // Property columns
-            ColumnInfo[] columnsLookup = OntologyManager.getColumnsForType(def.getTypeURI(), this, c);
+            ColumnInfo[] columnsLookup = OntologyManager.getColumnsForType(def.getTypeURI(), this, c, user);
             columns.addAll(Arrays.asList(columnsLookup));
             ColumnInfo visitRowId = newDatasetColumnInfo(this, participantVisit.getColumn("VisitRowId"));
             visitRowId.setIsHidden(true);

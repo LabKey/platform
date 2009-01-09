@@ -199,13 +199,13 @@ public class ExpSampleSetImpl extends ExpIdentifiableBaseImpl<MaterialSource> im
         return PropertyService.get().getDomain(getContainer(), getLSID());
     }
 
-    public ExpProtocol[] getProtocols()
+    public ExpProtocol[] getProtocols(User user)
     {
         try
         {
             TableInfo tinfoProtocol = ExperimentServiceImpl.get().getTinfoProtocol();
             ColumnInfo colLSID = tinfoProtocol.getColumn("LSID");
-            ColumnInfo colSampleLSID = new PropertyColumn(ExperimentProperty.SampleSetLSID.getPropertyDescriptor(), colLSID, null);
+            ColumnInfo colSampleLSID = new PropertyColumn(ExperimentProperty.SampleSetLSID.getPropertyDescriptor(), colLSID, null, user);
             SQLFragment whereClause = colSampleLSID.getValueSql();
             whereClause.append(" = ");
             whereClause.appendStringLiteral(getLSID());
@@ -232,7 +232,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableBaseImpl<MaterialSource> im
 
     public void onSamplesChanged(User user, List<Material> materials) throws Exception
     {
-        ExpProtocol[] protocols = getProtocols();
+        ExpProtocol[] protocols = getProtocols(user);
         if (protocols.length == 0)
             return;
         ExpMaterial[] expMaterials = null;

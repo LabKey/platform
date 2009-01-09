@@ -15,7 +15,6 @@
  */
 package org.labkey.study.reports;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
@@ -24,7 +23,6 @@ import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.ReportDB;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.reports.report.view.ReportUtil;
@@ -270,7 +268,7 @@ public class ReportManager implements StudyManager.UnmaterializeListener
 
         // UNDONE: use def.getTableInfo()
         TableInfo tinfo = StudySchema.getInstance().getTableInfoStudyData();
-        PropertyColumn[] propertyColumns = OntologyManager.getColumnsForType(typeURI, tinfo, "LSID", ctx.getContainer());
+        PropertyColumn[] propertyColumns = OntologyManager.getColumnsForType(typeURI, tinfo, "LSID", ctx.getContainer(), ctx.getUser());
         if (propertyColumns == null || propertyColumns.length == 0)
             throw new IllegalArgumentException("No columns for type: " + typeURI);
 

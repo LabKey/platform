@@ -420,7 +420,7 @@ public class DatasetBatch extends StudyBatch implements Serializable
             for (DatasetImportJob job : jobs)
             {
                 if (!(job instanceof ParticipantImportJob))
-                    job.getDatasetDefinition().materializeInBackground();
+                    job.getDatasetDefinition().materializeInBackground(getUser());
             }
         }
         catch (RuntimeException x)
@@ -449,18 +449,13 @@ public class DatasetBatch extends StudyBatch implements Serializable
     }
 
 
-    /* key and value are case insensitive on search, but are returned in original case
-     * I realize I am calling l() much more than necessary, optimization left as an excersize...
+    /**
+     * Key and value are case insensitive on search, but are returned in original case
      */
     public static class OneToOneStringMap extends AbstractMap<String,String>
     {
         CaseInsensitiveHashMap<Pair<String,String>> keyMap = new CaseInsensitiveHashMap<Pair<String,String>>();
         CaseInsensitiveHashMap<Pair<String,String>> valMap = new CaseInsensitiveHashMap<Pair<String,String>>();
-
-/*        private String l(Object o)
-        {
-            return o == null ? null : String.valueOf(o).toLowerCase();
-        } */
 
         @Override
         public String get(Object key)
