@@ -1763,7 +1763,7 @@ public class OntologyManager
 	}
 
 
-	public static PropertyColumn[] getColumnsForType(String typeURI, TableInfo parentTable, String parentCol, Container c)
+	public static PropertyColumn[] getColumnsForType(String typeURI, TableInfo parentTable, String parentCol, Container c, User user)
 	{
 		PropertyDescriptor[] pdArray = getPropertiesForType(typeURI, c);
 		if (null == pdArray)
@@ -1771,15 +1771,15 @@ public class OntologyManager
 
 		PropertyColumn[] cols = new PropertyColumn[pdArray.length];
 		for (int i = 0; i < cols.length; i++)
-			cols[i] = new PropertyColumn(pdArray[i], parentTable, parentCol, c.getId());
+			cols[i] = new PropertyColumn(pdArray[i], parentTable, parentCol, c.getId(), user);
 
 		return cols;
 	}
 
 
-	public static PropertyColumn[] getColumnsForType(String typeURI, TableInfo parentTable, Container c)
+	public static PropertyColumn[] getColumnsForType(String typeURI, TableInfo parentTable, Container c, User user)
 	{
-		return getColumnsForType(typeURI, parentTable, "LSID", c);
+		return getColumnsForType(typeURI, parentTable, "LSID", c, user);
 	}
 
 

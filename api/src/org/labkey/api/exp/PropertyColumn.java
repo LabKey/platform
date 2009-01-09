@@ -18,7 +18,7 @@ package org.labkey.api.exp;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.*;
 import org.labkey.api.query.PdLookupForeignKey;
-import org.labkey.api.view.HttpView;
+import org.labkey.api.security.User;
 
 
 /**
@@ -31,25 +31,12 @@ public class PropertyColumn extends LookupColumn
     protected PropertyDescriptor pd;
     protected String containerId;
 
-    static private ColumnInfo getColumnInfo(String fullyQualifiedColumnName)
+    public PropertyColumn(PropertyDescriptor pd, TableInfo tinfoParent, String parentLsidColumn, String containerId, User user)
     {
-        int ichFirstDot = fullyQualifiedColumnName.indexOf(".");
-        int ichSecondDot = fullyQualifiedColumnName.indexOf(".", ichFirstDot + 1);
-        String strSchema = fullyQualifiedColumnName.substring(0, ichFirstDot);
-        String strTable = fullyQualifiedColumnName.substring(ichFirstDot + 1, ichSecondDot);
-        String strColumn = fullyQualifiedColumnName.substring(ichSecondDot + 1);
-        DbSchema schema = DbSchema.get(strSchema);
-        TableInfo table = schema.getTable(strTable);
-        ColumnInfo column = table.getColumn(strColumn);
-        return column;
+        this(pd, tinfoParent.getColumn(parentLsidColumn), containerId, user);
     }
 
-    public PropertyColumn(PropertyDescriptor pd, TableInfo tinfoParent, String parentLsidColumn, String containerId)
-    {
-        this(pd, tinfoParent.getColumn(parentLsidColumn), containerId);
-    }
-
-    public PropertyColumn(PropertyDescriptor pd, ColumnInfo lsidColumn, String containerId)
+    public PropertyColumn(PropertyDescriptor pd, ColumnInfo lsidColumn, String containerId, User user)
     {
         super(lsidColumn, OntologyManager.getTinfoObject().getColumn("ObjectURI"), OntologyManager.getTinfoObjectProperty().getColumn(getPropertyCol(pd)), false);
         setName(ColumnInfo.legalNameFromName(pd.getName()));
@@ -73,13 +60,7 @@ public class PropertyColumn extends LookupColumn
         setInputType(pd.getPropertyType().getInputType());
 
         this.containerId = containerId;
-
-        // TODO: pass in the user as an argument. I'd do this now,
-        // but we're late in the cycle for 8.2. See bug 6130
-        if (HttpView.hasCurrentView())
-        {
-            setFk(new PdLookupForeignKey(HttpView.currentContext().getUser(), pd));
-        }
+        setFk(new PdLookupForeignKey(user, pd));
     }
 
 

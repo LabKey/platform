@@ -316,7 +316,7 @@ public class PropertyDescriptor implements Serializable, Cloneable
 
     public ColumnInfo createColumnInfo(TableInfo baseTable, String lsidCol, User user)
     {
-        ColumnInfo info = new PropertyColumn(this, baseTable, lsidCol, getContainer().getId());
+        ColumnInfo info = new PropertyColumn(this, baseTable, lsidCol, getContainer().getId(), user);
         if (getLookupQuery() != null)
             info.setFk(new PdLookupForeignKey(user, this));
         return info;
