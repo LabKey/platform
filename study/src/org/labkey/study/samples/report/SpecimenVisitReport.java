@@ -137,9 +137,9 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         // This is a terrible hack to deal with the fact that the some SpecimenDetail columns have been aliased
         // in the query view.  As a result, we need to use the view's column name for filtering
         // at the database layer, and then map this column name for use in a query view filter parameter:
-        fullFilter = replaceFilterParameterName(fullFilter, "PrimaryTypeId", FieldKey.fromParts("PrimaryType", "ScharpId").toString());
-        fullFilter = replaceFilterParameterName(fullFilter, "DerivativeTypeId", FieldKey.fromParts("DerivativeType", "ScharpId").toString());
-        fullFilter = replaceFilterParameterName(fullFilter, "AdditiveTypeId", FieldKey.fromParts("AdditiveType", "ScharpId").toString());
+        fullFilter = replaceFilterParameterName(fullFilter, "PrimaryTypeId", FieldKey.fromParts("PrimaryType", "RowId").toString());
+        fullFilter = replaceFilterParameterName(fullFilter, "DerivativeTypeId", FieldKey.fromParts("DerivativeType", "RowId").toString());
+        fullFilter = replaceFilterParameterName(fullFilter, "AdditiveTypeId", FieldKey.fromParts("AdditiveType", "RowId").toString());
         fullFilter = replaceFilterParameterName(fullFilter, "ptid", "ParticipantId");
         return fullFilter;
     }

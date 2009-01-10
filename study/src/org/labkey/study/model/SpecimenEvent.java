@@ -29,7 +29,7 @@ public class SpecimenEvent extends AbstractStudyCachable<SpecimenEvent>
 {
     private int _rowId; // INT IDENTITY(1,1),
     private Container _container; // ENTITYID NOT NULL,
-    private int _scharpId; // INT NOT NULL,
+    private int _externalId; // INT NOT NULL,
     private int _specimenId; // INT NOT NULL,
     private Integer _labId; // INT,
     private String _uniqueSpecimenId; // NVARCHAR(20),
@@ -137,15 +137,15 @@ public class SpecimenEvent extends AbstractStudyCachable<SpecimenEvent>
         _rowId = rowId;
     }
 
-    public int getScharpId()
+    public int getExternalId()
     {
-        return _scharpId;
+        return _externalId;
     }
 
-    public void setScharpId(int scharpId)
+    public void setExternalId(int externalId)
     {
         verifyMutability();
-        _scharpId = scharpId;
+        _externalId = externalId;
     }
 
     public Integer getShipBatchNumber()

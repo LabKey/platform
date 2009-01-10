@@ -62,6 +62,9 @@ public class SampleManager
     private final QueryHelper<SampleRequestEvent> _requestEventHelper;
     private final QueryHelper<Specimen> _specimenHelper;
     private final QueryHelper<SpecimenEvent> _specimenEventHelper;
+    private final QueryHelper<AdditiveType> _additiveHelper;
+    private final QueryHelper<DerivativeType> _derivativeHelper;
+    private final QueryHelper<PrimaryType> _primaryTypeHelper;
     private final QueryHelper<SampleRequest> _requestHelper;
     private final QueryHelper<SampleRequestStatus> _requestStatusHelper;
     private final RequirementProvider<SampleRequestRequirement, SampleRequestActor> _requirementProvider =
@@ -69,6 +72,28 @@ public class SampleManager
 
     private SampleManager()
     {
+        _primaryTypeHelper = new QueryHelper<PrimaryType>(new TableInfoGetter()
+        {
+            public TableInfo getTableInfo()
+            {
+                return StudySchema.getInstance().getTableInfoPrimaryType();
+            }
+        }, PrimaryType.class);
+        _derivativeHelper = new QueryHelper<DerivativeType>(new TableInfoGetter()
+        {
+            public TableInfo getTableInfo()
+            {
+                return StudySchema.getInstance().getTableInfoDerivativeType();
+            }
+        }, DerivativeType.class);
+        _additiveHelper = new QueryHelper<AdditiveType>(new TableInfoGetter()
+        {
+            public TableInfo getTableInfo()
+            {
+                return StudySchema.getInstance().getTableInfoAdditiveType();
+            }
+        }, AdditiveType.class);
+
         _requestEventHelper = new QueryHelper<SampleRequestEvent>(new TableInfoGetter()
         {
             public TableInfo getTableInfo()
@@ -164,12 +189,17 @@ public class SampleManager
     }
 
     /** Looks for any specimens that have the given id as a globalUniqueId  */
-    public Specimen[] getSpecimens(Container container, String globalUniqueId) throws SQLException
+    public Specimen getSpecimen(Container container, String globalUniqueId) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addClause(new SimpleFilter.SQLClause("LOWER(GlobalUniqueId) = LOWER(?)", new Object[] { globalUniqueId }));
         filter.addCondition("Container", container.getId());
-        return _specimenHelper.get(container, filter);
+        Specimen[] matches = _specimenHelper.get(container, filter);
+        if (matches == null || matches.length == 0)
+            return null;
+        if (matches.length != 1)
+            throw new IllegalStateException("Only one specimen expected per Global Unique Id.");
+        return matches[0];
     }
 
     public Specimen[] getSpecimens(Container container, String participantId, Date date) throws SQLException
@@ -309,8 +339,15 @@ public class SampleManager
 
     public SampleRequest[] getRequests(Container c) throws SQLException
     {
+        return getRequests(c, null);
+    }
+
+    public SampleRequest[] getRequests(Container c, User user) throws SQLException
+    {
         SimpleFilter filter = new SimpleFilter("Hidden", Boolean.FALSE);
-        return _requestHelper.get(c, filter);
+        if (user != null)
+            filter.addCondition("CreatedBy", user.getUserId());
+        return _requestHelper.get(c, filter, "-Created");
     }
 
     public SampleRequest getRequest(Container c, int rowId) throws SQLException
@@ -378,6 +415,20 @@ public class SampleManager
         return _requestStatusHelper.get(c, rowId);
     }
 
+    public AdditiveType getAdditiveType(Container c, int rowId) throws SQLException
+    {
+        return _additiveHelper.get(c, rowId);
+    }
+
+    public DerivativeType getDerivativeType(Container c, int rowId) throws SQLException
+    {
+        return _derivativeHelper.get(c, rowId);
+    }
+    public PrimaryType getPrimaryType(Container c, int rowId) throws SQLException
+    {
+        return _primaryTypeHelper.get(c, rowId);
+    }
+    
     public SampleRequestStatus[] getRequestStatuses(Container c, User user) throws SQLException
     {
         SampleRequestStatus[] statuses = _requestStatusHelper.get(c, "SortOrder");
@@ -1252,7 +1303,7 @@ public class SampleManager
                 if (!request.getContainer().getId().equals(specimen.getContainer().getId()))
                     throw new IllegalStateException("Mismatched containers.");
 
-                Integer[] requestIds = getRequestIdsForSpecimen(specimen);
+                Integer[] requestIds = getRequestIdsForSpecimen(specimen, true);
                 if (requestIds.length > 0)
                     throw new IllegalStateException("Specimen " + specimen.getGlobalUniqueId() + " is already part of request " + requestIds[0]);
             }
@@ -1300,6 +1351,8 @@ public class SampleManager
 
             deleteRequestSampleMappings(user, request, specimenIds, false);
 
+            deleteMissingSpecimens(request);
+
             _requirementProvider.deleteRequirements(request);
 
             deleteRequestEvents(user, request);
@@ -1341,12 +1394,26 @@ public class SampleManager
 
     public Integer[] getRequestIdsForSpecimen(Specimen specimen) throws SQLException
     {
+        return getRequestIdsForSpecimen(specimen, false);
+    }
+
+    public Integer[] getRequestIdsForSpecimen(Specimen specimen, boolean lockingRequestsOnly) throws SQLException
+    {
         if (specimen == null)
             return new Integer[0];
-        SimpleFilter filter = new SimpleFilter("SpecimenGlobalUniqueId", specimen.getGlobalUniqueId());
-        filter.addCondition("Container", specimen.getContainer().getId());
-        List<ColumnInfo> cols = Arrays.asList(StudySchema.getInstance().getTableInfoSampleRequestSpecimen().getColumn("SampleRequestId"));
-        Table.TableResultSet rs = Table.select(StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), cols, filter, null);
+        SQLFragment sql = new SQLFragment("SELECT SampleRequestId FROM " + StudySchema.getInstance().getTableInfoSampleRequestSpecimen() +
+                " Map, " + StudySchema.getInstance().getTableInfoSampleRequest() + " Request, " +
+                StudySchema.getInstance().getTableInfoSampleRequestStatus() + " Status WHERE SpecimenGlobalUniqueId = ? " +
+                "AND Request.Container = ? AND Map.Container = Request.Container AND Status.Container = Request.Container " +
+                "AND Map.SampleRequestId = Request.RowId AND Request.StatusId = Status.RowId");
+        sql.add(specimen.getGlobalUniqueId());
+        sql.add(specimen.getContainer().getId());
+        if (lockingRequestsOnly)
+        {
+            sql.append(" AND Status.SpecimensLocked = ?");
+            sql.add(Boolean.TRUE);
+        }
+        Table.TableResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql);
         List<Integer> rowIdList = new ArrayList<Integer>();
         while (rs.next())
             rowIdList.add(rs.getInt(1));
@@ -1355,29 +1422,29 @@ public class SampleManager
     }
 
     private static final String SPECIMEN_TYPE_SUMMARY_SQL = "SELECT study.SpecimenPrimaryType.PrimaryType,\n" +
-            "study.SpecimenPrimaryType.ScharpId AS PrimaryTypeId,\n" +
+            "study.SpecimenPrimaryType.RowId AS PrimaryTypeId,\n" +
             "study.SpecimenDerivative.Derivative AS Derivative,\n" +
-            "study.SpecimenDerivative.ScharpId AS DerivativeId,\n" +
+            "study.SpecimenDerivative.RowId AS DerivativeId,\n" +
             "study.SpecimenAdditive.Additive AS Additive,\n" +
-            "study.SpecimenAdditive.ScharpId AS AdditiveId,\n" +
+            "study.SpecimenAdditive.RowId AS AdditiveId,\n" +
             "Count(*) AS VialCount\n" +
             "FROM study.SpecimenDetail\n" +
             "LEFT OUTER JOIN study.SpecimenPrimaryType ON\n" +
-            "\tstudy.SpecimenPrimaryType.ScharpId = study.SpecimenDetail.PrimaryTypeId AND\n" +
+            "\tstudy.SpecimenPrimaryType.RowId = study.SpecimenDetail.PrimaryTypeId AND\n" +
             "\tstudy.SpecimenPrimaryType.Container = study.SpecimenDetail.Container\n" +
             "LEFT OUTER JOIN study.SpecimenDerivative ON\n" +
-            "\tstudy.SpecimenDerivative.ScharpId = study.SpecimenDetail.DerivativeTypeId AND\n" +
+            "\tstudy.SpecimenDerivative.RowId = study.SpecimenDetail.DerivativeTypeId AND\n" +
             "\tstudy.SpecimenDerivative.Container = study.SpecimenDetail.Container\n" +
             "LEFT OUTER JOIN study.SpecimenAdditive ON\n" +
-            "\tstudy.SpecimenAdditive.ScharpId = study.SpecimenDetail.AdditiveTypeId AND\n" +
+            "\tstudy.SpecimenAdditive.RowId = study.SpecimenDetail.AdditiveTypeId AND\n" +
             "\tstudy.SpecimenAdditive.Container = study.SpecimenDetail.Container\n" +
             "WHERE study.SpecimenDetail.Container = ?\n" +
-            "GROUP BY PrimaryType, study.SpecimenPrimaryType.ScharpId, \n" +
-            "\tDerivative, study.SpecimenDerivative.ScharpId, \n" +
-            "\tAdditive, study.SpecimenAdditive.ScharpId\n" +
-            "ORDER BY PrimaryType, study.SpecimenPrimaryType.ScharpId, \n" +
-            "\tDerivative, study.SpecimenDerivative.ScharpId, \n" +
-            "\tAdditive, study.SpecimenAdditive.ScharpId";
+            "GROUP BY PrimaryType, study.SpecimenPrimaryType.RowId, \n" +
+            "\tDerivative, study.SpecimenDerivative.RowId, \n" +
+            "\tAdditive, study.SpecimenAdditive.RowId\n" +
+            "ORDER BY PrimaryType, study.SpecimenPrimaryType.RowId, \n" +
+            "\tDerivative, study.SpecimenDerivative.RowId, \n" +
+            "\tAdditive, study.SpecimenAdditive.RowId";
 
     public SpecimenTypeSummary getSpecimenTypeSummary(Container container)
     {

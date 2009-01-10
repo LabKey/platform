@@ -38,14 +38,14 @@
   <ns:table tableName="Site" tableDbType="TABLE">
     <ns:columns>
       <ns:column columnName="RowId"/>
-      <ns:column columnName="ScharpId"/>
+      <ns:column columnName="ExternalId"/>
       <ns:column columnName="LdmsLabCode"/>
       <ns:column columnName="LabwareLabCode"/>
       <ns:column columnName="LabUploadCode"/>
-      <ns:column columnName="IsSal"/>
-      <ns:column columnName="IsRepository"/>
-      <ns:column columnName="IsEndpoint"/>
-      <ns:column columnName="IsClinic"/>
+      <ns:column columnName="Sal"/>
+      <ns:column columnName="Repository"/>
+      <ns:column columnName="Endpoint"/>
+      <ns:column columnName="Clinic"/>
       <ns:column columnName="Label"/>
       <ns:column columnName="Container"/>
       <ns:column columnName="EntityId"/>
@@ -350,21 +350,21 @@
       <ns:column columnName="VolumeUnits"/>
       <ns:column columnName="PrimaryTypeId">
         <ns:fk>
-          <ns:fkColumnName>ScharpId</ns:fkColumnName>
+          <ns:fkColumnName>RowId</ns:fkColumnName>
           <ns:fkTable>SpecimenPrimaryType</ns:fkTable>
           <ns:fkDbSchema>study</ns:fkDbSchema>
         </ns:fk>
       </ns:column>
       <ns:column columnName="DerivativeTypeId">
         <ns:fk>
-          <ns:fkColumnName>ScharpId</ns:fkColumnName>
+          <ns:fkColumnName>RowId</ns:fkColumnName>
           <ns:fkTable>SpecimenDerivative</ns:fkTable>
           <ns:fkDbSchema>study</ns:fkDbSchema>
         </ns:fk>
       </ns:column>
       <ns:column columnName="AdditiveTypeId">
         <ns:fk>
-          <ns:fkColumnName>ScharpId</ns:fkColumnName>
+          <ns:fkColumnName>RowId</ns:fkColumnName>
           <ns:fkTable>SpecimenAdditive</ns:fkTable>
           <ns:fkDbSchema>study</ns:fkDbSchema>
         </ns:fk>
@@ -410,21 +410,21 @@
       <ns:column columnName="SubAdditiveDerivative"/>
       <ns:column columnName="PrimaryTypeId">
         <ns:fk>
-          <ns:fkColumnName>ScharpId</ns:fkColumnName>
+          <ns:fkColumnName>RowId</ns:fkColumnName>
           <ns:fkTable>SpecimenPrimaryType</ns:fkTable>
           <ns:fkDbSchema>study</ns:fkDbSchema>
         </ns:fk>
       </ns:column>
       <ns:column columnName="DerivativeTypeId">
         <ns:fk>
-          <ns:fkColumnName>ScharpId</ns:fkColumnName>
+          <ns:fkColumnName>RowId</ns:fkColumnName>
           <ns:fkTable>SpecimenDerivative</ns:fkTable>
           <ns:fkDbSchema>study</ns:fkDbSchema>
         </ns:fk>
       </ns:column>
       <ns:column columnName="AdditiveTypeId">
         <ns:fk>
-          <ns:fkColumnName>ScharpId</ns:fkColumnName>
+          <ns:fkColumnName>RowId</ns:fkColumnName>
           <ns:fkTable>SpecimenAdditive</ns:fkTable>
           <ns:fkDbSchema>study</ns:fkDbSchema>
         </ns:fk>
@@ -439,7 +439,7 @@
     <ns:columns>
       <ns:column columnName="RowId"/>
       <ns:column columnName="Container"/>
-      <ns:column columnName="ScharpId"/>
+      <ns:column columnName="ExternalId"/>
       <ns:column columnName="LdmsAdditiveCode"/>
       <ns:column columnName="LabwareAdditiveCode"/>
       <ns:column columnName="Additive"/>
@@ -449,7 +449,7 @@
     <ns:columns>
       <ns:column columnName="RowId"/>
       <ns:column columnName="Container"/>
-      <ns:column columnName="ScharpId"/>
+      <ns:column columnName="ExternalId"/>
       <ns:column columnName="LdmsDerivativeCode"/>
       <ns:column columnName="LabwareDerivativeCode"/>
       <ns:column columnName="Derivative"/>
@@ -459,7 +459,7 @@
     <ns:columns>
       <ns:column columnName="RowId"/>
       <ns:column columnName="Container"/>
-      <ns:column columnName="ScharpId"/>
+      <ns:column columnName="ExternalId"/>
       <ns:column columnName="SpecimenId"/>
       <ns:column columnName="LabId"/>
       <ns:column columnName="UniqueSpecimenId"/>
@@ -495,7 +495,7 @@
     <ns:columns>
       <ns:column columnName="RowId"/>
       <ns:column columnName="Container"/>
-      <ns:column columnName="ScharpId"/>
+      <ns:column columnName="ExternalId"/>
       <ns:column columnName="PrimaryTypeLdmsCode"/>
       <ns:column columnName="PrimaryTypeLabwareCode"/>
       <ns:column columnName="PrimaryType"/>

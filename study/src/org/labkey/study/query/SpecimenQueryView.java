@@ -26,7 +26,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.SampleManager;
-import org.labkey.study.importer.SpecimenImporter;
+import org.labkey.study.controllers.samples.SpecimenUtils;
 import org.labkey.study.model.*;
 
 import java.io.IOException;
@@ -49,6 +49,12 @@ public class SpecimenQueryView extends BaseStudyQueryView
         protected boolean isRecordSelectorEnabled(RenderContext ctx)
         {
             return isAvailable(ctx);
+        }
+
+        @Override
+        protected String getRecordSelectorId(RenderContext ctx)
+        {
+            return "check_" + ctx.getRow().get("GlobalUniqueId");
         }
 
         protected void renderExtraRecordSelectorContent(RenderContext ctx, Writer out) throws IOException
@@ -86,32 +92,17 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
         private boolean isAtRepository(RenderContext ctx)
         {
-            Object value = ctx.getRow().get("AtRepository");
-            if (value instanceof Integer)
-                return ((Integer) value) != 0;
-            else if (value instanceof Boolean)
-                return ((Boolean) value).booleanValue();
-            return false;
+            return SpecimenUtils.isFieldTrue(ctx, "AtRepository");
         }
 
         private boolean isInActiveRequest(RenderContext ctx)
         {
-            Object value = ctx.getRow().get("LockedInRequest");
-            if (value instanceof Integer)
-                return ((Integer) value) != 0;
-            else if (value instanceof Boolean)
-                return ((Boolean) value).booleanValue();
-            return false;
+            return SpecimenUtils.isFieldTrue(ctx, "LockedInRequest");
         }
 
         private boolean isAvailable(RenderContext ctx)
         {
-            Object value = ctx.getRow().get("Available");
-            if (value instanceof Integer)
-                return ((Integer) value) != 0;
-            else if (value instanceof Boolean)
-                return ((Boolean) value).booleanValue();
-            return false;
+            return SpecimenUtils.isFieldTrue(ctx, "Available");
         }
     }
 
@@ -120,6 +111,12 @@ public class SpecimenQueryView extends BaseStudyQueryView
         protected boolean isRecordSelectorEnabled(RenderContext ctx)
         {
             return isAvailable(ctx);
+        }
+
+        @Override
+        protected String getRecordSelectorId(RenderContext ctx)
+        {
+            return "check_" + ctx.getRow().get("SpecimenHash");
         }
 
         protected void renderExtraRecordSelectorContent(RenderContext ctx, Writer out) throws IOException
@@ -145,73 +142,6 @@ public class SpecimenQueryView extends BaseStudyQueryView
                 count = getSampleCounts(ctx).get(hash);
             }
             return (count != null && count.intValue() > 0);
-        }
-    }
-
-    private class LastSpecimenDisplayColumn extends SimpleDisplayColumn
-    {
-        private boolean _showOneVialIndicator;
-        private boolean _showZeroVialIndicator;
-        private TableInfo _table;
-
-        public LastSpecimenDisplayColumn(TableInfo table, boolean showOneVialIndicator, boolean showZeroVialIndicator)
-        {
-            _showOneVialIndicator = showOneVialIndicator;
-            _showZeroVialIndicator = showZeroVialIndicator;
-            _table = table;
-        }
-
-        @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-        {
-            String hash = (String) ctx.getRow().get("SpecimenHash");
-            int count;
-            if (ctx.getRow().get("AvailableCount") != null)
-            {
-                count = ((Number)ctx.getRow().get("AvailableCount")).intValue();
-            }
-            else
-            {
-                count = getSampleCounts(ctx).get(hash).intValue();
-            }
-            
-            if (_showOneVialIndicator && count == 1)
-            {
-                String exclaimHtml = "<center><img src=\"" + ctx.getViewContext().getContextPath() + "/_images/one.gif\"></center>";
-                out.write(PageFlowUtil.helpPopup("One Vial Available",
-                        "Only one vial of this primary specimen is available.  Study procedures may not permit requests for the last vial of a primary specimen.",
-                        false, exclaimHtml));
-            }
-            else if (_showZeroVialIndicator && count == 0)
-            {
-                String exclaimHtml = "<center><img src=\"" + ctx.getViewContext().getContextPath() + "/_images/exclaim.gif\"></center>";
-                out.write(PageFlowUtil.helpPopup("Zero Vials Available",
-                        "No vials of this primary specimen are currently available for request.",
-                        false, exclaimHtml));
-            }
-            else if (_showZeroVialIndicator || _showOneVialIndicator)
-                out.write(PageFlowUtil.helpPopup(count + " Vials Available",
-                        count + " Vials of this primary specimen are currently available for new requests.", false,
-                        "<center style='color:gray'>" + String.valueOf(count)  + "</center>"));
-            else
-                out.write("&nbsp;");
-        }
-
-
-        @Override
-        public void addQueryColumns(Set<ColumnInfo> set)
-        {
-            set.add(_table.getColumn("SpecimenHash"));
-            // fix for https://cpas.fhcrc.org/Issues/home/issues/details.view?issueId=3116
-            ColumnInfo atRepositoryColumn = _table.getColumn("AtRepository");
-            if (atRepositoryColumn != null)
-                set.add(atRepositoryColumn);
-            ColumnInfo lockedInRequestColumn = _table.getColumn("LockedInRequest");
-            if (lockedInRequestColumn != null)
-                set.add(lockedInRequestColumn);
-            ColumnInfo availableCountColumn = _table.getColumn("AvailableCount");
-            if (availableCountColumn != null)
-                set.add(availableCountColumn);
         }
     }
 
@@ -345,7 +275,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         return new SpecimenQueryView(context, schema, qs, filter, sort, viewType, participantVisitFiltered);
     }
 
-    private Map<String, Integer> getSampleCounts(RenderContext ctx)
+    public Map<String, Integer> getSampleCounts(RenderContext ctx)
     {
         if (null  == _availableSpecimenCounts)
             try
@@ -562,24 +492,28 @@ public class SpecimenQueryView extends BaseStudyQueryView
                     new Aggregate(getTable().getColumn("AvailableVolume"), Aggregate.Type.SUM),
                     new Aggregate(getTable().getColumn("AvailableCount"), Aggregate.Type.SUM));
         }
-        if (!_disableLowVialIndicators)
+        try
         {
-            try
+            boolean oneVialIndicator = false;
+            boolean zeroVialIndicator = false;
+            if (!_disableLowVialIndicators)
             {
                 SampleManager.DisplaySettings settings =  SampleManager.getInstance().getDisplaySettings(getContainer());
-                boolean oneVialIndicator = settings.getLastVialEnum() == SampleManager.DisplaySettings.DisplayOption.ALL_USERS ||
+                oneVialIndicator = settings.getLastVialEnum() == SampleManager.DisplaySettings.DisplayOption.ALL_USERS ||
                     (settings.getLastVialEnum() == SampleManager.DisplaySettings.DisplayOption.ADMINS_ONLY &&
                         getUser().isAdministrator());
-                boolean zeroVialIndicator = settings.getZeroVialsEnum() == SampleManager.DisplaySettings.DisplayOption.ALL_USERS ||
+                zeroVialIndicator = settings.getZeroVialsEnum() == SampleManager.DisplaySettings.DisplayOption.ALL_USERS ||
                         (settings.getZeroVialsEnum() == SampleManager.DisplaySettings.DisplayOption.ADMINS_ONLY &&
                                 getUser().isAdministrator());
-                rgn.addDisplayColumn(0, new LastSpecimenDisplayColumn(getTable(), zeroVialIndicator, oneVialIndicator));
             }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            rgn.addDisplayColumn(0, new SpecimenRequestDisplayColumn(this, getTable(), zeroVialIndicator, oneVialIndicator,
+                    SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()) && _showRecordSelectors));
         }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
         DisplayColumn rowIdCol = rgn.getDisplayColumn("RowId");
         if (rowIdCol != null)
             rowIdCol.setVisible(false);

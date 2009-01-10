@@ -29,14 +29,14 @@ import java.util.Map;
 public class Site extends AbstractStudyEntity<Site>
 {
     private int _rowId; // INT IDENTITY(1,1),
-    private Integer _scharpId; // INT,
+    private Integer _externalId; // INT,
     private Integer _ldmsLabCode; // INT,
     private String _labwareLabCode; // NVARCHAR(20),
     private String _labUploadCode; // NVARCHAR(2),
-    private boolean _isSal; // Bit,
-    private boolean _isClinic; // Bit,
-    private boolean _isRepository; // Bit,
-    private boolean _isEndpoint; // Bit,
+    private boolean _sal; // Bit,
+    private boolean _clinic; // Bit,
+    private boolean _repository; // Bit,
+    private boolean endpoint; // Bit,
     private String _label;
 
     public Site()
@@ -46,17 +46,17 @@ public class Site extends AbstractStudyEntity<Site>
     public Site(Map<String, ? extends Object> rsRowMap)
     {
         setContainer(ContainerManager.getForId((String) rsRowMap.get("Container")));
-        setEndpoint(safeBooleanEntryConvert(rsRowMap, "IsEndpoint"));
+        setEndpoint(safeBooleanEntryConvert(rsRowMap, "endpoint"));
         setEntityId((String) rsRowMap.get("EntityId"));
         setLabel((String) rsRowMap.get("Label"));
         setLabUploadCode((String) rsRowMap.get("LabUploadCode"));
         setLabwareLabCode((String) rsRowMap.get("LabwareLabCode"));
         setLdmsLabCode((Integer) rsRowMap.get("LdmsLabCode"));
-        setRepository(safeBooleanEntryConvert(rsRowMap, "IsRepository"));
+        setRepository(safeBooleanEntryConvert(rsRowMap, "repository"));
         setRowId((Integer) rsRowMap.get("RowId"));
-        setSal(safeBooleanEntryConvert(rsRowMap, "IsSal"));
-        setClinic(safeBooleanEntryConvert(rsRowMap, "IsClinic"));
-        setScharpId((Integer) rsRowMap.get("ScharpId"));
+        setSal(safeBooleanEntryConvert(rsRowMap, "sal"));
+        setClinic(safeBooleanEntryConvert(rsRowMap, "clinic"));
+        setExternalId((Integer) rsRowMap.get("ExternalId"));
     }
 
     private boolean safeBooleanEntryConvert(Map<String, ? extends Object> rsRowMap, String booleanColName)
@@ -100,46 +100,46 @@ public class Site extends AbstractStudyEntity<Site>
 
     public boolean isEndpoint()
     {
-        return _isEndpoint;
+        return endpoint;
     }
 
     public void setEndpoint(boolean endpoint)
     {
         verifyMutability();
-        _isEndpoint = endpoint;
+        this.endpoint = endpoint;
     }
 
     public boolean isRepository()
     {
-        return _isRepository;
+        return _repository;
     }
 
     public void setRepository(boolean repository)
     {
         verifyMutability();
-        _isRepository = repository;
+        _repository = repository;
     }
 
     public boolean isSal()
     {
-        return _isSal;
+        return _sal;
     }
 
     public void setSal(boolean sal)
     {
         verifyMutability();
-        _isSal = sal;
+        _sal = sal;
     }
 
     public boolean isClinic()
     {
-        return _isClinic;
+        return _clinic;
     }
 
     public void setClinic(boolean clinic)
     {
         verifyMutability();
-        _isClinic = clinic;
+        _clinic = clinic;
     }
 
     public String getLabUploadCode()
@@ -175,15 +175,15 @@ public class Site extends AbstractStudyEntity<Site>
         _ldmsLabCode = ldmsLabCode;
     }
 
-    public Integer getScharpId()
+    public Integer getExternalId()
     {
-        return _scharpId;
+        return _externalId;
     }
 
-    public void setScharpId(Integer scharpId)
+    public void setExternalId(Integer externalId)
     {
         verifyMutability();
-        _scharpId = scharpId;
+        _externalId = externalId;
     }
 
     public String getDisplayName()

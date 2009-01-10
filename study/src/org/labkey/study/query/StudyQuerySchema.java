@@ -56,6 +56,7 @@ public class StudyQuerySchema extends UserSchema
         ret.add("SpecimenSummary");
         ret.add("SpecimenRequest");
         ret.add("SpecimenRequestStatus");
+        ret.add("VialRequest");
         ret.add("ParticipantVisit");
         ret.add("DataSets");
         ret.add("DataSetColumns");
@@ -217,6 +218,12 @@ public class StudyQuerySchema extends UserSchema
         if ("SpecimenComment".equals(name))
         {
             FilteredTable ret = new SpecimenCommentTable(this);
+            ret.setAlias(alias);
+            return ret;
+        }
+        if ("VialRequest".equals(name))
+        {
+            FilteredTable ret = new VialRequestTable(this);
             ret.setAlias(alias);
             return ret;
         }

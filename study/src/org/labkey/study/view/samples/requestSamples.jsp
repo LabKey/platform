@@ -90,14 +90,15 @@ function setDefaults()
     return true;
 }
 </script>
-<form action="handleCreateSampleRequest.post" method="POST">
+<form name="CreateSampleRequest" action="handleCreateSampleRequest.post" method="POST">
+    <input type="hidden" name="returnUrl" value="<%= bean.getReturnUrl() %>">
     <%
         if (specimens != null)
         {
             for (Specimen specimen : specimens)
             {
     %>
-    <input type="hidden" name="sampleIds" value="<%= specimen.getRowId() %>">
+    <input type="hidden" name="sampleRowIds" value="<%= specimen.getRowId() %>">
     <%
             }
         }
@@ -171,8 +172,19 @@ function setDefaults()
         %>
         <tr>
             <td>
-                <%= generateSubmitButton((shoppingCart ? "Create" : "Submit") + " Request")%>&nbsp;
-                <%= generateButton("Cancel", "viewRequests.view")%>
+                <input type="hidden" name="<%= SpringSpecimenController.CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name() %>" value="false">
+                <%
+                    boolean hasReturnURL = bean.getReturnUrl() != null && bean.getReturnUrl().length() > 0;
+                    if (hasReturnURL)
+                    {
+                %>
+                <%= generateSubmitButton((shoppingCart ? "Create" : "Submit") + " and Return to Specimens")%>
+                <%
+                    }
+                %>
+                <%= buttonImg((shoppingCart ? "Create" : "Submit") + " and View Details", 
+                        "document.CreateSampleRequest." + SpringSpecimenController.CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name() + ".value='true'; return true;")%>
+                <%= generateButton("Cancel", hasReturnURL ? bean.getReturnUrl() : "viewRequests.view")%>
             </td>
         </tr>
 

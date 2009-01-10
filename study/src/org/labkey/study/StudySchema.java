@@ -204,4 +204,20 @@ public class StudySchema
     {
         return getSchema().getTable("SpecimenComment");
     }
+
+    public TableInfo getTableInfoPrimaryType()
+    {
+        return getSchema().getTable("SpecimenPrimaryType");
+    }
+
+    public TableInfo getTableInfoDerivativeType()
+    {
+        return getSchema().getTable("SpecimenDerivative");
+    }
+
+    public TableInfo getTableInfoAdditiveType()
+    {
+        return getSchema().getTable("SpecimenAdditive");
+    }
+
 }

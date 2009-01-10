@@ -50,7 +50,7 @@ CREATE VIEW study.SpecimenDetail AS
          FROM
             (
                 SELECT Specimen.*, 	PV.VisitRowId, V.SequenceNumMin,
-                    (CASE IsRepository WHEN 1 THEN 1 ELSE 0 END) AS AtRepository,
+                    (CASE Repository WHEN 1 THEN 1 ELSE 0 END) AS AtRepository,
                      Site.Label AS SiteName,Site.LdmsLabCode AS SiteLdmsCode,
                     (CASE LockedSpecimens.Locked WHEN 1 THEN 1 ELSE 0 END) AS LockedInRequest
     	        FROM study.Specimen AS Specimen

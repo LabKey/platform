@@ -182,14 +182,15 @@
         </tr>
 <%
         }
-        if (multipleSites)
+        if (multipleSites && !bean.isFinalState())
         {
 %>
         <tr>
             <td class="labkey-form-label">
-                <span class="labkey-error"><b>WARNING: Multiple providing locations.</b></span><br>
+                <span class="labkey-error"><b>WARNING: Vials are at multiple locations.</b></span><br>
                 Requests containing vials from multiple providing locations may require increased processing time.
-                Providing locations for this request are:<br>
+                Multiple locations are expected if some vials have already shipped while others have not.
+                Current locations for this request are:<br>
                 <%
                     for (Site site : bean.getProvidingSites())
                     {
@@ -267,6 +268,14 @@
 %>
                 <%= generateButton("Cancel Request", "deleteRequest.view?id=" + bean.getSampleRequest().getRowId(),
                         "return confirm('" + SpringSpecimenController.ManageRequestBean.CANCELLATION_WARNING + "')")%>
+<%
+            if (bean.getReturnUrl() != null)
+            {
+%>
+                <%= generateButton("Return to Specimen View", bean.getReturnUrl())%>
+<%
+            }
+%>
             </td>
         </tr>
 <%

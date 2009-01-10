@@ -55,9 +55,10 @@ import java.util.*;
  */
 public class SpecimenUtils
 {
-    private SpringSpecimenController _controller;
+    private BaseStudyController _controller;
 
-    public SpecimenUtils(SpringSpecimenController controller)
+
+    public SpecimenUtils(BaseStudyController controller)
     {
         // private constructor to prevent external instantiation
         _controller = controller;
@@ -90,7 +91,18 @@ public class SpecimenUtils
 
     private String urlFor(Class<? extends Controller> action)
     {
-        return new ActionURL(action, getContainer()).getLocalURIString();
+        return urlFor(action, null);
+    }
+
+    private String urlFor(Class<? extends Controller> action, Map<Enum, String> parameters)
+    {
+        ActionURL url = new ActionURL(action, getContainer());
+        if (parameters != null)
+        {
+            for (Map.Entry<Enum, String> entry : parameters.entrySet())
+                url.addParameter(entry.getKey(), entry.getValue());
+        }
+        return url.getLocalURIString();
     }
 
     public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, ParticipantDataset[] cachedFilterData, boolean commentsMode) throws ServletException, SQLException
@@ -124,18 +136,22 @@ public class SpecimenUtils
                 if (getViewContext().hasPermission(ACL.PERM_INSERT))
                 {
                     String dataRegionName = gridView.getSettings().getDataRegionName();
-                    String createRequestURL = urlFor(SpringSpecimenController.ShowCreateSampleRequestAction.class);
+                    String createRequestURL = urlFor(SpringSpecimenController.ShowCreateSampleRequestAction.class,
+                            Collections.<Enum, String>singletonMap(SpringSpecimenController.CreateSampleRequestForm.PARAMS.returnUrl,
+                                    getViewContext().getActionURL().getLocalURIString()));
+
                     requestMenuButton.addMenuItem("Create New Request", "#",
                             "if (verifySelected(document.forms['" + dataRegionName + "'], '" + createRequestURL +
-                            "', 'post', 'rows')) document.forms['" + dataRegionName + "'].submit(); return false;");
+                            "', 'post', 'rows')) document.forms['" + dataRegionName + "'].submit();");
 
                     if (getUser().isAdministrator() || getViewContext().hasPermission(ACL.PERM_ADMIN) ||
                             SampleManager.getInstance().isSpecimenShoppingCartEnabled(getViewContext(). getContainer()))
                     {
-                        String addToRequestURL = urlFor(SpringSpecimenController.ShowAddToSampleRequestAction.class);
                         requestMenuButton.addMenuItem("Add To Existing Request", "#",
-                                "if (verifySelected(document.forms['" + dataRegionName + "'], '" + addToRequestURL +
-                                "', 'get', 'rows')) document.forms['" + dataRegionName + "'].submit(); return false;");
+                                "if (verifySelected(document.forms['" + dataRegionName + "'], '#', " +
+                                "'get', 'rows')) showRequestWindow(LABKEY.DataRegions['" +
+                                dataRegionName + "'].getChecked(), '" + (showVials ? SpecimenApiController.VialRequestForm.IdTypes.RowId
+                                : SpecimenApiController.VialRequestForm.IdTypes.SpecimenHash) + "');");
                     }
                 }
             }
@@ -456,7 +472,7 @@ public class SpecimenUtils
         }
     }
 
-    private <T> Set<T> intersect(Set<T> left, Set<T> right)
+    public static <T> Set<T> intersect(Set<T> left, Set<T> right)
     {
         Set<T> intersection = new HashSet<T>();
         for (T item : left)
@@ -497,7 +513,8 @@ public class SpecimenUtils
             HttpView.throwRedirect(new ActionURL(SpringSpecimenController.SpecimenRequestConfigRequired.class, getContainer()));
     }
 
-    public Specimen[] getSpecimensFromIds(int[] requestedSampleIds) throws SQLException
+
+    public Specimen[] getSpecimensFromRowIds(int[] requestedSampleIds) throws SQLException
     {
         Specimen[] requestedSpecimens = null;
         if (requestedSampleIds != null)
@@ -515,9 +532,27 @@ public class SpecimenUtils
 
     }
 
-    public Specimen[] getSpecimensFromIds(Collection<String> ids) throws SQLException
+    public Specimen[] getSpecimensFromGlobalUniqueIds(Set<String> globalUniqueIds) throws SQLException
     {
-        return getSpecimensFromIds(BaseStudyController.toIntArray(ids));
+        Specimen[] requestedSpecimens = null;
+        if (globalUniqueIds != null)
+        {
+            List<Specimen> specimens = new ArrayList<Specimen>();
+            for (String globalUniqueId : globalUniqueIds)
+            {
+                Specimen match = SampleManager.getInstance().getSpecimen(getContainer(), globalUniqueId);
+                if (match != null)
+                    specimens.add(match);
+            }
+            requestedSpecimens = specimens.toArray(new Specimen[specimens.size()]);
+        }
+        return requestedSpecimens;
+
+    }
+
+    public Specimen[] getSpecimensFromRowIds(Collection<String> ids) throws SQLException
+    {
+        return getSpecimensFromRowIds(BaseStudyController.toIntArray(ids));
     }
 
     public Specimen[] getSpecimensFromPost(boolean fromGroupedView, boolean onlyAvailable) throws SQLException
@@ -540,7 +575,7 @@ public class SpecimenUtils
             selectedVials = vials.toArray(new Specimen[vials.size()]);
         }
         else
-            selectedVials = getSpecimensFromIds(formValues);
+            selectedVials = getSpecimensFromRowIds(formValues);
         return selectedVials;
     }
 
@@ -635,13 +670,19 @@ public class SpecimenUtils
         }
     }
 
-    public RequestedSpecimens getRequestableByVialFormValue(Set<String> formValues) throws SQLException
+    public RequestedSpecimens getRequestableByVialRowIds(Set<String> rowIds) throws SQLException
     {
-        Specimen[] requestedSamples = getSpecimensFromIds(formValues);
+        Specimen[] requestedSamples = getSpecimensFromRowIds(rowIds);
         return new RequestedSpecimens(requestedSamples);
     }
 
-    public RequestedSpecimens getRequestableBySampleFormValue(Set<String> formValues, Integer preferredLocation) throws SQLException, AmbiguousLocationException
+    public RequestedSpecimens getRequestableByVialGlobalUniqueIds(Set<String> globalUniqueIds) throws SQLException
+    {
+        Specimen[] requestedSamples = getSpecimensFromGlobalUniqueIds(globalUniqueIds);
+        return new RequestedSpecimens(requestedSamples);
+    }
+
+    public RequestedSpecimens getRequestableBySampleHash(Set<String> formValues, Integer preferredLocation) throws SQLException, AmbiguousLocationException
     {
         Map<String, List<Specimen>> vialsByHash = SampleManager.getInstance().getVialsForSampleHashes(getContainer(), formValues, true);
         if (preferredLocation == null)
@@ -812,4 +853,14 @@ public class SpecimenUtils
         return label.replaceAll("\\W+", "_");
     }
 
+
+    public static boolean isFieldTrue(RenderContext ctx, String fieldName)
+    {
+        Object value = ctx.getRow().get(fieldName);
+        if (value instanceof Integer)
+            return ((Integer) value).intValue() != 0;
+        else if (value instanceof Boolean)
+            return ((Boolean) value).booleanValue();
+        return false;
+    }
 }

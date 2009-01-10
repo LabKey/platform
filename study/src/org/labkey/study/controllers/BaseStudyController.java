@@ -31,6 +31,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.Visit;
 import org.labkey.study.view.BaseStudyPage;
 import org.labkey.study.view.StudyNavigationView;
+import org.labkey.study.controllers.samples.SpecimenUtils;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -52,6 +53,11 @@ public abstract class BaseStudyController extends SpringActionController
         cohortId
     }
     static final boolean extprototype = false;
+
+    protected SpecimenUtils getUtils()
+    {
+        return new SpecimenUtils(this);
+    }
 
     ActionURL getPermaLink()
     {

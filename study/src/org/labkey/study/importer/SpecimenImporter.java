@@ -270,11 +270,11 @@ public class SpecimenImporter
     private static final String EVENT_ID_COL = "record_id";
 
     protected final SpecimenColumn[] SPECIMEN_COLUMNS = {
-            new SpecimenColumn(EVENT_ID_COL, "ScharpId", "INT NOT NULL", TargetTable.SPECIMEN_EVENTS, true),
+            new SpecimenColumn(EVENT_ID_COL, "ExternalId", "INT NOT NULL", TargetTable.SPECIMEN_EVENTS, true),
             new SpecimenColumn("record_source", "RecordSource", "VARCHAR(10)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn(GLOBAL_UNIQUE_ID_TSV_COL, "GlobalUniqueId", "VARCHAR(20)", TargetTable.SPECIMENS),
-            new SpecimenColumn(LAB_ID_TSV_COL, "LabId", "INT", TargetTable.IGNORED, "Site", "ScharpId"),
-            new SpecimenColumn("originating_location", "OriginatingLocationId", "INT", TargetTable.SPECIMENS, "Site", "ScharpId", "LEFT OUTER"),
+            new SpecimenColumn(LAB_ID_TSV_COL, "LabId", "INT", TargetTable.IGNORED, "Site", "ExternalId"),
+            new SpecimenColumn("originating_location", "OriginatingLocationId", "INT", TargetTable.SPECIMENS, "Site", "ExternalId", "LEFT OUTER"),
             new SpecimenColumn("unique_specimen_id", "UniqueSpecimenId", "VARCHAR(20)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("ptid", "Ptid", "VARCHAR(32)", TargetTable.SPECIMENS),
             new SpecimenColumn("parent_specimen_id", "ParentSpecimenId", "INT", TargetTable.SPECIMEN_EVENTS),
@@ -301,9 +301,9 @@ public class SpecimenImporter
             new SpecimenColumn("group_protocol", "GroupProtocol", "INT", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("sub_additive_derivative", "SubAdditiveDerivative", "VARCHAR(20)", TargetTable.SPECIMENS),
             new SpecimenColumn("comments", "Comments", "VARCHAR(200)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("primary_specimen_type_id", "PrimaryTypeId", "INT", TargetTable.SPECIMENS),
-            new SpecimenColumn("derivative_type_id", "DerivativeTypeId", "INT", TargetTable.SPECIMENS),
-            new SpecimenColumn("additive_type_id", "AdditiveTypeId", "INT", TargetTable.SPECIMENS),
+            new SpecimenColumn("primary_specimen_type_id", "PrimaryTypeId", "INT", TargetTable.SPECIMENS, "SpecimenPrimaryType", "ExternalId", "LEFT OUTER"),
+            new SpecimenColumn("derivative_type_id", "DerivativeTypeId", "INT", TargetTable.SPECIMENS, "SpecimenDerivative", "ExternalId", "LEFT OUTER"),
+            new SpecimenColumn("additive_type_id", "AdditiveTypeId", "INT", TargetTable.SPECIMENS, "SpecimenAdditive", "ExternalId", "LEFT OUTER"),
             new SpecimenColumn("specimen_condition", "SpecimenCondition", "VARCHAR(3)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("sample_number", "SampleNumber", "INT", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("x_sample_origin", "XSampleOrigin", "VARCHAR(20)", TargetTable.SPECIMEN_EVENTS),
@@ -319,7 +319,7 @@ public class SpecimenImporter
 
     private final ImportableColumn[] ADDITIVE_COLUMNS = new ImportableColumn[]
         {
-            new ImportableColumn("additive_id", "ScharpId", "INT NOT NULL", true),
+            new ImportableColumn("additive_id", "ExternalId", "INT NOT NULL", true),
             new ImportableColumn("ldms_additive_code", "LdmsAdditiveCode", "VARCHAR(3)"),
             new ImportableColumn("labware_additive_code", "LabwareAdditiveCode", "VARCHAR(20)"),
             new ImportableColumn("additive", "Additive", "VARCHAR(100)")
@@ -327,7 +327,7 @@ public class SpecimenImporter
 
     private final ImportableColumn[] DERIVATIVE_COLUMNS = new ImportableColumn[]
         {
-            new ImportableColumn("derivative_id", "ScharpId", "INT NOT NULL", true),
+            new ImportableColumn("derivative_id", "ExternalId", "INT NOT NULL", true),
             new ImportableColumn("ldms_derivative_code", "LdmsDerivativeCode", "VARCHAR(3)"),
             new ImportableColumn("labware_derivative_code", "LabwareDerivativeCode", "VARCHAR(20)"),
             new ImportableColumn("derivative", "Derivative", "VARCHAR(100)")
@@ -335,20 +335,20 @@ public class SpecimenImporter
 
     private final ImportableColumn[] SITE_COLUMNS = new ImportableColumn[]
         {
-            new ImportableColumn("lab_id", "ScharpId", "INT NOT NULL", true),
+            new ImportableColumn("lab_id", "ExternalId", "INT NOT NULL", true),
             new ImportableColumn("ldms_lab_code", "LdmsLabCode", "INT"),
             new ImportableColumn("labware_lab_code", "LabwareLabCode", "VARCHAR(20)"),
             new ImportableColumn("lab_name", "Label", "VARCHAR(200)"),
             new ImportableColumn("lab_upload_code", "LabUploadCode", "VARCHAR(2)"),
-            new ImportableColumn("is_sal", "IsSal", BOOLEAN_TYPE),
-            new ImportableColumn("is_repository", "IsRepository", BOOLEAN_TYPE),
-            new ImportableColumn("is_clinic", "IsClinic", BOOLEAN_TYPE),
-            new ImportableColumn("is_endpoint", "IsEndpoint", BOOLEAN_TYPE)
+            new ImportableColumn("is_sal", "Sal", BOOLEAN_TYPE),
+            new ImportableColumn("is_repository", "Repository", BOOLEAN_TYPE),
+            new ImportableColumn("is_clinic", "Clinic", BOOLEAN_TYPE),
+            new ImportableColumn("is_endpoint", "Endpoint", BOOLEAN_TYPE)
         };
 
     private final ImportableColumn[] PRIMARYTYPE_COLUMNS = new ImportableColumn[]
         {
-            new ImportableColumn("primary_type_id", "ScharpId", "INT NOT NULL", true),
+            new ImportableColumn("primary_type_id", "ExternalId", "INT NOT NULL", true),
             new ImportableColumn("primary_type_ldms_code", "PrimaryTypeLdmsCode", "VARCHAR(5)"),
             new ImportableColumn("primary_type_labware_code", "PrimaryTypeLabwareCode", "VARCHAR(5)"),
             new ImportableColumn("primary_type", "PrimaryType", "VARCHAR(100)")
@@ -945,7 +945,7 @@ public class SpecimenImporter
                 "-- join the temp table to study.Site, to translate CHAVI site ids into LabKey Server site ids:\n" +
                 "SELECT " + info.getTempTableName() + ".*, study.Site.RowId AS CpasLabId, study.Specimen.RowId As SpecimenId \n" +
                 "FROM " + info.getTempTableName() + ", study.Site, study.Specimen\n" +
-                "WHERE study.Site.ScharpId = " + info.getTempTableName() + ".LabId AND study.Site.Container = ? AND\n" +
+                "WHERE study.Site.ExternalId = " + info.getTempTableName() + ".LabId AND study.Site.Container = ? AND\n" +
                 info.getTempTableName() + ".GlobalUniqueId = study.Specimen.GlobalUniqueId AND study.Specimen.Container = ?\n" +
                 ") TempTable;";
 

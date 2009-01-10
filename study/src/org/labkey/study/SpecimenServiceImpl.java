@@ -110,9 +110,9 @@ public class SpecimenServiceImpl implements SpecimenService.Service
 
     public ParticipantVisit getSampleInfo(Container studyContainer, String sampleId) throws SQLException
     {
-        Specimen[] matches = SampleManager.getInstance().getSpecimens(studyContainer, sampleId);
-        if (matches.length > 0)
-            return new StudyParticipantVisit(studyContainer, sampleId, matches[0].getPtid(), matches[0].getVisitValue(), matches[0].getDrawTimestamp());
+        Specimen match = SampleManager.getInstance().getSpecimen(studyContainer, sampleId);
+        if (match != null)
+            return new StudyParticipantVisit(studyContainer, sampleId, match.getPtid(), match.getVisitValue(), match.getDrawTimestamp());
         else
             return new StudyParticipantVisit(studyContainer, sampleId, null, null, null);
     }

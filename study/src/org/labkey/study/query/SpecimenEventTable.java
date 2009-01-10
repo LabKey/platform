@@ -58,7 +58,7 @@ public class SpecimenEventTable extends BaseStudyTable
             String name = baseColumn.getName();
             if ("Container".equalsIgnoreCase(name) ||
                 "RowId".equalsIgnoreCase(name) ||
-                "ScharpId".equalsIgnoreCase(name))
+                "ExternalId".equalsIgnoreCase(name))
                 continue;
 
             if (getColumn(name) == null)

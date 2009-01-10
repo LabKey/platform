@@ -1885,6 +1885,7 @@ study/src/org/labkey/study/controllers/reports/ReportsController.java -text
 study/src/org/labkey/study/controllers/reports/StudyChartServiceImpl.java -text
 study/src/org/labkey/study/controllers/reports/StudyManageReportsBean.java -text
 study/src/org/labkey/study/controllers/samples/SamplesController.java -text
+study/src/org/labkey/study/controllers/samples/SpecimenApiController.java -text
 study/src/org/labkey/study/controllers/samples/SpecimenUtils.java -text
 study/src/org/labkey/study/controllers/samples/SpringSpecimenController.java -text
 study/src/org/labkey/study/controllers/security/SecurityController.java -text
@@ -1908,6 +1909,7 @@ study/src/org/labkey/study/importer/VisitMapImporter.java -text
 study/src/org/labkey/study/importer/VisitMapRecord.java -text
 study/src/org/labkey/study/model/AbstractStudyCachable.java -text
 study/src/org/labkey/study/model/AbstractStudyEntity.java -text
+study/src/org/labkey/study/model/AdditiveType.java -text
 study/src/org/labkey/study/model/AllParticipantData.java -text
 study/src/org/labkey/study/model/BaseStudyDomainKind.java -text
 study/src/org/labkey/study/model/Cohort.java -text
@@ -1915,11 +1917,13 @@ study/src/org/labkey/study/model/CohortDomainKind.java -text
 study/src/org/labkey/study/model/CustomParticipantView.java -text
 study/src/org/labkey/study/model/DataSetDefinition.java -text
 study/src/org/labkey/study/model/DatasetDomainKind.java -text
+study/src/org/labkey/study/model/DerivativeType.java -text
 study/src/org/labkey/study/model/ExtensibleStudyEntity.java -text
 study/src/org/labkey/study/model/Participant.java -text
 study/src/org/labkey/study/model/ParticipantDataMapKey.java -text
 study/src/org/labkey/study/model/ParticipantDataset.java -text
 study/src/org/labkey/study/model/ParticipantSequenceKey.java -text
+study/src/org/labkey/study/model/PrimaryType.java -text
 study/src/org/labkey/study/model/QCState.java -text
 study/src/org/labkey/study/model/QCStateSet.java -text
 study/src/org/labkey/study/model/SampleRequest.java -text
@@ -1995,6 +1999,7 @@ study/src/org/labkey/study/query/SpecimenDetailTable.java -text
 study/src/org/labkey/study/query/SpecimenEventQueryView.java -text
 study/src/org/labkey/study/query/SpecimenEventTable.java -text
 study/src/org/labkey/study/query/SpecimenQueryView.java -text
+study/src/org/labkey/study/query/SpecimenRequestDisplayColumn.java -text
 study/src/org/labkey/study/query/SpecimenRequestQueryView.java -text
 study/src/org/labkey/study/query/SpecimenRequestTable.java -text
 study/src/org/labkey/study/query/SpecimenSummaryTable.java -text
@@ -2003,6 +2008,7 @@ study/src/org/labkey/study/query/StudyPropertiesTable.java -text
 study/src/org/labkey/study/query/StudyPropertiesUpdateService.java -text
 study/src/org/labkey/study/query/StudyQuerySchema.java -text
 study/src/org/labkey/study/query/StudySchemaProvider.java -text
+study/src/org/labkey/study/query/VialRequestTable.java -text
 study/src/org/labkey/study/query/VisitTable.java -text
 study/src/org/labkey/study/reports/AbstractReportView.java -text
 study/src/org/labkey/study/reports/AttachmentReport.java -text
@@ -2171,6 +2177,7 @@ study/src/org/labkey/study/view/visitVisibility.jsp -text
 study/src/org/labkey/study/visitmanager/DateVisitManager.java -text
 study/src/org/labkey/study/visitmanager/SequenceVisitManager.java -text
 study/src/org/labkey/study/visitmanager/VisitManager.java -text
+study/webapp/sampleRequest.js -text
 study/webapp/study/assay/SampleLookupTemplate.xls -text
 timeline/Timeline.iml -text
 timeline/build.xml -text

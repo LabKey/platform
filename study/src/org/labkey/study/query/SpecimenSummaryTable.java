@@ -81,7 +81,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("AvailableVolume"));
         addWrapColumn(_rootTable.getColumn("VolumeUnits"));
         ColumnInfo primaryTypeColumn = new AliasedColumn(this, "PrimaryType", _rootTable.getColumn("PrimaryTypeId"));
-        primaryTypeColumn.setFk(new LookupForeignKey("ScharpId")
+        primaryTypeColumn.setFk(new LookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
             {
@@ -90,7 +90,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         });
         addColumn(primaryTypeColumn);
         ColumnInfo additiveTypeColumn = new AliasedColumn(this, "AdditiveType", _rootTable.getColumn("AdditiveTypeId"));
-        additiveTypeColumn.setFk(new LookupForeignKey("ScharpId")
+        additiveTypeColumn.setFk(new LookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
             {
@@ -99,7 +99,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         });
         addColumn(additiveTypeColumn);
         ColumnInfo derivativeTypeColumn = new AliasedColumn(this, "DerivativeType", _rootTable.getColumn("DerivativeTypeId"));
-        derivativeTypeColumn.setFk(new LookupForeignKey("ScharpId")
+        derivativeTypeColumn.setFk(new LookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
             {

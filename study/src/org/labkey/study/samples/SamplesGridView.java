@@ -21,6 +21,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.*;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.StudySchema;
+import org.labkey.study.controllers.samples.SpecimenUtils;
 import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.Specimen;
 
@@ -85,35 +86,19 @@ public class SamplesGridView extends GridView
 
         private boolean isAtRepository(RenderContext ctx)
         {
-            Object value = ctx.getRow().get("AtRepository");
-            if (value instanceof Integer)
-                return ((Integer) value) != 0;
-            else if (value instanceof Boolean)
-                return ((Boolean) value).booleanValue();
-            return false;
+            return SpecimenUtils.isFieldTrue(ctx, "AtRepository");
         }
 
         private boolean isInActiveRequest(RenderContext ctx)
         {
-            Object value = ctx.getRow().get("LockedInRequest");
-            if (value instanceof Integer)
-                return ((Integer) value) != 0;
-            else if (value instanceof Boolean)
-                return ((Boolean) value).booleanValue();
-            return false;
+            return SpecimenUtils.isFieldTrue(ctx, "LockedInRequest");
         }
 
         private boolean isAvailable(RenderContext ctx)
         {
-            Object value = ctx.getRow().get("Available");
-            if (value instanceof Integer)
-                return ((Integer) value) != 0;
-            else if (value instanceof Boolean)
-                return ((Boolean) value).booleanValue();
-            return false;
+            return SpecimenUtils.isFieldTrue(ctx, "Available");
         }
     }
-
 
     protected SamplesGridView(DataRegion region, SimpleFilter filter, Sort sort)
     {

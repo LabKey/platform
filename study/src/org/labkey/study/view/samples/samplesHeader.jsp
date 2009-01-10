@@ -25,9 +25,19 @@
 <%@ page import="org.labkey.study.SampleManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script>LABKEY.requiresScript('util.js')</script>
+<script>LABKEY.requiresClientAPI();</script>
 <%
     JspView<SpringSpecimenController.SpecimenHeaderBean> me = (JspView<SpringSpecimenController.SpecimenHeaderBean>) HttpView.currentView();
     SpringSpecimenController.SpecimenHeaderBean bean = me.getModelBean();
+    ActionURL createRequestURL = new ActionURL(SpringSpecimenController.ShowAPICreateSampleRequestAction.class, getViewContext().getContainer());
+    createRequestURL.addParameter("fromGroupedView", !bean.isShowingVials());
+    createRequestURL.addParameter("returnUrl", getViewContext().getActionURL().toString());
+%>
+<script>
+    var CREATE_REQUEST_BASE_LINK = '<%= createRequestURL.getLocalURIString() %>';
+    LABKEY.requiresScript('sampleRequest.js');
+</script>
+<%
     boolean enableRequests = SampleManager.getInstance().getRepositorySettings(me.getViewContext().getContainer()).isEnableRequests();
     String vialLinkText;
     if (enableRequests)
@@ -86,3 +96,28 @@
 <%
     }
 %>
+<div id="specimen-request-div" class="x-hidden">
+    <table>
+        <tr>
+            <td>
+                <table>
+                    <tr>
+                        <td>Select request:</td>
+                        <td style="width:12em" ><span id="sample-request-list"></span></td>
+                        <td><%= textLink("Create new request", "#", "createRequest(); return false;", "sample-request-create-link")%></td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <span id="sample-request-details"></span>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <span id="request-vial-details"></span>
+            </td>
+        </tr>
+    </table>
+</div>
