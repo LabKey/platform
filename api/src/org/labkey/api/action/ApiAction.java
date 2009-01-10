@@ -19,15 +19,20 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONException;
 import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.RequestBasicAuthException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.beans.MutablePropertyValues;
 
 import java.io.BufferedReader;
 import java.util.Iterator;
+import java.util.Map;
+
+import groovy.lang.PropertyValue;
 
 /**
  * Base class for API actions.
@@ -116,8 +121,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
                 }
 
                 form = getCommand();
-                populateForm(jsonObj, form);
-                errors = new BindException(form, "form");
+                errors = populateForm(jsonObj, form);
             }
             else
             {
@@ -203,51 +207,58 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         return new JSONObject(jsonString);
     }
 
-    protected void populateForm(JSONObject jsonObj, FORM form) throws Exception
+    protected BindException populateForm(JSONObject jsonObj, FORM form) throws Exception
     {
         if(null == jsonObj)
-            return;
+            return new BindException(form, "form");
 
         if(form instanceof ApiJsonForm)
+        {
             ((ApiJsonForm)form).setJsonObject(jsonObj);
+            return new BindException(form, "form");
+        }
         else
-            populateForm(jsonObj, form, null);
+        {
+            JsonPropertyValues values = new JsonPropertyValues(jsonObj);
+            return defaultBindParameters(form, values);
+        }
     }
 
-    protected void populateForm(JSONObject jsonObj, FORM form, String parentProperty) throws Exception
+    private class JsonPropertyValues extends MutablePropertyValues
     {
-        Iterator keys = jsonObj.keys();
-        while(keys.hasNext())
+        public JsonPropertyValues(JSONObject jsonObj) throws JSONException
         {
-            String key = (String)keys.next();
-            String beanKey = null == parentProperty ? key : parentProperty + "." + key;
-            Object value = jsonObj.get(key);
+            addPropertyValues(jsonObj);
+        }
 
-            if(value instanceof JSONArray)
+        private void addPropertyValues(JSONObject jsonObj) throws JSONException
+        {
+            Iterator keys = jsonObj.keys();
+            while(keys.hasNext())
             {
-                JSONArray array = (JSONArray)value;
-                for(int idx = 0; idx < array.length(); ++idx)
+                String key = (String)keys.next();
+                Object value = jsonObj.get(key);
+
+                if(value instanceof JSONArray)
                 {
-                    String entryKey = beanKey + "[" + String.valueOf(idx) + "]";
-                    Object entry = array.get(idx);
-                    if(entry instanceof JSONObject)
-                        populateForm((JSONObject)entry, form, entryKey);
-                    else
-                        BeanUtils.setProperty(form, entryKey, entry);
+                    JSONArray array = (JSONArray) value;
+                    Object[] valueArray = new Object[array.length()];
+                    for(int idx = 0; idx < array.length(); ++idx)
+                    {
+                        Object entry = array.get(idx);
+                        if(entry instanceof JSONObject || entry instanceof JSONArray)
+                            throw new IllegalArgumentException("Nested objects and arrays are not supported at this time.");
+                        else
+                            valueArray[idx] = entry;
+                    }
+                    value = valueArray;
                 }
+                else if (value instanceof JSONObject)
+                    throw new IllegalArgumentException("Nested objects and arrays are not supported at this time.");
+                else if(value.equals(JSONObject.NULL))
+                    value = null;
+                addPropertyValue(key, value);
             }
-            else if(value instanceof JSONObject)
-            {
-                if(!value.equals(JSONObject.NULL))
-                    populateForm((JSONObject)value, form, beanKey);
-            }
-            else if(value.equals(JSONObject.NULL))
-            {
-                BeanUtils.setProperty(form, beanKey, null);
-            }
-            else
-                BeanUtils.setProperty(form, beanKey, value);
-
         }
     }
 

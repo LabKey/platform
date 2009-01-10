@@ -26,6 +26,7 @@ api/src/org/json/XMLTokener.java -text
 api/src/org/labkey/api/action/AjaxAction.java -text
 api/src/org/labkey/api/action/AjaxCompletionAction.java -text
 api/src/org/labkey/api/action/ApiAction.java -text
+api/src/org/labkey/api/action/ApiBeanResponse.java -text
 api/src/org/labkey/api/action/ApiCustomRender.java -text
 api/src/org/labkey/api/action/ApiJsonForm.java -text
 api/src/org/labkey/api/action/ApiJsonWriter.java -text
@@ -792,6 +793,7 @@ api/webapp/clientapi/LongTextEditor.js -text
 api/webapp/clientapi/NavTrail.js -text
 api/webapp/clientapi/Query.js -text
 api/webapp/clientapi/Security.js -text
+api/webapp/clientapi/Specimen.js -text
 api/webapp/clientapi/Store.js -text
 api/webapp/clientapi/Utils.js -text
 api/webapp/clientapi/WebPart.js -text

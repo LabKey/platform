@@ -236,6 +236,11 @@ LABKEY.DataRegion.prototype = {
         }
     },
 
+    getChecked : function()
+    {
+        return getCheckedValues(this.form, '.select');
+    },
+
     selectPage : function (checked)
     {
         var ids = setAllCheckboxes(this.form, checked, '.select');

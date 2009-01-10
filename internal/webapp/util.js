@@ -22,6 +22,19 @@ function setAllCheckboxes(form, value, elementName)
     return ids;
 }
 
+function getCheckedValues(form, elementName)
+{
+    var elems = form.elements;
+    var l = elems.length;
+    var values = [];
+    for (var i = 0; i < l; i++)
+    {
+        var e = elems[i];
+        if (e.type == 'checkbox' && !e.disabled && (elementName == null || elementName == e.name) && e.checked)
+            values.push(e.value);
+    }
+    return values;
+}
 
 function getChildWithClassName(root, tagName, className)
 {

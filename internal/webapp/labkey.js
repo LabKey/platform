@@ -192,6 +192,7 @@ LABKEY.requiresClientAPI = function(immediate)
         LABKEY.requiresScript("clientapi/Utils.js");
         LABKEY.requiresScript("clientapi/WebPart.js");
         LABKEY.requiresScript("clientapi/Security.js");
+        LABKEY.requiresScript("clientapi/Specimen.js");
     }
     else
         LABKEY.requiresScript('clientapi/clientapi' + (LABKEY.devMode ? '.js' : '.min.js'), immediate);

@@ -1166,7 +1166,15 @@ public class DataRegion extends DisplayElement
         out.write("<td class='labkey-selectors' nowrap>");
         out.write("<input type=checkbox title='Select/unselect row' name='");
         out.write(SELECT_CHECKBOX_NAME);
-        out.write("' value=\"");
+        out.write("' ");
+        String id = getRecordSelectorId(ctx);
+        if (id != null)
+        {
+            out.write("id='");
+            out.write(id);
+            out.write("' ");
+        }
+        out.write("value=\"");
         String and = "";
         StringBuilder checkboxName = new StringBuilder();
         if (_recordSelectorValueColumns == null)
@@ -1219,6 +1227,11 @@ public class DataRegion extends DisplayElement
 
     protected void renderExtraRecordSelectorContent(RenderContext ctx, Writer out) throws IOException
     {
+    }
+
+    protected String getRecordSelectorId(RenderContext ctx)
+    {
+        return null;
     }
 
     @Deprecated

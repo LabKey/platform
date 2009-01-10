@@ -1268,16 +1268,29 @@ public class PageFlowUtil
 
     public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml)
     {
-        return helpPopup(title, helpText, htmlHelpText, linkHtml, 0);
+        return helpPopup(title, helpText, htmlHelpText, linkHtml, 0, null);
+    }
+
+    public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, String linkOnClick)
+    {
+        return helpPopup(title, helpText, htmlHelpText, linkHtml, 0, linkOnClick);
     }
 
     public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, int width)
     {
+        return helpPopup(title, helpText, htmlHelpText, linkHtml, width, null);
+    }
+
+    public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, int width, String linkOnClick)
+    {
+        if (linkOnClick == null)
+            linkOnClick = "return false";
+
         if (title == null && !htmlHelpText)
         {
             // use simple tooltip
             StringBuilder link = new StringBuilder();
-            link.append("<a href=\"#\" tabindex=\"-1\" onClick=\"return false\" title=\"");
+            link.append("<a href=\"#\" tabindex=\"-1\" onClick=\""+ linkOnClick + "\" title=\"");
             link.append(filter(helpText));
             link.append("\">").append(linkHtml).append("</a>");
             return link.toString();
@@ -1285,7 +1298,7 @@ public class PageFlowUtil
         else
         {
             StringBuilder link = new StringBuilder();
-            link.append("<a href=\"#\" tabindex=\"-1\" onClick=\"return false\" onMouseOut=\"return hideHelpDivDelay();\" onMouseOver=\"return showHelpDiv(this, ");
+            link.append("<a href=\"#\" tabindex=\"-1\" onClick=\""+ linkOnClick + "\" onMouseOut=\"return hideHelpDivDelay();\" onMouseOver=\"return showHelpDiv(this, ");
             link.append(filter(jsString(filter(title)), true)).append(", ");
 
             // The value of the javascript string literal is used to set the innerHTML of an element.  For this reason, if
