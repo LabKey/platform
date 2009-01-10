@@ -1748,6 +1748,7 @@ internal/webapp/_images/beta.gif -text
 internal/webapp/_images/button_arrow.gif -text
 internal/webapp/_images/cancel.gif -text
 internal/webapp/_images/cart.gif -text
+internal/webapp/_images/cart_added.gif -text
 internal/webapp/_images/collapse_folders.gif -text
 internal/webapp/_images/computer.png -text
 internal/webapp/_images/defaultlogo.gif -text
