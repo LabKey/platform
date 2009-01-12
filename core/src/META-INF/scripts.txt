@@ -5,5 +5,6 @@ Slider|1.0|{link:Slider|http://webfx.eae.net/dhtml/slider/slider.html}|{link:Apa
 TinyMCE|2.0.9|{link:TinyMCE|http://tinymce.moxiecode.com/}|{link:LGPL|http://wiki.moxiecode.com/index.php/TinyMCE:License}|daves|HTML WYSIWYG editor
 YUI|0.12.0|{link:YUI|http://developer.yahoo.com/yui/}|{link:BSD|http://developer.yahoo.com/yui/license.txt}|matthewb|Browser User Interface Library
 Ext JS|2.2|{link:Ext JS|http://extjs.com/}|{link:GPL v3|http://www.gnu.org/licenses/gpl.html} with {link:Ext FLOSS exception|http://extjs.com/products/floss-exception.php}|daves|Ajax Support, Various UI widgets
+Crystal Project icons||{link:everaldo.com|http://www.everaldo.com/crystal/}|LGPL|matthewb|document, action, and other icons
 {table}
 
