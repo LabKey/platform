@@ -168,7 +168,7 @@ public enum TemplateResourceHandler
         else
         {
             response.setDateHeader("Expires", getExpiration().getTimeInMillis());
-            request.getRequestDispatcher(getDefaultLink()).include(request, response);
+            request.getRequestDispatcher(getDefaultLink()).forward(request, response);
         }
     }
 

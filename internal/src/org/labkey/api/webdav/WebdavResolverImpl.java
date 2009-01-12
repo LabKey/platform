@@ -57,6 +57,10 @@ public class WebdavResolverImpl implements WebdavResolver
         return _instance;
     }
 
+    public boolean requiresLogin()
+    {
+        return false;
+    }
 
     public Resource lookup(String fullPath)
     {

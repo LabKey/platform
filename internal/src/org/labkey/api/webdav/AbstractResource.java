@@ -41,7 +41,7 @@ public abstract class AbstractResource implements WebdavResolver.Resource
     protected long _ts = System.currentTimeMillis();
     private String _path;
     protected ACL _acl;
-    private String _etag = null;
+    protected String _etag = null;
 
     protected AbstractResource(String path)
     {
@@ -140,10 +140,20 @@ public abstract class AbstractResource implements WebdavResolver.Resource
         return AppProps.getInstance().getContextPath() + Attachment.getFileIcon(getName());
     }
 
+
     public String getETag()
     {
+        long len = 0;
+        try
+        {
+            len = getContentLength();
+        }
+        catch (IOException x)
+        {
+            /* */
+        }
         if (null == _etag)
-            _etag = "W/\"" + getContentLength() + "-" + getLastModified() + "\"";
+            _etag = "W/\"" + len + "-" + getLastModified() + "\"";
         return _etag;
     }
 

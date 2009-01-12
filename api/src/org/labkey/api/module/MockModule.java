@@ -245,4 +245,10 @@ public class MockModule implements Module
     public void dispatch(HttpServletRequest request, HttpServletResponse response, ActionURL url) throws ServletException, IOException
     {
     }
+
+    @NotNull
+    public List<File> getStaticFileDirectories()
+    {
+        return Collections.EMPTY_LIST;
+    }
 }

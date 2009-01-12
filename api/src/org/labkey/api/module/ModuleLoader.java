@@ -314,7 +314,7 @@ public class ModuleLoader implements Filter
             File moduleXml = new File(moduleDir, "config/module.xml");
             try
             {
-                if(moduleXml.exists())
+                if (moduleXml.exists())
                 {
                     BeanFactory beanFactory = new XmlBeanFactory(new FileSystemResource(moduleXml));
                     module = (Module)beanFactory.getBean("moduleBean", Module.class);
@@ -328,7 +328,7 @@ public class ModuleLoader implements Filter
                     module = simpleModule;
                 }
 
-                if(null != module)
+                if (null != module)
                 {
                     module.setExplodedPath(moduleDir);
                     modules.add(module);
@@ -336,7 +336,7 @@ public class ModuleLoader implements Filter
                 else
                     _log.error("No module class was found for the module '" + moduleDir.getName() + "'");
             }
-            catch(Throwable t)
+            catch (Throwable t)
             {
                 _log.error("Unable to instantiate module " + moduleDir);
                 _moduleFailures.put(moduleDir.getName(), t);

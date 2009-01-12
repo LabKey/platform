@@ -242,4 +242,12 @@ public interface Module
      * @param url parsed ActionURL for a .view/.post requests
      */
     public void dispatch(HttpServletRequest request, HttpServletResponse response, ActionURL url) throws ServletException, IOException;
+
+
+    /**
+     * return a list of locations to look for static website files.  Files in these directories have no security. 
+     * @return
+     */
+    @NotNull
+    public List<File> getStaticFileDirectories();
 }

@@ -39,15 +39,11 @@
         <filter-name>Module Loader</filter-name>
         <filter-class>org.labkey.api.module.ModuleLoader</filter-class>
     </filter>
-    <filter>
-        <filter-name>JavaScript Filter</filter-name>
-        <filter-class>org.labkey.api.view.JavaScriptFilter</filter-class>
-    </filter>
 
     <filter>
         <filter-name>Static Content Caching Filter</filter-name>
         <filter-class>org.labkey.api.view.StaticContentCachingFilter</filter-class>
-    </filter>
+    </filter>                                                                        Java
     <filter-mapping>
         <filter-name>Static Content Caching Filter</filter-name>
         <url-pattern>*.gif</url-pattern>
@@ -73,10 +69,6 @@
         <url-pattern>*.js?*</url-pattern>
     </filter-mapping>
 
-    <filter-mapping>
-        <filter-name>JavaScript Filter</filter-name>
-        <url-pattern>*.js</url-pattern>
-    </filter-mapping>
     <filter-mapping>
         <filter-name>Form Authentication Filter</filter-name>
         <url-pattern>/*</url-pattern>
@@ -157,6 +149,7 @@
     <servlet>
         <servlet-name>ViewServlet</servlet-name>
         <servlet-class>org.labkey.api.view.ViewServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
     </servlet>
 
     <!--
@@ -208,8 +201,21 @@
 	<servlet>
 		<servlet-name>webdav</servlet-name>
 		<servlet-class>org.labkey.core.webdav.WebdavServlet</servlet-class>
+        <init-param>
+          <param-name>resolver</param-name> 
+          <param-value>org.labkey.api.webdav.WebdavResolverImpl</param-value>
+        </init-param>
 	</servlet>
 
+    <servlet>
+        <servlet-name>static</servlet-name>
+        <servlet-class>org.labkey.core.webdav.WebdavServlet</servlet-class>
+        <init-param>
+          <param-name>resolver</param-name>
+          <param-value>org.labkey.api.webdav.ModuleStaticResolverImpl</param-value>
+        </init-param>
+    </servlet>
+    
     <servlet>
         <servlet-name>action</servlet-name>
         <servlet-class>org.apache.beehive.netui.pageflow.PageFlowActionServlet</servlet-class>
@@ -299,6 +305,11 @@
         <url-pattern>/_webdav/*</url-pattern>
     </servlet-mapping>
 
+    <servlet-mapping>
+        <servlet-name>static</servlet-name>
+        <url-pattern>/</url-pattern>
+    </servlet-mapping>
+    
     <welcome-file-list>
         <welcome-file>index.html</welcome-file>
     </welcome-file-list>

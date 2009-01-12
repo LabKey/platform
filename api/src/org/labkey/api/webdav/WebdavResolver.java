@@ -36,6 +36,7 @@ import java.util.Date;
  */
 public interface WebdavResolver
 {
+    boolean requiresLogin();
     Resource lookup(String path);
 
     /**
@@ -83,7 +84,7 @@ public interface WebdavResolver
 
         long copyFrom(User user, Resource r) throws IOException;
 
-        long getContentLength();
+        long getContentLength() throws IOException;
 
         @NotNull
         String getHref(ViewContext context);

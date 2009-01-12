@@ -698,4 +698,36 @@ public abstract class DefaultModule implements Module
             throw new RuntimeException(x);
         }
     }
+
+    @NotNull
+    public List<File> getStaticFileDirectories()
+    {
+        List<File> l = new ArrayList<File>(3);
+        String build = getBuildPath();
+        File exploded = getExplodedPath();
+        String source = getSourcePath();
+
+        if (AppProps.getInstance().isDevMode())
+        {
+            if (null != source)
+            {
+                File f = new File(new File(source), "webapp");
+                if (f.isDirectory())
+                    l.add(f);
+            }
+            if (null != build)
+            {
+                File f = new File(new File(build), "explodedModule/web");
+                if (f.isDirectory())
+                    l.add(f);
+            }
+        }
+        if (exploded != null && exploded.isDirectory())
+        {
+            File f = new File(exploded, "web");
+            if (f.isDirectory())
+                l.add(f);
+        }
+        return l;
+    }
 }

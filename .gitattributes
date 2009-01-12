@@ -1695,6 +1695,7 @@ internal/src/org/labkey/api/webdav/AbstractCollectionResource.java -text
 internal/src/org/labkey/api/webdav/AbstractDocumentResource.java -text
 internal/src/org/labkey/api/webdav/AbstractResource.java -text
 internal/src/org/labkey/api/webdav/FileSystemResource.java -text
+internal/src/org/labkey/api/webdav/ModuleStaticResolverImpl.java -text
 internal/src/org/labkey/api/webdav/WebdavResolverImpl.java -text
 internal/webapp/ColumnTree.css -text
 internal/webapp/ColumnTree.js -text
