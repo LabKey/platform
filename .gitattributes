@@ -381,6 +381,8 @@ api/src/org/labkey/api/pipeline/file/FileAnalysisTaskPipeline.java -text
 api/src/org/labkey/api/pipeline/file/FileAnalysisTaskPipelineSettings.java -text
 api/src/org/labkey/api/pipeline/file/PathMapper.java -text
 api/src/org/labkey/api/portal/ProjectUrls.java -text
+api/src/org/labkey/api/qc/DataExchangeHandler.java -text
+api/src/org/labkey/api/qc/TsvDataExchangeHandler.java -text
 api/src/org/labkey/api/qc/ValidationDataHandler.java -text
 api/src/org/labkey/api/query/AbstractMethodInfo.java -text
 api/src/org/labkey/api/query/AbstractQueryUpdateService.java -text

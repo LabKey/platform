@@ -29,6 +29,7 @@ import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.qc.ValidationDataHandler;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,7 +40,7 @@ import java.util.*;
  * User: jeckels
  * Date: Jan 3, 2008
  */
-public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentDataHandler
+public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentDataHandler implements ValidationDataHandler
 {
     protected static final Object ERROR_VALUE = new Object();
 
@@ -165,7 +166,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     }
 
-    protected abstract Map<String, Object>[] loadFileData(PropertyDescriptor[] columns, File dataFile)  throws IOException, ExperimentException;
+    public abstract Map<String, Object>[] loadFileData(PropertyDescriptor[] columns, File dataFile)  throws IOException, ExperimentException;
 
     private void checkColumns(PropertyDescriptor[] expected, Set<String> actual, List<String> missing, List<String> unexpected, Map<String, Object>[] rawData, boolean strict)
     {
@@ -353,7 +354,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             materialInputs.add(participantVisit.getMaterial());
         }
-        
+
         if (errorSB.length() != 0)
         {
             throw new ExperimentException("There are errors in the uploaded data: " + errorSB.toString());

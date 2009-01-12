@@ -39,14 +39,21 @@ import org.labkey.api.study.query.RunDataQueryView;
 import org.labkey.api.study.query.RunListQueryView;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
+import org.labkey.api.reports.ExternalScriptEngine;
+import org.labkey.api.reports.report.r.ParamReplacementSvc;
+import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+import javax.script.Bindings;
+import javax.script.ScriptContext;
 import java.io.File;
 import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.net.URI;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -1217,5 +1224,92 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public void validate(AssayRunUploadContext context, ExpRun run) throws ValidationException
     {
+        for (File scriptFile : getValidationAndAnalysisScripts(context.getProtocol()))
+        {
+            // read the contents of the script file
+            if (scriptFile.exists())
+            {
+                BufferedReader br = null;
+                StringBuffer sb = new StringBuffer();
+                try {
+                    br = new BufferedReader(new FileReader(scriptFile));
+                    String l;
+                    while ((l = br.readLine()) != null)
+                        sb.append(l).append('\n');
+                }
+                catch (Exception e)
+                {
+                    throw new ValidationException(e.getMessage());
+                }
+                finally
+                {
+                    if (br != null)
+                        try {br.close();} catch(IOException ioe) {}
+                }
+
+                ScriptEngine engine = ServiceRegistry.get().getService(ScriptEngineManager.class).getEngineByExtension(FileUtil.getExtension(scriptFile));
+                if (engine != null)
+                {
+                    File scriptDir = getScriptDir(context.getProtocol());
+                    try
+                    {
+                        DataExchangeHandler dataHandler = getDataExchangeHandler();
+                        if (dataHandler != null)
+                        {
+                            Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+                            String script = sb.toString();
+
+                            bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, scriptDir.getAbsolutePath());
+                            File runInfo = dataHandler.createValidationRunInfo(context, run, scriptDir);
+                            script = ParamReplacementSvc.get().processInputReplacement(script, "runInfo", runInfo);
+
+                            Object output = engine.eval(script);
+
+                            // process any output from the validation script
+                            dataHandler.processValidationOutput(runInfo);
+                        }
+                    }
+                    catch(Exception e)
+                    {
+                        throw new ValidationException(e.getMessage());
+                    }
+                    finally
+                    {
+                        // clean up temp directory
+                        FileUtil.deleteDir(scriptDir);
+                    }
+                }
+                else
+                {
+                    // we may just want to log an error rather than fail the upload due to an engine config problem.
+/*
+                    throw new ValidationException("A script engine implementation was not found for the specified QC script. " +
+                            "Check configurations in the Admin Console.");
+*/
+                }
+            }
+        }
+    }
+
+    /**
+     * Return the helper to handle data exchange between the server and external scripts.
+     */
+    protected DataExchangeHandler getDataExchangeHandler()
+    {
+        return null;
+    }
+
+    protected File getScriptDir(ExpProtocol protocol)
+    {
+        File tempDir = new File(System.getProperty("java.io.tmpdir"));
+        File tempRoot = new File(tempDir, ExternalScriptEngine.DEFAULT_WORKING_DIRECTORY);
+        if (!tempRoot.exists())
+            tempRoot.mkdirs();
+
+        File tempFolder = new File(tempRoot.getAbsolutePath() + File.separator + "AssayId_" + protocol.getRowId(), String.valueOf(Thread.currentThread().getId()));
+        if (!tempFolder.exists())
+            tempFolder.mkdirs();
+
+        return tempFolder;
     }
 }
