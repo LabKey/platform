@@ -45,6 +45,7 @@ import org.labkey.core.test.TestController;
 import org.labkey.core.user.UserController;
 import org.labkey.core.webdav.DavController;
 import org.labkey.core.webdav.FileSystemAuditViewFactory;
+import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -333,5 +334,21 @@ public class CoreModule extends SpringModule
             "<a href=\"http://www.apache.org\" target=\"top\"><img src=\"http://www.apache.org/images/asf_logo.gif\" alt=\"Apache\" width=\"185\" height=\"50\"></a>",
             "<a href=\"http://www.springframework.org\" target=\"top\"><img src=\"http://static.springframework.org/images/spring21.png\" alt=\"Spring\" width=\"100\" height=\"48\"></a>"
         );
+    }
+
+    @NotNull
+    @Override
+    public List<File> getStaticFileDirectories()
+    {
+        List<File> dirs = super.getStaticFileDirectories();
+        if (AppProps.getInstance().isDevMode())
+        {
+            if (null != getSourcePath())
+            {
+                dirs.add(new File(getSourcePath(),"../../internal/webapp"));
+                dirs.add(new File(getSourcePath(),"../../api/webapp"));
+            }
+        }
+        return dirs;
     }
 }

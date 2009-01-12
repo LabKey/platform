@@ -38,6 +38,7 @@ import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.api.webdav.ModuleStaticResolverImpl;
 import org.labkey.common.util.Pair;
 import org.labkey.core.webdav.apache.XMLWriter;
 import org.springframework.web.multipart.MultipartException;
@@ -100,12 +101,16 @@ public class DavController extends SpringActionController
         return _webdavresponse;
     }
 
-
+    void setResolver(WebdavResolver resolver)
+    {
+        _webdavresolver = resolver;
+        _requiresLogin = resolver.requiresLogin();
+    }
+    
     WebdavResolver getResolver()
     {
         return _webdavresolver;
     }
-
 
     // best guess is this a browser vs. a WebDAV client
     boolean isBrowser()
@@ -138,7 +143,8 @@ public class DavController extends SpringActionController
     public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws MultipartException
     {
         _webdavresponse = new WebdavResponse(response);
-        _webdavresolver = WebdavResolverImpl.get();
+        WebdavResolver resolver = getResolver();
+
         String method = getViewContext().getActionURL().getAction();
         Controller action = resolveAction(method.toLowerCase());
         try
@@ -849,6 +855,19 @@ public class DavController extends SpringActionController
     }
 
 
+    long _contentLength(WebdavResolver.Resource r)
+    {
+        try
+        {
+            return r.getContentLength();
+        }
+        catch (IOException x)
+        {
+        return 0;
+        }
+    }
+
+
     class XMLResourceWriter implements ResourceWriter
     {
         XMLWriter xml;
@@ -912,7 +931,7 @@ public class DavController extends SpringActionController
                         if (isFile)
                         {
                             xml.writeProperty(null, "getlastmodified", getHttpDateFormat(resource.getLastModified()));
-                            xml.writeProperty(null, "getcontentlength", String.valueOf(resource.getContentLength()));
+                            xml.writeProperty(null, "getcontentlength", String.valueOf(_contentLength(resource)));
                             String contentType = resource.getContentType();
                             if (contentType != null)
                             {
@@ -1027,7 +1046,7 @@ public class DavController extends SpringActionController
                             }
                             else
                             {
-                                xml.writeProperty(null, "getcontentlength", (String.valueOf(resource.getContentLength())));
+                                xml.writeProperty(null, "getcontentlength", (String.valueOf(_contentLength(resource))));
                             }
                         }
                         else if (property.equals("getcontenttype"))
@@ -2797,7 +2816,7 @@ public class DavController extends SpringActionController
             }
         }
 
-        long fileLength = resource.getContentLength();
+        long fileLength = _contentLength(resource);
 
         if (fileLength == 0)
             return null;
@@ -2899,21 +2918,12 @@ public class DavController extends SpringActionController
             page.resource = resource;
             page.loginURL = getLoginURL();
 
-            if (0==1)
-            {
-                JspView<ListPage> v = new JspView<ListPage>(DavController.class,  "list.jsp", page);
-                v.setFrame(WebPartView.FrameType.NONE);
-                v.render(getViewContext().getRequest(), getViewContext().getResponse());
-            }
-            else
-            {
-                JspView<ListPage> v = new JspView<ListPage>(DavController.class,  "files.jsp", page);
-                v.setFrame(WebPartView.FrameType.NONE);
-                PageConfig config = new PageConfig();
-                config.setTitle(resource.getPath() + "-- webdav");
-                PrintTemplate print = new PrintTemplate(v, config);
-                print.render(getViewContext().getRequest(), getViewContext().getResponse());
-            }            
+            JspView<ListPage> v = new JspView<ListPage>(DavController.class,  "list.jsp", page);
+            v.setFrame(WebPartView.FrameType.NONE);
+            PageConfig config = new PageConfig();
+            config.setTitle(resource.getPath() + "-- webdav");
+            PrintTemplate print = new PrintTemplate(v, config);
+            print.render(getViewContext().getRequest(), getViewContext().getResponse());
             return WebdavStatus.SC_OK;
         }
         catch (Exception x)

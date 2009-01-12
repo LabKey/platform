@@ -30,6 +30,9 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.webdav.WebdavResolver;
+import org.labkey.api.webdav.ModuleStaticResolverImpl;
+import org.labkey.api.webdav.WebdavResolverImpl;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -37,6 +40,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletException;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
 import java.io.IOException;
 
 
@@ -46,7 +50,11 @@ public class WebdavServlet extends HttpServlet
     protected void service(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException
     {
-        String fullPath = StringUtils.trimToEmpty(request.getPathInfo());
+        String fullPath = request.getPathInfo();
+        if (fullPath == null)
+            fullPath = request.getServletPath();
+        if ((fullPath == null) || (fullPath.equals("")))
+            fullPath = "/";
 
         // Store the original URL in case we need to redirect for authentication
         URLHelper helper = (URLHelper)request.getAttribute(ViewServlet.ORIGINAL_URL); 
@@ -59,7 +67,7 @@ public class WebdavServlet extends HttpServlet
         String method = request.getMethod();
         if (method.equals("GET") || method.equals("POST"))
         {
-            String m = request.getHeader("method");
+            String m = request.getHeader("Method");
             if (m == null)
                 m = helper.getParameter("method");
             if (null != m)
@@ -69,36 +77,26 @@ public class WebdavServlet extends HttpServlet
         ActionURL dispatchUrl = new ActionURL("/" + DavController.name + "/" + method.toLowerCase() + ".view");
         dispatchUrl.addParameters(helper.getParameters());
         dispatchUrl.replaceParameter("path",fullPath);
-
-        if (0==1) // dispatch
+        dispatchUrl.setScheme(request.getScheme());
+        dispatchUrl.setHost(request.getServerName());
+        dispatchUrl.setPort(request.getServerPort());
+        ViewContext context = new ViewContext();
+        context.setRequest(request);
+        context.setResponse(response);
+        context.setActionURL(dispatchUrl);
+        DavController dav = new DavController();
+        dav.setResolver(_resolver);
+        dav.setViewContext(context);
+        dav.setResourcePath(fullPath);
+        int stackSize = HttpView.getStackSize();
+        try
         {
-            // NOTE other parameters seem to get magically propagated...
-            RequestDispatcher r = request.getRequestDispatcher(dispatchUrl.getLocalURIString());
-            r.forward(request, response);
+            HttpView.initForRequest(context, request, response);
+            dav.handleRequest(request, response);
         }
-        else // direct (if DavController doesn't depends on ViewServlet)
+        finally
         {
-            //ActionURL url = new ActionURL(dispatchUrl);
-            dispatchUrl.setScheme(request.getScheme());
-            dispatchUrl.setHost(request.getServerName());
-            dispatchUrl.setPort(request.getServerPort());
-            ViewContext context = new ViewContext();
-            context.setRequest(request);
-            context.setResponse(response);
-            context.setActionURL(dispatchUrl);
-            DavController dav = new DavController();
-            dav.setViewContext(context);
-            dav.setResourcePath(fullPath);
-            int stackSize = HttpView.getStackSize();
-            try
-            {
-                HttpView.initForRequest(context, request, response);
-                dav.handleRequest(request, response);
-            }
-            finally
-            {
-                HttpView.resetStackSize(stackSize);
-            }
+            HttpView.resetStackSize(stackSize);
         }
     }
 
@@ -106,5 +104,14 @@ public class WebdavServlet extends HttpServlet
     public void init(ServletConfig config) throws ServletException
     {
         super.init(config);
+        String resolver = config.getInitParameter("resolver");
+        if (ModuleStaticResolverImpl.class.getName().equals(resolver))
+            _resolver = ModuleStaticResolverImpl.get();
+        else if (WebdavResolverImpl.class.getName().equals(resolver))
+            _resolver = WebdavResolverImpl.get();
+        else
+            throw new IllegalArgumentException("resolver");
     }
+
+    WebdavResolver _resolver;
 }
