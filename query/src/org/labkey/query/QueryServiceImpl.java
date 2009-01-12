@@ -18,6 +18,7 @@ package org.labkey.query;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
@@ -26,9 +27,12 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
 import org.labkey.common.util.Pair;
-import org.labkey.query.persist.*;
-import org.labkey.query.view.DbUserSchema;
 import org.labkey.data.xml.TablesDocument;
+import org.labkey.query.persist.DbUserSchemaDef;
+import org.labkey.query.persist.QueryDef;
+import org.labkey.query.persist.QueryManager;
+import org.labkey.query.persist.QuerySnapshotDef;
+import org.labkey.query.view.DbUserSchema;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -235,6 +239,7 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
+    @NotNull
     public Map<FieldKey, ColumnInfo> getColumns(TableInfo table, Collection<FieldKey> fields)
     {
         AliasManager manager = new AliasManager(table, null);
