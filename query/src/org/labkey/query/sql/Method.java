@@ -226,32 +226,45 @@ public enum Method
             SQLFragment[] fragments = getSQLFragments(arguments);
             if (fragments.length >= 2)
             {
-                String sqlEscapeTypeName = getTypeArgument(fragments);
-                String typeName = sqlEscapeTypeName;
                 try
                 {
+                    String sqlEscapeTypeName = getTypeArgument(fragments);
                     _sqlType = ConvertType.valueOf(sqlEscapeTypeName).type;
-                    typeName = parentTable.getSchema().getSqlDialect().sqlTypeNameFromSqlType(_sqlType);
                 }
                 catch (IllegalArgumentException x)
                 {
                     /* */
                 }
-                fragments[1] = new SQLFragment(typeName);
             }
             return new ExprColumn(parentTable, alias, getSQL(parentTable.getSchema(), fragments), _sqlType);
         }
 
-        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        public SQLFragment getSQL(DbSchema schema, SQLFragment[] fragments)
         {
+            if (fragments.length >= 2)
+            {
+                String sqlEscapeTypeName = getTypeArgument(fragments);
+                String typeName = sqlEscapeTypeName;
+                try
+                {
+                    _sqlType = ConvertType.valueOf(sqlEscapeTypeName).type;
+                    typeName = schema.getSqlDialect().sqlTypeNameFromSqlType(_sqlType);
+                    fragments = new SQLFragment[] {fragments[0], new SQLFragment(typeName)};
+                }
+                catch (IllegalArgumentException x)
+                {
+                    /* */
+                }
+            }
+
             SQLFragment ret = new SQLFragment();
             ret.append("CAST(");
-            if (arguments.length > 0)
-                ret.append(arguments[0]);
-            if (arguments.length > 1)
+            if (fragments.length > 0)
+                ret.append(fragments[0]);
+            if (fragments.length > 1)
             {
                 ret.append(" AS ");
-                ret.append(arguments[1]);
+                ret.append(fragments[1]);
             }
             ret.append(")");
             return ret;
@@ -260,7 +273,7 @@ public enum Method
         String getTypeArgument(SQLFragment[] argumentsIN) throws IllegalArgumentException
         {
             if (argumentsIN.length < 2)
-                return "SQL_VARCHAR";
+                return "VARCHAR";
             String typeName = StringUtils.trimToEmpty(argumentsIN[1].getSQL());
             if (typeName.length() >= 2 && typeName.startsWith("'") && typeName.endsWith("'"))
                 typeName = typeName.substring(1,typeName.length()-1);
