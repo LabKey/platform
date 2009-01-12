@@ -16,28 +16,31 @@
 
 package org.labkey.study.assay;
 
+import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.api.*;
-import org.labkey.api.data.*;
+import org.labkey.api.qc.DataExchangeHandler;
+import org.labkey.api.qc.TsvDataExchangeHandler;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
+import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.actions.AssayRunUploadForm;
+import org.labkey.api.study.assay.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
-import org.labkey.api.security.User;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.DetailsURL;
-import org.labkey.api.study.assay.*;
-import org.labkey.api.study.actions.AssayRunUploadForm;
-import org.labkey.api.study.actions.AssayDataDetailsAction;
-import org.labkey.api.study.TimepointType;
 
 import javax.servlet.ServletException;
-import java.util.*;
-import java.sql.SQLException;
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
+import java.util.*;
 
 /**
  * User: brittp
@@ -296,5 +299,11 @@ public class TsvAssayProvider extends AbstractAssayProvider
     public boolean hasUsefulDetailsPage()
     {
         return false;
+    }
+
+    @Override
+    protected DataExchangeHandler getDataExchangeHandler()
+    {
+        return new TsvDataExchangeHandler();
     }
 }

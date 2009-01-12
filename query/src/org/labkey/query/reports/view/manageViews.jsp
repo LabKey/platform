@@ -28,6 +28,23 @@
 <script type="text/javascript">
     LABKEY.requiresExtJs(true);
 
+    function renderRow(value, p, record)
+    {
+        var txt = 'ext:qtip="';
+
+        txt = txt.concat('<b>title:</b> ' + record.data.name + '<br>');
+        if (record.data.description != undefined)
+            txt = txt.concat('<b>description:</b> ' + record.data.description + '<br>');
+        if (record.data.query != undefined)
+            txt = txt.concat('<b>query:</b> ' + record.data.query + '<br>');
+        if (record.data.schema != undefined)
+            txt = txt.concat('<b>schema:</b> ' + record.data.schema + '<br>');
+        txt = txt.concat('"');
+        p.attr = txt;
+        
+        return value;
+    }
+
     function showViews()
     {
         var con = new Ext.data.HttpProxy(new Ext.data.Connection({
@@ -47,6 +64,7 @@
                         {name:'description'},
                         {name:'editable'},
                         {name:'editUrl'},
+                        {name:'reportId'},
                         {name:'type'}]),
             proxy: con,
             autoLoad: true,
@@ -67,22 +85,19 @@
             width:800,
             store: store,
             selModel: cbs,
-/*
             listeners: {
-                rowcontextmenu: function(g, rowIndex, event) {
+                rowdblclick: function(g, rowIndex, event) {
                     event.stopEvent();
-                    var menu = new Ext.menu.Menu({items:[{text:'rename'},{text:'edit description'},{text:'edit view...',disabled:'true'}]});
-                    menu.showAt(event.getXY());
+                    editSelected(event, g);
                 }
             },
-*/
             columns:[
                 cbs,                    
-                {header:'Type', dataIndex:'type'},
-                {header:'Title', dataIndex:'displayName', width:200},
+                {header:'Type', dataIndex:'type', renderer:renderRow},
+                {header:'Title', dataIndex:'displayName', width:200, renderer:renderRow},
                 {header:'Description', dataIndex:'description', hidden:true},
-                {header:'Created By', dataIndex:'owner'},
-                {header:'Shared', dataIndex:'public'},
+                {header:'Created By', dataIndex:'owner', renderer:renderRow},
+                {header:'Shared', dataIndex:'public', renderer:renderRow},
                 {header:'Schema', dataIndex:'schema', hidden:true},
                 {header:'Query', dataIndex:'query'}
 
@@ -94,10 +109,10 @@
                 groupTextTpl: '{values.group}'
             }),
             buttons: [
-                {text:'Expand All', listeners:{click:function(button, event) {grid.view.expandAllGroups();}}},
-                {text:'Collapse All', listeners:{click:function(button, event) {grid.view.collapseAllGroups();}}},
-                {text:'Delete Selected', listeners:{click:function(button, event) {deleteSelected(grid);}}},
-                {text:'Edit Selected', listeners:{click:function(button, event) {editSelected(button, grid);}}}
+                {text:'Expand All', tooltip: {text:'Expands all groups', title:'Expand All'}, listeners:{click:function(button, event) {grid.view.expandAllGroups();}}},
+                {text:'Collapse All', tooltip: {text:'Collapses all groups', title:'Collapse All'}, listeners:{click:function(button, event) {grid.view.collapseAllGroups();}}},
+                {text:'Delete Selected', id: 'btn_deleteView', tooltip: {text:'Delete selected view', title:'Delete Views'}, listeners:{click:function(button, event) {deleteSelected(grid);}}},
+                {text:'Edit', id: 'btn_editView', tooltip: {text:'Edit an existing view (you can also double click on the view to edit)', title:'Edit View'}, listeners:{click:function(button, event) {editSelected(button, grid);}}}
             ],
             buttonAlign:'center'
         });
@@ -152,64 +167,67 @@
             return false;
         }
 
-        var tabPanel = new Ext.TabPanel({
-            activeTab: 0,
-            plain: true,
-            enableTabScroll: true,
-            defaults: {autoHeight:true, bodyStyle:'padding:10px'}
+        if (selections.length > 1)
+        {
+            Ext.Msg.alert("Edit Views", "Only one view can be edited at a time");
+            return false;
+        }
+
+        editRecord(button, grid, selections[0].data);
+    }
+
+    function editRecord(button, grid, record)
+    {
+        var formPanel = new Ext.FormPanel({
+            bodyStyle:'padding:5px',
+            defaultType: 'textfield',
+            items: [{
+                fieldLabel: 'View Name',
+                name: 'viewName',
+                allowBlank:false,
+                width: 250,
+                value: record.name
+            },{
+                fieldLabel: 'Description',
+                name: 'description',
+                xtype: 'textarea',
+                width: 250,
+                value: record.description
+            },{
+                name: 'reportId',
+                xtype: 'hidden',
+                value: record.reportId
+            },{
+                name: 'editUrl',
+                xtype: 'button',
+                text: 'Edit Source...',
+                dest: record.editUrl,
+                tooltip: {text:'Some view types support advanced editing capabilities, if they do this button will navigate you to the alternate view', title:'Edit Source'},
+                disabled: record.editUrl ? false : true,
+                handler: function(){doAdvancedEdit(this);}
+            }]
+
         });
         var win = new Ext.Window({
-            title: 'Edit Views',
+            title: 'Edit View',
             layout:'form',
             border: false,
-            width: 650,
-            height: 300,
+            width: 450,
+            height: 220,
             closeAction:'close',
-            //plain: true,
             modal: false,
-            items: tabPanel,
+            items: formPanel,
             buttons: [{
                 text: 'Submit',
-                handler: function(){submitForm(win, tabPanel, grid);}
+                id: 'btn_submit',
+                handler: function(){submitForm(win, formPanel, grid);}
             },{
-                text: 'Finished',
+                text: 'Cancel',
+                id: 'btn_cancel',
                 handler: function(){win.close();}
             }]
         });
 
-        for (var i=0; i < selections.length; i++)
-        {
-            tabPanel.add(new Ext.FormPanel({
-                title: selections[i].data.name,
-                layout:'form',
-                autoHeight: 'true',
-                defaults: {width: 230},
-                defaultType: 'textfield',
-
-                items: [{
-                    fieldLabel: 'View Name',
-                    name: 'viewName',
-                    allowBlank:false,
-                    value: selections[i].data.name
-                },{
-                    fieldLabel: 'Description',
-                    name: 'description',
-                    xtype: 'textarea',
-                    value: selections[i].data.description
-                },{
-                    name: 'reportId',
-                    xtype: 'hidden',
-                    value: selections[i].id
-                },{
-                    name: 'editUrl',
-                    xtype: 'button',
-                    text: 'Edit Source...',
-                    dest: selections[i].data.editUrl,
-                    disabled: selections[i].data.editUrl ? false : true,
-                    handler: function(){doAdvancedEdit(this);}
-                }]
-            }));
-        }
         win.show(button);
     }
 
@@ -223,40 +241,37 @@
         });
     }
 
-    function submitForm(win, tabPanel, grid)
+    function submitForm(win, panel, grid)
     {
-        var items = tabPanel.items;
+        var items = panel.items;
 
         // client side validation
-        for (var i=0; i < items.getCount(); i++)
+        var form = panel.getForm();
+        if (form && !form.isValid())
         {
-            var form = items.get(i).getForm();
-            if (form && !form.isValid())
-            {
-                Ext.Msg.alert('Edit Views', 'Invalid Form Parameter(s)');
-                tabPanel.setActiveTab(items.get(i).getId());
-                return false;
-            }
+            Ext.Msg.alert('Edit Views', 'Not all fields have been properly completed');
+            return false;
         }
 
-        Ext.Msg.confirm('Edit Views', 'Are you sure you wish to update the selected views?', function(btn, text) {
-            if (btn == 'yes')
-            {
-                for (var i=0; i < items.getCount(); i++)
-                {
-                    var form = items.get(i).getForm();
-                    if (form && form.getEl())
-                    {
-                        form.submit({
-                            url: LABKEY.ActionURL.buildURL("reports", "manageViewsEditReports"),
-                            waitMsg:'Submiting Form...',
-                            method: 'POST',
-                            success: function(){grid.store.load();},
-                            failure: function(form, action){LABKEY.Utils.displayAjaxErrorResponse(action.response);}
-                        });
-                    }
-                }
-            }
+        form.submit({
+            url: LABKEY.ActionURL.buildURL("reports", "manageViewsEditReports"),
+            waitMsg:'Submiting Form...',
+            method: 'POST',
+            success: function(){
+                win.close();
+                grid.store.load();
+            },
+            failure: function(form, action){Ext.Msg.alert("Save Error", "An error occurred while saving the view");}
+        });
+    }
+
+    function setFormFieldTooltip(component)
+    {
+        var label = Ext.get('x-form-el-' + component.id).prev('label');
+        Ext.QuickTips.register({
+            target: label,
+            text: component.tooltip.text,
+            title: ''
         });
     }
 

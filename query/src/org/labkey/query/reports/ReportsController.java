@@ -1148,40 +1148,57 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_READ)
-    public class ManageViewsEditReportsAction extends ApiAction<EditViewsForm>
+    public class ManageViewsEditReportsAction extends ExtFormAction<EditViewsForm>
     {
-        public ApiResponse execute(EditViewsForm form, BindException errors) throws Exception
+        private Report _report;
+
+        @Override
+        public void validateForm(EditViewsForm form, Errors errors)
         {
-            Report report = ReportService.get().getReport(form.getReportId());
+            try {
+                _report = form.getReportId().getReport();
 
-            if (report != null)
-            {
-                if (!report.getDescriptor().canEdit(getViewContext()))
-                    HttpView.throwUnauthorized();
-
-                boolean doSave = false;
-
-                if (!StringUtils.equals(report.getDescriptor().getReportName(), form.getViewName()))
+                if (_report != null)
                 {
-                    if (reportNameExists(getViewContext(), form.getViewName(), report.getDescriptor().getReportKey()))
-                        throw new IllegalArgumentException("There is already a view with the name of: " + form.getViewName() +
-                                ". Please specify a different name.");
+                    if (!_report.getDescriptor().canEdit(getViewContext()))
+                        errors.rejectValue("viewName", ERROR_MSG, "You are not allowed to edit this view.");
 
-                    else
+                    if (!StringUtils.equals(_report.getDescriptor().getReportName(), form.getViewName()))
                     {
-                        report.getDescriptor().setReportName(form.getViewName());
-                        doSave = true;
+                        if (reportNameExists(getViewContext(), form.getViewName(), _report.getDescriptor().getReportKey()))
+                            errors.rejectValue("viewName", ERROR_MSG, "There is already a view with the name of: " + form.getViewName() +
+                                    ". Please specify a different name.");
                     }
                 }
+                else
+                    errors.rejectValue("viewName", ERROR_MSG, "An error occurred saving the view.");
+            }
+            catch (Exception e)
+            {
+                errors.rejectValue("viewName", ERROR_MSG, "An error occurred saving the view.");
+            }
+        }
 
-                if (!StringUtils.equals(report.getDescriptor().getReportDescription(), form.getDescription()))
+        public ApiResponse execute(EditViewsForm form, BindException errors) throws Exception
+        {
+            if (_report != null)
+            {
+                boolean doSave = false;
+
+                if (!StringUtils.equals(_report.getDescriptor().getReportName(), form.getViewName()))
                 {
-                    report.getDescriptor().setReportDescription(StringUtils.trimToNull(form.getDescription()));
+                    _report.getDescriptor().setReportName(form.getViewName());
+                    doSave = true;
+                }
+
+                if (!StringUtils.equals(_report.getDescriptor().getReportDescription(), form.getDescription()))
+                {
+                    _report.getDescriptor().setReportDescription(StringUtils.trimToNull(form.getDescription()));
                     doSave = true;
                 }
 
                 if (doSave)
-                    ReportService.get().saveReport(getViewContext(), report.getDescriptor().getReportKey(), report);
+                    ReportService.get().saveReport(getViewContext(), _report.getDescriptor().getReportKey(), _report);
             }
             return new ApiSimpleResponse("success", true);
         }
@@ -1189,16 +1206,16 @@ public class ReportsController extends SpringActionController
 
     static class EditViewsForm
     {
-        int _reportId;
+        ReportIdentifier _reportId;
         String _viewName;
         String _description;
 
-        public int getReportId()
+        public ReportIdentifier getReportId()
         {
             return _reportId;
         }
 
-        public void setReportId(int reportId)
+        public void setReportId(ReportIdentifier reportId)
         {
             _reportId = reportId;
         }

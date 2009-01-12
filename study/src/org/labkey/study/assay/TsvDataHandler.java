@@ -60,7 +60,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler
         return false;
     }
 
-    protected Map<String, Object>[] loadFileData(PropertyDescriptor[] columns, File inputfile) throws IOException, ExperimentException
+    public Map<String, Object>[] loadFileData(PropertyDescriptor[] columns, File inputfile) throws IOException, ExperimentException
     {
         if (inputfile.getName().toLowerCase().endsWith(".xls"))
             return loadXls(columns, inputfile);

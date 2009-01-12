@@ -176,11 +176,6 @@
 
     function editRecord(button, grid, record)
     {
-        var tabPanel = new Ext.Panel({
-            plain: true,
-            defaults: {autoHeight:true, bodyStyle:'padding:10px'}
-        });
-
         var formPanel = new Ext.FormPanel({
             bodyStyle:'padding:5px',
             defaultType: 'textfield',
