@@ -1763,21 +1763,30 @@ public class OntologyManager
 	}
 
 
-	public static PropertyColumn[] getColumnsForType(String typeURI, TableInfo parentTable, String parentCol, Container c, User user)
+	public static ColumnInfo[] getColumnsForType(String typeURI, TableInfo parentTable, String parentCol, Container c, User user)
 	{
 		PropertyDescriptor[] pdArray = getPropertiesForType(typeURI, c);
 		if (null == pdArray)
 			return null;
 
-		PropertyColumn[] cols = new PropertyColumn[pdArray.length];
-		for (int i = 0; i < cols.length; i++)
-			cols[i] = new PropertyColumn(pdArray[i], parentTable, parentCol, c.getId(), user);
+		List<ColumnInfo> cols = new ArrayList<ColumnInfo>(pdArray.length);
+		for (PropertyDescriptor prop : pdArray)
+        {
+			ColumnInfo col = new PropertyColumn(prop, parentTable, parentCol, c.getId(), user);
+            cols.add(col);
+            if (prop.isQcEnabled())
+            {
+                col.setQcColumnName(col.getName() + QcColumn.QC_INDICATOR_SUFFIX);
+                ColumnInfo[] qcColumns = QCDisplayColumnFactory.createQcColumns(col, prop, parentTable, parentCol, c.getId());
+                cols.addAll(Arrays.asList(qcColumns));
+            }
+        }
 
-		return cols;
+		return cols.toArray(new ColumnInfo[cols.size()]);
 	}
 
 
-	public static PropertyColumn[] getColumnsForType(String typeURI, TableInfo parentTable, Container c, User user)
+	public static ColumnInfo[] getColumnsForType(String typeURI, TableInfo parentTable, Container c, User user)
 	{
 		return getColumnsForType(typeURI, parentTable, "LSID", c, user);
 	}

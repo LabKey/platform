@@ -16,11 +16,13 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.QcColumn;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.ExprColumn;
-import org.labkey.api.query.PropertyForeignKey;
+import org.labkey.api.query.*;
+
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * User: jgarms
@@ -28,53 +30,72 @@ import org.labkey.api.query.PropertyForeignKey;
  */
 public class QCDisplayColumnFactory implements DisplayColumnFactory
 {
-    private final ColumnInfo qcColumn;
     public static final String RAW_VALUE_SUFFIX = "RawValue";
-    public static final String QC_INDICATOR_SUFFIX = "QCIndicator";
-
-    public QCDisplayColumnFactory(ColumnInfo qcColumn)
-    {
-        this.qcColumn = qcColumn;
-    }
 
     public DisplayColumn createRenderer(ColumnInfo colInfo)
     {
+        String qcColName = colInfo.getQcColumnName();
+        assert qcColName != null : "Attempt to render QC state for a non-qc column";
+
+        FieldKey key = FieldKey.fromString(colInfo.getName());
+        FieldKey qcKey = new FieldKey(key.getParent(), qcColName);
+
+        Map<FieldKey,ColumnInfo> map = QueryService.get().getColumns(colInfo.getParentTable(), Collections.singletonList(qcKey));
+
+        ColumnInfo qcColumn = map.get(qcKey);
+        assert qcColumn != null : "No QC Column found";
+
         return new QCDisplayColumn(colInfo, qcColumn);
     }
 
-    /**
-     * For creating QC columns from ontology manager
-     */
-    public static ColumnInfo addQCColumns(FilteredTable table, ColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId)
+    public static ColumnInfo[] createQcColumns(ColumnInfo valueColumn, PropertyDescriptor pd, TableInfo table, String parentLsidColumn, String containerId)
+    {
+        ColumnInfo qcColumn = new QcColumn(pd, table, parentLsidColumn, containerId);
+
+        AliasedColumn rawValueCol = new AliasedColumn(table, valueColumn.getName() + RAW_VALUE_SUFFIX, valueColumn);
+        rawValueCol.setIsHidden(true);
+
+        valueColumn.setDisplayColumnFactory(new QCDisplayColumnFactory());
+        valueColumn.setUserEditable(false);
+
+        ColumnInfo[] result = new ColumnInfo[2];
+        result[0] = qcColumn;
+        result[1] = rawValueCol;
+
+        return result;
+    }
+
+    private static ColumnInfo[] createQCColumns(AbstractTableInfo table, ColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId)
     {
         ColumnInfo qcColumn = new ExprColumn(table,
-                property.getName() + QC_INDICATOR_SUFFIX,
+                property.getName() + QcColumn.QC_INDICATOR_SUFFIX,
                 PropertyForeignKey.getValueSql(colObjectId.getValueSql(ExprColumn.STR_TABLE_ALIAS), property.getQCValueSQL(), property.getPropertyId(), false),
                 property.getSqlType());
-        
-        qcColumn.setNullable(true);
 
-        table.addColumn(qcColumn);
+        qcColumn.setNullable(true);
+        qcColumn.setUserEditable(false);
 
         valueColumn.setQcColumnName(qcColumn.getName());
 
-        return addQCColumn(table, valueColumn, qcColumn);
-    }
-
-    /**
-     * Returns the new combined column, with qc states replacing null
-     */
-    public static ColumnInfo addQCColumn(FilteredTable table, ColumnInfo valueColumn, ColumnInfo qcColumn)
-    {
-        assert valueColumn.isQcEnabled() : "Attempt to add a QC column without QC enabled";
-        assert valueColumn.getQcColumnName().equals(qcColumn.getName()) : "Column QC name mismatch. valueColumn.getQcColumnName='" + valueColumn.getQcColumnName() + "'; qcColumn.getName()='" + qcColumn.getName() + "'.";
-
         AliasedColumn rawValueCol = new AliasedColumn(table, valueColumn.getName() + RAW_VALUE_SUFFIX, valueColumn);
-        table.addColumn(rawValueCol);
 
-        valueColumn.setDisplayColumnFactory(new QCDisplayColumnFactory(qcColumn));
-        //valueColumn.setUserEditable(false);
+        valueColumn.setDisplayColumnFactory(new QCDisplayColumnFactory());
+        valueColumn.setUserEditable(false);
 
-        return valueColumn;
+        ColumnInfo[] result = new ColumnInfo[2];
+        result[0] = qcColumn;
+        result[1] = rawValueCol;
+
+        return result;
     }
+
+    public static void addQCColumns(AbstractTableInfo table, ColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId)
+    {
+        ColumnInfo[] newColumns = createQCColumns(table, valueColumn, property, colObjectId);
+        for (ColumnInfo column : newColumns)
+        {
+            table.addColumn(column);
+        }
+    }
+
 }

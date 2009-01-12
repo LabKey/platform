@@ -16,18 +16,19 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.security.User;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
+import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
+import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.List;
-import java.util.Collection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 abstract public class QueryService
 {
@@ -58,6 +59,7 @@ abstract public class QueryService
     /**
      * Loops through the field keys and turns them into ColumnInfos based on the base table
      */
+    @NotNull
     abstract public Map<FieldKey, ColumnInfo> getColumns(TableInfo table, Collection<FieldKey> fields);
 
     abstract public List<DisplayColumn> getDisplayColumns(TableInfo table, Collection<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> fields);
