@@ -38,7 +38,6 @@ import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.api.webdav.ModuleStaticResolverImpl;
 import org.labkey.common.util.Pair;
 import org.labkey.core.webdav.apache.XMLWriter;
 import org.springframework.web.multipart.MultipartException;
@@ -400,6 +399,8 @@ public class DavController extends SpringActionController
                 }
                 catch (IOException ex)
                 {
+                    if (ExceptionUtil.isClientAbortException(ex))
+                        return null; // ignore
                     throw new DavException(ex);
                 }
             }
