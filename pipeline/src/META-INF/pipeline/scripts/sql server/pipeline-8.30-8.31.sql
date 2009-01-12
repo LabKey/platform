@@ -17,9 +17,3 @@
 UPDATE pipeline.StatusFiles SET JobParent = NULL WHERE JobParent NOT IN (SELECT Job FROM pipeline.StatusFiles)
 GO
 
-ALTER TABLE pipeline.StatusFiles ADD CONSTRAINT UQ_StatusFiles_EntityId UNIQUE (EntityId)
-GO
-
-ALTER TABLE pipeline.StatusFiles
-    ADD CONSTRAINT FK_StatusFiles_JobParent FOREIGN KEY (JobParent) REFERENCES pipeline.StatusFiles(EntityId)
-GO

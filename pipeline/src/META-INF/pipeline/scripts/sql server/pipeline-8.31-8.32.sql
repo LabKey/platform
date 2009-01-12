@@ -14,5 +14,6 @@
  * limitations under the License.
  */
 
-ALTER TABLE pipeline.StatusFiles DROP CONSTRAINT FK_StatusFiles_JobParent
+EXEC core.fn_dropifexists 'StatusFiles', 'pipeline', 'CONSTRAINT', 'FK_StatusFiles_JobParent'
 GO
+
