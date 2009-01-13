@@ -1103,7 +1103,7 @@ public class QueryControllerSpring extends SpringActionController
             String returnURL = (String)this.getProperty(QueryParam.srcURL); // UNDONE: add to QueryForm
             if (returnURL != null)
                 forward = new ActionURL(returnURL);
-            TableInfo table = form.getQueryDef().getTable(null, form.getSchema(), null);
+            TableInfo table = form.getQueryDef().getTable(null, form.getSchema(), null, true);
             QueryUpdateForm quf = new QueryUpdateForm(table, getViewContext().getRequest());
             if (!table.hasPermission(getUser(), ACL.PERM_DELETE))
             {

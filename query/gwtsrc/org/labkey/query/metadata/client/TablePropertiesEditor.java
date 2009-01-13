@@ -96,7 +96,15 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
                 }
             });
         }
+        _wrapFieldButton.setVisible(false);
         return _wrapFieldButton;
+    }
+
+    @Override
+    public void init(GWTTableInfo domain)
+    {
+        super.init(domain);
+        getWrapFieldButton().setVisible(domain != null && !domain.isUserDefinedQuery());
     }
 
     @Override

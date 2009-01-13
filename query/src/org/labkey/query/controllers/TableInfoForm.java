@@ -88,7 +88,7 @@ public class TableInfoForm extends QueryForm
         Map<FieldKey, TableInfo> ret = new HashMap<FieldKey, TableInfo>();
         if (!isDesign())
         {
-            ret.put(null, getQueryDef().getTable(null, getSchema(), null));
+            ret.put(null, getQueryDef().getTable(null, getSchema(), null, true));
         }
         else
         {

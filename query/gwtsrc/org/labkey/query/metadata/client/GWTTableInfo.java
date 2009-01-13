@@ -26,8 +26,20 @@ import java.util.Map;
  */
 public class GWTTableInfo extends GWTDomain<GWTColumnInfo>
 {
+    private boolean _userDefinedQuery;
+
     public boolean isEditable(GWTColumnInfo field)
     {
         return true;
+    }
+
+    public boolean isUserDefinedQuery()
+    {
+        return _userDefinedQuery;
+    }
+
+    public void setUserDefinedQuery(boolean userDefinedQuery)
+    {
+        _userDefinedQuery = userDefinedQuery;
     }
 }

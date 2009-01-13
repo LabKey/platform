@@ -233,7 +233,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return _queryDef.getSchema();
     }
 
-    public TableInfo getTable(String name, QuerySchema schema, List<QueryException> errors)
+    public TableInfo getTable(String name, QuerySchema schema, List<QueryException> errors, boolean includeMetadata)
     {
         if (name == null)
         {
@@ -245,7 +245,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         }
         Query query = getQuery(schema);
         QueryTableInfo ret = query.getTableInfo(name);
-        if (ret != null)
+        if (ret != null && includeMetadata)
         {
             String xml = getMetadataXml();
             if (xml != null)

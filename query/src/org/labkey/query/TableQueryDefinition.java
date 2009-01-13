@@ -55,13 +55,13 @@ public class TableQueryDefinition extends QueryDefinitionImpl
         return result;
     }
 
-    public TableInfo getTable(String name, QuerySchema schema, List<QueryException> errors)
+    public TableInfo getTable(String name, QuerySchema schema, List<QueryException> errors, boolean includeMetadata)
     {
         if (_table != null && schema == getSchema() && name == null)
         {
             return _table;
         }
-        return super.getTable(name, schema, errors);
+        return super.getTable(name, schema, errors, includeMetadata);
     }
 
     public String getSql()

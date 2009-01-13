@@ -97,6 +97,12 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
         }
 
         QueryDef queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), tableName, false);
+        if (queryDef == null)
+        {
+            queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), tableName, true);
+            gwtTableInfo.setUserDefinedQuery(true);
+        }
+
         if (queryDef != null)
         {
             TableType tableType = getTableType(tableName, parseDocument(queryDef.getMetaData()));
@@ -202,7 +208,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
         validatePermissions();
 
         UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), schemaName);
-        QueryDef queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), gwtTableInfo.getName(), false);
+        QueryDef queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), gwtTableInfo.getName(), gwtTableInfo.isUserDefinedQuery());
         TableInfo rawTableInfo = schema.getTable(gwtTableInfo.getName(), "alias", false);
 
         TablesDocument doc;
@@ -308,23 +314,28 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             // Set the FK
             if (!gwtColumnInfo.isLookupCustom() && gwtColumnInfo.getLookupQuery() != null && gwtColumnInfo.getLookupSchema() != null)
             {
-                UserSchema fkSchema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), gwtColumnInfo.getLookupSchema());
-                if (fkSchema != null)
+                ForeignKey rawFK = rawColumnInfo.getFk();
+                // Check if it's the same FK
+                if (rawFK == null || (!gwtColumnInfo.getLookupSchema().equals(rawFK.getLookupSchemaName()) && !gwtColumnInfo.getLookupQuery().equals(rawFK.getLookupTableName())))
                 {
-                    TableInfo fkTableInfo = fkSchema.getTable(gwtColumnInfo.getLookupQuery(), "alias");
-                    if (fkTableInfo != null)
+                    UserSchema fkSchema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), gwtColumnInfo.getLookupSchema());
+                    if (fkSchema != null)
                     {
-                        List<String> pkCols = fkTableInfo.getPkColumnNames();
-                        if (pkCols.size() == 1)
+                        TableInfo fkTableInfo = fkSchema.getTable(gwtColumnInfo.getLookupQuery(), "alias");
+                        if (fkTableInfo != null)
                         {
-                            ColumnType.Fk fk = xmlColumn.getFk();
-                            if (fk == null)
+                            List<String> pkCols = fkTableInfo.getPkColumnNames();
+                            if (pkCols.size() == 1)
                             {
-                                fk = xmlColumn.addNewFk();
+                                ColumnType.Fk fk = xmlColumn.getFk();
+                                if (fk == null)
+                                {
+                                    fk = xmlColumn.addNewFk();
+                                }
+                                fk.setFkDbSchema(gwtColumnInfo.getLookupSchema());
+                                fk.setFkTable(gwtColumnInfo.getLookupQuery());
+                                fk.setFkColumnName(pkCols.get(0));
                             }
-                            fk.setFkDbSchema(gwtColumnInfo.getLookupSchema());
-                            fk.setFkTable(gwtColumnInfo.getLookupQuery());
-                            fk.setFkColumnName(pkCols.get(0));
                         }
                     }
                 }
@@ -334,12 +345,9 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                 xmlColumn.unsetFk();
             }
 
-            if (!xmlColumn.isSetDescription() &&
-                    !xmlColumn.isSetFk() &&
-                    !xmlColumn.isSetFormatString() &&
-                    !xmlColumn.isSetWrappedColumnName() &&
-                    !xmlColumn.isSetColumnTitle())
+            if (xmlColumn.getDomNode().getChildNodes().getLength() == 0)
             {
+                // Remove columns that no longer have any metadata set on them
                 removeColumn(xmlTable, xmlColumn);
             }
         }
