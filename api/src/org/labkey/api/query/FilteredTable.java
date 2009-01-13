@@ -103,6 +103,10 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         ExprColumn ret = new ExprColumn(this, alias, underlyingColumn.getValueSql(ExprColumn.STR_TABLE_ALIAS), underlyingColumn.getSqlTypeInt());
         ret.copyAttributesFrom(underlyingColumn);
         ret.setCaption(ColumnInfo.captionFromName(alias));
+        if (underlyingColumn.isKeyField() && getColumn(underlyingColumn.getName()) != null)
+        {
+            ret.setKeyField(false);
+        }
         return ret;
     }
 
@@ -195,6 +199,10 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     {
         assert column.getParentTable() == getRealTable();
         ColumnInfo ret = new AliasedColumn(this, column.getAlias(), column);
+        if (column.isKeyField() && getColumn(column.getName()) != null)
+        {
+            ret.setKeyField(false);
+        }
         addColumn(ret);
         return ret;
     }

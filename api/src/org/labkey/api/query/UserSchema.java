@@ -58,7 +58,11 @@ abstract public class UserSchema extends AbstractSchema
         QueryDefinition def = QueryService.get().getQueryDef(getContainer(), getSchemaName(), name);
         if (def == null)
             return null;
-        return def.getTable(alias, this, null);
+        if (!includeExtraMetadata)
+        {
+            def.setMetadataXml(null);
+        }
+        return def.getTable(alias, this, null, true);
     }
 
     public final TableInfo getTable(String name, String alias)
@@ -160,13 +164,6 @@ abstract public class UserSchema extends AbstractSchema
     protected QuerySettings createQuerySettings(String dataRegionName)
     {
         return new QuerySettings(dataRegionName);
-    }
-
-    protected final QuerySettings xcreateQuerySettings(PropertyValues pvs, String dataRegionName)
-    {
-        QuerySettings settings = createQuerySettings(dataRegionName);
-        settings.init(pvs);
-        return settings;
     }
 
     public final QuerySettings getSettings(Portal.WebPart webPart, ViewContext context)

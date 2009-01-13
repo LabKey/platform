@@ -32,7 +32,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class WebdavService
 {
     static WebdavResolver _resolver = null;
-    static CopyOnWriteArrayList _providers = new CopyOnWriteArrayList();
+    static CopyOnWriteArrayList<Provider> _providers = new CopyOnWriteArrayList<Provider>();
 
     public static void setResolver(WebdavResolver r)
     {

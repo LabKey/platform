@@ -47,6 +47,7 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
     private FieldType _pd;
     private final LookupServiceAsync _service;
     private final LookupListener<FieldType> _listener;
+    private PopupList _popupList;
 
     public LookupEditor(LookupServiceAsync service, LookupListener<FieldType> listener, boolean showContainer)
     {
@@ -193,7 +194,11 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
 
     private void showContainersPopup(int x, int y)
     {
-        PopupList popupList = new PopupList(_containersText, _containersValues)
+        if (_popupList != null)
+        {
+            _popupList.hide();
+        }
+        _popupList = new PopupList(_containersText, _containersValues)
         {
             public void hide()
             {
@@ -202,9 +207,9 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
                 _txtContainer.setText(StringUtils.trimToEmpty(getValue()));
             }
         };
-        popupList.setValue(getContainer());
-        popupList.setPopupPosition(x, y);
-        popupList.show();
+        _popupList.setValue(getContainer());
+        _popupList.setPopupPosition(x, y);
+        _popupList.show();
     }
 
 
@@ -221,7 +226,11 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
             public void onSuccess(List<String> l)
             {
                 l.add(0,"");
-                PopupList popupList = new PopupList(l, l)
+                if (_popupList != null)
+                {
+                    _popupList.hide();
+                }
+                _popupList = new PopupList(l, l)
                 {
                     public void hide()
                     {
@@ -230,9 +239,9 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
                         _txtSchemaName.setText(StringUtils.trimToEmpty(getValue()));
                     }
                 };
-                popupList.setValue(getSchemaName());
-                popupList.setPopupPosition(x, y);
-                popupList.show();
+                _popupList.setValue(getSchemaName());
+                _popupList.setPopupPosition(x, y);
+                _popupList.show();
             }
         });
     }
@@ -269,7 +278,11 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
                     display.add(table + " (" + m.get(table) + ")");
                 display.add(0,"");
                 tables.add(0,null);
-                PopupList popupList = new PopupList(display, tables)
+                if (_popupList != null)
+                {
+                    _popupList.hide();
+                }
+                _popupList = new PopupList(display, tables)
                 {
                     public void hide()
                     {
@@ -278,9 +291,9 @@ public class LookupEditor<FieldType extends GWTPropertyDescriptor> extends Dialo
                         _txtTableName.setText(StringUtils.trimToEmpty(getValue()));
                     }
                 };
-                popupList.setValue(getTableName());
-                popupList.setPopupPosition(x, y);
-                popupList.show();
+                _popupList.setValue(getTableName());
+                _popupList.setPopupPosition(x, y);
+                _popupList.show();
             }
         });
     }

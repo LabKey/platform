@@ -1178,7 +1178,7 @@ public class QueryView extends WebPartView<Object>
 
     protected TableInfo createTable()
     {
-        return _queryDef.getTable(null, _schema, _errors);
+        return _queryDef.getTable(null, _schema, _errors, true);
     }
 
     final public TableInfo getTable()

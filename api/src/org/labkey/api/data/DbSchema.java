@@ -19,6 +19,7 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
+import org.apache.xmlbeans.XmlException;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleContext;
