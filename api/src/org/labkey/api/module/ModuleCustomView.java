@@ -15,22 +15,19 @@
  */
 package org.labkey.api.module;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
-import org.labkey.api.query.*;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.security.User;
-import org.labkey.api.util.DOMUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.common.util.Pair;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /*
 * User: Dave
@@ -39,33 +36,13 @@ import java.util.*;
 */
 public class ModuleCustomView implements CustomView
 {
-    public static final String FILE_EXTENSION = ".qview.xml";
-
     private QueryDefinition _queryDef;
-    private File _sourceFile;
-    private String _name;
-    private List<Map.Entry<FieldKey,Map<CustomView.ColumnProperty,String>>> _colList = new ArrayList<Map.Entry<FieldKey,Map<CustomView.ColumnProperty,String>>>();
-    private boolean _hidden = false;
-    private List<Pair<String,String>> _filters;
-    private List<String> _sorts;
-    private boolean _loaded = false;
-    private long _lastModified;
-    private String _customIconUrl;
+    private ModuleCustomViewDef _customViewDef;
 
-    public ModuleCustomView(QueryDefinition queryDef, File sourceFile)
+    public ModuleCustomView(QueryDefinition queryDef, ModuleCustomViewDef customViewDef)
     {
-        _sourceFile = sourceFile;
-        _lastModified = sourceFile.lastModified();
         _queryDef = queryDef;
-
-        String fileName = _sourceFile.getName();
-        assert fileName.length() > FILE_EXTENSION.length();
-        _name = fileName.substring(0, fileName.length() - FILE_EXTENSION.length());
-    }
-
-    public boolean isStale()
-    {
-        return _sourceFile.lastModified() != _lastModified;
+        _customViewDef = customViewDef;
     }
 
     public QueryDefinition getQueryDefinition()
@@ -75,7 +52,7 @@ public class ModuleCustomView implements CustomView
 
     public String getName()
     {
-        return _name;
+        return _customViewDef.getName();
     }
 
     public User getOwner()
@@ -102,8 +79,7 @@ public class ModuleCustomView implements CustomView
 
     public boolean isHidden()
     {
-        loadDefinition();
-        return _hidden;
+        return _customViewDef.isHidden();
     }
 
     public void setIsHidden(boolean f)
@@ -120,7 +96,7 @@ public class ModuleCustomView implements CustomView
 
     public String getCustomIconUrl()
     {
-        return _customIconUrl;
+        return _customViewDef.getCustomIconUrl();
     }
 
     public List<FieldKey> getColumns()
@@ -135,8 +111,7 @@ public class ModuleCustomView implements CustomView
 
     public List<Map.Entry<FieldKey,Map<CustomView.ColumnProperty,String>>> getColumnProperties()
     {
-        loadDefinition();
-        return _colList;
+        return _customViewDef.getColList();
     }
 
     public void setColumns(List<FieldKey> columns)
@@ -151,10 +126,9 @@ public class ModuleCustomView implements CustomView
 
     public void applyFilterAndSortToURL(ActionURL url, String dataRegionName)
     {
-        loadDefinition();
-        if(null != _filters)
+        if(null != _customViewDef.getFilters())
         {
-            for(Pair<String,String> filter : _filters)
+            for(Pair<String,String> filter : _customViewDef.getFilters())
             {
                 url.addParameter(dataRegionName + "." + filter.first, filter.second);
             }
@@ -167,12 +141,12 @@ public class ModuleCustomView implements CustomView
 
     protected String buildSortParamValue()
     {
-        if(null == _sorts)
+        if(null == _customViewDef.getSorts())
             return null;
 
         StringBuilder sortParam = new StringBuilder();
         String sep = "";
-        for(String sort : _sorts)
+        for(String sort : _customViewDef.getSorts())
         {
             sortParam.append(sep);
             sortParam.append(sort);
@@ -188,12 +162,11 @@ public class ModuleCustomView implements CustomView
 
     public String getFilter()
     {
-        loadDefinition();
-        if(null == _filters)
+        if(null == _customViewDef.getFilters())
             return null;
 
         StringBuilder ret = new StringBuilder();
-        for(Pair<String,String> filter : _filters)
+        for(Pair<String,String> filter : _customViewDef.getFilters())
         {
             ret.append(filter.first);
             ret.append("=");
@@ -210,11 +183,10 @@ public class ModuleCustomView implements CustomView
 
     public String getContainerFilterName()
     {
-        loadDefinition();
-        if(null == _filters)
+        if(null == _customViewDef.getFilters())
             return null;
 
-        for(Pair<String,String> filter : _filters)
+        for(Pair<String,String> filter : _customViewDef.getFilters())
         {
             if(filter.first.startsWith("containerFilterName~"))
                 return filter.second;
@@ -224,8 +196,7 @@ public class ModuleCustomView implements CustomView
 
     public boolean hasFilterOrSort()
     {
-        loadDefinition();
-        return (null != _filters && _filters.size() > 0);
+        return (null != _customViewDef.getFilters() || null != _customViewDef.getSorts());
     }
 
     public void save(User user, HttpServletRequest request) throws QueryException
@@ -238,133 +209,4 @@ public class ModuleCustomView implements CustomView
         throw new UnsupportedOperationException("Can't delete a module-based custom view!");
     }
 
-    /**
-     * Loads the custom view definition from the source file
-     */
-    protected void loadDefinition()
-    {
-        if(_loaded)
-            return;
-
-        try
-        {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            dbf.setValidating(false);
-            DocumentBuilder db = dbf.newDocumentBuilder();
-
-            Document doc = db.parse(_sourceFile);
-            if(null == doc)
-                throw new IllegalStateException("Custom view definition file " + _sourceFile.getPath() + " contianed an empty document!");
-
-            //load hidden attribute
-            _hidden = Boolean.parseBoolean(DOMUtil.getAttributeValue(doc.getDocumentElement(), "hidden", "false"));
-
-            _customIconUrl = DOMUtil.getAttributeValue(doc.getDocumentElement(), "customIconUrl", null);
-
-            //load the columns
-            _colList = loadColumns(doc);
-
-            //load the filters
-            _filters = loadFilters(doc);
-
-            //load the sorts
-            _sorts = loadSorts(doc);
-
-            _loaded = true;
-        }
-        catch(Exception e)
-        {
-            Logger.getLogger(ModuleCustomView.class).warn("Unable to load custom view definition from file "
-                    + _sourceFile.getPath(), e);
-        }
-    }
-
-    protected List<Map.Entry<FieldKey,Map<CustomView.ColumnProperty,String>>> loadColumns(Document doc)
-    {
-        List<Map.Entry<FieldKey,Map<CustomView.ColumnProperty,String>>> ret = new ArrayList<Map.Entry<FieldKey,Map<CustomView.ColumnProperty,String>>>();
-
-        //load the column elements
-        NodeList nodes = doc.getElementsByTagName("column");
-        for(int idx = 0; idx < nodes.getLength(); ++idx)
-        {
-            Node node = nodes.item(idx);
-            FieldKey fieldKey = getFieldKey(node);
-            if(null == fieldKey)
-                continue;
-
-            //load any column properties that might be there
-            Map<CustomView.ColumnProperty,String> props = new HashMap<ColumnProperty,String>();
-            Node propsNode = DOMUtil.getFirstChildNodeWithName(node, "properties");
-            if(null != propsNode)
-            {
-                List<Node> propsNodes = DOMUtil.getChildNodesWithName(propsNode, "property");
-                for(Node propNode : propsNodes)
-                {
-                    ColumnProperty colProp = ColumnProperty.valueOf(DOMUtil.getAttributeValue(propNode, "name", null));
-                    if(null == colProp)
-                        continue;
-
-                    props.put(colProp, DOMUtil.getAttributeValue(propNode, "value", null));
-                }
-            }
-
-            ret.add(Pair.of(fieldKey, props));
-        }
-
-        return ret;
-    }
-
-    protected List<Pair<String,String>> loadFilters(Document doc)
-    {
-        NodeList nodes = doc.getElementsByTagName("filters");
-        if(null == nodes || nodes.getLength() == 0)
-            return null;
-
-        List<Pair<String,String>> ret = new ArrayList<Pair<String,String>>();
-        Node filtersRoot = nodes.item(0);
-        nodes = filtersRoot.getChildNodes();
-        for(int idx = 0; idx < nodes.getLength(); ++idx)
-        {
-            Node filterNode = nodes.item(idx);
-            if(!filterNode.getNodeName().equalsIgnoreCase("filter"))
-                    continue;
-
-            String colName = DOMUtil.getAttributeValue(filterNode, "column", null);
-            if(null == colName)
-                continue;
-
-            String oper = DOMUtil.getAttributeValue(filterNode, "operator", "eq");
-            String value = DOMUtil.getAttributeValue(filterNode, "value", null);
-            
-            ret.add(new Pair<String,String>(colName + "~" + oper, value));
-        }
-
-        return ret;
-    }
-
-    protected FieldKey getFieldKey(Node columnNode)
-    {
-        String nameAttr = DOMUtil.getAttributeValue(columnNode, "name", null);
-        return null == nameAttr ? null : FieldKey.fromString(nameAttr);
-    }
-
-    protected List<String> loadSorts(Document doc)
-    {
-        List<Node> sortsNodes = DOMUtil.getChildNodesWithName(doc.getDocumentElement(), "sorts");
-        if(null == sortsNodes || sortsNodes.size() == 0)
-            return null;
-
-        List<Node> sortNodes = DOMUtil.getChildNodesWithName(sortsNodes.get(0), "sort");
-        List<String> ret = new ArrayList<String>();
-        for(Node node : sortNodes)
-        {
-            String colName = DOMUtil.getAttributeValue(node, "column");
-            if(null == colName)
-                continue;
-
-            boolean descending = Boolean.parseBoolean(DOMUtil.getAttributeValue(node, "descending", "false"));
-            ret.add(descending ? "-" + colName : colName);
-        }
-        return ret;
-    }
 }

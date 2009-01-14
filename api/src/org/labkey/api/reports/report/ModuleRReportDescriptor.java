@@ -17,7 +17,6 @@ package org.labkey.api.reports.report;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.Pair;
@@ -45,40 +44,51 @@ public class ModuleRReportDescriptor extends RReportDescriptor
     private Module _module;
     private String _reportPath;
     private File _sourceFile;
-    private long _lastModified = 0;
+    private File _metaDataFile;
+    private long _sourceLastModified = 0;
+    private long _metaDataLastModified = 0;
 
     public ModuleRReportDescriptor(Module module, String reportKey, File sourceFile)
     {
-        String name = sourceFile.getName().substring(0, sourceFile.getName().length() -
-                FILE_EXTENSION.length());
-
         _module = module;
         _sourceFile = sourceFile;
         _reportPath = reportKey + "/" + sourceFile.getName();
+
+        String name = sourceFile.getName().substring(0, sourceFile.getName().length() -
+                FILE_EXTENSION.length());
+
         setReportKey(reportKey);
         setReportName(name);
         setReportType(RReport.TYPE);
-        loadMetaData(sourceFile);
+        _metaDataFile = new File(sourceFile.getParentFile(), getReportName() + REPORT_METADATA_EXTENSION);
+        loadMetaData();
     }
 
-    protected void loadMetaData(File sourceFile)
+    public boolean isStale()
     {
-        //look for a file with the same base name but with an .report.xml extension
-        File metaDataFile = new File(sourceFile.getParentFile(), getReportName() + REPORT_METADATA_EXTENSION);
-        if(metaDataFile.exists() && metaDataFile.isFile())
+        //check if either source or meta-data files have changed
+        //meta-data file is optional so make sure it exists before checking
+        return (_sourceLastModified != 0 && _sourceFile.lastModified() != _sourceLastModified)
+                || (_metaDataLastModified != 0 && _metaDataFile.exists() && _metaDataFile.lastModified() != _metaDataLastModified);
+    }
+
+    protected void loadMetaData()
+    {
+        if(_metaDataFile.exists() && _metaDataFile.isFile())
         {
             try
             {
-                String xml = getFileContents(metaDataFile);
+                String xml = getFileContents(_metaDataFile);
                 List<Pair<String,String>> props = createPropsFromXML(xml);
 
                 if(null != props)
                     setProperties(props);
+                _metaDataLastModified = _metaDataFile.lastModified();
             }
             catch(IOException e)
             {
                 Logger.getLogger(ModuleRReportDescriptor.class).warn("Unable to load report metadata from file "
-                        + metaDataFile.getPath(), e);
+                        + _metaDataFile.getPath(), e);
             }
         }
     }
@@ -112,7 +122,7 @@ public class ModuleRReportDescriptor extends RReportDescriptor
 
     protected void ensureScriptCurrent()
     {
-        if(_sourceFile.exists() && _sourceFile.lastModified() > _lastModified)
+        if(_sourceFile.exists() && _sourceFile.lastModified() != _sourceLastModified)
         {
             try
             {
@@ -120,7 +130,7 @@ public class ModuleRReportDescriptor extends RReportDescriptor
                 if(null != script)
                 {
                     setProperty(Prop.script, script);
-                    _lastModified = _sourceFile.lastModified();
+                    _sourceLastModified = _sourceFile.lastModified();
                 }
             }
             catch(IOException e)
@@ -151,9 +161,9 @@ public class ModuleRReportDescriptor extends RReportDescriptor
         return _sourceFile;
     }
 
-    public long getLastModified()
+    public long getSourceLastModified()
     {
-        return _lastModified;
+        return _sourceLastModified;
     }
 
     @Override

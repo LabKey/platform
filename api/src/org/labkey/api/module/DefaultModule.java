@@ -30,6 +30,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.Cache;
 import org.labkey.api.view.*;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryDefinition;
@@ -66,7 +67,7 @@ public abstract class DefaultModule implements Module
     protected static final FilenameFilter customViewFileFilter = new FilenameFilter(){
         public boolean accept(File dir, String name)
         {
-            return name.toLowerCase().endsWith(ModuleCustomView.FILE_EXTENSION);
+            return name.toLowerCase().endsWith(ModuleCustomViewDef.FILE_EXTENSION);
         }
     };
 
@@ -90,6 +91,8 @@ public abstract class DefaultModule implements Module
     private String _buildPath = null;
     private String _sourcePath = null;
     private File _explodedPath = null;
+    private Cache _customViewCache = new Cache(1024, Cache.DAY);
+    private Cache _reportDescriptorCache = new Cache(1024, Cache.DAY);
 
     private enum SchemaUpdateType
     {
@@ -523,14 +526,22 @@ public abstract class DefaultModule implements Module
         if(null == key)
             return null;
 
-        //currently we support only R reports
+        //currently we support only R reports under the queries directory
+        //in the future, we can also support R reports that are not tied to a schema/query
         File keyDir = new File(getQueryReportsDir(), key);
         if(keyDir.exists() && keyDir.isDirectory())
         {
             List<ReportDescriptor> reportDescriptors = new ArrayList<ReportDescriptor>();
             for(File file : keyDir.listFiles(rReportFilter))
             {
-                reportDescriptors.add(new ModuleQueryRReportDescriptor(this, key, file));
+                ModuleRReportDescriptor descriptor = (ModuleRReportDescriptor)_reportDescriptorCache.get(file.getAbsolutePath());
+                if(null == descriptor || descriptor.isStale())
+                {
+                    //currently these are
+                    descriptor = new ModuleQueryRReportDescriptor(this, key, file);
+                    _reportDescriptorCache.put(file.getAbsolutePath(), descriptor);
+                }
+                reportDescriptors.add(descriptor);
             }
             return reportDescriptors;
         }
@@ -550,7 +561,15 @@ public abstract class DefaultModule implements Module
 
         File reportFile = new File(getQueryReportsDir(), path);
         if(reportFile.exists() && reportFile.isFile())
-            return new ModuleQueryRReportDescriptor(this, key, reportFile);
+        {
+            ModuleRReportDescriptor descriptor = (ModuleRReportDescriptor)_reportDescriptorCache.get(reportFile.getAbsolutePath());
+            if(null == descriptor || descriptor.isStale())
+            {
+                descriptor = new ModuleQueryRReportDescriptor(this, key, reportFile);
+                _reportDescriptorCache.put(reportFile.getAbsolutePath(), descriptor);
+            }
+            return descriptor;
+        }
         else
             return null;
     }
@@ -695,7 +714,13 @@ public abstract class DefaultModule implements Module
         {
             for(File file : queryDir.listFiles(customViewFileFilter))
             {
-                customViews.add(new ModuleCustomView(queryDef, file));
+                ModuleCustomViewDef viewDef = (ModuleCustomViewDef)_customViewCache.get(file.getAbsolutePath());
+                if(null == viewDef || viewDef.isStale())
+                {
+                    viewDef = new ModuleCustomViewDef(file);
+                    _customViewCache.put(file.getAbsolutePath(), viewDef);
+                }
+                customViews.add(new ModuleCustomView(queryDef, viewDef));
             }
         }
         return customViews;
