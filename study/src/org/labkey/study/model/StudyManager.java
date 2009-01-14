@@ -1956,6 +1956,7 @@ public class StudyManager
             col.name = matchedURI;
             col.clazz = matchedCol.getJavaClass();
             col.errorValues = CONVERSION_ERROR;
+            col.qcEnabled = matchedCol.isQcEnabled();
         }
 
         // make sure that our QC state columns are understood by this tab loader; we'll need to find QCStateLabel columns
