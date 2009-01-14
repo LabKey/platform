@@ -40,11 +40,15 @@ import org.labkey.query.reports.chart.TimeSeriesRenderer;
 import org.labkey.query.reports.chart.XYChartRenderer;
 import org.labkey.query.reports.view.ReportUIProvider;
 import org.labkey.query.view.QueryWebPartFactory;
+import org.labkey.query.sql.QParser;
 
 import javax.script.ScriptEngineManager;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
+import java.util.HashSet;
+
+import junit.framework.TestCase;
 
 
 public class QueryModule extends DefaultModule
@@ -111,5 +115,11 @@ public class QueryModule extends DefaultModule
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set(QueryManager.get().getDbSchemaName());
+    }
+
+    public Set<Class<? extends TestCase>> getJUnitTests()
+    {
+        return new HashSet<Class<? extends TestCase>>(Arrays.asList(
+                QParser.TestCase.class));
     }
 }

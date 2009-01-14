@@ -1,6 +1,6 @@
 {table}
 Filename|Component|Version|Source|License|Dev|Purpose
-antlr.jar|ANTLR|2.7.6|{link:ANTLR|http://www.antlr.org/}|{link:Public Domain|http://www.antlr.org/license.html}|mbellew|Query language parsing
+antlr-3.1.1.jar|ANTLR|2.7.6|{link:ANTLR|http://www.antlr.org/}|{link:Public Domain|http://www.antlr.org/license.html}|mbellew|Query language parsing
 axis.jar|Apache Axis|1.2RC2|{link:Apache|http://ws.apache.org/axis/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Web service implementation
 backport-util-concurrent-3.1.jar|JSR 166|3.1|{link:Emory|http://dcl.mathcs.emory.edu/util/backport-util-concurrent/}|Public Domain|brendanx|Pipeline (Mule dependency)
 beehive-controls.jar|Beehive|1.0|{link:Apache|http://beehive.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Pageflows

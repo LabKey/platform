@@ -27,6 +27,10 @@ import org.labkey.api.util.PageFlowUtil;
 
 import java.util.Set;
 import java.util.List;
+import java.util.ArrayList;
+
+import junit.framework.Test;
+import junit.framework.TestSuite;
 
 public class QParser
 {
@@ -138,10 +142,9 @@ public class QParser
             if (SqlBaseTokenTypes.UNION == last)
                 throw new QueryParseException("UNION is not supported", null, 0, 0);
             Node node = (Node) parser.getAST();
-            if (node == null)
-                return null;
-            QQuery ret = (QQuery) node.getQNode();
-            ret.syntaxCheck(errors);
+            QQuery ret = node == null ? null : (QQuery) node.getQNode();
+            if (ret != null)
+                ret.syntaxCheck(errors);
             for (Throwable e : parser.getErrors())
             {
                 errors.add(wrapParseException(e));
@@ -221,4 +224,123 @@ public class QParser
         }
         return ret.toString();
     }
+
+
+
+
+ /* other keywords
+    all any cast class convert delete elements exists fetch full indices insert into limit new set some
+    timstampdiff update versioned both empty leading memeber of trailing
+ */
+    static String[] testSql = new String[]
+    {
+        "SELECT 'text',1.0f,TRUE,FALSE,0x0ab12 FROM R",
+            
+        "SELECT DISTINCT R.a, b AS B FROM rel R INNER JOIN S ON R.x=S.x WHERE R.y=0 AND R.a IS NULL OR R.b IS NOT NULL",
+
+        "SELECT \"a\",\"b\",AVG(x),COUNT(x),MIN(x),MAX(x),SUM(x),STDDEV(x) FROM R WHERE R.x='key' GROUP BY a,b HAVING SUM(x)>100 ORDER BY a ASC, b DESC, SUM(x)",
+
+        "SELECT a = TRUE, b = FALSE, NOT c FROM R WHERE R.x IN (2,3,5,7) OR R.x BETWEEN 100 AND 200",
+
+        "SELECT R.a, S.\"b\" FROM R LEFT OUTER JOIN S ON R.x = S.x",
+
+        "SELECT R.a, S.\"b\" FROM R LEFT JOIN S ON R.x = S.x",
+
+        "SELECT 'R'.a, S.b FROM R FULL JOIN S ON R.x = S.x",
+
+        "SELECT CASE WHEN R.a=R.b THEN 'same' WHEN R.c IS NULL THEN 'different' ELSE R.c END FROM R",
+
+        "SELECT R.a FROM R WHERE R.a LIKE 'a%' AND R.b LIKE 'a/%' ESCAPE '/'",
+
+        "SELECT MS2SearchRuns.Flag,MS2SearchRuns.Links,MS2SearchRuns.Name,MS2SearchRuns.Created,MS2SearchRuns.RunGroups FROM MS2SearchRuns",
+
+        // TEST FROM (SELECT)
+        // WHERE EXISTS/ANY/SOME (SELECT)
+
+        "BROKEN",
+
+        // nested JOINS
+        "SELECT R.a, \"S\".b FROM R LEFT OUTER JOIN (S RIGHT OUTER JOIN T ON S.y = T.y) ON R.x = S.x",
+
+        // should OUTER be optionally allowed
+        "SELECT 'R'.a, S.b FROM R FULL OUTER JOIN S ON R.x = S.x",
+
+        "SELECT R.* FROM R"
+    };
+
+
+    static String[] failSql = new String[]
+    {
+        "SELECT a FROM R UNION SELECT b FROM S",
+        "lutefisk",
+        "SELECT R.a FROM R WHERE > 5", "SELECT R.a + AS A FROM R", "SELECT (R.a +) R.b AS A FROM R",
+
+        "BROKEN",
+        // empty select list
+        "SELECT FROM R",
+        // missing FROM
+        "SELECT R.a WHERE R.a > 5",
+        // no table name
+        "SELECT S.a AS lutefisk FROM"
+    };
+
+
+    public static class TestCase extends junit.framework.TestCase
+    {
+        public TestCase()
+        {
+            super();
+        }
+
+        public TestCase(String name)
+        {
+            super(name);
+        }
+
+        private boolean parse(String sql)
+        {
+            List<QueryParseException> errors = new ArrayList<QueryParseException>();
+            QQuery q = QParser.parseStatement(sql,errors);
+            if (errors.size() > 0)
+                return false;
+            // check for QUnknown
+            return true;
+        }
+
+        public void test()
+        {
+            for (String sql : testSql)
+            {
+                try
+                {
+                    if (sql.equals("BROKEN"))
+                        break;
+                    assertTrue(sql, parse(sql));
+                }
+                catch (Throwable t)
+                {
+                    fail(sql);
+                }
+            }
+            for (String sql : failSql)
+            {
+                try
+                {
+                    if (sql.equals("BROKEN"))
+                        break;
+                    assertFalse(sql, parse(sql));
+                }
+                catch (Throwable t)
+                {
+                    fail(sql);
+                }
+            }
+        }
+
+        public static Test suite()
+        {
+            return new TestSuite(TestCase.class);
+        }
+    }
+
 }

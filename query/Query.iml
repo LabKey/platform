@@ -25,29 +25,29 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../external/lib/server/antlr.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
     <orderEntry type="module" module-name="Internal" />
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../build/modules/query/explodedMar/META-INF/jsp/query_jsp.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../build/modules/query/explodedModule/lib/query_jsp.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../../build/modules/query/explodedMar/META-INF/jsp/query_jsp.jar!/" />
+          <root url="file://$MODULE_DIR$/../../../build/modules/query/jspTempDir/classes" />
         </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module" module-name="API" />
     <orderEntry type="module" module-name="QueryGWT" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../external/lib/server/antlr-3.1.1.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
   </component>
 </module>
 
