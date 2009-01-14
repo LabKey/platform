@@ -60,11 +60,11 @@ public class ObjectProperty extends OntologyManager.PropertyRow
     private Identifiable objectValue;
     private Map<String, ObjectProperty> _childProperties;
 
+    // Don't delete this -- it's accessed via introspection
     public ObjectProperty()
     {
     }
-
-
+    
     public ObjectProperty(String objectURI, Container container, String propertyURI, String value)
     {
         init(objectURI, container, propertyURI, PropertyType.STRING);

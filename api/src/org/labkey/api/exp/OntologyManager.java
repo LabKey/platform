@@ -27,10 +27,10 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.common.util.CPUTimer;
 
 import java.io.File;
@@ -188,7 +188,7 @@ public class OntologyManager
                         if (validatorMap.containsKey(pd.getPropertyId()))
                             validateProperty(validatorMap.get(pd.getPropertyId()), pd, value, errors);
                     }
-                    PropertyRow row = new PropertyRow(objectId, pd.getPropertyId(), value, propertyTypes[i]);
+                    PropertyRow row = new PropertyRow(objectId, pd, value, propertyTypes[i]);
 					propsToInsert.add(row);
 				}
 
@@ -1359,7 +1359,7 @@ public class OntologyManager
 		ArrayList<Object[]> dates = new ArrayList<Object[]>();
 		ArrayList<Object[]> floats = new ArrayList<Object[]>();
 		ArrayList<Object[]> strings = new ArrayList<Object[]>();
-//		ArrayList<Object[]> texts = new ArrayList<Object[]>();
+        ArrayList<Object[]> qcValues = new ArrayList<Object[]>();
 
 		for (PropertyRow property : props)
 		{
@@ -1368,11 +1368,12 @@ public class OntologyManager
 
             int objectId = property.getObjectId();
             int propertyId = property.getPropertyId();
+            String qcValue = property.getQcValue();
 
             if (null != property.getFloatValue())
-                floats.add(new Object[] {objectId, propertyId, property.getFloatValue()});
+                floats.add(new Object[] {objectId, propertyId, property.getFloatValue(), qcValue});
             else if (null != property.getDateTimeValue())
-                dates.add(new Object[] {objectId, propertyId, new java.sql.Timestamp(property.getDateTimeValue().getTime())});
+                dates.add(new Object[] {objectId, propertyId, new java.sql.Timestamp(property.getDateTimeValue().getTime()), qcValue});
             else if (null != property.getStringValue())
             {
                 String string = property.getStringValue();
@@ -1380,7 +1381,11 @@ public class OntologyManager
                 if (string.length() > ObjectProperty.STRING_LENGTH)
                     ;
                 </UNDONE> */
-                strings.add(new Object[] {objectId, propertyId, string});
+                strings.add(new Object[] {objectId, propertyId, string, qcValue});
+            }
+            else if (null != qcValue)
+            {
+                qcValues.add(new Object[] {objectId, propertyId, property.getTypeTag(), qcValue});
             }
 		}
 
@@ -1388,21 +1393,27 @@ public class OntologyManager
 
 		if (dates.size() > 0)
 		{
-			String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, DateTimeValue) VALUES (?,?,'d',?)";
+			String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, DateTimeValue, QcValue) VALUES (?,?,'d',?, ?)";
             Table.batchExecute(getExpSchema(), sql, dates);
 		}
 
 		if (floats.size() > 0)
 		{
-			String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, FloatValue) VALUES (?,?,'f',?)";
+			String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, FloatValue, QcValue) VALUES (?,?,'f',?, ?)";
             Table.batchExecute(getExpSchema(), sql, floats);
 		}
 
 		if (strings.size() > 0)
 		{
-			String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, StringValue) VALUES (?,?,'s',?)";
+			String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, StringValue, QcValue) VALUES (?,?,'s',?, ?)";
             Table.batchExecute(getExpSchema(), sql, strings);
 		}
+
+        if (qcValues.size() > 0)
+        {
+            String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, QcValue) VALUES (?,?,?,?)";
+            Table.batchExecute(getExpSchema(), sql, qcValues);
+        }
 
         clearPropertyCache();
     }
@@ -2618,80 +2629,84 @@ public class OntologyManager
 		protected Double floatValue;
 		protected String stringValue;
 		protected Date dateTimeValue;
+        protected String qcValue;
 
 		public PropertyRow()
 		{
 		}
 
-		public PropertyRow(int objectId, int propertyId, Object value)
-		{
-			this(objectId, propertyId, value, PropertyType.getFromClass(value.getClass()));
-		}
-
-		public PropertyRow(int objectId, int propertyId, Object value, PropertyType pt)
+		public PropertyRow(int objectId, PropertyDescriptor pd, Object value, PropertyType pt)
 		{
 			this.objectId = objectId;
-			this.propertyId = propertyId;
+			this.propertyId = pd.getPropertyId();
 			this.typeTag = pt.getStorageType();
 
-			switch (pt)
-			{
-				case STRING:
-                case MULTI_LINE:
-                    if (value instanceof String)
-                        this.stringValue = (String) value;
-                    else
-                        this.stringValue = ConvertUtils.convert(value);
-                    break;
-				case ATTACHMENT:
-    				this.stringValue = (String) value;
-					break;
-				case FILE_LINK:
-					if (value instanceof File)
-						this.stringValue = ((File) value).getPath();
-					else
-						this.stringValue = (String) value;
-					break;
-				case DATE_TIME:
-					if (value instanceof Date)
-						this.dateTimeValue = (Date) value;
-					else if (null != value)
-						this.dateTimeValue = (Date) ConvertUtils.convert(value.toString(), Date.class);
-					break;
-				case INTEGER:
-					if (value instanceof Integer)
-						this.floatValue = ((Integer) value).doubleValue();
-					else if (null != value)
-						this.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
-					break;
-				case DOUBLE:
-					if (value instanceof Double)
-						this.floatValue = (Double) value;
-					else if (null != value)
-						this.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
-					break;
-                case BOOLEAN:
+            // Handle field-level QC
+            if (value != null && pd.isQcEnabled() && QcUtil.getQcValues(pd.getContainer()).contains(value.toString()))
+            {
+                this.qcValue = value.toString();
+            }
+            else
+            {
+                switch (pt)
                 {
-                    boolean boolValue = false;
-                    if (value instanceof Boolean)
-                        boolValue = (Boolean)value;
-                    else if (null != value && !"".equals(value))
-                        boolValue = (Boolean) ConvertUtils.convert(value.toString(), Boolean.class);
-                    this.floatValue = boolValue ? 1.0 : 0.0;
-                    break;
-                }
-                case RESOURCE:
-					if (value instanceof Identifiable)
-					{
-						this.stringValue = ((Identifiable) value).getLSID();
-					}
-					else if (null != value)
-						this.stringValue = value.toString();
+                    case STRING:
+                    case MULTI_LINE:
+                        if (value instanceof String)
+                            this.stringValue = (String) value;
+                        else
+                            this.stringValue = ConvertUtils.convert(value);
+                        break;
+                    case ATTACHMENT:
+                        this.stringValue = (String) value;
+                        break;
+                    case FILE_LINK:
+                        if (value instanceof File)
+                            this.stringValue = ((File) value).getPath();
+                        else
+                            this.stringValue = (String) value;
+                        break;
+                    case DATE_TIME:
+                        if (value instanceof Date)
+                            this.dateTimeValue = (Date) value;
+                        else if (null != value)
+                            this.dateTimeValue = (Date) ConvertUtils.convert(value.toString(), Date.class);
+                        break;
+                    case INTEGER:
+                        if (value instanceof Integer)
+                            this.floatValue = ((Integer) value).doubleValue();
+                        else if (null != value)
+                            this.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
+                        break;
+                    case DOUBLE:
+                        if (value instanceof Double)
+                            this.floatValue = (Double) value;
+                        else if (null != value)
+                            this.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
+                        break;
+                    case BOOLEAN:
+                    {
+                        boolean boolValue = false;
+                        if (value instanceof Boolean)
+                            boolValue = (Boolean)value;
+                        else if (null != value && !"".equals(value))
+                            boolValue = (Boolean) ConvertUtils.convert(value.toString(), Boolean.class);
+                        this.floatValue = boolValue ? 1.0 : 0.0;
+                        break;
+                    }
+                    case RESOURCE:
+                        if (value instanceof Identifiable)
+                        {
+                            this.stringValue = ((Identifiable) value).getLSID();
+                        }
+                        else if (null != value)
+                            this.stringValue = value.toString();
 
-					break;
-				default:
-					throw new IllegalArgumentException("Unknown property type: " + pt);
-			}
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unknown property type: " + pt);
+                }
+            }
 		}
 
 		public int getObjectId()
@@ -2753,7 +2768,17 @@ public class OntologyManager
 		{
 			this.dateTimeValue = dateTimeValue;
 		}
-	}
+
+        public String getQcValue()
+        {
+            return qcValue;
+        }
+
+        public void setQcValue(String qcValue)
+        {
+            this.qcValue = qcValue;
+        }
+    }
 
     public static DbSchema getExpSchema() {
         return DbSchema.get("exp");

@@ -53,6 +53,7 @@ public class ColumnDescriptor
     public Object errorValues = null;
     public Converter converter = null;
     public Method setter = null;
+    public boolean qcEnabled;
 
     public String toString()
     {

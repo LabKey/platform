@@ -27,6 +27,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections.Transformer;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.data.QcUtil;
 
 import java.io.*;
 import java.lang.reflect.Array;
@@ -760,19 +761,26 @@ public class TabLoader extends DataLoader
                         values[i] = column.missingValues;
                         continue;
                     }
+                    String fld = fields[i];
                     try
                     {
-                        String fld = fields[i];
                         values[i] = ("".equals(fld)) ?
                                 column.missingValues :
                                 column.converter.convert(column.clazz, fld);
                     }
                     catch (Exception x)
                     {
-                        if (_throwOnErrors)
-                            throw new ConversionException("Conversion error: line " + lineNo + " column " + (i+ 1) + " (" + column.name + ")", x);
+                        if (column.qcEnabled && QcUtil.getQcValues(null).contains(fld))
+                        {
+                            values[i] = fld;
+                        }
+                        else
+                        {
+                            if (_throwOnErrors)
+                                throw new ConversionException("Conversion error: line " + lineNo + " column " + (i+ 1) + " (" + column.name + ")", x);
 
-                        values[i] = column.errorValues;
+                            values[i] = column.errorValues;
+                        }
                     }
                 }
 
