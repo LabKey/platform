@@ -26,6 +26,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.module.Module;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
@@ -151,6 +152,19 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             if (user != null)
             {
                 addCustomViews(ret, mgr.getColumnLists(ContainerManager.getSharedContainer(), _queryDef.getSchema(), _queryDef.getName(), null, null, true));
+            }
+
+            //finally, ask all the modules in the container if they have any views to contribute
+            for(Module module : container.getActiveModules())
+            {
+                List<CustomView> views = module.getCustomViews(this);
+                if(null == views)
+                    continue;
+
+                for(CustomView view : views)
+                {
+                    ret.put(view.getName(), view);
+                }
             }
 
             return ret;

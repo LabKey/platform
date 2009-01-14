@@ -359,6 +359,17 @@ public class CustomViewImpl implements CustomView
         edit().setFlags(_mgr.setIsHidden(_collist.getFlags(), b));
     }
 
+    public boolean isEditable()
+    {
+        return true;
+    }
+
+    public String getCustomIconUrl()
+    {
+        //might support this in the future
+        return null;
+    }
+
     public ViewDocument getDesignDocument(QuerySchema schema)
     {
         ViewDocument ret = ViewDocument.Factory.newInstance();
