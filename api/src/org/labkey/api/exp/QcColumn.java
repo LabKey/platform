@@ -28,14 +28,13 @@ public class QcColumn extends LookupColumn
     public static final String QC_INDICATOR_SUFFIX = "QCIndicator";
 
     private final PropertyDescriptor pd;
-    private final String containerId;
 
-    public QcColumn(PropertyDescriptor pd, TableInfo tinfoParent, String parentLsidColumn, String containerId)
+    public QcColumn(PropertyDescriptor pd, TableInfo tinfoParent, String parentLsidColumn)
     {
-        this(pd, tinfoParent.getColumn(parentLsidColumn), containerId);
+        this(pd, tinfoParent.getColumn(parentLsidColumn));
     }
 
-    public QcColumn(PropertyDescriptor pd, ColumnInfo lsidColumn, String containerId)
+    public QcColumn(PropertyDescriptor pd, ColumnInfo lsidColumn)
     {
         super(lsidColumn, OntologyManager.getTinfoObject().getColumn("ObjectURI"), OntologyManager.getTinfoObjectProperty().getColumn("QcValue"), false);
         this.pd = pd;
@@ -52,8 +51,6 @@ public class QcColumn extends LookupColumn
             setFormatString(format);
 
         setInputType(pd.getPropertyType().getInputType());
-
-        this.containerId = containerId;
     }
 
     public SQLFragment getValueSql()
@@ -86,9 +83,18 @@ public class QcColumn extends LookupColumn
         return getPropertyDescriptor().getPropertyURI();
     }
 
+    private String getContainerId()
+    {
+        Container c = pd.getContainer();
+        if (c != null)
+            return c.getId();
+        return null;
+    }
+
     public SQLFragment getJoinCondition()
     {
         SQLFragment strJoinNoContainer = super.getJoinCondition();
+        String containerId = getContainerId();
         if (containerId == null)
         {
             return strJoinNoContainer;
@@ -100,7 +106,7 @@ public class QcColumn extends LookupColumn
 
     public String getTableAlias()
     {
-        if (containerId == null)
+        if (getContainerId() == null)
             return super.getTableAlias();
         return super.getTableAlias() + "_C";
     }

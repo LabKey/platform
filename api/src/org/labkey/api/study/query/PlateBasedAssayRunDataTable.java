@@ -81,7 +81,7 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
             ColumnInfo propertyLookupColumn = wrapColumn("Properties", _rootTable.getColumn("ObjectId"));
             propertyLookupColumn.setKeyField(false);
             propertyLookupColumn.setIsUnselectable(true);
-            OORAwarePropertyForeignKey fk = new OORAwarePropertyForeignKey(pds, this, schema)
+            QcAwarePropertyForeignKey fk = new QcAwarePropertyForeignKey(pds, this, schema)
             {
                 protected ColumnInfo constructColumnInfo(ColumnInfo parent, String name, PropertyDescriptor pd)
                 {

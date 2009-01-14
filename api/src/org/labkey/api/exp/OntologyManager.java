@@ -1777,7 +1777,7 @@ public class OntologyManager
             if (prop.isQcEnabled())
             {
                 col.setQcColumnName(col.getName() + QcColumn.QC_INDICATOR_SUFFIX);
-                ColumnInfo[] qcColumns = QCDisplayColumnFactory.createQcColumns(col, prop, parentTable, parentCol, c.getId());
+                ColumnInfo[] qcColumns = QCDisplayColumnFactory.createQcColumns(col, prop, parentTable, parentCol);
                 cols.addAll(Arrays.asList(qcColumns));
             }
         }

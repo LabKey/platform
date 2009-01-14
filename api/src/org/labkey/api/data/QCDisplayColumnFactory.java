@@ -48,9 +48,9 @@ public class QCDisplayColumnFactory implements DisplayColumnFactory
         return new QCDisplayColumn(colInfo, qcColumn);
     }
 
-    public static ColumnInfo[] createQcColumns(ColumnInfo valueColumn, PropertyDescriptor pd, TableInfo table, String parentLsidColumn, String containerId)
+    public static ColumnInfo[] createQcColumns(ColumnInfo valueColumn, PropertyDescriptor pd, TableInfo table, String parentLsidColumn)
     {
-        ColumnInfo qcColumn = new QcColumn(pd, table, parentLsidColumn, containerId);
+        ColumnInfo qcColumn = new QcColumn(pd, table, parentLsidColumn);
 
         AliasedColumn rawValueCol = new AliasedColumn(table, valueColumn.getName() + RAW_VALUE_SUFFIX, valueColumn);
         rawValueCol.setIsHidden(true);

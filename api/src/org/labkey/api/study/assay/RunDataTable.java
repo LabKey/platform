@@ -50,7 +50,7 @@ public class RunDataTable extends FilteredTable
         column.setIsUnselectable(true);
         final AssayProvider provider = AssayService.get().getProvider(protocol);
         PropertyDescriptor[] pds = provider.getRunDataColumns(protocol);
-        OORAwarePropertyForeignKey fk = new OORAwarePropertyForeignKey(pds, this, schema);
+        QcAwarePropertyForeignKey fk = new QcAwarePropertyForeignKey(pds, this, schema);
 
         Set<String> hiddenCols = new HashSet<String>();
         for (PropertyDescriptor pd : fk.getDefaultHiddenProperties())
