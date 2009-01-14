@@ -20,6 +20,7 @@ import antlr.collections.AST;
 import org.labkey.api.util.UnexpectedException;
 
 import java.io.Writer;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -210,11 +211,6 @@ abstract public class QNode<T extends QNode> implements Cloneable
         return _node.getType();
     }
 
-    public void dumpTree(Writer writer)
-    {
-        //new ASTPrinter(SqlTokenTypes.class).showAst(_node, new PrintWriter(writer));
-    }
-
     public boolean isNextSibling(int tokenType)
     {
         QNode nextSibling = getNextSibling();
@@ -275,5 +271,18 @@ abstract public class QNode<T extends QNode> implements Cloneable
         if (this == that)
             return true;
         return this._node.equalsTree(that._node);
+    }
+
+    public void dump(PrintWriter out)
+    {
+        dump(out, "\n");
+        out.println();
+    }
+
+    protected void dump(PrintWriter out, String nl)
+    {
+        out.printf("%s%s: %s", nl, getClass().getSimpleName(), getTokenText());
+        for (QNode c = getFirstChild() ; c != null ; c = c.getNextSibling())
+            c.dump(out, nl + "    |");
     }
 }

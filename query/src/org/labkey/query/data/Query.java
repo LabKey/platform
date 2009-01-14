@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 
 import java.util.*;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 
 import org.labkey.query.sql.*;
 import org.labkey.query.design.*;
@@ -80,13 +81,22 @@ public class Query
     public void parse(String queryText)
     {
         _queryText = queryText;
-        _parseErrors = new ArrayList();
+        _parseErrors = new ArrayList<QueryParseException>();
 
         try
         {
             _root = QParser.parseStatement(queryText, _parseErrors);
             if (_parseErrors.isEmpty())
                 parseTree();
+
+            if (_log.isDebugEnabled())
+            {
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                _root.dump(pw);
+                pw.close();
+                _log.debug(sw.toString());
+            }
         }
         catch (RuntimeException ex)
         {
