@@ -39,6 +39,9 @@ import java.util.List;
  */
 public class ModuleRReportDescriptor extends RReportDescriptor
 {
+    public static final String FILE_EXTENSION = ".r";
+    protected static final String REPORT_METADATA_EXTENSION = ".report.xml";
+
     private Module _module;
     private String _reportPath;
     private File _sourceFile;
@@ -47,7 +50,7 @@ public class ModuleRReportDescriptor extends RReportDescriptor
     public ModuleRReportDescriptor(Module module, String reportKey, File sourceFile)
     {
         String name = sourceFile.getName().substring(0, sourceFile.getName().length() -
-                DefaultModule.R_REPORT_EXTENSION.length());
+                FILE_EXTENSION.length());
 
         _module = module;
         _sourceFile = sourceFile;
@@ -60,8 +63,8 @@ public class ModuleRReportDescriptor extends RReportDescriptor
 
     protected void loadMetaData(File sourceFile)
     {
-        //look for a file with the same base name but with an .xml extension
-        File metaDataFile = new File(sourceFile.getParentFile(), getReportName() + ".xml");
+        //look for a file with the same base name but with an .report.xml extension
+        File metaDataFile = new File(sourceFile.getParentFile(), getReportName() + REPORT_METADATA_EXTENSION);
         if(metaDataFile.exists() && metaDataFile.isFile())
         {
             try

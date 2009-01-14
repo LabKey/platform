@@ -23,6 +23,8 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SqlDialect;
 import org.labkey.api.security.User;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.QueryDefinition;
 import org.labkey.common.util.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
@@ -251,4 +253,10 @@ public class MockModule implements Module
     {
         return Collections.EMPTY_LIST;
     }
+
+    public List<CustomView> getCustomViews(QueryDefinition queryDef)
+    {
+        return null;
+    }
+
 }

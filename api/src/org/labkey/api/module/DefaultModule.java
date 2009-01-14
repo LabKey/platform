@@ -25,11 +25,14 @@ import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.reports.report.ModuleQueryRReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ModuleRReportDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.QueryDefinition;
 import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -40,6 +43,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * User: migra
@@ -50,16 +54,22 @@ public abstract class DefaultModule implements Module
 {
     public static final String CORE_MODULE_NAME = "Core";
 
-    public static final String R_REPORT_EXTENSION = ".r";
 
     static final Logger _log = Logger.getLogger(DefaultModule.class);
 
     protected static final FilenameFilter rReportFilter = new FilenameFilter(){
         public boolean accept(File dir, String name)
         {
-            return name.toLowerCase().endsWith(R_REPORT_EXTENSION);
+            return name.toLowerCase().endsWith(ModuleRReportDescriptor.FILE_EXTENSION);
         }
     };
+    protected static final FilenameFilter customViewFileFilter = new FilenameFilter(){
+        public boolean accept(File dir, String name)
+        {
+            return name.toLowerCase().endsWith(ModuleCustomView.FILE_EXTENSION);
+        }
+    };
+
     private static final Set<Pair<Class,String>> INSTANTIATED_MODULES = new HashSet<Pair<Class,String>>();
 
     private final Map<String, Class<? extends Controller>> _pageFlowNameToClass = new LinkedHashMap<String, Class<? extends Controller>>();
@@ -80,7 +90,6 @@ public abstract class DefaultModule implements Module
     private String _buildPath = null;
     private String _sourcePath = null;
     private File _explodedPath = null;
-
 
     private enum SchemaUpdateType
     {
@@ -672,7 +681,26 @@ public abstract class DefaultModule implements Module
         }
     }
 
-    
+    protected File getCustomViewsDir()
+    {
+        return new File(getExplodedPath(), "queries");
+    }
+
+    public List<CustomView> getCustomViews(QueryDefinition queryDef)
+    {
+        List<CustomView> customViews = new ArrayList<CustomView>();
+
+        File queryDir = new File(getCustomViewsDir(), queryDef.getSchemaName() + "/" + queryDef.getName());
+        if(queryDir.exists() && queryDir.isDirectory())
+        {
+            for(File file : queryDir.listFiles(customViewFileFilter))
+            {
+                customViews.add(new ModuleCustomView(queryDef, file));
+            }
+        }
+        return customViews;
+    }
+
     public Controller getController(HttpServletRequest request, String name)
     {
         Class cls = _pageFlowNameToClass.get(name);

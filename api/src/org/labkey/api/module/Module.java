@@ -24,6 +24,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.QueryDefinition;
 import org.labkey.common.util.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
@@ -245,9 +247,16 @@ public interface Module
 
 
     /**
-     * return a list of locations to look for static website files.  Files in these directories have no security. 
+     * return a list of locations to look for static website files.  Files in these directories have no security.
      * @return
      */
     @NotNull
     public List<File> getStaticFileDirectories();
+
+    /**
+     * Returns a list of custom views defined within the module for the given query definition
+     * @param queryDef The query definition
+     * @return a list of custom views for that query definition, or null if no custom views are defined in the module
+     */
+    public List<CustomView> getCustomViews(QueryDefinition queryDef);
 }

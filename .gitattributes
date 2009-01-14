@@ -282,6 +282,7 @@ api/src/org/labkey/api/module/FolderType.java -text
 api/src/org/labkey/api/module/MockModule.java -text
 api/src/org/labkey/api/module/Module.java -text
 api/src/org/labkey/api/module/ModuleContext.java -text
+api/src/org/labkey/api/module/ModuleCustomView.java -text
 api/src/org/labkey/api/module/ModuleDependencySorter.java -text
 api/src/org/labkey/api/module/ModuleFileCopyListener.java -text
 api/src/org/labkey/api/module/ModuleLoader.java -text
@@ -633,6 +634,7 @@ api/src/org/labkey/api/util/CaseInsensitiveHashMap.java -text
 api/src/org/labkey/api/util/CaseInsensitiveHashSet.java -text
 api/src/org/labkey/api/util/ContainerUtil.java -text
 api/src/org/labkey/api/util/ContextListener.java -text
+api/src/org/labkey/api/util/DOMUtil.java -text
 api/src/org/labkey/api/util/ExceptionReportingLevel.java -text
 api/src/org/labkey/api/util/ExceptionUtil.java -text
 api/src/org/labkey/api/util/Expression.java -text

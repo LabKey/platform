@@ -39,6 +39,8 @@ public interface CustomView
     void setCanInherit(boolean f);
     boolean isHidden();
     void setIsHidden(boolean f);
+    boolean isEditable();
+    String getCustomIconUrl();
 
 
     List<FieldKey> getColumns();

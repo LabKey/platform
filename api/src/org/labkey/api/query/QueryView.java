@@ -653,7 +653,11 @@ public class QueryView extends WebPartView<Object>
             item.setId("Views:" + label);
             if (label.equals(currentView))
                 item.setHighlighted(true);
-            item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
+            if (null != view.getCustomIconUrl())
+                item.setImageSrc(getViewContext().getContextPath() + "/" + view.getCustomIconUrl());
+            else
+                item.setImageSrc(getViewContext().getContextPath() +
+                        (null != view.getOwner() ? "/reports/grid.gif" : "/reports/grid_shared.gif"));
             menu.addMenuItem(item);
         }
     }
@@ -722,7 +726,7 @@ public class QueryView extends WebPartView<Object>
     public void addCustomizeViewItems(MenuButton button)
     {
         String label = "Apply View Filter";
-        if (_report == null)
+        if (_report == null && (null == _customView || _customView.isEditable()))
         {
             NavTree item = new NavTree("Customize View", urlFor(QueryAction.chooseColumns).toString());
             item.setId("Views:Customize View");
