@@ -24,6 +24,7 @@ import org.labkey.query.sql.SqlParser;
 import org.labkey.query.sql.antlr.SqlBaseTokenTypes;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.MemTracker;
 
 import java.util.Set;
 import java.util.List;
@@ -34,13 +35,6 @@ import junit.framework.TestSuite;
 
 public class QParser
 {
-    static private ASTFactory _factory = new ASTFactory()
-    {
-        public Class getASTNodeType(int tokenType) {
-            return Node.class;
-        }
-    };
-
     static private Set<String> keywords = new CaseInsensitiveHashSet(PageFlowUtil.set(
             "all",
             "any",
@@ -108,10 +102,7 @@ public class QParser
 
     static public SqlParser getParser(String str)
     {
-        SqlParser parser = new SqlParser(str);
-        parser.setASTFactory(_factory);
-        parser.setFilter(true);
-        return parser;
+        return new SqlParser(str);
     }
 
     static public QueryParseException wrapParseException(Throwable e)
@@ -137,11 +128,7 @@ public class QParser
         try
         {
             SqlParser parser = getParser(str);
-            parser.statement();
-            int last = parser.LA(1);
-            if (SqlBaseTokenTypes.UNION == last)
-                throw new QueryParseException("UNION is not supported", null, 0, 0);
-            Node node = (Node) parser.getAST();
+            Node node = parser.parseStatement();
             QQuery ret = node == null ? null : (QQuery) node.getQNode();
             if (ret != null)
                 ret.syntaxCheck(errors);
@@ -149,6 +136,8 @@ public class QParser
             {
                 errors.add(wrapParseException(e));
             }
+            assert MemTracker.put(node);
+            assert MemTracker.put(ret);
             return ret;
         }
         catch (Exception e)
@@ -228,13 +217,12 @@ public class QParser
 
 
 
- /* other keywords
-    all any cast class convert delete elements exists fetch full indices insert into limit new set some
-    timstampdiff update versioned both empty leading memeber of trailing
+ /* UNDONE keywords
+    all any  class delete elements exists fetch full indices insert into limit new set some update versioned both empty leading member of trailing
  */
     static String[] testSql = new String[]
     {
-        "SELECT 'text',1.0f,TRUE,FALSE,0x0ab12 FROM R",
+        "SELECT 'text',1,-2,1.0f,3.1415926535897932384626433832795,6.02214179e23,TRUE,FALSE,0x0ab12,NULL FROM R",
             
         "SELECT DISTINCT R.a, b AS B FROM rel R INNER JOIN S ON R.x=S.x WHERE R.y=0 AND R.a IS NULL OR R.b IS NOT NULL",
 
@@ -254,6 +242,11 @@ public class QParser
 
         "SELECT MS2SearchRuns.Flag,MS2SearchRuns.Links,MS2SearchRuns.Name,MS2SearchRuns.Created,MS2SearchRuns.RunGroups FROM MS2SearchRuns",
 
+        "SELECT CONVERT(a, VARCHAR), CONVERT(a+b, SQL_INTEGER), CONVERT(c, 'SQL_TIMESTAMP'), CONVERT(d, 'TIMESTAMP') FROM R",
+        "SELECT CAST(a AS VARCHAR), CAST(a+b AS INTEGER) FROM R",
+        "SELECT CAST(a AS VARCHAR), CAST(a+b AS INTEGER) FROM R",
+        "SELECT TIMESTAMPDIFF(a,b,SQL_TSI_SECOND), TIMESTAMPDIFF(a,b,SECOND), TIMESTAMPDIFF(a,b,'SQL_TSI_DAY'), TIMESTAMPDIFF(a,b,'DAY') FROM R",
+            
         // TEST FROM (SELECT)
         // WHERE EXISTS/ANY/SOME (SELECT)
 

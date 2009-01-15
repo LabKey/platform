@@ -19,6 +19,7 @@ package org.labkey.query.data;
 import org.labkey.api.query.*;
 import org.labkey.api.data.*;
 import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.util.MemTracker;
 import org.apache.log4j.Logger;
 
 import java.util.*;
@@ -56,6 +57,7 @@ public class Query
         _schema = schema;
         _subqueryAliasManager = new AliasManager(schema.getDbSchema());
         _queryAliasManager = new AliasManager(schema.getDbSchema());
+        assert MemTracker.put(this);
     }
 
 
@@ -75,6 +77,7 @@ public class Query
         {
             throw wrapRuntimeException(ex);
         }
+        assert MemTracker.put(this);
     }
 
 
@@ -911,6 +914,7 @@ loop:
         if (!_parseErrors.isEmpty())
             return null;
 
+        assert MemTracker.put(ret);
         return ret;
     }
 
@@ -978,6 +982,7 @@ loop:
                 }
             }
         }
+        assert MemTracker.put(ret);
         return ret;
     }
 
