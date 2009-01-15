@@ -242,9 +242,9 @@ public class XML {
 
                         } else if (t == LT) {
                             if (parse(x, o, n)) {
-                                if (o.length() == 0) {
+                                if (o.size() == 0) {
                                     context.accumulate(n, "");
-                                } else if (o.length() == 1 &&
+                                } else if (o.size() == 1 &&
                                        o.opt("content") != null) {
                                     context.accumulate(n, o.opt("content"));
                                 } else {
@@ -328,7 +328,7 @@ public class XML {
 // Loop thru the keys.
 
             jo = (JSONObject)o;
-            keys = jo.keys();
+            keys = jo.keySet().iterator();
             while (keys.hasNext()) {
                 k = keys.next().toString();
                 v = jo.get(k);

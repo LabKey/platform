@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRunTable;
+import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -66,5 +67,13 @@ public class AssayService
 
         @Nullable
         public List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean includeOtherContainers);
+
+        /**
+         * Creates a batch object but does not save it to the database
+         * @param container location for this batch to live
+         * @param name preferred name for the batch. If null, a default name will be assigned. If the name is already in
+         * use, a different name will be chosen. 
+         */
+        public ExpExperiment createStandardBatch(Container container, String name);
     }
 }

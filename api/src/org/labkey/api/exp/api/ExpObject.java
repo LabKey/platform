@@ -23,9 +23,10 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.ValidationException;
 
 import java.util.Comparator;
-import java.sql.SQLException;
+import java.util.Date;
 
 public interface ExpObject extends Identifiable
 {
@@ -38,7 +39,7 @@ public interface ExpObject extends Identifiable
     Container getContainer();
     void setContainer(Container container);
 
-    void setProperty(User user, PropertyDescriptor pd, Object value) throws SQLException;
+    void setProperty(User user, PropertyDescriptor pd, Object value) throws ValidationException;
     Object getProperty(PropertyDescriptor pd);
     Object getProperty(DomainProperty prop);
 
@@ -47,6 +48,9 @@ public interface ExpObject extends Identifiable
     String urlFlag(boolean flagged);
 
     User getCreatedBy();
+    Date getCreated();
+    User getModifiedBy();
+    Date getModified();
 
     public static final Comparator<ExpObject> NAME_COMPARATOR = new Comparator<ExpObject>()
     {

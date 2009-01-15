@@ -301,7 +301,7 @@ public class JSONTokener {
 
     /**
      * Get the next value. The value can be a Boolean, Double, Integer,
-     * JSONArray, JSONObject, Long, or String, or the JSONObject.NULL object.
+     * JSONArray, JSONObject, Long, or String.
      * @throws JSONException If syntax error.
      *
      * @return An object.
@@ -354,7 +354,7 @@ public class JSONTokener {
             return Boolean.FALSE;
         }
         if (s.equalsIgnoreCase("null")) {
-            return JSONObject.NULL;
+            return null;
         }
 
         /*

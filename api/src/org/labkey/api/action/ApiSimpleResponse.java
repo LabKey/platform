@@ -38,6 +38,11 @@ public class ApiSimpleResponse extends HashMap<String,Object> implements ApiResp
     {
     }
 
+    public ApiSimpleResponse(Map<String, Object> values)
+    {
+        putAll(values);
+    }
+
     public ApiSimpleResponse(String key, Object value)
     {
         put(key, value);
@@ -84,7 +89,6 @@ public class ApiSimpleResponse extends HashMap<String,Object> implements ApiResp
     {
         if(null == props || props.length == 0)
         {
-            Map<String, Object> map;
             //noinspection unchecked
             ObjectFactory<T> f = ObjectFactory.Registry.getFactory((Class<T>)bean.getClass());
             if (null == f)

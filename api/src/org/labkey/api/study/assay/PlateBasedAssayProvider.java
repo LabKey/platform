@@ -37,6 +37,7 @@ import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.InsertView;
+import org.labkey.api.query.ValidationException;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -232,7 +233,7 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
                     derivedMaterial.setProperty(context.getUser(), propertyEntry.getKey(), propertyEntry.getValue());
             }
         }
-        catch (SQLException e)
+        catch (ValidationException e)
         {
             throw new ExperimentException(e);
         }

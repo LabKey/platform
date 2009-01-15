@@ -24,7 +24,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.DateUtil;
 
 import java.io.IOException;
@@ -32,7 +31,6 @@ import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.text.SimpleDateFormat;
 
 /**
  * A JSONObject is an unordered collection of name/value pairs. Its
@@ -87,66 +85,12 @@ import java.text.SimpleDateFormat;
  * @author JSON.org
  * @version 2
  */
-public class JSONObject {
-
-    /**
-     * JSONObject.NULL is equivalent to the value that JavaScript calls null,
-     * whilst Java's null is equivalent to the value that JavaScript calls
-     * undefined.
-     */
-     private static final class Null {
-
-        /**
-         * There is only intended to be a single instance of the NULL object,
-         * so the clone method returns itself.
-         * @return     NULL.
-         */
-        protected final Object clone() {
-            return this;
-        }
-
-
-        /**
-         * A Null object is equal to the null value and to itself.
-         * @param object    An object to test for nullness.
-         * @return true if the object parameter is the JSONObject.NULL object
-         *  or null.
-         */
-        public boolean equals(Object object) {
-            return object == null || object == this;
-        }
-
-
-        /**
-         * Get the "null" string value.
-         * @return The string "null".
-         */
-        public String toString() {
-            return "null";
-        }
-    }
-
-
-    /**
-     * The hash map where the JSONObject's properties are kept.
-     */
-    private HashMap myHashMap;
-
-
-    /**
-     * It is sometimes more convenient and less ambiguous to have a
-     * <code>NULL</code> object than to use Java's <code>null</code> value.
-     * <code>JSONObject.NULL.equals(null)</code> returns <code>true</code>.
-     * <code>JSONObject.NULL.toString()</code> returns <code>"null"</code>.
-     */
-    public static final Object NULL = new Null();
-
+public class JSONObject extends HashMap<String, Object> {
 
     /**
      * Construct an empty JSONObject.
      */
     public JSONObject() {
-        this.myHashMap = new HashMap();
     }
 
 
@@ -160,8 +104,9 @@ public class JSONObject {
      */
     public JSONObject(JSONObject jo, String[] names) throws JSONException {
         this();
-        for (int i = 0; i < names.length; i += 1) {
-            putOpt(names[i], jo.opt(names[i]));
+        for (String name : names)
+        {
+            putOpt(name, jo.opt(name));
         }
     }
 
@@ -231,10 +176,11 @@ public class JSONObject {
      * @param map A map object that can be used to initialize the contents of
      *  the JSONObject.
      */
-    public JSONObject(Map map) {
-        this.myHashMap = (map == null) ?
-            new HashMap() :
-            new HashMap(map);
+    public JSONObject(Map<String, Object> map) {
+        if (map != null)
+        {
+            putAll(map);
+        }
     }
 
 
@@ -261,28 +207,38 @@ public class JSONObject {
         this();
         Class klass = bean.getClass();
         Method[] methods = klass.getMethods();
-        for (int i = 0; i < methods.length; i += 1) {
-            try {
-                Method method = methods[i];
+        for (Method method : methods)
+        {
+            try
+            {
                 String name = method.getName();
                 String key = "";
-                if (name.startsWith("get")) {
+                if (name.startsWith("get"))
+                {
                     key = name.substring(3);
-                } else if (name.startsWith("is")) {
+                }
+                else if (name.startsWith("is"))
+                {
                     key = name.substring(2);
                 }
                 if (key.length() > 0 &&
                         Character.isUpperCase(key.charAt(0)) &&
-                        method.getParameterTypes().length == 0) {
-                    if (key.length() == 1) {
+                        method.getParameterTypes().length == 0)
+                {
+                    if (key.length() == 1)
+                    {
                         key = key.toLowerCase();
-                    } else if (!Character.isUpperCase(key.charAt(1))) {
+                    }
+                    else if (!Character.isUpperCase(key.charAt(1)))
+                    {
                         key = key.substring(0, 1).toLowerCase() +
-                            key.substring(1);
+                                key.substring(1);
                     }
                     this.put(key, method.invoke(bean, null));
                 }
-            } catch (Exception e) {
+            }
+            catch (Exception e)
+            {
                 /* forget about it */
             }
         }
@@ -302,13 +258,16 @@ public class JSONObject {
     public JSONObject(Object object, String names[]) {
         this();
         Class c = object.getClass();
-        for (int i = 0; i < names.length; i += 1) {
-            String name = names[i];
-        	try {
+        for (String name : names)
+        {
+            try
+            {
                 Field field = c.getField(name);
                 Object value = field.get(object);
                 this.put(name, value);
-        	} catch (Exception e) {
+            }
+            catch (Exception e)
+            {
                 /* forget about it */
             }
         }    
@@ -407,23 +366,6 @@ public class JSONObject {
             }
         }
         return s;
-    }
-
-
-    /**
-     * Get the value object associated with a key.
-     *
-     * @param key   A key string.
-     * @return      The object associated with the key.
-     * @throws   JSONException if the key is not found.
-     */
-    public Object get(String key) throws JSONException {
-        Object o = opt(key);
-        if (o == null) {
-            throw new JSONException("JSONObject[" + quote(key) +
-                    "] not found.");
-        }
-        return o;
     }
 
 
@@ -545,15 +487,15 @@ public class JSONObject {
      * @return An array of field names, or null if there are no names.
      */
     public static String[] getNames(JSONObject jo) {
-    	int length = jo.length();
+    	int length = jo.size();
     	if (length == 0) {
     		return null;
     	}
-    	Iterator i = jo.keys();
+    	Iterator<String> i = jo.keySet().iterator();
     	String[] names = new String[length];
     	int j = 0;
     	while (i.hasNext()) {
-    		names[j] = (String)i.next();
+    		names[j] = i.next();
     		j += 1;
     	}
         return names;
@@ -601,7 +543,7 @@ public class JSONObject {
      * @return      true if the key exists in the JSONObject.
      */
     public boolean has(String key) {
-        return this.myHashMap.containsKey(key);
+        return containsKey(key);
     }
 
 
@@ -609,31 +551,10 @@ public class JSONObject {
      * Determine if the value associated with the key is null or if there is
      *  no value.
      * @param key   A key string.
-     * @return      true if there is no value associated with the key or if
-     *  the value is the JSONObject.NULL object.
+     * @return      true if there is no value associated with the key
      */
     public boolean isNull(String key) {
-        return JSONObject.NULL.equals(opt(key));
-    }
-
-
-    /**
-     * Get an enumeration of the keys of the JSONObject.
-     *
-     * @return An iterator of the keys.
-     */
-    public Iterator keys() {
-        return this.myHashMap.keySet().iterator();
-    }
-
-
-    /**
-     * Get the number of keys stored in the JSONObject.
-     *
-     * @return The number of keys in the JSONObject.
-     */
-    public int length() {
-        return this.myHashMap.size();
+        return !containsKey(key) || get(key) == null;
     }
 
 
@@ -645,9 +566,9 @@ public class JSONObject {
      */
     public JSONArray names() {
         JSONArray ja = new JSONArray();
-        Iterator  keys = keys();
-        while (keys.hasNext()) {
-            ja.put(keys.next());
+        for (String s : keySet())
+        {
+            ja.put(s);
         }
         return ja.length() == 0 ? null : ja;
     }
@@ -702,7 +623,7 @@ public class JSONObject {
      * @return      An object which is the value, or null if there is no value.
      */
     public Object opt(String key) {
-        return key == null ? null : this.myHashMap.get(key);
+        return key == null ? null : get(key);
     }
 
 
@@ -779,7 +700,7 @@ public class JSONObject {
         try {
             Object o = opt(key);
             return o instanceof Number ? ((Number)o).doubleValue() :
-                new Double((String)o).doubleValue();
+                    Double.parseDouble((String) o);
         } catch (Exception e) {
             return defaultValue;
         }
@@ -971,19 +892,17 @@ public class JSONObject {
      * @return      this.
      * @throws JSONException
      */
-    public JSONObject put(String key, Map value) throws JSONException {
-        put(key, new JSONObject(value));
+    public JSONObject put(String key, Map<String, Object> value) throws JSONException {
+        put(key, (Object)new JSONObject(value));
         return this;
     }
 
 
     /**
-     * Put a key/value pair in the JSONObject. If the value is null,
-     * then the key will be removed from the JSONObject if it is present.
+     * Put a key/value pair in the JSONObject.
      * @param key   A key string.
      * @param value An object which is the value. It should be of one of these
-     *  types: Boolean, Double, Integer, JSONArray, JSONObject, Long, String,
-     *  or the JSONObject.NULL object.
+     *  types: Boolean, Double, Integer, JSONArray, JSONObject, Long, or String.
      * @return this.
      * @throws JSONException If the value is non-finite number
      *  or if the key is null.
@@ -994,10 +913,9 @@ public class JSONObject {
         }
         if (value != null) {
             testValidity(value);
-            this.myHashMap.put(key, value);
-        } else {
-            remove(key);
         }
+        super.put(key, value);
+
         return this;
     }
 
@@ -1007,8 +925,7 @@ public class JSONObject {
      * key and the value are both non-null.
      * @param key   A key string.
      * @param value An object which is the value. It should be of one of these
-     *  types: Boolean, Double, Integer, JSONArray, JSONObject, Long, String,
-     *  or the JSONObject.NULL object.
+     *  types: Boolean, Double, Integer, JSONArray, JSONObject, Long, or String.
      * @return this.
      * @throws JSONException If the value is a non-finite number.
      */
@@ -1086,17 +1003,6 @@ public class JSONObject {
     }
 
     /**
-     * Remove a name and its value, if present.
-     * @param key The name to be removed.
-     * @return The value that was associated with the name,
-     * or null if there was no value.
-     */
-    public Object remove(String key) {
-        return this.myHashMap.remove(key);
-    }
-
-
-    /**
      * Throw an exception if the object is an NaN or infinite number.
      * @param o The object to test.
      * @throws JSONException If o is a non-finite number.
@@ -1151,7 +1057,7 @@ public class JSONObject {
      */
     public String toString() {
         try {
-            Iterator     keys = keys();
+            Iterator     keys = keySet().iterator();
             StringBuffer sb = new StringBuffer("{");
 
             while (keys.hasNext()) {
@@ -1161,7 +1067,7 @@ public class JSONObject {
                 Object o = keys.next();
                 sb.append(quote(o.toString()));
                 sb.append(':');
-                sb.append(valueToString(this.myHashMap.get(o)));
+                sb.append(valueToString(get(o)));
             }
             sb.append('}');
             return sb.toString();
@@ -1203,11 +1109,11 @@ public class JSONObject {
      */
     String toString(int indentFactor, int indent) throws JSONException {
         int          i;
-        int          n = length();
+        int          n = size();
         if (n == 0) {
             return "{}";
         }
-        Iterator     keys = keys();
+        Iterator     keys = keySet().iterator();
         StringBuffer sb = new StringBuffer("{");
         int          newindent = indent + indentFactor;
         Object       o;
@@ -1215,7 +1121,7 @@ public class JSONObject {
             o = keys.next();
             sb.append(quote(o.toString()));
             sb.append(": ");
-            sb.append(valueToString(this.myHashMap.get(o), indentFactor,
+            sb.append(valueToString(get(o), indentFactor,
                     indent));
         } else {
             while (keys.hasNext()) {
@@ -1230,7 +1136,7 @@ public class JSONObject {
                 }
                 sb.append(quote(o.toString()));
                 sb.append(": ");
-                sb.append(valueToString(this.myHashMap.get(o), indentFactor,
+                sb.append(valueToString(get(o), indentFactor,
                         newindent));
             }
             if (sb.length() > 1) {
@@ -1290,7 +1196,7 @@ public class JSONObject {
             return value.toString();
         }
         if (value instanceof Map) {
-            return new JSONObject((Map)value).toString();
+            return new JSONObject((Map<String, Object>)value).toString();
         }
         if (value instanceof Collection) {
             return new JSONArray((Collection)value).toString();
@@ -1372,7 +1278,7 @@ public class JSONObject {
      public Writer write(Writer writer) throws JSONException {
         try {
             boolean  b = false;
-            Iterator keys = keys();
+            Iterator keys = keySet().iterator();
             writer.write('{');
 
             while (keys.hasNext()) {
@@ -1382,7 +1288,7 @@ public class JSONObject {
                 Object k = keys.next();
                 writer.write(quote(k.toString()));
                 writer.write(':');
-                Object v = this.myHashMap.get(k);
+                Object v = get(k);
                 if (v instanceof JSONObject) {
                     ((JSONObject)v).write(writer);
                 } else if (v instanceof JSONArray) {
@@ -1398,23 +1304,4 @@ public class JSONObject {
             throw new JSONException(e);
         }
      }
-
-    public Map<String,Object> getMap()
-    {
-        return getMap(false);
-    }
-
-    public Map<String,Object> getMap(boolean jsonNullToJavaNull)
-    {
-        HashMap<String,Object> ret = new CaseInsensitiveHashMap<Object>();
-        for(Object key : myHashMap.keySet())
-        {
-            Object value = myHashMap.get(key);
-            if(jsonNullToJavaNull && value instanceof Null)
-                ret.put((String)key, null);
-            else
-                ret.put((String)key, myHashMap.get(key));
-        }
-        return ret;
-    }
 }

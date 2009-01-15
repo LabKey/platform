@@ -61,6 +61,11 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     PropertyDescriptor[] getRunDataColumns(ExpProtocol protocol);
 
+    /**
+     * Creates a run, but does not persist it to the database. Creates the run only, no protocol applications, etc.
+     */
+    ExpRun createExperimentRun(String name, Container container, ExpProtocol protocol);
+    
     Pair<ExpRun, ExpExperiment> saveExperimentRun(AssayRunUploadContext context, ExpExperiment batch) throws ExperimentException;
 
     List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles);

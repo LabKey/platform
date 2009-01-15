@@ -38,8 +38,7 @@ import java.util.Map;
  * methods for accessing the values by index, and <code>put</code> methods for
  * adding or replacing values. The values can be any of these types:
  * <code>Boolean</code>, <code>JSONArray</code>, <code>JSONObject</code>,
- * <code>Number</code>, <code>String</code>, or the
- * <code>JSONObject.NULL object</code>.
+ * <code>Number</code>, or <code>String</code>.
  * <p>
  * The constructor can convert a JSON text into a Java object. The
  * <code>toString</code> method converts to JSON text.
@@ -319,7 +318,7 @@ public class JSONArray {
      * @return true if the value at the index is null, or if there is no value.
      */
     public boolean isNull(int index) {
-        return JSONObject.NULL.equals(opt(index));
+        return opt(index) == null;
     }
 
 
@@ -561,7 +560,14 @@ public class JSONArray {
      * @return      this.
      */
     public JSONArray put(Collection value) {
-        put(new JSONArray(value));
+        if (value instanceof JSONObject)
+        {
+            put((Object)value);
+        }
+        else
+        {
+            put(new JSONArray(value));
+        }
         return this;
     }
 
@@ -612,7 +618,14 @@ public class JSONArray {
      * @return      this.
      */
     public JSONArray put(Map value) {
-        put(new JSONObject(value));
+        if (value instanceof JSONObject)
+        {
+            put((Object)value);
+        }
+        else
+        {
+            put(new JSONObject(value));
+        }
         return this;
     }
 
@@ -620,8 +633,7 @@ public class JSONArray {
     /**
      * Append an object value. This increases the array's length by one.
      * @param value An object value.  The value should be a
-     *  Boolean, Double, Integer, JSONArray, JSONObject, Long, or String, or the
-     *  JSONObject.NULL object.
+     *  Boolean, Double, Integer, JSONArray, JSONObject, Long, or String.
      * @return this.
      */
     public JSONArray put(Object value) {
@@ -727,8 +739,7 @@ public class JSONArray {
      *  necessary to pad it out.
      * @param index The subscript.
      * @param value The value to put into the array. The value should be a
-     *  Boolean, Double, Integer, JSONArray, JSONObject, Long, or String, or the
-     *  JSONObject.NULL object.
+     *  Boolean, Double, Integer, JSONArray, JSONObject, Long, or String.
      * @return this.
      * @throws JSONException If the index is negative or if the the value is
      *  an invalid number.
@@ -742,7 +753,7 @@ public class JSONArray {
             this.myArrayList.set(index, value);
         } else {
             while (index != length()) {
-                put(JSONObject.NULL);
+                put((Object)null);
             }
             put(value);
         }

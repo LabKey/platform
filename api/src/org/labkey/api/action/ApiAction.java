@@ -15,7 +15,6 @@
  */
 package org.labkey.api.action;
 
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -30,9 +29,6 @@ import org.springframework.beans.MutablePropertyValues;
 
 import java.io.BufferedReader;
 import java.util.Iterator;
-import java.util.Map;
-
-import groovy.lang.PropertyValue;
 
 /**
  * Base class for API actions.
@@ -233,7 +229,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
 
         private void addPropertyValues(JSONObject jsonObj) throws JSONException
         {
-            Iterator keys = jsonObj.keys();
+            Iterator keys = jsonObj.keySet().iterator();
             while(keys.hasNext())
             {
                 String key = (String)keys.next();
@@ -255,8 +251,6 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
                 }
                 else if (value instanceof JSONObject)
                     throw new IllegalArgumentException("Nested objects and arrays are not supported at this time.");
-                else if(value.equals(JSONObject.NULL))
-                    value = null;
                 addPropertyValue(key, value);
             }
         }

@@ -52,6 +52,4 @@ public interface ExpProtocolOutput extends ExpObject
 
     void save(User user);
     void delete(User user);
-
-    Date getCreated();
 }

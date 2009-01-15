@@ -170,7 +170,7 @@ public class Test {
             j.put("double", 123456789012345678901234567890.);
             j.put("true", true);
             j.put("false", false);
-            j.put("null", JSONObject.NULL);
+            j.put("null", (Object)null);
             j.put("bool", "true");
             j.put("zero", -0.0);
             j.put("\\u2028", "\u2028");
@@ -361,7 +361,7 @@ public class Test {
             System.out.println(a.toString(4));
 
             System.out.println("\nKeys: ");
-            it = j.keys();
+            it = j.keySet().iterator();
             while (it.hasNext()) {
                 s = (String)it.next();
                 System.out.println(s + ": " + j.getString(s));

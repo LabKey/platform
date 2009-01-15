@@ -24,8 +24,6 @@ public interface ExpExperiment extends ExpObject
     ExpRun[] getRuns();
     ExpRun[] getRuns(ExpProtocol parentProtocol, ExpProtocol childProtocol);
     ExpProtocol[] getProtocols();
-    Date getCreated();
-    User getCreatedBy();
     void removeRun(User user, ExpRun run) throws Exception;
     void addRuns(User user, ExpRun... run);
     void save(User user);

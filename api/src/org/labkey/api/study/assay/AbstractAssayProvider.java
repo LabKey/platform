@@ -408,8 +408,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     protected ExpRun createExperimentRun(AssayRunUploadContext context) throws ExperimentException
     {
-        Container container = context.getContainer();
-        String entityId = GUID.makeGUID();
         File file = null;
         {
             try
@@ -425,7 +423,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 throw new RuntimeException(e);
             }
         }
-        String name;
+        String name = null;
         if (context.getName() != null)
         {
             name = context.getName();
@@ -434,22 +432,30 @@ public abstract class AbstractAssayProvider implements AssayProvider
         {
             name = file.getName();
         }
-        else
-        {
-            name = "[Untitled]";
-        }
+        ExpRun run = createExperimentRun(name, context.getContainer(), context.getProtocol());
 
-        ExpRun run = ExperimentService.get().createExperimentRun(container, name);
-
-        Lsid lsid = new Lsid(_runLSIDPrefix, "Folder-" + container.getRowId(), entityId);
-        run.setLSID(lsid.toString());
-        run.setProtocol(ExperimentService.get().getExpProtocol(context.getProtocol().getRowId()));
         run.setComments(context.getComments());
-        run.setEntityId(entityId);
         if (file != null)
         {
             run.setFilePathRoot(file.getParentFile());
         }
+        return run;
+    }
+
+    public ExpRun createExperimentRun(String name, Container container, ExpProtocol protocol)
+    {
+        if (name == null)
+        {
+            name = "[Untitled]";
+        }
+
+        String entityId = GUID.makeGUID();
+        ExpRun run = ExperimentService.get().createExperimentRun(container, name);
+
+        Lsid lsid = new Lsid(_runLSIDPrefix, "Folder-" + container.getRowId(), entityId);
+        run.setLSID(lsid.toString());
+        run.setProtocol(ExperimentService.get().getExpProtocol(protocol.getRowId()));
+        run.setEntityId(entityId);
         return run;
     }
 
@@ -542,17 +548,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
             if (batch == null)
             {
-                String namePrefix = DateUtil.formatDate() + " batch ";
-                int batchNumber = 1;
-                do
-                {
-                    batch = ExperimentService.get().createExpExperiment(run.getContainer(), namePrefix + batchNumber++);
-                    Lsid lsid = new Lsid(batch.getLSID());
-                    lsid.setNamespaceSuffix(lsid.getNamespaceSuffix() + "AssayBatch");
-                    batch.setLSID(lsid);
-                }
-                while(ExperimentService.get().getExpExperiment(batch.getLSID()) != null);
-
+                batch = AssayService.get().createStandardBatch(run.getContainer(), null);
                 batch.save(context.getUser());
                 savePropertyObject(batch.getLSID(), uploadSetProperties, context.getContainer());
             }
