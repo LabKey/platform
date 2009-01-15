@@ -19,10 +19,8 @@ package org.labkey.study.assay;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpRunTable;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.api.*;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -35,6 +33,7 @@ import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.DateUtil;
 import org.labkey.study.assay.query.AssayListPortalView;
 import org.labkey.study.assay.query.AssayListQueryView;
 import org.labkey.study.assay.query.AssaySchema;
@@ -239,5 +238,30 @@ public class AssayManager implements AssayService.Interface
         }
 
         return result;
+    }
+
+    public ExpExperiment createStandardBatch(Container container, String namePrefix)
+    {
+        if (namePrefix == null)
+        {
+            namePrefix = DateUtil.formatDate() + " batch";
+        }
+        ExpExperiment batch;
+        int batchNumber = 1;
+        do
+        {
+            String name = namePrefix;
+            if (batchNumber > 1)
+            {
+                name = namePrefix + " " + batchNumber;
+            }
+             batchNumber++;
+            batch = ExperimentService.get().createExpExperiment(container, name);
+            Lsid lsid = new Lsid(batch.getLSID());
+            lsid.setNamespaceSuffix(lsid.getNamespaceSuffix() + "AssayBatch");
+            batch.setLSID(lsid);
+        }
+        while(ExperimentService.get().getExpExperiment(batch.getLSID()) != null);
+        return batch;
     }
 }

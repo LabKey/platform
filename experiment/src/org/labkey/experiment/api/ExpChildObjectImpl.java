@@ -25,6 +25,8 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
 
+import java.util.Date;
+
 public class ExpChildObjectImpl extends ExpObjectImpl implements ExpChildObject
 {
     ExpObject _owner;
@@ -92,6 +94,21 @@ public class ExpChildObjectImpl extends ExpObjectImpl implements ExpChildObject
     public User getCreatedBy()
     {
         return _parent.getCreatedBy();
+    }
+
+    public Date getCreated()
+    {
+        return _parent.getCreated();
+    }
+
+    public User getModifiedBy()
+    {
+        return _parent.getModifiedBy();
+    }
+
+    public Date getModified()
+    {
+        return _parent.getModified();
     }
 
     public void delete(User user) throws Exception

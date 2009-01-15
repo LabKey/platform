@@ -19,7 +19,6 @@ package org.labkey.experiment.api;
 import org.labkey.api.exp.api.ExpProtocolAction;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.experiment.api.ProtocolAction;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.security.User;
@@ -71,7 +70,7 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
         ResultSet rs = null;
         try
         {
-            List<ExpProtocolAction> ret = new ArrayList();
+            List<ExpProtocolAction> ret = new ArrayList<ExpProtocolAction>();
             SimpleFilter filter = new SimpleFilter();
             filter.addCondition("ActionId", getRowId());
             rs = Table.select(ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), Collections.singleton("PredecessorId"), filter, null);
@@ -79,7 +78,7 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
             {
                 ret.add(fromRowId(rs.getInt(1)));
             }
-            return ret.toArray(new ExpProtocolAction[0]);
+            return ret.toArray(new ExpProtocolAction[ret.size()]);
         }
         catch (SQLException e)
         {
@@ -98,7 +97,7 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
         ResultSet rs = null;
         try
         {
-            List<ExpProtocolAction> ret = new ArrayList();
+            List<ExpProtocolAction> ret = new ArrayList<ExpProtocolAction>();
             SimpleFilter filter = new SimpleFilter();
             filter.addCondition("PredecessorId", getRowId());
             rs = Table.select(ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), Collections.singleton("ActionId"), filter, null);
@@ -106,7 +105,7 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
             {
                 ret.add(fromRowId(rs.getInt(1)));
             }
-            return ret.toArray(new ExpProtocolAction[0]);
+            return ret.toArray(new ExpProtocolAction[ret.size()]);
         }
         catch (SQLException e)
         {
@@ -121,7 +120,7 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
 
     public void addSuccessor(User user, ExpProtocolAction successor) throws Exception
     {
-        Map<String, Integer> map = new HashMap();
+        Map<String, Integer> map = new HashMap<String, Integer>();
         map.put("PredecessorId", getRowId());
         map.put("ActionId", successor.getRowId());
         Table.insert(user, ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), map);

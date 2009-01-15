@@ -100,7 +100,10 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
         if (queryDef == null)
         {
             queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), tableName, true);
-            gwtTableInfo.setUserDefinedQuery(true);
+            if (queryDef != null)
+            {
+                gwtTableInfo.setUserDefinedQuery(true);
+            }
         }
 
         if (queryDef != null)
@@ -170,7 +173,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
 
     private TableType getTableType(String name, TablesDocument doc)
     {
-        if (doc.getTables() != null)
+        if (doc != null && doc.getTables() != null)
         {
             TablesDocument.Tables tables = doc.getTables();
             for (TableType tableType : tables.getTableArray())
@@ -211,7 +214,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
         QueryDef queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), gwtTableInfo.getName(), gwtTableInfo.isUserDefinedQuery());
         TableInfo rawTableInfo = schema.getTable(gwtTableInfo.getName(), "alias", false);
 
-        TablesDocument doc;
+        TablesDocument doc = null;
         TableType xmlTable = null; 
 
         if (queryDef != null)
@@ -225,9 +228,13 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             queryDef.setSchema(schemaName);
             queryDef.setContainer(getViewContext().getContainer().getId());
             queryDef.setName(gwtTableInfo.getName());
-            doc = TablesDocument.Factory.newInstance();
         }
 
+        if (doc == null)
+        {
+            doc = TablesDocument.Factory.newInstance();
+        }
+        
         if (xmlTable == null)
         {
             TablesDocument.Tables tables = doc.addNewTables();

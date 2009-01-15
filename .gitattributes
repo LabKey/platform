@@ -677,6 +677,7 @@ experiment/src/org/labkey/experiment/api/ExpDataTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpExperimentImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpExperimentTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpIdentifiableBaseImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpIdentifiableEntityImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpMaterialImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpMaterialRunInputImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpMaterialTableImpl.java -text
@@ -1881,6 +1882,9 @@ study/src/org/labkey/study/controllers/StudyController.java -text
 study/src/org/labkey/study/controllers/StudyDefinitionController.java -text
 study/src/org/labkey/study/controllers/StudyPropertiesController.java -text
 study/src/org/labkey/study/controllers/assay/AssayController.java -text
+study/src/org/labkey/study/controllers/assay/actions/AbstractAssayAPIAction.java -text
+study/src/org/labkey/study/controllers/assay/actions/GetAssayBatchAction.java -text
+study/src/org/labkey/study/controllers/assay/actions/SaveAssayBatchAction.java -text
 study/src/org/labkey/study/controllers/designer/DesignerController.java -text
 study/src/org/labkey/study/controllers/plate/PlateController.java -text
 study/src/org/labkey/study/controllers/reports/ReportsController.java -text

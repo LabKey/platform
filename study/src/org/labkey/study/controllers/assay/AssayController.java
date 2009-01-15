@@ -39,6 +39,8 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.assay.AssayServiceImpl;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
+import org.labkey.study.controllers.assay.actions.SaveAssayBatchAction;
+import org.labkey.study.controllers.assay.actions.GetAssayBatchAction;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -54,6 +56,8 @@ import java.util.*;
 public class AssayController extends SpringActionController
 {
     private static final DefaultActionResolver _resolver = new DefaultActionResolver(AssayController.class,
+            GetAssayBatchAction.class,
+            SaveAssayBatchAction.class,
             PublishStartAction.class,
             PublishConfirmAction.class,
             UploadWizardAction.class,

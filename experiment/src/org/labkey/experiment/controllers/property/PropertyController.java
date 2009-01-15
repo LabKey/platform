@@ -480,7 +480,7 @@ public class PropertyController extends SpringActionController
         domain.setDomainURI(jsonDomain.getString("domainURI"));
 
         // Description can be null
-        domain.setDescription((String)jsonDomain.getMap(true).get("description"));
+        domain.setDescription((String)jsonDomain.get("description"));
 
         JSONArray jsonFields = jsonDomain.getJSONArray("fields");
         List<GWTPropertyDescriptor> props = new ArrayList<GWTPropertyDescriptor>();
@@ -503,26 +503,25 @@ public class PropertyController extends SpringActionController
         prop.setRangeURI(obj.getString("rangeURI"));
 
         // Other fields can be null
-        Map<String,Object> map = obj.getMap(true);
-        Integer propId = (Integer)map.get("propertyId");
+        Integer propId = (Integer)obj.get("propertyId");
         if (propId != null)
             prop.setPropertyId(propId.intValue());
 
-        Boolean required = (Boolean)map.get("required");
+        Boolean required = (Boolean)obj.get("required");
         if (required != null)
             prop.setRequired(required.booleanValue());
 
-        prop.setPropertyURI((String)map.get("propertyURI"));
-        prop.setOntologyURI((String)map.get("ontologyURI"));
-        prop.setDescription((String)map.get("description"));
-        prop.setConceptURI((String)map.get("conceptURI"));
-        prop.setLabel((String)map.get("label"));
-        prop.setSearchTerms((String)map.get("searchTerms"));
-        prop.setSemanticType((String)map.get("semanticType"));
-        prop.setFormat((String)map.get("format"));
-        prop.setLookupContainer((String)map.get("lookupContainer"));
-        prop.setLookupSchema((String)map.get("lookupSchema"));
-        prop.setLookupQuery((String)map.get("lookupQuery"));
+        prop.setPropertyURI((String)obj.get("propertyURI"));
+        prop.setOntologyURI((String)obj.get("ontologyURI"));
+        prop.setDescription((String)obj.get("description"));
+        prop.setConceptURI((String)obj.get("conceptURI"));
+        prop.setLabel((String)obj.get("label"));
+        prop.setSearchTerms((String)obj.get("searchTerms"));
+        prop.setSemanticType((String)obj.get("semanticType"));
+        prop.setFormat((String)obj.get("format"));
+        prop.setLookupContainer((String)obj.get("lookupContainer"));
+        prop.setLookupSchema((String)obj.get("lookupSchema"));
+        prop.setLookupQuery((String)obj.get("lookupQuery"));
 
         return prop;
     }

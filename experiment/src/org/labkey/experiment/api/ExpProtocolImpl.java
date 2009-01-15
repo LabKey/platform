@@ -31,7 +31,7 @@ import org.labkey.api.util.URLHelper;
 import java.sql.SQLException;
 import java.util.*;
 
-public class ExpProtocolImpl extends ExpIdentifiableBaseImpl<Protocol> implements ExpProtocol
+public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> implements ExpProtocol
 {
     public ExpProtocolImpl(Protocol protocol)
     {
@@ -41,11 +41,6 @@ public class ExpProtocolImpl extends ExpIdentifiableBaseImpl<Protocol> implement
     public URLHelper detailsURL()
     {
         return null;
-    }
-
-    public User getCreatedBy()
-    {
-        return UserManager.getUser(_object.getCreatedBy());
     }
 
     public ApplicationType getApplicationType()

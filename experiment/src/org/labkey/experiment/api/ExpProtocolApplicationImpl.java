@@ -45,10 +45,28 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         return null;
     }
 
+    public Date getCreated()
+    {
+        ExpRun run = getRun();
+        return null == run ? null : run.getCreated();
+    }
+
     public User getCreatedBy()
     {
-        ExpProtocolImpl protocol = getProtocol();
-        return null == protocol ? null : protocol.getCreatedBy();
+        ExpRun run = getRun();
+        return null == run ? null : run.getCreatedBy();
+    }
+
+    public User getModifiedBy()
+    {
+        ExpRun run = getRun();
+        return null == run ? null : run.getModifiedBy();
+    }
+
+    public Date getModified()
+    {
+        ExpRun run = getRun();
+        return null == run ? null : run.getModified();
     }
 
     public Container getContainer()

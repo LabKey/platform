@@ -122,6 +122,18 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
         return null == run ? null : run.getCreatedBy();
     }
 
+    public User getModifiedBy()
+    {
+        ExpRunImpl run = getRun();
+        return null == run ? null : run.getModifiedBy();
+    }
+
+    public Date getModified()
+    {
+        ExpRunImpl run = getRun();
+        return null == run ? null : run.getModified();
+    }
+
     public ExpRunImpl getRun()
     {
         if (_object.getRunId() == null)

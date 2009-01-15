@@ -20,7 +20,6 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -31,7 +30,7 @@ import java.io.File;
 import java.sql.SQLException;
 import java.util.*;
 
-public class ExpRunImpl extends ExpIdentifiableBaseImpl<ExperimentRun> implements ExpRun
+public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> implements ExpRun
 {
     private boolean _populated;
 
@@ -135,16 +134,6 @@ public class ExpRunImpl extends ExpIdentifiableBaseImpl<ExperimentRun> implement
     public void setFilePathRoot(File file)
     {
         _object.setFilePathRoot(file.getAbsolutePath());
-    }
-
-    public Date getCreated()
-    {
-        return _object.getCreated();
-    }
-
-    public User getCreatedBy()
-    {
-        return UserManager.getUser(_object.getCreatedBy());
     }
 
     static final public String s_urlFlagRun = AppProps.getInstance().getContextPath() + "/Experiment/flagRun.gif";

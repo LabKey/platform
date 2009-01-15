@@ -17,8 +17,6 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpChildObject;
 import org.labkey.api.exp.api.ExperimentService;
@@ -34,6 +32,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.ObjectUtils;
 
 import java.util.Map;
+import java.util.Date;
 import java.sql.SQLException;
 import java.io.Serializable;
 
@@ -94,7 +93,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
         return this;
     }
 
-    public void setProperty(User user, PropertyDescriptor pd, Object value) throws SQLException
+    public void setProperty(User user, PropertyDescriptor pd, Object value) throws ValidationException
     {
         if (pd.getPropertyType() == PropertyType.RESOURCE)
             throw new IllegalArgumentException("PropertyType resource is NYI in this method");
@@ -120,10 +119,6 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
                 ExperimentService.get().commitTransaction();
                 fTrans = false;
             }
-        }
-        catch (ValidationException ve)
-        {
-            throw new SQLException(ve.getMessage());
         }
         finally
         {

@@ -1464,8 +1464,7 @@ public class QueryControllerSpring extends SpringActionController
             {
                 for(int idx = 0; idx < rows.length(); ++idx)
                 {
-                    JSONObject row = rows.getJSONObject(idx);
-                    Map<String,Object> rowMap = row.getMap(true);
+                    Map<String,Object> rowMap = rows.getJSONObject(idx);
                     if(null != rowMap)
                     {
                         saveRow(qus, rowMap, responseRows);
@@ -1608,8 +1607,8 @@ public class QueryControllerSpring extends SpringActionController
             //for this action, the shape of the row map is a little different so as to
             //accommodate the action and old keys and such
             String command = (String)row.get(PROP_COMMAND);
-            Map<String,Object> values = ((JSONObject)row.get(PROP_VALUES)).getMap(true);
-            Map<String,Object> oldKeys = row.containsKey(PROP_OLD_KEYS) ? ((JSONObject)row.get(PROP_OLD_KEYS)).getMap(true) : null;
+            Map<String,Object> values = ((JSONObject)row.get(PROP_VALUES));
+            Map<String,Object> oldKeys = row.containsKey(PROP_OLD_KEYS) ? ((JSONObject)row.get(PROP_OLD_KEYS)) : null;
             Map<String, Object> responseRow = new HashMap<String,Object>();
 
             responseRow.put(PROP_COMMAND, command);

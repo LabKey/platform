@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 import java.sql.SQLException;
 import java.util.Date;
 
-public class ExpExperimentImpl extends ExpIdentifiableBaseImpl<Experiment> implements ExpExperiment
+public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> implements ExpExperiment
 {
     static final private Logger _log = Logger.getLogger(ExpExperimentImpl.class);
 
@@ -59,16 +59,6 @@ public class ExpExperimentImpl extends ExpIdentifiableBaseImpl<Experiment> imple
     {
         ExperimentRun[] runs = ExperimentServiceImpl.get().getRunsForExperiment(getLSID());
         return ExpRunImpl.fromRuns(runs);
-    }
-
-    public Date getCreated()
-    {
-        return _object.getCreated();
-    }
-
-    public User getCreatedBy()
-    {
-        return UserManager.getUser(_object.getCreatedBy());
     }
 
     public ExpRun[] getRuns(ExpProtocol parentProtocol, ExpProtocol childProtocol)
