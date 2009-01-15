@@ -28,11 +28,12 @@ public class QNumber extends QExpr implements IConstant
     {
     }
 
-    public void setText(String str)
+	@Override
+    public void setTokenText(String str)
     {
-        super.setText(str);
-
+        super.setTokenText(str);
     }
+
 
     public QNumber(Number value)
     {
@@ -56,7 +57,7 @@ public class QNumber extends QExpr implements IConstant
         {
             throw new IllegalArgumentException();
         }
-        setText(value.toString());
+        setTokenText(value.toString());
     }
 
     public Number getValue()

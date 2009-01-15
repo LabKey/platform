@@ -26,7 +26,7 @@ public class QDot extends QFieldKey
 
     public QDot(QExpr left, QExpr right)
     {
-        insertChildren(left, right);
+        appendChildren(left, right);
     }
 
     public FieldKey getFieldKey()

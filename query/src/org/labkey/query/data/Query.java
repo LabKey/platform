@@ -28,6 +28,8 @@ import java.io.StringWriter;
 
 import org.labkey.query.sql.*;
 import org.labkey.query.design.*;
+import static org.labkey.query.sql.antlr.SqlBaseTokenTypes.*;
+
 
 public class Query
 {
@@ -46,9 +48,9 @@ public class Query
     private QDistinct _distinct;
     private Map<FieldKey, QTable> _from;
     private Map<FieldKey, TableInfo> _tables;
-    private Map<FieldKey, ColumnInfo> _declaredFields = new HashMap();
+    private Map<FieldKey, ColumnInfo> _declaredFields = new HashMap<FieldKey, ColumnInfo>();
     private SQLTableInfo _subqueryTable;
-    private List<QueryParseException> _parseErrors = new ArrayList();
+    private List<QueryParseException> _parseErrors = new ArrayList<QueryParseException>();
     private AliasManager _subqueryAliasManager;
     private AliasManager _queryAliasManager;
 
@@ -118,8 +120,8 @@ public class Query
     
     private void parseTree()
     {
-        _columns = new ArrayList();
-        _from = new LinkedHashMap();
+        _columns = new ArrayList<QColumn>();
+        _from = new LinkedHashMap<FieldKey, QTable>();
         _filter = new QWhere();
         if (_root == null)
             return;
@@ -128,7 +130,7 @@ public class Query
         if (select != null)
         {
             boolean first = true;
-            for (QNode node : _root.getSelect().children())
+            for (QNode<QExpr> node : _root.getSelect().children())
             {
                 if (node instanceof QDistinct)
                 {
@@ -142,7 +144,7 @@ public class Query
                 first = false;
             }
         }
-        _tables = new HashMap();
+        _tables = new HashMap<FieldKey, TableInfo>();
         QFrom from = _root.getFrom();
         if (from == null)
         {
@@ -184,7 +186,7 @@ public class Query
             _tables.put(qtable.getAlias(), table);
         }
 
-        Map<String, QColumn> columnMap = new CaseInsensitiveHashMap();
+        Map<String, QColumn> columnMap = new CaseInsensitiveHashMap<QColumn>();
         if (_parent != null && !_inFromClause)
         {
             if (_columns.size() != 1)
@@ -272,7 +274,8 @@ public class Query
             line = node.getLine();
             column = node.getColumn();
         }
-        _parseErrors.add(new QueryParseException(message, null, line, column));
+		//noinspection ThrowableInstanceNeverThrown
+		_parseErrors.add(new QueryParseException(message, null, line, column));
     }
 
     /**
@@ -385,15 +388,20 @@ public class Query
 
         private void parseTable(QNode parent)
         {
-            QNode node = parent.getFirstChild();
+			List<QNode> l = parent.childList();
+			QNode[] children = l.toArray(new QNode[l.size()]);
+			int inode = 0;
+            QNode node = children[inode];
+			
             JoinType joinType = JoinType.root;
 
             if (parent.getTokenType() == SqlTokenTypes.JOIN)
             {
                 joinType = JoinType.inner;
 loop:
-                for (;node != null; node = node.getNextSibling())
+                for ( ; inode < children.length ; inode++)
                 {
+					node = children[inode];
                     switch (node.getTokenType())
                     {
                         case SqlTokenTypes.LEFT:
@@ -419,15 +427,17 @@ loop:
             QExpr expr = (QExpr) node;
             QExpr with = null;
             QIdentifier alias = null;
-            if (node.getNextSibling() instanceof QIdentifier)
+			QNode next = inode+1<children.length ? children[inode+1] : null;
+            if (next instanceof QIdentifier)
             {
-                node = node.getNextSibling();
-                alias = (QIdentifier) node;
+                alias = (QIdentifier) next;
+				inode++;
             }
-            if (node.isNextSibling(SqlTokenTypes.ON))
+			next = inode+1<children.length ? children[inode+1] : null;
+            if (null != next && next.getTokenType() == ON)
             {
-                node = node.getNextSibling();
-                with = (QExpr) node.getFirstChild();
+                with = (QExpr) next.getFirstChild();
+				inode++;
             }
             QTable table = new QTable(expr, joinType);
             table.setAlias(alias);
@@ -445,9 +455,9 @@ loop:
 
         Map<FieldKey, QTable> parseTables(QFrom from)
         {
-            _tables = new LinkedHashMap();
+            _tables = new LinkedHashMap<FieldKey, QTable>();
 
-            for (QNode node = from.getFirstChild(); node != null; node = node.getNextSibling())
+            for (QNode node : from.children())
             {
                 if (_tables.size() > 0 && node.getTokenType() == SqlTokenTypes.RANGE)
                 {
@@ -468,6 +478,7 @@ loop:
         return null;
     }
 
+	
     /**
      * Resolve a particular field.
      * The FieldKey may refer to a particular ColumnInfo.
@@ -477,7 +488,7 @@ loop:
      */
     private QField getField(FieldKey key, QNode expr)
     {
-        QField ret = null;
+        QField ret;
         if (key.getTable() == null)
         {
             ret = new QField(null, key.getName(), expr);
@@ -507,6 +518,7 @@ loop:
         return ret;
     }
 
+	
     /**
      * Indicate that a particular ColumnInfo is used by this query.
      */
@@ -605,6 +617,7 @@ loop:
         }
     }
 
+
     private void declareFields()
     {
         for (QColumn column : _columns)
@@ -630,6 +643,7 @@ loop:
         }
     }
 
+
     /**
      * Return the result of replacing field names in the expression with QField objects.
      */
@@ -651,50 +665,36 @@ loop:
             }
             return ret;
         }
+
         QExpr ret = (QExpr) expr.clone();
-        QExpr lastChild = null;
-        for (QExpr child : expr.children())
-        {
-            QExpr newChild = resolveFields(child, expr);
-            if (lastChild == null)
-            {
-                ret.setFirstChild(newChild);
-            }
-            else
-            {
-                lastChild.setNextSibling(newChild);
-            }
-            lastChild = newChild;
-        }
+		for (QExpr child : expr.children())
+            ret.appendChild(resolveFields(child, expr));
+
         QueryParseException error = ret.fieldCheck(parent);
         if (error != null)
-        {
             _parseErrors.add(error);
-        }
         return ret;
     }
+
 
     public List<QExpr> getFilter()
     {
         return _filter.childList();
     }
 
+
     public List<QueryParseException> getParseErrors()
     {
         return _parseErrors;
     }
+
 
     public boolean hasErrors()
     {
         return !_parseErrors.isEmpty();
     }
 
-    private void checkErrors()
-    {
-        if (hasErrors())
-            throw new IllegalStateException("Query has errors");
-    }
-
+	
     public boolean isAggregate()
     {
         if (_groupBy != null)
@@ -896,7 +896,7 @@ loop:
             {
                 QExpr expr = resolveFields(entry.getKey(), _orderBy);
                 expr.appendSql(sql);
-                if (!entry.getValue())
+                if (!entry.getValue().booleanValue())
                 {
                     sql.append(" DESC");
                 }
@@ -921,7 +921,7 @@ loop:
     public QueryDocument getDesignDocument()
     {
         QueryDocument ret = QueryDocument.Factory.newInstance();
-        DgQuery root = ret.addNewQuery();
+        ret.addNewQuery();
         DgQuery.Select select = ret.getQuery().addNewSelect();
         DgQuery.Where dgWhere = ret.getQuery().addNewWhere();
         DgQuery.OrderBy dgOrderBy = ret.getQuery().addNewOrderBy();
@@ -972,7 +972,7 @@ loop:
                     dgClause = dgOrderBy.addNewSql();
                     dgClause.setStringValue(entry.getKey().getSourceText());
                 }
-                if (entry.getValue())
+                if (entry.getValue().booleanValue())
                 {
                     dgClause.setDir("ASC");
                 }
@@ -1026,7 +1026,7 @@ loop:
             {
                 _orderBy = new QOrder();
             }
-            _orderBy.setFirstChild(null);
+            _orderBy.removeChildren();
             for (DgOrderByString field : query.getOrderBy().getFieldArray())
             {
                 _orderBy.addOrderByClause(QIdentifier.of(FieldKey.fromString(field.getStringValue())), !"DESC".equals(field.getDir()));

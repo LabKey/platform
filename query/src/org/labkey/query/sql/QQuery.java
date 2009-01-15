@@ -81,7 +81,7 @@ public class QQuery extends QExpr
     public void appendSource(SourceBuilder builder)
     {
         builder.append("(");
-        for (QNode node = getFirstChild(); node != null; node = node.getNextSibling())
+        for (QNode node : children())
         {
             node.appendSource(builder);
         }
@@ -111,8 +111,8 @@ public class QQuery extends QExpr
         children.add(this);
         while (!children.isEmpty())
         {
-            QNode child = children.remove(0);
-            for (QNode grandChild = child.getFirstChild(); grandChild != null; grandChild = grandChild.getNextSibling())
+            QNode<QNode> child = children.remove(0);
+            for (QNode grandChild : child.children())
             {
                 if (grandChild instanceof QExpr)
                 {

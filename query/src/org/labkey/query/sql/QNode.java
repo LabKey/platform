@@ -16,99 +16,53 @@
 
 package org.labkey.query.sql;
 
-import antlr.collections.AST;
 import org.labkey.api.util.UnexpectedException;
 
-import java.io.Writer;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+
 
 abstract public class QNode<T extends QNode> implements Cloneable
 {
-    private Node _node;
+	int _tokenType;
+	String _tokenText;
+	int _line;
+	int _column;
 
-    static private QNode qNode(AST ast)
+	LinkedList<T> _children = new LinkedList<T>();
+
+
+	protected QNode()
+	{
+
+	}
+	
+    public QNode(int type, String text)
     {
-        if (ast == null)
-            return null;
-        return ((Node) ast).getQNode();
+		_tokenType = type;
+		_tokenText = text;
     }
 
-    public QNode()
+    public void setTokenText(String text)
     {
-        _node = new Node();
-        _node.setQNode(this, 0);
-    }
-
-    public void setNode(Node node)
-    {
-        _node = node;
-    }
-
-    public void setText(String text)
-    {
-        _node.setText(text);
+        _tokenText = text;
     }
 
     public void setTokenType(int type)
     {
-        _node.setQNode(this, type);
-    }
-
-    static private class QNodeIterator<T extends QNode> implements Iterator<T>
-    {
-        T _node;
-        public QNodeIterator(T node)
-        {
-            _node = node;
-        }
-        public boolean hasNext()
-        {
-            return _node != null;
-        }
-
-        public T next()
-        {
-            T ret = _node;
-            _node = (T) _node.getNextSibling();
-            return ret;
-        }
-
-        public void remove()
-        {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    static private class QNodeIterable<T extends QNode> implements Iterable<T>
-    {
-        T _node;
-        public QNodeIterable(T first)
-        {
-            _node = first;
-        }
-        public Iterator<T> iterator()
-        {
-            return new QNodeIterator(_node);
-        }
+        _tokenType = type;
     }
 
     public Iterable<T> children()
     {
-        return new QNodeIterable(getFirstChild());
+		return _children;
     }
 
     public List<T> childList()
     {
-        List<T> ret = new ArrayList();
-        for (T child : children())
-        {
-            ret.add(child);
-        }
-        return ret;
+		return _children;
     }
 
     public abstract void appendSource(SourceBuilder builder);
@@ -130,116 +84,56 @@ abstract public class QNode<T extends QNode> implements Cloneable
         return null;
     }
 
-    public void insertChildren(T... children)
+    public void appendChildren(T... children)
     {
-        if (children == null)
+        if (children == null || children.length == 0)
             return;
-        insertChildren(Arrays.asList(children));
+		appendChildren(Arrays.asList(children));
     }
 
-    public void insertChildren(List<? extends T> children)
+    public void appendChildren(List<? extends T> children)
     {
-        for (int i = children.size() - 1; i >= 0; i--)
-        {
-            ASTUtil.insertChild(_node, children.get(i)._node);
-        }
-    }
-
-    public void insertChild(T child)
-    {
-        // This child might belong to someone else, so we clone it.
-        T newChild = (T) child.clone();
-        newChild.setFirstChild(child.getFirstChild());
-        ASTUtil.insertChild(_node, newChild._node);
+		_children.addAll(children);
     }
 
     public void appendChild(T child)
     {
-        T lastChild = getLastChild();
-        if (lastChild == null)
-        {
-            _node.setFirstChild(child._node);
-        }
-        else
-        {
-            lastChild._node.setNextSibling(child._node);
-        }
+		_children.add(child);
     }
 
     public T getFirstChild()
     {
-        return (T) qNode(_node.getFirstChild());
+		return _children.isEmpty() ? null : _children.getFirst();
     }
 
     public T getLastChild()
     {
-        return (T) qNode(_node.getLastChild());
+		return _children.isEmpty() ? null : _children.getLast();
     }
 
-    public QNode getNextSibling()
-    {
-        return qNode(_node.getNextSibling());
-    }
+	public void removeChildren()
+	{
+		if (!_children.isEmpty())
+			_children = new LinkedList<T>();
+	}
 
-    public void removeChild(T node)
-    {
-        Node previousSibling = _node.findPreviousSibling(node._node);
-        if (previousSibling == null)
-        {
-            _node.setFirstChild(node._node.getNextSibling());
-        }
-        else
-        {
-            previousSibling.setNextSibling(node._node.getNextSibling());
-        }
-    }
-    public void removeSiblings()
-    {
-        _node.setNextSibling(null);
-    }
-    public void setNextSibling(QNode node)
-    {
-        _node.setNextSibling(node._node);
-    }
     public String getTokenText()
     {
-        return _node.getText();
+        return _tokenText;
     }
 
     public int getTokenType()
     {
-        return _node.getType();
+        return _tokenType;
     }
 
-    public boolean isNextSibling(int tokenType)
-    {
-        QNode nextSibling = getNextSibling();
-        if (nextSibling == null)
-        {
-            return false;
-        }
-        return tokenType == nextSibling.getTokenType();
-    }
-
-    public void setFirstChild(QNode node)
-    {
-        if (node == null)
-        {
-            _node.setFirstChild(null);
-            return;        
-        }
-        _node.setFirstChild(node._node);
-    }
 
     public QNode clone()
     {
         try
         {
             QNode ret = (QNode) super.clone();
-            ret._node = _node.clone();
-            ret._node.setFirstChild(null);
-            ret._node.setNextSibling(null);
-            ret._node.setQNode(ret, getTokenType());
+			ret._children = new LinkedList<T>();
             return ret;
         }
         catch (CloneNotSupportedException e)
@@ -250,28 +144,42 @@ abstract public class QNode<T extends QNode> implements Cloneable
 
     public int getLine()
     {
-        return _node.getLine();
+        return _line;
     }
 
     public int getColumn()
     {
-        return _node.getColumn();
+        return _column;
     }
 
     public void setLineAndColumn(QNode other)
     {
         if (other == null)
             return;
-        _node._line = other.getLine();
-        _node._column = other.getColumn();
+        _line = other.getLine();
+        _column = other.getColumn();
     }
 
-    public boolean equalsTree(QNode that)
-    {
-        if (this == that)
-            return true;
-        return this._node.equalsTree(that._node);
-    }
+
+//    public boolean equalsTree(QNode that)
+//    {
+//        if (this == that)
+//            return true;
+//		if (getTokenType() != that.getTokenType() || !StringUtils.equals(getTokenText(), that.getTokenText()))
+//			return false;
+//		if (_children.size() != that._children.size())
+//			return false;
+//
+//		Iterator<QNode> a = (Iterator<QNode>)_children.iterator();
+//		Iterator<QNode> b = (Iterator<QNode>)that._children.iterator();
+//		while (a.hasNext())
+//		{
+//			if (a.next().equalsTree(b.next()))
+//				return false;
+//		}
+//        return true;
+//    }
+
 
     public void dump(PrintWriter out)
     {
@@ -282,7 +190,7 @@ abstract public class QNode<T extends QNode> implements Cloneable
     protected void dump(PrintWriter out, String nl)
     {
         out.printf("%s%s: %s", nl, getClass().getSimpleName(), getTokenText());
-        for (QNode c = getFirstChild() ; c != null ; c = c.getNextSibling())
+		for (QNode c : children())
             c.dump(out, nl + "    |");
     }
 }

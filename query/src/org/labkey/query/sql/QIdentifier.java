@@ -31,11 +31,11 @@ public class QIdentifier extends QFieldKey
         if (QParser.isLegalIdentifier(str))
         {
             setTokenType(SqlTokenTypes.IDENT);
-            setText(str);
+            setTokenText(str);
             return;
         }
         setTokenType(SqlTokenTypes.QUOTED_IDENTIFIER);
-        setText(quote(str));
+        setTokenText(quote(str));
     }
 
     public FieldKey getFieldKey()

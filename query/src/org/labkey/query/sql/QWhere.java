@@ -281,7 +281,7 @@ public class QWhere extends QNode<QExpr>
 
     public void updateWhere(DgQuery.Where where, List<? super QueryParseException> errors)
     {
-        setFirstChild(null);
+        removeChildren();
 
         QNameSet qnames = QNameSet.forArray(new QName[] {
                 new QName("http://query.labkey.org/design", "compare"),

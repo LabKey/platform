@@ -16,22 +16,18 @@
 
 package org.labkey.query.sql;
 
-import antlr.ASTFactory;
 import antlr.RecognitionException;
 import antlr.TokenStreamRecognitionException;
-import org.labkey.api.query.QueryParseException;
-import org.labkey.query.sql.SqlParser;
-import org.labkey.query.sql.antlr.SqlBaseTokenTypes;
-import org.labkey.api.util.CaseInsensitiveHashSet;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.MemTracker;
-
-import java.util.Set;
-import java.util.List;
-import java.util.ArrayList;
-
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.util.CaseInsensitiveHashSet;
+import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.PageFlowUtil;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 public class QParser
 {
@@ -128,8 +124,8 @@ public class QParser
         try
         {
             SqlParser parser = getParser(str);
-            Node node = parser.parseStatement();
-            QQuery ret = node == null ? null : (QQuery) node.getQNode();
+            QNode node = parser.parseStatement();
+            QQuery ret = node != null && node instanceof QQuery ? (QQuery) node : null;
             if (ret != null)
                 ret.syntaxCheck(errors);
             for (Throwable e : parser.getErrors())
@@ -167,7 +163,6 @@ public class QParser
             return null;
         }
         QExpr ret = ((QAs) select.getFirstChild()).getExpression();
-        ret.removeSiblings();
         return ret;
     }
 
@@ -218,7 +213,7 @@ public class QParser
 
 
  /* UNDONE keywords
-    all any  class delete elements exists fetch full indices insert into limit new set some update versioned both empty leading member of trailing
+    class delete elements fetch indices insert into limit new set update versioned both empty leading member of trailing
  */
     static String[] testSql = new String[]
     {
@@ -247,15 +242,22 @@ public class QParser
         "SELECT CAST(a AS VARCHAR), CAST(a+b AS INTEGER) FROM R",
         "SELECT TIMESTAMPDIFF(a,b,SQL_TSI_SECOND), TIMESTAMPDIFF(a,b,SECOND), TIMESTAMPDIFF(a,b,'SQL_TSI_DAY'), TIMESTAMPDIFF(a,b,'DAY') FROM R",
             
-        // TEST FROM (SELECT)
-        // WHERE EXISTS/ANY/SOME (SELECT)
+		"SELECT (SELECT value FROM S WHERE S.x=R.x) AS V FROM R",
+		"SELECT R.value AS V FROM R WHERE R.y > (SELECT MAX(S.y) FROM S WHERE S.x=R.x)",
+		"SELECT R.value, T.a, T.b FROM R INNER JOIN (SELECT S.a, S.b FROM S) T",
+
+		"SELECT R.a FROM R WHERE EXISTS (SELECT S.b FROM S WHERE S.x=R.x)",
+		"SELECT R.a FROM R WHERE NOT EXISTS (SELECT S.b FROM S WHERE S.x=R.x)",
+		"SELECT R.a FROM R WHERE R.value > ALL (SELECT value from S WHERE S.x=R.x)",
+		"SELECT R.a FROM R WHERE R.value > ANY (SELECT value from S WHERE S.x=R.x)",
+		"SELECT R.a FROM R WHERE R.value > SOME (SELECT value from S WHERE S.x=R.x)",
 
         "BROKEN",
 
         // nested JOINS
         "SELECT R.a, \"S\".b FROM R LEFT OUTER JOIN (S RIGHT OUTER JOIN T ON S.y = T.y) ON R.x = S.x",
 
-        // should OUTER be optionally allowed
+        // OUTER should be optionally allowed
         "SELECT 'R'.a, S.b FROM R FULL OUTER JOIN S ON R.x = S.x",
 
         "SELECT R.* FROM R"
@@ -267,6 +269,7 @@ public class QParser
         "SELECT a FROM R UNION SELECT b FROM S",
         "lutefisk",
         "SELECT R.a FROM R WHERE > 5", "SELECT R.a + AS A FROM R", "SELECT (R.a +) R.b AS A FROM R",
+		"SELECT R.value, T.a, T.b FROM R INNER JOIN (SELECT S.a, S.b FROM S)",
 
         "BROKEN",
         // empty select list

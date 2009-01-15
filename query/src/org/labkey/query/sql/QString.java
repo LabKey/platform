@@ -50,7 +50,7 @@ public class QString extends QExpr implements IConstant
 
     public QString(String value)
     {
-        setText(quote(value));
+        setTokenText(quote(value));
     }
 
     public String getValue()

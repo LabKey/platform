@@ -183,14 +183,14 @@ public enum Operator
     public QOperator expr(QExpr ... operands)
     {
         QOperator ret = new QOperator(this);
-        ret.insertChildren(operands);
+        ret.appendChildren(operands);
         return ret;
     }
 
     public QOperator expr(List<QExpr> operands)
     {
         QOperator ret = new QOperator(this);
-        ret.insertChildren(operands);
+        ret.appendChildren(operands);
         return ret;
     }
 

@@ -28,14 +28,9 @@ public class QBoolean extends QExpr implements IConstant
     {
     }
 
-    public void setText(String str)
-    {
-        super.setText(str);
-    }
-
     public QBoolean(boolean value)
     {
-        setText(value ? "true" : "false");
+        setTokenText(value ? "true" : "false");
     }
 
     public Boolean getValue()

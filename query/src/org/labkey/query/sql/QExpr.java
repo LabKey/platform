@@ -54,13 +54,6 @@ abstract public class QExpr extends QNode<QExpr>
         return null;
     }
 
-    public QExpr clonePreserveChildren()
-    {
-        QExpr ret = (QExpr) super.clone();
-        ret.setFirstChild(getFirstChild());
-        return ret;
-    }
-
     public int getSqlType()
     {
         return Types.OTHER;
