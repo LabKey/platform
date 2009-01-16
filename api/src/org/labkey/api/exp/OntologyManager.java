@@ -2643,8 +2643,6 @@ public class OntologyManager
 			this.propertyId = pd.getPropertyId();
 			this.typeTag = pt.getStorageType();
 
-            _log.info(value.toString());
-
             // Handle field-level QC
             if (value instanceof QcFieldWrapper)
             {
