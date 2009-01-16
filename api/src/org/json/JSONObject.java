@@ -205,6 +205,11 @@ public class JSONObject extends HashMap<String, Object> {
      */
     public JSONObject(Object bean) {
         this();
+        if (bean instanceof Map)
+        {
+            putAll((Map<String, Object>)bean);
+            return;
+        }
         Class klass = bean.getClass();
         Method[] methods = klass.getMethods();
         for (Method method : methods)
