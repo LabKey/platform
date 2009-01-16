@@ -94,6 +94,14 @@ public abstract class AbstractAssayAPIAction<FORM> extends ApiAction<FORM>
     {
         JSONObject jsonObject = new JSONObject();
         serializeStandardProperties(batch, jsonObject, provider.getUploadSetColumns(protocol));
+
+        JSONArray runsArray = new JSONArray();
+        for (ExpRun run : batch.getRuns())
+        {
+            runsArray.put(serializeRun(run, provider, protocol));
+        }
+        jsonObject.put(RUNS, runsArray);
+
         return jsonObject;
     }
 
@@ -126,22 +134,16 @@ public abstract class AbstractAssayAPIAction<FORM> extends ApiAction<FORM>
         result.put(ASSAY_ID, protocol.getRowId());
 
         JSONObject batchObject;
-        JSONArray runsArray = new JSONArray();
 
         if (batch != null)
         {
             batchObject = serializeBatch(batch, provider, protocol);
-            for (ExpRun run : batch.getRuns())
-            {
-                runsArray.put(serializeRun(run, provider, protocol));
-            }
         }
         else
         {
             batchObject = new JSONObject();
         }
 
-        result.put(RUNS, runsArray);
         result.put(BATCH, batchObject);
         return new ApiSimpleResponse(result);
     }
