@@ -2650,6 +2650,16 @@ public class OntologyManager
                 this.qcValue = qcWrapper.getQcValue();
                 value = qcWrapper.getValue();
             }
+            else if (pd.isQcEnabled())
+            {
+                // Not all callers will have wrapped a QC value if there isn't also
+                // a real value
+                if (QcUtil.isQcValue(value.toString(), pd.getContainer()))
+                {
+                    this.qcValue = value.toString();
+                    value = null;
+                }
+            }
             
             switch (pt)
             {

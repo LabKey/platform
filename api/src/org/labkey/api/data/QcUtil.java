@@ -35,10 +35,18 @@ public class QcUtil
         return new HashSet<String>(Arrays.asList(QC_STATES));
     }
 
-    public static boolean isQcValue(String value, Container c)
+    /**
+     * Allows nulls and ""
+     */
+    public static boolean isValidQcValue(String value, Container c)
     {
         if (value == null || "".equals(value))
             return true;
+        return isQcValue(value, c);
+    }
+
+    public static boolean isQcValue(String value, Container c)
+    {
         return getQcValues(c).contains(value);
     }
 }
