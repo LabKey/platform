@@ -41,10 +41,19 @@ import org.labkey.query.view.CustomViewSetKey;
 import javax.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 import java.util.*;
+import java.io.FilenameFilter;
+import java.io.File;
 
 @SuppressWarnings({"ThrowableInstanceNeverThrown"})
 public abstract class QueryDefinitionImpl implements QueryDefinition
 {
+    protected static final FilenameFilter customViewFileFilter = new FilenameFilter(){
+        public boolean accept(File dir, String name)
+        {
+            return name.toLowerCase().endsWith(ModuleCustomViewDef.FILE_EXTENSION);
+        }
+    };
+
     final static private QueryManager mgr = QueryManager.get();
     final static private Logger log = Logger.getLogger(QueryDefinitionImpl.class);
     protected UserSchema _schema = null;
@@ -154,16 +163,22 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 addCustomViews(ret, mgr.getColumnLists(ContainerManager.getSharedContainer(), _queryDef.getSchema(), _queryDef.getName(), null, null, true));
             }
 
-            //finally, ask all the modules in the container if they have any views to contribute
+            //finally, look in all the active modules for any views defined in the file system
             for(Module module : container.getActiveModules())
             {
-                List<CustomView> views = module.getCustomViews(this);
-                if(null == views)
-                    continue;
-
-                for(CustomView view : views)
+                File queryDir = new File(getQueriesDir(module), getSchemaName() + "/" + getName());
+                if(queryDir.exists())
                 {
-                    ret.put(view.getName(), view);
+                    for(File viewFile : queryDir.listFiles(customViewFileFilter))
+                    {
+                        ModuleCustomViewDef viewDef = (ModuleCustomViewDef)(QueryServiceImpl.getModuleResourcesCache().get(viewFile.getAbsolutePath()));
+                        if(null == viewDef || viewDef.isStale())
+                        {
+                            viewDef = new ModuleCustomViewDef(viewFile);
+                            QueryServiceImpl.getModuleResourcesCache().put(viewFile.getAbsolutePath(), viewDef);
+                        }
+                        ret.put(viewDef.getName(), new ModuleCustomView(this, viewDef));
+                    }
                 }
             }
 
@@ -174,6 +189,11 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             log.error("Error", e);
             return Collections.EMPTY_MAP;
         }
+    }
+
+    protected File getQueriesDir(Module module)
+    {
+        return new File(module.getExplodedPath(), "queries");
     }
 
     private void addCustomViews(Map<String, CustomView> map, CstmView[] views)

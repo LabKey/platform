@@ -24,8 +24,10 @@ import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.Cache;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.module.Module;
 import org.labkey.common.util.Pair;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.persist.DbUserSchemaDef;
@@ -37,10 +39,27 @@ import org.labkey.query.view.DbUserSchema;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.io.File;
+import java.io.FilenameFilter;
 
 public class QueryServiceImpl extends QueryService
 {
     static private final Logger _log = Logger.getLogger(QueryServiceImpl.class);
+
+    protected static final FilenameFilter moduleQueryFileFilter = new FilenameFilter(){
+        public boolean accept(File dir, String name)
+        {
+            return name.toLowerCase().endsWith(ModuleQueryDef.FILE_EXTENSION);
+        }
+    };
+
+    private static Cache _moduleResourcesCache = new Cache(1024, Cache.DAY);
+
+    public static Cache getModuleResourcesCache()
+    {
+        return _moduleResourcesCache;
+    }
+
     public UserSchema getUserSchema(User user, Container container, String schemaName)
     {
         QuerySchema ret = DefaultSchema.get(user, container).getSchema(schemaName);
@@ -95,9 +114,36 @@ public class QueryServiceImpl extends QueryService
         return new ArrayList<QueryDefinition>(getAllQueryDefs(container, null, true, false).values());
     }
 
+    private File getModuleQueriesDir(Module module)
+    {
+        return new File(module.getExplodedPath(), "queries");
+    }
+
     private Map<Map.Entry<String, String>, QueryDefinition> getAllQueryDefs(Container container, String schemaName, boolean inheritable, boolean includeSnapshots)
     {
         Map<Map.Entry<String, String>, QueryDefinition> ret = new LinkedHashMap<Map.Entry<String, String>, QueryDefinition>();
+
+        //look in all the active modules in this container to see if they contain any query definitions
+        for(Module module : container.getActiveModules())
+        {
+            File schemaDir = new File(getModuleQueriesDir(module), schemaName);
+            if(schemaDir.exists())
+            {
+                for(File sqlFile : schemaDir.listFiles(moduleQueryFileFilter))
+                {
+                    ModuleQueryDef moduleQueryDef = (ModuleQueryDef)_moduleResourcesCache.get(sqlFile.getAbsolutePath());
+                    if(null == moduleQueryDef || moduleQueryDef.isStale())
+                    {
+                        moduleQueryDef = new ModuleQueryDef(sqlFile, schemaName);
+                        _moduleResourcesCache.put(sqlFile.getAbsolutePath(), moduleQueryDef);
+                    }
+                    
+                    ret.put(new Pair<String,String>(schemaName, moduleQueryDef.getName()),
+                            new ModuleCustomQueryDefinition(moduleQueryDef, container));
+                }
+            }
+        }
+
         for (QueryDef queryDef : QueryManager.get().getQueryDefs(container, schemaName, false, includeSnapshots, true))
         {
             Map.Entry<String, String> key = new Pair<String,String>(queryDef.getSchema(), queryDef.getName());

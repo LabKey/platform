@@ -1424,6 +1424,10 @@ query/src/META-INF/query/scripts/sql[!!-~]server/query-8.24-8.25.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/query-8.30-8.31.sql -text
 query/src/org/labkey/query/CustomQueryDefinitionImpl.java -text
 query/src/org/labkey/query/CustomViewImpl.java -text
+query/src/org/labkey/query/ModuleCustomQueryDefinition.java -text
+query/src/org/labkey/query/ModuleCustomView.java -text
+query/src/org/labkey/query/ModuleCustomViewDef.java -text
+query/src/org/labkey/query/ModuleQueryDef.java -text
 query/src/org/labkey/query/QueryDefinitionImpl.java -text
 query/src/org/labkey/query/QueryModule.java -text
 query/src/org/labkey/query/QueryServiceImpl.java -text

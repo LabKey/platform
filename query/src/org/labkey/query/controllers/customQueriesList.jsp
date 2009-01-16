@@ -57,21 +57,29 @@
                        text="<%=h(query.getContainer().getPath())%>"/>
         </td>
         <% }
-        else
+        else if(query.canEdit(context.getUser()))
         { %>
+
         <td>
             [<a title="<%="Design " + query.getName()%>" href="<%=currentSchema.urlFor(QueryAction.designQuery, query)%>">design query</a>]
         </td>
         <td>
             [<a title="<%="Source " + query.getName()%>" href="<%=currentSchema.urlFor(QueryAction.sourceQuery, query)%>">edit source</a>]
         </td>
-        <td><% if (query.canEdit(context.getUser()))
-        { %>
+        <td>
             [<a title="<%="Delete " + query.getName()%>" href="<%=currentSchema.urlFor(QueryAction.deleteQuery, query)%>">delete</a>]
-            <% } %></td>
+        </td>
         <td>
             [<a title="<%="Properties " + query.getName()%>" href="<%=currentSchema.urlFor(QueryAction.propertiesQuery, query)%>">edit properties</a>]
         </td>
+
+        <% }
+        else
+        { %>
+        <td colspan="4">
+            [<a title="View Source" href="<%=currentSchema.urlFor(QueryAction.sourceQuery, query)%>">view source</a>]
+        </td>
+        
         <% } %>
         <td>
 <%--

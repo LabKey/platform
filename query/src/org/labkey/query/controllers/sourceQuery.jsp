@@ -44,7 +44,9 @@ if (!form.getQueryDef().isTableQueryDefinition())
 {
     %><labkey:button text="Design View" onclick="submit_onclick('designQuery')" />&nbsp;<%
 }%>
+<% if(canEdit) { %>
     <labkey:button text="Edit Metadata with GUI" onclick="submit_onclick('metadataQuery')" />&nbsp;
+<% } %>
     <labkey:button text="Run Query" onclick="submit_onclick('executeQuery')" />
 <p>Metadata XML:<br>
     <textarea style="width: 100%;" rows="20" cols="80" wrap="off" name="ff_metadataText"<%=canEdit ? "" : " READONLY"%>><%=h(form.ff_metadataText)%></textarea>
