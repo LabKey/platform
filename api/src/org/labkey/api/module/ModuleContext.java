@@ -15,7 +15,6 @@
  */
 package org.labkey.api.module;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.security.User;
 
 import java.text.DecimalFormat;
@@ -27,17 +26,24 @@ import java.text.DecimalFormat;
  */
 public class ModuleContext implements Cloneable
 {
-    private double _installedVersion;
-    private double _originalVersion = 0.0;
-    private String _className;
-    private String _name;
-    private ModuleLoader.ModuleState _moduleState = ModuleLoader.ModuleState.Loading;
-    private boolean _newInstall = false;
+    // ModuleContext fields are written by the main upgrade thread and read by request threads to show current
+    // upgrade status.  Use volatile to ensure reads see the latest values.
 
-    private static Logger _log = Logger.getLogger(ModuleContext.class);
+    // These three fields are effectively "final" -- they are set on construction (new module) or when loaded from DB,
+    // then never changed.
+    private volatile double _originalVersion = 0.0;
+    private volatile String _className;
+    private volatile String _name;
+
+    // These two are updated during the upgrade process.
+    private volatile double _installedVersion;
+    private volatile ModuleLoader.ModuleState _moduleState = ModuleLoader.ModuleState.Loading;
+
+    private final boolean _newInstall;
 
     public ModuleContext()
     {
+        _newInstall = false;  // ModuleContext is being loaded from the database
     }
 
     public ModuleContext(Module module)
@@ -45,7 +51,7 @@ public class ModuleContext implements Cloneable
         _className = module.getClass().getName();
         setName(module.getName());
         assert _installedVersion == 0.00;
-        _newInstall = true;
+        _newInstall = true;  // ModuleContext has not been seen before
     }
 
 

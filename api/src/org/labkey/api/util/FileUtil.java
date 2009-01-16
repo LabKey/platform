@@ -16,22 +16,20 @@
 
 package org.labkey.api.util;
 
-import org.labkey.api.security.Crypt;
-import org.apache.log4j.Logger;
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.security.Crypt;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.Arrays;
+import java.net.URI;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import java.security.MessageDigest;
 import java.security.DigestInputStream;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: jeckels
