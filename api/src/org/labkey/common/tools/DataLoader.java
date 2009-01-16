@@ -236,6 +236,29 @@ public abstract class DataLoader
         return "column" + col;
     }
 
+    // Given a qc indicator column, find its matching qc column
+    protected int getQcColumnIndex(ColumnDescriptor qcIndicatorColumn)
+    {
+        for(int i = 0; i<_columns.length; i++)
+        {
+            ColumnDescriptor col = _columns[i];
+            if (col.name.equals(qcIndicatorColumn.name) && col.qcEnabled)
+                return i;
+        }
+        return -1;
+    }
+
+    protected int getQcIndicatorColumnIndex(ColumnDescriptor qcColumn)
+    {
+        for(int i = 0; i<_columns.length; i++)
+        {
+            ColumnDescriptor col = _columns[i];
+            if (col.name.equals(qcColumn.name) && col.qcIndicator)
+                return i;
+        }
+        return -1;
+    }
+
     /**
      * Set the number of lines to look ahead in the file when infering the data types of the columns.
      */

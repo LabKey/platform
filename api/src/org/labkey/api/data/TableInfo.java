@@ -74,8 +74,6 @@ public interface TableInfo
 
     ColumnInfo getColumn(String colName);
 
-    ColumnInfo getColumnFromPropertyURI(String propertyURI);
-
     List<ColumnInfo> getColumns();
 
     List<ColumnInfo> getUserEditableColumns();

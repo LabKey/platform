@@ -15,7 +15,6 @@
  */
 package org.labkey.api.exp;
 
-import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.*;
 
 
@@ -45,12 +44,6 @@ public class QcColumn extends LookupColumn
         setNullable(true);
         setIsHidden(true);
         setUserEditable(false);
-        setSqlTypeName(getPropertySqlType(OntologyManager.getSqlDialect()));
-        String format = StringUtils.trimToNull(pd.getFormat());
-        if (null != format)
-            setFormatString(format);
-
-        setInputType(pd.getPropertyType().getInputType());
     }
 
     public SQLFragment getValueSql()
@@ -61,16 +54,6 @@ public class QcColumn extends LookupColumn
         sql.append("\nAND exp.ObjectProperty.ObjectId = " + getTableAlias() + ".ObjectId)");
 
         return sql;
-    }
-
-    private String getPropertySqlType(SqlDialect dialect)
-    {
-        return dialect.sqlTypeNameFromSqlType(getPropertySqlTypeInt());
-    }
-
-    private int getPropertySqlTypeInt()
-    {
-        return pd.getPropertyType().getSqlType();
     }
 
     public PropertyDescriptor getPropertyDescriptor()

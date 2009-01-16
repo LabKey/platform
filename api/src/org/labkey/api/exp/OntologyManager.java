@@ -181,7 +181,9 @@ public class OntologyManager
                         if (pd.isRequired())
                             throw new ValidationException("Missing value for required property " + pd.getName());
                         else
+                        {
                             continue;
+                        }
                     }
                     else
                     {
@@ -2641,72 +2643,75 @@ public class OntologyManager
 			this.propertyId = pd.getPropertyId();
 			this.typeTag = pt.getStorageType();
 
-            // Handle field-level QC
-            if (value != null && pd.isQcEnabled() && QcUtil.getQcValues(pd.getContainer()).contains(value.toString()))
-            {
-                this.qcValue = value.toString();
-            }
-            else
-            {
-                switch (pt)
-                {
-                    case STRING:
-                    case MULTI_LINE:
-                        if (value instanceof String)
-                            this.stringValue = (String) value;
-                        else
-                            this.stringValue = ConvertUtils.convert(value);
-                        break;
-                    case ATTACHMENT:
-                        this.stringValue = (String) value;
-                        break;
-                    case FILE_LINK:
-                        if (value instanceof File)
-                            this.stringValue = ((File) value).getPath();
-                        else
-                            this.stringValue = (String) value;
-                        break;
-                    case DATE_TIME:
-                        if (value instanceof Date)
-                            this.dateTimeValue = (Date) value;
-                        else if (null != value)
-                            this.dateTimeValue = (Date) ConvertUtils.convert(value.toString(), Date.class);
-                        break;
-                    case INTEGER:
-                        if (value instanceof Integer)
-                            this.floatValue = ((Integer) value).doubleValue();
-                        else if (null != value)
-                            this.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
-                        break;
-                    case DOUBLE:
-                        if (value instanceof Double)
-                            this.floatValue = (Double) value;
-                        else if (null != value)
-                            this.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
-                        break;
-                    case BOOLEAN:
-                    {
-                        boolean boolValue = false;
-                        if (value instanceof Boolean)
-                            boolValue = (Boolean)value;
-                        else if (null != value && !"".equals(value))
-                            boolValue = (Boolean) ConvertUtils.convert(value.toString(), Boolean.class);
-                        this.floatValue = boolValue ? 1.0 : 0.0;
-                        break;
-                    }
-                    case RESOURCE:
-                        if (value instanceof Identifiable)
-                        {
-                            this.stringValue = ((Identifiable) value).getLSID();
-                        }
-                        else if (null != value)
-                            this.stringValue = value.toString();
+            _log.info(value.toString());
 
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Unknown property type: " + pt);
-                }
+            // Handle field-level QC
+            if (value instanceof QcFieldWrapper)
+            {
+                QcFieldWrapper qcWrapper = (QcFieldWrapper) value;
+                this.qcValue = qcWrapper.getQcValue();
+                value = qcWrapper.getValue();
             }
+            
+            switch (pt)
+            {
+                case STRING:
+                case MULTI_LINE:
+                    if (value instanceof String)
+                        this.stringValue = (String) value;
+                    else
+                        this.stringValue = ConvertUtils.convert(value);
+                    break;
+                case ATTACHMENT:
+                    this.stringValue = (String) value;
+                    break;
+                case FILE_LINK:
+                    if (value instanceof File)
+                        this.stringValue = ((File) value).getPath();
+                    else
+                        this.stringValue = (String) value;
+                    break;
+                case DATE_TIME:
+                    if (value instanceof Date)
+                        this.dateTimeValue = (Date) value;
+                    else if (null != value)
+                        this.dateTimeValue = (Date) ConvertUtils.convert(value.toString(), Date.class);
+                    break;
+                case INTEGER:
+                    if (value instanceof Integer)
+                        this.floatValue = ((Integer) value).doubleValue();
+                    else if (null != value)
+                        this.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
+                    break;
+                case DOUBLE:
+                    if (value instanceof Double)
+                        this.floatValue = (Double) value;
+                    else if (null != value)
+                        this.floatValue = (Double) ConvertUtils.convert(value.toString(), Double.class);
+                    break;
+                case BOOLEAN:
+                {
+                    boolean boolValue = false;
+                    if (value instanceof Boolean)
+                        boolValue = (Boolean)value;
+                    else if (null != value && !"".equals(value))
+                        boolValue = (Boolean) ConvertUtils.convert(value.toString(), Boolean.class);
+                    this.floatValue = boolValue ? 1.0 : 0.0;
+                    break;
+                }
+                case RESOURCE:
+                    if (value instanceof Identifiable)
+                    {
+                        this.stringValue = ((Identifiable) value).getLSID();
+                    }
+                    else if (null != value)
+                        this.stringValue = value.toString();
+
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown property type: " + pt);
+            }
+
 		}
 
 		public int getObjectId()

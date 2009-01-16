@@ -31,6 +31,14 @@ public class QcUtil
 
     public static Set<String> getQcValues(Container c)
     {
+        assert c != null : "Attempt to get QC values without a container";
         return new HashSet<String>(Arrays.asList(QC_STATES));
+    }
+
+    public static boolean isQcValue(String value, Container c)
+    {
+        if (value == null || "".equals(value))
+            return true;
+        return getQcValues(c).contains(value);
     }
 }

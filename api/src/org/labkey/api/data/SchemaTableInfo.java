@@ -326,14 +326,6 @@ public class SchemaTableInfo implements TableInfo
         return colMap.get(colName);
     }
 
-    public ColumnInfo getColumnFromPropertyURI(String propertyURI)
-    {
-        for(ColumnInfo col : columns)
-            if (col.getPropertyURI().equals(propertyURI))
-                return col;
-        return null;
-    }
-
     public void addColumn(ColumnInfo column)
     {
         columns.add(column);

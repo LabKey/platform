@@ -16,6 +16,7 @@
 package org.labkey.common.tools;
 
 import org.apache.commons.beanutils.Converter;
+import org.labkey.api.data.Container;
 
 import java.lang.reflect.Method;
 import java.util.Date;
@@ -53,7 +54,15 @@ public class ColumnDescriptor
     public Object errorValues = null;
     public Converter converter = null;
     public Method setter = null;
+
+    // This column is a data column, with qc enabled
     public boolean qcEnabled;
+
+    // This column is the qc indicator -- that is, .Q or .N, not the actual value.
+    public boolean qcIndicator;
+
+    // If qc is enabled, or this is a qc indicator, need to know which container to look in for possible QC states
+    public Container qcContainer;
 
     public String toString()
     {
