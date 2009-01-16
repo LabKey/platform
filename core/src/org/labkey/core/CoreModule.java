@@ -345,8 +345,8 @@ public class CoreModule extends SpringModule
         {
             if (null != getSourcePath())
             {
-                dirs.add(new File(getSourcePath(),"../../internal/webapp"));
-                dirs.add(new File(getSourcePath(),"../../api/webapp"));
+                dirs.add(0, new File(getSourcePath(),"../../internal/webapp"));
+                dirs.add(0, new File(getSourcePath(),"../../api/webapp"));
             }
         }
         return dirs;
