@@ -314,6 +314,7 @@ public class ListDefinitionImpl implements ListDefinition
             pds.add(property.getPropertyDescriptor());
         Map<String, PropertyDescriptor> propertiesByName = OntologyManager.createImportPropertyMap(pds.toArray(new PropertyDescriptor[pds.size()]));
         Map<String, PropertyDescriptor> properties = new CaseInsensitiveHashMap<PropertyDescriptor>();
+        Map<String, ColumnDescriptor> qcIndicatorColumnNames = new CaseInsensitiveHashMap<ColumnDescriptor>();
         ColumnDescriptor cdKey = null;
 
         Object errorValue = new Object();
@@ -337,6 +338,26 @@ public class ListDefinitionImpl implements ListDefinition
                 }
                 properties.put(cd.name, property);
                 cd.name = property.getPropertyURI();
+                if (property.isQcEnabled())
+                {
+                    cd.qcEnabled = true;
+                    cd.qcContainer = getContainer();
+                }
+            }
+            else if (cd.name.endsWith(QcColumn.QC_INDICATOR_SUFFIX))
+            {
+                if (qcIndicatorColumnNames.containsKey(cd.name))
+                {
+                    errors.add("The field '" + cd.name + "' appears more than once.");
+                }
+                else
+                {
+                    qcIndicatorColumnNames.put(cd.name, cd);
+                    cd.clazz = String.class;
+                    cd.qcIndicator = true;
+                    cd.qcContainer = getContainer();
+                }
+
             }
             else if (!getKeyName().equalsIgnoreCase(cd.name))
             {
@@ -354,6 +375,26 @@ public class ListDefinitionImpl implements ListDefinition
                 }
             }
         }
+
+        for (Map.Entry<String,ColumnDescriptor> entry : qcIndicatorColumnNames.entrySet())
+        {
+            String qcIndicatorName = entry.getKey();
+            // Lop off "QCIndicatorColumn"
+            String dataColumnName = qcIndicatorName.substring(0, qcIndicatorName.length() - QcColumn.QC_INDICATOR_SUFFIX.length()).trim();
+            PropertyDescriptor pd = propertiesByName.get(dataColumnName);
+
+            if (pd != null)
+            {
+                ColumnDescriptor qcIndicatorColumn = entry.getValue();
+                // The column name needs to be the URI, in order to match up with the real column later.
+                qcIndicatorColumn.name = pd.getPropertyURI();
+            }
+            else
+            {
+                errors.add("Could not find a column match for the field '" + qcIndicatorName + "'.");
+            }
+        }
+
         if (cdKey == null && getKeyType() != ListDefinition.KeyType.AutoIncrementInteger)
         {
             errors.add("There must be a field with the name '" + getKeyName() + "'");
