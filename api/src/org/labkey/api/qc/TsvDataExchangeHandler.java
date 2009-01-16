@@ -25,10 +25,12 @@ import org.labkey.api.exp.Handler;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.PropertyValidationError;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.tools.ColumnDescriptor;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.apache.commons.lang.StringUtils;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.activation.DataHandler;
@@ -63,6 +65,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     public static final String ERRORS_FILE = "validationErrors.tsv";
     public static final String RUN_DATA_FILE = "runData.tsv";
 
+    private Map<String, String> _formFields = new HashMap<String, String>();
+
     public File createValidationRunInfo(AssayRunUploadContext context, ExpRun run, File scriptDir) throws Exception
     {
         File runProps = new File(scriptDir, VALIDATION_RUN_INFO_FILE);
@@ -81,6 +85,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 pw.append(entry.getValue());
                 pw.append('\t');
                 pw.println(entry.getKey().getPropertyType().getJavaType().getName());
+
+                _formFields.put(entry.getKey().getName(), entry.getValue());
             }
 
             // additional context properties
@@ -140,6 +146,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     {
         if (runInfo.exists())
         {
+            List<ValidationError> errors = new ArrayList<ValidationError>();
+
             try {
                 TabLoader loader = new TabLoader(runInfo, false);
                 loader.setColumns(new ColumnDescriptor[]{
@@ -168,22 +176,45 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                             new ColumnDescriptor("message", String.class)
                     });
 
-                    List<ValidationError> errors = new ArrayList<ValidationError>();
                     for (Map row : (Map[])errorLoader.load())
                     {
                         if ("error".equalsIgnoreCase(row.get("type").toString()))
-                            errors.add(new SimpleValidationError(row.get("message").toString()));
-                    }
+                        {
+                            String propName = mapPropertyName(StringUtils.trimToNull((String)row.get("property")));
 
-                    if (!errors.isEmpty())
-                        throw new ValidationException(errors);
+                            if (propName != null)
+                                errors.add(new PropertyValidationError(row.get("message").toString(), propName));
+                            else
+                                errors.add(new SimpleValidationError(row.get("message").toString()));
+                        }
+                    }
                 }
             }
             catch (Exception e)
             {
                 throw new ValidationException(e.getMessage());
             }
+
+            if (!errors.isEmpty())
+                throw new ValidationException(errors);
         }
+    }
+
+    /**
+     * Ensures the property name recorded maps to a valid form field name
+     * @param name
+     * @return
+     */
+    private String mapPropertyName(String name)
+    {
+        if (Props.assayId.name().equals(name))
+            return "name";
+        if (Props.runComments.name().equals(name))
+            return "comments";
+        if (_formFields.containsKey(name))
+            return name;
+
+        return null;
     }
 
     private void writeRunData(Map<String, Object>[] data, File runDataFile) throws Exception

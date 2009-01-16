@@ -464,7 +464,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
      * @return the run and batch that were inserted
      * @throws ExperimentException
      */
-    public Pair<ExpRun, ExpExperiment> saveExperimentRun(AssayRunUploadContext context, ExpExperiment batch) throws ExperimentException
+    public Pair<ExpRun, ExpExperiment> saveExperimentRun(AssayRunUploadContext context, ExpExperiment batch) throws ExperimentException, ValidationException
     {
         ExpRun run = createExperimentRun(context);
 
@@ -559,10 +559,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 scope.commitTransaction();
 
             return new Pair<ExpRun, ExpExperiment>(run, batch);
-        }
-        catch (ValidationException e)
-        {
-            throw new ExperimentException(e);
         }
         catch (SQLException e)
         {
@@ -1208,19 +1204,22 @@ public abstract class AbstractAssayProvider implements AssayProvider
         protocol.setObjectProperties(props);
     }
 
-    public List<File> getValidationAndAnalysisScripts(ExpProtocol protocol)
+    public List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope)
     {
-        ObjectProperty prop = protocol.getObjectProperties().get(protocol.getLSID() + "#ValidationScript");
-        if (prop != null)
+        if (scope == Scope.ASSAY_DEF || scope == Scope.ALL)
         {
-            return Collections.singletonList(new File(prop.getStringValue()));
+            ObjectProperty prop = protocol.getObjectProperties().get(protocol.getLSID() + "#ValidationScript");
+            if (prop != null)
+            {
+                return Collections.singletonList(new File(prop.getStringValue()));
+            }
         }
         return Collections.emptyList();
     }
 
     public void validate(AssayRunUploadContext context, ExpRun run) throws ValidationException
     {
-        for (File scriptFile : getValidationAndAnalysisScripts(context.getProtocol()))
+        for (File scriptFile : getValidationAndAnalysisScripts(context.getProtocol(), Scope.ALL))
         {
             // read the contents of the script file
             if (scriptFile.exists())
@@ -1265,7 +1264,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
                             dataHandler.processValidationOutput(runInfo);
                         }
                     }
-                    catch(Exception e)
+                    catch (ValidationException e)
+                    {
+                        throw e;
+                    }
+                    catch (Exception e)
                     {
                         throw new ValidationException(e.getMessage());
                     }

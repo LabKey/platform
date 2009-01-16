@@ -38,7 +38,8 @@ public class ParamReplacementSvc
     private static final ParamReplacementSvc _instance = new ParamReplacementSvc();
     private static Map<String, String> _outputSubstitutions = new HashMap<String, String>();
 
-    public static Pattern scriptPattern = Pattern.compile("\\$\\{(.*?)\\}");
+    // the default param replacement pattern : ${}
+    public static Pattern defaultScriptPattern = Pattern.compile("\\$\\{(.*?)\\}");
 
     private ParamReplacementSvc(){}
 
@@ -90,10 +91,20 @@ public class ParamReplacementSvc
      */
     public List<ParamReplacement> getParamReplacements(String script)
     {
+        return getParamReplacements(script, defaultScriptPattern);
+    }
+
+    /**
+     * Finds all the replacement parameters for a given script block
+     *
+     * @param pattern - the regular expression pattern for the replacements
+     */
+    public List<ParamReplacement> getParamReplacements(String script, Pattern pattern)
+    {
         List<ParamReplacement> params = new ArrayList<ParamReplacement>();
         if (script != null)
         {
-            Matcher m = ParamReplacementSvc.scriptPattern.matcher(script);
+            Matcher m = pattern.matcher(script);
 
             while (m.find())
             {
@@ -138,7 +149,17 @@ public class ParamReplacementSvc
      */
     public String processInputReplacement(String script, String replacementParam, File inputFile) throws Exception
     {
-        Matcher m = scriptPattern.matcher(script);
+        return processInputReplacement(script, replacementParam, inputFile, defaultScriptPattern);
+    }
+
+    /**
+     * Replaces an input replacement symbol with the full path name of the specified input file.
+     *
+     * @param pattern - the regular expression pattern for the replacements
+     */
+    public String processInputReplacement(String script, String replacementParam, File inputFile, Pattern pattern) throws Exception
+    {
+        Matcher m = pattern.matcher(script);
         String inputFileName = inputFile.getAbsolutePath();
         inputFileName = inputFileName.replaceAll("\\\\", "/");
 
@@ -149,7 +170,7 @@ public class ParamReplacementSvc
             if (replacementParam.equals(value))
             {
                 script = m.replaceFirst(inputFileName);
-                m = scriptPattern.matcher(script);
+                m = pattern.matcher(script);
             }
         }
         return script;
@@ -164,7 +185,19 @@ public class ParamReplacementSvc
      */
     public String processParamReplacement(String script, File parentDirectory, List<ParamReplacement> outputReplacements) throws Exception
     {
-        Matcher m = ParamReplacementSvc.scriptPattern.matcher(script);
+        return processParamReplacement(script, parentDirectory, outputReplacements, defaultScriptPattern);
+    }
+
+    /**
+     * Finds and processes all replacement parameters for a given script block. The
+     * returned string will have all valid replacement references converted.
+     *
+     * @param parentDirectory - the parent directory to create the output files for each param replacement.
+     * @param outputReplacements - the list of processed replacements found in the source script.
+     */
+    public String processParamReplacement(String script, File parentDirectory, List<ParamReplacement> outputReplacements, Pattern pattern) throws Exception
+    {
+        Matcher m = pattern.matcher(script);
         StringBuffer sb = new StringBuffer();
 
         while (m.find())

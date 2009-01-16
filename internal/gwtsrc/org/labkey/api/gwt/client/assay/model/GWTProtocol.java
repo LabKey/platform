@@ -20,6 +20,7 @@ import com.google.gwt.user.client.rpc.IsSerializable;
 
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 
 import org.labkey.api.gwt.client.model.GWTDomain;
 
@@ -42,7 +43,8 @@ public class GWTProtocol implements IsSerializable
     private List<String> _availablePlateTemplates;
 
     private String _selectedPlateTemplate;
-    private String _validationScriptFile;
+    private List<String> _validationScripts = new ArrayList<String>();
+    private String _protocolValidationScript;
 
     public GWTProtocol()
     {
@@ -129,13 +131,23 @@ public class GWTProtocol implements IsSerializable
         _selectedPlateTemplate = selectedPlateTemplate;
     }
 
-    public String getValidationScriptFile()
+    public List<String> getValidationScripts()
     {
-        return _validationScriptFile;
+        return _validationScripts;
     }
 
-    public void setValidationScriptFile(String qcScript)
+    public void setValidationScripts(List<String> validationScripts)
     {
-        _validationScriptFile = qcScript;
+        _validationScripts = validationScripts;
+    }
+
+    public String getProtocolValidationScript()
+    {
+        return _protocolValidationScript;
+    }
+
+    public void setProtocolValidationScript(String protocolValidationScript)
+    {
+        _protocolValidationScript = protocolValidationScript;
     }
 }

@@ -65,8 +65,8 @@ public interface AssayProvider extends Handler<ExpProtocol>
      * Creates a run, but does not persist it to the database. Creates the run only, no protocol applications, etc.
      */
     ExpRun createExperimentRun(String name, Container container, ExpProtocol protocol);
-    
-    Pair<ExpRun, ExpExperiment> saveExperimentRun(AssayRunUploadContext context, ExpExperiment batch) throws ExperimentException;
+
+    Pair<ExpRun, ExpExperiment> saveExperimentRun(AssayRunUploadContext context, ExpExperiment batch) throws ExperimentException, ValidationException;
 
     List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles);
 
@@ -150,6 +150,12 @@ public interface AssayProvider extends Handler<ExpProtocol>
      */
     boolean hasUsefulDetailsPage();
 
+    public enum Scope {
+        ALL,
+        ASSAY_TYPE,
+        ASSAY_DEF,
+    }
+
     /**
      * File based QC and analysis scripts can be added to a protocol and invoked when the validate
      * method is called. Set to an empty list if no scripts exist.
@@ -158,7 +164,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
      */
     void setValidationAndAnalysisScripts(ExpProtocol protocol, List<File> scripts) throws ExperimentException;
 
-    List<File> getValidationAndAnalysisScripts(ExpProtocol protocol);
+    List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope);
 
     void validate(AssayRunUploadContext context, ExpRun run) throws ValidationException;
 }

@@ -38,6 +38,11 @@ public class InsertView extends DataView
         super(dataRegion, errors);
     }
 
+    public InsertView(DataRegion dataRegion, RenderContext context)
+    {
+        super(dataRegion, context);    
+    }
+
     public InsertView(DataRegion dataRegion, TableViewForm form, BindException errors)
     {
         super(dataRegion, form, errors);

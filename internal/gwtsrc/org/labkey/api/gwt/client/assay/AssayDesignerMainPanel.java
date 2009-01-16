@@ -181,6 +181,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
     {
         final FlexTable table = new FlexTable();
         final String assayName = assay.getProtocolId() != null ? assay.getName() : null;
+        int row = 0;
 
         _nameBox = new BoundTextBox("Name", "AssayDesignerName", assayName, new WidgetUpdatable()
         {
@@ -196,13 +197,13 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
         _nameBox.setRequired(true);
         if (assay.getProtocolId() == null || _copy)
         {
-            table.setWidget(0, 1, _nameBox);
-            table.setHTML(0, 0, "Name (Required)");
+            table.setWidget(row, 1, _nameBox);
+            table.setHTML(row++, 0, "Name (Required)");
         }
         else
         {
-            table.setHTML(0, 1, assayName);
-            table.setHTML(0, 0, "Name");
+            table.setHTML(row, 1, assayName);
+            table.setHTML(row++, 0, "Name");
         }
 
         BoundTextAreaBox descriptionBox = new BoundTextAreaBox("Description", "AssayDesignerDescription", assay.getDescription(), new WidgetUpdatable()
@@ -216,15 +217,32 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
                 assay.setDescription(((TextArea) widget).getText());
             }
         }, this);
-        table.setHTML(1, 0, "Description");
-        table.setWidget(1, 1, descriptionBox);
+        table.setHTML(row, 0, "Description");
+        table.setWidget(row++, 1, descriptionBox);
 
-        BoundTextBox scriptFile = new BoundTextBox("QC Script", "AssayDesignerQCScript", assay.getValidationScriptFile(), new WidgetUpdatable()
+        // validation scripts defined at the type or global level are read only
+        for(String path : assay.getValidationScripts())
+        {
+            TextBox text = new TextBox();
+            text.setText(path);
+            text.setReadOnly(true);
+            text.setVisibleLength(79);
+
+            HorizontalPanel namePanel = new HorizontalPanel();
+            namePanel.add(new HTML("QC Script"));
+            namePanel.add(new HelpPopup("QC Script", "Validation scripts can be assigned by default by the assay type. Default scripts cannot be " +
+                    "removed from this view."));
+
+            table.setWidget(row, 0, namePanel);
+            table.setWidget(row++, 1, text);
+        }
+
+        BoundTextBox scriptFile = new BoundTextBox("QC Script", "AssayDesignerQCScript", assay.getProtocolValidationScript(), new WidgetUpdatable()
         {
             public void update(Widget widget)
             {
-                assay.setValidationScriptFile(((TextBox) widget).getText());
-                if (!((TextBox) widget).getText().equals(assay.getValidationScriptFile()))
+                assay.setProtocolValidationScript(((TextBox) widget).getText());
+                if (!((TextBox) widget).getText().equals(assay.getProtocolValidationScript()))
                 {
                     setDirty(true);
                 }
@@ -237,12 +255,12 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
         namePanel.add(new HelpPopup("QC Script", "The full path to the validation script file. The extension of the script file " +
                 "identifies the script engine that will be used to run the validation script. For example: a script named test.pl will " +
                 "be run with the Perl scripting engine. The scripting engine must be configured from the Admin panel."));
-        table.setWidget(2, 0, namePanel);
-        table.setWidget(2, 1, scriptFile);
+        table.setWidget(row, 0, namePanel);
+        table.setWidget(row++, 1, scriptFile);
 
         if (assay.getAvailablePlateTemplates() != null)
         {
-            table.setHTML(3, 0, "Plate Template");
+            table.setHTML(row, 0, "Plate Template");
             final ListBox templateList = new ListBox();
             int selectedIndex = -1;
             for (int i = 0; i < assay.getAvailablePlateTemplates().size(); i++)
@@ -268,7 +286,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
             picker.add(templateList);
             picker.add(new HTML("&nbsp;[<a href=\"" + PropertyUtil.getRelativeURL("plateTemplateList", "Plate") + "\">configure templates</a>]"));
             picker.setVerticalAlignment(ALIGN_BOTTOM);
-            table.setWidget(3, 1, picker);
+            table.setWidget(row++, 1, picker);
         }
         return table;
     }

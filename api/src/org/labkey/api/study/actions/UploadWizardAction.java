@@ -22,16 +22,18 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
-import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.assay.*;
@@ -39,7 +41,9 @@ import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.common.util.Pair;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.BindException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
@@ -159,7 +163,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         for (PropertyDescriptor pd : propertyDescriptors.keySet())
             pds[i++] = pd;
 
-        InsertView view = new InsertView(createDataRegion(baseTable, lsidCol, pds, null), errors);
+        InsertView view = new UploadWizardInsertView(createDataRegion(baseTable, lsidCol, pds, null), getViewContext(), errors);
         if (resetDefaultValues)
         {
             clearDefaultValues(uploadStepName);
@@ -610,6 +614,18 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
             {
                 run = saveExperimentRun(form);
             }
+            catch (ValidationException e)
+            {
+                for (ValidationError error : e.getErrors())
+                {
+                    if (error instanceof PropertyValidationError)
+                        errors.addError(new FieldError("AssayUploadForm", ((PropertyValidationError)error).getPropety(), null, false,
+                                new String[]{SpringActionController.ERROR_MSG}, new Object[0], error.getMessage()));
+                    else
+                        errors.reject(SpringActionController.ERROR_MSG, error.getMessage());
+                }
+                return getRunPropertiesView(form, true, false, errors);
+            }
             catch (ExperimentException e)
             {
                 errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
@@ -619,7 +635,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
             return afterRunCreation(form, run, errors);
         }
 
-        protected ExpRun saveExperimentRun(FormClass form) throws ExperimentException
+        protected ExpRun saveExperimentRun(FormClass form) throws ExperimentException, ValidationException
         {
             ExpExperiment exp = null;
             if (form.getBatchId() != null)
@@ -670,5 +686,97 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         if (participantVisitResolverName != null)
             return AbstractAssayProvider.findType(participantVisitResolverName, provider.getParticipantVisitResolverTypes());
         return null;
+    }
+
+    private static class UploadWizardInsertView extends InsertView
+    {
+        public UploadWizardInsertView(DataRegion dataRegion, ViewContext context, BindException errors)
+        {
+            super(dataRegion, new WizardRenderContext(context, errors));
+        }
+
+        @Override
+        protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException, SQLException
+        {
+            // may want to just put this in a js file and include it in all the wizard pages
+            out.write("<script type=\"text/javascript\">\n");
+            out.write("    LABKEY.requiresExtJs(true);\n");
+            out.write("    function showPopup(elem, txtTitle, txtMsg)\n" +
+                    "      {\n" +
+                    "        var win = new Ext.Window({\n" +
+                    "           title: txtTitle,\n" +
+                    "           border: false,\n" +
+                    "           html: txtMsg,\n" +
+                    "           closeAction:'close',\n" +
+                    "           autoScroll: true,\n" +
+                    "           modal: true,\n" +
+                    "           buttons: [{\n" +
+                    "             text: 'Close',\n" +
+                    "             id: 'btn_cancel',\n" +
+                    "             handler: function(){win.close();}\n" +
+                    "           }]\n" +
+                    "        });\n" +
+                    "        win.show(elem);\n" +
+                    "      }");
+            out.write("</script>\n");
+
+            super._renderDataRegion(ctx, out);
+        }
+    }
+
+    private static class WizardRenderContext extends RenderContext
+    {
+        private static final int MAX_ERRORS = 7;
+        public WizardRenderContext(ViewContext context, BindException errors)
+        {
+            super(context, errors);
+        }
+
+        @Override
+        public String getErrors(String paramName)
+        {
+            BindException errors = getErrors();
+            if (errors != null && errors.getErrorCount() > MAX_ERRORS)
+            {
+                List list;
+                if ("main".equals(paramName))
+                    list = errors.getGlobalErrors();
+                else
+                    list = errors.getFieldErrors(paramName);
+                if (list == null || list.size() == 0)
+                    return "";
+
+                StringBuilder sb = new StringBuilder();
+                StringBuilder msgBox = new StringBuilder();
+                String br = "<font class=\"labkey-error\">";
+                int cnt = 0;
+                for (Object m : list)
+                {
+                    if (cnt++ < MAX_ERRORS)
+                    {
+                        sb.append(br);
+                        sb.append(getViewContext().getMessage((MessageSourceResolvable)m));
+                        br = "<br>";
+                    }
+                    else
+                    {
+                        msgBox.append(getViewContext().getMessage((MessageSourceResolvable)m));
+                        msgBox.append("<br>");
+                    }
+                }
+                if (sb.length() > 0)
+                    sb.append("</font>");
+
+                if (msgBox.length() > 0)
+                {
+                    sb.append("<br><a id='extraErrors' href='#' onclick=\"showPopup('extraErrors', 'Additional Errors', '");
+                    sb.append(PageFlowUtil.encodeJavascriptStringLiteral(msgBox.toString()));
+                    sb.append("');return false;\">Additional errors...<a>");
+                }
+                return sb.toString();
+            }
+            else
+                return super.getErrors(paramName);
+        }
     }
 }
