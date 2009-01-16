@@ -284,10 +284,9 @@ api/src/org/labkey/api/module/FolderType.java -text
 api/src/org/labkey/api/module/MockModule.java -text
 api/src/org/labkey/api/module/Module.java -text
 api/src/org/labkey/api/module/ModuleContext.java -text
-api/src/org/labkey/api/module/ModuleCustomView.java -text
-api/src/org/labkey/api/module/ModuleCustomViewDef.java -text
 api/src/org/labkey/api/module/ModuleDependencySorter.java -text
 api/src/org/labkey/api/module/ModuleFileCopyListener.java -text
+api/src/org/labkey/api/module/ModuleFileResource.java -text
 api/src/org/labkey/api/module/ModuleLoader.java -text
 api/src/org/labkey/api/module/ModuleResourceLoadException.java -text
 api/src/org/labkey/api/module/ModuleResourceLoader.java -text

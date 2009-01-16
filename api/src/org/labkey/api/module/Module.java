@@ -253,10 +253,4 @@ public interface Module
     @NotNull
     public List<File> getStaticFileDirectories();
 
-    /**
-     * Returns a list of custom views defined within the module for the given query definition
-     * @param queryDef The query definition
-     * @return a list of custom views for that query definition, or null if no custom views are defined in the module
-     */
-    public List<CustomView> getCustomViews(QueryDefinition queryDef);
 }

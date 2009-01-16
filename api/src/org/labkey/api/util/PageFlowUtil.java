@@ -84,6 +84,12 @@ import java.util.zip.InflaterInputStream;
 
 public class PageFlowUtil
 {
+    public enum TransformFormat
+    {
+        html,
+        xml
+    }
+
     private static Logger _log = Logger.getLogger(PageFlowUtil.class);
     private static final String _newline = System.getProperty("line.separator");
 
@@ -1398,20 +1404,28 @@ public class PageFlowUtil
         }
     }
 
-
     public static String convertNodeToHtml(Node node)
+    {
+        return convertNodeToString(node, TransformFormat.html);
+    }
+
+    public static String convertNodeToXml(Node node)
+    {
+        return convertNodeToString(node, TransformFormat.xml);
+    }
+
+    public static String convertNodeToString(Node node, TransformFormat format)
     {
         try
         {
             Transformer t = TransformerFactory.newInstance().newTransformer();
-            t.setOutputProperty(OutputKeys.METHOD, "html");
+            t.setOutputProperty(OutputKeys.METHOD, format.toString());
             t.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
             ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
             t.transform(new DOMSource(node), new StreamResult(out));
             out.close();
 
-            String nodeHtml = new String(out.toByteArray(), "UTF-8").trim();
-            return nodeHtml;
+            return new String(out.toByteArray(), "UTF-8").trim();
         }
         catch (TransformerException e)
         {

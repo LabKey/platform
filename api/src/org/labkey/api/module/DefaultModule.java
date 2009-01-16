@@ -44,7 +44,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * User: migra
@@ -62,12 +61,6 @@ public abstract class DefaultModule implements Module
         public boolean accept(File dir, String name)
         {
             return name.toLowerCase().endsWith(ModuleRReportDescriptor.FILE_EXTENSION);
-        }
-    };
-    protected static final FilenameFilter customViewFileFilter = new FilenameFilter(){
-        public boolean accept(File dir, String name)
-        {
-            return name.toLowerCase().endsWith(ModuleCustomViewDef.FILE_EXTENSION);
         }
     };
 
@@ -698,32 +691,6 @@ public abstract class DefaultModule implements Module
             assert HttpView.getStackSize() == stackSize + 1;
             HttpView.resetStackSize(stackSize);
         }
-    }
-
-    protected File getCustomViewsDir()
-    {
-        return new File(getExplodedPath(), "queries");
-    }
-
-    public List<CustomView> getCustomViews(QueryDefinition queryDef)
-    {
-        List<CustomView> customViews = new ArrayList<CustomView>();
-
-        File queryDir = new File(getCustomViewsDir(), queryDef.getSchemaName() + "/" + queryDef.getName());
-        if(queryDir.exists() && queryDir.isDirectory())
-        {
-            for(File file : queryDir.listFiles(customViewFileFilter))
-            {
-                ModuleCustomViewDef viewDef = (ModuleCustomViewDef)_customViewCache.get(file.getAbsolutePath());
-                if(null == viewDef || viewDef.isStale())
-                {
-                    viewDef = new ModuleCustomViewDef(file);
-                    _customViewCache.put(file.getAbsolutePath(), viewDef);
-                }
-                customViews.add(new ModuleCustomView(queryDef, viewDef));
-            }
-        }
-        return customViews;
     }
 
     public Controller getController(HttpServletRequest request, String name)

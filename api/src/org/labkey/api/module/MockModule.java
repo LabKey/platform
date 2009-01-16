@@ -254,9 +254,4 @@ public class MockModule implements Module
         return Collections.EMPTY_LIST;
     }
 
-    public List<CustomView> getCustomViews(QueryDefinition queryDef)
-    {
-        return null;
-    }
-
 }

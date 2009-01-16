@@ -92,6 +92,22 @@ public class DOMUtil
     }
 
     /**
+     * Returns the child nodes of the given node as an iterable list
+     * @param node The parent node
+     * @return An iterable list of the child nodes (may be empty but will not be null)
+     */
+    public static List<Node> getChildNodes(Node node)
+    {
+        NodeList children = node.getChildNodes();
+        List<Node> ret = new ArrayList<Node>(children.getLength());
+        for(int idx = 0; idx < children.getLength(); ++idx)
+        {
+            ret.add(children.item(idx));
+        }
+        return ret;
+    }
+
+    /**
      * Returns a List of Node objects matching a given name.
      * If the node has no children or no children matching the
      * name, an empty list will be returned.
@@ -126,5 +142,22 @@ public class DOMUtil
     {
         List<Node> nodes = getChildNodesWithName(node, name);
         return nodes.size() > 0 ? nodes.get(0) : null;
+    }
+
+    /**
+     * Returns the first child node of the given node that is an element
+     * @param node The parent node
+     * @return The first child node that is an element, or null if there are none
+     */
+    public static Node getFirstChildElement(Node node)
+    {
+        NodeList children = node.getChildNodes();
+        for(int idx = 0; idx < children.getLength(); ++idx)
+        {
+            Node child = children.item(idx);
+            if(child.getNodeType() == Node.ELEMENT_NODE)
+                return child;
+        }
+        return null;
     }
 }
