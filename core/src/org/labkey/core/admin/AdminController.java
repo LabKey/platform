@@ -345,7 +345,7 @@ public class AdminController extends SpringActionController
 
             HttpView jars = new CreditsView("jars.txt", getWebInfJars(true), "JAR", "webapp", jarRegEx);
             HttpView commonJars = new CreditsView("common_jars.txt", getCommonJars(), "Common JAR", "/external/lib/common directory", jarRegEx);
-            HttpView scripts = new CreditsView("scripts.txt", null, "JavaScript", "/internal/webapp directory", null);
+            HttpView scripts = new CreditsView("scripts.txt", null, "JavaScript and Icons", "/internal/webapp directory", null);
             HttpView executables = new CreditsView("executables.txt", getBinFilenames(), "Executable", "/external/bin directory", "([\\w\\.]+\\.(exe|dll|manifest|jar))");
 
             return new VBox(jars, commonJars, scripts, executables);
