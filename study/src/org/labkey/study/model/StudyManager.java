@@ -1950,13 +1950,28 @@ public class StudyManager
 
             String matchedURI = matchedCol.getPropertyURI();
 
-            if (foundProperties.contains(matchedURI))
-                errors.add("Property '" + name + "' more than once.");
-            foundProperties.add(matchedURI);
+            if (! (matchedCol instanceof QcColumn))
+            {
+                if (foundProperties.contains(matchedURI))
+                {
+                    errors.add("Property '" + name + "' included more than once.");
+                }
+                foundProperties.add(matchedURI);
+            }
+
             col.name = matchedURI;
             col.clazz = matchedCol.getJavaClass();
             col.errorValues = CONVERSION_ERROR;
-            col.qcEnabled = matchedCol.isQcEnabled();
+            if (matchedCol.isQcEnabled())
+            {
+                col.qcEnabled = true;
+                col.qcContainer = def.getContainer();
+            }
+            else if (matchedCol instanceof QcColumn)
+            {
+                col.qcIndicator = true;
+                col.qcContainer = def.getContainer();
+            }
         }
 
         // make sure that our QC state columns are understood by this tab loader; we'll need to find QCStateLabel columns

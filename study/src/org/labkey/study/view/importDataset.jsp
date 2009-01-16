@@ -37,13 +37,13 @@
 <form action="showImportDataset.post" method=POST>
     <%=PageFlowUtil.generateSubmitButton("Import Data")%>
     <%=PageFlowUtil.generateButton("Cancel", "javascript:{}", "window.history.back();")%>
-    <table>
+    <table width="100%">
     <tr><td class=labkey-form-label width=150>Type URI</td><td><%=h(form.getTypeURI())%><input type=hidden name="typeURI" value="<%=h(form.getTypeURI())%>"></td></tr>
     <tr><td class=labkey-form-label width=150>Key Fields</td><td><%=h(form.getKeys())%><input type=hidden name="keys" value="<%=h(form.getKeys())%>"></td></tr>
         <tr><td class=labkey-form-label width=150 >Tab delimited data (TSV)</td>
         <td>[<a href="template.view?datasetId=<%=form.getDatasetId()%>">template spreadsheet</a>]
         </td></tr>
-        <tr><td colspan=2><textarea id=tsv name=tsv rows=25 cols=80  wrap=off ><%=h(form.getTsv())%></textarea></td></tr>
+        <tr><td colspan=2 width="100%"><textarea id=tsv name=tsv rows=25 cols=80 wrap=off style="width:100%;"><%=h(form.getTsv())%></textarea></td></tr>
     </table>
 	<input type=hidden name=datasetId value="<%=form.getDatasetId()%>">
 
