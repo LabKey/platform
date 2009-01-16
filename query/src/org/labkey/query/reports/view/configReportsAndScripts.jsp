@@ -60,6 +60,7 @@
 
         var newMenu = new Ext.menu.Menu({
             id: 'mainMenu',
+            cls:'extContainer',
             items: [{
                 id: 'add_rEngine',
                 text:'New R Engine',

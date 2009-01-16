@@ -141,13 +141,22 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             setPlateTemplateList(provider, result);
         }
 
-        List<File> scripts = provider.getValidationAndAnalysisScripts(protocol);
+        List<File> scripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_DEF);
         if (scripts.size() > 1)
-            throw new IllegalStateException("Only a single validation script is available for this release");
+            throw new IllegalStateException("Only a single validation script per Assay Definition is available for this release");
 
         if (scripts.size() == 1)
-            result.setValidationScriptFile(scripts.get(0).getAbsolutePath());
-        
+            result.setProtocolValidationScript(scripts.get(0).getAbsolutePath());
+
+        List<File> typeScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_TYPE);
+        if (!typeScripts.isEmpty())
+        {
+            List<String> scriptNames = new ArrayList<String>();
+            for (File script : typeScripts)
+                scriptNames.add(script.getAbsolutePath());
+
+            result.setValidationScripts(scriptNames);
+        }
         return result;
     }
 
@@ -293,8 +302,8 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
 
                 List<File> validationScripts = Collections.emptyList();
 
-                if (!StringUtils.isBlank(assay.getValidationScriptFile()))
-                    validationScripts = Collections.singletonList(new File(assay.getValidationScriptFile()));
+                if (!StringUtils.isBlank(assay.getProtocolValidationScript()))
+                    validationScripts = Collections.singletonList(new File(assay.getProtocolValidationScript()));
 
                 provider.setValidationAndAnalysisScripts(protocol, validationScripts);
                 protocol.save(getUser());

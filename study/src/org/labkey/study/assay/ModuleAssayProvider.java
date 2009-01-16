@@ -20,32 +20,31 @@ import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.IAssayDomainType;
 import org.labkey.api.exp.api.ExpProtocol.AssayDomainTypes;
+import org.labkey.api.exp.api.IAssayDomainType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.property.DomainUtil;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.actions.AssayDataDetailsAction;
-import org.labkey.api.study.assay.RunDataTable;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.RunDataTable;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.*;
-import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.ViewContext;
 import org.springframework.web.servlet.ModelAndView;
-import org.jetbrains.annotations.NotNull;
 
+import javax.script.ScriptEngineManager;
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
+import java.io.FileFilter;
 import java.sql.SQLException;
+import java.util.*;
 
 /**
  * User: kevink
@@ -252,5 +251,33 @@ public class ModuleAssayProvider extends TsvAssayProvider
     public boolean hasUsefulDetailsPage()
     {
         return true;
+    }
+
+    @Override
+    public List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope)
+    {
+        List<File> validationScripts = new ArrayList<File>();
+
+        if (scope == Scope.ASSAY_TYPE || scope == Scope.ALL)
+        {
+            // lazily get the validation scripts
+            File scriptDir = new File(baseDir, "scripts");
+
+            if (scriptDir.canRead())
+            {
+                final ScriptEngineManager manager = ServiceRegistry.get().getService(ScriptEngineManager.class);
+
+                File[] scripts = scriptDir.listFiles(new FileFilter(){
+                    public boolean accept(File pathname)
+                    {
+                        String ext = FileUtil.getExtension(pathname);
+                        return  (manager.getEngineByExtension(ext) != null);
+                    }
+                });
+                validationScripts.addAll(Arrays.asList(scripts));
+            }
+        }
+        validationScripts.addAll(super.getValidationAndAnalysisScripts(protocol, scope));
+        return validationScripts;
     }
 }
