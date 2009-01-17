@@ -360,4 +360,21 @@ public class DomainPropertyImpl implements DomainProperty
             }
         }
     }
+
+    @Override
+    public int hashCode()
+    {
+        return _pd.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (!(obj instanceof DomainPropertyImpl))
+            return false;
+        // once a domain property has been edited, it no longer equals any other domain property:
+        if (_pdOld != null || ((DomainPropertyImpl) obj)._pdOld != null)
+            return false;
+        return (_pd.equals(((DomainPropertyImpl) obj)._pd));
+    }
 }
