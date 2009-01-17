@@ -155,6 +155,7 @@ Ext.extend(LABKEY.MultiRequest, Ext.util.Observable,
         }
 
         this.waitQ.push(fn.createCallback(config));
+        return this;
     },
 
     /**
