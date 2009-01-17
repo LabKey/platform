@@ -797,6 +797,7 @@ api/webapp/clientapi/ExtJsConfig.js -text
 api/webapp/clientapi/Filter.js -text
 api/webapp/clientapi/GridView.js -text
 api/webapp/clientapi/LongTextEditor.js -text
+api/webapp/clientapi/MultiRequest.js -text
 api/webapp/clientapi/NavTrail.js -text
 api/webapp/clientapi/Query.js -text
 api/webapp/clientapi/Security.js -text
