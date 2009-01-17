@@ -23,7 +23,9 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.security.User;
+import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.property.DomainPropertyImpl;
 
 import java.util.*;
 
@@ -65,7 +67,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
         return _names;
     }
 
-    protected String getObject(int index, Map<PropertyDescriptor, String> sampleProperties) throws DuplicateMaterialException
+    protected String getObject(int index, Map<DomainProperty, String> sampleProperties) throws DuplicateMaterialException
     {
         String lsid = _lsids.get(index);
         if (lsid == null)
@@ -91,18 +93,19 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
 
             if (_lsids.containsValue(lsid) || ExperimentService.get().getExpMaterial(lsid) != null)
             {
-                throw new DuplicateMaterialException("Duplicate material name: " + name, getSpecimenPropertyInputName(getSampleNames().get(index), getNamePDs().get(0)));
+                throw new DuplicateMaterialException("Duplicate material name: " + name,
+                        UploadWizardAction.getInputName(getNamePDs().get(0), getSampleNames().get(index)));
             }
             _lsids.put(index, lsid);
         }
         return lsid;
     }
 
-    public String determineMaterialName(Map<PropertyDescriptor, String> sampleProperties)
+    public String determineMaterialName(Map<DomainProperty, String> sampleProperties)
     {
         String separator = "";
         StringBuilder sb = new StringBuilder();
-        for (PropertyDescriptor pd : getNamePDs())
+        for (DomainProperty pd : getNamePDs())
         {
             sb.append(separator);
             separator = "-";
@@ -111,37 +114,44 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
         return sb.toString();
     }
 
-    protected boolean isCopyable(PropertyDescriptor pd)
+    protected boolean isCopyable(DomainProperty pd)
     {
         return !getNamePDs().contains(pd);
     }
 
-    public static PropertyDescriptor[] getPropertyDescriptors(ExpSampleSet sampleSet, Container c)
+    public static DomainProperty[] getPropertyDescriptors(ExpSampleSet sampleSet, Container c)
     {
-        List<PropertyDescriptor> pds = new ArrayList<PropertyDescriptor>();
+        List<DomainProperty> dps = new ArrayList<DomainProperty>();
 
         if (sampleSet != null && sampleSet.getType() != null)
         {
-            for (DomainProperty domainProp : sampleSet.getType().getProperties())
-            {
-                pds.add(domainProp.getPropertyDescriptor());
-            }
+            dps.addAll(Arrays.asList(sampleSet.getType().getProperties()));
         }
         else
         {
-            PropertyDescriptor namePD = new PropertyDescriptor(ExperimentServiceImpl.get().getTinfoMaterial().getColumn("Name"), c);
-            namePD.setRequired(true);
-            pds.add(namePD);
+            PropertyDescriptor namePropertyDescriptor = new PropertyDescriptor(ExperimentServiceImpl.get().getTinfoMaterial().getColumn("Name"), c);
+            namePropertyDescriptor.setRequired(true);
+            DomainPropertyImpl nameDomainProperty = new DomainPropertyImpl(null, namePropertyDescriptor);
+            dps.add(nameDomainProperty);
         }
         
-        return pds.toArray(new PropertyDescriptor[pds.size()]);
+        return dps.toArray(new DomainProperty[dps.size()]);
     }
 
-    public List<PropertyDescriptor> getNamePDs()
+    public List<DomainProperty> getNamePDs()
     {
         if (_sampleSet != null)
         {
-            return _sampleSet.getIdCols();
+            Set<String> idColNames = new HashSet<String>();
+            for (PropertyDescriptor pd : _sampleSet.getIdCols())
+                idColNames.add(pd.getName());
+            List<DomainProperty> properties = new ArrayList<DomainProperty>();
+            for (DomainProperty dp : _sampleSet.getType().getProperties())
+            {
+                if (idColNames.contains(dp.getName()))
+                    properties.add(dp);
+            }
+            return properties;
         }
         else
         {

@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.action.*;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.pipeline.PipeRoot;
@@ -2570,12 +2571,13 @@ public class ExperimentController extends SpringActionController
 
             DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleSet, form.getOutputCount(), getContainer(), getUser());
 
-            if (!UploadWizardAction.validatePostedProperties(helper.getPostedPropertyValues(getViewContext().getRequest()), errors))
-            {
+            boolean valid = true;
+            for (Map.Entry<String, Map<DomainProperty, String>> entry : helper.getPostedPropertyValues(getViewContext().getRequest()).entrySet())
+                valid = UploadWizardAction.validatePostedProperties(entry.getValue(), errors) && valid;
+            if (!valid)
                 return redirectError(form, errors);
-            }
 
-            Map<String, Map<PropertyDescriptor, String>> allProperties;
+            Map<String, Map<DomainProperty, String>> allProperties;
             try
             {
                 allProperties = helper.getSampleProperties(getViewContext().getRequest());
@@ -2587,9 +2589,9 @@ public class ExperimentController extends SpringActionController
             }
 
             int i = 0;
-            for (Map.Entry<String, Map<PropertyDescriptor, String>> entry : allProperties.entrySet())
+            for (Map.Entry<String, Map<DomainProperty, String>> entry : allProperties.entrySet())
             {
-                Map<PropertyDescriptor, String> props = entry.getValue();
+                Map<DomainProperty, String> props = entry.getValue();
                 String name = helper.determineMaterialName(props);
                 ExpMaterial outputMaterial = ExperimentService.get().createExpMaterial(getContainer(), entry.getKey(), name);
                 if (sampleSet != null)
@@ -2600,8 +2602,8 @@ public class ExperimentController extends SpringActionController
 
                 if (sampleSet != null)
                 {
-                    for (Map.Entry<PropertyDescriptor, String> propertyEntry : entry.getValue().entrySet())
-                        outputMaterial.setProperty(getUser(), propertyEntry.getKey(), propertyEntry.getValue());
+                    for (Map.Entry<DomainProperty, String> propertyEntry : entry.getValue().entrySet())
+                        outputMaterial.setProperty(getUser(), propertyEntry.getKey().getPropertyDescriptor(), propertyEntry.getValue());
                 }
 
                 outputMaterials.put(outputMaterial, helper.getSampleNames().get(i++));

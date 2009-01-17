@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
 <%@ page import="org.labkey.api.data.TableViewForm" %>
 <%@ page import="org.labkey.api.data.DisplayColumnGroup" %>
+<%@ page import="org.labkey.api.exp.property.DomainProperty" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib"%>
 <%
@@ -64,7 +65,7 @@
                 <td>
                     <%
                     String separator = "";
-                    Map<PropertyDescriptor, DisplayColumnGroup> groups = helper.getGroups();
+                    Map<DomainProperty, DisplayColumnGroup> groups = helper.getGroups();
                     for (int i = 0; i < helper.getSampleNames().size(); i++)
                     {
                         %><%= separator %>

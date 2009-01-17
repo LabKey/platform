@@ -24,6 +24,8 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.query.ValidationException;
 import org.springframework.validation.BindException;
@@ -123,10 +125,10 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             run.setName(name);
         }
         run.save(getViewContext().getUser());
-        PropertyDescriptor[] pds = provider.getUploadSetColumns(protocol);
+        Domain uploadSetDomain = provider.getUploadSetDomain(protocol);
         if (runJsonObject.has(PROPERTIES))
         {
-            saveProperties(run, pds, runJsonObject.getJSONObject(PROPERTIES));
+            saveProperties(run, uploadSetDomain.getProperties(), runJsonObject.getJSONObject(PROPERTIES));
         }
 
         return run;
@@ -150,27 +152,27 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         }
         batch.save(getViewContext().getUser());
 
-        PropertyDescriptor[] pds = provider.getUploadSetColumns(protocol);
+        Domain uploadSetDomain = provider.getUploadSetDomain(protocol);
         if (batchJsonObject.has(PROPERTIES))
         {
-            saveProperties(batch, pds, batchJsonObject.getJSONObject(PROPERTIES));
+            saveProperties(batch, uploadSetDomain.getProperties(), batchJsonObject.getJSONObject(PROPERTIES));
         }
 
         return batch;
     }
 
-    private void saveProperties(ExpObject object, PropertyDescriptor[] pds, JSONObject propertiesJsonObject) throws ValidationException, JSONException
+    private void saveProperties(ExpObject object, DomainProperty[] dps, JSONObject propertiesJsonObject) throws ValidationException, JSONException
     {
-        for (PropertyDescriptor pd : pds)
+        for (DomainProperty dp : dps)
         {
-            if (propertiesJsonObject.has(pd.getName()))
+            if (propertiesJsonObject.has(dp.getName()))
             {
-                Class javaType = pd.getPropertyType().getJavaType();
-                object.setProperty(getViewContext().getUser(), pd, ConvertUtils.lookup(javaType).convert(javaType, propertiesJsonObject.get(pd.getName())));
+                Class javaType = dp.getPropertyDescriptor().getPropertyType().getJavaType();
+                object.setProperty(getViewContext().getUser(), dp.getPropertyDescriptor(), ConvertUtils.lookup(javaType).convert(javaType, propertiesJsonObject.get(dp.getName())));
             }
             else
             {
-                object.setProperty(getViewContext().getUser(), pd, null);
+                object.setProperty(getViewContext().getUser(), dp.getPropertyDescriptor(), null);
             }
         }
     }

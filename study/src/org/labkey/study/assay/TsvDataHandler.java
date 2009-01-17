@@ -25,8 +25,9 @@ import org.apache.commons.beanutils.ConversionException;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.study.assay.AbstractAssayTsvDataHandler;
@@ -60,15 +61,15 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler
         return false;
     }
 
-    public Map<String, Object>[] loadFileData(PropertyDescriptor[] columns, File inputfile) throws IOException, ExperimentException
+    public Map<String, Object>[] loadFileData(Domain dataDomain, File inputfile) throws IOException, ExperimentException
     {
         if (inputfile.getName().toLowerCase().endsWith(".xls"))
-            return loadXls(columns, inputfile);
+            return loadXls(dataDomain, inputfile);
         else
-            return loadTsv(columns, inputfile);
+            return loadTsv(dataDomain, inputfile);
     }
 
-    private Map<String, Object>[] loadXls(PropertyDescriptor[] columns, File inputfile) throws IOException, ExperimentException
+    private Map<String, Object>[] loadXls(Domain dataDomain, File inputfile) throws IOException, ExperimentException
     {
         FileInputStream fIn = null;
         try
@@ -103,8 +104,8 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler
             Map<String, Object>[] rowDatas = new HashMap[sheet.getRows() - 1];
 
             Map<String, PropertyType> colTypes = new HashMap<String, PropertyType>();
-            for (PropertyDescriptor pd : columns)
-                colTypes.put(pd.getName().toLowerCase(), pd.getPropertyType());
+            for (DomainProperty dp : dataDomain.getProperties())
+                colTypes.put(dp.getName().toLowerCase(), dp.getPropertyDescriptor().getPropertyType());
 
             for (int rowIndex = 1; rowIndex < sheet.getRows(); rowIndex++)
             {
@@ -212,16 +213,17 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler
         }
     }
 
-    private Map<String, Object>[] loadTsv(PropertyDescriptor[] columns, File inputFile) throws IOException, ExperimentException
+    private Map<String, Object>[] loadTsv(Domain dataDomain, File inputFile) throws IOException, ExperimentException
     {
+        DomainProperty[] columns = dataDomain.getProperties();
         Map<String, Class> expectedColumns = new HashMap<String, Class>(columns.length);
-        for (PropertyDescriptor col : columns)
+        for (DomainProperty col : columns)
         {
             if (col.getLabel() != null)
-                expectedColumns.put(col.getLabel().toLowerCase(), col.getPropertyType().getJavaType());
+                expectedColumns.put(col.getLabel().toLowerCase(), col.getPropertyDescriptor().getPropertyType().getJavaType());
         }
-        for (PropertyDescriptor col : columns)
-            expectedColumns.put(col.getName().toLowerCase(), col.getPropertyType().getJavaType());
+        for (DomainProperty col : columns)
+            expectedColumns.put(col.getName().toLowerCase(), col.getPropertyDescriptor().getPropertyType().getJavaType());
         Reader fileReader = new FileReader(inputFile);
         try
         {

@@ -19,6 +19,8 @@ package org.labkey.study.assay.query;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
@@ -109,8 +111,7 @@ public class AssaySchema extends UserSchema
 
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>(runTable.getDefaultVisibleColumns());
 
-        List<PropertyDescriptor> runColumns = new ArrayList<PropertyDescriptor>(Arrays.asList(provider.getRunPropertyColumns(protocol)));
-        runColumns.addAll(Arrays.asList(provider.getUploadSetColumns(protocol)));
+        List<PropertyDescriptor> runColumns = provider.getRunTableColumns(protocol);
         PropertyDescriptor[] pds = runColumns.toArray(new PropertyDescriptor[runColumns.size()]);
 
         ColumnInfo propsCol = runTable.addPropertyColumns("Run Properties", pds, this);
@@ -131,7 +132,11 @@ public class AssaySchema extends UserSchema
                 ExpExperimentTable result = ExperimentService.get().createExperimentTable("Experiments", null, AssaySchema.this);
                 result.populate();
                 result.setContainerFilter(runTable.getContainerFilter(), getUser());
-                PropertyDescriptor[] batchPDs = provider.getUploadSetColumns(protocol);
+                Domain uploadSetDomain = provider.getUploadSetDomain(protocol);
+                DomainProperty[] properties = uploadSetDomain.getProperties();
+                PropertyDescriptor[] batchPDs = new PropertyDescriptor[properties.length];
+                for (int i = 0; i < properties.length; i++)
+                    batchPDs[i] = properties[i].getPropertyDescriptor();
                 ColumnInfo batchPropsCol = result.addPropertyColumns("Batch Properties", batchPDs, AssaySchema.this);
                 batchPropsCol.setFk(new AssayPropertyForeignKey(batchPDs));
                 return result;

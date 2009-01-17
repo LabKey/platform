@@ -20,7 +20,8 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.exp.api.*;
-import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.NotFoundException;
@@ -85,7 +86,7 @@ public abstract class AbstractAssayAPIAction<FORM> extends ApiAction<FORM>
     protected JSONObject serializeRun(ExpRun run, AssayProvider provider, ExpProtocol protocol)
     {
         JSONObject jsonObject = new JSONObject();
-        serializeStandardProperties(run, jsonObject, provider.getRunDataColumns(protocol));
+        serializeStandardProperties(run, jsonObject, provider.getRunDataDomain(protocol).getProperties());
         jsonObject.put("comments", run.getComments());
         return jsonObject;
     }
@@ -93,7 +94,7 @@ public abstract class AbstractAssayAPIAction<FORM> extends ApiAction<FORM>
     protected JSONObject serializeBatch(ExpExperiment batch, AssayProvider provider, ExpProtocol protocol)
     {
         JSONObject jsonObject = new JSONObject();
-        serializeStandardProperties(batch, jsonObject, provider.getUploadSetColumns(protocol));
+        serializeStandardProperties(batch, jsonObject, provider.getUploadSetDomain(protocol).getProperties());
 
         JSONArray runsArray = new JSONArray();
         for (ExpRun run : batch.getRuns())
@@ -105,7 +106,7 @@ public abstract class AbstractAssayAPIAction<FORM> extends ApiAction<FORM>
         return jsonObject;
     }
 
-    protected void serializeStandardProperties(ExpObject object, JSONObject jsonObject, PropertyDescriptor[] pds)
+    protected void serializeStandardProperties(ExpObject object, JSONObject jsonObject, DomainProperty[] dps)
     {
         // Standard properties on all experiment objects
         jsonObject.put(NAME, object.getName());
@@ -117,12 +118,12 @@ public abstract class AbstractAssayAPIAction<FORM> extends ApiAction<FORM>
         jsonObject.put(MODIFIED, object.getModified());
 
         // Add the custom properties
-        if (pds != null)
+        if (dps != null)
         {
             JSONObject propertiesObject = new JSONObject();
-            for (PropertyDescriptor pd : pds)
+            for (DomainProperty dp : dps)
             {
-                propertiesObject.put(pd.getName(), object.getProperty(pd));
+                propertiesObject.put(dp.getName(), object.getProperty(dp));
             }
             jsonObject.put(PROPERTIES, propertiesObject);
         }

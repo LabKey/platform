@@ -151,7 +151,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     }
 
     public ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, @Nullable ExpProtocol protocol,
-                                          Map<String, Object>[] dataMaps, List<PropertyDescriptor> types, String keyPropertyName, List<String> errors)
+                                          Map<String, Object>[] dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
             throws SQLException, IOException, ServletException
     {
         Study targetStudy = StudyManager.getInstance().getStudy(targetContainer);
@@ -188,7 +188,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                 }
             }
 
-            types = createTargetPropertyDescriptors(dataset, types, errors);
+            List<PropertyDescriptor> types = createTargetPropertyDescriptors(dataset, columns, errors);
             if (!errors.isEmpty())
                 return null;
             Map<String, String> propertyNamesToUris = ensurePropertyDescriptors(targetContainer, user, dataset, dataMaps, types);

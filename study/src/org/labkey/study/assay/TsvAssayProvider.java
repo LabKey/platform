@@ -149,8 +149,8 @@ public class TsvAssayProvider extends AbstractAssayProvider
             typeList.add(createPublishPropertyDescriptor(study, getDataRowIdFieldKey().toString(), getDataRowIdType()));
             typeList.add(createPublishPropertyDescriptor(study, "SourceLSID", getDataRowIdType()));
 
-            PropertyDescriptor[] runPDs = getRunPropertyColumns(protocol);
-            PropertyDescriptor[] uploadSetPDs = getUploadSetColumns(protocol);
+            PropertyDescriptor[] runPDs = getPropertyDescriptors(getRunDomain(protocol));
+            PropertyDescriptor[] uploadSetPDs = getPropertyDescriptors(getUploadSetDomain(protocol));
 
             List<PropertyDescriptor> pds = new ArrayList<PropertyDescriptor>();
             pds.addAll(Arrays.asList(runPDs));
@@ -163,11 +163,11 @@ public class TsvAssayProvider extends AbstractAssayProvider
             // this will produce a types set that contains rowCount*columnCount property descriptors unless we prevent additions
             // to the map after the first row.  This is done by nulling out the 'tempTypes' object after the first iteration:
             Set<PropertyDescriptor> tempTypes = typeList;
+            PropertyDescriptor[] rowPropertyDescriptors = getPropertyDescriptors(getRunDataDomain(protocol));
             for (OntologyObject row : dataRows)
             {
                 Map<String, Object> dataMap = new HashMap<String, Object>();
                 Map<String, Object> rowProperties = OntologyManager.getProperties(row.getContainer(), row.getObjectURI());
-                PropertyDescriptor[] rowPropertyDescriptors = getRunDataColumns(protocol);
                 for (PropertyDescriptor pd : rowPropertyDescriptors)
                 {
                     // We should skip properties that are set by the resolver: participantID,

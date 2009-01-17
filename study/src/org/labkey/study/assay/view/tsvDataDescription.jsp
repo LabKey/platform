@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.study.actions.TemplateAction" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.study.assay.AssayUrls" %>
+<%@ page import="org.labkey.api.exp.property.DomainProperty" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AssayRunUploadForm> me = (JspView<org.labkey.api.study.actions.AssayRunUploadForm>) HttpView.currentView();
@@ -33,10 +34,10 @@
         <td colspan="2">Expected Columns:
             <table>
         <%
-            for (PropertyDescriptor pd : bean.getRunDataProperties())
+            for (DomainProperty pd : bean.getRunDataProperties())
             {
         %>
-            <tr><td><strong><%= pd.getName() %><%= (pd.isRequired() ? " (Required)" : "") %></strong>:</td><td><%= pd.getPropertyType().getXarName() %></td><td><%=h(pd.getDescription())%></td></tr>
+            <tr><td><strong><%= pd.getName() %><%= (pd.isRequired() ? " (Required)" : "") %></strong>:</td><td><%= pd.getPropertyDescriptor().getPropertyType().getXarName() %></td><td><%=h(pd.getDescription())%></td></tr>
         <%
             }
         %>
