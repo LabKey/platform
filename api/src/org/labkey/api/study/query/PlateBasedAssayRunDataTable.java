@@ -22,6 +22,8 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.query.*;
 import org.labkey.api.study.assay.AbstractAssayProvider;
@@ -170,12 +172,14 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
 
         Set<String> hiddenProperties = new HashSet<String>();
         hiddenProperties.add(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME);
-        for (PropertyDescriptor prop : provider.getRunPropertyColumns(protocol))
+        Domain runDomain = provider.getRunDomain(protocol);
+        for (DomainProperty prop : runDomain.getProperties())
         {
             if (!hiddenProperties.contains(prop.getName()))
                 visibleColumns.add(FieldKey.fromParts("Run", "Run Properties", prop.getName()));
         }
-        for (PropertyDescriptor prop : provider.getUploadSetColumns(protocol))
+        Domain uploadSetDomain = provider.getUploadSetDomain(protocol);
+        for (DomainProperty prop : uploadSetDomain.getProperties())
         {
             if (!hiddenProperties.contains(prop.getName()))
                 visibleColumns.add(FieldKey.fromParts("Run", "Run Properties", prop.getName()));

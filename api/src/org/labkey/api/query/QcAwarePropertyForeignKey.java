@@ -20,6 +20,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.QcColumn;
+import org.labkey.api.exp.property.DomainProperty;
 
 import java.sql.Types;
 import java.util.ArrayList;
@@ -44,6 +45,19 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
         // It's annoying that we have to call 'getDisplayPds()' twice, but using
         // a ThreadLocal or the like seems like overkill.
         _metadata = getDisplayPds(pds);
+    }
+
+    public QcAwarePropertyForeignKey(DomainProperty[] dps, TableInfo baseTable, QuerySchema schema)
+    {
+        this(getPropertyDescriptors(dps), baseTable, schema);
+    }
+
+    private static PropertyDescriptor[] getPropertyDescriptors(DomainProperty[] domainProperties)
+    {
+        PropertyDescriptor[] propertyDescriptors = new PropertyDescriptor[domainProperties.length];
+        for (int i = 0; i < domainProperties.length; i++)
+            propertyDescriptors[i] = domainProperties[i].getPropertyDescriptor();
+        return propertyDescriptors;
     }
 
     private static QcMetadata getDisplayPds(PropertyDescriptor[] pds)

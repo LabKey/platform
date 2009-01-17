@@ -18,22 +18,17 @@ package org.labkey.api.qc;
 import org.labkey.api.study.assay.AssayRunUploadContext;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.ExperimentDataHandler;
-import org.labkey.api.exp.Handler;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.tools.ColumnDescriptor;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.apache.commons.lang.StringUtils;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.activation.DataHandler;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.BufferedWriter;
@@ -73,18 +68,18 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(runProps)));
 
         try {
-            Map<PropertyDescriptor, String> runProperties = context.getRunProperties();
+            Map<DomainProperty, String> runProperties = context.getRunProperties();
             runProperties.putAll(context.getUploadSetProperties());
             runProperties.putAll(context.getRunProperties());
 
             // serialize the run properties to a tsv
-            for (Map.Entry<PropertyDescriptor, String> entry : runProperties.entrySet())
+            for (Map.Entry<DomainProperty, String> entry : runProperties.entrySet())
             {
                 pw.append(entry.getKey().getName());
                 pw.append('\t');
                 pw.append(entry.getValue());
                 pw.append('\t');
-                pw.println(entry.getKey().getPropertyType().getJavaType().getName());
+                pw.println(entry.getKey().getPropertyDescriptor().getPropertyType().getJavaType().getName());
 
                 _formFields.put(entry.getKey().getName(), entry.getValue());
             }
@@ -105,7 +100,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 ExperimentDataHandler handler = expData.findDataHandler();
                 if (handler instanceof ValidationDataHandler)
                 {
-                    Map<String, Object>[] data = ((ValidationDataHandler)handler).loadFileData(context.getProvider().getRunDataColumns(context.getProtocol()), expData.getDataFile());
+                    Domain runDataDomain = context.getProvider().getRunDataDomain(context.getProtocol());
+                    Map<String, Object>[] data = ((ValidationDataHandler)handler).loadFileData(runDataDomain, expData.getDataFile());
                     File runData = new File(scriptDir, RUN_DATA_FILE);
                     writeRunData(data, runData);
 

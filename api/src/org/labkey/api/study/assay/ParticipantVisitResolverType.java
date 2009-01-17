@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRun;
@@ -55,7 +56,7 @@ public interface ParticipantVisitResolverType
 
     public void addHiddenFormFields(InsertView view, AssayRunUploadForm form);
 
-    public void configureRun(AssayRunUploadContext context, ExpRun run, Map<PropertyDescriptor, String> runProperties, Map<PropertyDescriptor, String> uploadSetProperties, Map<ExpData, String> inputDatas) throws ExperimentException;
+    public void configureRun(AssayRunUploadContext context, ExpRun run, Map<DomainProperty, String> runProperties, Map<DomainProperty, String> uploadSetProperties, Map<ExpData, String> inputDatas) throws ExperimentException;
 
     public void putDefaultProperties(HttpServletRequest request, Map<String, String> properties);
 

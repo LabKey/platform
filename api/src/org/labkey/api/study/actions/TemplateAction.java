@@ -18,8 +18,8 @@ package org.labkey.api.study.actions;
 
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.ACL;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
@@ -44,9 +44,9 @@ public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
     {
         ExpProtocol protocol = getProtocol(rowIdForm);
         AssayProvider provider = AssayService.get().getProvider(protocol);
-        PropertyDescriptor[] columns = provider.getRunDataColumns(protocol);
+        Domain runDataDomain = provider.getRunDataDomain(protocol);
         Map<String, String> colNameToPdname = new CaseInsensitiveHashMap<String>();
-        DataRegion dr = createDataRegion(OntologyManager.getTinfoObject(), "ObjectURI", columns, colNameToPdname);
+        DataRegion dr = createDataRegion(OntologyManager.getTinfoObject(), "ObjectURI", runDataDomain.getProperties(), colNameToPdname);
         SimpleFilter filter = new SimpleFilter();
         filter.addWhereClause("0 = 1", new Object[]{});
 

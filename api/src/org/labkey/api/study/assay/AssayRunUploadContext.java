@@ -18,6 +18,7 @@ package org.labkey.api.study.assay;
 
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -39,9 +40,9 @@ public interface AssayRunUploadContext
 {
     ExpProtocol getProtocol();
 
-    Map<PropertyDescriptor, String> getRunProperties();
+    Map<DomainProperty, String> getRunProperties();
 
-    Map<PropertyDescriptor, String> getUploadSetProperties();
+    Map<DomainProperty, String> getUploadSetProperties();
 
     String getComments();
 

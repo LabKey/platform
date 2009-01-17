@@ -19,6 +19,8 @@ package org.labkey.api.study.actions;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -41,8 +43,8 @@ import java.sql.SQLException;
 */
 public class AssayRunUploadForm extends ProtocolIdForm implements AssayRunUploadContext
 {
-    private Map<PropertyDescriptor, String> _uploadSetProperties = null;
-    private Map<PropertyDescriptor, String> _runProperties = null;
+    private Map<DomainProperty, String> _uploadSetProperties = null;
+    private Map<DomainProperty, String> _runProperties = null;
     private String _comments;
     private String _name;
     private String _dataCollectorName;
@@ -54,19 +56,19 @@ public class AssayRunUploadForm extends ProtocolIdForm implements AssayRunUpload
     private Map<String, File> _uploadedData;
     private boolean _successfulUploadComplete;
     private String _uploadAttemptID = GUID.makeGUID();
-    private Map<PropertyDescriptor, File> _additionalFiles;
+    private Map<DomainProperty, File> _additionalFiles;
     private Integer _batchId;
 
     // Unfortunate query hackery that orders display columns based on default view
-    protected PropertyDescriptor[] reorderDomainColumns(PropertyDescriptor[] unorderedColumns, ViewContext context, ExpProtocol protocol)
+    protected DomainProperty[] reorderDomainColumns(DomainProperty[] unorderedColumns, ViewContext context, ExpProtocol protocol)
     {
-        Map<String, PropertyDescriptor> nameToCol = new HashMap<String, PropertyDescriptor>();
+        Map<String, DomainProperty> nameToCol = new HashMap<String, DomainProperty>();
         // unfortunately, we have to match on label/caption when mapping propertydescriptors to columninfo objects;
         // there are no other pieces of data that are the same.
-        for (PropertyDescriptor pd : unorderedColumns)
-            nameToCol.put(pd.getNonBlankLabel(), pd);
+        for (DomainProperty pd : unorderedColumns)
+            nameToCol.put(pd.getPropertyDescriptor().getNonBlankLabel(), pd);
 
-        List<PropertyDescriptor> orderedColumns = new ArrayList<PropertyDescriptor>();
+        List<DomainProperty> orderedColumns = new ArrayList<DomainProperty>();
         // add all columns that are found in the default view in the correct order:
         QueryView dataView = getProvider().createRunDataQueryView(context, protocol);
         List<DisplayColumn> allColumns = dataView.getDisplayColumns();
@@ -78,7 +80,7 @@ public class AssayRunUploadForm extends ProtocolIdForm implements AssayRunUpload
             if (dc instanceof UrlColumn)
                 continue;
 
-            PropertyDescriptor col = nameToCol.get(dc.getCaption());
+            DomainProperty col = nameToCol.get(dc.getCaption());
             if (col != null)
             {
                 orderedColumns.add(col);
@@ -86,57 +88,60 @@ public class AssayRunUploadForm extends ProtocolIdForm implements AssayRunUpload
             }
         }
         // add the remaining columns:
-        for (PropertyDescriptor col : nameToCol.values())
+        for (DomainProperty col : nameToCol.values())
             orderedColumns.add(col);
-        return orderedColumns.toArray(new PropertyDescriptor[orderedColumns.size()]);
+        return orderedColumns.toArray(new DomainProperty[orderedColumns.size()]);
     }
 
-    public PropertyDescriptor[] getRunDataProperties()
+    public DomainProperty[] getRunDataProperties()
     {
         AssayProvider provider = AssayService.get().getProvider(getProtocol());
-        PropertyDescriptor[] properties = provider.getRunDataColumns(getProtocol());
+        Domain domain = provider.getRunDataDomain(getProtocol());
+        DomainProperty[] properties = domain.getProperties();
         return reorderDomainColumns(properties, getViewContext(), getProtocol());
     }
 
-    public Map<PropertyDescriptor, String> getRunProperties()
+    public Map<DomainProperty, String> getRunProperties()
     {
         if (_runProperties == null)
         {
             AssayProvider provider = AssayService.get().getProvider(getProtocol());
-            PropertyDescriptor[] properties = provider.getRunInputPropertyColumns(getProtocol());
+            Domain domain = provider.getRunInputDomain(getProtocol());
+            DomainProperty[] properties = domain.getProperties();
             properties = reorderDomainColumns(properties, getViewContext(), getProtocol());
             _runProperties = getPropertyMapFromRequest(Arrays.asList(properties));
         }
         return _runProperties;
     }
 
-    public String getFormElementName(PropertyDescriptor pd)
+    public String getFormElementName(DomainProperty pd)
     {
         return ColumnInfo.propNameFromName(pd.getName());
     }
 
     /** @return property descriptor to value */
-    public Map<PropertyDescriptor, String> getUploadSetProperties()
+    public Map<DomainProperty, String> getUploadSetProperties()
     {
         if (_uploadSetProperties == null)
         {
             AssayProvider provider = AssayService.get().getProvider(getProtocol());
-            PropertyDescriptor[] properties = provider.getUploadSetColumns(getProtocol());
+            Domain domain = provider.getUploadSetDomain(getProtocol());
+            DomainProperty[] properties = domain.getProperties();
             properties = reorderDomainColumns(properties, getViewContext(), getProtocol());
             _uploadSetProperties = getPropertyMapFromRequest(Arrays.asList(properties));
         }
         return _uploadSetProperties;
     }
 
-    protected Map<PropertyDescriptor, String> getPropertyMapFromRequest(List<PropertyDescriptor> columns)
+    protected Map<DomainProperty, String> getPropertyMapFromRequest(List<DomainProperty> columns)
     {
-        Map<PropertyDescriptor, String> properties = new LinkedHashMap<PropertyDescriptor, String>();
-        Map<PropertyDescriptor, File> additionalFiles = getAdditionalPostedFiles(columns);
-        for (PropertyDescriptor pd : columns)
+        Map<DomainProperty, String> properties = new LinkedHashMap<DomainProperty, String>();
+        Map<DomainProperty, File> additionalFiles = getAdditionalPostedFiles(columns);
+        for (DomainProperty pd : columns)
         {
             String propName = getFormElementName(pd);
             String value = getRequest().getParameter(propName);
-            if (pd.isRequired() && pd.getPropertyType() == PropertyType.BOOLEAN && 
+            if (pd.isRequired() && pd.getPropertyDescriptor().getPropertyType() == PropertyType.BOOLEAN &&
                     (value == null || value.length() == 0))
                 value = Boolean.FALSE.toString();
 
@@ -225,14 +230,14 @@ public class AssayRunUploadForm extends ProtocolIdForm implements AssayRunUpload
         return _uploadedData;
     }
 
-    public Map<PropertyDescriptor, File> getAdditionalPostedFiles(List<PropertyDescriptor> pds)
+    public Map<DomainProperty, File> getAdditionalPostedFiles(List<DomainProperty> pds)
     {
         if (_additionalFiles == null)
         {
-            Map<String, PropertyDescriptor> fileParameters = new HashMap<String, PropertyDescriptor>();
-            for (PropertyDescriptor pd : pds)
+            Map<String, DomainProperty> fileParameters = new HashMap<String, DomainProperty>();
+            for (DomainProperty pd : pds)
             {
-                if (pd.getPropertyType() == PropertyType.FILE_LINK)
+                if (pd.getPropertyDescriptor().getPropertyType() == PropertyType.FILE_LINK)
                     fileParameters.put(getFormElementName(pd), pd);
             }
 
@@ -242,7 +247,7 @@ public class AssayRunUploadForm extends ProtocolIdForm implements AssayRunUpload
                 try
                 {
                     Map<String, File> postedFiles = writer.savePostedFiles(this, fileParameters.keySet());
-                    _additionalFiles = new HashMap<PropertyDescriptor, File>();
+                    _additionalFiles = new HashMap<DomainProperty, File>();
                     for (Map.Entry<String, File> entry : postedFiles.entrySet())
                         _additionalFiles.put(fileParameters.get(entry.getKey()), entry.getValue());
                 }

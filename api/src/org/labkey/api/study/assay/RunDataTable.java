@@ -21,6 +21,8 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRunTable;
 import org.labkey.api.query.*;
@@ -49,15 +51,16 @@ public class RunDataTable extends FilteredTable
         column.setKeyField(false);
         column.setIsUnselectable(true);
         final AssayProvider provider = AssayService.get().getProvider(protocol);
-        PropertyDescriptor[] pds = provider.getRunDataColumns(protocol);
-        QcAwarePropertyForeignKey fk = new QcAwarePropertyForeignKey(pds, this, schema);
+        Domain runDataDomain = provider.getRunDataDomain(protocol);
+        DomainProperty[] dps = runDataDomain.getProperties();
+        QcAwarePropertyForeignKey fk = new QcAwarePropertyForeignKey(dps, this, schema);
 
         Set<String> hiddenCols = new HashSet<String>();
         for (PropertyDescriptor pd : fk.getDefaultHiddenProperties())
             hiddenCols.add(pd.getName());
 
         FieldKey dataKeyProp = new FieldKey(null, column.getName());
-        for (PropertyDescriptor lookupCol : pds)
+        for (DomainProperty lookupCol : dps)
         {
             if (!hiddenCols.contains(lookupCol.getName()))
                 visibleColumns.add(new FieldKey(dataKeyProp, lookupCol.getName()));
@@ -95,11 +98,9 @@ public class RunDataTable extends FilteredTable
         });
         addColumn(runColumn);
 
-        for (PropertyDescriptor prop : provider.getRunPropertyColumns(protocol))
+        List<PropertyDescriptor> runProperties = provider.getRunTableColumns(protocol);
+        for (PropertyDescriptor prop : runProperties)
             visibleColumns.add(FieldKey.fromParts("Run", "Run Properties", prop.getName()));
-        for (PropertyDescriptor prop : provider.getUploadSetColumns(protocol))
-            visibleColumns.add(FieldKey.fromParts("Run", "Run Properties", prop.getName()));
-
 
         Set<String> studyColumnNames = ((AbstractAssayProvider)provider).addCopiedToStudyColumns(this, protocol, schema.getUser(), "objectId", false);
         for (String columnName : studyColumnNames)

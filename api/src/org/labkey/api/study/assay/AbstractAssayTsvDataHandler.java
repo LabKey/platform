@@ -21,6 +21,8 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.*;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -62,18 +64,16 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             Container container = data.getContainer();
             Integer id = OntologyManager.ensureObject(container, data.getLSID());
             AssayProvider provider = AssayService.get().getProvider(protocol);
-            PropertyDescriptor[] columns = provider.getRunDataColumns(protocol);
 
-
-            List<PropertyDescriptor> allProps = new ArrayList<PropertyDescriptor>();
-            allProps.addAll(Arrays.asList(provider.getUploadSetColumns(protocol)));
-            allProps.addAll(Arrays.asList(provider.getRunPropertyColumns(protocol)));
+            List<DomainProperty> allProps = new ArrayList<DomainProperty>();
+            allProps.addAll(Arrays.asList(provider.getUploadSetDomain(protocol).getProperties()));
+            allProps.addAll(Arrays.asList(provider.getRunDomain(protocol).getProperties()));
 
             Map<String, Object> runProps = OntologyManager.getProperties(info.getContainer(), run.getLSID());
             ParticipantVisitResolver resolver = null;
 
             Container targetContainer = null;
-            for (PropertyDescriptor runProp : allProps)
+            for (DomainProperty runProp : allProps)
             {
                 if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equalsIgnoreCase(runProp.getName()))
                 {
@@ -86,7 +86,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
             }
 
-            for (PropertyDescriptor runProp : allProps)
+            for (DomainProperty runProp : allProps)
             {
                 if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equalsIgnoreCase(runProp.getName()))
                 {
@@ -105,7 +105,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 resolver = new StudyParticipantVisitResolver(container, targetContainer);
             }
 
-            Map<String, Object>[] rawData = loadFileData(columns, dataFile);
+            Domain dataDomain = provider.getRunDataDomain(protocol);
+            Map<String, Object>[] rawData = loadFileData(dataDomain, dataFile);
 
             if (rawData.length == 0)
             {
@@ -119,8 +120,12 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
             }
 
-            Set<ExpMaterial> inputMaterials = checkData(columns, rawData, resolver);
-            Map<String, PropertyDescriptor> propertyNameToDescriptor = OntologyManager.createImportPropertyMap(columns);
+            Set<ExpMaterial> inputMaterials = checkData(dataDomain, rawData, resolver);
+            DomainProperty[] dataDPs = dataDomain.getProperties();
+            PropertyDescriptor[] dataProperties = new PropertyDescriptor[dataDPs.length];
+            for (int i = 0; i < dataDPs.length; i++)
+                dataProperties[i] = dataDPs[i].getPropertyDescriptor();
+            Map<String, PropertyDescriptor> propertyNameToDescriptor = OntologyManager.createImportPropertyMap(dataProperties);
             Map<String, Object>[] fileData = convertPropertyNamesToURIs(rawData, propertyNameToDescriptor);
 
             if (!ExperimentService.get().isTransactionActive())
@@ -130,7 +135,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             }
 
             OntologyManager.insertTabDelimited(container, id,
-                    new SimpleAssayDataImportHelper(data.getLSID()), columns, fileData, false);
+                    new SimpleAssayDataImportHelper(data.getLSID()), dataProperties, fileData, false);
 
             if (inputMaterials.isEmpty())
             {
@@ -166,12 +171,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     }
 
-    public abstract Map<String, Object>[] loadFileData(PropertyDescriptor[] columns, File dataFile)  throws IOException, ExperimentException;
+    public abstract Map<String, Object>[] loadFileData(Domain dataDomain, File dataFile)  throws IOException, ExperimentException;
 
-    private void checkColumns(PropertyDescriptor[] expected, Set<String> actual, List<String> missing, List<String> unexpected, Map<String, Object>[] rawData, boolean strict)
+    private void checkColumns(Domain dataDomain, Set<String> actual, List<String> missing, List<String> unexpected, Map<String, Object>[] rawData, boolean strict)
     {
         Set<String> checkSet = new HashSet<String>();
-        for (PropertyDescriptor pd : expected)
+        DomainProperty[] expected = dataDomain.getProperties();
+        for (DomainProperty pd : expected)
             checkSet.add(pd.getName().toLowerCase());
         for (String col : actual)
         {
@@ -189,17 +195,17 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         for (String col : actual)
             checkSet.add(col.toLowerCase());
 
-        for (PropertyDescriptor pd : expected)
+        for (DomainProperty pd : expected)
         {
             if ((pd.isRequired() || strict) && !checkSet.contains(pd.getName().toLowerCase()))
                 missing.add(pd.getName());
         }
     }
 
-    private void filterColumns(PropertyDescriptor[] expected, Set<String> actual, Map<String, Object>[] rawData)
+    private void filterColumns(DomainProperty[] expected, Set<String> actual, Map<String, Object>[] rawData)
     {
         Map<String,String> expectedKey2ActualKey = new HashMap<String,String>();
-        for (PropertyDescriptor expectedCol : expected)
+        for (DomainProperty expectedCol : expected)
         {
             for (String actualKey : actual)
             {
@@ -227,7 +233,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     /**
      * @return the set of materials that are inputs to this run
      */
-    private Set<ExpMaterial> checkData(PropertyDescriptor[] columns, Map<String, Object>[] rawData, ParticipantVisitResolver resolver) throws IOException, ExperimentException
+    private Set<ExpMaterial> checkData(Domain dataDomain, Map<String, Object>[] rawData, ParticipantVisitResolver resolver) throws IOException, ExperimentException
     {
         List<String> missing = new ArrayList<String>();
         List<String> unexpected = new ArrayList<String>();
@@ -235,7 +241,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         Set<String> columnNames = rawData[0].keySet();
         // For now, we'll only enforce that required columns are present.  In the future, we'd like to
         // do a strict check first, and then present ignorable warnings.
-        checkColumns(columns, columnNames, missing, unexpected, rawData, false);
+        checkColumns(dataDomain, columnNames, missing, unexpected, rawData, false);
         if (!missing.isEmpty() || !unexpected.isEmpty())
         {
             StringBuilder builder = new StringBuilder();
@@ -264,26 +270,32 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             throw new ExperimentException(builder.toString());
         }
 
-        PropertyDescriptor participantPD = null;
-        PropertyDescriptor specimenPD = null;
-        PropertyDescriptor visitPD = null;
-        PropertyDescriptor datePD = null;
+        DomainProperty participantPD = null;
+        DomainProperty specimenPD = null;
+        DomainProperty visitPD = null;
+        DomainProperty datePD = null;
 
-        for (PropertyDescriptor pd : columns)
+        DomainProperty[] columns = dataDomain.getProperties();
+
+        for (DomainProperty pd : columns)
         {
-            if (pd.getName().equalsIgnoreCase(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME) && pd.getPropertyType() == PropertyType.STRING)
+            if (pd.getName().equalsIgnoreCase(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME) &&
+                    pd.getPropertyDescriptor().getPropertyType() == PropertyType.STRING)
             {
                 participantPD = pd;
             }
-            else if (pd.getName().equalsIgnoreCase(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME) && pd.getPropertyType() == PropertyType.STRING)
+            else if (pd.getName().equalsIgnoreCase(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME) &&
+                    pd.getPropertyDescriptor().getPropertyType() == PropertyType.STRING)
             {
                 specimenPD = pd;
             }
-            else if (pd.getName().equalsIgnoreCase(AbstractAssayProvider.VISITID_PROPERTY_NAME) && pd.getPropertyType() == PropertyType.DOUBLE)
+            else if (pd.getName().equalsIgnoreCase(AbstractAssayProvider.VISITID_PROPERTY_NAME) &&
+                    pd.getPropertyDescriptor().getPropertyType() == PropertyType.DOUBLE)
             {
                 visitPD = pd;
             }
-            else if (pd.getName().equalsIgnoreCase(AbstractAssayProvider.DATE_PROPERTY_NAME) && pd.getPropertyType() == PropertyType.DATE_TIME)
+            else if (pd.getName().equalsIgnoreCase(AbstractAssayProvider.DATE_PROPERTY_NAME) &&
+                    pd.getPropertyDescriptor().getPropertyType() == PropertyType.DATE_TIME)
             {
                 datePD = pd;
             }
@@ -303,7 +315,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             String specimenID = null;
             Double visitID = null;
             Date date = null;
-            for (PropertyDescriptor pd : columns)
+            for (DomainProperty pd : columns)
             {
                 Object o = map.get(pd.getName());
                 if (participantPD == pd)
@@ -332,7 +344,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 else if (!valueMissing && o == ERROR_VALUE && !wrongTypes.contains(pd.getName()))
                 {
                     wrongTypes.add(pd.getName());
-                    errorSB.append(pd.getName()).append(" must be of type ").append(ColumnInfo.getFriendlyTypeName(pd.getPropertyType().getJavaType())).append(". ");
+                    errorSB.append(pd.getName()).append(" must be of type ");
+                    errorSB.append(ColumnInfo.getFriendlyTypeName(pd.getPropertyDescriptor().getPropertyType().getJavaType())).append(". ");
                 }
             }
             ParticipantVisit participantVisit = resolver.resolve(specimenID, participantID, visitID, date);

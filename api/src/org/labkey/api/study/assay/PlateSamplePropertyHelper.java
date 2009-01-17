@@ -17,7 +17,7 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.exp.SamplePropertyHelper;
-import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.WellGroupTemplate;
 import org.labkey.api.study.WellGroup;
@@ -35,9 +35,9 @@ public class PlateSamplePropertyHelper extends SamplePropertyHelper<WellGroupTem
     private List<String> _sampleNames;
     private final PlateTemplate _template;
 
-    public PlateSamplePropertyHelper(PropertyDescriptor[] pds, PlateTemplate template)
+    public PlateSamplePropertyHelper(DomainProperty[] domainProperties, PlateTemplate template)
     {
-        super(pds);
+        super(domainProperties);
         _template = template;
         _sampleNames = new ArrayList<String>();
 
@@ -53,7 +53,7 @@ public class PlateSamplePropertyHelper extends SamplePropertyHelper<WellGroupTem
         }
     }
 
-    protected WellGroupTemplate getObject(int index, Map<PropertyDescriptor, String> sampleProperties)
+    protected WellGroupTemplate getObject(int index, Map<DomainProperty, String> sampleProperties)
     {
         int i = 0;
         for (WellGroupTemplate wellgroup : _template.getWellGroups())
@@ -70,7 +70,7 @@ public class PlateSamplePropertyHelper extends SamplePropertyHelper<WellGroupTem
         throw new IndexOutOfBoundsException("Requested #" + index + " but there were only " + i + " well group templates");
     }
 
-    protected boolean isCopyable(PropertyDescriptor pd)
+    protected boolean isCopyable(DomainProperty pd)
     {
         return !AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equals(pd.getName()) && !AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME.equals(pd.getName());
     }

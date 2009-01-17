@@ -17,6 +17,8 @@ package org.labkey.api.qc;
 
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
 
 import java.util.Map;
@@ -30,5 +32,5 @@ import java.io.IOException;
 */
 public interface ValidationDataHandler
 {
-    public Map<String, Object>[] loadFileData(PropertyDescriptor[] columns, File dataFile)  throws IOException, ExperimentException;
+    public Map<String, Object>[] loadFileData(Domain dataDomain, File dataFile)  throws IOException, ExperimentException;
 }

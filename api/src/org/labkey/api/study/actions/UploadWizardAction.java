@@ -21,7 +21,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -29,6 +29,8 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.PropertyValidationError;
@@ -156,14 +158,15 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         }
     }
 
-    protected InsertView createInsertView(TableInfo baseTable, String lsidCol, Map<PropertyDescriptor, String> propertyDescriptors, boolean reshow, boolean resetDefaultValues, String uploadStepName, FormClass form, BindException errors)
+    protected InsertView createInsertView(TableInfo baseTable, String lsidCol, Map<DomainProperty, String> domainProperties,
+                                          boolean reshow, boolean resetDefaultValues, String uploadStepName, FormClass form, BindException errors)
     {
-        PropertyDescriptor[] pds = new PropertyDescriptor[propertyDescriptors.size()];
+        DomainProperty[] dps = new DomainProperty[domainProperties.size()];
         int i = 0;
-        for (PropertyDescriptor pd : propertyDescriptors.keySet())
-            pds[i++] = pd;
+        for (DomainProperty pd : domainProperties.keySet())
+            dps[i++] = pd;
 
-        InsertView view = new UploadWizardInsertView(createDataRegion(baseTable, lsidCol, pds, null), getViewContext(), errors);
+        InsertView view = new UploadWizardInsertView(createDataRegion(baseTable, lsidCol, dps, null), getViewContext(), errors);
         if (resetDefaultValues)
         {
             clearDefaultValues(uploadStepName);
@@ -176,7 +179,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         {
             try
             {
-                view.setInitialValues(getDefaultValues(uploadStepName, form));
+                view.setInitialValues(getDefaultValuesByInputName(uploadStepName, form));
             }
             catch (ExperimentException e)
             {
@@ -227,7 +230,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         }
     }
 
-    protected Map<String, String> getDefaultValues(String suffix, FormClass form) throws ExperimentException
+    protected Map<String, String> getDefaultValuesByInputName(String suffix, FormClass form) throws ExperimentException
     {
         ViewContext context = getViewContext();
         Map<String, String> result = PropertyManager.getProperties(context.getUser().getUserId(),
@@ -235,15 +238,21 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         return result == null ? Collections.<String, String>emptyMap() : result;
     }
 
-    protected void saveDefaultValues(Map<PropertyDescriptor, String> values, HttpServletRequest request, AssayProvider provider, String suffix)
+    protected void saveDefaultValues(Map<DomainProperty, String> values, HttpServletRequest request, AssayProvider provider, String suffix)
+    {
+        saveDefaultValues(values, request, provider, suffix, null);
+    }
+
+    protected void saveDefaultValues(Map<DomainProperty, String> values, HttpServletRequest request, AssayProvider provider,
+                                     String suffix, String disambiguationId)
     {
         Map<String, String> properties = PropertyManager.getWritableProperties(getViewContext().getUser().getUserId(),
                         getViewContext().getContainer().getId(), getPropertySetName(suffix), true);
-        for (Map.Entry<PropertyDescriptor, String> entry : values.entrySet())
+        for (Map.Entry<DomainProperty, String> entry : values.entrySet())
         {
-            PropertyDescriptor pd = entry.getKey();
+            DomainProperty pd = entry.getKey();
             String value = entry.getValue();
-            properties.put(ColumnInfo.propNameFromName(pd.getName()), value);
+            properties.put(getInputName(pd, disambiguationId), value);
             if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equals(pd.getName()) && value != null)
             {
                 ParticipantVisitResolverType type = AbstractAssayProvider.findType(value, provider.getParticipantVisitResolverTypes());
@@ -258,8 +267,8 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         ExpProtocol protocol = getProtocol(runForm);
         AssayProvider provider = AssayService.get().getProvider(protocol);
         runForm.setProviderName(provider.getName());
-        PropertyDescriptor[] uploadSetColumns = provider.getUploadSetColumns(protocol);
-
+        Domain uploadDomain = provider.getUploadSetDomain(protocol);
+        DomainProperty[] uploadSetColumns = uploadDomain.getProperties();
         if (uploadSetColumns == null || uploadSetColumns.length == 0)
         {
             ActionURL helper = getViewContext().cloneActionURL();
@@ -316,7 +325,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         InsertView insertView = createRunInsertView(newRunForm, reshow, errors);
         addHiddenUploadSetProperties(newRunForm, insertView);
 
-        for (Map.Entry<PropertyDescriptor, String> entry : newRunForm.getUploadSetProperties().entrySet())
+        for (Map.Entry<DomainProperty, String> entry : newRunForm.getUploadSetProperties().entrySet())
         {
             if (entry.getKey().getName().equals(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
             {
@@ -370,11 +379,34 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         addHiddenProperties(newRunForm.getRunProperties(), insertView);
     }
 
-    protected void addHiddenProperties(Map<PropertyDescriptor, String> properties, InsertView insertView)
+    public static String getInputName(DomainProperty property, String disambiguationId)
     {
-        for (Map.Entry<PropertyDescriptor, String> entry : properties.entrySet())
+        if (disambiguationId != null)
+            return ColumnInfo.propNameFromName(disambiguationId + "_" + property.getName());
+        else
+            return ColumnInfo.propNameFromName(property.getName());
+    }
+
+    public static String getInputName(DomainProperty property)
+    {
+        return getInputName(property, null);
+    }
+
+    protected void addHiddenProperties(Map<DomainProperty, String> properties, InsertView insertView)
+    {
+        for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
         {
             String name = ColumnInfo.propNameFromName(entry.getKey().getName());
+            String value = entry.getValue();
+            insertView.getDataRegion().addHiddenFormField(name, value);
+        }
+    }
+
+    protected void addHiddenProperties(Map<DomainProperty, String> properties, InsertView insertView, String disambiguationId)
+    {
+        for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
+        {
+            String name = getInputName(entry.getKey(), disambiguationId);
             String value = entry.getValue();
             insertView.getDataRegion().addHiddenFormField(name, value);
         }
@@ -518,34 +550,36 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         }
     }
 
-    public static boolean validatePostedProperties(Map<PropertyDescriptor, String> properties, BindException errors)
+    public static boolean validatePostedProperties(Map<DomainProperty, String> properties, BindException errors)
     {
-        for (Map.Entry<PropertyDescriptor, String> entry : properties.entrySet())
+        for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
         {
-            PropertyDescriptor pd = entry.getKey();
+            DomainProperty dp = entry.getKey();
             String value = entry.getValue();
+            String label = dp.getPropertyDescriptor().getNonBlankLabel();
+            PropertyType type = dp.getPropertyDescriptor().getPropertyType();
             boolean missing = (value == null || value.length() == 0);
-            if (pd.isRequired() && missing)
+            if (dp.isRequired() && missing)
             {
                 errors.reject(SpringActionController.ERROR_MSG,
-                        pd.getNonBlankLabel() + " is required and must be of type " + ColumnInfo.getFriendlyTypeName(pd.getPropertyType().getJavaType()) + ".");
+                        label + " is required and must be of type " + ColumnInfo.getFriendlyTypeName(type.getJavaType()) + ".");
             }
             else if (!missing)
             {
                 try
                 {
-                    ConvertUtils.convert(value, pd.getPropertyType().getJavaType());
+                    ConvertUtils.convert(value, type.getJavaType());
                 }
                 catch (ConversionException e)
                 {
                     errors.reject(SpringActionController.ERROR_MSG,
-                            pd.getNonBlankLabel() + " must be of type " + ColumnInfo.getFriendlyTypeName(pd.getPropertyType().getJavaType()) + ".");
+                            label + " must be of type " + ColumnInfo.getFriendlyTypeName(type.getJavaType()) + ".");
                 }
             }
             List<ValidationError> validationErrors = new ArrayList<ValidationError>();
-            for (IPropertyValidator validator : PropertyService.get().getPropertyValidators(pd))
+            for (IPropertyValidator validator : PropertyService.get().getPropertyValidators(dp.getPropertyDescriptor()))
             {
-                validator.validate(pd.getLabel(), value, validationErrors);
+                validator.validate(dp.getLabel(), value, validationErrors);
             }
 
             for (ValidationError ve : validationErrors)
@@ -675,7 +709,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
     protected ParticipantVisitResolverType getSelectedParticipantVisitResolverType(AssayProvider provider, AssayRunUploadForm newRunForm)
     {
         String participantVisitResolverName = null;
-        for (Map.Entry<PropertyDescriptor, String> uploadSetProperty : newRunForm.getUploadSetProperties().entrySet())
+        for (Map.Entry<DomainProperty, String> uploadSetProperty : newRunForm.getUploadSetProperties().entrySet())
         {
             if (uploadSetProperty.getKey().getName().equals(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
             {

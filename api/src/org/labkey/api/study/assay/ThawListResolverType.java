@@ -23,6 +23,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
@@ -193,7 +194,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
     }
 
 
-    public void configureRun(AssayRunUploadContext context, ExpRun run, Map<PropertyDescriptor, String> runProperties, Map<PropertyDescriptor, String> uploadSetProperties, Map<ExpData, String> inputDatas) throws ExperimentException
+    public void configureRun(AssayRunUploadContext context, ExpRun run, Map<DomainProperty, String> runProperties, Map<DomainProperty, String> uploadSetProperties, Map<ExpData, String> inputDatas) throws ExperimentException
     {
         String type = context.getRequest().getParameter(THAW_LIST_TYPE_INPUT_NAME);
 

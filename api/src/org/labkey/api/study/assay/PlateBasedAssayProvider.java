@@ -24,10 +24,10 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.PlateService;
@@ -109,18 +109,18 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
     {
         Map<WellGroupTemplate, ExpMaterial> originalMaterials = new HashMap<WellGroupTemplate, ExpMaterial>();
         PlateSamplePropertyHelper helper = createSamplePropertyHelper(context, context.getProtocol(), null);
-        Map<WellGroupTemplate, Map<PropertyDescriptor, String>> materialProperties = helper.getSampleProperties(context.getRequest());
-        for (Map.Entry<WellGroupTemplate, Map<PropertyDescriptor, String>> entry : materialProperties.entrySet())
+        Map<WellGroupTemplate, Map<DomainProperty, String>> materialProperties = helper.getSampleProperties(context.getRequest());
+        for (Map.Entry<WellGroupTemplate, Map<DomainProperty, String>> entry : materialProperties.entrySet())
         {
-            Map<PropertyDescriptor, String> properties = entry.getValue();
+            Map<DomainProperty, String> properties = entry.getValue();
             String specimenID = null;
             String participantID = null;
             Double visitID = null;
             Date date = null;
-            PropertyDescriptor participantProperty = null;
-            PropertyDescriptor visitProperty = null;
-            PropertyDescriptor specimenIDProperty = null;
-            for (Map.Entry<PropertyDescriptor, String> property : properties.entrySet())
+            DomainProperty participantProperty = null;
+            DomainProperty visitProperty = null;
+            DomainProperty specimenIDProperty = null;
+            for (Map.Entry<DomainProperty, String> property : properties.entrySet())
             {
                 if (PARTICIPANTID_PROPERTY_NAME.equals(property.getKey().getName()))
                 {
@@ -161,7 +161,7 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
             {
                 ParticipantVisit pv = resolver.resolve(specimenID, participantID, visitID, date);
                 originalMaterial = pv.getMaterial();
-                Map<PropertyDescriptor, String> wellgroupProperties = materialProperties.get(entry.getKey());
+                Map<DomainProperty, String> wellgroupProperties = materialProperties.get(entry.getKey());
                 if (specimenIDProperty != null)
                     wellgroupProperties.put(specimenIDProperty, pv.getSpecimenID());
                 if (participantProperty != null)
@@ -176,7 +176,7 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
     }
 
     private Map<ExpMaterial, String> createDerivedMaterials(AssayRunUploadContext context, Map<WellGroupTemplate, ExpMaterial> originalMaterials,
-                                        Map<WellGroupTemplate, Map<PropertyDescriptor, String>> materialProperties) throws ExperimentException
+                                        Map<WellGroupTemplate, Map<DomainProperty, String>> materialProperties) throws ExperimentException
     {
         Map<ExpMaterial, String> derivedMaterials = new HashMap<ExpMaterial, String>();
         long ms = System.currentTimeMillis();
@@ -195,7 +195,7 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
                 else
                     originalLsidToMaterial.put(originalMaterial.getLSID(), originalMaterial);
 
-                Map<PropertyDescriptor, String> properties = materialProperties.get(wellgroup);
+                Map<DomainProperty, String> properties = materialProperties.get(wellgroup);
 
                 String domainURI = getDomainURIForPrefix(context.getProtocol(), ASSAY_DOMAIN_SAMPLE_WELLGROUP);
                 ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(domainURI);
@@ -229,8 +229,8 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
                 derivedMaterials.put(derivedMaterial, wellgroup.getName());
                 ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL());
                 ExperimentService.get().deriveSamples(originalMaterialSet, derivedMaterialSet, info, null);
-                for (Map.Entry<PropertyDescriptor, String> propertyEntry : properties.entrySet())
-                    derivedMaterial.setProperty(context.getUser(), propertyEntry.getKey(), propertyEntry.getValue());
+                for (Map.Entry<DomainProperty, String> propertyEntry : properties.entrySet())
+                    derivedMaterial.setProperty(context.getUser(), propertyEntry.getKey().getPropertyDescriptor(), propertyEntry.getValue());
             }
         }
         catch (ValidationException e)
@@ -241,25 +241,26 @@ public abstract class PlateBasedAssayProvider extends AbstractAssayProvider
     }
 
 
-    public PropertyDescriptor[] getSampleWellGroupColumns(ExpProtocol protocol)
+    public Domain getSampleWellGroupDomain(ExpProtocol protocol)
     {
-        return getPropertiesForDomainPrefix(protocol, ASSAY_DOMAIN_SAMPLE_WELLGROUP);
+        return getDomainByPrefix(protocol, ASSAY_DOMAIN_SAMPLE_WELLGROUP);
     }
 
     public PlateSamplePropertyHelper createSamplePropertyHelper(AssayRunUploadContext context, ExpProtocol protocol, ParticipantVisitResolverType filterInputsForType)
     {
         PlateTemplate template = getPlateTemplate(context.getContainer(), protocol);
-        PropertyDescriptor[] allSampleProperties = getSampleWellGroupColumns(protocol);
-        PropertyDescriptor[] selectedSampleProperties = allSampleProperties;
+        Domain sampleDomain = getSampleWellGroupDomain(protocol);
+        DomainProperty[] allSampleProperties = sampleDomain.getProperties();
+        DomainProperty[] selectedSampleProperties = allSampleProperties;
         if (filterInputsForType != null)
         {
-            List<PropertyDescriptor> selected = new ArrayList<PropertyDescriptor>();
-            for (PropertyDescriptor possible : allSampleProperties)
+            List<DomainProperty> selected = new ArrayList<DomainProperty>();
+            for (DomainProperty possible : allSampleProperties)
             {
                 if (filterInputsForType.collectPropertyOnUpload(possible.getName(), context))
                     selected.add(possible);
             }
-            selectedSampleProperties = selected.toArray(new PropertyDescriptor[selected.size()]);
+            selectedSampleProperties = selected.toArray(new DomainProperty[selected.size()]);
         }
         return new PlateSamplePropertyHelper(selectedSampleProperties, template);
     }

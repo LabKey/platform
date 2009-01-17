@@ -53,13 +53,13 @@ import java.util.Set;
  */
 public interface AssayProvider extends Handler<ExpProtocol>
 {
-    PropertyDescriptor[] getUploadSetColumns(ExpProtocol protocol);
+    Domain getUploadSetDomain(ExpProtocol protocol);
 
-    PropertyDescriptor[] getRunPropertyColumns(ExpProtocol protocol);
+    Domain getRunDomain(ExpProtocol protocol);
 
-    PropertyDescriptor[] getRunInputPropertyColumns(ExpProtocol protocol);
+    Domain getRunInputDomain(ExpProtocol protocol);
 
-    PropertyDescriptor[] getRunDataColumns(ExpProtocol protocol);
+    Domain getRunDataDomain(ExpProtocol protocol);
 
     /**
      * Creates a run, but does not persist it to the database. Creates the run only, no protocol applications, etc.
@@ -67,6 +67,8 @@ public interface AssayProvider extends Handler<ExpProtocol>
     ExpRun createExperimentRun(String name, Container container, ExpProtocol protocol);
 
     Pair<ExpRun, ExpExperiment> saveExperimentRun(AssayRunUploadContext context, ExpExperiment batch) throws ExperimentException, ValidationException;
+
+    List<PropertyDescriptor> getRunTableColumns(ExpProtocol protocol);
 
     List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles);
 

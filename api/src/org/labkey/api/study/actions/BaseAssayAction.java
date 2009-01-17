@@ -18,7 +18,7 @@ package org.labkey.api.study.actions;
 
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.*;
-import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.ACL;
@@ -87,16 +87,16 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
         return getViewContext().getContainer();
     }
 
-    protected DataRegion createDataRegion(TableInfo baseTable, String lsidCol, PropertyDescriptor[] propertyDescriptors, Map<String, String> columnNameToPropertyName)
+    protected DataRegion createDataRegion(TableInfo baseTable, String lsidCol, DomainProperty[] domainProperties, Map<String, String> columnNameToPropertyName)
     {
         DataRegion rgn = new DataRegion();
         rgn.setTable(baseTable);
-        for (PropertyDescriptor pd : propertyDescriptors)
+        for (DomainProperty dp : domainProperties)
         {
-            ColumnInfo info = pd.createColumnInfo(baseTable, lsidCol, getViewContext().getUser());
+            ColumnInfo info = dp.getPropertyDescriptor().createColumnInfo(baseTable, lsidCol, getViewContext().getUser());
             rgn.addColumn(info);
             if (columnNameToPropertyName != null)
-                columnNameToPropertyName.put(info.getName(), pd.getName());
+                columnNameToPropertyName.put(info.getName(), dp.getName());
         }
         return rgn;
     }

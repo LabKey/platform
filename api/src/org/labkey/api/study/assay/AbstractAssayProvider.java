@@ -221,25 +221,37 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return result;
     }
     
-    public static PropertyDescriptor[] getPropertiesForDomainPrefix(ExpProtocol protocol, String domainPrefix)
+    public static Domain getDomainByPrefix(ExpProtocol protocol, String domainPrefix)
     {
         Container container = protocol.getContainer();
-        return OntologyManager.getPropertiesForType(getDomainURIForPrefix(protocol, domainPrefix), container);
+        return PropertyService.get().getDomain(container, getDomainURIForPrefix(protocol, domainPrefix));
     }
 
-    public PropertyDescriptor[] getRunDataColumns(ExpProtocol protocol)
+    public Domain getRunDataDomain(ExpProtocol protocol)
     {
-        return getPropertiesForDomainPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_DATA);
+        return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_DATA);
     }
 
-    public PropertyDescriptor[] getUploadSetColumns(ExpProtocol protocol)
+    public List<PropertyDescriptor> getRunTableColumns(ExpProtocol protocol)
     {
-        return getPropertiesForDomainPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_UPLOAD_SET);
+        List<PropertyDescriptor> cols = new ArrayList<PropertyDescriptor>();
+        Domain runDomain = getRunDomain(protocol);
+        if (runDomain != null)
+            Collections.addAll(cols, getPropertyDescriptors(runDomain));
+        Domain uploadSetDomain = getUploadSetDomain(protocol);
+        if (uploadSetDomain != null)
+            Collections.addAll(cols, getPropertyDescriptors(uploadSetDomain));
+        return cols;
     }
 
-    public PropertyDescriptor[] getRunInputPropertyColumns(ExpProtocol protocol)
+    public Domain getUploadSetDomain(ExpProtocol protocol)
     {
-        return getPropertiesForDomainPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_RUN);
+        return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_UPLOAD_SET);
+    }
+
+    public Domain getRunInputDomain(ExpProtocol protocol)
+    {
+        return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_RUN);
     }
 
     protected void addProperty(Container sourceContainer, String name, Integer value, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
@@ -401,9 +413,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return result;
     }
 
-    public PropertyDescriptor[] getRunPropertyColumns(ExpProtocol protocol)
+    public Domain getRunDomain(ExpProtocol protocol)
     {
-        return getRunInputPropertyColumns(protocol);
+        return getRunInputDomain(protocol);
     }
 
     protected ExpRun createExperimentRun(AssayRunUploadContext context) throws ExperimentException
@@ -473,15 +485,15 @@ public abstract class AbstractAssayProvider implements AssayProvider
         Map<ExpMaterial, String> outputMaterials = new HashMap<ExpMaterial, String>();
         Map<ExpData, String> outputDatas = new HashMap<ExpData, String>();
 
-        Map<PropertyDescriptor, String> runProperties = context.getRunProperties();
-        Map<PropertyDescriptor, String> uploadSetProperties = context.getUploadSetProperties();
+        Map<DomainProperty, String> runProperties = context.getRunProperties();
+        Map<DomainProperty, String> uploadSetProperties = context.getUploadSetProperties();
 
-        Map<PropertyDescriptor, String> allProperties = new HashMap<PropertyDescriptor, String>();
+        Map<DomainProperty, String> allProperties = new HashMap<DomainProperty, String>();
         allProperties.putAll(runProperties);
         allProperties.putAll(uploadSetProperties);
 
         ParticipantVisitResolverType resolverType = null;
-        for (Map.Entry<PropertyDescriptor, String> entry : allProperties.entrySet())
+        for (Map.Entry<DomainProperty, String> entry : allProperties.entrySet())
         {
             if (entry.getKey().getName().equals(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
             {
@@ -502,7 +514,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             if (resolverType != null)
             {
                 String targetStudyId = null;
-                for (Map.Entry<PropertyDescriptor, String> property : allProperties.entrySet())
+                for (Map.Entry<DomainProperty, String> property : allProperties.entrySet())
                 {
                     if (TARGET_STUDY_PROPERTY_NAME.equals(property.getKey().getName()))
                     {
@@ -571,6 +583,15 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
     }
 
+    protected PropertyDescriptor[] getPropertyDescriptors(Domain domain)
+    {
+        DomainProperty[] domainProperties = domain.getProperties();
+        PropertyDescriptor[] pds = new PropertyDescriptor[domainProperties.length];
+        for (int i = 0; i < domainProperties.length; i++)
+            pds[i] = domainProperties[i].getPropertyDescriptor();
+        return pds;
+    }
+
     protected void resolveExtraRunData(ParticipantVisitResolver resolver,
                                   AssayRunUploadContext context,
                                   Map<ExpMaterial, String> inputMaterials,
@@ -581,17 +602,17 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     }
 
-    protected void savePropertyObject(String parentLSID, Map<PropertyDescriptor, String> properties, Container container) throws ExperimentException
+    protected void savePropertyObject(String parentLSID, Map<DomainProperty, String> properties, Container container) throws ExperimentException
     {
         try {
             ObjectProperty[] objProperties = new ObjectProperty[properties.size()];
             int i = 0;
-            for (Map.Entry<PropertyDescriptor, String> entry : properties.entrySet())
+            for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
             {
-                PropertyDescriptor pd = entry.getKey();
+                DomainProperty pd = entry.getKey();
                 ObjectProperty property = new ObjectProperty(parentLSID,
                         container, pd.getPropertyURI(),
-                        entry.getValue(), pd.getPropertyType());
+                        entry.getValue(), pd.getPropertyDescriptor().getPropertyType());
                 property.setName(pd.getName());
                 objProperties[i++] = property;
             }
@@ -622,16 +643,18 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return ExperimentService.get().insertSimpleProtocol(protocol, user);
     }
 
-    protected PropertyDescriptor getRunTargetStudyColumn(ExpProtocol protocol)
+    protected DomainProperty getRunTargetStudyColumn(ExpProtocol protocol)
     {
-        PropertyDescriptor[] uploadSetColumns = getUploadSetColumns(protocol);
-        for (PropertyDescriptor pd : uploadSetColumns)
+        Domain uploadDomain = getUploadSetDomain(protocol);
+        DomainProperty[] uploadSetColumns = uploadDomain.getProperties();
+        for (DomainProperty pd : uploadSetColumns)
         {
             if (TARGET_STUDY_PROPERTY_NAME.equals(pd.getName()))
                 return pd;
         }
-        PropertyDescriptor[] runColumns = getRunPropertyColumns(protocol);
-        for (PropertyDescriptor pd : runColumns)
+        Domain runDomain = getRunDomain(protocol);
+        DomainProperty[] runColumns = runDomain.getProperties();
+        for (DomainProperty pd : runColumns)
         {
             if (TARGET_STUDY_PROPERTY_NAME.equals(pd.getName()))
                 return pd;
@@ -641,7 +664,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public Container getAssociatedStudyContainer(ExpProtocol protocol, Object dataId)
     {
-        PropertyDescriptor targetStudyColumn = getRunTargetStudyColumn(protocol);
+        DomainProperty targetStudyColumn = getRunTargetStudyColumn(protocol);
         if (targetStudyColumn == null)
             return null;
         ExpData data = getDataForDataRow(dataId);
@@ -667,7 +690,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public Set<Container> getAllAssociatedStudyContainers(ExpProtocol protocol)
     {
-        PropertyDescriptor targetStudyColumn = getRunTargetStudyColumn(protocol);
+        DomainProperty targetStudyColumn = getRunTargetStudyColumn(protocol);
         if (targetStudyColumn == null)
             return Collections.emptySet();
 
@@ -860,16 +883,18 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public Container getTargetStudy(ExpRun run)
     {
         ExpProtocol protocol = run.getProtocol();
-        PropertyDescriptor[] runPDs = getRunPropertyColumns(protocol);
-        PropertyDescriptor[] uploadSetPDs = getUploadSetColumns(protocol);
+        Domain uploadSetDomain = getUploadSetDomain(protocol);
+        DomainProperty[] uploadSetColumns = uploadSetDomain.getProperties();
+        Domain runDomain = getRunDomain(protocol);
+        DomainProperty[] runColumns = runDomain.getProperties();
 
-        List<PropertyDescriptor> pds = new ArrayList<PropertyDescriptor>();
-        pds.addAll(Arrays.asList(runPDs));
-        pds.addAll(Arrays.asList(uploadSetPDs));
+        List<DomainProperty> pds = new ArrayList<DomainProperty>();
+        pds.addAll(Arrays.asList(runColumns));
+        pds.addAll(Arrays.asList(uploadSetColumns));
 
         Map<String, ObjectProperty> props = run.getObjectProperties();
 
-        for (PropertyDescriptor pd : pds)
+        for (DomainProperty pd : pds)
         {
             ObjectProperty prop = props.get(pd.getPropertyURI());
             if (prop != null && TARGET_STUDY_PROPERTY_NAME.equals(pd.getName()))

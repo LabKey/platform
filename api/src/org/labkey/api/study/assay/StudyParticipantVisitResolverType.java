@@ -20,6 +20,7 @@ import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -73,7 +74,7 @@ public class StudyParticipantVisitResolverType implements ParticipantVisitResolv
         // Don't need to add any form fields - the data's already all there
     }
 
-    public void configureRun(AssayRunUploadContext context, ExpRun run, Map<PropertyDescriptor, String> runProperties, Map<PropertyDescriptor, String> uploadSetProperties, Map<ExpData, String> inputDatas)
+    public void configureRun(AssayRunUploadContext context, ExpRun run, Map<DomainProperty, String> runProperties, Map<DomainProperty, String> uploadSetProperties, Map<ExpData, String> inputDatas)
     {
         // Don't need to do anything - the data's already all there
     }

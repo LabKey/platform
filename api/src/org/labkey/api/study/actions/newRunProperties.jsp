@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.study.actions.AssayRunUploadForm" %>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
 <%@ page import="org.labkey.api.study.assay.AssayRunUploadContext" %>
+<%@ page import="org.labkey.api.exp.property.DomainProperty" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
@@ -58,13 +59,13 @@
             <td colspan="2">Run Set Properties</td>
         </tr>
         <%
-            for (Map.Entry<PropertyDescriptor, String> entry : bean.getUploadSetProperties().entrySet())
+            for (Map.Entry<DomainProperty, String> entry : bean.getUploadSetProperties().entrySet())
             {
                 %>
                 <tr>
-                    <td class="labkey-form-label" nowrap="true"><%= h(entry.getKey().getNonBlankLabel()) %></td>
+                    <td class="labkey-form-label" nowrap="true"><%= h(entry.getKey().getPropertyDescriptor().getNonBlankLabel()) %></td>
                     <td>
-                        <%= h(bean.getUploadSetPropertyValue(entry.getKey(), entry.getValue())) %>
+                        <%= h(bean.getUploadSetPropertyValue(entry.getKey().getPropertyDescriptor(), entry.getValue())) %>
                     </td>
                 </tr>
                 <%
