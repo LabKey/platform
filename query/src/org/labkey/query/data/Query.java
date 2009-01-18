@@ -16,19 +16,28 @@
 
 package org.labkey.query.data;
 
-import org.labkey.api.query.*;
-import org.labkey.api.data.*;
-import org.labkey.api.util.CaseInsensitiveHashMap;
-import org.labkey.api.util.MemTracker;
+import junit.framework.Test;
+import junit.framework.TestSuite;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.data.*;
+import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.*;
+import org.labkey.api.security.User;
+import org.labkey.api.util.*;
+import org.labkey.common.tools.DataLoader;
+import org.labkey.query.design.*;
+import org.labkey.query.sql.*;
+import static org.labkey.query.sql.antlr.SqlBaseTokenTypes.ON;
 
-import java.util.*;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-
-import org.labkey.query.sql.*;
-import org.labkey.query.design.*;
-import static org.labkey.query.sql.antlr.SqlBaseTokenTypes.*;
+import java.sql.ResultSetMetaData;
+import java.util.*;
 
 
 public class Query
@@ -1053,6 +1062,239 @@ loop:
         QueryInternalException(RuntimeException cause)
         {
             super("Internal error while parsing \""+ _queryText + "\"", cause);
+        }
+    }
+
+
+
+    public static class TestDataLoader extends DataLoader
+    {
+        static final String[] COLUMNS = new String[] {"d", "seven", "twelve", "day", "month", "date", "duration", "guid"};
+        static final String[] TYPES = new String[] {"double", "int", "int", "string", "string", "date", "string", "string"};
+        static final String[] days = new String[] {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+        static final String[] months = new String[] {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+
+        String[][] data;
+        ArrayListMap<String,String> row = new ArrayListMap<String,String>();
+        
+        TestDataLoader(int len)
+        {
+            data = new String[len+1][];
+            data[0] = COLUMNS;
+            for (String c : data[0])
+                row.put(c,c);
+            for (int i=1 ; i<=len ; i++)
+            {
+                String[] row = data[i] = new String[8];
+                int c = 0;
+                row[c++] = "" + Math.exp(i);
+                row[c++] = "" + (i%7);
+                row[c++] = "" + (i%12);
+                row[c++] = days[i%7];
+                row[c++] = months[i%12];
+                row[c++] = DateUtil.toISO(Date.parse("1/1/2000") + i*24*60*60*1000);
+                row[c++] = DateUtil.formatDuration(i*1000);
+                row[c] = GUID.makeGUID();
+            }
+
+            for (String[] row : data) System.err.println(StringUtils.join(row,"\t")); System.err.flush();
+        }
+
+        public String[][] getFirstNLines(int n) throws IOException
+        {
+            return data;
+        }
+
+        int i=1;
+        
+        protected Iterator<?> iterator() throws IOException
+        {
+            return new _Iterator();
+        }
+
+        class _Iterator implements Iterator
+        {
+            public boolean hasNext()
+            {
+                return i < data.length;
+            }
+
+            public Map next()
+            {
+                return new ArrayListMap<String,String>(row, data[i++]);
+            }
+
+            public void remove()
+            {
+                throw new UnsupportedOperationException();
+            }
+        }
+    }
+
+
+    static class SqlTest
+    {
+        public String sql;
+        public int countColumns = -1;
+        public int countRows = -1;
+
+        SqlTest(String sql)
+        {
+            this.sql = sql;
+        }
+
+        SqlTest(String sql, int cols, int rows)
+        {
+            this.sql = sql;
+            countColumns = cols;
+            countRows = rows;
+        }
+    }
+
+
+    static SqlTest[] tests = new SqlTest[]
+    {
+        new SqlTest("SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid FROM R", 8, 100),
+        new SqlTest("SELECT R.duration AS elapsed FROM R WHERE R.rowid=1", 1, 1)
+    };
+    
+
+    public static class TestCase extends junit.framework.TestCase
+    {
+        public TestCase()
+        {
+            super();
+        }
+
+        public TestCase(String name)
+        {
+            super(name);
+        }
+
+        String hash = GUID.makeHash();
+        QuerySchema lists;
+        ListDefinition R;
+        ListDefinition S;
+
+        private void addProperties(ListDefinition l)
+        {
+            Domain d = l.getDomain();
+            for (int i=0 ; i<TestDataLoader.COLUMNS.length ; i++)
+            {
+                DomainProperty p = d.addProperty();
+                p.setPropertyURI(d.getName() + hash + "#" + TestDataLoader.COLUMNS[i]);
+                p.setName(TestDataLoader.COLUMNS[i]);
+                p.setRangeURI(TestDataLoader.TYPES[i]);
+            }
+        }
+
+        @Override
+        protected void setUp() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+            ListService.Interface s = ListService.get();
+
+            Map<String,ListDefinition> m = s.getLists(c);
+            if (m.containsKey("R"))
+                m.get("R").delete(user);
+            if (m.containsKey("S"))
+                m.get("S").delete(user);
+
+            R = s.createList(c, "R");
+            R.setKeyType(ListDefinition.KeyType.AutoIncrementInteger);
+            R.setKeyName("rowid");
+            addProperties(R);
+            R.save(user);
+            R.insertListItems(user, new TestDataLoader(100));
+            
+            S = s.createList(c, "S");
+            S.setKeyType(ListDefinition.KeyType.AutoIncrementInteger);
+            S.setKeyName("rowid");
+            addProperties(S);
+            S.save(user);
+            S.insertListItems(user, new TestDataLoader(100));
+
+            // note getSchema() will return NULL if there are no lists yet
+            lists = DefaultSchema.get(user, c).getSchema(s.getSchemaName());
+        }
+
+
+        @Override
+        protected void tearDown() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            S.delete(user);
+            R.delete(user);
+        }
+
+
+        @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
+        private CachedRowSetImpl resultset(String sql) throws Exception
+        {
+            Query q = new Query(lists);
+            q.parse(sql);
+            if (q.getParseErrors().size() > 0)
+                fail("" + q.getParseErrors().get(0).getMessage() + ": " + sql);
+            TableInfo t = q.getTableInfo("JUNIT");
+            if (q.getParseErrors().size() > 0)
+                fail("" + q.getParseErrors().get(0).getMessage() + ": " + sql);
+            assertNotNull(sql, t);
+            CachedRowSetImpl rs = (CachedRowSetImpl)Table.select(t, Table.ALL_COLUMNS, null, null);
+            assertNotNull(sql, rs);
+            return rs;
+        }
+
+
+        private void validate(SqlTest test) throws Exception
+        {
+            CachedRowSetImpl rs = null;
+            try
+            {
+                rs = resultset(test.sql);
+                ResultSetMetaData md = rs.getMetaData();
+                assertTrue(test.sql, test.countColumns == -1 || test.countColumns == md.getColumnCount());
+                assertTrue(test.sql, test.countRows == -1 || test.countRows == rs.getSize());
+            }
+            finally
+            {
+                ResultSetUtil.close(rs);
+            }
+        }
+
+
+        public void test() throws Exception
+        {
+            assertNotNull(lists);
+            TableInfo Rinfo = lists.getTable("R", "R");
+            assertNotNull(Rinfo);
+            TableInfo Sinfo = lists.getTable("S", "S");
+            assertNotNull(Sinfo);
+
+            // custom tests
+            CachedRowSetImpl rs = resultset("SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration FROM R");
+            ResultSetMetaData md = rs.getMetaData();
+            assertTrue(0 < rs.findColumn("d"));
+            assertTrue(0 < rs.findColumn("seven"));
+            assertTrue(0 < rs.findColumn("twelve"));
+            assertTrue(0 < rs.findColumn("day"));
+            assertTrue(0 < rs.findColumn("month"));
+            assertTrue(0 < rs.findColumn("date"));
+            assertTrue(0 < rs.findColumn("duration"));
+            assertEquals(7, md.getColumnCount());
+            assertEquals(100, rs.getSize());
+            rs.close();
+
+            // simple tests
+            for (SqlTest test : tests)
+            {
+                validate(test);
+            }
+        }
+
+        public static Test suite()
+        {
+            return new TestSuite(TestCase.class);
         }
     }
 }
