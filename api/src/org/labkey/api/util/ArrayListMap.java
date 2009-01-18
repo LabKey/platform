@@ -24,7 +24,7 @@ import java.util.*;
 public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializable
 {
     protected Map<K, Integer> _findMap;
-    protected ArrayList<V> _row;
+    protected List<V> _row;
 
 
     public ArrayListMap()
@@ -40,6 +40,13 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
             _findMap = new HashMap<K, Integer>();
             _row = new ArrayList<V>();
         }
+    }
+
+
+    public ArrayListMap(ArrayListMap<K,V> m, V[] a)
+    {
+        _findMap = m._findMap;
+        _row = Arrays.asList(a);
     }
 
 
