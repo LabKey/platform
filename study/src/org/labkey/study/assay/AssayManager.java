@@ -20,6 +20,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.query.QuerySettings;
@@ -113,6 +114,16 @@ public class AssayManager implements AssayService.Interface
         return new AssaySchema(user, container);
     }
 
+    public String getRunListTableName(ExpProtocol protocol)
+    {
+        return AssaySchema.getRunListTableName(protocol);
+    }
+
+    public String getRunDataTableName(ExpProtocol protocol)
+    {
+        return AssaySchema.getRunDataTableName(protocol);
+    }
+
     public List<ExpProtocol> getAssayProtocols(Container container)
     {
         List<ExpProtocol> protocols = new ArrayList<ExpProtocol>();
@@ -125,33 +136,6 @@ public class AssayManager implements AssayService.Interface
             addTopLevelProtocols(projectProtocols, protocols);
         }
         return protocols;
-    }
-
-    public boolean hasAssayProtocols(Container container)
-    {
-        ExpProtocol[] containerProtocols = ExperimentService.get().getExpProtocols(container);
-        if (containerProtocols != null)
-        {
-            for (ExpProtocol protocol : containerProtocols)
-            {
-                if (AssayService.get().getProvider(protocol) != null)
-                    return true;
-            }
-        }
-        Container project = container.getProject();
-        if (project != null && !container.equals(project))
-        {
-            ExpProtocol[] projectProtocols = ExperimentService.get().getExpProtocols(project);
-            if (projectProtocols != null)
-            {
-                for (ExpProtocol protocol : projectProtocols)
-                {
-                    if (AssayService.get().getProvider(protocol) != null)
-                        return true;
-                }
-            }
-        }
-        return false;
     }
 
     private void addTopLevelProtocols(ExpProtocol[] potential, List<ExpProtocol> returnList)

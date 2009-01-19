@@ -85,12 +85,6 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return false;
     }
 
-    @Override
-    public boolean isPlateBased()
-    {
-        return false;
-    }
-
     public void addDomain(IAssayDomainType domainType, DomainDescriptorType xDomain)
     {
         domainsDescriptors.put(domainType, xDomain);

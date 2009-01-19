@@ -18,6 +18,9 @@ package org.labkey.experiment.api;
 
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.ExpProtocolApplicationTable;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;

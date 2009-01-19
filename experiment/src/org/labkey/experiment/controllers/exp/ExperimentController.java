@@ -22,6 +22,9 @@ import org.labkey.api.action.*;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.pipeline.PipeRoot;
@@ -69,7 +72,7 @@ public class ExperimentController extends SpringActionController
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ExperimentController.class);
 
     public static final String GUEST_DIRECTORY_NAME = "guest";
-    
+
     public ExperimentController()
     {
         setActionResolver(_actionResolver);
@@ -1188,7 +1191,7 @@ public class ExperimentController extends SpringActionController
         {
             super("Experiment Run");
         }
-        
+
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
         {
             List<ExpRun> runs = new ArrayList<ExpRun>();
@@ -1301,12 +1304,15 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            ExperimentService.get().deleteMaterialByRowIds(getContainer(), deleteForm.getIds(true));
+            for (ExpMaterial expMaterial : getMaterials(deleteForm, true))
+            {
+                expMaterial.delete(getUser());
+            }
         }
 
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
         {
-            List<ExpMaterial> materials = getMaterials(deleteForm);
+            List<ExpMaterial> materials = getMaterials(deleteForm, false);
             List<ExpRun> runs = getRuns(deleteForm);
             return new ConfirmDeleteView("Sample", "showMaterial", materials, deleteForm, runs);
         }
@@ -1318,10 +1324,10 @@ public class ExperimentController extends SpringActionController
             return ExperimentService.get().runsDeletedWithInput(runs);
         }
 
-        private List<ExpMaterial> getMaterials(DeleteForm deleteForm)
+        private List<ExpMaterial> getMaterials(DeleteForm deleteForm, boolean clear)
         {
             List<ExpMaterial> materials = new ArrayList<ExpMaterial>();
-            for (int materialId : deleteForm.getIds(false))
+            for (int materialId : deleteForm.getIds(clear))
             {
                 ExpMaterial material = ExperimentService.get().getExpMaterial(materialId);
                 if (material != null)
@@ -1343,13 +1349,24 @@ public class ExperimentController extends SpringActionController
 
         protected void deleteObjects(DeleteForm deleteForm) throws ExperimentException, ServletException
         {
-            ExperimentService.get().deleteDataByRowIds(getContainer(), deleteForm.getIds(true));
+            for (ExpData data : getDatas(deleteForm, true))
+            {
+                data.delete(getViewContext().getUser());
+            }
         }
 
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
         {
+            List<ExpData> datas = getDatas(deleteForm, false);
+            List<ExpRun> runs = ExperimentService.get().getRunsUsingDatas(datas);
+
+            return new ConfirmDeleteView("Data", "showData", datas, deleteForm, runs);
+        }
+
+        private List<ExpData> getDatas(DeleteForm deleteForm, boolean clear)
+        {
             List<ExpData> datas = new ArrayList<ExpData>();
-            for (int dataId : deleteForm.getIds(false))
+            for (int dataId : deleteForm.getIds(clear))
             {
                 ExpData data = ExperimentService.get().getExpData(dataId);
                 if (data != null)
@@ -1357,9 +1374,7 @@ public class ExperimentController extends SpringActionController
                     datas.add(data);
                 }
             }
-            List<ExpRun> runs = ExperimentService.get().getRunsUsingDatas(datas);
-
-            return new ConfirmDeleteView("Data", "showData", datas, deleteForm, runs);
+            return datas;
         }
     }
 
@@ -2423,7 +2438,7 @@ public class ExperimentController extends SpringActionController
                 }
 
                 List<ExpSampleSet> sampleSets = getUploadableSampleSets();
-                
+
                 DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(sampleSets, materialsWithRoles, form.getOutputCount(), materialInputRoles, null);
                 view = new JspView<DeriveSamplesChooseTargetBean>("/org/labkey/experiment/deriveSamplesChooseTarget.jsp", bean);
             }
@@ -2490,7 +2505,7 @@ public class ExperimentController extends SpringActionController
         }
         return sampleSets;
     }
-    
+
     @RequiresPermission(ACL.PERM_INSERT)
     public class DescribeDerivedSamplesAction extends SimpleViewAction<DeriveMaterialForm>
     {

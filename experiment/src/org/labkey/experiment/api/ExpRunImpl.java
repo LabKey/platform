@@ -278,6 +278,18 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         }
     }
 
+    public void deleteProtocolApplications(User user)
+    {
+        try
+        {
+            ExperimentServiceImpl.get().deleteProtocolApplications(this, getOutputDatas(null), user);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
     private synchronized void ensureFullyPopulated()
     {
         if (!_populated)

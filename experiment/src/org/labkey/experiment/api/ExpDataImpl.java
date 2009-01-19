@@ -158,7 +158,7 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
 
     public void delete(User user)
     {
-        ExperimentService.get().deleteDataByRowIds(getContainer(), getRowId());
+        ExperimentServiceImpl.get().deleteDataByRowIds(getContainer(), getRowId());
     }
     
     public String getMimeType()

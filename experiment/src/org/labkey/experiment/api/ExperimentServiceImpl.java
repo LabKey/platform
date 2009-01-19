@@ -22,12 +22,14 @@ import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
+import org.labkey.api.exp.query.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.exp.xar.XarConstants;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -799,23 +801,19 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public ExpDataImpl[] deleteExperimentRunForMove(int runId, Container container, User user) throws SQLException, ExperimentException
+    /**
+     * @return the data objects that were attached to the run that should be attached to the run in its new folder
+     */
+    public ExpDataImpl[] deleteExperimentRunForMove(int runId, User user) throws SQLException, ExperimentException
     {
         ExpDataImpl[] datasToDelete = getAllDataOwnedByRun(runId);
 
-        deleteRun(runId, container, datasToDelete, user);
+        deleteRun(runId, datasToDelete, user);
         return datasToDelete;
     }
 
-
-    private void deleteRun(int runId, Container container, ExpData[] datasToDelete, User user)
-        throws SQLException
+    public void deleteProtocolApplications(ExpRun run, ExpData[] datasToDelete, User user) throws SQLException
     {
-        ExpRun run = getExpRun(runId);
-        if (run == null)
-        {
-            return;
-        }
         if (user == null || !run.getContainer().hasPermission(user, ACL.PERM_DELETE))
         {
             throw new SQLException("Attempting to delete an ExperimentRun without having delete permissions for its container");
@@ -823,40 +821,55 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         DbCache.remove(getTinfoExperimentRun(), getCacheKey(run.getLSID()));
 
         beforeDeleteData(datasToDelete);
-        //delete run properties and all children
-        OntologyManager.deleteOntologyObject(run.getLSID(), container, true);
 
         String sql = " ";
-        sql += "  DELETE FROM exp.ProtocolApplicationParameter WHERE ProtocolApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + runId + ") ;";
+        sql += "DELETE FROM exp.ProtocolApplicationParameter WHERE ProtocolApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + run.getRowId() + ");\n";
 
-        sql += " UPDATE " + getTinfoData() + " SET SourceApplicationId = NULL, RunId = NULL, SourceProtocolLSID = NULL  " +
+        sql += "UPDATE " + getTinfoData() + " SET SourceApplicationId = NULL, RunId = NULL, SourceProtocolLSID = NULL  " +
                 " WHERE RowId IN (SELECT exp.Data.RowId FROM exp.Data " +
                 " INNER JOIN exp.DataInput ON exp.Data.RowId = exp.DataInput.DataId " +
                 " INNER JOIN exp.ProtocolApplication PAOther ON exp.DataInput.TargetApplicationId = PAOther.RowId " +
                 " INNER JOIN exp.ProtocolApplication PA ON exp.Data.SourceApplicationId = PA.RowId " +
-                " WHERE PAOther.RunId <> PA.RunId AND PA.RunId = " + runId + ") ; ";
+                " WHERE PAOther.RunId <> PA.RunId AND PA.RunId = " + run.getRowId() + ");\n";
 
-        sql += " UPDATE " + getTinfoMaterial() + " SET SourceApplicationId = NULL, RunId = NULL, SourceProtocolLSID = NULL  " +
+        sql += "UPDATE " + getTinfoMaterial() + " SET SourceApplicationId = NULL, RunId = NULL, SourceProtocolLSID = NULL  " +
                 " WHERE RowId IN (SELECT exp.Material.RowId FROM exp.Material " +
                 " INNER JOIN exp.MaterialInput ON exp.Material.RowId = exp.MaterialInput.MaterialId " +
                 " INNER JOIN exp.ProtocolApplication PAOther ON exp.MaterialInput.TargetApplicationId = PAOther.RowId " +
                 " INNER JOIN exp.ProtocolApplication PA ON exp.Material.SourceApplicationId = PA.RowId " +
-                " WHERE PAOther.RunId <> PA.RunId AND PA.RunId = " + runId + ") ; ";
+                " WHERE PAOther.RunId <> PA.RunId AND PA.RunId = " + run.getRowId() + ");\n";
 
-        sql += "  DELETE FROM exp.DataInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + runId + ") ;";
-        sql += "  DELETE FROM exp.MaterialInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + runId + ") ;";
-        sql += "  DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE RunId = " + runId + ") ;";
-        sql += "  DELETE FROM exp.MaterialInput WHERE MaterialId IN (SELECT RowId FROM exp.Material WHERE RunId = " + runId + ") ;";
+        sql += "DELETE FROM exp.DataInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + run.getRowId() + ");\n";
+        sql += "DELETE FROM exp.MaterialInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + run.getRowId() + ");\n";
+        sql += "DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE RunId = " + run.getRowId() + ");\n";
+        sql += "DELETE FROM exp.MaterialInput WHERE MaterialId IN (SELECT RowId FROM exp.Material WHERE RunId = " + run.getRowId() + ");\n";
 
-        sql += "  DELETE FROM exp.Data WHERE RunId = " + runId + " ; ";
-        sql += "  DELETE FROM exp.Material WHERE RunId = " + runId + " ; ";
-        sql += "  DELETE FROM exp.ProtocolApplication WHERE RunId = " + runId + " ; ";
-        sql += "  DELETE FROM exp.RunList WHERE ExperimentRunId = " + runId + " ; ";
-        sql += "  DELETE FROM exp.ExperimentRun WHERE RowId = " + runId + " ; ";
-
+        sql += "DELETE FROM exp.Data WHERE RunId = " + run.getRowId() + ";\n";
+        sql += "DELETE FROM exp.Material WHERE RunId = " + run.getRowId() + ";\n";
+        sql += "DELETE FROM exp.ProtocolApplication WHERE RunId = " + run.getRowId() + ";\n";
         Table.execute(getExpSchema(), sql, new Object[]{});
 
-        ExperimentRunGraph.clearCache(container);
+        ExperimentRunGraph.clearCache(run.getContainer());
+    }
+
+    private void deleteRun(int runId, ExpData[] datasToDelete, User user)
+        throws SQLException
+    {
+        ExpRun run = getExpRun(runId);
+        if (run == null)
+        {
+            return;
+        }
+
+        deleteProtocolApplications(run, datasToDelete, user);
+
+        //delete run properties and all children
+        OntologyManager.deleteOntologyObject(run.getLSID(), run.getContainer(), true);
+        
+        String sql = "DELETE FROM exp.RunList WHERE ExperimentRunId = " + runId + ";\n";
+        sql += "DELETE FROM exp.ExperimentRun WHERE RowId = " + runId + ";\n";
+
+        Table.execute(getExpSchema(), sql, new Object[]{});
     }
 
 
@@ -1480,7 +1493,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 // Grab these to delete after we've deleted the Data rows
                 ExpDataImpl[] datasToDelete = getAllDataOwnedByRun(runId);
 
-                deleteRun(runId, container, datasToDelete, user);
+                deleteRun(runId, datasToDelete, user);
 
                 for (ExpData data : datasToDelete)
                 {
@@ -1760,7 +1773,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     }
                     OntologyManager.deleteOntologyObjects(container, data.getLSID());
                 }
-                sql = "  DELETE FROM exp.Data WHERE RowId IN (" + dataIds + ");";
+                sql = "DELETE FROM exp.DataInput WHERE DataId IN (" + dataIds + ");";
+                Table.execute(getExpSchema(), sql, new Object[]{});
+
+                sql = "DELETE FROM exp.Data WHERE RowId IN (" + dataIds + ");";
                 Table.execute(getExpSchema(), sql, new Object[]{});
 
                 if (!containingTrans)
@@ -1826,7 +1842,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             deleteProtocolByRowIds(c, user, protIds);
 
             // now delete starting materials that were not associated with a MaterialSource upload.
-            // we get this list now so that it doesn't innclude all of the run-scoped Materials that were
+            // we get this list now so that it doesn't include all of the run-scoped Materials that were
             // deleted already
             sql = "SELECT RowId FROM exp.Material WHERE Container = ? ;";
             int[] matIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
@@ -2730,10 +2746,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public ExpRun insertSimpleExperimentRun(ExpRun baseRun, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException
     {
         ExpRunImpl run = (ExpRunImpl)baseRun;
-        if (outputMaterials.isEmpty() && outputDatas.isEmpty())
-        {
-            throw new IllegalArgumentException("You must have at least one output to the run");
-        }
+//        if (outputMaterials.isEmpty() && outputDatas.isEmpty())
+//        {
+//            throw new IllegalArgumentException("You must have at least one output to the run");
+//        }
         if (run.getFilePathRoot() == null)
         {
             throw new IllegalArgumentException("You must set the file path root on the experiment run");
@@ -2757,7 +2773,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     {
                         run.setContainer(info.getContainer());
                     }
-                    Table.insert(user, getTinfoExperimentRun(), run.getDataObject());
+                    run.save(user);
                     insertedDatas = ensureSimpleExperimentRunParameters(inputMaterials.keySet(), inputDatas.keySet(), outputMaterials.keySet(), outputDatas.keySet(), user);
 
                     ExpProtocolImpl parentProtocol = run.getProtocol();
@@ -2901,10 +2917,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 }
 
                 ExpRun reloadedRun = getExpRun(run.getRowId());
-                if (reloadedRun.getDataInputs().isEmpty() && reloadedRun.getMaterialInputs().isEmpty())
-                {
-                    throw new IllegalArgumentException("You must have at least one input to the run");
-                }
+//                if (reloadedRun.getDataInputs().isEmpty() && reloadedRun.getMaterialInputs().isEmpty())
+//                {
+//                    throw new IllegalArgumentException("You must have at least one input to the run");
+//                }
 
 
                 return run;

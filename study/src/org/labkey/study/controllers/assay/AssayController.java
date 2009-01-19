@@ -33,6 +33,7 @@ import org.labkey.api.study.actions.*;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.assay.PlateBasedAssayProvider;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
@@ -180,8 +181,8 @@ public class AssayController extends SpringActionController
                 assayProperties.put("description", protocol.getDescription());
                 assayProperties.put("name", protocol.getName());
                 assayProperties.put("id", protocol.getRowId());
-                if (provider.isPlateBased())
-                    assayProperties.put("plateTemplate", provider.getPlateTemplate(getContainer(), protocol));
+                if (provider instanceof PlateBasedAssayProvider)
+                    assayProperties.put("plateTemplate", ((PlateBasedAssayProvider)provider).getPlateTemplate(getContainer(), protocol));
 
                 Map<String, List<Map<String, Object>>> domains = new HashMap<String, List<Map<String, Object>>>();
                 for (Domain domain : provider.getDomains(protocol))
@@ -542,12 +543,12 @@ public class AssayController extends SpringActionController
                     filterValue.append(sep).append(runId);
                     sep = ";";
                 }
-                result.addFilter(provider.getRunDataTableName(protocol),
+                result.addFilter(AssayService.get().getRunDataTableName(protocol),
                         provider.getRunIdFieldKeyFromDataRow(), CompareType.IN, filterValue.toString());
             }
             else if (runIds.length == 1)
             {
-                result.addFilter(provider.getRunDataTableName(protocol),
+                result.addFilter(AssayService.get().getRunDataTableName(protocol),
                         provider.getRunIdFieldKeyFromDataRow(), CompareType.EQUAL, runIds[0]);
             }
             if (containerFilter != null)

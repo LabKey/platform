@@ -21,6 +21,8 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
@@ -71,11 +73,21 @@ public class AssaySchema extends UserSchema
             AssayProvider provider = AssayService.get().getProvider(protocol);
             if (provider != null)
             {
-                names.add(provider.getRunListTableName(protocol));
-                names.add(provider.getRunDataTableName(protocol));
+                names.add(getRunListTableName(protocol));
+                names.add(getRunDataTableName(protocol));
             }
         }
         return names;
+    }
+
+    public static String getRunListTableName(ExpProtocol protocol)
+    {
+        return protocol.getName() + " Runs";
+    }
+
+    public static String getRunDataTableName(ExpProtocol protocol)
+    {
+        return protocol.getName() + " Data";
     }
 
     @Override
@@ -90,11 +102,11 @@ public class AssaySchema extends UserSchema
                 AssayProvider provider = AssayService.get().getProvider(protocol);
                 if (provider != null)
                 {
-                    if (name.equals(provider.getRunListTableName(protocol)))
+                    if (name.equals(getRunListTableName(protocol)))
                     {
                         return createRunTable(alias, protocol, provider);
                     }
-                    else if (name.equals(provider.getRunDataTableName(protocol)))
+                    else if (name.equals(getRunDataTableName(protocol)))
                     {
                         return provider.createDataTable(this, alias, protocol);
                     }
@@ -165,7 +177,7 @@ public class AssaySchema extends UserSchema
             AssayProvider provider = AssayService.get().getProvider(protocol);
             if (provider != null)
             {
-                if (name != null && name.equals(provider.getRunDataTableName(protocol)))
+                if (name != null && name.equals(AssayService.get().getRunDataTableName(protocol)))
                 {
                     return new RunDataQueryView(protocol, context, settings);
                 }

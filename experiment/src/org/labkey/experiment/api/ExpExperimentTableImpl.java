@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.query.*;

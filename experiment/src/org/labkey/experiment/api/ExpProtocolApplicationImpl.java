@@ -23,6 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
+import org.labkey.experiment.ExperimentRunGraph;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;

@@ -16,7 +16,7 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.api.ExpProtocolTable;
+import org.labkey.api.exp.query.ExpProtocolTable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.DetailsURL;

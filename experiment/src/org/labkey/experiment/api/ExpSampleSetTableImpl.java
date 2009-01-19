@@ -16,7 +16,7 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.api.ExpSampleSetTable;
+import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.FieldKey;

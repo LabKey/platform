@@ -39,6 +39,7 @@ import org.labkey.api.study.PlateService;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.PlateBasedAssayProvider;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.Pair;
@@ -133,9 +134,9 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             gwtProtocolParams.put(property.getOntologyEntryURI(), property.getStringValue());
         }
         result.setProtocolParameters(gwtProtocolParams);
-        if (provider.isPlateBased())
+        if (provider instanceof PlateBasedAssayProvider)
         {
-            PlateTemplate plateTemplate = provider.getPlateTemplate(getContainer(), protocol);
+            PlateTemplate plateTemplate = ((PlateBasedAssayProvider)provider).getPlateTemplate(getContainer(), protocol);
             if (plateTemplate != null)
                 result.setSelectedPlateTemplate(plateTemplate.getName());
             setPlateTemplateList(provider, result);
@@ -171,7 +172,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
 
     private void setPlateTemplateList(AssayProvider provider, GWTProtocol protocol)
     {
-        if (provider.isPlateBased())
+        if (provider instanceof PlateBasedAssayProvider)
         {
             List<String> plateTemplates = new ArrayList<String>();
             try
@@ -291,11 +292,12 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                 protocol.setProtocolParameters(newParams.values());
 
                 AssayProvider provider = org.labkey.api.study.assay.AssayService.get().getProvider(protocol);
-                if (provider.isPlateBased() && assay.getSelectedPlateTemplate() != null)
+                if (provider instanceof PlateBasedAssayProvider && assay.getSelectedPlateTemplate() != null)
                 {
+                    PlateBasedAssayProvider plateProvider = (PlateBasedAssayProvider)provider;
                     PlateTemplate template = PlateService.get().getPlateTemplate(getContainer(), assay.getSelectedPlateTemplate());
                     if (template != null)
-                        provider.setPlateTemplate(getContainer(), protocol, template);
+                        plateProvider.setPlateTemplate(getContainer(), protocol, template);
                     else
                         throw new AssayException("The selected plate template could not be found.  Perhaps it was deleted by another user?");
                 }

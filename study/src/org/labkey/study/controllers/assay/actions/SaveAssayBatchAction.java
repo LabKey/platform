@@ -22,21 +22,28 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiVersion;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.exp.api.*;
-import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.study.assay.TsvDataHandler;
 import org.springframework.validation.BindException;
 import org.json.JSONObject;
 import org.json.JSONException;
 import org.json.JSONArray;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.log4j.Logger;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
+import java.sql.SQLException;
 
 /**
  * User: jeckels
@@ -46,6 +53,8 @@ import java.util.Arrays;
 @ApiVersion(9.1)
 public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonForm>
 {
+    private static final Logger LOG = Logger.getLogger(SaveAssayBatchAction.class);
+
     public ApiResponse executeAction(ExpProtocol protocol, AssayProvider provider, SimpleApiJsonForm form, BindException errors) throws Exception
     {
         JSONObject rootJsonObject = form.getJsonObject();
@@ -99,7 +108,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         return serializeResult(provider, protocol, batch);
     }
 
-    private ExpRun handleRun(JSONObject runJsonObject, ExpProtocol protocol, AssayProvider provider, ExpExperiment batch) throws JSONException, ValidationException
+    private ExpRun handleRun(JSONObject runJsonObject, ExpProtocol protocol, AssayProvider provider, ExpExperiment batch) throws JSONException, ValidationException, ExperimentException, SQLException
     {
         String name = runJsonObject.has(NAME) ? runJsonObject.getString(NAME) : null;
         ExpRun run;
@@ -120,18 +129,61 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         {
             run = provider.createExperimentRun(name, getViewContext().getContainer(), protocol);
         }
+        PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
+        if (pipeRoot == null)
+        {
+            throw new NotFoundException("Pipeline root is not configured for folder " + getViewContext().getContainer());
+        }
+        run.setFilePathRoot(pipeRoot.getRootPath());
         if (name != null)
         {
             run.setName(name);
         }
         run.save(getViewContext().getUser());
+        OntologyManager.ensureObject(run.getContainer(), run.getLSID());
         Domain uploadSetDomain = provider.getUploadSetDomain(protocol);
         if (runJsonObject.has(PROPERTIES))
         {
             saveProperties(run, uploadSetDomain.getProperties(), runJsonObject.getJSONObject(PROPERTIES));
         }
 
+        if (runJsonObject.has(DATA_ROWS))
+        {
+            handleDataRows(protocol, provider, run, runJsonObject.getJSONArray(DATA_ROWS));
+        }
+
         return run;
+    }
+
+    private void handleDataRows(ExpProtocol protocol, AssayProvider provider, ExpRun run, JSONArray dataArray) throws ExperimentException
+    {
+        ViewContext context = getViewContext();
+
+        // First, clear out any old data analysis results
+        for (ExpData data : run.getOutputDatas(provider.getDataType()))
+        {
+            data.delete(context.getUser());
+        }
+
+        // Delete the contents of the run
+        run.deleteProtocolApplications(context.getUser());
+
+        // Recreate the run
+        ExpData newData = AbstractAssayProvider.createData(run.getContainer(), null, "Analysis Results", provider.getDataType());
+        newData.save(getViewContext().getUser());
+
+        Map<String, Object>[] rawData = dataArray.toMapArray();
+
+        run = ExperimentService.get().insertSimpleExperimentRun(run,
+            Collections.<ExpMaterial, String>emptyMap(),
+            Collections.<ExpData, String>emptyMap(),
+            Collections.<ExpMaterial, String>emptyMap(),
+            Collections.singletonMap(newData, "Data"),
+            new ViewBackgroundInfo(context.getContainer(),
+                    context.getUser(), context.getActionURL()), LOG, false);
+
+        TsvDataHandler dataHandler = new TsvDataHandler();
+        dataHandler.importRows(newData, getViewContext().getUser(), run, protocol, provider, rawData);
     }
 
     private ExpExperiment handleBatch(JSONObject batchJsonObject, ExpProtocol protocol, AssayProvider provider) throws JSONException, ValidationException

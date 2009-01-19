@@ -27,7 +27,9 @@ import java.util.List;
 import java.io.Writer;
 import java.io.IOException;
 
-import org.labkey.api.exp.api.SamplesSchema;
+import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.experiment.controllers.exp.ExperimentController;

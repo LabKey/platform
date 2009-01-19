@@ -22,13 +22,15 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.study.assay.AssayProvider;
 import org.springframework.validation.BindException;
 
+import java.sql.SQLException;
+
 /**
  * User: jeckels
  * Date: Jan 15, 2009
  */
 public class GetAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonForm>
 {
-    public ApiResponse executeAction(ExpProtocol assay, AssayProvider provider, SimpleApiJsonForm form, BindException errors)
+    public ApiResponse executeAction(ExpProtocol assay, AssayProvider provider, SimpleApiJsonForm form, BindException errors) throws SQLException
     {
         ExpExperiment batch = null;
         if (form.getJsonObject().has(BATCH_ID))

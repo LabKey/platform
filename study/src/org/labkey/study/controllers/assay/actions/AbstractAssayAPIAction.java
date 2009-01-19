@@ -22,14 +22,19 @@ import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.SQLFragment;
 import org.json.JSONObject;
 import org.json.JSONArray;
 import org.springframework.validation.BindException;
 
 import java.util.List;
+import java.util.Map;
+import java.sql.SQLException;
 
 /**
  * User: jeckels
@@ -37,12 +42,13 @@ import java.util.List;
  */
 public abstract class AbstractAssayAPIAction<FORM> extends ApiAction<FORM>
 {
+    // Top level properties
     protected static final String ASSAY_ID = "assayId";
     protected static final String BATCH_ID = "batchId";
-
     protected static final String BATCH = "batch";
     protected static final String RUNS = "runs";
 
+    // General experiment object properties
     protected static final String ID = "id";
     protected static final String CREATED = "created";
     protected static final String CREATED_BY = "createdBy";
@@ -51,6 +57,10 @@ public abstract class AbstractAssayAPIAction<FORM> extends ApiAction<FORM>
     protected static final String NAME = "name";
     protected static final String LSID = "lsid";
     protected static final String PROPERTIES = "properties";
+
+    // Run properties
+    protected static final String DATA_ROWS = "dataRows";
+
 
     public final ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
     {
@@ -83,15 +93,42 @@ public abstract class AbstractAssayAPIAction<FORM> extends ApiAction<FORM>
 
     protected abstract ApiResponse executeAction(ExpProtocol assay, AssayProvider provider, SimpleApiJsonForm form, BindException errors) throws Exception;
 
-    protected JSONObject serializeRun(ExpRun run, AssayProvider provider, ExpProtocol protocol)
+    protected JSONObject serializeRun(ExpRun run, AssayProvider provider, ExpProtocol protocol) throws SQLException
     {
         JSONObject jsonObject = new JSONObject();
         serializeStandardProperties(run, jsonObject, provider.getRunDataDomain(protocol).getProperties());
         jsonObject.put("comments", run.getComments());
+
+        JSONArray dataRows = new JSONArray();
+
+        ExpData[] datas = run.getOutputDatas(provider.getDataType());
+        if (datas.length == 1)
+        {
+            SQLFragment sql = new SQLFragment("SELECT child.ObjectURI FROM " + OntologyManager.getTinfoObject() + " child, ");
+            sql.append(OntologyManager.getTinfoObject() + " parent WHERE parent.ObjectId = child.OwnerObjectId AND ");
+            sql.append("parent.ObjectURI = ? ORDER BY child.ObjectId");
+            sql.add(datas[0].getLSID());
+            String[] objectURIs = Table.executeArray(OntologyManager.getExpSchema(), sql, String.class);
+
+            Domain dataDomain = provider.getRunDataDomain(protocol);
+
+            for (String objectURI : objectURIs)
+            {
+                JSONObject dataRow = new JSONObject();
+                Map<String, Object> values = OntologyManager.getProperties(run.getContainer(), objectURI);
+                for (DomainProperty prop : dataDomain.getProperties())
+                {
+                    dataRow.put(prop.getName(), values.get(prop.getPropertyURI()));
+                }
+                dataRows.put(dataRow);
+            }
+        }
+        jsonObject.put(DATA_ROWS, dataRows);
+
         return jsonObject;
     }
 
-    protected JSONObject serializeBatch(ExpExperiment batch, AssayProvider provider, ExpProtocol protocol)
+    protected JSONObject serializeBatch(ExpExperiment batch, AssayProvider provider, ExpProtocol protocol) throws SQLException
     {
         JSONObject jsonObject = new JSONObject();
         serializeStandardProperties(batch, jsonObject, provider.getUploadSetDomain(protocol).getProperties());
@@ -129,7 +166,7 @@ public abstract class AbstractAssayAPIAction<FORM> extends ApiAction<FORM>
         }
     }
 
-    protected ApiResponse serializeResult(AssayProvider provider, ExpProtocol protocol, ExpExperiment batch)
+    protected ApiResponse serializeResult(AssayProvider provider, ExpProtocol protocol, ExpExperiment batch) throws SQLException
     {
         JSONObject result = new JSONObject();
         result.put(ASSAY_ID, protocol.getRowId());

@@ -16,8 +16,8 @@
 package org.labkey.experiment;
 
 import org.labkey.api.view.*;
-import org.labkey.api.exp.api.ExpSchema;
-import org.labkey.api.exp.api.ExpExperimentTable;
+import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.query.QueryView;

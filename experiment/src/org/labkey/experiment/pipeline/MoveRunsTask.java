@@ -16,7 +16,6 @@
 package org.labkey.experiment.pipeline;
 
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.exp.api.ExperimentService;
@@ -40,7 +39,6 @@ import org.fhcrc.cpas.exp.xml.ExperimentArchiveType;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Collections;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -111,7 +109,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
                 handler.beforeMove(oldData, experimentRun.getContainer(), job.getUser());
             }
 
-            ExpData[] datas = ExperimentService.get().deleteExperimentRunForMove(experimentRun.getRowId(), experimentRun.getContainer(), job.getUser());
+            ExpData[] datas = ExperimentService.get().deleteExperimentRunForMove(experimentRun.getRowId(), job.getUser());
             for (ExpData data : datas)
             {
                 if (data.getDataFileUrl() != null)

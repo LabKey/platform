@@ -18,6 +18,10 @@ package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.ExpSampleSetTable;
+import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
