@@ -266,7 +266,16 @@ public class ListItemImpl implements ListItem
                     }
                     if (entry.getValue() != null)
                     {
-                        ObjectProperty property = new ObjectProperty(obj.getObjectURI(), obj.getContainer(), entry.getKey(), entry.getValue(), dp.getPropertyDescriptor().getPropertyType(), dp.getPropertyDescriptor().getName());
+                        Object value = entry.getValue();
+                        String qcValue = null;
+                        if (dp.isQcEnabled() && QcUtil.isQcValue(value.toString(), obj.getContainer()))
+                        {
+                            qcValue = value.toString();
+                            value = null;
+                        }
+                        ObjectProperty property = new ObjectProperty(obj.getObjectURI(), obj.getContainer(), entry.getKey(), value, dp.getPropertyDescriptor().getPropertyType(), dp.getPropertyDescriptor().getName());
+                        if (qcValue != null)
+                            property.setQcValue(qcValue);
                         if (dp.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT)
                             newAttachments.add((AttachmentFile)entry.getValue());
                         OntologyManager.insertProperties(obj.getContainer(), obj.getObjectURI(), property);

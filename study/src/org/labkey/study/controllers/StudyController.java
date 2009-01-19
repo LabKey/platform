@@ -3439,6 +3439,11 @@ public class StudyController extends BaseStudyController
             Study study = getStudy();
             _datasetId = updateQCForm.getDatasetId();
             DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, _datasetId);
+            if (def == null)
+            {
+                HttpView.throwNotFound("No dataset found for id: " + _datasetId);
+                return null;
+            }
             Set<String> lsids = null;
             if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
                 lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), true, false);
@@ -3627,9 +3632,7 @@ public class StudyController extends BaseStudyController
             if (null == typeURI)
                 redirectTypeNotFound(datasetId);
 
-            //TODO: This may unnecessarily select into temp table.
-            //Make public entry point for tableInfo without temp table
-            TableInfo tinfo = def.getTableInfo(getUser());
+            TableInfo tinfo = def.getTableInfo(getUser(), true, false);
 
             DataRegion dr = new DataRegion();
             dr.setTable(tinfo);
@@ -3652,10 +3655,21 @@ public class StudyController extends BaseStudyController
                 ignoreColumns.add(def.getKeyPropertyName());
             }
 
+            // Need to ignore field-level qc columns that are generated
+            for (ColumnInfo col : tinfo.getColumns())
+            {
+                if (col.isQcEnabled())
+                {
+                    ignoreColumns.add(col.getQcColumnName());
+                    ignoreColumns.add(col.getName() + QCDisplayColumnFactory.RAW_VALUE_SUFFIX);
+                }
+            }
+
             for (ColumnInfo col : tinfo.getColumns())
             {
                 if (ignoreColumns.contains(col.getName()))
                     continue;
+
                 DataColumn dc = new DataColumn(col);
                 //DO NOT use friendly names. We will import this later.
                 dc.setCaption(col.getAlias());
