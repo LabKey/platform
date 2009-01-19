@@ -86,6 +86,8 @@ LABKEY.Query = new function()
 
     function getErrorCallbackWrapper(callbackFn)
     {
+        if (!callbackFn)
+            return Ext.emptyFn;
         return function(response, options)
         {
             var errorInfo = null;

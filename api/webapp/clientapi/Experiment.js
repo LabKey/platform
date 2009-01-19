@@ -29,12 +29,16 @@ LABKEY.Experiment = new function()
         {
             //ensure response is JSON before trying to decode
             var json = null;
+            var experiment = null;
             if(response && response.getResponseHeader && response.getResponseHeader['Content-Type']
                     && response.getResponseHeader['Content-Type'].indexOf('application/json') >= 0)
+            {
                 json = Ext.util.JSON.decode(response.responseText);
+                experiment = new LABKEY.Exp.RunGroup(json);
+            }
 
             if(fn)
-                fn.call(scope || this, json, response);
+                fn.call(scope || this, experiment, response);
         };
     }
 
@@ -48,19 +52,7 @@ LABKEY.Experiment = new function()
          * @param {function} config.successCallback A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
-         * <li><b>runGroup:</b> an object containing properties about the run group
-         * This object will have the following shape:
-         *  <ul>
-         *  <li>container
-         *      <ul>
-         *          <li>rowId: the row id for the run group</li>
-         *          <li>LSID: the LSID for the run group</li>
-         *          <li>hidden: a boolean indicating if the group is hidden (always true for this method)</li>
-         *          <li>name: a name for the group, may not be meaningful for hidden groups</li>
-         *      </ul>
-         *  </li>
-         * </ul>
-         * </li>
+         * <li><b>runGroup:</b> an @{link LABKEY.Exp.RunGroup} object containing properties about the run group</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
          * @param {Integer[]} config.runIds An array of integer ids for the runs to be members of the group.
@@ -94,4 +86,163 @@ LABKEY.Experiment = new function()
         }
     };
 
-}
+};
+
+Ext.namespace('LABKEY', 'LABKEY.Exp');
+
+LABKEY.Exp.ExpObject = function (config) {
+    config = config || {};
+    this.lsid = config.lsid;
+    this.name = config.name;
+    this.id = config.id || config.rowId;
+    this.rowId = this.id;
+    this.comment = config.comment;
+
+    /**
+     * When the ExpObject was created.
+     * @type {Date}
+     */
+    this.created = config.created;
+
+    /**
+     * Who created the ExpObject.
+     * @type {String}
+     */
+    this.createdBy = config.createdBy;
+
+    this.modified = config.modified;
+    this.modifiedBy = config.modifiedBy;
+
+    /**
+     * Map of property descriptor names to values.
+     * @type {Object}
+     */
+    this.properties = config.properties || {};
+};
+
+LABKEY.Exp.Run = function (config) {
+    LABKEY.Exp.Run.superclass.constructor.call(this, config);
+    config = config || {};
+
+    this.experiments = config.experiments || [];
+    this.protocol = config.protocol;
+    this.filePathRoot = config.filePathRoot;
+    this.dataInputs = config.dataInputs || [];
+    this.dataOutputs = config.dataOutputs || [];
+    this.materialInputs = config.materialInputs || [];
+    this.materialOutputs = config.materialOutputs || [];
+//    this.protocolApplications = config.protocolApplications || [];
+//    this.inputProtocolApplication = config.inputProtocolApplication;
+//    this.outputProtocolApplication = config.outputProtocolApplication;
+    this.objectProperties = config.objectProperties || {};
+};
+Ext.extend(LABKEY.Exp.Run, LABKEY.Exp.ExpObject);
+
+LABKEY.Exp.Protocol = function (config) {
+    LABKEY.Exp.Protocol.superclass.constructor.call(this, config);
+    config = config || {};
+
+    this.protocolParameters = config.protocolParameters || [];
+    this.instrument = config.instrument;
+    this.software = config.software;
+    this.contact = config.contact;
+    this.childProtocols = config.childProtocols || [];
+    this.steps = config.steps || [];
+    this.applicationType = config.applicationType;
+    this.description = config.description;
+    //this.maxInputDataPerInstance = config.maxInputDataPerInstance;
+    //this.maxInputMaterialPerInstance = config.maxInputMaterialPerInstance;
+    //this.protocolDescription = config.protocolDescription;
+    //this.outputMaterialPerInstance = config.outputMaterialPerInstance;
+    //this.outputDataPerInstance = config.outputDataPerInstance;
+    //this.outputMaterialType = config.outputMaterialType;
+    //this.outputDataType = config.outputDataType;
+    //this.parentProtocols = config.parentProtocols || [];
+    this.runs = config.runs || [];
+};
+Ext.extend(LABKEY.Exp.Protocol, LABKEY.Exp.ExpObject);
+
+LABKEY.Exp.RunGroup = function (config) {
+    LABKEY.Exp.RunGroup.superclass.constructor.call(this, config);
+    config = config || {};
+
+    this.runs = config.runs || [];
+    this.protocols = config.protocols || [];
+    this.hidden = config.hidden;
+};
+Ext.extend(LABKEY.Exp.RunGroup, LABKEY.Exp.ExpObject);
+
+LABKEY.Exp.ProtocolApplication = function (config) {
+    LABKEY.Exp.ProtocolApplication.superclass.constructor.call(this, config);
+    config = config || {};
+
+    //this.dataInputs
+    //this.inputDatas
+    //this.outputDatas
+    //this.materialInputs
+    //this.inputMaterials
+    //this.outputMaterials
+    //this.protocol
+    //this.run
+    //this.actionSequence
+    //this.applicationType
+    //this.activityDate
+    //this.comments
+};
+Ext.extend(LABKEY.Exp.ProtocolApplication, LABKEY.Exp.ExpObject);
+
+LABKEY.Exp.SampleSet = function (config) {
+    LABKEY.Exp.SampleSet.superclass.constructor.call(this, config);
+    config = config || {};
+
+    this.materialLSIDPrefix = config.materialLSIDPrefix;
+    this.propertiesForType = config.propertiesForType;
+    this.samples = config.samples;
+    this.type = config.type;
+    this.description = config.description;
+    this.canImportMoreSamples = config.canImportMoreSamples;
+    this.hasIdColumns = config.hasIdColumns;
+};
+Ext.extend(LABKEY.Exp.SampleSet, LABKEY.Exp.ExpObject);
+
+LABKEY.Exp.ChildObject = function (config) {
+    LABKEY.Exp.ChildObject.superclass.constructor.call(this, config);
+    config = config || {};
+    // property holder
+};
+Ext.extend(LABKEY.Exp.ChildObject, LABKEY.Exp.ExpObject);
+
+LABKEY.Exp.ProtocolOutput = function (config) {
+    LABKEY.Exp.ProtocolOutput.superclass.constructor.call(this, config);
+    config = config || {};
+
+    this.sourceProtocol = config.sourceProtocol;
+    this.run = config.run;
+    this.targetApplications = config.targetApplications;
+    this.sourceApplications = config.sourceApplications;
+    this.sucessorRuns = config.sucessorRuns;
+    this.cpasType = config.cpasType;
+};
+Ext.extend(LABKEY.Exp.ProtocolOutput, LABKEY.Exp.ExpObject);
+
+LABKEY.Exp.Material = function (config) {
+    LABKEY.Exp.Material.superclass.constructor.call(this, config);
+    config = config || {};
+
+    this.sampleSet = config.sampleSet;
+    this.propertyValues = config.propertyValues || {};
+};
+Ext.extend(LABKEY.Exp.Material, LABKEY.Exp.ProtocolOutput);
+
+LABKEY.Exp.Data = function (config) {
+    LABKEY.Exp.Data.superclass.constructor.call(this, config);
+    config = config || {};
+
+    this.dataType = config.dataType;
+    this.dataFileURI = config.dataFileURI;
+    //this.isInlineImage
+    //this.isFileOnDisk
+};
+Ext.extend(LABKEY.Exp.Data, LABKEY.Exp.ProtocolOutput);
+
+

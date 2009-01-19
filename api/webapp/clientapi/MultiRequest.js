@@ -53,7 +53,7 @@
  multi.add(LABKEY.Query.selectRows, config);
  multi.send(function () { console.log("send complete"); });
 
- // additional requests won't be send while other requests are in progress
+ // additional requests won't be sent while other requests are in progress
  multi.add(LABKEY.Query.selectRows, config);
  multi.send(function () { console.log("send complete"); });
 
@@ -161,7 +161,7 @@ Ext.extend(LABKEY.MultiRequest, Ext.util.Observable,
     /**
      * Send the queued up requests.  When all requesta have returned, the callback
      * will be called.
-     * @param callback {Function} A function with no arguments.
+     * @param callback {Function} A function with a single argument of 'this'.
      * @param [scope] {Object} Optional. The scope in which to execute the callback.
      */
     send : function (callback, scope) {
@@ -181,7 +181,7 @@ Ext.extend(LABKEY.MultiRequest, Ext.util.Observable,
         if (typeof callback == "function") {
             function onetimeCallback() {
                 self.un("done", onetimeCallback);
-                callback.apply(scope||window);
+                callback.apply(scope||window, [self]);
             }
 
             this.on("done", onetimeCallback);

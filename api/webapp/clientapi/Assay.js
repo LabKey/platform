@@ -23,14 +23,28 @@
 */
 LABKEY.Assay = new function()
 {
-    function getAssays(successCallback, failureCallback, parameters, containerPath)
+    function getAssays(config)
     {
+        //check for old-style separate arguments
+        if(arguments.length > 1) {
+            config = {
+                successCallback: arguments[0],
+                failureCallback: arguments[1],
+                parameters: arguments[2],
+                containerPath: arguments[3]
+            };
+        }
+
+        moveParameter(config, "id");
+        moveParameter(config, "type");
+        moveParameter(config, "name");
+
         Ext.Ajax.request({
-            url : LABKEY.ActionURL.buildURL("assay", "assayList", containerPath),
+            url : LABKEY.ActionURL.buildURL("assay", "assayList", config.containerPath),
             method : 'POST',
-            success: successCallback,
-            failure: failureCallback,
-            jsonData : parameters,
+            success: config.successCallback,
+            failure: config.failureCallback,
+            jsonData : config.parameters,
             headers : {
                 'Content-Type' : 'application/json'
             }
@@ -45,16 +59,27 @@ LABKEY.Assay = new function()
             successCallback(data.definitions);
         };
     }
+
+    function moveParameter(config, param)
+    {
+        if (!config.parameters) config.parameters = {};
+        if (config[param])
+        {
+            config.parameters[param] = config[param];
+            delete config[param];
+        }
+    }
+
     /** @scope LABKEY.Assay.prototype */
     return {
 
 	/**
 	* Gets all assays.
-	* @param {Function} successCallback Required. Function called when the
+	* @param {Function} config.successCallback Required. Function called when the
 			"getAll" function executes successfully.  Will be called with the argument: 
 			{@link LABKEY.Assay.AssayDesign[]}.
-	* @param {Function} [failureCallback] Function called when execution of the "getAll" function fails.
-	* @param {String} [containerPath] The container path in which the requested Assays are defined.
+	* @param {Function} [config.failureCallback] Function called when execution of the "getAll" function fails.
+	* @param {String} [config.containerPath] The container path in which the requested Assays are defined.
 	*       If not supplied, the current container path will be used.
 	* @example Example:
 <pre name="code" class="xml">
@@ -91,58 +116,101 @@ LABKEY.Assay = new function()
 		alert('An error occurred retrieving data.'); 
 	}
 	
-	LABKEY.Assay.getAll(successHandler, errorHandler); 
+	LABKEY.Assay.getAll({successCallback: successHandler, failureCallback: errorHandler});
 &lt;/script&gt;
 &lt;div id='testDiv'&gt;Loading...&lt;/div&gt;
 </pre>
 	  * @see LABKEY.Assay.AssayDesign
 	  */
-        getAll : function(successCallback, failureCallback, containerPath)
+        getAll : function(config)
         {
-            getAssays(getSuccessCallbackWrapper(successCallback), failureCallback, {}, containerPath);
+            if(arguments.length > 1) {
+                config = {
+                    successCallback: arguments[0],
+                    failureCallback: arguments[1],
+                    parameters: {},
+                    containerPath: arguments[2]
+                };
+            }
+
+            config.successCallback = getSuccessCallbackWrapper(config.successCallback);
+            getAssays(config);
         },
 	  /**
 	  * Gets an assay by name.
-	  * @param {Function(LABKEY.Assay.AssayDesign[])} successCallback Function called when the "getByName" function executes successfully.
-	  * @param {Function} [failureCallback] Function called when execution of the "getByName" function fails.
-	  * @param {String} name String name of the assay.
-	  * @param {String} [containerPath] The container path in which the requested Assay is defined.
+	  * @param {Function(LABKEY.Assay.AssayDesign[])} config.successCallback Function called when the "getByName" function executes successfully.
+	  * @param {Function} [config.failureCallback] Function called when execution of the "getByName" function fails.
+	  * @param {String} config.name String name of the assay.
+	  * @param {String} [config.containerPath] The container path in which the requested Assay is defined.
 	  *       If not supplied, the current container path will be used.
 	  * @see LABKEY.Assay.AssayDesign
 	  */
-        getByName : function(successCallback, failureCallback, name, containerPath)
+        getByName : function(config)
         {
-            getAssays(getSuccessCallbackWrapper(successCallback), failureCallback, { name : name}, containerPath);
+            if(arguments.length > 1) {
+                config = {
+                    successCallback: arguments[0],
+                    failureCallback: arguments[1],
+                    parameters: { name: arguments[2] },
+                    containerPath: arguments[3]
+                };
+            }
+
+            moveParameter(config, "name");
+            config.successCallback = getSuccessCallbackWrapper(config.successCallback);
+            getAssays(config);
         },
 
 	  /**
 	  * Gets an assay by type.
-	  * @param {Function(LABKEY.Assay.AssayDesign[])} successCallback Function called
+	  * @param {Function(LABKEY.Assay.AssayDesign[])} config.successCallback Function called
 				when the "getByType" function executes successfully.
-	  * @param {Function} [failureCallback] Function called when execution of the "getByType" function fails.
-	  * @param {String} type String name of the assay type.  "ELISpot", for example.
-	  * @param {String} [containerPath] The container path in which the requested Assays are defined.
+	  * @param {Function} [config.failureCallback] Function called when execution of the "getByType" function fails.
+	  * @param {String} config.type String name of the assay type.  "ELISpot", for example.
+	  * @param {String} [config.containerPath] The container path in which the requested Assays are defined.
 	  *       If not supplied, the current container path will be used.
  	  * @see LABKEY.Assay.AssayDesign
 	  */
-        getByType : function(successCallback, failureCallback, type, containerPath)
+        getByType : function(config)
         {
-            getAssays(getSuccessCallbackWrapper(successCallback), failureCallback, { type : type }, containerPath);
+            if(arguments.length > 1) {
+                config = {
+                    successCallback: arguments[0],
+                    failureCallback: arguments[1],
+                    parameters: { type: arguments[2] },
+                    containerPath: arguments[3]
+                };
+            }
+
+            moveParameter(config, "type");
+            config.successCallback = getSuccessCallbackWrapper(config.successCallback);
+            getAssays(config);
         },
 
 	 /**
 	 * Gets an assay by its ID.
-	 * @param {Function(LABKEY.Assay.AssayDesign[])} successCallback Function called
+	 * @param {Function(LABKEY.Assay.AssayDesign[])} config.successCallback Function called
 				when the "getById" function executes successfully.
-	 * @param {Function} [failureCallback] Function called when execution of the "getById" function fails.
-	 * @param {Integer} id Unique integer ID for the assay.
-	  * @param {String} [containerPath] The container path in which the requested Assay is defined.
+	 * @param {Function} [config.failureCallback] Function called when execution of the "getById" function fails.
+	 * @param {Integer} config.id Unique integer ID for the assay.
+	  * @param {String} [config.containerPath] The container path in which the requested Assay is defined.
 	  *       If not supplied, the current container path will be used.
 	 * @see LABKEY.Assay.AssayDesign
 	 */
-        getById : function(successCallback, failureCallback, id, containerPath)
+        getById : function(config)
         {
-            getAssays(getSuccessCallbackWrapper(successCallback), failureCallback, { id : id }, containerPath);
+            if(arguments.length > 1) {
+                config = {
+                    successCallback: arguments[0],
+                    failureCallback: arguments[1],
+                    parameters: { id: arguments[2] },
+                    containerPath: arguments[3]
+                };
+            }
+
+            moveParameter(config, "id");
+            config.successCallback = getSuccessCallbackWrapper(config.successCallback);
+            getAssays(config);
         }
     };
 };

@@ -622,13 +622,13 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         throw new RedirectException(url);
     }
 
-    public static ModelAndView redirect(ActionURL url) throws ServletException
+    public static ModelAndView redirect(ActionURL url)
     {
         return new ModelAndView(new RedirectView(url.getLocalURIString(), false));
     }
 
 
-    public static ModelAndView redirect(String url) throws ServletException
+    public static ModelAndView redirect(String url)
     {
         return new ModelAndView(new RedirectView(url, false));
     }
