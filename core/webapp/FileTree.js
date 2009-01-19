@@ -85,6 +85,7 @@ Ext.extend(LABKEY.ext.WebDavTreeLoader, Ext.tree.TreeLoader, {
 
     requestData : function(node, callback) {
         if (this.fireEvent("beforeload", this, node, callback) !== false) {
+            document.getElementById('labkey-main-title').innerHTML= _concatPaths(this.url, node.id);
             this.transId = Ext.Ajax.request({
                 method: "GET",
                 headers: {"Method" : "PROPFIND", "Depth" : "1,noroot"},
