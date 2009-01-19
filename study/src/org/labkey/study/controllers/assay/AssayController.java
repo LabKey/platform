@@ -23,6 +23,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -38,6 +39,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.query.QueryParam;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.assay.AssayServiceImpl;
+import org.labkey.study.assay.ModuleAssayProvider;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.assay.actions.SaveAssayBatchAction;
 import org.labkey.study.controllers.assay.actions.GetAssayBatchAction;
@@ -413,6 +415,38 @@ public class AssayController extends SpringActionController
         {
             return root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer())).addChild(_protocol.getName(),
                     new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId())).addChild("Copy-to-Study History");
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_INSERT)
+    public class ModuleAssayUploadAction extends BaseAssayAction<AssayRunUploadForm>
+    {
+        private ExpProtocol _protocol;
+
+        @Override
+        public ModelAndView getView(AssayRunUploadForm form, BindException errors) throws Exception
+        {
+            ViewContext context = getViewContext();
+            _protocol = getProtocol(form);
+
+            AssayProvider ap = AssayService.get().getProvider(_protocol);
+            if (!(ap instanceof ModuleAssayProvider))
+                throw new RuntimeException("Assay must be a ModuleAssayProvider");
+            ModuleAssayProvider provider = (ModuleAssayProvider) ap;
+            return provider.createUploadView(form);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            Container c = getContainer();
+            ActionURL assayListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(c);
+            ActionURL runListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, _protocol);
+
+            return root
+                .addChild("Assay List", assayListURL)
+                .addChild(_protocol.getName() + " Runs", runListURL)
+                .addChild("Data Import");
         }
     }
 

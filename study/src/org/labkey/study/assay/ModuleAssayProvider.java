@@ -17,34 +17,37 @@
 package org.labkey.study.assay;
 
 import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
+import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpProtocol.AssayDomainTypes;
 import org.labkey.api.exp.api.IAssayDomainType;
+import org.labkey.api.exp.api.ExpProtocol.AssayDomainTypes;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.actions.AssayDataDetailsAction;
-import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.actions.AssayRunUploadForm;
+import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.RunDataTable;
-import org.labkey.api.util.FileUtil;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.view.*;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.study.controllers.assay.AssayController;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
+import org.jetbrains.annotations.NotNull;
 
 import javax.script.ScriptEngineManager;
 import java.io.File;
 import java.io.FileFilter;
-import java.sql.SQLException;
 import java.util.*;
+import java.sql.SQLException;
 
 /**
  * User: kevink
@@ -52,17 +55,16 @@ import java.util.*;
  */
 public class ModuleAssayProvider extends TsvAssayProvider
 {
-
     private File baseDir;
     private File viewsDir;
     private String name;
     private Map<IAssayDomainType, DomainDescriptorType> domainsDescriptors = new HashMap<IAssayDomainType, DomainDescriptorType>();
-//    private Map<IAssayDomainType, File> viewFiles = new HashMap<IAssayDomainType, File>();
 
     public ModuleAssayProvider(File baseDir, String name)
     {
         super(name + "Protocol", name + "Run");
         this.baseDir = baseDir;
+        this.viewsDir = new File(baseDir, "views");
         this.name = name;
 
         init();
@@ -70,9 +72,6 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     protected void init()
     {
-        viewsDir = new File(baseDir, "views");
-        if (!viewsDir.isDirectory() || !viewsDir.canRead())
-            viewsDir = null;
     }
 
     public String getName()
@@ -95,6 +94,11 @@ public class ModuleAssayProvider extends TsvAssayProvider
     public void addDomain(IAssayDomainType domainType, DomainDescriptorType xDomain)
     {
         domainsDescriptors.put(domainType, xDomain);
+    }
+
+    protected boolean hasDomain(IAssayDomainType domainType)
+    {
+        return domainsDescriptors.containsKey(domainType);
     }
 
     protected Domain createDomain(Container c, User user, IAssayDomainType domainType)
@@ -132,6 +136,23 @@ public class ModuleAssayProvider extends TsvAssayProvider
         if (domain != null)
             return domain;
         return super.createDataDomain(c, user);
+    }
+
+    @Override
+    protected Map<String, Set<String>> getRequiredDomainProperties()
+    {
+        Map<String, Set<String>> required = new HashMap<String, Set<String>>();
+        for (Map.Entry<IAssayDomainType, DomainDescriptorType> domainDescriptor : domainsDescriptors.entrySet())
+        {
+            DomainDescriptorType xDescriptor = domainDescriptor.getValue();
+            PropertyDescriptorType[] xProperties = xDescriptor.getPropertyDescriptorArray();
+            LinkedHashSet<String> properties = new LinkedHashSet<String>(xProperties.length);
+            for (PropertyDescriptorType xProp : xProperties)
+                properties.add(xProp.getName());
+
+            required.put(domainDescriptor.getKey().getName(), properties);
+        }
+        return required;
     }
 
     @Override
@@ -179,27 +200,24 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return maps[0];
     }
 
+    private File getViewFile(IAssayDomainType domainType)
+    {
+        return new File(viewsDir, domainType.getName().toLowerCase() + ".html");
+    }
+
     // XXX: consider moving to TsvAssayProvider
     protected boolean hasView(IAssayDomainType domainType)
     {
-        if (viewsDir != null)
-        {
-            File viewFile = new File(viewsDir, domainType.getName().toLowerCase() + ".html");
-            if (viewFile.canRead())
-                return true;
-        }
-        return false;
+        File viewFile = getViewFile(domainType);
+        return viewFile.canRead();
     }
 
     // XXX: consider moving to TsvAssayProvider
     protected ModelAndView getView(IAssayDomainType domainType)
     {
-        if (viewsDir != null)
-        {
-            File viewFile = new File(viewsDir, domainType.getName().toLowerCase() + ".html");
-            if (viewFile.canRead())
-                return new HtmlView(PageFlowUtil.getFileContentsAsString(viewFile));
-        }
+        File viewFile = getViewFile(domainType);
+        if (viewFile.canRead())
+            return new HtmlView(PageFlowUtil.getFileContentsAsString(viewFile));
         return null;
     }
 
@@ -213,9 +231,13 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return runDataView;
     }
 
-    public static class DataDetailsModel
+    public static class AssayPageBean
     {
         public ExpProtocol expProtocol;
+    }
+
+    public static class DataDetailsBean extends AssayPageBean
+    {
         public ExpData expData;
         public Object objectId;
 
@@ -230,20 +252,63 @@ public class ModuleAssayProvider extends TsvAssayProvider
         if (dataDetailsView == null)
             return super.createDataDetailsView(context, protocol, data, objectId);
 
-        DataDetailsModel model = new DataDetailsModel();
-        model.expProtocol = protocol;
-        model.expData = data;
-        model.objectId = objectId;
+        DataDetailsBean bean = new DataDetailsBean();
+        bean.expProtocol = protocol;
+        bean.expData = data;
+        bean.objectId = objectId;
 
 //        String domainURI = getDomainURIForPrefix(protocol, AssayDomainTypes.Data.getPrefix());
-////        model.dataDomain = PropertyService.get().getDomain(context.getContainer(), domainURI);
-//        model.dataDomain = DomainUtil.getDomainDescriptor(domainURI, context.getContainer());
-//        model.values = getDataRow(context.getUser(), context.getContainer(), protocol, objectId);
-//        if (model.values == null)
+////        bean.dataDomain = PropertyService.get().getDomain(context.getContainer(), domainURI);
+//        bean.dataDomain = DomainUtil.getDomainDescriptor(domainURI, context.getContainer());
+//        bean.values = getDataRow(context.getUser(), context.getContainer(), protocol, objectId);
+//        if (bean.values == null)
 //            HttpView.throwNotFound("Data values for '" + data.getRowId() + "' not found");
 
-        JspView<DataDetailsModel> view = new JspView<DataDetailsModel>("/org/labkey/study/assay/view/dataDetails.jsp", model);
+        JspView<DataDetailsBean> view = new JspView<DataDetailsBean>("/org/labkey/study/assay/view/dataDetails.jsp", bean);
         view.setView("nested", dataDetailsView);
+        return view;
+    }
+
+    @Override
+    public Map<String, Class<? extends Controller>> getImportActions()
+    {
+        if (!hasUploadView())
+            return super.getImportActions();
+        return Collections.<String, Class<? extends Controller>>singletonMap(
+                IMPORT_DATA_LINK_NAME, AssayController.ModuleAssayUploadAction.class);
+    }
+
+    private File getUploadViewFile()
+    {
+        return new File(viewsDir, "upload.html");
+    }
+
+    protected boolean hasUploadView()
+    {
+        File viewFile = getUploadViewFile();
+        return viewFile.canRead();
+    }
+
+    protected ModelAndView getUploadView()
+    {
+        File viewFile = getUploadViewFile();
+        if (viewFile.canRead())
+            return new HtmlView(PageFlowUtil.getFileContentsAsString(viewFile));
+        return null;
+    }
+
+    public ModelAndView createUploadView(AssayRunUploadForm form)
+    {
+        ModelAndView uploadView = getUploadView();
+        if (uploadView == null)
+        {
+            ActionURL url = form.getViewContext().cloneActionURL();
+            url.setAction(UploadWizardAction.class);
+            return HttpView.redirect(url);
+        }
+
+        JspView<AssayRunUploadForm> view = new JspView<AssayRunUploadForm>("/org/labkey/study/assay/view/moduleAssayUpload.jsp", form);
+        view.setView("nested", uploadView);
         return view;
     }
 

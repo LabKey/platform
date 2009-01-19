@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2008-2009 LabKey Corporation
+ * Copyright (c) 2007-2008 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,54 +17,41 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.study.assay.ModuleAssayProvider.DataDetailsBean" %>
-<%@ page import="org.json.JSONObject" %>
-<%@ page import="org.labkey.api.exp.property.DomainUtil" %>
-<%@ page import="org.labkey.study.assay.ModuleAssayProvider" %>
+<%@ page import="org.labkey.api.study.actions.AssayRunUploadForm" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<DataDetailsBean> me = (JspView<DataDetailsBean>) HttpView.currentView();
-    DataDetailsBean bean = me.getModelBean();
-    ExpProtocol protocol = bean.expProtocol;
+    JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
+    AssayRunUploadForm bean = me.getModelBean();
+    ExpProtocol protocol = bean.getProtocol();
+    int batchId = bean.getBatchId() == null ? 0 : bean.getBatchId().intValue();
 %>
 <script type="text/javascript">
     LABKEY.requiresClientAPI();
 </script>
 <script type="text/javascript">
-    var loader = new LABKEY.MultiRequest();
-    loader.add(LABKEY.Assay.getById, {
+    var assay = null;
+    LABKEY.Assay.getById({
         id: <%=protocol.getRowId()%>,
         containerPath: LABKEY.ActionURL.getContainer(),
         successCallback: function (assayDesigns) {
             if (!assayDesigns || assayDesigns.length != 1)
                 Ext.Msg.alert("Expected an assay design for assay");
             else
-                loader.assay = assayDesigns[0];
+                assay = assayDesigns[0];
         },
         failureCallback: function (response, options) {
             Ext.Msg.alert("failed to get assay design");
         }
     });
-    loader.add(LABKEY.Query.selectRows, {
-        schemaName : "assay",
-        queryName : "<%=protocol.getName()%> Data",
-        filterArray : [ LABKEY.Filter.create("ObjectId", <%=bean.objectId%>, LABKEY.Filter.Types.EQUAL) ],
-        successCallback: function (data, options, response) {
-            if (!data || data.rowCount != 1)
-                Ext.Msg.alert("Expected a single row of data");
-            else
-                loader.data = data;
-        },
-        failureCallback: function (response, options) {
-            Ext.Msg.alert("failed to get assay design");
-        }
-    });
+
+    var batch = new LABKEY.Assay.Batch(<%=protocol.getRowId()%>, <%=batchId%>);
 </script>
+
 <p>
 <%
     if (me.getView("nested") == null)
         throw new IllegalStateException("expected nested view");
     me.include(me.getView("nested"), out);
 %>
+</p>

@@ -22,7 +22,6 @@ import org.labkey.api.module.ModuleResourceLoadException;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocol.AssayDomainTypes;
 import org.labkey.api.exp.api.IAssayDomainType;
 import org.labkey.api.util.StringExpressionFactory;
@@ -44,9 +43,12 @@ import java.util.*;
  */
 public class ModuleAssayLoader implements ModuleResourceLoader
 {
+    private static final String ASSAY_DIR_NAME = "assay";
+    private static final String DOMAINS_DIR_NAME = "domains";
+
     public Set<String> getModuleDependencies(Module module, File explodedModuleDir)
     {
-        File assayDir = new File(explodedModuleDir, "assay");
+        File assayDir = new File(explodedModuleDir, ASSAY_DIR_NAME);
         if (assayDir.exists())
             return Collections.singleton(StudyModule.MODULE_NAME);
         return Collections.emptySet();
@@ -54,7 +56,7 @@ public class ModuleAssayLoader implements ModuleResourceLoader
 
     public void loadResources(Module module, File explodedModuleDir) throws IOException, ModuleResourceLoadException
     {
-        File assayDir = new File(explodedModuleDir, "assay");
+        File assayDir = new File(explodedModuleDir, ASSAY_DIR_NAME);
         if (assayDir.exists())
         {
             for (File assayProviderDir : assayDir.listFiles())
@@ -70,7 +72,7 @@ public class ModuleAssayLoader implements ModuleResourceLoader
 
         ModuleAssayProvider assayProvider = new ModuleAssayProvider(assayProviderDir, assayName);
 
-        File domainDir = new File(assayProviderDir, "domains");
+        File domainDir = new File(assayProviderDir, DOMAINS_DIR_NAME);
         if (domainDir.canRead())
         {
             for (IAssayDomainType domainType : AssayDomainTypes.values())
@@ -119,48 +121,4 @@ public class ModuleAssayLoader implements ModuleResourceLoader
         return null;
     }
 
-    public static class ModuleAssayConfig
-    {
-        public String name;
-        public String protocolLSIDPrefix;
-        public String runLSIDPrefix;
-        public DataTypeConfig dataType;
-
-        public boolean canPublish = false;
-        public boolean plateBased = false;
-    }
-
-    public static class DataTypeConfig
-    {
-        public String dataLSIDPrefix;
-        public String flaggedURL;
-        public String unflaggedURL;
-        public StringExpressionFactory.StringExpression detailsURL; // StringExpression taking ExpData?
-
-        public DataType createDataType()
-        {
-            return new DataType(dataLSIDPrefix) {
-                @Override
-                public URLHelper getDetailsURL(ExpData dataObject)
-                {
-                    try
-                    {
-                        if (detailsURL != null && dataObject != null)
-                            return new ActionURL(detailsURL.eval(BeanUtils.describe(dataObject)));
-                    }
-                    catch (Exception e)
-                    {
-                        // XXX: log to mother
-                    }
-                    return null;
-                }
-
-                @Override
-                public String urlFlag(boolean flagged)
-                {
-                    return flagged ? flaggedURL : unflaggedURL;
-                }
-            };
-        }
-    }
 }
