@@ -35,6 +35,7 @@ public class QcEnabledItem<DomainType extends GWTDomain<FieldType>, FieldType ex
     {
         super(propertyPane);
         this.requiredItem = requiredItem;
+        qcCheckbox.setName("allowsQc");
     }
 
     public int addToTable(FlexTable flexTable, int row)

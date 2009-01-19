@@ -798,7 +798,7 @@ public class TabLoader extends DataLoader
                                     if (QcUtil.isValidQcValue(fld, column.qcContainer))
                                     {
                                         QcFieldWrapper qcWrapper = new QcFieldWrapper();
-                                        qcWrapper.setValue("".equals(fld) ? null : fld);
+                                        qcWrapper.setQcValue("".equals(fld) ? null : fld);
                                         values[i] = qcWrapper;
                                     }
                                     else

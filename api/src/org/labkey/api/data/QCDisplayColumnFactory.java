@@ -79,10 +79,10 @@ public class QCDisplayColumnFactory implements DisplayColumnFactory
         valueColumn.setQcColumnName(qcColumn.getName());
 
         AliasedColumn rawValueCol = new AliasedColumn(table, valueColumn.getName() + RAW_VALUE_SUFFIX, valueColumn);
+        rawValueCol.setUserEditable(false);
         rawValueCol.setIsHidden(true);
 
         valueColumn.setDisplayColumnFactory(new QCDisplayColumnFactory());
-        valueColumn.setUserEditable(false);
 
         ColumnInfo[] result = new ColumnInfo[2];
         result[0] = qcColumn;
