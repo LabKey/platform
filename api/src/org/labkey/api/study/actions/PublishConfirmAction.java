@@ -276,7 +276,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
                 }
             }
         }
-        String name = provider.getRunDataTableName(_protocol);
+        String name = AssayService.get().getRunDataTableName(_protocol);
         UserSchema schema = AssayService.get().createSchema(context.getUser(), getContainer());
         QuerySettings settings = new QuerySettings(context, name);
         settings.setSchemaName(schema.getSchemaName());

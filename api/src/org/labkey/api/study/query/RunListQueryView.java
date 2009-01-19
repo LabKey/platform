@@ -25,6 +25,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.assay.AssayRunType;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.actions.ShowSelectedDataAction;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -61,7 +62,7 @@ public class RunListQueryView extends ExperimentRunListView
     public static QuerySettings getDefaultQuerySettings(ExpProtocol protocol, ViewContext context)
     {
         UserSchema schema = getDefaultUserSchema(context);
-        return ExperimentRunListView.getRunListQuerySettings(schema, context, AssayRunType.getRunListTableName(protocol), true);
+        return ExperimentRunListView.getRunListQuerySettings(schema, context, AssayService.get().getRunListTableName(protocol), true);
     }
 
     public static UserSchema getDefaultUserSchema(ViewContext context)

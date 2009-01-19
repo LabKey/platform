@@ -41,7 +41,7 @@ import java.sql.SQLException;
 * Date: Jul 11, 2007
 * Time: 2:52:54 PM
 */
-public class AssayRunUploadForm extends ProtocolIdForm implements AssayRunUploadContext
+public class AssayRunUploadForm<ProviderType extends AssayProvider> extends ProtocolIdForm implements AssayRunUploadContext
 {
     private Map<DomainProperty, String> _uploadSetProperties = null;
     private Map<DomainProperty, String> _runProperties = null;
@@ -266,9 +266,9 @@ public class AssayRunUploadForm extends ProtocolIdForm implements AssayRunUpload
         return _additionalFiles;
     }
 
-    public AssayProvider getProvider()
+    public ProviderType getProvider()
     {
-        return AssayService.get().getProvider(getProviderName());
+        return (ProviderType)AssayService.get().getProvider(getProviderName());
     }
 
     public ActionURL getActionURL()

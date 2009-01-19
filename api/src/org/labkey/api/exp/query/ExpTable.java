@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package org.labkey.api.exp.api;
+package org.labkey.api.exp.query;
 
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.query.TableEditHelper;
 import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.security.User;
 

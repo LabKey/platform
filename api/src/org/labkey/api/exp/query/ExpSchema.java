@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.exp.api;
+package org.labkey.api.exp.query;
 
 import org.labkey.api.query.*;
 import org.labkey.api.data.Container;
@@ -22,6 +22,8 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.security.User;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExpRun;
 
 import java.util.*;
 

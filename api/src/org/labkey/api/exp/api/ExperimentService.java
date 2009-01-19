@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.*;
+import org.labkey.api.exp.query.*;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
@@ -180,8 +181,6 @@ public class ExperimentService
         List<ExpRun> runsDeletedWithInput(ExpRun[] runs) throws SQLException;
 
         void deleteProtocolByRowIds(Container container, User user, int... rowIds) throws SQLException, ExperimentException;
-        void deleteMaterialByRowIds(Container c, int... materialRowIds);
-        void deleteDataByRowIds(Container container, int... dataRowIds);
         void deleteAllExpObjInContainer(Container container, User user) throws Exception;
         void deleteSampleSet(int rowId, Container c, User user) throws SQLException, ExperimentException;
         void deleteExperimentByRowIds(Container container, int... experimentRowIds) throws SQLException, ExperimentException;
@@ -199,7 +198,7 @@ public class ExperimentService
 
         Identifiable getObject(Lsid lsid);
 
-        ExpData[] deleteExperimentRunForMove(int runId, Container container, User user) throws SQLException, ExperimentException;
+        ExpData[] deleteExperimentRunForMove(int runId, User user) throws SQLException, ExperimentException;
 
         ExpData[] getAllDataUsedByRun(int runId) throws SQLException;
 

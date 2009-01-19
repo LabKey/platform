@@ -14,15 +14,29 @@
  * limitations under the License.
  */
 
-package org.labkey.api.exp.api;
+package org.labkey.api.exp.query;
 
-public interface ExpProtocolTable extends ExpTable<ExpProtocolTable.Column>
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpSampleSet;
+
+import java.util.Set;
+
+public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>
 {
+    void setMaterials(Set<ExpMaterial> predecessorMaterials);
+
     enum Column
     {
         RowId,
         Name,
         LSID,
+        Flag,
+        Run,
+        CpasType,
+        SourceProtocolLSID,
+        Property,
         Folder,
     }
+    void populate(ExpSampleSet ss, boolean filterSampleSet);
+    void setSampleSet(ExpSampleSet ss, boolean filter);
 }

@@ -19,7 +19,7 @@ package org.labkey.api.study.assay;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpRunTable;
+import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
@@ -61,9 +61,10 @@ public class AssayService
 
         public UserSchema createSchema(User user, Container container);
 
-        List<ExpProtocol> getAssayProtocols(Container container);
+        public String getRunListTableName(ExpProtocol protocol);
+        public String getRunDataTableName(ExpProtocol protocol);
 
-        boolean hasAssayProtocols(Container container);
+        List<ExpProtocol> getAssayProtocols(Container container);
 
         @Nullable
         public List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean includeOtherContainers);

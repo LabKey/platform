@@ -50,26 +50,41 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
     public void importFile(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context) throws ExperimentException
     {
+        ExpProtocolApplication sourceApplication = data.getSourceApplication();
+        if (sourceApplication == null)
+        {
+            throw new ExperimentException("Cannot import a TSV without knowing its assay definition");
+        }
+        ExpRun run = sourceApplication.getRun();
+        ExpProtocol protocol = run.getProtocol();
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+
+        Domain dataDomain = provider.getRunDataDomain(protocol);
+
+        try
+        {
+            Map<String, Object>[] rawData = loadFileData(dataDomain, dataFile);
+            importRows(data, info.getUser(), run, protocol, provider, rawData);
+        }
+        catch (IOException e)
+        {
+            throw new ExperimentException(e);
+        }
+    }
+
+    public void importRows(ExpData data, User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, Map<String, Object>[] rawData) throws ExperimentException
+    {
         boolean transaction = false;
         try
         {
-            ExpProtocolApplication sourceApplication = data.getSourceApplication();
-            if (sourceApplication == null)
-            {
-                throw new ExperimentException("Cannot import a TSV without knowing its assay definition");
-            }
-            ExpRun run = sourceApplication.getRun();
-            ExpProtocol protocol = run.getProtocol();
-
             Container container = data.getContainer();
             Integer id = OntologyManager.ensureObject(container, data.getLSID());
-            AssayProvider provider = AssayService.get().getProvider(protocol);
 
             List<DomainProperty> allProps = new ArrayList<DomainProperty>();
             allProps.addAll(Arrays.asList(provider.getUploadSetDomain(protocol).getProperties()));
             allProps.addAll(Arrays.asList(provider.getRunDomain(protocol).getProperties()));
 
-            Map<String, Object> runProps = OntologyManager.getProperties(info.getContainer(), run.getLSID());
+            Map<String, Object> runProps = OntologyManager.getProperties(container, run.getLSID());
             ParticipantVisitResolver resolver = null;
 
             Container targetContainer = null;
@@ -94,7 +109,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     if (targetObject instanceof String)
                     {
                         ParticipantVisitResolverType resolverType = AbstractAssayProvider.findType((String)targetObject, provider.getParticipantVisitResolverTypes());
-                        resolver = resolverType.createResolver(ExperimentService.get().getExpRun(run.getRowId()), targetContainer, info.getUser());
+                        resolver = resolverType.createResolver(ExperimentService.get().getExpRun(run.getRowId()), targetContainer, user);
                         break;
                     }
                 }
@@ -104,9 +119,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             {
                 resolver = new StudyParticipantVisitResolver(container, targetContainer);
             }
-
-            Domain dataDomain = provider.getRunDataDomain(protocol);
-            Map<String, Object>[] rawData = loadFileData(dataDomain, dataFile);
 
             if (rawData.length == 0)
             {
@@ -119,6 +131,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     throw new ExperimentException("Data file contained zero data rows");
                 }
             }
+
+            Domain dataDomain = provider.getRunDataDomain(protocol);
 
             Set<ExpMaterial> inputMaterials = checkData(dataDomain, rawData, resolver);
             DomainProperty[] dataDPs = dataDomain.getProperties();
@@ -142,7 +156,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 throw new ExperimentException("Could not find any input samples in the data");
             }
 
-            AbstractAssayProvider.addInputMaterials(run, info.getUser(), inputMaterials);
+            AbstractAssayProvider.addInputMaterials(run, user, inputMaterials);
 
             if (transaction)
             {

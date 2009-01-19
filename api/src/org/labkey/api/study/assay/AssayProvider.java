@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2009 LabKey Corporation
+ * Copyright (c) 2007-2008 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,16 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpRunTable;
+import org.labkey.api.exp.api.DataType;
+import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.query.RunDataQueryView;
 import org.labkey.api.study.query.RunListQueryView;
@@ -106,12 +106,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     List<ParticipantVisitResolverType> getParticipantVisitResolverTypes();
 
-    void setPlateTemplate(Container container, ExpProtocol protocol, PlateTemplate template);
-
-    PlateTemplate getPlateTemplate(Container container, ExpProtocol protocol);
-
-    boolean isPlateBased();
-
     List<Domain> getDomains(ExpProtocol protocol);
 
     Set<String> getReservedPropertyNames(ExpProtocol protocol, Domain domain);
@@ -133,10 +127,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
     RunListQueryView createRunQueryView(ViewContext context, ExpProtocol protocol);
 
     ModelAndView createRunDataView(ViewContext context, ExpProtocol protocol);
-
-    String getRunListTableName(ExpProtocol protocol);
-
-    String getRunDataTableName(ExpProtocol protocol);
 
     void deleteProtocol(ExpProtocol protocol, User user) throws ExperimentException;
 
@@ -169,4 +159,9 @@ public interface AssayProvider extends Handler<ExpProtocol>
     List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope);
 
     void validate(AssayRunUploadContext context, ExpRun run) throws ValidationException;
+
+    /**
+     * @return the data type that this run creates for its analyzed results
+     */
+    DataType getDataType();
 }

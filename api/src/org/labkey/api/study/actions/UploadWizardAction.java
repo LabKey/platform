@@ -62,42 +62,42 @@ import java.util.*;
 * Time: 7:01:17 PM
 */
 @RequiresPermission(ACL.PERM_INSERT)
-public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends BaseAssayAction<FormClass>
+public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType>, ProviderType extends AssayProvider> extends BaseAssayAction<FormType>
 {
     protected ExpProtocol _protocol;
 
-    private Map<String, StepHandler<FormClass>> _stepHandlers = new HashMap<String, StepHandler<FormClass>>();
+    private Map<String, StepHandler<FormType>> _stepHandlers = new HashMap<String, StepHandler<FormType>>();
 
     protected String _stepDescription;
 
     public UploadWizardAction()
     {
-        this((Class<FormClass>)AssayRunUploadForm.class);
+        this(AssayRunUploadForm.class);
     }
 
-    public UploadWizardAction(Class<FormClass> formClass)
+    public UploadWizardAction(Class formClass)
     {
         super(formClass);
         addStepHandler(getUploadSetStepHandler());
         addStepHandler(getRunStepHandler());
     }
 
-    protected StepHandler<FormClass> getUploadSetStepHandler()
+    protected StepHandler<FormType> getUploadSetStepHandler()
     {
         return new UploadSetStepHandler();
     }
 
-    protected StepHandler<FormClass> getRunStepHandler()
+    protected StepHandler<FormType> getRunStepHandler()
     {
         return new RunStepHandler();
     }
 
-    protected void addStepHandler(StepHandler<FormClass> stepHandler)
+    protected void addStepHandler(StepHandler<FormType> stepHandler)
     {
         _stepHandlers.put(stepHandler.getName(), stepHandler);
     }
 
-    public ModelAndView getView(FormClass form, BindException errors) throws Exception
+    public ModelAndView getView(FormType form, BindException errors) throws Exception
     {
         _protocol = form.getProtocol();
         String currentStep = form.getUploadStep();
@@ -129,7 +129,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
                 return getUploadSetPropertiesView(form, false, errors);
         } //first step
 
-        StepHandler<FormClass> handler = _stepHandlers.get(currentStep);
+        StepHandler<FormType> handler = _stepHandlers.get(currentStep);
         if (handler == null)
         {
             throw new IllegalStateException("Unknown wizard post step: " + currentStep);
@@ -138,12 +138,12 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         return handler.handleStep(form, errors);
     }
 
-    protected ModelAndView afterRunCreation(FormClass form, ExpRun run, BindException errors) throws ServletException, SQLException
+    protected ModelAndView afterRunCreation(FormType form, ExpRun run, BindException errors) throws ServletException, SQLException
     {
         return runUploadComplete(form, errors);
     }
 
-    protected ModelAndView runUploadComplete(FormClass form, BindException errors)
+    protected ModelAndView runUploadComplete(FormType form, BindException errors)
             throws ServletException
     {
         if (form.isMultiRunUpload())
@@ -159,7 +159,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
     }
 
     protected InsertView createInsertView(TableInfo baseTable, String lsidCol, Map<DomainProperty, String> domainProperties,
-                                          boolean reshow, boolean resetDefaultValues, String uploadStepName, FormClass form, BindException errors)
+                                          boolean reshow, boolean resetDefaultValues, String uploadStepName, FormType form, BindException errors)
     {
         DomainProperty[] dps = new DomainProperty[domainProperties.size()];
         int i = 0;
@@ -230,7 +230,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         }
     }
 
-    protected Map<String, String> getDefaultValuesByInputName(String suffix, FormClass form) throws ExperimentException
+    protected Map<String, String> getDefaultValuesByInputName(String suffix, FormType form) throws ExperimentException
     {
         ViewContext context = getViewContext();
         Map<String, String> result = PropertyManager.getProperties(context.getUser().getUserId(),
@@ -262,7 +262,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         PropertyManager.saveProperties(properties);
     }
 
-    private ModelAndView getUploadSetPropertiesView(FormClass runForm, boolean reshow, BindException errors) throws ServletException
+    private ModelAndView getUploadSetPropertiesView(FormType runForm, boolean reshow, BindException errors) throws ServletException
     {
         ExpProtocol protocol = getProtocol(runForm);
         AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -306,7 +306,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         bbar.add(cancelButton);
     }
 
-    protected void addResetButton(FormClass newRunForm, InsertView insertView, ButtonBar bbar)
+    protected void addResetButton(FormType newRunForm, InsertView insertView, ButtonBar bbar)
     {
         ActionButton resetDefaultsButton = new ActionButton(getViewContext().getActionURL().getAction() + ".view", "Reset Default Values");
         resetDefaultsButton.setScript("this.form.action=\"" + getViewContext().getActionURL().getAction() + ".view" + "\"; " + insertView.getDataRegion().getJavascriptFormReference(true) + ".resetDefaultValues.value = \"true\";");
@@ -314,13 +314,13 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         bbar.add(resetDefaultsButton);
     }
 
-    protected InsertView createRunInsertView(FormClass newRunForm, boolean reshow, BindException errors)
+    protected InsertView createRunInsertView(FormType newRunForm, boolean reshow, BindException errors)
     {
         return createInsertView(ExperimentService.get().getTinfoExperimentRun(),
                 "lsid", newRunForm.getRunProperties(), reshow, newRunForm.isResetDefaultValues(), RunStepHandler.NAME, newRunForm, errors);
     }
 
-    private ModelAndView getRunPropertiesView(FormClass newRunForm, boolean reshow, boolean warnings, BindException errors)
+    private ModelAndView getRunPropertiesView(FormType newRunForm, boolean reshow, boolean warnings, BindException errors)
     {
         InsertView insertView = createRunInsertView(newRunForm, reshow, errors);
         addHiddenUploadSetProperties(newRunForm, insertView);
@@ -412,13 +412,13 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         }
     }
 
-    protected void addRunActionButtons(FormClass newRunForm, InsertView insertView, ButtonBar bbar)
+    protected void addRunActionButtons(FormType newRunForm, InsertView insertView, ButtonBar bbar)
     {
         addFinishButtons(newRunForm, insertView, bbar);
         addResetButton(newRunForm, insertView, bbar);
     }
 
-    protected void addFinishButtons(FormClass newRunForm, InsertView insertView, ButtonBar bbar)
+    protected void addFinishButtons(FormType newRunForm, InsertView insertView, ButtonBar bbar)
     {
         ActionButton saveFinishButton = new ActionButton(getViewContext().getActionURL().getAction() + ".view", "Save and Finish");
         saveFinishButton.setScript(insertView.getDataRegion().getJavascriptFormReference(true) + ".multiRunUpload.value = \"false\";");
@@ -588,11 +588,11 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         return errors.getErrorCount() == 0;
     }
 
-    public class UploadSetStepHandler extends StepHandler<FormClass>
+    public class UploadSetStepHandler extends StepHandler<FormType>
     {
         public static final String NAME = "UPLOAD_SET";
 
-        public ModelAndView handleStep(FormClass form, BindException errors) throws ServletException
+        public ModelAndView handleStep(FormType form, BindException errors) throws ServletException
         {
             if (!form.isResetDefaultValues() && validatePostedProperties(form.getUploadSetProperties(), errors))
                 return getRunPropertiesView(form, false, false, errors);
@@ -623,12 +623,12 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         }
         return result;
     }
-    
-    public class RunStepHandler extends StepHandler<FormClass>
+
+    public class RunStepHandler extends StepHandler<FormType>
     {
         public static final String NAME = "RUN";
 
-        public ModelAndView handleStep(FormClass form, BindException errors) throws ServletException, SQLException
+        public ModelAndView handleStep(FormType form, BindException errors) throws ServletException, SQLException
         {
             if (getCompletedUploadAttemptIDs().contains(form.getUploadAttemptID()))
             {
@@ -641,7 +641,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
                 return getRunPropertiesView(form, true, false, errors);
         }
 
-        protected ModelAndView handleSuccessfulPost(FormClass form, BindException errors) throws SQLException, ServletException
+        protected ModelAndView handleSuccessfulPost(FormType form, BindException errors) throws SQLException, ServletException
         {
             ExpRun run;
             try
@@ -669,7 +669,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
             return afterRunCreation(form, run, errors);
         }
 
-        protected ExpRun saveExperimentRun(FormClass form) throws ExperimentException, ValidationException
+        protected ExpRun saveExperimentRun(FormType form) throws ExperimentException, ValidationException
         {
             ExpExperiment exp = null;
             if (form.getBatchId() != null)
@@ -695,7 +695,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
             return run;
         }
 
-        protected boolean validatePost(FormClass form, BindException errors)
+        protected boolean validatePost(FormType form, BindException errors)
         {
             return validatePostedProperties(form.getRunProperties(), errors);
         }
@@ -706,7 +706,7 @@ public class UploadWizardAction<FormClass extends AssayRunUploadForm> extends Ba
         }
     }
 
-    protected ParticipantVisitResolverType getSelectedParticipantVisitResolverType(AssayProvider provider, AssayRunUploadForm newRunForm)
+    protected ParticipantVisitResolverType getSelectedParticipantVisitResolverType(AssayProvider provider, AssayRunUploadForm<? extends AssayProvider> newRunForm)
     {
         String participantVisitResolverName = null;
         for (Map.Entry<DomainProperty, String> uploadSetProperty : newRunForm.getUploadSetProperties().entrySet())

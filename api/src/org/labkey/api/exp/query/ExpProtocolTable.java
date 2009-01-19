@@ -14,29 +14,15 @@
  * limitations under the License.
  */
 
-package org.labkey.api.exp.api;
+package org.labkey.api.exp.query;
 
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.query.DetailsURL;
-
-public interface ExpExperimentTable extends ExpTable<ExpExperimentTable.Column>
+public interface ExpProtocolTable extends ExpTable<ExpProtocolTable.Column>
 {
-    void addExperimentMembershipColumn(ExpRun run);
-
     enum Column
     {
         RowId,
-        LSID,
         Name,
-        Hypothesis,
-        Comments,
-        Created,
-        CreatedBy,
-        Modified,
-        ModifiedBy,
-        RunCount,
+        LSID,
         Folder,
     }
-
-    ColumnInfo createRunCountColumn(String alias, ExpProtocol parentProtocol, ExpProtocol childProtocol);
 }

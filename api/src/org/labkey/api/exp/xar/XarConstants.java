@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2008 LabKey Corporation
+ * Copyright (c) 2007-2008 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,23 @@
  * limitations under the License.
  */
 
-package org.labkey.api.exp.api;
+package org.labkey.api.exp.xar;
 
-import java.util.Set;
-
-public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>
+/**
+ * User: jeckels
+ * Date: Jun 30, 2007
+ */
+public abstract class XarConstants
 {
-    void setMaterials(Set<ExpMaterial> predecessorMaterials);
+    public static final String APPLICATION_LSID_TEMPLATE_NAME = "ApplicationLSIDTemplate";
+    public static final String APPLICATION_LSID_TEMPLATE_URI = "terms.fhcrc.org#XarTemplate.ApplicationLSID";
 
-    enum Column
+    public static final String APPLICATION_NAME_TEMPLATE_NAME = "ApplicationName";
+    public static final String APPLICATION_NAME_TEMPLATE_URI = "terms.fhcrc.org#XarTemplate.ApplicationName";
+
+
+    private XarConstants()
     {
-        RowId,
-        Name,
-        LSID,
-        Flag,
-        Run,
-        CpasType,
-        SourceProtocolLSID,
-        Property,
-        Folder,
+
     }
-    void populate(ExpSampleSet ss, boolean filterSampleSet);
-    void setSampleSet(ExpSampleSet ss, boolean filter);
 }

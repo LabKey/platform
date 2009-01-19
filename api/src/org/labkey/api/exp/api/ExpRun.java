@@ -21,7 +21,6 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.security.User;
 
 import java.io.File;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.sql.SQLException;
@@ -30,6 +29,10 @@ public interface ExpRun extends ExpObject
 {
     public ExpExperiment[] getExperiments();
     public ExpProtocol getProtocol();
+
+    /**
+     * @param type an optional filter for the type of data
+     */
     public ExpData[] getOutputDatas(DataType type);
     public ExpData[] getInputDatas(String inputRole, ExpProtocol.ApplicationType appType);
     public String getFilePathRoot();
@@ -65,4 +68,5 @@ public interface ExpRun extends ExpObject
      */
     Map<String, ObjectProperty> getObjectProperties();
 
+    void deleteProtocolApplications(User user);
 }

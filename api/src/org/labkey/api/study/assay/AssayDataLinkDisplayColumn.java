@@ -22,6 +22,8 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.exp.query.ExpProtocolTable;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.FieldKey;

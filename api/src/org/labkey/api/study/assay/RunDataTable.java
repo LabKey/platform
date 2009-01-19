@@ -24,7 +24,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpRunTable;
+import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.*;
 
 import java.sql.Types;

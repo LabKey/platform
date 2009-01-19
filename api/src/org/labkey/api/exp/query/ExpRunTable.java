@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package org.labkey.api.exp.api;
+package org.labkey.api.exp.query;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.exp.api.*;
 
 import java.util.List;
 

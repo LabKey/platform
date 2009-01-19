@@ -18,6 +18,7 @@ package org.labkey.api.exp;
 
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.PageFlowUtil;

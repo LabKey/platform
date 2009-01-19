@@ -21,11 +21,12 @@
 <%@ page import="org.labkey.api.study.actions.AssayRunUploadForm" %>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
 <%@ page import="org.labkey.api.study.assay.AssayRunUploadContext" %>
+<%@ page import="org.labkey.api.study.assay.AssayProvider" %>
 <%@ page import="org.labkey.api.exp.property.DomainProperty" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
-    org.labkey.api.study.actions.AssayRunUploadForm bean = me.getModelBean();
+    org.labkey.api.study.actions.AssayRunUploadForm<? extends AssayProvider> bean = me.getModelBean();
 %>
 <table>
 <%

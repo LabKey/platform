@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package org.labkey.api.exp.api;
+package org.labkey.api.exp.query;
 
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExpSampleSet;
 
 public interface ExpProtocolApplicationTable extends ExpTable<ExpProtocolApplicationTable.Column>
 {

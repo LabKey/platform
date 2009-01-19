@@ -19,6 +19,8 @@ package org.labkey.api.study.assay;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
+import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -31,7 +33,6 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.actions.DesignerAction;
@@ -87,11 +88,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     protected final String _protocolLSIDPrefix;
     protected final String _runLSIDPrefix;
-    protected final String _dataLSIDPrefix;
+    protected final DataType _dataType;
 
     public AbstractAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, DataType dataType)
     {
-        _dataLSIDPrefix = dataType.getNamespacePrefix();
+        _dataType = dataType;
         _protocolLSIDPrefix = protocolLSIDPrefix;
         _runLSIDPrefix = runLSIDPrefix;
         registerLsidHandler();
@@ -173,7 +174,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         File file = files.values().iterator().next();
 
-        ExpData data = createData(context.getContainer(), file, new DataType(_dataLSIDPrefix));
+        ExpData data = createData(context.getContainer(), file, file.getName(), _dataType);
         outputDatas.put(data, "Data");
     }
 
@@ -574,7 +575,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
         catch (SQLException e)
         {
-            throw new RuntimeException(e);
+            throw new RuntimeSQLException(e);
         }
         finally
         {
@@ -761,20 +762,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
         throw new IllegalArgumentException("Unexpected resolver type: " + name);
     }
-    public void setPlateTemplate(Container container, ExpProtocol protocol, PlateTemplate template)
-    {
-        throw new UnsupportedOperationException("Only plate-based assays may have a plate template.");
-    }
-
-    public PlateTemplate getPlateTemplate(Container container, ExpProtocol protocol)
-    {
-        throw new UnsupportedOperationException("Only plate-based assays may have a plate template.");
-    }
-
-    public boolean isPlateBased()
-    {
-        return false;
-    }
 
     private Set<String> getPropertyDomains(ExpProtocol protocol)
     {
@@ -933,7 +920,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public boolean allowUpload(User user, Container container, ExpProtocol protocol)
     {
-        return isPipelineSetup(container) && (!isPlateBased() || getPlateTemplate(container, protocol) != null);
+        return isPipelineSetup(container);
     }
 
     protected boolean isPipelineSetup(Container container)
@@ -953,9 +940,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public HttpView getDisallowedUploadMessageView(User user, Container container, ExpProtocol protocol)
     {
-        StringBuilder html = new StringBuilder();
         if (!isPipelineSetup(container))
         {
+            StringBuilder html = new StringBuilder();
             html.append("<b>Pipeline root has not been set.</b> ");
             if (container.hasPermission(user, ACL.PERM_ADMIN))
             {
@@ -964,40 +951,29 @@ public abstract class AbstractAssayProvider implements AssayProvider
             }
             else
                 html.append(" Please ask an administrator for assistance.");
-        }
-
-        if (isPlateBased() && getPlateTemplate(container, protocol) == null)
-        {
-            if (html.length() > 0)
-                html.append("<br>");
-
-            html.append("<b>This assay design does not reference a valid plate template.</b> ");
-            if (container.hasPermission(user, ACL.PERM_INSERT))
-            {
-                ActionURL designerURL = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(container, protocol, false);
-                html.append("[<a href=\"").append(designerURL.getLocalURIString()).append("\">edit assay design</a>]");
-            }
-            else
-                html.append(" Please ask an administrator for assistance.");
-        }
-
-        if (html.length() > 0)
             return new HtmlView(html.toString());
-        else
-            return null;
+        }
+
+        return null;
     }
 
-    public static ExpData createData(Container c, File file, DataType dataType) throws ExperimentException
+    public static ExpData createData(Container c, File file, String name, DataType dataType) throws ExperimentException
     {
         try
         {
-            file = file.getCanonicalFile();
-            ExpData data = ExperimentService.get().getExpDataByURL(file, c);
+            ExpData data = null;
+            if (file != null)
+            {
+                data = ExperimentService.get().getExpDataByURL(file, c);
+            }
             if (data == null)
             {
-                data = ExperimentService.get().createData(c, dataType, file.getName());
+                data = ExperimentService.get().createData(c, dataType, name);
                 data.setLSID(ExperimentService.get().generateGuidLSID(c, dataType));
-                data.setDataFileURI(file.toURI());
+                if (file != null)
+                {
+                    data.setDataFileURI(file.getCanonicalFile().toURI());
+                }
             }
             return data;
         }
@@ -1019,7 +995,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public RunDataQueryView createRunDataQueryView(ViewContext context, ExpProtocol protocol)
     {
-        String name = getRunDataTableName(protocol);
+        String name = AssayService.get().getRunDataTableName(protocol);
         QuerySettings settings = new QuerySettings(context, name);
         settings.setSchemaName(AssayService.ASSAY_SCHEMA_NAME);
         settings.setQueryName(name);
@@ -1057,18 +1033,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         bb.getList().add(new ActionButton("Show Run", runUrl));
         region.setButtonBar(bb, DataRegion.MODE_DETAILS);
 
-        DetailsView details = new DetailsView(region, dataRowId);
-        return details;
-    }
-
-    public String getRunListTableName(ExpProtocol protocol)
-    {
-        return protocol.getName() + " Runs";
-    }
-
-    public String getRunDataTableName(ExpProtocol protocol)
-    {
-        return protocol.getName() + " Data";
+        return new DetailsView(region, dataRowId);
     }
 
     public void deleteProtocol(ExpProtocol protocol, User user) throws ExperimentException
@@ -1313,6 +1278,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 }
             }
         }
+    }
+
+    public DataType getDataType()
+    {
+        return _dataType;
     }
 
     /**

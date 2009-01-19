@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.exp.api;
+package org.labkey.api.exp.query;
 
 /**
  * User: jeckels

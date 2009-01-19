@@ -40,15 +40,9 @@ public class AssayRunType extends ExperimentRunType
 
     public AssayRunType(ExpProtocol protocol, Container c)
     {
-        super(protocol.getName(), SCHEMA_NAME, getRunListTableName(protocol));
+        super(protocol.getName(), SCHEMA_NAME, AssayService.get().getRunListTableName(protocol));
         _protocol = protocol;
         _container = c;
-    }
-
-    public static String getRunListTableName(ExpProtocol protocol)
-    {
-        AssayProvider provider = AssayService.get().getProvider(protocol);
-        return provider.getRunListTableName(protocol);
     }
 
     @Override

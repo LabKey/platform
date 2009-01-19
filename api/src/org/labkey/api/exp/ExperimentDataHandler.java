@@ -25,6 +25,7 @@ import org.labkey.api.view.ActionURL;
 
 import java.io.File;
 import java.io.OutputStream;
+import java.io.IOException;
 import java.util.List;
 
 /**
