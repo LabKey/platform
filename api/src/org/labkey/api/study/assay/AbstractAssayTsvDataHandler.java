@@ -192,7 +192,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         Set<String> checkSet = new HashSet<String>();
         DomainProperty[] expected = dataDomain.getProperties();
         for (DomainProperty pd : expected)
+        {
             checkSet.add(pd.getName().toLowerCase());
+            if (pd.isQcEnabled())
+                checkSet.add((pd.getName() + QcColumn.QC_INDICATOR_SUFFIX).toLowerCase());
+        }
         for (String col : actual)
         {
             if (!checkSet.contains(col.toLowerCase()))

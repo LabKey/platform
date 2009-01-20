@@ -18,6 +18,8 @@ package org.labkey.common.tools;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.collections.Transformer;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.exp.QcColumn;
 
 import java.beans.PropertyDescriptor;
 import java.io.File;
@@ -239,10 +241,17 @@ public abstract class DataLoader
     // Given a qc indicator column, find its matching qc column
     protected int getQcColumnIndex(ColumnDescriptor qcIndicatorColumn)
     {
+        // Sometimes names are URIs, sometimes they're names. If they're URIs, the columns
+        // share a name. If not, they have different names
+        @Nullable String nonQcIndicatorName = null;
+        if (qcIndicatorColumn.name.toLowerCase().endsWith(QcColumn.QC_INDICATOR_SUFFIX.toLowerCase()))
+        {
+            nonQcIndicatorName = qcIndicatorColumn.name.substring(0, qcIndicatorColumn.name.length() - QcColumn.QC_INDICATOR_SUFFIX.length());
+        }
         for(int i = 0; i<_columns.length; i++)
         {
             ColumnDescriptor col = _columns[i];
-            if (col.name.equals(qcIndicatorColumn.name) && col.qcEnabled)
+            if (col.qcEnabled && (col.name.equals(qcIndicatorColumn.name) || col.name.equals(nonQcIndicatorName)))
                 return i;
         }
         return -1;
@@ -250,10 +259,14 @@ public abstract class DataLoader
 
     protected int getQcIndicatorColumnIndex(ColumnDescriptor qcColumn)
     {
+        // Sometimes names are URIs, sometimes they're names. If they're URIs, the columns
+        // share a name. If not, they have different names
+        String namePlusIndicator = qcColumn.name + QcColumn.QC_INDICATOR_SUFFIX;
+
         for(int i = 0; i<_columns.length; i++)
         {
             ColumnDescriptor col = _columns[i];
-            if (col.name.equals(qcColumn.name) && col.qcIndicator)
+            if (col.qcIndicator && (col.name.equals(qcColumn.name) || col.name.equals(namePlusIndicator)))
                 return i;
         }
         return -1;

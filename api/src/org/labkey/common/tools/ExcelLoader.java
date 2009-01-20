@@ -26,6 +26,8 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections.Transformer;
 import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.QcUtil;
+import org.labkey.api.exp.QcFieldWrapper;
 import org.labkey.api.settings.AppProps;
 
 import java.io.File;
@@ -209,17 +211,90 @@ public class ExcelLoader extends DataLoader
                     contents = "";
                 }
                 Object value = column.missingValues;
-                if (!"".equals(contents))
+                try
                 {
-                    try
+                    if (column.qcEnabled)
+                    {
+                        QcFieldWrapper qcWrapper = (QcFieldWrapper)row.get(column.name);
+                        if (qcWrapper != null)
+                        {
+                            // We have an indicator column and it placed a qc wrapper in here for us
+                            qcWrapper.setValue(column.converter.convert(column.clazz, contents));
+                            value = qcWrapper;
+                        }
+                        else
+                        {
+                            // Do we have a QC indicator column?
+                            int qcIndicatorIndex = getQcIndicatorColumnIndex(column);
+                            if (qcIndicatorIndex != -1)
+                            {
+                                // There is such a column, so this value had better be good.
+                                qcWrapper = new QcFieldWrapper();
+                                qcWrapper.setValue(column.converter.convert(column.clazz, contents));
+                                value = qcWrapper;
+                            }
+                            else
+                            {
+                                // No such column. Is this a valid qc indicator or a valid value?
+                                if (QcUtil.isValidQcValue(contents, column.qcContainer))
+                                {
+                                    // set the qc value
+                                    qcWrapper = new QcFieldWrapper();
+                                    qcWrapper.setQcValue("".equals(contents) ? null : contents);
+                                    value = qcWrapper;
+                                }
+                                else
+                                {
+                                    // set the actual value
+                                    qcWrapper = new QcFieldWrapper();
+                                    qcWrapper.setValue(column.converter.convert(column.clazz, contents));
+                                    value = qcWrapper;
+                                }
+                            }
+                        }
+                    }
+                    else if (column.qcIndicator)
+                    {
+                        if (!QcUtil.isValidQcValue(contents, column.qcContainer))
+                        {
+                            throw new ConversionException(contents + " is not a valid QC value");
+                        }
+                        int qcColumnIndex = getQcColumnIndex(column);
+                        if (qcColumnIndex != -1)
+                        {
+                            String qcColumName = _columns[qcColumnIndex].name;
+                            // Is there a qc column that matches?
+                            QcFieldWrapper qcWrapper = (QcFieldWrapper)row.get(qcColumName);
+                            if (qcWrapper == null)
+                            {
+                                qcWrapper = new QcFieldWrapper();
+                                qcWrapper.setQcValue("".equals(contents) ? null : contents);
+                                value = qcWrapper;
+                                row.put(qcColumName, value); // store it for the qc column's use
+                            }
+                            else
+                            {
+                                qcWrapper.setQcValue("".equals(contents) ? null : contents);
+                                value = qcWrapper;
+                            }
+                        }
+                        else
+                        {
+                            QcFieldWrapper qcWrapper = new QcFieldWrapper();
+                            qcWrapper.setQcValue("".equals(contents) ? null : contents);
+                            value = qcWrapper;
+                        }
+                    }
+                    else if (!"".equals(contents))
                     {
                         value = column.converter.convert(column.clazz, contents);
                     }
-                    catch (ConversionException ce)
-                    {
-                        // Couldn't convert. Leave it as a missing value.
-                    }
                 }
+                catch (ConversionException ce)
+                {
+                    // Couldn't convert. Leave it as a missing value.
+                }
+                
                 if (value != null)
                     foundData = true;
 

@@ -100,6 +100,11 @@ public class OntologyManager
         HashMap<String,PropertyDescriptor> m = new CaseInsensitiveHashMap<PropertyDescriptor>(descriptors.length * 3);
         for (PropertyDescriptor pd : descriptors)
         {
+            if (pd.isQcEnabled())
+                m.put(pd.getName() + QcColumn.QC_INDICATOR_SUFFIX, pd);
+        }
+        for (PropertyDescriptor pd : descriptors)
+        {
             if (null != pd.getLabel())
                 m.put(pd.getLabel(), pd);
         }

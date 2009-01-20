@@ -512,6 +512,21 @@ public class TabLoader extends DataLoader
         _throwOnErrors = throwOnErrors;
     }
 
+    @Override
+    public void close()
+    {
+        if (_reader != null)
+        {
+            try
+            {
+                _reader.close();
+            }
+            catch (IOException e)
+            {
+                // Ignore
+            }
+        }
+    }
 
     protected class _RowMap implements Map<Object, Object>
     {
@@ -568,10 +583,11 @@ public class TabLoader extends DataLoader
         {
             if (o instanceof String && _lowerCaseHeaders)
                 o = ((String) o).toLowerCase();
-            Integer col = _colMap.get(o);
-            if (null == col)
+            Integer colInteger = _colMap.get(o);
+            if (null == colInteger)
                 throw new IllegalArgumentException("Can't find col: " + o);
 
+            int col = colInteger.intValue();
             //This generally won't happen
             if (null == _values || _values.length <= col)
             {
