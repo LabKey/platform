@@ -85,11 +85,6 @@ Ext.extend(LABKEY.ext.WebDavTreeLoader, Ext.tree.TreeLoader, {
 
     requestData : function(node, callback) {
         if (this.fireEvent("beforeload", this, node, callback) !== false) {
-            try {
-                netscape.security.PrivilegeManager.enablePrivilege("UniversalBrowserRead");
-            } catch (e) {
-            }
-
             this.transId = Ext.Ajax.request({
                 method: "GET",
                 headers: {"Method" : "PROPFIND", "Depth" : "1,noroot"},
