@@ -61,8 +61,11 @@ public class RecompilingJspClassLoader extends JspClassLoader
             {
                 File jspTempBuildDirectory = new File(finder.getBuildPath() + JSP_PATH);
                 File classFile = new File(jspTempBuildDirectory, JSP_PACKAGE_PATH + compiledJspPath + ".class");
+                File sourceFile = null;
+                if (null != finder.getSourcePath())
+                    sourceFile = new File(finder.getSourcePath() + "/src" + getSourceJspPath(packageName, jspFileName));
 
-                if (classFile.exists())
+                if (classFile.exists() || (null != sourceFile && sourceFile.exists()))
                     return getCompiledClassFile(classFile, jspTempBuildDirectory, finder, packageName, jspFileName);
             }
         }
@@ -86,7 +89,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
             synchronized(_classLoaders)
             {
                 // Is source more recent than compiled class?
-                boolean requiresRecompile = sourceFile.exists() && sourceFile.lastModified() > classFile.lastModified();
+                boolean requiresRecompile = sourceFile.exists() && (!classFile.exists() || sourceFile.lastModified() > classFile.lastModified());
                 boolean requiresTestRecompile = TEST && !_compiledJsps.contains(sourcePath);
 
                 if (requiresRecompile || requiresTestRecompile)
@@ -95,6 +98,8 @@ public class RecompilingJspClassLoader extends JspClassLoader
 
                     // Copy .jsp file from source to build staging directory
                     File stagingJsp = new File(jspTempBuildDirectory.getParent() + "/webapp", relativePath);
+                    if (!stagingJsp.getParentFile().exists())
+                        stagingJsp.getParentFile().mkdirs();
                     FileUtil.copyFile(sourceFile, stagingJsp);
 
                     ClassPath cp = new ClassPath();
@@ -123,7 +128,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
 
                     // Compile the _jsp.java file
                     String stagingJava = classFile.getAbsolutePath().replaceFirst("\\.class", ".java");
-                    compileJavaFile(stagingJava, cp.getPath());
+                    boolean success = (0 == compileJavaFile(stagingJava, cp.getPath()));
 
                     _classLoaders.remove(finder);
 
@@ -151,7 +156,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
     }
 
 
-    private void compileJavaFile(String filePath, String classPath) throws Exception
+    private int compileJavaFile(String filePath, String classPath) throws Exception
     {
         /*
             This is the code I want to execute here:
@@ -166,7 +171,8 @@ public class RecompilingJspClassLoader extends JspClassLoader
         Method getSystemJavaCompilerMethod = clazz.getMethod("getSystemJavaCompiler");
         Object javaCompiler = getSystemJavaCompilerMethod.invoke(null);
         Method compileJavaMethod = javaCompiler.getClass().getMethod("run", InputStream.class, OutputStream.class, OutputStream.class, String[].class);
-        compileJavaMethod.invoke(javaCompiler, null, null, null, new String[]{filePath, "-cp", classPath});
+        Integer ret = (Integer)compileJavaMethod.invoke(javaCompiler, null, null, null, new String[]{filePath, "-cp", classPath});
+        return ret.intValue();
     }
 
 
