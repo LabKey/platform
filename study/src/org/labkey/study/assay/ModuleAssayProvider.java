@@ -138,13 +138,14 @@ public class ModuleAssayProvider extends TsvAssayProvider
         Map<String, Set<String>> required = new HashMap<String, Set<String>>();
         for (Map.Entry<IAssayDomainType, DomainDescriptorType> domainDescriptor : domainsDescriptors.entrySet())
         {
+            IAssayDomainType domainType = domainDescriptor.getKey();
             DomainDescriptorType xDescriptor = domainDescriptor.getValue();
             PropertyDescriptorType[] xProperties = xDescriptor.getPropertyDescriptorArray();
             LinkedHashSet<String> properties = new LinkedHashSet<String>(xProperties.length);
             for (PropertyDescriptorType xProp : xProperties)
                 properties.add(xProp.getName());
 
-            required.put(domainDescriptor.getKey().getName(), properties);
+            required.put(domainType.getPrefix(), properties);
         }
         return required;
     }
