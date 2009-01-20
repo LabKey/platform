@@ -115,10 +115,10 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         }
         run.save(getViewContext().getUser());
         OntologyManager.ensureObject(run.getContainer(), run.getLSID());
-        Domain uploadSetDomain = provider.getUploadSetDomain(protocol);
+        Domain runDomain = provider.getRunDomain(protocol);
         if (runJsonObject.has(PROPERTIES))
         {
-            saveProperties(run, uploadSetDomain.getProperties(), runJsonObject.getJSONObject(PROPERTIES));
+            saveProperties(run, runDomain.getProperties(), runJsonObject.getJSONObject(PROPERTIES));
         }
 
         if (runJsonObject.has(DATA_ROWS))

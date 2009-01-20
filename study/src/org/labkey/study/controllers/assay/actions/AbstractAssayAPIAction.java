@@ -96,7 +96,7 @@ public abstract class AbstractAssayAPIAction<FORM> extends ApiAction<FORM>
     protected JSONObject serializeRun(ExpRun run, AssayProvider provider, ExpProtocol protocol) throws SQLException
     {
         JSONObject jsonObject = new JSONObject();
-        serializeStandardProperties(run, jsonObject, provider.getRunDataDomain(protocol).getProperties());
+        serializeStandardProperties(run, jsonObject, provider.getRunDomain(protocol).getProperties());
         jsonObject.put("comments", run.getComments());
 
         JSONArray dataRows = new JSONArray();
