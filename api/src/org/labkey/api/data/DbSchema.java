@@ -19,10 +19,9 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
-import org.apache.xmlbeans.XmlException;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.ms2.MS2Service;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CaseInsensitiveHashMap;
@@ -295,7 +294,8 @@ public class DbSchema
         String ownerName = "dbo";
 
         DbScope scope = getDbScope(dsName);
-        String dbName = SqlDialect.getDatabaseName2(scope.getDataSource());
+        SqlDialect dialect = SqlDialect.getSqlDialect(scope.getDataSource());
+        String dbName = dialect.getDatabaseName(scope.getDataSource());
 
         // Support old format that included catalog
         if (3 == schemaStrings.length)

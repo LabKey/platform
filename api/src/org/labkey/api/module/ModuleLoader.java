@@ -244,7 +244,6 @@ public class ModuleLoader implements Filter
             }
         }
 
-
         ensureDataBases();
 
         if (getTableInfoModules().getTableType() == TableInfo.TABLE_TYPE_NOT_IN_DB)

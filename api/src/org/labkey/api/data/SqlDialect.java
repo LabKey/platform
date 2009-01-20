@@ -16,13 +16,15 @@
 
 package org.labkey.api.data;
 
+import junit.framework.Test;
+import junit.framework.TestSuite;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.module.ModuleContext;
+import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.SystemMaintenance;
-import org.labkey.api.util.CaseInsensitiveHashMap;
-import org.labkey.api.module.ModuleContext;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
@@ -32,10 +34,6 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import junit.framework.TestCase;
 
 /**
  * User: arauch
@@ -524,19 +522,16 @@ public abstract class SqlDialect
     // Currently, JdbcHelper only finds the database name.  It could be extended if we require querying
     // other components or if replacement/reassembly becomes necessary.
 
-    public static String getDatabaseName2(DataSource ds) throws ServletException
+    public static SqlDialect getSqlDialect(DataSource ds) throws ServletException
     {
         try
         {
             DataSourceProperties props = new DataSourceProperties(ds);
-            SqlDialect dialect = getFromDriverClassName(props.getDriverClassName());
-            String url = props.getUrl();
-
-            return dialect.getDatabaseName(url);
+            return getFromDriverClassName(props.getDriverClassName());
         }
         catch (Exception e)
         {
-            throw new ServletException("Error retrieving url property from DataSource", e);
+            throw new ServletException("Error determining SqlDialect from DataSource", e);
         }
     }
 
@@ -806,7 +801,7 @@ public abstract class SqlDialect
     public abstract boolean isCaseSensitive();
     public abstract boolean isSqlServer();
     public abstract boolean isPostgreSQL();
-    public abstract TestCase getTestCase();
+    public abstract TestSuite getTestSuite();
 
 
     // JUnit test case
@@ -814,9 +809,7 @@ public abstract class SqlDialect
     {
         public static Test suite()
         {
-            TestSuite suite = new TestSuite();
-            suite.addTest(CoreSchema.getInstance().getSqlDialect().getTestCase());
-            return suite;
+            return CoreSchema.getInstance().getSqlDialect().getTestSuite();
         }
     }
 
