@@ -129,6 +129,7 @@ LABKEY.Exp.Run = function (config) {
     this.filePathRoot = config.filePathRoot;
     this.dataInputs = config.dataInputs || [];
     this.dataOutputs = config.dataOutputs || [];
+    this.dataRows = config.dataRows || [];
     this.materialInputs = config.materialInputs || [];
     this.materialOutputs = config.materialOutputs || [];
 //    this.protocolApplications = config.protocolApplications || [];
@@ -158,7 +159,12 @@ LABKEY.Exp.Protocol = function (config) {
     //this.outputMaterialType = config.outputMaterialType;
     //this.outputDataType = config.outputDataType;
     //this.parentProtocols = config.parentProtocols || [];
-    this.runs = config.runs || [];
+    this.runs = [];
+    if (config.runs) {
+        for (var i = 0; i < config.runs.length; i++) {
+            this.runs.push(new LABKEY.Exp.Run(config.runs[i]));
+        }
+    }
 };
 Ext.extend(LABKEY.Exp.Protocol, LABKEY.Exp.ExpObject);
 
@@ -166,7 +172,12 @@ LABKEY.Exp.RunGroup = function (config) {
     LABKEY.Exp.RunGroup.superclass.constructor.call(this, config);
     config = config || {};
 
-    this.runs = config.runs || [];
+    this.runs = [];
+    if (config.runs) {
+        for (var i = 0; i < config.runs.length; i++) {
+            this.runs.push(new LABKEY.Exp.Run(config.runs[i]));
+        }
+    }
     this.protocols = config.protocols || [];
     this.hidden = config.hidden;
 };
