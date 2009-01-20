@@ -66,37 +66,11 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         }
 
         ExpExperiment batch;
-        List<ExpRun> runs = new ArrayList<ExpRun>();
 
         try
         {
             ExperimentService.get().beginTransaction();
             batch = handleBatch(batchJsonObject, protocol, provider);
-
-            if (rootJsonObject.has(RUNS))
-            {
-                JSONArray runsArray = rootJsonObject.getJSONArray(RUNS);
-                for (int i = 0; i < runsArray.length(); i++)
-                {
-                    JSONObject runJsonObject = runsArray.getJSONObject(i);
-                    ExpRun run = handleRun(runJsonObject, protocol, provider, batch);
-                    runs.add(run);
-                }
-            }
-            List<ExpRun> existingRuns = Arrays.asList(batch.getRuns());
-
-            // Make sure that all the runs are considered part of the batch
-            List<ExpRun> runsToAdd = new ArrayList<ExpRun>(runs);
-            runsToAdd.removeAll(existingRuns);
-            batch.addRuns(getViewContext().getUser(), runsToAdd.toArray(new ExpRun[runsToAdd.size()]));
-
-            // Remove any runs that are no longer part of the batch
-            List<ExpRun> runsToRemove = new ArrayList<ExpRun>(existingRuns);
-            runsToRemove.removeAll(runs);
-            for (ExpRun runToRemove : runsToRemove)
-            {
-                batch.removeRun(getViewContext().getUser(), runToRemove);
-            }
 
             ExperimentService.get().commitTransaction();
         }
@@ -186,7 +160,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         dataHandler.importRows(newData, getViewContext().getUser(), run, protocol, provider, rawData);
     }
 
-    private ExpExperiment handleBatch(JSONObject batchJsonObject, ExpProtocol protocol, AssayProvider provider) throws JSONException, ValidationException
+    private ExpExperiment handleBatch(JSONObject batchJsonObject, ExpProtocol protocol, AssayProvider provider) throws Exception
     {
         ExpExperiment batch;
         if (batchJsonObject.has(ID))
@@ -208,6 +182,32 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         if (batchJsonObject.has(PROPERTIES))
         {
             saveProperties(batch, uploadSetDomain.getProperties(), batchJsonObject.getJSONObject(PROPERTIES));
+        }
+
+        List<ExpRun> runs = new ArrayList<ExpRun>();
+        if (batchJsonObject.has(RUNS))
+        {
+            JSONArray runsArray = batchJsonObject.getJSONArray(RUNS);
+            for (int i = 0; i < runsArray.length(); i++)
+            {
+                JSONObject runJsonObject = runsArray.getJSONObject(i);
+                ExpRun run = handleRun(runJsonObject, protocol, provider, batch);
+                runs.add(run);
+            }
+        }
+        List<ExpRun> existingRuns = Arrays.asList(batch.getRuns());
+
+        // Make sure that all the runs are considered part of the batch
+        List<ExpRun> runsToAdd = new ArrayList<ExpRun>(runs);
+        runsToAdd.removeAll(existingRuns);
+        batch.addRuns(getViewContext().getUser(), runsToAdd.toArray(new ExpRun[runsToAdd.size()]));
+
+        // Remove any runs that are no longer part of the batch
+        List<ExpRun> runsToRemove = new ArrayList<ExpRun>(existingRuns);
+        runsToRemove.removeAll(runs);
+        for (ExpRun runToRemove : runsToRemove)
+        {
+            batch.removeRun(getViewContext().getUser(), runToRemove);
         }
 
         return batch;
