@@ -112,20 +112,24 @@ Ext.extend(LABKEY.Assay.Batch, Ext.util.Observable, {
     processLoadResponse : function (response, callback) {
         var json = response.responseText;
         try {
-            var o = eval("(" + json + ")");
-            if (o)
-            {
-                this.assayId = o.assayId;
-                this.batch = new LABKEY.Exp.RunGroup(o.batch);
-                this.batchId = this.batch.id;
-                this.loaded = true;
-            }
+            this._unpackData(json);
             if (typeof callback == "function") {
                 callback(this);
             }
         }
         catch (e) {
             this.handleLoadFailure(response);
+        }
+    },
+
+    _unpackData : function (json) {
+        var o = eval("(" + json + ")");
+        if (o)
+        {
+            this.assayId = o.assayId;
+            this.batch = new LABKEY.Exp.RunGroup(o.batch);
+            this.batchId = this.batch.id;
+            this.loaded = true;
         }
     },
 
@@ -179,8 +183,7 @@ Ext.extend(LABKEY.Assay.Batch, Ext.util.Observable, {
     processSaveResponse : function (response, callback) {
         var json = response.responseText;
         try {
-            var o = eval("(" + json + ")");
-            // do something with o...
+            this._unpackData(json);
             if (typeof callback == "function") {
                 callback(this);
             }
