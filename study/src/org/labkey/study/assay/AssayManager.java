@@ -16,25 +16,30 @@
 
 package org.labkey.study.assay;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.MenuButton;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpRunTable;
-import org.labkey.api.exp.api.*;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.DateUtil;
 import org.labkey.study.assay.query.AssayListPortalView;
 import org.labkey.study.assay.query.AssayListQueryView;
 import org.labkey.study.assay.query.AssaySchema;
@@ -201,7 +206,9 @@ public class AssayManager implements AssayService.Interface
             {
                 for (Map.Entry<String, Class<? extends Controller>> entry : provider.getImportActions().entrySet())
                 {
-                    result.add(new ActionButton(PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(c, protocol, entry.getValue()), entry.getKey()));
+                    ActionButton button = new ActionButton(PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(c, protocol, entry.getValue()), entry.getKey());
+                    button.setActionType(ActionButton.Action.LINK);
+                    result.add(button);
                 }
             }
         }

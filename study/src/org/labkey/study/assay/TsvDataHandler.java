@@ -16,30 +16,25 @@
 
 package org.labkey.study.assay;
 
-import jxl.Cell;
-import jxl.Sheet;
-import jxl.Workbook;
-import jxl.WorkbookSettings;
-import jxl.read.biff.BiffException;
-import org.apache.commons.beanutils.ConversionException;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.QcColumn;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.study.assay.AbstractAssayTsvDataHandler;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.security.User;
+import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.common.tools.ColumnDescriptor;
+import org.labkey.common.tools.DataLoader;
+import org.labkey.common.tools.ExcelLoader;
 import org.labkey.common.tools.TabLoader;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -65,187 +60,71 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler
         return false;
     }
 
-    public Map<String, Object>[] loadFileData(Domain dataDomain, File inputfile) throws IOException, ExperimentException
-    {
-        if (inputfile.getName().toLowerCase().endsWith(".xls"))
-            return loadXls(dataDomain, inputfile);
-        else
-            return loadTsv(dataDomain, inputfile);
-    }
-
-    private Map<String, Object>[] loadXls(Domain dataDomain, File inputfile) throws IOException, ExperimentException
-    {
-        FileInputStream fIn = null;
-        try
-        {
-            fIn = new FileInputStream(inputfile);
-            WorkbookSettings settings = new WorkbookSettings();
-            settings.setGCDisabled(true);
-            Workbook workbook = Workbook.getWorkbook(fIn, settings);
-            Sheet sheet = workbook.getSheet(0);
-            if (sheet.getRows() == 0 || sheet.getColumns() == 0)
-                throw new ExperimentException("The first sheet of the  Excel workbook contains no data.  " +
-                        "Data is read only from the first sheet.");
-            Cell[] headerCells = sheet.getRow(0);
-            List<String> headers = new ArrayList<String>(headerCells.length);
-            // get list of header strings, normalizing empty headers to null:
-            for (Cell headerCell : headerCells)
-            {
-                String header = headerCell.getContents();
-                if (header != null && header.trim().length() == 0)
-                    header = null;
-                headers.add(header);
-            }
-
-            // remove "ghost" headers from the end of our list.  ghost headers occur when a header cell contains
-            // formatting but no text content
-            while (headers.size() > 0 && headers.get(headers.size() - 1) == null)
-                headers.remove(headers.size() - 1);
-
-            if (headers.size() == 0)
-                throw new ExperimentException("Excel workbook contained no data on sheet 1.");
-
-            Map<String, Object>[] rowDatas = new HashMap[sheet.getRows() - 1];
-
-            Map<String, PropertyType> colTypes = new HashMap<String, PropertyType>();
-            for (DomainProperty dp : dataDomain.getProperties())
-                colTypes.put(dp.getName().toLowerCase(), dp.getPropertyDescriptor().getPropertyType());
-
-            for (int rowIndex = 1; rowIndex < sheet.getRows(); rowIndex++)
-            {
-                Map<String, Object> rowData = new HashMap<String, Object>();
-                rowDatas[rowIndex - 1] = rowData;
-
-                Cell[] row = sheet.getRow(rowIndex);
-                for (int i = 0; i < row.length; i++)
-                {
-                    String stringValue = row[i].getContents();
-                    String header = i < headers.size() ? headers.get(i) : null;
-                    if (header == null)
-                    {
-                        if (stringValue != null && stringValue.length() > 0)
-                        {
-                            throw new ExperimentException("The format of " + inputfile.getName() + " is not as expected. " +
-                                    "No header was found for the data in column " + convertColumnToLetter(i) + ", row " + (rowIndex + 1) + ".");
-                        }
-                        else
-                        {
-                            // sometimes there are formatted cells to the right of the last data column.  This formatting
-                            // introduces ghost rows into our data grid that should be ignored.  So, we continue if the header
-                            // is empty/missing and there's no actual content in the data cell:
-                            continue;
-                        }
-                    }
-                    PropertyType type = colTypes.get(header.toLowerCase());
-                    if (type != null)
-                    {
-                        try
-                        {
-                            rowData.put(header, type.getExcelValue(row[i]));
-                        }
-                         catch (ConversionException e)
-                        {
-                            throw new ExperimentException("There are errors in the uploaded data: " + header + " must be of type " + ColumnInfo.getFriendlyTypeName(type.getJavaType()) + " but the value \"" + row[i].getContents() + "\" in row " + (rowIndex + 1) + " could not be converted.");
-                        }
-                    }
-                    else
-                        rowData.put(header, stringValue != null && stringValue.length() > 0 ? stringValue : null);
-                }
-            }
-
-            // If formatting has been applied to cells below the data, we'll sometimes have empty rows within our
-            // rawData map that should be trimmed. See https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=4797
-            int rowCount = rowDatas.length;
-            boolean hasData = false;
-            while (rowCount > 0 && !hasData)
-            {
-                Collection<Object> rowValues = rowDatas[rowCount - 1].values();
-                for (Object value : rowValues)
-                {
-                    if (value != null)
-                    {
-                        hasData = true;
-                        break;
-                    }
-                }
-                if (!hasData)
-                    rowCount--;
-            }
-            if (rowCount < rowDatas.length)
-            {
-                Map<String, Object>[] truncated = new Map[rowCount];
-                System.arraycopy(rowDatas, 0, truncated, 0, rowCount);
-                rowDatas = truncated;
-            }
-
-            return rowDatas;
-        }
-        catch (BiffException e)
-        {
-            throw new ExperimentException(e);
-        }
-        finally
-        {
-            if (fIn != null)
-                try { fIn.close(); } catch (IOException e) { /* fall through */ }
-        }
-    }
-
-    /**
-     *
-     * @param column zero-based column number
-     * @return excel column name (e.g. A, B, AA, AB, BA, etc)
-     */
-    private static String convertColumnToLetter(int column)
-    {
-        if (column > 701)
-        {
-            // If greater than ZZ, punt. Return a string of the column name
-            return Integer.toString(column);
-        }
-        if (column < 26)
-        {
-
-            int result = column + 'A';
-            char c = (char)result;
-            return Character.toString(c);
-        }
-        else
-        {
-            int remainder = column/26 - 1;
-            return convertColumnToLetter(remainder) + convertColumnToLetter(column % 26);
-        }
-    }
-
-    private Map<String, Object>[] loadTsv(Domain dataDomain, File inputFile) throws IOException, ExperimentException
+    public Map<String, Object>[] loadFileData(Domain dataDomain, File inputFile) throws IOException, ExperimentException
     {
         DomainProperty[] columns = dataDomain.getProperties();
-        Map<String, Class> expectedColumns = new HashMap<String, Class>(columns.length);
+        Map<String, Class> expectedColumns = new CaseInsensitiveHashMap<Class>(columns.length);
+        Set<String> qcEnabledColumns = new CaseInsensitiveHashSet();
+        Set<String> qcIndicatorColumns = new CaseInsensitiveHashSet();
+
+
         for (DomainProperty col : columns)
         {
+            if (col.isQcEnabled())
+            {
+                qcEnabledColumns.add(col.getName());
+                qcIndicatorColumns.add(col.getName() + QcColumn.QC_INDICATOR_SUFFIX);
+            }
             if (col.getLabel() != null)
-                expectedColumns.put(col.getLabel().toLowerCase(), col.getPropertyDescriptor().getPropertyType().getJavaType());
+                expectedColumns.put(col.getLabel(), col.getPropertyDescriptor().getPropertyType().getJavaType());
         }
         for (DomainProperty col : columns)
-            expectedColumns.put(col.getName().toLowerCase(), col.getPropertyDescriptor().getPropertyType().getJavaType());
-        Reader fileReader = new FileReader(inputFile);
+            expectedColumns.put(col.getName(), col.getPropertyDescriptor().getPropertyType().getJavaType());
+        DataLoader loader = null;
         try
         {
-            TabLoader loader = new TabLoader(fileReader, true);
+
+            if (inputFile.getName().toLowerCase().endsWith(".xls"))
+            {
+                loader = new ExcelLoader(inputFile, true);
+            }
+            else
+            {
+                loader = new TabLoader(inputFile, true);
+            }
             for (ColumnDescriptor column : loader.getColumns())
             {
-                Class expectedColumnClass = expectedColumns.get(column.name.toLowerCase());
+                if (qcEnabledColumns.contains(column.name))
+                {
+                    column.qcEnabled = true;
+                    column.qcContainer = dataDomain.getContainer();
+                }
+                else if (qcIndicatorColumns.contains(column.name))
+                {
+                    column.qcIndicator = true;
+                    column.qcContainer = dataDomain.getContainer();
+                    column.clazz = String.class;
+                }
+                Class expectedColumnClass = expectedColumns.get(column.name);
                 if (expectedColumnClass != null)
                     column.clazz = expectedColumnClass;
                 else
-                    column.load = false;
+                {
+                    // It's not an expected column. Is it a qc indicator column?
+                    if (!qcIndicatorColumns.contains(column.name))
+                    {
+                        column.load = false;
+                    }
+                }
                 column.errorValues = ERROR_VALUE;
             }
+            //noinspection unchecked
             return (Map<String, Object>[]) loader.load();
         }
         finally
         {
-            try { fileReader.close(); } catch (IOException e) {}
+            if (loader != null)
+                loader.close();
         }
     }
 }
