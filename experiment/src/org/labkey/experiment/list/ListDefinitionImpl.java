@@ -411,7 +411,7 @@ public class ListDefinitionImpl implements ListDefinition
             case Varchar:
                 break;
 
-            // Fine if it's misisng, otherwise fall through
+            // Fine if it's missing, otherwise fall through
             case AutoIncrementInteger:
                 if (null == cdKey)
                     break;
@@ -431,10 +431,12 @@ public class ListDefinitionImpl implements ListDefinition
         Set<String> wrongTypes = new HashSet<String>();
         Set<String> noUpload = new HashSet<String>();
 
+		DomainProperty[] domainProperties = getDomain().getProperties();
+		
         for (Map row : rows)
         {
             row = new CaseInsensitiveHashMap<Object>(row);
-            for (DomainProperty domainProperty : getDomain().getProperties())
+            for (DomainProperty domainProperty : domainProperties)
             {
                 Object o = row.get(domainProperty.getPropertyURI());
                 String value = o == null ? null : o.toString();

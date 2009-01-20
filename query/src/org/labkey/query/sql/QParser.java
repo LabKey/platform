@@ -29,6 +29,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+
+//
+// TODO merge QParser and SqlParser
+//
+
 public class QParser
 {
     static private Set<String> keywords = new CaseInsensitiveHashSet(PageFlowUtil.set(
@@ -96,7 +101,7 @@ public class QParser
             "trailing"));
 
 
-    static public SqlParser getParser(String str)
+    static private SqlParser getParser(String str)
     {
         return new SqlParser(str);
     }
@@ -145,25 +150,13 @@ public class QParser
 
     static public QExpr parseExpr(String str, List<? super QueryParseException> errors)
     {
-        String full = "SELECT " + str + " AS __COLUMN__ FROM __TABLE__";
-        QQuery query = parseStatement(full, errors);
-        if (query == null)
-        {
-            return null;
-        }
-        if (errors.size() != 0)
-            return null;
-        QSelect select = query.getSelect();
-        if (select == null)
-        {
-            return null;
-        }
-        if (select.childList().size() != 1)
-        {
-            return null;
-        }
-        QExpr ret = ((QAs) select.getFirstChild()).getExpression();
-        return ret;
+        SqlParser parser = getParser(str);
+        QExpr expr = parser.parseExpression();
+        for (Throwable e : parser.getErrors())
+            errors.add(wrapParseException(e));
+        if (errors.size() == 0)
+            return expr;
+        return null;
     }
 
     static public boolean isLegalIdentifierChar(char ch, boolean fFirst)

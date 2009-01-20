@@ -57,7 +57,7 @@ public class SqlParser
 		return _errors;
 	}
 
-	public QNode parseStatement()
+	public QQuery parseStatement()
 	{
 		try
 		{
@@ -82,8 +82,37 @@ public class SqlParser
 	   	QNode ret = postProcesses(node);
 		assert MemTracker.put(ret);
 		
-		return ret;
+		return ret instanceof QQuery ? (QQuery)ret : null;
 	}
+
+
+    public QExpr parseExpression()
+    {
+        try
+        {
+            _parser.expression();
+            int last = _parser.LA(1);
+            if (last != EOF)
+                //noinspection ThrowableInstanceNeverThrown
+                _errors.add(new RecognitionException("Unexpected token: " + last));
+        }
+        catch (Exception x)
+        {
+            _errors.add(x);
+        }
+        if (_errors.size() != 0)
+            return null;
+
+        Node node = (Node) _parser.getAST();
+        MemTracker.put(node);
+        if (null == node)
+            return null;
+
+        QNode ret = postProcesses(node);
+        assert MemTracker.put(ret);
+
+        return ret instanceof QExpr ? (QExpr)ret : null;
+    }
 
 
 	private QNode postProcesses(Node node)
@@ -268,7 +297,6 @@ public class SqlParser
 			case HAVING:
 			case ASCENDING:
 			case DESCENDING:
-			case BETWEEN:
 			case ESCAPE:
 			case EXISTS:
 			case ANY:

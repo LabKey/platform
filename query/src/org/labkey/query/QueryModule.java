@@ -41,6 +41,7 @@ import org.labkey.query.reports.chart.XYChartRenderer;
 import org.labkey.query.reports.view.ReportUIProvider;
 import org.labkey.query.view.QueryWebPartFactory;
 import org.labkey.query.sql.QParser;
+import org.labkey.query.data.Query;
 
 import javax.script.ScriptEngineManager;
 import java.util.Arrays;
@@ -120,6 +121,7 @@ public class QueryModule extends DefaultModule
     public Set<Class<? extends TestCase>> getJUnitTests()
     {
         return new HashSet<Class<? extends TestCase>>(Arrays.asList(
-                QParser.TestCase.class));
+                QParser.TestCase.class,
+				Query.TestCase.class));
     }
 }

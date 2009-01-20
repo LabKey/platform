@@ -103,7 +103,7 @@ public class Query
             if (_parseErrors.isEmpty())
                 parseTree();
 
-            if (_log.isDebugEnabled())
+            if (null != _root && _log.isDebugEnabled())
             {
                 StringWriter sw = new StringWriter();
                 PrintWriter pw = new PrintWriter(sw);
@@ -1075,14 +1075,16 @@ loop:
         static final String[] months = new String[] {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
 
         String[][] data;
-        ArrayListMap<String,String> row = new ArrayListMap<String,String>();
-        
-        TestDataLoader(int len)
+        ArrayListMap<String,String> templateRow = new ArrayListMap<String,String>();
+
+
+		// UNDONE: need some NULLS in here
+		TestDataLoader(String propertyPrefix, int len)
         {
             data = new String[len+1][];
             data[0] = COLUMNS;
             for (String c : data[0])
-                row.put(c,c);
+                templateRow.put(propertyPrefix + "#" + c, c);
             for (int i=1 ; i<=len ; i++)
             {
                 String[] row = data[i] = new String[8];
@@ -1121,7 +1123,7 @@ loop:
 
             public Map next()
             {
-                return new ArrayListMap<String,String>(row, data[i++]);
+                return new ArrayListMap<String,String>(templateRow, data[i++]);
             }
 
             public void remove()
@@ -1152,10 +1154,15 @@ loop:
     }
 
 
+	static int Rsize = 84;
+	static int Ssize = 84;
+
     static SqlTest[] tests = new SqlTest[]
     {
-        new SqlTest("SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid FROM R", 8, 100),
-        new SqlTest("SELECT R.duration AS elapsed FROM R WHERE R.rowid=1", 1, 1)
+        new SqlTest("SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid FROM R", 8, Rsize),
+        new SqlTest("SELECT R.duration AS elapsed FROM R WHERE R.rowid=1", 1, 1),
+		new SqlTest("SELECT R.rowid, R.seven, R.day FROM R WHERE R.day LIKE '%ues%'", 3, 12),
+		new SqlTest("SELECT R.rowid, R.twelve, R.month FROM R WHERE R.month BETWEEN 'L' and 'O'", 3, 3*7) // March, May, Nov
     };
     
 
@@ -1171,10 +1178,12 @@ loop:
             super(name);
         }
 
+
         String hash = GUID.makeHash();
         QuerySchema lists;
         ListDefinition R;
         ListDefinition S;
+
 
         private void addProperties(ListDefinition l)
         {
@@ -1187,6 +1196,7 @@ loop:
                 p.setRangeURI(TestDataLoader.TYPES[i]);
             }
         }
+
 
         @Override
         protected void setUp() throws Exception
@@ -1206,14 +1216,14 @@ loop:
             R.setKeyName("rowid");
             addProperties(R);
             R.save(user);
-            R.insertListItems(user, new TestDataLoader(100));
+            R.insertListItems(user, new TestDataLoader(R.getName() + hash, Rsize));
             
             S = s.createList(c, "S");
             S.setKeyType(ListDefinition.KeyType.AutoIncrementInteger);
             S.setKeyName("rowid");
             addProperties(S);
             S.save(user);
-            S.insertListItems(user, new TestDataLoader(100));
+            S.insertListItems(user, new TestDataLoader(S.getName() + hash, Ssize));
 
             // note getSchema() will return NULL if there are no lists yet
             lists = DefaultSchema.get(user, c).getSchema(s.getSchemaName());
@@ -1282,7 +1292,10 @@ loop:
             assertTrue(0 < rs.findColumn("date"));
             assertTrue(0 < rs.findColumn("duration"));
             assertEquals(7, md.getColumnCount());
-            assertEquals(100, rs.getSize());
+            assertEquals(Rsize, rs.getSize());
+			rs.next();
+			for (int c=1; c<=md.getColumnCount() ; c++)
+				assertNotNull(rs.getObject(c));
             rs.close();
 
             // simple tests

@@ -31,6 +31,29 @@ public enum Operator
     le("<=", Precedence.comparison, SqlTokenTypes.LE),
     is(" IS ", Precedence.comparison, SqlTokenTypes.IS),
     is_not(" IS NOT ", Precedence.comparison, SqlTokenTypes.IS_NOT),
+    between(" BETWEEN ", Precedence.comparison, SqlTokenTypes.BETWEEN)
+    {
+        public void appendSql(SqlBuilder builder, Iterable<QExpr> operands)
+        {
+            builder.pushPrefix("");
+            int i=0;
+            for (QExpr operand : operands)
+            {
+                boolean paren = needsParentheses(operand, true);
+                if (paren)
+                    builder.pushPrefix("(");
+                operand.appendSql(builder);
+                if (paren)
+                    builder.popPrefix(")");
+                if (i==0)
+                    builder.append(" BETWEEN ");
+                else if (i==1)
+                    builder.append(" AND ");
+                ++i;
+            }
+            builder.popPrefix("");
+        }
+    },
     add("+", Precedence.addition, SqlTokenTypes.PLUS),
     subtract("-", Precedence.addition, SqlTokenTypes.MINUS),
     plus("+", Precedence.unary, SqlTokenTypes.UNARY_PLUS)
