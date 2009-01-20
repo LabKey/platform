@@ -17,8 +17,8 @@
 package org.labkey.bigiron;
 
 import org.labkey.api.data.SqlDialect;
-import org.labkey.api.data.SqlDialectMicrosoftSQLServer;
-import org.labkey.api.data.SqlDialectMicrosoftSQLServer9;
+import org.labkey.api.data.mssql.SqlDialectMicrosoftSQLServer;
+import org.labkey.api.data.mssql.SqlDialectMicrosoftSQLServer9;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.view.WebPartFactory;

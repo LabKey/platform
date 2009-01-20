@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package org.labkey.api.data;
+package org.labkey.api.data.mssql;
 
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.data.*;
 
 import javax.servlet.ServletException;
 import java.sql.Connection;
@@ -31,6 +32,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 
 /**
@@ -449,8 +451,57 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
                 dbEnd = url.length();
             int dbDelimiter = url.lastIndexOf('/', dbEnd);
             if (-1 == dbDelimiter)
-                throw new RuntimeException("Invalid jTDS connection url: " + url);
+                throw new ServletException("Invalid jTDS connection url: " + url);
             _database = url.substring(dbDelimiter + 1, dbEnd);
+        }
+    }
+
+    public static class JdbcHelperTestCase extends TestCase
+    {
+        public JdbcHelperTestCase()
+        {
+            super("testJdbcHelper");
+        }
+
+        public void testJdbcHelper()
+        {
+            try
+            {
+                String goodUrls =   "jdbc:jtds:sqlserver://localhost/database\n" +
+                                    "jdbc:jtds:sqlserver://localhost:1433/database\n" +
+                                    "jdbc:jtds:sqlserver://localhost/database;SelectMethod=cursor\n" +
+                                    "jdbc:jtds:sqlserver://localhost:1433/database;SelectMethod=cursor\n" +
+                                    "jdbc:jtds:sqlserver://www.host.com/database\n" +
+                                    "jdbc:jtds:sqlserver://www.host.com:1433/database\n" +
+                                    "jdbc:jtds:sqlserver://www.host.com/database;SelectMethod=cursor\n" +
+                                    "jdbc:jtds:sqlserver://www.host.com:1433/database;SelectMethod=cursor";
+
+                for (String url : goodUrls.split("\n"))
+                    assertEquals(new JtdsJdbcHelper(url).getDatabase(), "database");
+            }
+            catch(Exception e)
+            {
+                fail("Exception running JdbcHelper test: " + e.getMessage());
+            }
+
+            String badUrls =    "jdb:jtds:sqlserver://localhost/database\n" +
+                                "jdbc:jts:sqlserver://localhost/database\n" +
+                                "jdbc:jtds:sqlerver://localhost/database\n" +
+                                "jdbc:jtds:sqlserver://localhostdatabase\n" +
+                                "jdbc:jtds:sqlserver:database";
+
+            for (String url : badUrls.split("\n"))
+            {
+                try
+                {
+                    if (new JtdsJdbcHelper(url).getDatabase().equals("database"))
+                        fail("JdbcHelper test failed: database in " + url + " should not have resolved to 'database'");
+                }
+                catch (ServletException e)
+                {
+                    // Skip -- we expect to fail on some of these
+                }
+            }
         }
     }
 
@@ -498,23 +549,20 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return false;
     }
 
-    public TestCase getTestCase()
+    public TestSuite getTestSuite()
     {
-        return new SqlServerTestCase();
+        TestSuite suite = new TestSuite();
+        suite.addTest(new JavaUpgradeCodeTestCase());
+        suite.addTest(new JdbcHelperTestCase());
+        return suite;
     }
 
 
-    public class SqlServerTestCase extends TestCase
+    public class JavaUpgradeCodeTestCase extends TestCase
     {
-        public SqlServerTestCase()
+        public JavaUpgradeCodeTestCase()
         {
-            super();
-            setName("testJavaUpgradeCode");
-        }
-
-        public SqlServerTestCase(String name)
-        {
-            super(name);
+            super("testJavaUpgradeCode");
         }
 
         public void testJavaUpgradeCode()

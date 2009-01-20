@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package org.labkey.api.data;
+package org.labkey.api.data.mssql;
 
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.data.SQLFragment;
 
 /**
  * User: kevink

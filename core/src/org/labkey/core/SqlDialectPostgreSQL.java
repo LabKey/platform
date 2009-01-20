@@ -17,6 +17,7 @@
 package org.labkey.core;
 
 import junit.framework.TestCase;
+import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.*;
 import org.labkey.api.module.ModuleContext;
@@ -521,6 +522,55 @@ class SqlDialectPostgreSQL extends SqlDialect
         }
     }
 
+    public static class JdbcHelperTestCase extends TestCase
+    {
+        public JdbcHelperTestCase()
+        {
+            super("testJdbcHelper");
+        }
+
+        public void testJdbcHelper()
+        {
+            try
+            {
+                String goodUrls =   "jdbc:postgresql:database\n" +
+                                    "jdbc:postgresql://localhost/database\n" +
+                                    "jdbc:postgresql://localhost:8300/database\n" +
+                                    "jdbc:postgresql://www.host.com/database\n" +
+                                    "jdbc:postgresql://www.host.com:8499/database\n" +
+                                    "jdbc:postgresql:database?user=fred&password=secret&ssl=true\n" +
+                                    "jdbc:postgresql://localhost/database?user=fred&password=secret&ssl=true\n" +
+                                    "jdbc:postgresql://localhost:8672/database?user=fred&password=secret&ssl=true\n" +
+                                    "jdbc:postgresql://www.host.com/database?user=fred&password=secret&ssl=true\n" +
+                                    "jdbc:postgresql://www.host.com:8992/database?user=fred&password=secret&ssl=true";
+
+                for (String url : goodUrls.split("\n"))
+                    assertEquals(new PostgreSQLJdbcHelper(url).getDatabase(), "database");
+            }
+            catch(Exception e)
+            {
+                fail("Exception running JdbcHelper test: " + e.getMessage());
+            }
+
+            String badUrls =    "jddc:postgresql:database\n" +
+                                "jdbc:postgres://localhost/database\n" +
+                                "jdbc:postgresql://www.host.comdatabase";
+
+            for (String url : badUrls.split("\n"))
+            {
+                try
+                {
+                    if (new PostgreSQLJdbcHelper(url).getDatabase().equals("database"))
+                        fail("JdbcHelper test failed: database in " + url + " should not have resolved to 'database'");
+                }
+                catch (ServletException e)
+                {
+                    // Skip -- we expect to fail on these
+                }
+            }
+        }
+    }
+
     protected String getDatabaseMaintenanceSql()
     {
         return "VACUUM ANALYZE;";
@@ -625,22 +675,19 @@ class SqlDialectPostgreSQL extends SqlDialect
         return true;
     }
 
-    public TestCase getTestCase()
+    public TestSuite getTestSuite()
     {
-        return new PostgresTestCase();
+        TestSuite suite = new TestSuite();
+        suite.addTest(new JavaUpgradeCodeTestCase());
+        suite.addTest(new JdbcHelperTestCase());
+        return suite;
     }
 
-    public class PostgresTestCase extends TestCase
+    public class JavaUpgradeCodeTestCase extends TestCase
     {
-        public PostgresTestCase()
+        public JavaUpgradeCodeTestCase()
         {
-            super();
-            setName("testJavaUpgradeCode");
-        }
-
-        public PostgresTestCase(String name)
-        {
-            super(name);
+            super("testJavaUpgradeCode");
         }
 
         public void testJavaUpgradeCode()
