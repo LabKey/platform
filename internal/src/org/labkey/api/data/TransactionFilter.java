@@ -34,7 +34,7 @@ public class TransactionFilter implements Filter
     public void doFilter(ServletRequest req, ServletResponse resp, FilterChain chain) throws IOException, ServletException
     {
         chain.doFilter(req, resp);
-        DbSchema.rollbackAllTransactions();
+        DbScope.rollbackAllTransactions();
     }
 
     public void init(FilterConfig arg0) throws ServletException

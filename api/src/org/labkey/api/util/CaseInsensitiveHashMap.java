@@ -18,7 +18,6 @@ package org.labkey.api.util;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: arauch
  * Date: Dec 25, 2004
  * Time: 4:07:57 PM

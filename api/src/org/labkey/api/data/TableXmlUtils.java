@@ -45,9 +45,8 @@ public class TableXmlUtils
         DbSchema dbSchema = DbSchema.createFromMetaData(dbSchemaName);
         TablesDocument xmlTablesDoc = TablesDocument.Factory.newInstance();
         TablesDocument.Tables xmlTables = xmlTablesDoc.addNewTables();
-        SchemaTableInfo[] tableInfos = dbSchema.getTables();
 
-        for (SchemaTableInfo tableInfo : tableInfos)
+        for (SchemaTableInfo tableInfo : dbSchema.getTables())
         {
             TableType xmlTable = xmlTables.addNewTable();
             tableInfo.copyToXml(xmlTable, bFull);

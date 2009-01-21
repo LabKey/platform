@@ -45,34 +45,25 @@ import java.util.Date;
 
 public class DbSchema
 {
-    private static final HashMap<String, DbSchema> loadedSchemas = new HashMap<String, DbSchema>();
-    private static Logger _log = Logger.getLogger(DbSchema.class);
-    private static final Map<String, DbScope> scopes = new HashMap<String, DbScope>();
+    private static final HashMap<String, DbSchema> _loadedSchemas = new HashMap<String, DbSchema>();
+    private static final Logger _log = Logger.getLogger(DbSchema.class);
 
-    private Map<String, SchemaTableInfo> tables = new CaseInsensitiveHashMap<SchemaTableInfo>();
-    private DbScope scope = null;
-    private String name = null;
-    private SqlDialect sqlDialect;
-    private String _catalog;
-    private String _owner;  // also called "schema" in sql
+    private final Map<String, SchemaTableInfo> _tables = new CaseInsensitiveHashMap<SchemaTableInfo>();
+    private final DbScope _scope;
+    private final String _name;
+    private final String _owner;  // also called "schema" in sql
+
     private long _schemaXmlTimestamp = -1;
-
-    // Stash database config info
-    private String _URL;
-    private String _databaseProductName;
-    private String _databaseProductVersion;
-    private String _driverName;
-    private String _driverVersion;
 
     public static DbSchema get(String schemaName)
     {
         // synchronized ensures one thread at a time.  This assert detects same-thread re-entrancy (e.g., the schema
         // load process directly or indirectly causing another call to this method.)
-        assert !Thread.holdsLock(loadedSchemas) : "Schema load re-entrancy detected";
+        assert !Thread.holdsLock(_loadedSchemas) : "Schema load re-entrancy detected";
 
-        synchronized (loadedSchemas)
+        synchronized (_loadedSchemas)
         {
-            DbSchema schema = loadedSchemas.get(schemaName);
+            DbSchema schema = _loadedSchemas.get(schemaName);
 
             if (null != schema && !AppProps.getInstance().isDevMode())
                 return schema;
@@ -113,7 +104,8 @@ public class DbSchema
                             schema.loadXml(tablesDoc, true);
                         }
                     }
-                    loadedSchemas.put(schema.getName(), schema);
+
+                    _loadedSchemas.put(schema.getName(), schema);
                 }
             }
             catch (Exception e)
@@ -164,36 +156,6 @@ public class DbSchema
     {
         Module module = ModuleLoader.getInstance().getModuleForSchemaName(schemaName);
         return module;
-    }
-
-
-    private static DbScope getDbScope(String dsName) throws NamingException
-    {
-        DbScope scope;
-
-        synchronized (scopes)
-        {
-            scope = scopes.get(dsName);
-            if (null == scope)
-            {
-                scope = new DbScope(dsName);
-                scopes.put(dsName, scope);
-            }
-        }
-
-        return scope;
-    }
-
-
-    public DataSource getDataSource()
-    {
-        return getScope().getDataSource();
-    }
-
-
-    public static Map<String, DbScope> getDbScopes()
-    {
-        return scopes;
     }
 
 
@@ -293,9 +255,8 @@ public class DbSchema
         String dsName = schemaStrings[0];
         String ownerName = "dbo";
 
-        DbScope scope = getDbScope(dsName);
-        SqlDialect dialect = SqlDialect.getSqlDialect(scope.getDataSource());
-        String dbName = dialect.getDatabaseName(scope.getDataSource());
+        DbScope scope = DbScope.getDbScope(dsName);
+        String dbName = scope.getDatabaseName();
 
         // Support old format that included catalog
         if (3 == schemaStrings.length)
@@ -317,57 +278,28 @@ public class DbSchema
             ownerName = schemaStrings[1].trim();
         }
 
-        dbSchema = createFromMetaData(dbSchemaName, scope, dbName, ownerName);
-        scope.setSqlDialect(dbSchema.getSqlDialect());
+        dbSchema = createFromMetaData(dbSchemaName, scope, ownerName);
         return dbSchema;
     }
 
-    private static DatabaseMetaData _dbmdLast;
-
-    private static DbSchema createFromMetaData(String name, DbScope scope, String catalogName, String schemaName) throws SQLException, SqlDialect.SqlDialectNotSupportedException
+    public static DbSchema createFromMetaData(String name, DbScope scope, String owner) throws SQLException, SqlDialect.SqlDialectNotSupportedException
     {
         Connection conn = null;
-        DbSchema schema = new DbSchema(name);
-        schema._catalog = catalogName;
-        schema._owner = schemaName;
-        schema.scope = scope;
+        DbSchema schema = new DbSchema(name, scope, owner);
+        String dbName = scope.getDatabaseName();
 
         long startLoad = System.currentTimeMillis();
+
+        _log.info("Loading DbSchema \"" + name + "\"");
 
         try
         {
             DataSource ds = scope.getDataSource();
             conn = ds.getConnection();
             DatabaseMetaData dbmd = conn.getMetaData();
-            schema.sqlDialect = SqlDialect.getFromMetaData(dbmd);
-
-            if (_dbmdLast != null && _dbmdLast.getURL().equals(dbmd.getURL()) &&
-                    _dbmdLast.getDatabaseProductName().equals(dbmd.getDatabaseProductName()) &&
-                    _dbmdLast.getDatabaseProductVersion().equals(dbmd.getDatabaseProductVersion()) &&
-                    _dbmdLast.getDriverName().equals(dbmd.getDriverName()) &&
-                    _dbmdLast.getDriverVersion().equals(dbmd.getDriverVersion()))
-            {
-                _log.info("Loading DbSchema \"" + name + "\"");
-            }
-            else
-            {
-                _log.info("Loading DbSchema \"" + name + "\" using the following configuration:" +
-                        "\n    Server URL:               " + dbmd.getURL() +
-                        "\n    Database Product Name:    " + dbmd.getDatabaseProductName() +
-                        "\n    Database Product Version: " + dbmd.getDatabaseProductVersion() +
-                        "\n    JDBC Driver Name:         " + dbmd.getDriverName() +
-                        "\n    JDBC Driver Version:      " + dbmd.getDriverVersion());
-                _dbmdLast = dbmd;
-            }
-
-            schema.setURL(dbmd.getURL());
-            schema.setDatabaseProductName(dbmd.getDatabaseProductName());
-            schema.setDatabaseProductVersion(dbmd.getDatabaseProductVersion());
-            schema.setDriverName(dbmd.getDriverName());
-            schema.setDriverVersion(dbmd.getDriverVersion());
 
             String[] types = {"TABLE", "VIEW",};
-            ResultSet rs = dbmd.getTables(catalogName, schemaName, "%", types);
+            ResultSet rs = dbmd.getTables(dbName, owner, "%", types);
             ArrayList<SchemaTableInfo> list = new ArrayList<SchemaTableInfo>();
 
             try
@@ -377,7 +309,7 @@ public class DbSchema
                     String metaDataName = rs.getString("TABLE_NAME");
 
                     // Ignore system tables
-                    if (schema.sqlDialect.isSystemTable(metaDataName))
+                    if (schema.getSqlDialect().isSystemTable(metaDataName))
                         continue;
 
                     // skip if it looks like one of our temp table names: name$<32hexchars>
@@ -397,11 +329,11 @@ public class DbSchema
 
             for (SchemaTableInfo ti : list)
             {
-                ti.loadFromMetaData(dbmd, catalogName, schemaName);
-                schema.tables.put(ti.getName(), ti);
+                ti.loadFromMetaData(dbmd, dbName, owner);
+                schema.addTable(ti.getName(), ti);
             }
 
-            schema.sqlDialect.prepareNewDbSchema(schema);
+            schema.getSqlDialect().prepareNewDbSchema(schema);
         }
         catch (SQLException e)
         {
@@ -420,32 +352,16 @@ public class DbSchema
             }
         }
 
-        _log.debug("" + schema.getTables().length + " tables loaded in " + DateUtil.formatDuration(System.currentTimeMillis()-startLoad));
+        _log.debug("" + schema.getTables().size() + " tables loaded in " + DateUtil.formatDuration(System.currentTimeMillis()-startLoad));
         return schema;
     }
 
 
-    public static void rollbackAllTransactions()
-    {
-        for (DbScope scope : scopes.values())
-        {
-            if (scope.isTransactionActive())
-                try
-                {
-                    scope.rollbackTransaction();
-                }
-                catch (Exception x)
-                {
-                    _log.error("Rollback All Transactions", x);
-                }
-        }
-    }
-
     public static void invalidateSchemas()
     {
-        synchronized (loadedSchemas)
+        synchronized (_loadedSchemas)
         {
-            loadedSchemas.clear();
+            _loadedSchemas.clear();
         }
     }
 
@@ -455,9 +371,9 @@ public class DbSchema
     // complete.
     public static void invalidateIncompleteSchemas()
     {
-        synchronized (loadedSchemas)
+        synchronized (_loadedSchemas)
         {
-            List<String> schemaNames = new ArrayList<String>(loadedSchemas.keySet());
+            List<String> schemaNames = new ArrayList<String>(_loadedSchemas.keySet());
 
             for (String schemaName : schemaNames)
             {
@@ -465,7 +381,7 @@ public class DbSchema
                 ModuleContext context = ModuleLoader.getInstance().getModuleContext(module);
 
                 if (!context.isInstallComplete())
-                    loadedSchemas.remove(schemaName);
+                    _loadedSchemas.remove(schemaName);
             }
         }
     }
@@ -473,25 +389,22 @@ public class DbSchema
 
     public static void invalidateSchema(String schemaName)
     {
-        synchronized (loadedSchemas)
+        synchronized (_loadedSchemas)
         {
-            loadedSchemas.remove(schemaName);
+            _loadedSchemas.remove(schemaName);
         }
     }
 
-    public DbSchema(String name)
+    private DbSchema(String name, DbScope scope, String owner)
     {
-        this.name = name;
+        _name = name;
+        _scope = scope;
+        _owner = owner;
     }
 
     public String getName()
     {
-        return name;
-    }
-
-    public String getCatalog()
-    {
-        return _catalog;
+        return _name;
     }
 
     public String getOwner()
@@ -501,7 +414,7 @@ public class DbSchema
 
     public SqlDialect getSqlDialect()
     {
-        return sqlDialect;
+        return _scope.getSqlDialect();
     }
 
     private long getSchemaXmlTimestamp()
@@ -546,111 +459,53 @@ public class DbSchema
                 tableInfo = new SchemaTableInfo(xmlTable.getTableName(), this);
 
             tableInfo.loadFromXml(xmlTable, merge);
-            this.tables.put(tableInfo.getName(), tableInfo);
+            addTable(tableInfo.getName(), tableInfo);
         }
     }
 
 
-    public SchemaTableInfo[] getTables()
+    public Collection<SchemaTableInfo> getTables()
     {
-        return tables.values().toArray(new SchemaTableInfo[tables.size()]);
+        return Collections.unmodifiableCollection(_tables.values());
     }
 
     public SchemaTableInfo getTable(String tableName)
     {
-        return tables.get(tableName);
+        return _tables.get(tableName);
     }
 
-    public TableInfo[] getTables(String tableNames)
+    private void addTable(String tableName, SchemaTableInfo table)
     {
-        String[] names = tableNames.split(",");
-        TableInfo[] tables = new TableInfo[names.length];
-        for (int i = 0; i < names.length; i++)
-            tables[i] = getTable(names[i]);
-
-        return tables;
+        _tables.put(tableName, table);
     }
 
     public void writeCreateTableSql(Writer out) throws IOException
     {
-        SchemaTableInfo[] tableArray = getTables();
-        for (SchemaTableInfo aTableArray : tableArray)
+        for (SchemaTableInfo table : getTables())
         {
-            aTableArray.writeCreateTableSql(out);
+            table.writeCreateTableSql(out);
         }
     }
 
     public void writeCreateConstraintsSql(Writer out) throws IOException
     {
-        SchemaTableInfo[] tableArray = getTables();
-        for (SchemaTableInfo aTableArray : tableArray)
+        for (SchemaTableInfo table : getTables())
         {
-            aTableArray.writeCreateConstraintsSql(out);
+            table.writeCreateConstraintsSql(out);
         }
     }
 
     public void writeBeanSource(Writer out) throws IOException
     {
-        SchemaTableInfo[] tableArray = getTables();
-        for (SchemaTableInfo aTableArray : tableArray)
+        for (SchemaTableInfo table : getTables())
         {
-            aTableArray.writeBean(out);
+            table.writeBean(out);
         }
     }
 
     public DbScope getScope()
     {
-        return scope;
-    }
-
-    public String getURL()
-    {
-        return _URL;
-    }
-
-    public void setURL(String URL)
-    {
-        _URL = URL;
-    }
-
-    public String getDatabaseProductName()
-    {
-        return _databaseProductName;
-    }
-
-    public void setDatabaseProductName(String databaseProductName)
-    {
-        _databaseProductName = databaseProductName;
-    }
-
-    public String getDatabaseProductVersion()
-    {
-        return _databaseProductVersion;
-    }
-
-    public void setDatabaseProductVersion(String databaseProductVersion)
-    {
-        _databaseProductVersion = databaseProductVersion;
-    }
-
-    public String getDriverName()
-    {
-        return _driverName;
-    }
-
-    public void setDriverName(String driverName)
-    {
-        _driverName = driverName;
-    }
-
-    public String getDriverVersion()
-    {
-        return _driverVersion;
-    }
-
-    public void setDriverVersion(String driverVersion)
-    {
-        _driverVersion = driverVersion;
+        return _scope;
     }
 
     public void dropTableIfExists(String objName) throws SQLException
@@ -905,10 +760,9 @@ public class DbSchema
 
         int row = rowId.intValue();
         DbSchema curSchema = DbSchema.get(dbSchemaName);
-        TableInfo[] ta = curSchema.getTables();
         SQLFragment sbSql = new SQLFragment();
 
-        for (TableInfo t : ta)
+        for (TableInfo t : curSchema.getTables())
         {
             if (t.getTableType()!= TableInfo.TABLE_TYPE_TABLE)
                 continue;

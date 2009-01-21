@@ -78,9 +78,9 @@ public abstract class SqlDialect
 
         public void run()
         {
-            Map<String, DbScope> scopes = DbSchema.getDbScopes();
+            Collection<DbScope> scopes = DbScope.getDbScopes();
 
-            for (DbScope scope : scopes.values())
+            for (DbScope scope : scopes)
             {
                 Connection conn = null;
                 String sql = scope.getSqlDialect().getDatabaseMaintenanceSql();
@@ -513,16 +513,7 @@ public abstract class SqlDialect
     public abstract String getBooleanDatatype();
 
 
-    // We need to determine the database name from a data source, so we've implemented a helper that parses
-    // the JDBC connection string for each driver we support.  This is necessary because, unfortunately, there
-    // appears to be no standard, reliable way to ask a JDBC driver for individual components of the URL or
-    // to programmatically assemble a new connection URL.  Driver.getPropertyInfo(), for example, doesn't
-    // return the database name on PostgreSQL if it's specified as part of the URL.
-    //
-    // Currently, JdbcHelper only finds the database name.  It could be extended if we require querying
-    // other components or if replacement/reassembly becomes necessary.
-
-    public static SqlDialect getSqlDialect(DataSource ds) throws ServletException
+    public static SqlDialect get(DataSource ds) throws ServletException
     {
         try
         {
@@ -536,6 +527,14 @@ public abstract class SqlDialect
     }
 
 
+    // We need to determine the database name from a data source, so we've implemented a helper that parses
+    // the JDBC connection string for each driver we support.  This is necessary because, unfortunately, there
+    // appears to be no standard, reliable way to ask a JDBC driver for individual components of the URL or
+    // to programmatically assemble a new connection URL.  Driver.getPropertyInfo(), for example, doesn't
+    // return the database name on PostgreSQL if it's specified as part of the URL.
+    //
+    // Currently, JdbcHelper only finds the database name.  It could be extended if we require querying
+    // other components or if replacement/reassembly becomes necessary.
     public String getDatabaseName(DataSource ds) throws ServletException
     {
         try
@@ -546,7 +545,7 @@ public abstract class SqlDialect
         }
         catch (Exception e)
         {
-            throw new ServletException("Error retrieving url property from DataSource", e);
+            throw new ServletException("Error retrieving database name from DataSource", e);
         }
     }
 

@@ -19,6 +19,7 @@ package org.labkey.api.util;
 import org.apache.log4j.Category;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineService;
@@ -220,10 +221,11 @@ public class MothershipReport implements Runnable
         DbSchema schema = CoreSchema.getInstance().getSchema();
         if (schema != null)
         {
-            addParam("databaseProductName", schema.getDatabaseProductName());
-            addParam("databaseProductVersion", schema.getDatabaseProductVersion());
-            addParam("databaseDriverName", schema.getDriverName());
-            addParam("databaseDriverVersion", schema.getDriverVersion());
+            DbScope scope = schema.getScope();
+            addParam("databaseProductName", scope.getDatabaseProductName());
+            addParam("databaseProductVersion", scope.getDatabaseProductVersion());
+            addParam("databaseDriverName", scope.getDriverName());
+            addParam("databaseDriverVersion", scope.getDriverVersion());
         }
         addParam("serverSessionGUID", AppProps.getInstance().getServerSessionGUID());
         addParam("serverGUID", AppProps.getInstance().getServerGUID());

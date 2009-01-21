@@ -21,12 +21,14 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
+import javax.servlet.ServletException;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.DatabaseMetaData;
 import java.util.*;
 
 /**
@@ -38,12 +40,20 @@ import java.util.*;
  */
 public class DbScope
 {
-    private static final ConnectionMap _initializedConnections = newConnectionMap();
     private static final Logger _log = Logger.getLogger(DbScope.class);
+    private static final ConnectionMap _initializedConnections = newConnectionMap();
+    private static final Map<String, DbScope> _scopes = new HashMap<String, DbScope>();
 
-    private String dataSourceName;
-    private DataSource dataSource;
+    private String _dataSourceName;
+    private DataSource _dataSource;
     private SqlDialect _dialect;
+    private String _databaseName;
+    private String _URL;
+    private String _databaseProductName;
+    private String _databaseProductVersion;
+    private String _driverName;
+    private String _driverVersion;
+
 
     private ThreadLocal<Connection> threadConnection = new ThreadLocal<Connection>();
     private ThreadLocal<LinkedList<Runnable>> _transactedRemovals = new ThreadLocal<LinkedList<Runnable>>()
@@ -60,33 +70,92 @@ public class DbScope
     }
 
 
-    DbScope(String dsName) throws NamingException
+    DbScope(String dsName) throws NamingException, ServletException, SQLException
     {
         InitialContext ctx = new InitialContext();
         Context envCtx = (Context) ctx.lookup("java:comp/env");
-        dataSource = (DataSource) envCtx.lookup(dsName);
-        dataSourceName = "java:comp/env/" + dsName;
+
+        _dataSource = (DataSource) envCtx.lookup(dsName);
+        _dataSourceName = "java:comp/env/" + dsName;
+        _dialect = SqlDialect.get(_dataSource);
+        _databaseName = _dialect.getDatabaseName(_dataSource);
+
+        Connection conn = null;
+
+        try
+        {
+            conn = _dataSource.getConnection();
+            DatabaseMetaData dbmd = conn.getMetaData();
+
+            _log.info("Initializing DbScope with the following configuration:" +
+                    "\n    Server URL:               " + dbmd.getURL() +
+                    "\n    Database Product Name:    " + dbmd.getDatabaseProductName() +
+                    "\n    Database Product Version: " + dbmd.getDatabaseProductVersion() +
+                    "\n    JDBC Driver Name:         " + dbmd.getDriverName() +
+                    "\n    JDBC Driver Version:      " + dbmd.getDriverVersion());
+
+            _URL = dbmd.getURL();
+            _databaseProductName = dbmd.getDatabaseProductName();
+            _databaseProductVersion = dbmd.getDatabaseProductVersion();
+            _driverName = dbmd.getDriverName();
+            _driverVersion = dbmd.getDriverVersion();
+        }
+        finally
+        {
+            if (null != conn)
+            {
+                try
+                {
+                    conn.close();
+                }
+                catch (SQLException e)
+                {
+                    // ignore
+                }
+            }
+        }
     }
 
 
     public String getDataSourceName()
     {
-        return dataSourceName;
+        return _dataSourceName;
     }
-
 
     public DataSource getDataSource()
     {
-        return dataSource;
+        return _dataSource;
     }
 
-
-/*    public void close() throws SQLException
+    public String getDatabaseName()
     {
-        ((BasicDataSource) dataSource).close();
-        dataSource = null;
-    } */
+        return _databaseName;
+    }
 
+    public String getURL()
+    {
+        return _URL;
+    }
+
+    public String getDatabaseProductName()
+    {
+        return _databaseProductName;
+    }
+
+    public String getDatabaseProductVersion()
+    {
+        return _databaseProductVersion;
+    }
+
+    public String getDriverName()
+    {
+        return _driverName;
+    }
+
+    public String getDriverVersion()
+    {
+        return _driverVersion;
+    }
 
     public Connection beginTransaction() throws SQLException
     {
@@ -243,7 +312,7 @@ public class DbScope
 
     protected Connection _getConnection(Logger log) throws SQLException
     {
-        Connection conn = dataSource.getConnection();
+        Connection conn = _dataSource.getConnection();
 
         //
         // Handle one time per-connection setup
@@ -311,12 +380,6 @@ public class DbScope
     }
 
 
-    public void setSqlDialect(SqlDialect sqlDialect)
-    {
-        _dialect = sqlDialect;
-    }
-
-
     public SqlDialect getSqlDialect()
     {
         return _dialect;
@@ -370,12 +433,59 @@ public class DbScope
 
     void addTransactedInvalidate(final TableInfo tinfo)
     {
-        addCommitTask(new Runnable() {
+        addCommitTask(new Runnable()
+        {
             public void run()
             {
                 DbCache.invalidateAll(tinfo);
             }
         });
+    }
+
+    static DbScope getDbScope(String dsName) throws NamingException, ServletException, SQLException
+    {
+        DbScope scope;
+
+        synchronized (_scopes)
+        {
+            scope = _scopes.get(dsName);
+            if (null == scope)
+            {
+                scope = new DbScope(dsName);
+                _scopes.put(dsName, scope);
+            }
+        }
+
+        return scope;
+    }
+
+    public static Collection<DbScope> getDbScopes()
+    {
+        synchronized (_scopes)
+        {
+            return new ArrayList<DbScope>(_scopes.values());
+        }
+    }
+
+    public static void rollbackAllTransactions()
+    {
+        synchronized (_scopes)
+        {
+            for (DbScope scope : _scopes.values())
+            {
+                if (scope.isTransactionActive())
+                {
+                    try
+                    {
+                        scope.rollbackTransaction();
+                    }
+                    catch (Exception x)
+                    {
+                        _log.error("Rollback All Transactions", x);
+                    }
+                }
+            }
+        }
     }
 
 

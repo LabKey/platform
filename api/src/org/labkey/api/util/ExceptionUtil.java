@@ -325,16 +325,17 @@ public class ExceptionUtil
                     try
                     {
                         DbSchema core = CoreSchema.getInstance().getSchema();
+                        DbScope scope = core.getScope();
 
                         if (null != core)
                         {
                             out.println("<br><table>\n");
                             out.println("<tr><td colspan=2><b>core schema database configuration</b></td></tr>\n");
-                            out.println("<tr><td>Server URL</td><td>" + core.getURL() + "</td></tr>\n");
-                            out.println("<tr><td>Product Name</td><td>" + core.getDatabaseProductName() + "</td></tr>\n");
-                            out.println("<tr><td>Product Version</td><td>" + core.getDatabaseProductVersion() + "</td></tr>\n");
-                            out.println("<tr><td>Driver Name</td><td>" + core.getDriverName() + "</td></tr>\n");
-                            out.println("<tr><td>Driver Version</td><td>" + core.getDriverVersion() + "</td></tr>\n");
+                            out.println("<tr><td>Server URL</td><td>" + scope.getURL() + "</td></tr>\n");
+                            out.println("<tr><td>Product Name</td><td>" + scope.getDatabaseProductName() + "</td></tr>\n");
+                            out.println("<tr><td>Product Version</td><td>" + scope.getDatabaseProductVersion() + "</td></tr>\n");
+                            out.println("<tr><td>Driver Name</td><td>" + scope.getDriverName() + "</td></tr>\n");
+                            out.println("<tr><td>Driver Version</td><td>" + scope.getDriverVersion() + "</td></tr>\n");
                             out.println("</table>\n");
                         }
                     }
@@ -564,7 +565,7 @@ public class ExceptionUtil
     // This is called by Global.java (to display unhandled exceptions) and called directly by ModuleLoader.doFilter() (to display startup errors and bypass normal request handling)
     public static Forward handleException(HttpServletRequest request, HttpServletResponse response, Throwable ex, String message, boolean startupFailure)
     {
-        DbSchema.rollbackAllTransactions();
+        DbScope.rollbackAllTransactions();
 
         // First, get rid of RuntimeException, InvocationTargetException, etc. wrappers
         ex = unwrapException(ex);
