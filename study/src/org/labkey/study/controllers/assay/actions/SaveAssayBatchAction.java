@@ -25,7 +25,6 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.view.NotFoundException;
@@ -109,27 +108,41 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             throw new NotFoundException("Pipeline root is not configured for folder " + getViewContext().getContainer());
         }
         run.setFilePathRoot(pipeRoot.getRootPath());
-        if (name != null)
-        {
-            run.setName(name);
-        }
-        run.save(getViewContext().getUser());
-        OntologyManager.ensureObject(run.getContainer(), run.getLSID());
-        Domain runDomain = provider.getRunDomain(protocol);
-        if (runJsonObject.has(PROPERTIES))
-        {
-            saveProperties(run, runDomain.getProperties(), runJsonObject.getJSONObject(PROPERTIES));
-        }
+        handleStandardProperties(runJsonObject, run, provider.getRunDataDomain(protocol).getProperties());
 
-        if (runJsonObject.has(DATA_ROWS))
+        if (runJsonObject.has(DATA_ROWS) || runJsonObject.has(DATA_INPUTS))
         {
-            handleDataRows(protocol, provider, run, runJsonObject.getJSONArray(DATA_ROWS));
+            JSONArray dataRows;
+            JSONArray dataInputs;
+            if (!runJsonObject.has(DATA_ROWS))
+            {
+                // Client didn't post the rows so reuse the values that are currently attached to the run
+                // Ineffecient but easy
+                dataRows = serializeRun(run, provider, protocol).getJSONArray(DATA_ROWS);
+            }
+            else
+            {
+                dataRows = runJsonObject.getJSONArray(DATA_ROWS);
+            }
+
+            if (!runJsonObject.has(DATA_INPUTS))
+            {
+                // Client didn't post the inputs so reuse the values that are currently attached to the run
+                // Ineffecient but easy
+                dataInputs = serializeRun(run, provider, protocol).getJSONArray(DATA_INPUTS);
+            }
+            else
+            {
+                dataInputs = runJsonObject.getJSONArray(DATA_INPUTS);
+            }
+
+            rewriteProtocolApplications(protocol, provider, run, dataInputs, dataRows);
         }
 
         return run;
     }
 
-    private void handleDataRows(ExpProtocol protocol, AssayProvider provider, ExpRun run, JSONArray dataArray) throws ExperimentException
+    private void rewriteProtocolApplications(ExpProtocol protocol, AssayProvider provider, ExpRun run, JSONArray inputArray, JSONArray dataArray) throws ExperimentException, ValidationException
     {
         ViewContext context = getViewContext();
 
@@ -137,6 +150,13 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         for (ExpData data : run.getOutputDatas(provider.getDataType()))
         {
             data.delete(context.getUser());
+        }
+
+        Map<ExpData, String> inputData = new HashMap<ExpData, String>();
+        for (int i = 0; i < inputArray.length(); i++)
+        {
+            JSONObject dataObject = inputArray.getJSONObject(i);
+            inputData.put(handleData(dataObject), "Data");
         }
 
         // Delete the contents of the run
@@ -150,7 +170,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
         run = ExperimentService.get().insertSimpleExperimentRun(run,
             Collections.<ExpMaterial, String>emptyMap(),
-            Collections.<ExpData, String>emptyMap(),
+            inputData,
             Collections.<ExpMaterial, String>emptyMap(),
             Collections.singletonMap(newData, "Data"),
             new ViewBackgroundInfo(context.getContainer(),
@@ -158,6 +178,23 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
         TsvDataHandler dataHandler = new TsvDataHandler();
         dataHandler.importRows(newData, getViewContext().getUser(), run, protocol, provider, rawData);
+    }
+
+    private ExpData handleData(JSONObject dataObject) throws ValidationException
+    {
+        // Unlike with runs and batches, we require that the datas are already created
+        int dataId = dataObject.getInt(ID);
+        ExpData data = ExperimentService.get().getExpData(dataId);
+        if (data == null)
+        {
+            throw new NotFoundException("Could not find data with id " + dataId);
+        }
+        if (!data.getContainer().equals(getViewContext().getContainer()))
+        {
+            throw new NotFoundException("Data with row id " + dataId + " is not in folder " + getViewContext().getContainer());
+        }
+        saveProperties(data, new DomainProperty[0], dataObject);
+        return data;
     }
 
     private ExpExperiment handleBatch(JSONObject batchJsonObject, ExpProtocol protocol, AssayProvider provider) throws Exception
@@ -172,17 +209,8 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             batch = AssayService.get().createStandardBatch(getViewContext().getContainer(),
                     batchJsonObject.has(NAME) ? batchJsonObject.getString(NAME) : null);
         }
-        if (batchJsonObject.has(NAME))
-        {
-            batch.setName(batchJsonObject.getString(NAME));
-        }
-        batch.save(getViewContext().getUser());
 
-        Domain uploadSetDomain = provider.getUploadSetDomain(protocol);
-        if (batchJsonObject.has(PROPERTIES))
-        {
-            saveProperties(batch, uploadSetDomain.getProperties(), batchJsonObject.getJSONObject(PROPERTIES));
-        }
+        handleStandardProperties(batchJsonObject, batch, provider.getUploadSetDomain(protocol).getProperties());
 
         List<ExpRun> runs = new ArrayList<ExpRun>();
         if (batchJsonObject.has(RUNS))
@@ -211,6 +239,22 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         }
 
         return batch;
+    }
+
+    private void handleStandardProperties(JSONObject jsonObject, ExpObject object, DomainProperty[] dps) throws ValidationException, SQLException
+    {
+        if (jsonObject.has(NAME))
+        {
+            object.setName(jsonObject.getString(NAME));
+        }
+
+        object.save(getViewContext().getUser());
+        OntologyManager.ensureObject(object.getContainer(), object.getLSID());
+
+        if (jsonObject.has(PROPERTIES))
+        {
+            saveProperties(object, dps, jsonObject.getJSONObject(PROPERTIES));
+        }
     }
 
     private void saveProperties(ExpObject object, DomainProperty[] dps, JSONObject propertiesJsonObject) throws ValidationException, JSONException

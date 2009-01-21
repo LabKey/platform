@@ -140,64 +140,27 @@ public class PropertyController extends SpringActionController
      * for later use by gwt services
      */
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class UploadFileForInferencingAction extends ExportAction
+    public class UploadFileForInferencingAction extends AbstractFileUploadAction
     {
         private static final String SESSION_ATTR_NAME = "org.labkey.domain.tempFile";
 
-        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
+        protected File getTargetFile(String filename) throws IOException
         {
-            response.reset();
-            response.setContentType("text/html");
-
-            OutputStream out = response.getOutputStream();
-            OutputStreamWriter writer = new OutputStreamWriter(out);
-
-            HttpServletRequest basicRequest = getViewContext().getRequest();
-            if (! (basicRequest instanceof MultipartHttpServletRequest))
-            {
-                error(writer, "No file uploaded");
-                return;
-            }
-
-            MultipartHttpServletRequest request = (MultipartHttpServletRequest)basicRequest;
-
-            //noinspection unchecked
-            Iterator<String> nameIterator = request.getFileNames();
-            String formElementName = nameIterator.next();
-            MultipartFile file = request.getFile(formElementName);
-            String filename = file.getOriginalFilename();
             int dotIndex = filename.lastIndexOf(".");
             if (dotIndex < 0)
             {
-                error(writer, "Unrecognized file type. Please upload a .xls, .tsv, .csv or .txt file");
-                return;
+                throw new UploadException("Unrecognized file type. Please upload a .xls, .tsv, .csv or .txt file", HttpServletResponse.SC_BAD_REQUEST);
             }
             String suffix = filename.substring(dotIndex + 1).toLowerCase();
             String prefix = filename.substring(0, dotIndex);
 
             File tempFile = File.createTempFile(prefix, suffix);
             tempFile.deleteOnExit();
-            InputStream input = file.getInputStream();
-            OutputStream output = new FileOutputStream(tempFile);
-            try
-            {
-                byte[] buffer = new byte[1024];
-                int len;
-                while ((len = input.read(buffer)) > 0)
-                    output.write(buffer, 0, len);
+            return tempFile;
+        }
 
-                output.flush();
-                output.close();
-                input.close();
-
-            }
-            catch (IOException ioe)
-            {
-                ExceptionUtil.logExceptionToMothership(request, ioe);
-                error(writer, ioe.getMessage());
-                return;
-            }
-
+        protected String handleFile(File file, String originalName)
+        {
             // Store the file in the session, and delete it when the session expires
             HttpSession session = getViewContext().getSession();
 
@@ -207,18 +170,9 @@ public class PropertyController extends SpringActionController
             if (oldFileHolder != null)
                 oldFileHolder.getFile().delete();
 
-            session.setAttribute(SESSION_ATTR_NAME, new SessionTempFileHolder(tempFile));
+            session.setAttribute(SESSION_ATTR_NAME, new SessionTempFileHolder(file));
 
-            writer.write("Success");
-
-            writer.flush();
-            writer.close();
-        }
-        private void error(Writer writer, String message) throws IOException
-        {
-            writer.write(message);
-            writer.flush();
-            writer.close();
+            return "Success";
         }
     }
 

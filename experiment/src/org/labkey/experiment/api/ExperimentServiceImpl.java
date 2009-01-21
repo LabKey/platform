@@ -1356,49 +1356,56 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new Lsid("SampleSet", "Folder-" + String.valueOf(container.getRowId()), sourceName);
     }
 
-    public void deleteExperimentByRowIds(Container container, int... selectedExperimentIds) throws SQLException, ExperimentException
+    public void deleteExperimentByRowIds(Container container, int... selectedExperimentIds)
     {
         if (selectedExperimentIds.length == 0)
             return;
 
         String experimentIds = StringUtils.join(toIntegers(selectedExperimentIds), ",");
 
-        String sql = "SELECT LSID FROM exp.Experiment WHERE RowId IN (" + experimentIds + ")  AND Container = ? ;";
-        String[] expLsids = Table.executeArray(getExpSchema(), sql, new Object[]{container.getId()}, String.class);
-
-        if (expLsids.length != selectedExperimentIds.length)
-            _log.debug("deleteExperimentByRowIds:  LSIDs not found in container for all rowIds selected");
-
-        boolean containingTrans = getExpSchema().getScope().isTransactionActive();
-
         try
         {
-            if (!containingTrans)
-                getExpSchema().getScope().beginTransaction();
 
-            sql = "DELETE FROM " + getTinfoRunList()
-                    + " WHERE ExperimentId IN ("
-                    + " SELECT E.RowId FROM " + getTinfoExperiment() + " E "
-                    + " WHERE E.RowId IN ( " + experimentIds  + " ) "
-                    + " AND E.Container = ? ); ";
-            Table.execute(getExpSchema(), sql, new Object[]{container.getId()});
+            String sql = "SELECT LSID FROM exp.Experiment WHERE RowId IN (" + experimentIds + ")  AND Container = ? ;";
+            String[] expLsids = Table.executeArray(getExpSchema(), sql, new Object[]{container.getId()}, String.class);
 
-            OntologyManager.deleteOntologyObjects(container, expLsids);
-            
-            sql = "  DELETE FROM " + getTinfoExperiment()
-                    + " WHERE RowId IN ("+ experimentIds + ") "
-                    + " AND Container = ? ";
-            Table.execute(getExpSchema(), sql, new Object[]{container.getId()});
+            if (expLsids.length != selectedExperimentIds.length)
+                _log.debug("deleteExperimentByRowIds:  LSIDs not found in container for all rowIds selected");
 
-            if (!containingTrans)
-                getExpSchema().getScope().commitTransaction();
+            boolean containingTrans = getExpSchema().getScope().isTransactionActive();
+
+            try
+            {
+                if (!containingTrans)
+                    getExpSchema().getScope().beginTransaction();
+
+                sql = "DELETE FROM " + getTinfoRunList()
+                        + " WHERE ExperimentId IN ("
+                        + " SELECT E.RowId FROM " + getTinfoExperiment() + " E "
+                        + " WHERE E.RowId IN ( " + experimentIds  + " ) "
+                        + " AND E.Container = ? ); ";
+                Table.execute(getExpSchema(), sql, new Object[]{container.getId()});
+
+                OntologyManager.deleteOntologyObjects(container, expLsids);
+
+                sql = "  DELETE FROM " + getTinfoExperiment()
+                        + " WHERE RowId IN ("+ experimentIds + ") "
+                        + " AND Container = ? ";
+                Table.execute(getExpSchema(), sql, new Object[]{container.getId()});
+
+                if (!containingTrans)
+                    getExpSchema().getScope().commitTransaction();
+            }
+            finally
+            {
+                if (!containingTrans)
+                    getExpSchema().getScope().closeConnection();
+            }
         }
-        finally
+        catch (SQLException e)
         {
-            if (!containingTrans)
-                getExpSchema().getScope().closeConnection();
+            throw new RuntimeSQLException(e);
         }
-
     }
 
     public void dropRunsFromExperiment(String expLSID, int... selectedRunIds) throws SQLException
@@ -1476,7 +1483,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public void deleteExperimentRunsByRowIds(Container container, User user, int... selectedRunIds) throws SQLException, ExperimentException
+    public void deleteExperimentRunsByRowIds(Container container, User user, int... selectedRunIds)
     {
         if (selectedRunIds == null || selectedRunIds.length == 0)
             return;
@@ -1504,6 +1511,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             if (!containingTrans)
                 getExpSchema().getScope().commitTransaction();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
         }
         finally
         {
@@ -1593,81 +1604,88 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return Arrays.asList(ExpRunImpl.fromRuns(Table.executeQuery(getExpSchema(), sb.toString(), new Object[]{}, ExperimentRun.class)));
     }
 
-    public void deleteProtocolByRowIds(Container c, User user, int... selectedProtocolIds) throws SQLException, ExperimentException
+    public void deleteProtocolByRowIds(Container c, User user, int... selectedProtocolIds) throws ExperimentException
     {
-        if (selectedProtocolIds.length == 0)
-            return;
-
-        List<ExpRun> runs = getExpRunsForProtocolIds(false, selectedProtocolIds);
-        for (ExpRun run : runs)
-        {
-            deleteExperimentRunsByRowIds(c, user, run.getRowId());
-        }
-
-        String protocolIds = StringUtils.join(toIntegers(selectedProtocolIds), ",");
-
-        String sql = "SELECT * FROM exp.Protocol WHERE RowId IN (" + protocolIds + ");";
-        Protocol[] protocols = Table.executeQuery(getExpSchema(), sql, new Object[]{}, Protocol.class);
-
-        sql = "SELECT RowId FROM exp.ProtocolAction ";
-        sql += " WHERE (ChildProtocolId IN (" + protocolIds + ")";
-        sql += " OR ParentProtocolId IN (" + protocolIds + ") );";
-        Integer[] actionIds = Table.executeArray(getExpSchema(), sql, new Object[]{}, Integer.class);
-
-        boolean containingTrans = getExpSchema().getScope().isTransactionActive();
-
         try
         {
-            if (!containingTrans)
-                getExpSchema().getScope().beginTransaction();
+            if (selectedProtocolIds.length == 0)
+                return;
 
-            if (actionIds.length > 0)
+            List<ExpRun> runs = getExpRunsForProtocolIds(false, selectedProtocolIds);
+            for (ExpRun run : runs)
             {
+                deleteExperimentRunsByRowIds(c, user, run.getRowId());
+            }
+
+            String protocolIds = StringUtils.join(toIntegers(selectedProtocolIds), ",");
+
+            String sql = "SELECT * FROM exp.Protocol WHERE RowId IN (" + protocolIds + ");";
+            Protocol[] protocols = Table.executeQuery(getExpSchema(), sql, new Object[]{}, Protocol.class);
+
+            sql = "SELECT RowId FROM exp.ProtocolAction ";
+            sql += " WHERE (ChildProtocolId IN (" + protocolIds + ")";
+            sql += " OR ParentProtocolId IN (" + protocolIds + ") );";
+            Integer[] actionIds = Table.executeArray(getExpSchema(), sql, new Object[]{}, Integer.class);
+
+            boolean containingTrans = getExpSchema().getScope().isTransactionActive();
+
+            try
+            {
+                if (!containingTrans)
+                    getExpSchema().getScope().beginTransaction();
+
+                if (actionIds.length > 0)
+                {
+                    for (Protocol protocol : protocols)
+                    {
+                        ExpProtocol protocolToDelete = new ExpProtocolImpl(protocol);
+                        AssayProvider provider = AssayService.get().getProvider(protocolToDelete);
+                        if (provider != null)
+                        {
+                            provider.deleteProtocol(protocolToDelete, user);
+                        }
+                    }
+
+                    String actionIdsJoined = "(" + StringUtils.join(actionIds, ",") + ")";
+                    sql = "DELETE FROM exp.ProtocolActionPredecessor WHERE ActionId IN " + actionIdsJoined + " OR PredecessorId IN " + actionIdsJoined + ";";
+                    Table.execute(getExpSchema(), sql, new Object[]{});
+
+                    sql = "DELETE FROM exp.ProtocolAction WHERE RowId IN " + actionIdsJoined + ";";
+                    Table.execute(getExpSchema(), sql, new Object[]{});
+                }
+
+                sql = "DELETE FROM exp.ProtocolParameter WHERE ProtocolId IN (" + protocolIds + ");";
+                Table.execute(getExpSchema(), sql, new Object[]{});
+
                 for (Protocol protocol : protocols)
                 {
-                    ExpProtocol protocolToDelete = new ExpProtocolImpl(protocol);
-                    AssayProvider provider = AssayService.get().getProvider(protocolToDelete);
-                    if (provider != null)
+                    if (!protocol.getContainer().equals(c))
                     {
-                        provider.deleteProtocol(protocolToDelete, user);
+                        throw new SQLException("Attemping to delete a Protocol from another container");
                     }
+                    DbCache.remove(getTinfoProtocol(), getCacheKey(protocol.getLSID()));
+                    OntologyManager.deleteOntologyObjects(c, protocol.getLSID());
                 }
 
-                String actionIdsJoined = "(" + StringUtils.join(actionIds, ",") + ")";
-                sql = "DELETE FROM exp.ProtocolActionPredecessor WHERE ActionId IN " + actionIdsJoined + " OR PredecessorId IN " + actionIdsJoined + ";";
+                sql = "  DELETE FROM exp.Protocol WHERE RowId IN (" + protocolIds + ");";
                 Table.execute(getExpSchema(), sql, new Object[]{});
 
-                sql = "DELETE FROM exp.ProtocolAction WHERE RowId IN " + actionIdsJoined + ";";
-                Table.execute(getExpSchema(), sql, new Object[]{});
+                sql = "SELECT RowId FROM exp.Protocol Where RowId NOT IN (SELECT ParentProtocolId from exp.ProtocolAction UNION SELECT ChildProtocolId FROM exp.ProtocolAction) AND Container = ?";
+                int[] orphanedProtocolIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
+                deleteProtocolByRowIds(c, user, orphanedProtocolIds);
+
+                if (!containingTrans)
+                    getExpSchema().getScope().commitTransaction();
             }
-
-            sql = "DELETE FROM exp.ProtocolParameter WHERE ProtocolId IN (" + protocolIds + ");";
-            Table.execute(getExpSchema(), sql, new Object[]{});
-
-            for (Protocol protocol : protocols)
+            finally
             {
-                if (!protocol.getContainer().equals(c))
-                {
-                    throw new SQLException("Attemping to delete a Protocol from another container");
-                }
-                DbCache.remove(getTinfoProtocol(), getCacheKey(protocol.getLSID()));
-                OntologyManager.deleteOntologyObjects(c, protocol.getLSID());
+                if (!containingTrans)
+                    getExpSchema().getScope().closeConnection();
             }
-
-            sql = "  DELETE FROM exp.Protocol WHERE RowId IN (" + protocolIds + ");";
-            Table.execute(getExpSchema(), sql, new Object[]{});
-
-            sql = "SELECT RowId FROM exp.Protocol Where RowId NOT IN (SELECT ParentProtocolId from exp.ProtocolAction UNION SELECT ChildProtocolId FROM exp.ProtocolAction) AND Container = ?";
-            int[] orphanedProtocolIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
-            deleteProtocolByRowIds(c, user, orphanedProtocolIds);
-
-            if (!containingTrans)
-                getExpSchema().getScope().commitTransaction();
         }
-        finally
+        catch (SQLException e)
         {
-            if (!containingTrans)
-                getExpSchema().getScope().closeConnection();
+            throw new RuntimeSQLException(e);
         }
     }
 
@@ -2117,14 +2135,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 "WHERE m.SourceApplicationId = pa.RowId AND m.RowId IN (" + materialRowIdSQL + ")))", doubledParams, ExperimentRun.class);
     }
 
-    public void deleteSampleSet(int rowId, Container c, User user) throws SQLException, ExperimentException
+    public void deleteSampleSet(int rowId, Container c, User user) throws ExperimentException
     {
         ExpSampleSet source = getSampleSet(rowId);
         if (null == source)
             throw new IllegalArgumentException("Can't find SampleSet with rowId " + rowId);
         if (!source.getContainer().equals(c))
         {
-            throw new SQLException("Trying to delete a SampleSet from a different container");
+            throw new ExperimentException("Trying to delete a SampleSet from a different container");
         }
         boolean containingTrans = getExpSchema().getScope().isTransactionActive();
 
@@ -2163,6 +2181,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             if (!containingTrans)
                 getExpSchema().getScope().commitTransaction();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
         }
         finally
         {

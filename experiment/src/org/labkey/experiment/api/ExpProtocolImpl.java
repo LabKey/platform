@@ -22,11 +22,12 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.ProtocolParameter;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -129,6 +130,18 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
     public void save(User user)
     {
         _object = ExperimentServiceImpl.get().saveProtocol(user, _object);
+    }
+
+    public void delete(User user)
+    {
+        try
+        {
+            ExperimentServiceImpl.get().deleteProtocolByRowIds(getContainer(), user, getRowId());
+        }
+        catch (ExperimentException e)
+        {
+            throw new UnexpectedException(e);
+        }
     }
 
     public ExpProtocolAction addStep(User user, ExpProtocol childProtocol, int actionSequence)

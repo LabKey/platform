@@ -187,6 +187,11 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         save(user, ExperimentServiceImpl.get().getTinfoProtocolApplication());
     }
 
+    public void delete(User user)
+    {
+        throw new UnsupportedOperationException();
+    }
+
     public void setInputMaterials(List<ExpMaterial> inputMaterialList)
     {
         _inputMaterials = inputMaterialList;

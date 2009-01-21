@@ -111,8 +111,13 @@ public class ExpChildObjectImpl extends ExpObjectImpl implements ExpChildObject
         return _parent.getModified();
     }
 
-    public void delete(User user) throws Exception
+    public void delete(User user)
     {
         OntologyManager.deleteProperty(_parent.getLSID(), _pd.getPropertyURI(), getContainer(), _pd.getContainer());
+    }
+
+    public void save(User user)
+    {
+        throw new UnsupportedOperationException();
     }
 }

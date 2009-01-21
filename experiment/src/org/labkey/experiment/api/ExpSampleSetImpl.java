@@ -20,6 +20,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
@@ -29,6 +30,7 @@ import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
@@ -252,6 +254,23 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     public void setContainer(Container container)
     {
         _object.setContainer(container);
+    }
+
+    public void save(User user)
+    {
+        save(user, ExperimentServiceImpl.get().getTinfoMaterialSource());
+    }
+
+    public void delete(User user)
+    {
+        try
+        {
+            ExperimentServiceImpl.get().deleteSampleSet(getRowId(), getContainer(), user);
+        }
+        catch (ExperimentException e)
+        {
+            throw new UnexpectedException(e);
+        }
     }
 
     public static ExpSampleSetImpl[] fromMaterialSources(MaterialSource[] sources)

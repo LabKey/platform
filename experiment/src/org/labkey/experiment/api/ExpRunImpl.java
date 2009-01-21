@@ -149,6 +149,11 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         save(user, ExperimentServiceImpl.get().getTinfoExperimentRun());
     }
 
+    public void delete(User user)
+    {
+        ExperimentServiceImpl.get().deleteExperimentRunsByRowIds(getContainer(), user, getRowId());
+    }
+
     public void setProtocol(ExpProtocol protocol)
     {
         _object.setProtocolLSID(protocol.getLSID());

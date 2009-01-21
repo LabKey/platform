@@ -45,6 +45,8 @@ import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.samples.UploadMaterialSetForm;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 import org.labkey.experiment.xar.XarExportSelection;
+import org.labkey.common.tools.TabLoader;
+import org.labkey.common.tools.ColumnDescriptor;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -52,6 +54,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -61,6 +64,8 @@ import java.net.URI;
 import java.sql.SQLException;
 import java.util.*;
 import java.awt.image.BufferedImage;
+
+import jxl.*;
 
 /**
  * User: jeckels
@@ -898,13 +903,13 @@ public class ExperimentController extends SpringActionController
 
             try
             {
-                boolean inline = _data.isInlineImage() || form.isInline();
+                boolean inline = _data.isInlineImage() || form.isInline() || "inlineImage".equalsIgnoreCase(form.getFormat());
                 if (_data.isInlineImage() && form.getMaxDimension() != null && _data.isFileOnDisk())
                 {
                     ByteArrayOutputStream bOut = new ByteArrayOutputStream();
                     BufferedImage image = ImageIO.read(_data.getDataFile());
                     int imageMax = Math.max(image.getHeight(), image.getWidth());
-                    if (imageMax > form.getMaxDimension())
+                    if (imageMax > form.getMaxDimension().intValue())
                     {
                         double scale = (double)form.getMaxDimension().intValue() / (double)imageMax;
                         ImageUtil.resizeImage(image, bOut, scale, 1);
@@ -912,6 +917,89 @@ public class ExperimentController extends SpringActionController
                         return null;
                     }
                 }
+
+                String lowerCaseFileName = realContent.getName().toLowerCase();
+                if ("jsonTSV".equalsIgnoreCase(form.getFormat()))
+                {
+                    JSONObject sheetsJson = new JSONObject();
+                    if (lowerCaseFileName.endsWith(".xls"))
+                    {
+                        FileInputStream fIn = null;
+                        try
+                        {
+                            fIn = new FileInputStream(realContent);
+                            WorkbookSettings settings = new WorkbookSettings();
+                            settings.setGCDisabled(true);
+                            Workbook workbook = Workbook.getWorkbook(fIn, settings);
+                            for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++)
+                            {
+                                JSONArray rowsArray = new JSONArray();
+                                Sheet sheet = workbook.getSheet(sheetIndex);
+                                for (int rowIndex = 0; rowIndex < sheet.getRows(); rowIndex++)
+                                {
+                                    Cell[] rowCells = sheet.getRow(rowIndex);
+                                    JSONArray rowArray = new JSONArray();
+                                    for (Cell cell : rowCells)
+                                    {
+                                        if (cell instanceof NumberCell)
+                                        {
+                                            rowArray.put(((NumberCell)cell).getValue());
+                                        }
+                                        else if (cell instanceof BooleanCell)
+                                        {
+                                            rowArray.put(((BooleanCell)cell).getValue());
+                                        }
+                                        else if (cell instanceof DateCell)
+                                        {
+                                            rowArray.put(((DateCell)cell).getDate());
+                                        }
+                                        else
+                                        {
+                                            rowArray.put(cell.getContents());
+                                        }
+                                    }
+                                    rowsArray.put(rowArray);
+                                }
+                                sheetsJson.put(sheet.getName(), rowsArray);
+                            }
+                        }
+                        finally
+                        {
+                            if (fIn != null)
+                                try { fIn.close(); } catch (IOException e) { /* fall through */ }
+                        }
+                    }
+                    else if (lowerCaseFileName.endsWith(".tsv") || lowerCaseFileName.endsWith(".tsv") || lowerCaseFileName.endsWith(".csv"))
+                    {
+                        TabLoader tabLoader = new TabLoader(realContent, Map.class);
+                        if (lowerCaseFileName.endsWith(".csv"))
+                        {
+                            tabLoader.parseAsCSV();
+                        }
+                        ColumnDescriptor[] cols = tabLoader.getColumns();
+                        JSONArray rowsArray = new JSONArray();
+                        for (TabLoader.TabLoaderIterator i = tabLoader.iterator(); i.hasNext(); )
+                        {
+                            Map<String, Object> rowMap = (Map<String, Object>)i.next();
+                            JSONArray rowArray = new JSONArray();
+                            for (ColumnDescriptor col : cols)
+                            {
+                                rowArray.put(rowMap.get(col.name));
+                            }
+                            rowsArray.put(rowArray);
+                        }
+
+                        sheetsJson.put("flat", rowsArray);
+                    }
+                    else
+                    {
+                        throw new IllegalArgumentException("Unable to convert file " + realContent + " to tsv");
+                    }
+                    ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse());
+                    writer.write(new ApiSimpleResponse(sheetsJson));
+                    return null;
+                }
+
                 PageFlowUtil.streamFile(getViewContext().getResponse(), realContent.getAbsolutePath(), !inline);
             }
             catch (IOException e)
@@ -1108,6 +1196,7 @@ public class ExperimentController extends SpringActionController
         private int _rowId;
         private String _lsid;
         private Integer _maxDimension;
+        private String _format;
 
         public boolean isInline()
         {
@@ -1157,6 +1246,16 @@ public class ExperimentController extends SpringActionController
         public void setMaxDimension(Integer maxDimension)
         {
             _maxDimension = maxDimension;
+        }
+
+        public String getFormat()
+        {
+            return _format;
+        }
+
+        public void setFormat(String format)
+        {
+            _format = format;
         }
     }
 

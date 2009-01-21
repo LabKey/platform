@@ -23,19 +23,17 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.actions.*;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.study.assay.AssayUrls;
-import org.labkey.api.study.assay.PlateBasedAssayProvider;
+import org.labkey.api.study.assay.*;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.query.QueryParam;
 import org.labkey.study.assay.AssayManager;
@@ -48,7 +46,9 @@ import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -363,7 +363,7 @@ public class AssayController extends SpringActionController
                 HttpView.throwNotFound();
             OntologyObject obj = OntologyManager.getOntologyObject(form.getObjectId().intValue());
             if (obj == null)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
             if (!obj.getContainer().equals(getContainer()))
             {
                 ActionURL correctedURL = getViewContext().getActionURL().clone();
@@ -376,12 +376,12 @@ public class AssayController extends SpringActionController
 
             PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(form.getPropertyId().intValue());
             if (pd == null)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
 
             Map<String, ObjectProperty> properties = OntologyManager.getPropertyObjects(obj.getContainer(), obj.getObjectURI());
             ObjectProperty fileProperty = properties.get(pd.getPropertyURI());
             if (fileProperty == null || fileProperty.getPropertyType() != PropertyType.FILE_LINK || fileProperty.getStringValue() == null)
-                HttpView.throwNotFound();
+                throw new NotFoundException();
             File file = new File(fileProperty.getStringValue());
             if (!file.exists())
                 HttpView.throwNotFound("File " + file.getPath() + " does not exist on the server file system.");
@@ -420,6 +420,35 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_INSERT)
+    public class AssayFileUploadAction extends AbstractFileUploadAction
+    {
+        protected File getTargetFile(String filename) throws IOException
+        {
+            AssayFileWriter writer = new AssayFileWriter();
+            try
+            {
+                File targetDirectory = writer.ensureUploadDirectory(getContainer());
+                return writer.findUniqueFileName(filename, targetDirectory);
+            }
+            catch (ExperimentException e)
+            {
+                throw new UploadException(e.getMessage(), HttpServletResponse.SC_NOT_FOUND);
+            }
+        }
+
+        protected String handleFile(File file, String originalName) throws UploadException
+        {
+            ExpData data = ExperimentService.get().createData(getContainer(), ModuleAssayProvider.RAW_DATA_TYPE);
+            
+            data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI());
+            data.setName(originalName);
+            data.save(getViewContext().getUser());
+
+            return Integer.toString(data.getRowId());
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_INSERT)
     public class ModuleAssayUploadAction extends BaseAssayAction<AssayRunUploadForm>
     {
         private ExpProtocol _protocol;
@@ -427,7 +456,6 @@ public class AssayController extends SpringActionController
         @Override
         public ModelAndView getView(AssayRunUploadForm form, BindException errors) throws Exception
         {
-            ViewContext context = getViewContext();
             _protocol = getProtocol(form);
 
             AssayProvider ap = AssayService.get().getProvider(_protocol);

@@ -22,6 +22,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.IAssayDomainType;
+import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpProtocol.AssayDomainTypes;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
@@ -59,6 +60,8 @@ public class ModuleAssayProvider extends TsvAssayProvider
     private File viewsDir;
     private String name;
     private Map<IAssayDomainType, DomainDescriptorType> domainsDescriptors = new HashMap<IAssayDomainType, DomainDescriptorType>();
+
+    public static final DataType RAW_DATA_TYPE = new DataType("RawAssayData");
 
     public ModuleAssayProvider(File baseDir, String name)
     {

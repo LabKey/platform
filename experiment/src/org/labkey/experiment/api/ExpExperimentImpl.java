@@ -111,7 +111,12 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
     {
         save(user, ExperimentServiceImpl.get().getTinfoExperiment());
     }
-    
+
+    public void delete(User user)
+    {
+        ExperimentServiceImpl.get().deleteExperimentByRowIds(getContainer(), getRowId());
+    }
+
     public void setHidden(boolean hidden)
     {
         _object.setHidden(hidden);
