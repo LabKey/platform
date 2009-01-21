@@ -50,6 +50,5 @@ public interface ExpProtocolOutput extends ExpObject
     String getCpasType();
     void setCpasType(String type);
 
-    void save(User user);
     void delete(User user);
 }

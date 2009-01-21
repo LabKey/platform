@@ -24,19 +24,19 @@ import org.labkey.api.data.Container;
  */
 public class OntologyObject
 {
-    private int ObjectId;
+    private int objectId;
     private Container container;
     private String objectURI;
     private Integer ownerObjectId;
 
     public int getObjectId()
     {
-        return ObjectId;
+        return objectId;
     }
 
     public void setObjectId(int objectId)
     {
-        ObjectId = objectId;
+        this.objectId = objectId;
     }
 
     public Container getContainer()

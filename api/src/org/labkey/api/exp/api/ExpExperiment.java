@@ -26,6 +26,5 @@ public interface ExpExperiment extends ExpObject
     ExpProtocol[] getProtocols();
     void removeRun(User user, ExpRun run) throws Exception;
     void addRuns(User user, ExpRun... run);
-    void save(User user);
     boolean isHidden();
 }

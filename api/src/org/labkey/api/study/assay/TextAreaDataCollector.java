@@ -46,8 +46,6 @@ public class TextAreaDataCollector extends AbstractAssayDataCollector
         return "Paste in a tab-separated set of values";
     }
 
-    static final String DIR_NAME = "assaydata";
-
     public Map<String, File> createData(AssayRunUploadContext context) throws IOException, ExperimentException
     {
         ExpProtocol protocol = context.getProtocol();
@@ -61,7 +59,7 @@ public class TextAreaDataCollector extends AbstractAssayDataCollector
             throw new ExperimentException("Data file contained zero data rows");
         }
 
-        File dir = ensureUploadDirectory(protocol, context);
+        File dir = ensureUploadDirectory(context.getContainer());
         File file = createFile(protocol, dir, "tsv");
         ByteArrayInputStream bIn = new ByteArrayInputStream(data.getBytes(context.getRequest().getCharacterEncoding()));
 

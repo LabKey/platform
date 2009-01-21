@@ -23,5 +23,4 @@ import org.labkey.api.security.User;
  */
 public interface ExpChildObject extends ExpObject
 {
-    public void delete(User user) throws Exception;
 }

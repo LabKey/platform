@@ -114,5 +114,4 @@ public interface ExpProtocol extends ExpObject
 
     public void setApplicationType(ApplicationType type);
     public void setDescription(String description);
-    public void save(User user);
 }

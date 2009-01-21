@@ -584,4 +584,29 @@ quickScan:
         }
         return new String(ret);
     }
+
+    /**
+     * Returns the absolute path to a file. On Windows and Mac, corrects casing in file paths to match the
+     * canonical path.
+     */
+    public static File getAbsoluteCaseSensitiveFile(File file)
+    {
+        String osName = System.getProperty("os.name").toLowerCase();
+        if (osName.startsWith("windows") || osName.startsWith("mac os"))
+        {
+            try
+            {
+                File canonicalFile = file.getCanonicalFile();
+                if (canonicalFile.getAbsolutePath().equalsIgnoreCase(file.getAbsolutePath()))
+                {
+                    return canonicalFile;
+                }
+            }
+            catch (IOException e)
+            {
+                // Ignore and just use the absolute file
+            }
+        }
+        return file.getAbsoluteFile();
+    }
 }

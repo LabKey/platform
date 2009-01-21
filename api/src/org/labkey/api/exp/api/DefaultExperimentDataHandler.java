@@ -44,7 +44,7 @@ public class DefaultExperimentDataHandler extends AbstractExperimentDataHandler
         return null;
     }
 
-    public void deleteData(ExpData data, Container container, User user) throws ExperimentException
+    public void deleteData(ExpData data, Container container, User user)
     {
         // Do nothing
     }

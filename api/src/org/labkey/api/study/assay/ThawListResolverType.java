@@ -22,7 +22,6 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.query.QueryService;
@@ -214,7 +213,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
                     in = new ByteArrayInputStream(text.getBytes());
                 }
 
-                File uploadDir = ensureUploadDirectory(context.getProtocol(), context);
+                File uploadDir = ensureUploadDirectory(context.getContainer());
                 File file = createFile(context.getProtocol(), uploadDir, "thawList");
                 try
                 {

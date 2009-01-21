@@ -51,7 +51,7 @@ public class PreviouslyUploadedDataCollector extends AbstractAssayDataCollector
     {
         StringBuilder sb = new StringBuilder();
         String separator = "";
-        PipeRoot pipeRoot = getPipelineRoot(context);
+        PipeRoot pipeRoot = getPipelineRoot(context.getContainer());
         for (Map.Entry<String, File> entry : _uploadedFiles.entrySet())
         {
             sb.append(separator);
@@ -98,7 +98,7 @@ public class PreviouslyUploadedDataCollector extends AbstractAssayDataCollector
         }
         Map<String, File> result = new HashMap<String, File>();
 
-        PipeRoot pipelineRoot = getPipelineRoot(context);
+        PipeRoot pipelineRoot = getPipelineRoot(context.getContainer());
 
         for (int i = 0; i < paths.length; i++)
         {
@@ -114,7 +114,7 @@ public class PreviouslyUploadedDataCollector extends AbstractAssayDataCollector
 
     public void addHiddenFormFields(InsertView view, AssayRunUploadContext context)
     {
-        PipeRoot pipeRoot = getPipelineRoot(context);
+        PipeRoot pipeRoot = getPipelineRoot(context.getContainer());
 
         view.getDataRegion().addHiddenFormField("dataCollectorName", getShortName());
         for (Map.Entry<String, File> entry : _uploadedFiles.entrySet())

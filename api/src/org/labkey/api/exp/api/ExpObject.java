@@ -52,6 +52,9 @@ public interface ExpObject extends Identifiable
     User getModifiedBy();
     Date getModified();
 
+    void save(User user);
+    void delete(User user);
+
     public static final Comparator<ExpObject> NAME_COMPARATOR = new Comparator<ExpObject>()
     {
         public int compare(ExpObject o1, ExpObject o2)

@@ -21,6 +21,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.data.Container;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
@@ -36,14 +37,16 @@ import java.util.*;
  */
 public class AssayFileWriter
 {
-    protected File ensureUploadDirectory(ExpProtocol protocol, AssayRunUploadContext context) throws ExperimentException
+    public static final String DIR_NAME = "assaydata";
+
+    public File ensureUploadDirectory(Container container) throws ExperimentException
     {
-        File rootFile = getPipelineRoot(context).getRootPath();
+        File rootFile = getPipelineRoot(container).getRootPath();
 
         if (!rootFile.exists())
             throw new ExperimentException("Pipeline directory: " + rootFile + " does not exist. Please see your administrator.");
 
-        File dir = new File(rootFile, TextAreaDataCollector.DIR_NAME);
+        File dir = new File(rootFile, DIR_NAME);
         if (!dir.exists()) {
             boolean success = dir.mkdir();
             if (!success) throw new ExperimentException("Could not create directory: " + dir);
@@ -51,7 +54,7 @@ public class AssayFileWriter
         return dir;
     }
 
-    protected File createFile(ExpProtocol protocol, File dir, String extension)
+    public File createFile(ExpProtocol protocol, File dir, String extension)
     {
         //File name is studyname_datasetname_date_hhmm.ss
         Date dateCreated = new Date();
@@ -99,17 +102,20 @@ public class AssayFileWriter
         }
     }
 
-    protected PipeRoot getPipelineRoot(AssayRunUploadContext context)
+    protected PipeRoot getPipelineRoot(Container container)
     {
-        PipeRoot pipelineRoot;
-            pipelineRoot = PipelineService.get().findPipelineRoot(context.getContainer());
-            if (null == pipelineRoot)
-                throw new IllegalStateException("Please have your administrator set up a pipeline root for this folder.");
+        PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(container);
+        if (null == pipelineRoot)
+            throw new IllegalStateException("Please have your administrator set up a pipeline root for this folder.");
         return pipelineRoot;
     }
 
-    protected File findUniqueFileName(String originalFilename, File dir)
+    public File findUniqueFileName(String originalFilename, File dir)
     {
+        if (originalFilename == null || "".equals(originalFilename))
+        {
+            originalFilename = "[unnamed]";
+        }
         File file;
         int uniquifier = 0;
         do
@@ -141,10 +147,9 @@ public class AssayFileWriter
         Map<String, File> files = new HashMap<String, File>();
         if (context.getRequest() instanceof MultipartHttpServletRequest)
         {
-            ExpProtocol protocol = context.getProtocol();
             MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest)context.getRequest();
             Iterator<Map.Entry<String, MultipartFile>> iter = multipartRequest.getFileMap().entrySet().iterator();
-            File dir = ensureUploadDirectory(protocol, context);
+            File dir = ensureUploadDirectory(context.getContainer());
             while (iter.hasNext())
             {
                 Map.Entry<String, MultipartFile> entry = iter.next();
@@ -152,8 +157,6 @@ public class AssayFileWriter
                 {
                     MultipartFile multipartFile = entry.getValue();
                     String fileName = multipartFile.getOriginalFilename();
-                    if (fileName.equals(""))
-                        fileName = "[unnamed]";
                     if (!multipartFile.isEmpty())
                     {
                         File file = findUniqueFileName(fileName, dir);

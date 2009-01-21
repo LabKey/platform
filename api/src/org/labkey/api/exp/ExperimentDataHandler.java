@@ -42,7 +42,7 @@ public interface ExperimentDataHandler extends Handler<ExpData>
 
     public void beforeDeleteData(List<ExpData> datas) throws ExperimentException;
 
-    public void deleteData(ExpData data, Container container, User user) throws ExperimentException;
+    public void deleteData(ExpData data, Container container, User user);
 
     public boolean hasContentToExport(ExpData data, File file);
 
