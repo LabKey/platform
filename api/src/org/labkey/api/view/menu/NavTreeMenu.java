@@ -21,6 +21,7 @@ import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.portal.ProjectUrls;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
@@ -188,7 +189,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
                 out.print(filter(nav.getKey()));
             else
             {
-                if (null != nav.getId())
+                if (!StringUtils.isEmpty(nav.getId()))
                     out.printf("<a id=\"%s\" href=\"%s\"", filter(nav.getId()), filter(link));
                 else
                     out.printf("<a href=\"%s\"", filter(link));
