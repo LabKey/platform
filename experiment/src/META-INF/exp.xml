@@ -649,6 +649,7 @@
       <ns:column columnName="FloatValue"/>
       <ns:column columnName="StringValue"/>
       <ns:column columnName="DatetimeValue"/>
+      <ns:column columnName="QcValue"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="ExperimentRunDataInputs" tableDbType="VIEW">

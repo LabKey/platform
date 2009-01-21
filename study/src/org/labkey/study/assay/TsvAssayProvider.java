@@ -122,7 +122,7 @@ public class TsvAssayProvider extends AbstractAssayProvider
         OntologyObject dataRow = OntologyManager.getOntologyObject(id.intValue());
         if (dataRow == null)
             return null;
-        OntologyObject dataRowParent = OntologyManager.getOntologyObject(dataRow.getOwnerObjectId());
+        OntologyObject dataRowParent = OntologyManager.getOntologyObject(dataRow.getOwnerObjectId().intValue());
         if (dataRowParent == null)
             return null;
         return ExperimentService.get().getExpData(dataRowParent.getObjectURI());
@@ -167,7 +167,7 @@ public class TsvAssayProvider extends AbstractAssayProvider
             for (OntologyObject row : dataRows)
             {
                 Map<String, Object> dataMap = new HashMap<String, Object>();
-                Map<String, Object> rowProperties = OntologyManager.getProperties(row.getContainer(), row.getObjectURI());
+                Map<String, ObjectProperty> rowProperties = OntologyManager.getPropertyObjects(row.getContainer(), row.getObjectURI());
                 for (PropertyDescriptor pd : rowPropertyDescriptors)
                 {
                     // We should skip properties that are set by the resolver: participantID,
@@ -186,7 +186,7 @@ public class TsvAssayProvider extends AbstractAssayProvider
                 ExpRun run = runCache.get(row.getOwnerObjectId());
                 if (run == null)
                 {
-                    OntologyObject dataRowParent = OntologyManager.getOntologyObject(row.getOwnerObjectId());
+                    OntologyObject dataRowParent = OntologyManager.getOntologyObject(row.getOwnerObjectId().intValue());
                     ExpData data = ExperimentService.get().getExpData(dataRowParent.getObjectURI());
 
                     run = data.getRun();
