@@ -36,8 +36,69 @@
 <script type="text/javascript">
     LABKEY.requiresExtJs(true);
 
+    var R_EXTENSIONS = 'R,r';
+    var PERL_EXTENSIONS = 'pl';
+
+    function renderNameColumn(value, p, record)
+    {
+        var txt;
+
+        if (record.data.enabled)
+            txt = '<b>' + value + '</b><br>';
+        else
+            txt = '<b><div class="labkey-disabled">' + value + '</div></b><br>';
+
+        txt = txt.concat('<i>enabled : ' + record.data.enabled + '</i><br>');
+        txt = txt.concat('<i>external : ' + record.data.external + '</i><br>');
+
+        return txt;
+    }
+
+    function recordsLoaded(records)
+    {
+        testItem.enable();
+        for (var i in records)
+        {
+            if (records[i].data)
+            {
+                if (records[i].data.extensions == 'R,r')
+                {
+                    testItem.disable();
+                }
+            }
+        }
+
+    }
+
     function showEngines()
     {
+        // pre defined engine templates
+        
+        var rEngineItem = new Ext.menu.Item({
+            id: 'add_rEngine',
+            text:'New R Engine',
+            listeners:{click:function(button, event) {editRecord(button, grid,{
+                name:'R Scripting Engine',
+                extensions: R_EXTENSIONS,
+                exeCommand:'<%=RReport.DEFAULT_R_CMD%>',
+                outputFileName: 'script.Rout',
+                external: true,
+                enabled: true,
+                languageName:'R'});}}}
+
+            );
+
+        var perlEngineItem = new Ext.menu.Item({
+            id: 'add_perlEngine',
+            text:'New Perl Engine',
+            listeners:{click:function(button, event) {editRecord(button, grid,{
+                name:'Perl Scripting Engine',
+                extensions: PERL_EXTENSIONS,
+                external: true,
+                languageName:'Perl'});}}}
+            );
+
+
         var con = new Ext.data.HttpProxy(new Ext.data.Connection({
                 url: LABKEY.ActionURL.buildURL("reports", "scriptEnginesSummary", '<%=context.getContainer().getPath()%>'),
                 method: 'GET'
@@ -53,15 +114,32 @@
                         {name:'languageName'},
                         {name:'languageVersion'},
                         {name:'key'},
+                        {name:'enabled', type:'boolean'},
+                        {name:'external', type:'boolean'},
                         {name:'outputFileName'}]),
             proxy: con,
             autoLoad: true,
+            listeners:{load:function(store, records, options) {
+                rEngineItem.enable();
+                perlEngineItem.enable();
+                for (var i in records) {
+                    if (records[i].data) {
+                        if (records[i].data.extensions == R_EXTENSIONS)
+                            rEngineItem.disable();
+                        if (records[i].data.extensions == PERL_EXTENSIONS)
+                            perlEngineItem.disable();
+                    }
+                }
+            }},
             sortInfo: {field:'name', direction:"ASC"}});
 
         var newMenu = new Ext.menu.Menu({
             id: 'mainMenu',
             cls:'extContainer',
-            items: [{
+            items: [rEngineItem,
+                    perlEngineItem,
+/*
+                {
                 id: 'add_rEngine',
                 text:'New R Engine',
                 listeners:{click:function(button, event) {editRecord(button, grid,{
@@ -69,18 +147,24 @@
                     extensions:'R,r',
                     exeCommand:'<%=RReport.DEFAULT_R_CMD%>',
                     outputFileName: 'script.Rout',
+                    external: true,
                     languageName:'R'});}}
-            },{
+            },testItem,{
                 id: 'add_perlEngine',
                 text:'New Perl Engine',
                 listeners:{click:function(button, event) {editRecord(button, grid,{
                     name:'Perl Scripting Engine',
                     extensions:'pl',
+                    external: true,
                     languageName:'Perl'});}}
-            },{
+            },
+*/
+                {
                 id: 'add_externalEngine',
                 text:'New External Engine',
-                listeners:{click:function(button, event) {editRecord(button, grid, {name:"External"});}}
+                listeners:{click:function(button, event) {editRecord(button, grid, {
+                    name:"External",
+                    external: true});}}
             }] });
 
         var grid = new Ext.grid.GridPanel({
@@ -96,7 +180,7 @@
                 }
             },
             columns:[
-                {header:'Name', dataIndex:'name'},
+                {header:'Name', dataIndex:'name', renderer:renderNameColumn},
                 {header:'Language', dataIndex:'languageName'},
                 {header:'Language Version', dataIndex:'languageVersion'},
                 {header:'File Extensions', dataIndex:'extensions'},
@@ -108,7 +192,7 @@
                 forceFit:true
             }),
             buttons: [
-                {text:'Add', id: 'btn_addEngine', iconCls: 'bmenu', menu: newMenu, tooltip: {text:'Configure a new external script engine', title:'Add Engine'}},
+                {text:'Add', id: 'btn_addEngine', menu: newMenu, tooltip: {text:'Configure a new external script engine', title:'Add Engine'}},
                 {text:'Delete', id: 'btn_deleteEngine', tooltip: {text:'Delete the selected script engine', title:'Delete Engine'}, listeners:{click:function(button, event) {deleteSelected(grid);}}},
                 {text:'Edit', id: 'btn_editEngine', tooltip: {text:'Edit an existing script engine', title:'Edit Engine'}, listeners:{click:function(button, event) {editSelected(button, grid);}}}
             ],
@@ -131,7 +215,7 @@
         var record = selections[0].data;
         var params = [];
 
-        if (record.exePath.length == 0)
+        if (!record.external)
         {
             Ext.Msg.alert("Delete Engine Configuration", "Java 6 script engines cannot be deleted but you can disable them.");
             return false;
@@ -139,7 +223,7 @@
         params.push("key=" + record.key);
         params.push("extensions=" + record.extensions);
 
-        Ext.Msg.confirm('Delete Engine Configuration', "Are you sure you wish to delete the selected Configuration?", function(btn, text) {
+        Ext.Msg.confirm('Delete Engine Configuration', "Are you sure you wish to delete the selected Configuration? : " + record.name, function(btn, text) {
             if (btn == 'yes')
             {
                 Ext.Ajax.request({
@@ -185,17 +269,20 @@
                 name: 'name',
                 id: 'editEngine_name',
                 allowBlank:false,
+                readOnly:!record.external,
                 value: record.name
             },{
                 fieldLabel: 'Language',
                 name: 'languageName',
                 id: 'editEngine_languageName',
                 allowBlank:false,
+                readOnly:!record.external,
                 value: record.languageName
             },{
                 fieldLabel: 'Language Version',
                 name: 'languageVersion',
                 id: 'editEngine_languageVersion',
+                readOnly:!record.external,
                 value: record.languageVersion
             },{
                 fieldLabel: 'File Extensions',
@@ -204,6 +291,7 @@
                 allowBlank:false,
                 tooltip: {text:'The list of file extensions (separated by commas) that this engine is associated with', title:'File Extensions'},
                 listeners: {render: setFormFieldTooltip},
+                readOnly:!record.external,
                 value: record.extensions
             },{
                 fieldLabel: 'Program Path',
@@ -213,6 +301,7 @@
                 value: record.exePath,
                 tooltip: {text:'Specify the absolute path to the program including the program itself', title:'Program Path'},
                 listeners: {render: setFormFieldTooltip},
+                disabled:!record.external,
                 width: 250
             },{
                 fieldLabel: 'Program Command',
@@ -220,6 +309,7 @@
                 id: 'editEngine_exeCommand',
                 tooltip: {text:'The command used when the program is invoked', title:'Program Command'},
                 listeners: {render: setFormFieldTooltip},
+                disabled:!record.external,
                 value: record.exeCommand,
                 width: 250
             },{
@@ -228,7 +318,20 @@
                 id: 'editEngine_outputFileName',
                 value: record.outputFileName,
                 tooltip: {text:'If the console output is written to a file, the name should be specified here', title:'Output File Name'},
+                disabled:!record.external,
                 listeners: {render: setFormFieldTooltip}
+            },{
+                fieldLabel: 'Enabled',
+                name: 'enabled',
+                id: 'editEngine_enabled',
+                xtype: 'checkbox',
+                checked: record.enabled,
+                tooltip: {text:'If a script engine is disabled, it cannot be used to run reports and scripts', title:'Enable Engine'},
+                listeners: {render: setFormFieldTooltip}
+            },{
+                name: 'external',
+                xtype: 'hidden',
+                value: record.external
             },{
                 name: 'key',
                 xtype: 'hidden',

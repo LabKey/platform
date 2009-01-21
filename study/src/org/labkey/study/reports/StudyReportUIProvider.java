@@ -73,11 +73,14 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         designers.add(new DesignerInfoImpl(StudyChartQueryReport.TYPE, "Chart View", url));
 
         // r report
-        RReportBean rBean = new RReportBean(settings);
-        rBean.setReportType(StudyRReport.TYPE);
-        rBean.setRedirectUrl(context.getActionURL().getLocalURIString());
+        if (RReport.isEnabled())
+        {
+            RReportBean rBean = new RReportBean(settings);
+            rBean.setReportType(StudyRReport.TYPE);
+            rBean.setRedirectUrl(context.getActionURL().getLocalURIString());
 
-        designers.add(new DesignerInfoImpl(StudyRReport.TYPE, "R View", ReportUtil.getRReportDesignerURL(context, rBean)));
+            designers.add(new DesignerInfoImpl(StudyRReport.TYPE, "R View", ReportUtil.getRReportDesignerURL(context, rBean)));
+        }
 
         // external report
         if (context.getUser().isAdministrator())

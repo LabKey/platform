@@ -338,6 +338,12 @@ public class ModuleAssayProvider extends TsvAssayProvider
                     }
                 });
                 validationScripts.addAll(Arrays.asList(scripts));
+                Collections.sort(validationScripts, new Comparator<File>(){
+                    public int compare(File o1, File o2)
+                    {
+                        return o1.getName().compareToIgnoreCase(o2.getName());
+                    }
+                });
             }
         }
         validationScripts.addAll(super.getValidationAndAnalysisScripts(protocol, scope));

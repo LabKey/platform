@@ -87,6 +87,7 @@ public class QueryModule extends DefaultModule
         ReportService.get().registerReport(new ChartQueryReport());
         ReportService.get().registerReport(new RReport());
         ReportService.get().registerReport(new ExternalScriptEngineReport());
+        ReportService.get().registerReport(new InternalScriptEngineReport());
     }
 
     protected Collection<? extends WebPartFactory> createWebPartFactories()

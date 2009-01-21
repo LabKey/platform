@@ -338,7 +338,11 @@ public class ReportsController extends SpringActionController
                 record.put("languageName", factory.getLanguageName());
                 record.put("languageVersion", factory.getLanguageVersion());
 
-                if (factory instanceof ExternalScriptEngineFactory)
+                boolean isExternal = factory instanceof ExternalScriptEngineFactory;
+                record.put("external", String.valueOf(isExternal));
+                record.put("enabled", String.valueOf(LabkeyScriptEngineManager.isFactoryEnabled(factory)));
+
+                if (isExternal)
                 {
                     // extra metadata for external engines
                     ExternalScriptEngineDefinition def = ((ExternalScriptEngineFactory)factory).getDefinition();
@@ -365,11 +369,14 @@ public class ReportsController extends SpringActionController
             if (StringUtils.isEmpty(def.getName()))
                 errors.rejectValue("name", ERROR_MSG, "The Name field cannot be empty");
 
-            File rexe = new File(def.getExePath());
-            if (!rexe.exists())
-                errors.rejectValue("exePath", ERROR_MSG, "The program location: '" + def.getExePath() + "' does not exist");
-            if (rexe.isDirectory())
-                errors.rejectValue("exePath", ERROR_MSG, "Please specify the entire path to the program, not just the directory (e.g., 'c:/Program Files/R/R-2.7.1/bin/R.exe)");
+            if (def.isExternal())
+            {
+                File rexe = new File(def.getExePath());
+                if (!rexe.exists())
+                    errors.rejectValue("exePath", ERROR_MSG, "The program location: '" + def.getExePath() + "' does not exist");
+                if (rexe.isDirectory())
+                    errors.rejectValue("exePath", ERROR_MSG, "Please specify the entire path to the program, not just the directory (e.g., 'c:/Program Files/R/R-2.7.1/bin/R.exe)");
+            }
         }
 
         public ApiResponse execute(LabkeyScriptEngineManager.EngineDefinition def, BindException errors) throws Exception
