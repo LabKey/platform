@@ -48,13 +48,11 @@ import java.util.*;
  */
 public class DemoController extends SpringActionController
 {
-    static Logger _log = Logger.getLogger(DemoController.class);
-
-    static DefaultActionResolver _actionResolver = new DefaultActionResolver(DemoController.class);
+    private final static Logger _log = Logger.getLogger(DemoController.class);
+    private final static DefaultActionResolver _actionResolver = new DefaultActionResolver(DemoController.class);
 
     public DemoController()
     {
-        super();
         setActionResolver(_actionResolver);
     }
 

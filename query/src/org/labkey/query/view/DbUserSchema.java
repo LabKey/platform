@@ -68,8 +68,7 @@ public class DbUserSchema extends UserSchema
 
         if (_dbSchema != null)
         {
-            SchemaTableInfo[] tables = _dbSchema.getTables();
-            for (SchemaTableInfo table : tables)
+            for (SchemaTableInfo table : _dbSchema.getTables())
             {
                 _tables.put(table.getName(), table);
             }

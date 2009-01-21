@@ -988,6 +988,7 @@ public class MothershipController extends SpringActionController
             session.setAdministratorEmail(getAdministratorEmail());
             session.setLdapEnabled(isLDAPEnabled());
             session.setEnterprisePipelineEnabled(isEnterprisePipelineEnabled());
+
             return session;
         }
 

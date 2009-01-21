@@ -385,7 +385,7 @@ class SqlDialectPostgreSQL extends SqlDialect
             if (rs.next())
                 return;
 
-            String dbName = schema.getCatalog();
+            String dbName = schema.getScope().getDatabaseName();
             String message = "PL/pgSQL is not enabled in the \"" + dbName + "\" database because it is not enabled in your Template1 master database.  Use PostgreSQL's 'createlang' command line utility to enable PL/pgSQL in the \"" + dbName + "\" database then restart Tomcat.";
             _log.error(message);
             throw new ServletException(message);
