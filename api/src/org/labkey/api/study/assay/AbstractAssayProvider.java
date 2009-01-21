@@ -282,7 +282,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     protected void addProperty(PropertyDescriptor pd, ObjectProperty value, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
     {
-        addProperty(pd, value == null ? null : value.value(), dataMap, types);
+        addProperty(pd, value == null ? null : value.getValueQcAware(), dataMap, types);
     }
 
     protected void addProperty(PropertyDescriptor pd, Object value, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)

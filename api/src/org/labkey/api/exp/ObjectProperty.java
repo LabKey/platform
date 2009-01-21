@@ -203,6 +203,18 @@ public class ObjectProperty extends OntologyManager.PropertyRow
         }
     }
 
+    public Object getValueQcAware()
+    {
+        Object value = value();
+        if (qcValue == null)
+            return value;
+        QcFieldWrapper wrapper = new QcFieldWrapper();
+        wrapper.setValue(value);
+        wrapper.setQcValue(qcValue);
+
+        return wrapper;
+    }
+
     public Object value()
     {
         switch (getPropertyType())
