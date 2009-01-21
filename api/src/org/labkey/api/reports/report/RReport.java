@@ -60,35 +60,6 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
 
     public static final String DEFAULT_R_CMD = "CMD BATCH --slave";
 
-    public static boolean isValidConfiguration()
-    {
-        return true;
-//        return validateConfiguration(getRExe(), getRCmd(), getTempFolder(), getRScriptHandler()) == null;
-    }
-
-    public static String validateConfiguration(String programPath, String command, String tempFolder, String scriptHandler)
-    {
-        if (StringUtils.isEmpty(programPath))
-            return "The R program location cannot be empty";
-
-        File rexe = new File(programPath);
-        if (!rexe.exists())
-            return "The R program location: '" + programPath + "' does not exist";
-        if (rexe.isDirectory())
-            return "Please specify the entire path to the R executable, not just the directory (e.g., 'c:/Program Files/R/R-2.7.1/bin/R.exe)";
-
-        if (StringUtils.isEmpty(command))
-            return "The R command cannot be empty";
-
-        if (!StringUtils.isEmpty(tempFolder))
-        {
-            File temp = new File(tempFolder);
-            if (!temp.exists())
-                return "The temp folder: '" + tempFolder + "' does not exist";
-        }
-        return null;
-    }
-
     public String getType()
     {
         return TYPE;
@@ -102,6 +73,12 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
     public String getDescriptorType()
     {
         return RReportDescriptor.TYPE;
+    }
+
+    public static boolean isEnabled()
+    {
+        ScriptEngineManager mgr = ServiceRegistry.get().getService(ScriptEngineManager.class);
+        return mgr.getEngineByExtension("r") != null;
     }
 
     public ScriptEngine getScriptEngine()

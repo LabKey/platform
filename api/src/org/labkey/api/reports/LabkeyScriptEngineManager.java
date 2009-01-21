@@ -17,6 +17,7 @@ package org.labkey.api.reports;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.BooleanUtils;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 
@@ -44,6 +45,7 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         exePath,
         exeCommand,
         outputFileName,
+        disabled,
     }
 
     @Override
@@ -55,14 +57,17 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         {
             for (ExternalScriptEngineDefinition def : getEngineDefinitions())
             {
-                if (shortName.equals(def.getName()))
+                if (def.isEnabled() && shortName.equals(def.getName()))
                 {
                     ScriptEngineFactory factory = new ExternalScriptEngineFactory(def);
                     return factory.getScriptEngine();
                 }
             }
         }
-        return engine;
+        else if (isFactoryEnabled(engine.getFactory()))
+            return engine;
+
+        return null;
     }
 
     @Override
@@ -85,14 +90,17 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         {
             for (ExternalScriptEngineDefinition def : getEngineDefinitions())
             {
-                if (Arrays.asList(def.getExtensions()).contains(extension))
+                if (def.isEnabled() && Arrays.asList(def.getExtensions()).contains(extension))
                 {
                     ScriptEngineFactory factory = new ExternalScriptEngineFactory(def);
                     return factory.getScriptEngine();
                 }
             }
         }
-        return engine;
+        else if (isFactoryEnabled(engine.getFactory()))
+            return engine;
+
+        return null;
     }
 
     public static List<ExternalScriptEngineDefinition> getEngineDefinitions()
@@ -159,40 +167,65 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
     {
         if (def instanceof EngineDefinition)
         {
-            String key = ((EngineDefinition)def).getKey();
-
-            if (key == null)
+            if (((EngineDefinition)def).isExternal())
             {
-                // new engine definition
-                key = makeKey(def);
+                String key = ((EngineDefinition)def).getKey();
+
+                if (key == null)
+                {
+                    // new engine definition
+                    key = makeKey(def.getExtensions());
+                    if (getProp(key, SCRIPT_ENGINE_MAP) != null)
+                        throw new IllegalArgumentException("An existing definition is already mapped to those file extensions");
+
+                    setProp(key, key, SCRIPT_ENGINE_MAP);
+                }
                 if (getProp(key, SCRIPT_ENGINE_MAP) != null)
-                    throw new IllegalArgumentException("An existing definition is already mapped to those file extensions");
 
-                setProp(key, key, SCRIPT_ENGINE_MAP);
-            }
-
-            if (getProp(key, SCRIPT_ENGINE_MAP) != null)
-            {
-                setProp(Props.key.name(), key, key);
-                setProp(Props.name.name(), def.getName(), key);
-                setProp(Props.extensions.name(), StringUtils.join(def.getExtensions(), ','), key);
-                setProp(Props.languageName.name(), def.getLanguageName(), key);
-                setProp(Props.languageVersion.name(), def.getLanguageVersion(), key);
-                setProp(Props.exePath.name(), def.getExePath(), key);
-                setProp(Props.exeCommand.name(), def.getExeCommand(), key);
-                setProp(Props.outputFileName.name(), def.getOutputFileName(), key);
+                {
+                    setProp(Props.key.name(), key, key);
+                    setProp(Props.name.name(), def.getName(), key);
+                    setProp(Props.extensions.name(), StringUtils.join(def.getExtensions(), ','), key);
+                    setProp(Props.languageName.name(), def.getLanguageName(), key);
+                    setProp(Props.languageVersion.name(), def.getLanguageVersion(), key);
+                    setProp(Props.exePath.name(), def.getExePath(), key);
+                    setProp(Props.exeCommand.name(), def.getExeCommand(), key);
+                    setProp(Props.outputFileName.name(), def.getOutputFileName(), key);
+                    setProp(Props.disabled.name(), String.valueOf(!def.isEnabled()), key);
+                }
+                else
+                    throw new IllegalArgumentException("Existing definition does not exist in the DB");
             }
             else
-                throw new IllegalArgumentException("Existing definition does not exist in the DB");
+            {
+                // jdk 1.6 script engine implementation, create an engine meta data map but don't add an entry
+                // to the external script engine table.
+                String key = makeKey(def.getExtensions());
+
+                setProp(Props.disabled.name(), String.valueOf(!def.isEnabled()), key);
+            }
         }
         else
             throw new IllegalArgumentException("Engine definition must be an instance of LabkeyScriptEngineManager.EngineDefinition");
         return def;
     }
 
-    private static String makeKey(ExternalScriptEngineDefinition def)
+    public static boolean isFactoryEnabled(ScriptEngineFactory factory)
     {
-        return ENGINE_DEF_MAP_PREFIX + StringUtils.join(def.getExtensions(), ',');
+        if (factory instanceof ExternalScriptEngineFactory)
+        {
+            return ((ExternalScriptEngineFactory)factory).getDefinition().isEnabled();
+        }
+        else
+        {
+            String key = makeKey(factory.getExtensions().toArray(new String[0]));
+            return !BooleanUtils.toBoolean(getProp(Props.disabled.name(), key));
+        }
+    }
+
+    private static String makeKey(String[] engineExtensions)
+    {
+        return ENGINE_DEF_MAP_PREFIX + StringUtils.join(engineExtensions, ',');
     }
 
     private static ExternalScriptEngineDefinition createDefinition(Map<String, String> props)
@@ -210,6 +243,7 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
 
                 BeanUtils.populate(def, props);
                 def.setExtensions(extensions);
+                def.setEnabled(!BooleanUtils.toBoolean(props.get(Props.disabled.name())));
 
                 return def;
             }
@@ -251,6 +285,9 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         String _exePath;
         String _exeCommand;
         String _outputFileName;
+        boolean _enabled;
+        boolean _external;
+
 
         public String getKey()
         {
@@ -330,6 +367,26 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         public void setExeCommand(String exeCommand)
         {
             _exeCommand = exeCommand;
+        }
+
+        public boolean isEnabled()
+        {
+            return _enabled;
+        }
+
+        public void setEnabled(boolean enabled)
+        {
+            _enabled = enabled;
+        }
+
+        public boolean isExternal()
+        {
+            return _external;
+        }
+
+        public void setExternal(boolean external)
+        {
+            _external = external;
         }
     }
 }

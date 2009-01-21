@@ -469,6 +469,7 @@ api/src/org/labkey/api/reports/report/ChartReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/CustomRReport.java -text
 api/src/org/labkey/api/reports/report/DbReportIdentifier.java -text
 api/src/org/labkey/api/reports/report/ExternalScriptEngineReport.java -text
+api/src/org/labkey/api/reports/report/InternalScriptEngineReport.java -text
 api/src/org/labkey/api/reports/report/ModuleQueryRReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/ModuleRReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/ModuleReportIdentifier.java -text

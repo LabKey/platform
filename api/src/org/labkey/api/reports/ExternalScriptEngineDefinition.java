@@ -40,4 +40,7 @@ public interface ExternalScriptEngineDefinition
 
     public String getOutputFileName();
     public void setOutputFileName(String name);
+
+    public void setEnabled(boolean enabled);
+    public boolean isEnabled();
 }
