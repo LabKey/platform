@@ -213,7 +213,7 @@ public class ExcelLoader extends DataLoader
                 Object value = column.missingValues;
                 try
                 {
-                    if (column.qcEnabled)
+                    if (column.isQcEnabled())
                     {
                         QcFieldWrapper qcWrapper = (QcFieldWrapper)row.get(column.name);
                         if (qcWrapper != null)
@@ -236,7 +236,7 @@ public class ExcelLoader extends DataLoader
                             else
                             {
                                 // No such column. Is this a valid qc indicator or a valid value?
-                                if (QcUtil.isValidQcValue(contents, column.qcContainer))
+                                if (QcUtil.isValidQcValue(contents, column.getQcContainer()))
                                 {
                                     // set the qc value
                                     qcWrapper = new QcFieldWrapper();
@@ -253,9 +253,9 @@ public class ExcelLoader extends DataLoader
                             }
                         }
                     }
-                    else if (column.qcIndicator)
+                    else if (column.isQcIndicator())
                     {
-                        if (!QcUtil.isValidQcValue(contents, column.qcContainer))
+                        if (!QcUtil.isValidQcValue(contents, column.getQcContainer()))
                         {
                             throw new ConversionException(contents + " is not a valid QC value");
                         }

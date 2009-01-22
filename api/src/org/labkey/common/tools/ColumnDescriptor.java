@@ -16,6 +16,7 @@
 package org.labkey.common.tools;
 
 import org.apache.commons.beanutils.Converter;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 
 import java.lang.reflect.Method;
@@ -56,13 +57,13 @@ public class ColumnDescriptor
     public Method setter = null;
 
     // This column is a data column, with qc enabled
-    public boolean qcEnabled;
+    private boolean qcEnabled;
 
     // This column is the qc indicator -- that is, .Q or .N, not the actual value.
-    public boolean qcIndicator;
+    private boolean qcIndicator;
 
     // If qc is enabled, or this is a qc indicator, need to know which container to look in for possible QC states
-    public Container qcContainer;
+    private Container qcContainer;
 
     public String toString()
     {
@@ -82,5 +83,32 @@ public class ColumnDescriptor
         if (clazz == Boolean.class)
             return "xsd:boolean";
         throw new IllegalArgumentException("Unknown class for column: " + clazz);
+    }
+
+    public boolean isQcEnabled()
+    {
+        return qcEnabled;
+    }
+
+    public boolean isQcIndicator()
+    {
+        return qcIndicator;
+    }
+
+    public Container getQcContainer()
+    {
+        return qcContainer;
+    }
+
+    public void setQcEnabled(@NotNull Container qcContainer)
+    {
+        qcEnabled = true;
+        this.qcContainer = qcContainer;
+    }
+
+    public void setQcIndicator(@NotNull Container qcContainer)
+    {
+        qcIndicator = true;
+        this.qcContainer = qcContainer;
     }
 }

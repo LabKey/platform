@@ -251,7 +251,7 @@ public abstract class DataLoader
         for(int i = 0; i<_columns.length; i++)
         {
             ColumnDescriptor col = _columns[i];
-            if (col.qcEnabled && (col.name.equals(qcIndicatorColumn.name) || col.name.equals(nonQcIndicatorName)))
+            if (col.isQcEnabled() && (col.name.equals(qcIndicatorColumn.name) || col.name.equals(nonQcIndicatorName)))
                 return i;
         }
         return -1;
@@ -266,7 +266,7 @@ public abstract class DataLoader
         for(int i = 0; i<_columns.length; i++)
         {
             ColumnDescriptor col = _columns[i];
-            if (col.qcIndicator && (col.name.equals(qcColumn.name) || col.name.equals(namePlusIndicator)))
+            if (col.isQcIndicator() && (col.name.equals(qcColumn.name) || col.name.equals(namePlusIndicator)))
                 return i;
         }
         return -1;

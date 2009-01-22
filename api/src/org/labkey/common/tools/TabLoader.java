@@ -784,7 +784,7 @@ public class TabLoader extends DataLoader
                     }
                     try
                     {
-                        if (column.qcEnabled)
+                        if (column.isQcEnabled())
                         {
                             if (values[i] != null)
                             {
@@ -811,7 +811,7 @@ public class TabLoader extends DataLoader
                                 else
                                 {
                                     // No such column. Is this a valid qc indicator or a valid value?
-                                    if (QcUtil.isValidQcValue(fld, column.qcContainer))
+                                    if (QcUtil.isValidQcValue(fld, column.getQcContainer()))
                                     {
                                         QcFieldWrapper qcWrapper = new QcFieldWrapper();
                                         qcWrapper.setQcValue("".equals(fld) ? null : fld);
@@ -828,7 +828,7 @@ public class TabLoader extends DataLoader
                                 }
                             }
                         }
-                        else if (column.qcIndicator)
+                        else if (column.isQcIndicator())
                         {
                             int qcColumnIndex = getQcColumnIndex(column);
                             if (qcColumnIndex != -1)
@@ -843,7 +843,7 @@ public class TabLoader extends DataLoader
                                 }
                                 else
                                 {
-                                    if (QcUtil.isValidQcValue(fld, column.qcContainer))
+                                    if (QcUtil.isValidQcValue(fld, column.getQcContainer()))
                                     {
                                         QcFieldWrapper qcWrapper = (QcFieldWrapper)values[qcColumnIndex];
                                         qcWrapper.setQcValue("".equals(fld) ? null : fld);
@@ -857,7 +857,7 @@ public class TabLoader extends DataLoader
                             else
                             {
                                 // No matching qc column, just put in a wrapper
-                                if (!QcUtil.isValidQcValue(fld, column.qcContainer))
+                                if (!QcUtil.isValidQcValue(fld, column.getQcContainer()))
                                 {
                                     throw new ConversionException(fld + " is not a valid QC value");
                                 }
