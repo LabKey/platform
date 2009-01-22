@@ -83,11 +83,13 @@
     SimpleFilter f = new SimpleFilter();
     f.addCondition("Container", study.getContainer());
     f.addCondition("ParticipantId", bean.getParticipantId());
-    ResultSet rsVisitDates = Table.select(tinfoParticipantVisit, PageFlowUtil.set("SequenceNum", "VisitDate"), f, null);
+    ResultSet rsVisitDates = Table.select(tinfoParticipantVisit, PageFlowUtil.set("SequenceNum", "VisitDate", "ParticipantId", "Container"), f, null);
+    int s = rsVisitDates.findColumn("SequenceNum");
+    int v = rsVisitDates.findColumn("VisitDate");
     while (rsVisitDates.next())
     {
-        Double seq = rsVisitDates.getDouble(1);
-        Date date = rsVisitDates.getTimestamp(2);
+        Double seq = rsVisitDates.getDouble(s);
+        Date date = rsVisitDates.getTimestamp(v);
         visitDates.put(seq, date);
     }
     rsVisitDates.close();

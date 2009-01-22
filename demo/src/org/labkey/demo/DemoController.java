@@ -195,7 +195,7 @@ public class DemoController extends SpringActionController
 
             // get Person to generate nav trail later
             if (!form.isDataLoaded())
-                form.refreshFromDb(false);
+                form.refreshFromDb();
             _person = form.getBean();
 
             UpdateView updateView = new UpdateView(form, errors);

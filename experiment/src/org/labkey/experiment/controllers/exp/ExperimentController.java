@@ -1753,11 +1753,13 @@ public class ExperimentController extends SpringActionController
                         MaterialSource newSource = helper.uploadMaterials();
 
                         ExpSampleSet activeSampleSet = ExperimentService.get().lookupActiveSampleSet(getContainer());
+						ExpSampleSet newSampleSet = ExperimentService.get().getSampleSet(newSource.getRowId());
+
                         if (activeSampleSet == null)
                         {
-                            ExperimentService.get().setActiveSampleSet(getContainer(), ExperimentService.get().getSampleSet(newSource.getRowId()));
+                            ExperimentService.get().setActiveSampleSet(getContainer(), newSampleSet);
                         }
-                        HttpView.throwRedirect(ExperimentUrlsImpl.get().getShowSampleSetURL(ExperimentService.get().getSampleSet(newSource.getRowId())));
+                        HttpView.throwRedirect(ExperimentUrlsImpl.get().getShowSampleSetURL(newSampleSet));
                     }
                     catch (ExperimentException e)
                     {
@@ -1844,7 +1846,7 @@ public class ExperimentController extends SpringActionController
     {
         public ModelAndView getView(ExperimentForm form, BindException errors) throws Exception
         {
-            form.refreshFromDb(false);
+            form.refreshFromDb();
             Experiment exp = form.getBean();
             if (exp == null)
             {

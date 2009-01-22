@@ -2002,7 +2002,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         MaterialSource source;
         try
         {
-            source = Table.selectObject(getTinfoMaterialSource(), Table.ALL_COLUMNS, filter, null, MaterialSource.class);
+			Class<MaterialSource> c = MaterialSource.class;
+            source = (MaterialSource)Table.selectObject(getTinfoMaterialSource(), Table.ALL_COLUMNS, (Filter)filter, (Sort)null, c);
         }
         catch (SQLException x)
         {

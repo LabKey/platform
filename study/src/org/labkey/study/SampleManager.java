@@ -2112,7 +2112,7 @@ public class SampleManager
         if (!unresolvedColumns.isEmpty())
             throw new IllegalStateException("Unable to resolve column(s): " + unresolvedColumns.toString());
         // generate our select SQL:
-        SQLFragment viewSql = Table.getDisplaySelectSQL(tinfo, cols, specimenDetailFilter, null);
+        SQLFragment viewSql = Table.getSelectSQL(tinfo, cols, specimenDetailFilter, null);
 
         // save off the aliases for our grouping columns, so we can group by them later:
         String groupingColSql = null;

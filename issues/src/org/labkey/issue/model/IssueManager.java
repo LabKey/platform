@@ -63,11 +63,11 @@ public class IssueManager
     public static Issue getIssue(Object s, Container c, int issueId) throws SQLException
     {
         Issue[] issues = Table.selectForDisplay(
-                _issuesSchema.getTableInfoIssues(),
-                Table.ALL_COLUMNS,
-                new SimpleFilter("issueId", new Integer(issueId))
+                (TableInfo)_issuesSchema.getTableInfoIssues(),
+                (Set)Table.ALL_COLUMNS,
+                (Filter)new SimpleFilter("issueId", new Integer(issueId))
                         .addCondition("container", c.getId()),
-                null, Issue.class);
+                (Sort)null, Issue.class);
         if (null == issues || issues.length < 1)
             return null;
         Issue issue = issues[0];

@@ -1792,7 +1792,7 @@ public class QueryControllerSpring extends SpringActionController
 
         public ModelAndView getConfirmView(DbUserSchemaForm form, BindException errors) throws Exception
         {
-            form.refreshFromDb(false);
+            form.refreshFromDb();
             return new HtmlView(
                     null,
                     "Are you sure you want to delete the schema '%s'? The tables and queries defined in this schema will no longer be accessible.",
@@ -1823,7 +1823,7 @@ public class QueryControllerSpring extends SpringActionController
     {
         public ModelAndView getView(DbUserSchemaForm form, BindException errors) throws Exception
         {
-            form.refreshFromDb(false);
+            form.refreshFromDb();
             DbUserSchemaDef def = form.getBean();
             ActionURL fwd = new ActionURL(AdminAction.class, form.getContainer());
             fwd.addParameter("reloadedSchema", def.getUserSchemaName());

@@ -202,16 +202,12 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
             TableInfo tinfoProtocol = ExperimentServiceImpl.get().getTinfoProtocol();
             ColumnInfo colLSID = tinfoProtocol.getColumn("LSID");
             ColumnInfo colSampleLSID = new PropertyColumn(ExperimentProperty.SampleSetLSID.getPropertyDescriptor(), colLSID, null, user);
-            SQLFragment whereClause = colSampleLSID.getValueSql();
-            whereClause.append(" = ");
-            whereClause.appendStringLiteral(getLSID());
             SimpleFilter filter = new SimpleFilter();
-            filter.addWhereClause(whereClause.getSQL(), whereClause.getParams().toArray());
+			filter.addCondition(colSampleLSID, getLSID());
             List<ColumnInfo> selectColumns = new ArrayList<ColumnInfo>();
             selectColumns.addAll(tinfoProtocol.getColumns());
             selectColumns.add(colSampleLSID);
-            Protocol[] protocols = Table.select(tinfoProtocol,
-                    selectColumns, filter, null, Protocol.class);
+            Protocol[] protocols = Table.select(tinfoProtocol, selectColumns, filter, null, Protocol.class);
             ExpProtocol[] ret = new ExpProtocol[protocols.length];
             for (int i = 0; i < protocols.length; i ++)
             {
@@ -223,7 +219,6 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         {
             return new ExpProtocol[0];
         }
-
     }
 
     public void onSamplesChanged(User user, List<Material> materials) throws Exception

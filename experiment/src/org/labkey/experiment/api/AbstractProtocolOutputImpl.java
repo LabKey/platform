@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.security.User;
 import org.labkey.api.data.*;
+import org.labkey.api.util.CsvSet;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -198,11 +199,12 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
         ResultSet rs = null;
         try
         {
-            rs = Table.select(inputTable, Collections.singleton("TargetApplicationId"), filter, null);
+            rs = Table.select(inputTable, new CsvSet("TargetApplicationId,DataId"), filter, null);
             List<ExpProtocolApplication> ret = new ArrayList<ExpProtocolApplication>();
+			int targetCol = rs.findColumn("TargetApplicationId");
             while (rs.next())
             {
-                ret.add(ExperimentService.get().getExpProtocolApplication(rs.getInt(1)));
+                ret.add(ExperimentService.get().getExpProtocolApplication(rs.getInt(targetCol)));
             }
             return ret.toArray(new ExpProtocolApplication[ret.size()]);
         }

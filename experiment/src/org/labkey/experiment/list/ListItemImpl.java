@@ -432,7 +432,7 @@ public class ListItemImpl implements ListItem
                                 RenderContext ctx = details.getRenderContext();
 
                                 ctx.setMode(DataRegion.MODE_DETAILS);
-                                ctx.setBaseFilter(new PkFilter(table, _itm.getKey(), true));
+                                ctx.setBaseFilter(new PkFilter(table, _itm.getKey()));
 
                                 ResultSet rs = Table.selectForDisplay(table, table.getColumns(), ctx.getBaseFilter(), ctx.getBaseSort(), 0, 0);
                                 rs.next();

@@ -327,6 +327,7 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
+
     public void ensureRequiredColumns(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort, Set<String> unresolvedColumns)
     {
         AliasManager manager = new AliasManager(table, columns);
@@ -389,6 +390,7 @@ public class QueryServiceImpl extends QueryService
         }
     }
 
+
     public String[] getAvailableWebPartNames(UserSchema schema)
     {
         return new String[0];
@@ -424,7 +426,7 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
-    @Override
+
     public TableInfo overlayMetadata(TableInfo tableInfo, String tableName, UserSchema schema)
     {
         if (tableInfo instanceof AbstractTableInfo && tableInfo.isMetadataOverrideable())
@@ -448,9 +450,17 @@ public class QueryServiceImpl extends QueryService
         return tableInfo;
     }
 
+
     public ResultSet select(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort) throws SQLException
     {
-        ensureRequiredColumns(table, columns, filter, sort, null);
-        return Table.selectForDisplay(table, columns, filter, sort, 0, 0);
+        SQLFragment sql = getSelectSQL(table, columns, filter, sort, 0, 0);
+		return Table.executeQuery(table.getSchema(), sql);
     }
+
+
+	public SQLFragment getSelectSQL(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset)
+	{
+		ensureRequiredColumns(table, columns, filter, sort, null);
+		return Table.getSelectSQL(table, columns, filter, sort, rowCount, offset);
+	}
 }

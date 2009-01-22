@@ -74,7 +74,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             for (String pattern : _protocolPatterns)
             {
                 condition.append(separator);
-                condition.append(_rootTable.getColumn("ProtocolLSID").getValueSql());
+                condition.append(_rootTable.getColumn("ProtocolLSID").getAlias());
                 condition.append(" LIKE ?");
                 condition.add(pattern);
                 separator = " OR "; 
@@ -100,7 +100,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return;
         }
         _inputMaterial = material;
-        addCondition(new SQLFragment( " " + ExperimentServiceImpl.get().getTinfoExperimentRun() + ".LSID IN " +
+        addCondition(new SQLFragment( " LSID IN " +
             "(SELECT RunLSID FROM " + ExperimentServiceImpl.get().getTinfoExperimentRunMaterialInputs() + " WHERE RowId = ?)", _inputMaterial.getRowId()));
     }
 
@@ -120,7 +120,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return;
         }
         _inputData = data;
-        addCondition(new SQLFragment( " " + ExperimentServiceImpl.get().getTinfoExperimentRun() + ".LSID IN " +
+        addCondition(new SQLFragment( " LSID IN " +
             "(SELECT RunLSID FROM " + ExperimentServiceImpl.get().getTinfoExperimentRunDataInputs() + " WHERE RowId = ?)", _inputData.getRowId()));
 
     }
@@ -139,8 +139,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         else
         {
             SQLFragment sql = new SQLFragment();
-            sql.append(ExperimentServiceImpl.get().getTinfoExperimentRun());
-            sql.append(".RowID IN (");
+            //sql.append(ExperimentServiceImpl.get().getTinfoExperimentRun());
+            sql.append("RowID IN (");
             String separator = "";
             for (ExpRun run : runs)
             {
@@ -160,7 +160,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         if (experiment == null)
             return;
         _experiment = experiment;
-        addCondition(new SQLFragment(" " + ExperimentServiceImpl.get().getTinfoExperimentRun() + ".RowId IN ( SELECT ExperimentRunId FROM " + ExperimentServiceImpl.get().getTinfoRunList() + " "
+        addCondition(new SQLFragment(" RowId IN ( SELECT ExperimentRunId FROM " + ExperimentServiceImpl.get().getTinfoRunList() + " "
                     +  " WHERE ExperimentId = " +  experiment.getRowId() + " ) "));
 
         if (_schema.getContainer().equals(ContainerManager.getSharedContainer()))
