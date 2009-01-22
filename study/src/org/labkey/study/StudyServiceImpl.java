@@ -28,6 +28,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.CsvSet;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.study.controllers.StudyController;
@@ -582,10 +583,10 @@ public class StudyServiceImpl implements StudyService.Service
         ResultSet rs = null;
         try
         {
-            rs = Table.select(datasetTable, Collections.singleton("container"), filter, null);
+            rs = Table.select(datasetTable, new CsvSet("container,protocolid"), filter, null);
             while (rs.next())
             {
-                String containerId = rs.getString(1);
+                String containerId = rs.getString("container");
                 containers.add(ContainerManager.getForId(containerId));
             }
         }

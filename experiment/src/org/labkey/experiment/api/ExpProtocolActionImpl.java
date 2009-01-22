@@ -22,6 +22,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.security.User;
+import org.labkey.api.util.CsvSet;
 import org.apache.log4j.Logger;
 
 import java.sql.SQLException;
@@ -73,10 +74,10 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
             List<ExpProtocolAction> ret = new ArrayList<ExpProtocolAction>();
             SimpleFilter filter = new SimpleFilter();
             filter.addCondition("ActionId", getRowId());
-            rs = Table.select(ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), Collections.singleton("PredecessorId"), filter, null);
+            rs = Table.select(ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), new CsvSet("PredecessorId,ActionId"), filter, null);
             while (rs.next())
             {
-                ret.add(fromRowId(rs.getInt(1)));
+                ret.add(fromRowId(rs.getInt("PredecessorId")));
             }
             return ret.toArray(new ExpProtocolAction[ret.size()]);
         }
@@ -100,10 +101,10 @@ public class ExpProtocolActionImpl implements ExpProtocolAction
             List<ExpProtocolAction> ret = new ArrayList<ExpProtocolAction>();
             SimpleFilter filter = new SimpleFilter();
             filter.addCondition("PredecessorId", getRowId());
-            rs = Table.select(ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), Collections.singleton("ActionId"), filter, null);
+            rs = Table.select(ExperimentServiceImpl.get().getTinfoProtocolActionPredecessor(), new CsvSet("ActionId,PredecessorId"), filter, null);
             while (rs.next())
             {
-                ret.add(fromRowId(rs.getInt(1)));
+                ret.add(fromRowId(rs.getInt("ActionId")));
             }
             return ret.toArray(new ExpProtocolAction[ret.size()]);
         }

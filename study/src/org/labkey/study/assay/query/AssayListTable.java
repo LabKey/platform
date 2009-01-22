@@ -80,7 +80,7 @@ public class AssayListTable extends FilteredTable
         setDefaultVisibleColumns(defaultCols);
 
         // TODO - this is a horrible way to filter out non-assay protocols
-        addCondition(new SQLFragment("(SELECT MAX(pd.PropertyId) from exp.object o, exp.objectproperty op, exp.propertydescriptor pd where pd.propertyid = op.propertyid and op.objectid = o.objectid and o.objecturi = " + _rootTable + ".lsid AND pd.PropertyURI LIKE '%AssayDomain-Run%') IS NOT NULL"));
+        addCondition(new SQLFragment("(SELECT MAX(pd.PropertyId) from exp.object o, exp.objectproperty op, exp.propertydescriptor pd where pd.propertyid = op.propertyid and op.objectid = o.objectid and o.objecturi = x.lsid AND pd.PropertyURI LIKE '%AssayDomain-Run%') IS NOT NULL"));
     }
 
     public StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns)

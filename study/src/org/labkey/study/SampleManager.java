@@ -2423,9 +2423,9 @@ public class SampleManager
         ResultSet rs = null;
         try
         {
-            rs = Table.select(StudySchema.getInstance().getTableInfoSpecimen(), Collections.singleton("GlobalUniqueId"), vialFilter, new Sort("GlobalUniqueId"));
+            rs = Table.select(StudySchema.getInstance().getTableInfoSpecimen(), new CsvSet("GlobalUniqueId,SpecimenHash,Container"), vialFilter, new Sort("GlobalUniqueId"));
             while (rs.next())
-                globalUniqueIds.add(rs.getString(1));
+                globalUniqueIds.add(rs.getString("GlobalUniqueId"));
         }
         finally
         {

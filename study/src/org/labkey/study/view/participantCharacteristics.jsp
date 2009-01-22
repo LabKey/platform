@@ -46,6 +46,7 @@
 <%@ page import="org.labkey.study.reports.StudyChartQueryReport" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.util.CsvSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -151,8 +152,8 @@
             }
 
 
-            Map<String,String> result = Table.selectObject(datasetTable, Collections.singleton("lsid"), filter, sort, Map.class);
-            String lsid = result != null ? result.get("lsid") : null;
+            Map<String,Object> result = Table.selectObject(datasetTable, new CsvSet("lsid,ParticipantId,Date,SequenceNum"), filter, sort, Map.class);
+            String lsid = result != null ? (String)result.get("lsid") : null;
             Map<String,Object> datasetRow = null;
 
             if (lsid != null)
