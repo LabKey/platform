@@ -115,8 +115,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         else
         {
             SQLFragment sql = new SQLFragment();
-            sql.append(ExperimentServiceImpl.get().getTinfoMaterial());
-            sql.append(".RowID IN (");
+            sql.append("RowID IN (");
             String separator = "";
             for (ExpMaterial material : materials)
             {
@@ -209,5 +208,12 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             return SamplesSchema.SCHEMA_NAME;
         }
         return super.getPublicSchemaName();
+    }
+
+
+    @Override
+    public SQLFragment getFromSQL(String alias)
+    {
+        return super.getFromSQL(alias);
     }
 }
