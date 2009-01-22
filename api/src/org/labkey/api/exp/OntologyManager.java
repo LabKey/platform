@@ -2796,6 +2796,31 @@ public class OntologyManager
         {
             this.qcValue = qcValue;
         }
+
+        @Override
+        public String toString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.append("PropertyRow: ");
+
+            sb.append("objectId=" + objectId);
+            sb.append(", propertyId=" + propertyId);
+            sb.append(", value=");
+
+            if (stringValue != null)
+                sb.append(stringValue);
+            else if (floatValue != null)
+                sb.append(floatValue);
+            else if (dateTimeValue != null)
+                sb.append(dateTimeValue);
+            else
+                sb.append("null");
+
+            if (qcValue != null)
+                sb.append(", qcValue=" + qcValue);
+
+            return sb.toString();
+        }
     }
 
     public static DbSchema getExpSchema() {
