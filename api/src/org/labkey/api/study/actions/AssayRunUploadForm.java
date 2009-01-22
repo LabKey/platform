@@ -356,7 +356,10 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                     SimpleFilter filter = new SimpleFilter(pks.get(0).getName(), value);
                     try
                     {
-                        Map[] maps =  Table.selectForDisplay(lookupTable, Collections.singleton(lookupTable.getTitleColumn()), filter, null, Map.class);
+                        Set<String> cols = new HashSet<String>();
+                        cols.add(lookupTable.getTitleColumn());
+                        cols.add(pks.get(0).getName());
+                        Map[] maps =  Table.selectForDisplay(lookupTable, cols, filter, null, Map.class);
                         if (maps.length > 0)
                         {
                             Object title = maps[0].get(lookupTable.getTitleColumn());
