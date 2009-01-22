@@ -546,7 +546,24 @@ public class Table
     public static <K> K[] executeArray(TableInfo table, ColumnInfo col, Filter filter, Sort sort, Class<K> c)
             throws SQLException
     {
-        SQLFragment sql = getSelectSQL(table, Collections.singletonList(col), filter, sort);
+        HashMap cols = new HashMap<String,ColumnInfo>();
+        cols.put(col.getName(), col);
+        if (filter != null || sort != null)
+            ensureRequiredColumns(table, cols, filter, sort);
+        SQLFragment sqlInner = getSelectSQL(table, cols.values(), filter, sort);
+        SQLFragment sql;
+        if (cols.size() == 1)
+        {
+            sql = sqlInner;
+        }
+        else
+        {
+            sql = new SQLFragment();
+            sql.append("SELECT " + col.getName() + " FROM (");
+            sql.append(sqlInner);
+            sql.append(") _array_");
+        }
+
         return executeArray(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), c);
     }
 
@@ -1186,7 +1203,7 @@ public class Table
     }
 
 
-    public static SQLFragment getSelectSQL(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort)
+    public static SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort)
     {
         return getSelectSQL(table, columns, filter, sort, 0, 0);
     }
@@ -1195,7 +1212,7 @@ public class Table
     /**
      * Returns the sql for a select.
      */
-    public static SQLFragment getSelectSQL(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset)
+    public static SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset)
     {
         SqlDialect dialect = table.getSqlDialect();
         Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
@@ -1254,7 +1271,7 @@ public class Table
     }
 
 
-    public static Sort createDefaultSort(List<ColumnInfo> columns)
+    public static Sort createDefaultSort(Collection<ColumnInfo> columns)
     {
         Sort sort = new Sort();
         addSortableColumns(sort, columns, true);
@@ -1267,7 +1284,7 @@ public class Table
         return sort;
     }
 
-    private static void addSortableColumns(Sort sort, List<ColumnInfo> columns, boolean usePrimaryKey)
+    private static void addSortableColumns(Sort sort, Collection<ColumnInfo> columns, boolean usePrimaryKey)
     {
         for (ColumnInfo column : columns)
         {
@@ -2198,7 +2215,7 @@ public class Table
         }
     }
 
-    static public Map<String, ColumnInfo> createColumnMap(TableInfo table, List<ColumnInfo> columns)
+    static public Map<String, ColumnInfo> createColumnMap(TableInfo table, Collection<ColumnInfo> columns)
     {
         // TODO: instead of creating a map with all the known entries, we should return a map implementation that defers to TableInfo.getColumn()
         CaseInsensitiveHashMap<ColumnInfo> ret = new CaseInsensitiveHashMap<ColumnInfo>();
