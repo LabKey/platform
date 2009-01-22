@@ -52,6 +52,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         assayType,              // assay definition name : general, nab, elispot etc.
         assayName,              // assay instance name
         userName,               // user email
+        workingDir,             // temp directory that the script will be executed from
+        protocolId,             // protocol row id
+        protocolLsid,
+        protocolDescription,
 
         runDataFile,
         errorsFile,
@@ -85,7 +89,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             }
 
             // additional context properties
-            for (Map.Entry<String, String> entry : getContextProperties(context).entrySet())
+            for (Map.Entry<String, String> entry : getContextProperties(context, scriptDir).entrySet())
             {
                 pw.append(entry.getKey());
                 pw.append('\t');
@@ -124,7 +128,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
     }
 
-    private Map<String, String> getContextProperties(AssayRunUploadContext context)
+    private Map<String, String> getContextProperties(AssayRunUploadContext context, File scriptDir)
     {
         Map<String, String> map = new HashMap<String, String>();
 
@@ -134,6 +138,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         map.put(Props.assayType.name(), context.getProvider().getName());
         map.put(Props.assayName.name(), context.getProtocol().getName());
         map.put(Props.userName.name(), context.getUser().getEmail());
+        map.put(Props.workingDir.name(), scriptDir.getAbsolutePath());
+        map.put(Props.protocolId.name(), String.valueOf(context.getProtocol().getRowId()));
+        map.put(Props.protocolDescription.name(), context.getProtocol().getDescription());
+        map.put(Props.protocolLsid.name(), context.getProtocol().getLSID());
 
         return map;
     }
