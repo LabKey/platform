@@ -220,6 +220,7 @@ api/src/org/labkey/api/exp/api/ExpProtocolOutput.java -text
 api/src/org/labkey/api/exp/api/ExpRun.java -text
 api/src/org/labkey/api/exp/api/ExpRunInput.java -text
 api/src/org/labkey/api/exp/api/ExpSampleSet.java -text
+api/src/org/labkey/api/exp/api/ExperimentJSONConverter.java -text
 api/src/org/labkey/api/exp/api/ExperimentService.java -text
 api/src/org/labkey/api/exp/api/ExperimentUrls.java -text
 api/src/org/labkey/api/exp/api/IAssayDomainType.java -text

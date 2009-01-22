@@ -39,7 +39,7 @@ LABKEY.Assay.Batch = function (assayId, batchId) {
     this.batchId = batchId;
 
     /**
-     * Mutible. When saving an exising Batch, the properties of the batch
+     * Mutable. When saving an exising Batch, the properties of the batch
      * will be merged by the server.  When creating a new batch, the server
      * will provide some values such as batch.id and batch.createdBy.
      * @type {LABKEY.Exp.RunGroup}
@@ -118,6 +118,7 @@ Ext.extend(LABKEY.Assay.Batch, Ext.util.Observable, {
             }
         }
         catch (e) {
+            alert(e);
             this.handleLoadFailure(response);
         }
     },
