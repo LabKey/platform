@@ -178,7 +178,7 @@ public class IssueManager
 
         try
         {
-            keywords = Table.select(_issuesSchema.getTableInfoIssueKeywords(), PageFlowUtil.set("Keyword", "Default"), filter, sort, Keyword.class);
+            keywords = Table.select(_issuesSchema.getTableInfoIssueKeywords(), PageFlowUtil.set("Keyword", "Default", "Container", "Type"), filter, sort, Keyword.class);
         }
         catch (SQLException e)
         {
