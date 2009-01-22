@@ -972,35 +972,38 @@ public class PageFlowUtil
     }
 
 
-
+	// UNDONE: Move to FileUtil
     // Fetch the contents of an input stream, and return in a String.
     public static String getStreamContentsAsString(InputStream is)
     {
-        StringBuilder contents = new StringBuilder();
-        BufferedReader input = null;
-
-        try
-        {
-            input = new BufferedReader(new InputStreamReader(is));
-            String line;
-            while ((line = input.readLine()) != null)
-            {
-                contents.append(line);
-                contents.append(_newline);
-            }
-        }
-        catch (IOException e)
-        {
-            _log.error("getStreamContentsAsString", e);
-        }
-        finally
-        {
-            IOUtils.closeQuietly(input);
-        }
-        return contents.toString();
+		return getReaderContentsAsString(new BufferedReader(new InputStreamReader(is)));
     }
 
 
+	public static String getReaderContentsAsString(BufferedReader reader)
+	{
+		StringBuilder contents = new StringBuilder();
+		String line;
+		try
+		{
+			while ((line = reader.readLine()) != null)
+			{
+				contents.append(line);
+				contents.append(_newline);
+			}
+		}
+		catch (IOException e)
+		{
+			_log.error("getStreamContentsAsString", e);
+		}
+		finally
+		{
+			IOUtils.closeQuietly(reader);
+		}
+		return contents.toString();
+	}
+
+	
     // Fetch the contents of an input stream, and return it in a list.
     public static List<String> getStreamContentsAsList(InputStream is) throws IOException
     {

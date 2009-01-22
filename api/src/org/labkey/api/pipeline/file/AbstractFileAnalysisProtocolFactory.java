@@ -17,8 +17,11 @@ package org.labkey.api.pipeline.file;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.impl.common.IOUtil;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.io.*;
 import java.net.URI;
@@ -260,14 +263,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
             try
             {
                 reader = new BufferedReader(createReader());
-
-                StringBuffer defaults = new StringBuffer();
-                String line;
-                while ((line = reader.readLine()) != null)
-                {
-                    defaults.append(line).append("\n");
-                }
-                return defaults.toString();
+				return PageFlowUtil.getReaderContentsAsString(reader);
             }
             catch (FileNotFoundException enf)
             {

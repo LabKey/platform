@@ -62,7 +62,7 @@ public class DetailsView extends DataView
             assert _pk != null || filter != null;
             if (null == filter)
                 ctx.setBaseFilter(
-                        new PkFilter(getTable(), _pk, true));
+                        new PkFilter(getTable(), _pk));
             getDataRegion().renderDetails(ctx, out);
         }
         else

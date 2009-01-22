@@ -20,6 +20,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.security.User;
 
@@ -30,7 +31,7 @@ import java.io.Serializable;
  * Date: Aug 15, 2005
  * Time: 2:41:47 PM
  */
-public class PropertyDescriptor implements Serializable, Cloneable
+public class PropertyDescriptor extends ColumnRenderProperties implements Serializable, Cloneable
 {
     private int propertyId;
     private String propertyURI;

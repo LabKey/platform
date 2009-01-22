@@ -80,4 +80,6 @@ abstract public class QueryService
     abstract public List<FieldKey> getDefaultVisibleColumns(List<ColumnInfo> columns);
 
     abstract public TableInfo overlayMetadata(TableInfo tableInfo, String tableName, UserSchema schema);
+
+	abstract public SQLFragment getSelectSQL(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset);
 }

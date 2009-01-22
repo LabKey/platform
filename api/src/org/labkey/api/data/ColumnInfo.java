@@ -34,7 +34,7 @@ import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ColumnInfo
+public class ColumnInfo extends ColumnRenderProperties
 {
     private static final DisplayColumnFactory DEFAULT_FACTORY = new DisplayColumnFactory()
     {
@@ -48,24 +48,16 @@ public class ColumnInfo
     private String alias;
     private String caption;
     private String sqlTypeName;
-    private String formatString = null;
-    private String tsvFormatString = null;
-    private String excelFormatString = null;
     private String textAlign = null;
     private String cssClass;
     private String cssStyle;
     private ForeignKey fk = null;
-    private String inputType = null;
-    private Sort.SortDirection sortDirection = Sort.SortDirection.ASC;
     private StringExpression url = null;
     private String defaultValue = null;
     private String autoFillValue = null;
-    private int inputLength = -1;
-    private int inputRows = -1;
     private int scale = 0;
     private int precision = 0;
     private int colIndex = 0; //index of column in table. 1 based.
-    private String width = null;
     private boolean nullable = false;
     private boolean isAutoIncrement = false;
     private boolean isKeyField = false;
@@ -245,6 +237,7 @@ public class ColumnInfo
         return caption;
     }
 
+    @Override
     public String getFormatString()
     {
         if (isDateTimeType())
@@ -267,31 +260,6 @@ public class ColumnInfo
     public boolean isFormatStringSet()
     {
         return (formatString != null);
-    }
-
-    public void setFormatString(String formatString)
-    {
-        this.formatString = formatString;
-    }
-
-    public String getTsvFormatString()
-    {
-        return tsvFormatString;
-    }
-
-    public void setTsvFormatString(String tsvFormatString)
-    {
-        this.tsvFormatString = tsvFormatString;
-    }
-
-    public String getExcelFormatString()
-    {
-        return excelFormatString;
-    }
-
-    public void setExcelFormatString(String excelFormatString)
-    {
-        this.excelFormatString = excelFormatString;
     }
 
     public String getTextAlign()
@@ -382,26 +350,26 @@ public class ColumnInfo
 
     public void setWidth(String width)
     {
-        this.width = width;
+        this.displayWidth = width;
     }
 
     public String getWidth()
     {
-        if (null != width)
-            return width;
+        if (null != displayWidth)
+            return displayWidth;
         if (fk != null)
         {
             ColumnInfo fkTitleColumn = getDisplayField();
             if (null != fkTitleColumn && fkTitleColumn != this)
-                return width = fkTitleColumn.getWidth();
+                return displayWidth = fkTitleColumn.getWidth();
         }
 
         if (isStringType())
-            return width = String.valueOf(Math.min(getScale() * 6, 200));
+            return displayWidth = String.valueOf(Math.min(getScale() * 6, 200));
         else if (isDateTimeType())
-            return width = "90";
+            return displayWidth = "90";
         else
-            return width = "60";
+            return displayWidth = "60";
     }
 
     public TableInfo getFkTableInfo()
@@ -483,6 +451,7 @@ public class ColumnInfo
     }
 
 
+    @Override
     public int getInputLength()
     {
         if (-1 == inputLength)
@@ -496,6 +465,8 @@ public class ColumnInfo
         return inputLength;
     }
 
+
+    @Override
     public int getInputRows()
     {
         if (-1 == inputRows)
@@ -634,8 +605,8 @@ public class ColumnInfo
                 xmlCol.setScale(scale);
             if (null != defaultValue)
                 xmlCol.setDefaultValue(defaultValue);
-            if (null != width)
-                xmlCol.setDisplayWidth(width);
+            if (null != getDisplayWidth())
+                xmlCol.setDisplayWidth(getDisplayWidth());
             if (null != formatString)
                 xmlCol.setFormatString(formatString);
             if (null != textAlign)
@@ -692,7 +663,7 @@ public class ColumnInfo
         if (xmlCol.isSetPropertyURI())
             propertyURI = xmlCol.getPropertyURI();
         if (xmlCol.isSetSortDescending())
-            sortDirection = xmlCol.getSortDescending() ? Sort.SortDirection.DESC : Sort.SortDirection.ASC;
+            setSortDirection(xmlCol.getSortDescending() ? Sort.SortDirection.DESC : Sort.SortDirection.ASC);
         if (xmlCol.isSetDescription())
             description = xmlCol.getDescription();
         if (xmlCol.isSetIsHidden())
@@ -703,7 +674,7 @@ public class ColumnInfo
         try
         {
             if (xmlCol.isSetDisplayWidth())
-                width = xmlCol.getDisplayWidth();
+                setDisplayWidth(xmlCol.getDisplayWidth());
         }
         catch (Throwable x)
         {
@@ -887,16 +858,6 @@ public class ColumnInfo
         }
 
         return sb.toString();
-    }
-
-    public Sort.SortDirection getSortDirection()
-    {
-        return sortDirection;
-    }
-
-    public void setSortDirection(Sort.SortDirection sortDirection)
-    {
-        this.sortDirection = sortDirection;
     }
 
     public String getDescription()
@@ -1321,12 +1282,6 @@ public class ColumnInfo
     }
 
 
-    public void setInputType(String inputType)
-    {
-        this.inputType = inputType;
-    }
-
-
     public void setDefaultValue(String defaultValue)
     {
         this.defaultValue = defaultValue;
@@ -1336,17 +1291,6 @@ public class ColumnInfo
     public void setAutoFillValue(String autoFillValue)
     {
         this.autoFillValue = autoFillValue;
-    }
-
-    public void setInputLength(int inputLength)
-    {
-        this.inputLength = inputLength;
-    }
-
-
-    public void setInputRows(int inputRows)
-    {
-        this.inputRows = inputRows;
     }
 
 

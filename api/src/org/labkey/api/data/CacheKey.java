@@ -26,7 +26,7 @@ public class CacheKey<T, C extends Enum<C>> implements Cloneable
     private void addBitMaskFilter(ColumnInfo column, int mask, int value)
     {
         SQLFragment ret = new SQLFragment("(((");
-        ret.append(column.getValueSql());
+        ret.append(column.getAlias());
         ret.append(") &");
         ret.append(mask);
         ret.append(") = ");

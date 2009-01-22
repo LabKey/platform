@@ -1381,7 +1381,7 @@ public class DataRegion extends DisplayElement
             }
             else
             {
-                Map[] maps = Table.select(getTable(), getSelectColumns(), new PkFilter(getTable(), viewForm.getPkVals(), false), null, Map.class);
+                Map[] maps = Table.select(getTable(), getSelectColumns(), new PkFilter(getTable(), viewForm.getPkVals()), null, Map.class);
                 if (maps.length > 0)
                     valueMap = maps[0];
             }

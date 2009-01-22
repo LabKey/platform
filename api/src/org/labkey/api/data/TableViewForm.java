@@ -222,7 +222,7 @@ public class TableViewForm extends ViewFormData implements DynaBean, HasBindPara
     /**
      * Pulls in the data from the current row of the database.
      */
-    public void refreshFromDb(boolean selectDisplayFields) throws SQLException
+    public void refreshFromDb() throws SQLException
     {
         assert null != _tinfo;
         assert null != getPkVals();
@@ -241,11 +241,7 @@ public class TableViewForm extends ViewFormData implements DynaBean, HasBindPara
         {
             HttpView.throwNotFound("Invalid PK value - cannot be null");
         }
-        Map[] maps;
-        if (selectDisplayFields)
-            maps = Table.selectForDisplay(_tinfo, _tinfo.getColumnNameSet(), new PkFilter(_tinfo, pkVals, true), null, Map.class);
-        else
-            maps = Table.select(_tinfo, _tinfo.getColumnNameSet(), new PkFilter(_tinfo, pkVals, false), null, Map.class);
+        Map[] maps = Table.select(_tinfo, _tinfo.getColumnNameSet(), new PkFilter(_tinfo, pkVals), null, Map.class);
 
         if (maps.length > 0)
         {

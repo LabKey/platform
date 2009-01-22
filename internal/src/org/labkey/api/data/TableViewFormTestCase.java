@@ -129,14 +129,14 @@ public class TableViewFormTestCase extends junit.framework.TestCase
         Assert.assertEquals("Date time roundtrip: ", createdDate.getTime(), ((Date) tf.getTypedValue("datetimeNotNull")).getTime());
 
         tf.setPkVal(firstPk);
-        tf.refreshFromDb(false);
+        tf.refreshFromDb();
         Assert.assertEquals("reselect", tf.getTypedValue("text"), "First test record");
 
         tf.doDelete();
         boolean wasDeleted = false;
         try
         {
-            tf.refreshFromDb(false);
+            tf.refreshFromDb();
         }
         catch (Exception x)
         {

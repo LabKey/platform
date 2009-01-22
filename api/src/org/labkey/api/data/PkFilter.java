@@ -27,7 +27,7 @@ import java.util.List;
  */
 public class PkFilter extends SimpleFilter
 {
-    public PkFilter(TableInfo tinfo, Object pkVal, boolean forDisplay)
+    public PkFilter(TableInfo tinfo, Object pkVal)
     {
         super();
         List<ColumnInfo> columnPK = tinfo.getPkColumns();
@@ -43,15 +43,7 @@ public class PkFilter extends SimpleFilter
 
         for (int i = 0; i < pkVals.length; i++)
         {
-            String name;
-            if (forDisplay)
-            {
-                name = columnPK.get(i).getAlias();
-            }
-            else
-            {
-                name = columnPK.get(i).getValueSql().toString();
-            }
+            String name = columnPK.get(i).getAlias();
             Object value = pkVals[i];
             if (value instanceof String)
             {

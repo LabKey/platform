@@ -87,6 +87,11 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         return _rootTable;
     }
 
+	private String filterName(ColumnInfo c)
+	{
+		return c.getAlias();
+	}
+
     final public void addCondition(SQLFragment condition, String... columnNames)
     {
         _filter.addWhereClause("(" + condition.getSQL() + ")", condition.getParams().toArray(), columnNames);
@@ -125,7 +130,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         assert col.getParentTable() == _rootTable;
         // This CAST improves performance on Postgres for some queries by choosing a more efficient query plan
         SQLFragment frag = new SQLFragment();
-        frag.append(col.getValueSql());
+        frag.append(filterName(col));
         frag.append(" = CAST(");
         frag.appendStringLiteral(container.getId());
         frag.append(" AS UniqueIdentifier)");
@@ -136,7 +141,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     {
         assert col.getParentTable() == _rootTable;
         SQLFragment frag = new SQLFragment();
-        frag.append(col.getValueSql());
+        frag.append(filterName(col));
         frag.append(" = ");
         frag.appendStringLiteral(value);
         addCondition(frag, col.getName());
@@ -146,7 +151,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     {
         assert col.getParentTable() == _rootTable;
         SQLFragment frag = new SQLFragment();
-        frag.append(col.getValueSql());
+        frag.append(filterName(col));
         frag.append(" = ");
         frag.append(Integer.toString(value));
         addCondition(frag);
@@ -156,7 +161,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     {
         assert col.getParentTable() == _rootTable;
         SQLFragment frag = new SQLFragment();
-        frag.append(col.getValueSql());
+        frag.append(filterName(col));
         frag.append(" = ");
         frag.append(Float.toString(value));
         addCondition(frag);
@@ -167,16 +172,16 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         assert col1.getParentTable() == col2.getParentTable();
         assert col1.getParentTable() == _rootTable;
         SQLFragment frag = new SQLFragment();
-        frag.append(col1.getValueSql());
+        frag.append(filterName(col1));
         frag.append(" = ");
-        frag.append(col2.getValueSql());
+        frag.append(filterName(col2));
         addCondition(frag);
     }
 
     public void addInClause(ColumnInfo col, Collection<?> params)
     {
         assert col.getParentTable() == _rootTable;
-        SimpleFilter.InClause clause = new SimpleFilter.InClause(col.getValueSql().toString(), params);
+        SimpleFilter.InClause clause = new SimpleFilter.InClause(filterName(col), params);
         SQLFragment frag = clause.toSQLFragment(Collections.<String, ColumnInfo>emptyMap(), _schema.getSqlDialect());
         addCondition(frag);
     }

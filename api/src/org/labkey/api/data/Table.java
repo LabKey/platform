@@ -20,6 +20,7 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.beanutils.PropertyUtils;
 import static org.apache.commons.lang.StringUtils.stripEnd;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
 import org.labkey.api.attachments.AttachmentFile;
@@ -27,6 +28,7 @@ import org.labkey.api.data.collections.Join;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.*;
+import org.labkey.api.settings.AppProps;
 import org.labkey.common.util.BoundMap;
 import org.labkey.common.util.Pair;
 
@@ -760,7 +762,7 @@ public class Table
 
         try
         {
-            rs = select(table, ALL_COLUMNS, new PkFilter(table, key, false), null);
+            rs = select(table, ALL_COLUMNS, new PkFilter(table, key), null);
 
             if (!rs.next())
                 throw OptimisticConflictException.create(ERROR_DELETED);
@@ -1180,8 +1182,9 @@ public class Table
     {
         List<ColumnInfo> allColumns = new ArrayList<ColumnInfo>(select);
         QueryService.get().ensureRequiredColumns(table, allColumns, filter, sort, null);
-        return getDisplaySelectSQL(table, allColumns, filter, sort, 0, 0);
+        return getSelectSQL(table, allColumns, filter, sort, 0, 0);
     }
+
 
     public static SQLFragment getSelectSQL(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort)
     {
@@ -1233,48 +1236,23 @@ public class Table
             orderBy = sort.getOrderByClause(dialect, columnMap);
         }
 
-        return dialect.limitRows(selectFrag, fromFrag, filterFrag, orderBy, rowCount, offset);
+		if (filterFrag == null && sort == null && rowCount == 0 && offset == 0)
+		{
+			selectFrag.append("\n").append(fromFrag);
+			return selectFrag;
+		}
+
+		SQLFragment nestedFrom = new SQLFragment();
+		nestedFrom.append("FROM (\n").append(selectFrag).append("\n").append(fromFrag).append(") x\n");
+		if (AppProps.getInstance().isDevMode())
+		{
+			String s = StringUtils.replace(nestedFrom.getSQL(), "\n", "\n\t\t");
+			nestedFrom = new SQLFragment(s, nestedFrom.getParams());
+		}
+
+        return dialect.limitRows(new SQLFragment("SELECT *"), nestedFrom, filterFrag, orderBy, rowCount, offset);
     }
 
-    /**
-     * Returns the sql for a select.
-     */
-    public static SQLFragment getDisplaySelectSQL(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort)
-    {
-        return getDisplaySelectSQL(table, columns,  filter, sort, 0, 0);
-    }
-    /**
-     * Returns the sql for a select.
-     */
-    public static SQLFragment getDisplaySelectSQL(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset)
-    {
-        SqlDialect dialect = table.getSqlDialect();
-        SQLFragment selectFrag = new SQLFragment("SELECT *");
-
-        SQLFragment fromFrag = new SQLFragment();
-        fromFrag.append("FROM (");
-        fromFrag.append(getSelectSQL(table, columns, null, null, 0, 0));
-        fromFrag.append(") x");
-
-        SQLFragment filterFrag = null;
-        Map<String, ColumnInfo> columnMap = createColumnMap(table, columns);
-        if (filter != null)
-        {
-            filterFrag = filter.getSQLFragment(dialect, columnMap);
-        }
-
-        String orderBy = null;
-        if ((sort == null || sort.getSortList().size() == 0) && (rowCount > 0 || offset > 0))
-        {
-            sort = createDefaultSort(columns);
-        }
-        if (sort != null && sort.getSortList().size() > 0)
-        {
-            orderBy = sort.getOrderByClause(dialect, columnMap);
-        }
-
-        return dialect.limitRows(selectFrag, fromFrag, filterFrag, orderBy, rowCount, offset);
-    }
 
     public static Sort createDefaultSort(List<ColumnInfo> columns)
     {
@@ -1402,7 +1380,7 @@ public class Table
     {
         Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
         ensureRequiredColumns(table, columns, filter, null);
-        SQLFragment innerSql = getDisplaySelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, null, 0, 0);
+        SQLFragment innerSql = getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, null, 0, 0);
 
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT ");
@@ -1478,7 +1456,7 @@ public class Table
             queryRowCount = rowCount + (int)offset;
         }
 
-        SQLFragment sql = getDisplaySelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, sort, decideRowCount(queryRowCount, null), queryOffset);
+        SQLFragment sql = getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, sort, decideRowCount(queryRowCount, null), queryOffset);
         return (Table.TableResultSet)executeQuery(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), rowCount, scrollOffset, cache, !cache, asyncRequest, log);
     }
 
@@ -1487,7 +1465,8 @@ public class Table
     {
         final Logger log = ConnectionWrapper.getConnectionLogger();
         final AsyncQueryRequest<TableResultSet> asyncRequest = new AsyncQueryRequest(response);
-        return asyncRequest.waitForResult(new Callable<TableResultSet>() {
+        return asyncRequest.waitForResult(new Callable<TableResultSet>()
+		{
             public TableResultSet call() throws Exception
             {
                 return selectForDisplay(table, select, filter, sort, rowCount, offset, cache, asyncRequest, log);
@@ -1508,7 +1487,7 @@ public class Table
     {
         Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
         ensureRequiredColumns(table, columns, filter, sort);
-        SQLFragment sql = getDisplaySelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, sort, 0, 0);
+        SQLFragment sql = getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, sort, 0, 0);
         return internalExecuteQueryArray(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), clss, 0);
     }
 
@@ -1676,11 +1655,6 @@ public class Table
         {
             ColumnInfo colDirect = new ColumnInfo(col.getAlias());
             colDirect.copyAttributesFrom(col);
-//            colDirect.setSqlTypeName(col.getSqlTypeName());
-//            colDirect.setPropertyURI(col.getPropertyURI());
-//            colDirect.setCaption(col.getCaption());
-//            colDirect.setFormatString(col.getFormatString());
-//            colDirect.setDescription(col.getDescription());
             cols.add(colDirect);
         }
 
