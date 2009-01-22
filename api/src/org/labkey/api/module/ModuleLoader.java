@@ -231,20 +231,32 @@ public class ModuleLoader implements Filter
             {
                 module.initialize();
                 moduleMap.put(module.getName(), module);
-
-                for(ModuleResourceLoader resLoader : _resourceLoaders)
-                {
-                    resLoader.loadResources(module, module.getExplodedPath());
-                }
             }
             catch(Throwable t)
             {
-                _log.error("Unable to initialize module " + module.getName());
+                _log.error("Unable to initialize module " + module.getName(), t);
                 _moduleFailures.put(module.getName(), t);
             }
         }
 
         ensureDataBases();
+
+        //call the module resource loaders for each module
+        for(Module module : _modules)
+        {
+            for(ModuleResourceLoader resLoader : _resourceLoaders)
+            {
+                try
+                {
+                    resLoader.loadResources(module, module.getExplodedPath());
+                }
+                catch(Throwable t)
+                {
+                    _log.error("Unable to load resources from module " + module.getName() + " using the resource loader " + resLoader.getClass().getName(), t);
+                    _moduleFailures.put(module.getName(), t);
+                }
+            }
+        }
 
         if (getTableInfoModules().getTableType() == TableInfo.TABLE_TYPE_NOT_IN_DB)
             _newInstall = true;
