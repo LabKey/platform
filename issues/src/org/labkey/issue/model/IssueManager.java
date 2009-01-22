@@ -196,12 +196,12 @@ public class IssueManager
         try
         {
             SimpleFilter filter = new SimpleFilter("container", container.getId()).addCondition("Default", true);
-            rs = Table.select(_issuesSchema.getTableInfoIssueKeywords(), PageFlowUtil.set("Type", "Keyword"), filter, null);
+            rs = Table.select(_issuesSchema.getTableInfoIssueKeywords(), PageFlowUtil.set("Type", "Keyword", "Container", "Default"), filter, null);
 
             Map<Integer, String> defaults = new HashMap<Integer, String>(5);
 
             while (rs.next())
-                defaults.put(rs.getInt(1), rs.getString(2));
+                defaults.put(rs.getInt("Type"), rs.getString("Keyword"));
 
             return defaults;
         }
