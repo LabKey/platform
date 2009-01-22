@@ -96,13 +96,11 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler
             {
                 if (qcEnabledColumns.contains(column.name))
                 {
-                    column.qcEnabled = true;
-                    column.qcContainer = dataDomain.getContainer();
+                    column.setQcEnabled(dataDomain.getContainer());
                 }
                 else if (qcIndicatorColumns.contains(column.name))
                 {
-                    column.qcIndicator = true;
-                    column.qcContainer = dataDomain.getContainer();
+                    column.setQcIndicator(dataDomain.getContainer());
                     column.clazz = String.class;
                 }
                 Class expectedColumnClass = expectedColumns.get(column.name);

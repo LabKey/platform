@@ -336,8 +336,7 @@ public class ListDefinitionImpl implements ListDefinition
                 {
                     cd.name = property.getPropertyURI();
                     cd.clazz = String.class;
-                    cd.qcIndicator = true;
-                    cd.qcContainer = getContainer();
+                    cd.setQcIndicator(getContainer());
                 }
                 else
                 {
@@ -355,8 +354,7 @@ public class ListDefinitionImpl implements ListDefinition
                     cd.name = property.getPropertyURI();
                     if (property.isQcEnabled())
                     {
-                        cd.qcEnabled = true;
-                        cd.qcContainer = getContainer();
+                        cd.setQcEnabled(getContainer());
                     }
                 }
             }

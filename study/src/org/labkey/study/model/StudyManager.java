@@ -1964,13 +1964,11 @@ public class StudyManager
             col.errorValues = CONVERSION_ERROR;
             if (matchedCol.isQcEnabled())
             {
-                col.qcEnabled = true;
-                col.qcContainer = def.getContainer();
+                col.setQcEnabled(def.getContainer());
             }
             else if (matchedCol instanceof QcColumn)
             {
-                col.qcIndicator = true;
-                col.qcContainer = def.getContainer();
+                col.setQcIndicator(def.getContainer());
             }
         }
 
