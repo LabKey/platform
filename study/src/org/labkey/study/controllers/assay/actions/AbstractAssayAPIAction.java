@@ -48,20 +48,8 @@ public abstract class AbstractAssayAPIAction<FORM> extends ApiAction<FORM>
     protected static final String BATCH = "batch";
     protected static final String RUNS = "runs";
 
-    // General experiment object properties
-    protected static final String ID = "id";
-    protected static final String CREATED = "created";
-    protected static final String CREATED_BY = "createdBy";
-    protected static final String MODIFIED = "modified";
-    protected static final String MODIFIED_BY = "modifiedBy";
-    protected static final String NAME = "name";
-    protected static final String LSID = "lsid";
-    protected static final String PROPERTIES = "properties";
-
     // Run properties
     protected static final String DATA_ROWS = "dataRows";
-    protected static final String DATA_INPUTS = "dataInputs";
-
 
     public final ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
     {
@@ -94,19 +82,9 @@ public abstract class AbstractAssayAPIAction<FORM> extends ApiAction<FORM>
 
     protected abstract ApiResponse executeAction(ExpProtocol assay, AssayProvider provider, SimpleApiJsonForm form, BindException errors) throws Exception;
 
-    public static JSONObject serializeData(ExpData data)
-    {
-        JSONObject jsonObject = new JSONObject();
-        serializeStandardProperties(data, jsonObject, new DomainProperty[0]);
-        jsonObject.put("dataFileURL", data.getDataFileUrl());
-        return jsonObject;
-    }
-
     protected JSONObject serializeRun(ExpRun run, AssayProvider provider, ExpProtocol protocol) throws SQLException
     {
-        JSONObject jsonObject = new JSONObject();
-        serializeStandardProperties(run, jsonObject, provider.getRunDomain(protocol).getProperties());
-        jsonObject.put("comments", run.getComments());
+        JSONObject jsonObject = ExperimentJSONConverter.serializeRun(run, provider.getRunDomain(protocol));
 
         JSONArray dataRows = new JSONArray();
 
@@ -134,20 +112,12 @@ public abstract class AbstractAssayAPIAction<FORM> extends ApiAction<FORM>
         }
         jsonObject.put(DATA_ROWS, dataRows);
 
-        JSONArray inputDataArray = new JSONArray();
-        for (ExpData data : run.getDataInputs().keySet())
-        {
-            inputDataArray.put(serializeData(data));
-        }
-        jsonObject.put(DATA_INPUTS, inputDataArray);
-
         return jsonObject;
     }
 
     protected JSONObject serializeBatch(ExpExperiment batch, AssayProvider provider, ExpProtocol protocol) throws SQLException
     {
-        JSONObject jsonObject = new JSONObject();
-        serializeStandardProperties(batch, jsonObject, provider.getUploadSetDomain(protocol).getProperties());
+        JSONObject jsonObject = ExperimentJSONConverter.serializeRunGroup(batch, provider.getUploadSetDomain(protocol));
 
         JSONArray runsArray = new JSONArray();
         for (ExpRun run : batch.getRuns())
@@ -157,35 +127,6 @@ public abstract class AbstractAssayAPIAction<FORM> extends ApiAction<FORM>
         jsonObject.put(RUNS, runsArray);
 
         return jsonObject;
-    }
-
-    protected static void serializeStandardProperties(ExpObject object, JSONObject jsonObject, DomainProperty[] dps)
-    {
-        // Standard properties on all experiment objects
-        jsonObject.put(NAME, object.getName());
-        jsonObject.put(LSID, object.getLSID());
-        jsonObject.put(ID, object.getRowId());
-        if (object.getCreatedBy() != null)
-        {
-            jsonObject.put(CREATED_BY, object.getCreatedBy().getEmail());
-        }
-        jsonObject.put(CREATED, object.getCreated());
-        if (object.getModifiedBy() != null)
-        {
-            jsonObject.put(MODIFIED_BY, object.getModifiedBy().getEmail());
-        }
-        jsonObject.put(MODIFIED, object.getModified());
-
-        // Add the custom properties
-        if (dps != null)
-        {
-            JSONObject propertiesObject = new JSONObject();
-            for (DomainProperty dp : dps)
-            {
-                propertiesObject.put(dp.getName(), object.getProperty(dp));
-            }
-            jsonObject.put(PROPERTIES, propertiesObject);
-        }
     }
 
     protected ApiResponse serializeResult(AssayProvider provider, ExpProtocol protocol, ExpExperiment batch) throws SQLException

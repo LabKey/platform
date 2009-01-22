@@ -83,11 +83,11 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
     private ExpRun handleRun(JSONObject runJsonObject, ExpProtocol protocol, AssayProvider provider, ExpExperiment batch) throws JSONException, ValidationException, ExperimentException, SQLException
     {
-        String name = runJsonObject.has(NAME) ? runJsonObject.getString(NAME) : null;
+        String name = runJsonObject.has(ExperimentJSONConverter.NAME) ? runJsonObject.getString(ExperimentJSONConverter.NAME) : null;
         ExpRun run;
-        if (runJsonObject.has(ID))
+        if (runJsonObject.has(ExperimentJSONConverter.ID))
         {
-            int runId = runJsonObject.getInt(ID);
+            int runId = runJsonObject.getInt(ExperimentJSONConverter.ID);
             run = ExperimentService.get().getExpRun(runId);
             if (run == null)
             {
@@ -110,7 +110,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         run.setFilePathRoot(pipeRoot.getRootPath());
         handleStandardProperties(runJsonObject, run, provider.getRunDataDomain(protocol).getProperties());
 
-        if (runJsonObject.has(DATA_ROWS) || runJsonObject.has(DATA_INPUTS))
+        if (runJsonObject.has(DATA_ROWS) || runJsonObject.has(ExperimentJSONConverter.DATA_INPUTS))
         {
             JSONArray dataRows;
             JSONArray dataInputs;
@@ -125,15 +125,15 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
                 dataRows = runJsonObject.getJSONArray(DATA_ROWS);
             }
 
-            if (!runJsonObject.has(DATA_INPUTS))
+            if (!runJsonObject.has(ExperimentJSONConverter.DATA_INPUTS))
             {
                 // Client didn't post the inputs so reuse the values that are currently attached to the run
                 // Ineffecient but easy
-                dataInputs = serializeRun(run, provider, protocol).getJSONArray(DATA_INPUTS);
+                dataInputs = serializeRun(run, provider, protocol).getJSONArray(ExperimentJSONConverter.DATA_INPUTS);
             }
             else
             {
-                dataInputs = runJsonObject.getJSONArray(DATA_INPUTS);
+                dataInputs = runJsonObject.getJSONArray(ExperimentJSONConverter.DATA_INPUTS);
             }
 
             rewriteProtocolApplications(protocol, provider, run, dataInputs, dataRows);
@@ -183,7 +183,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
     private ExpData handleData(JSONObject dataObject) throws ValidationException
     {
         // Unlike with runs and batches, we require that the datas are already created
-        int dataId = dataObject.getInt(ID);
+        int dataId = dataObject.getInt(ExperimentJSONConverter.ID);
         ExpData data = ExperimentService.get().getExpData(dataId);
         if (data == null)
         {
@@ -200,14 +200,14 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
     private ExpExperiment handleBatch(JSONObject batchJsonObject, ExpProtocol protocol, AssayProvider provider) throws Exception
     {
         ExpExperiment batch;
-        if (batchJsonObject.has(ID))
+        if (batchJsonObject.has(ExperimentJSONConverter.ID))
         {
-            batch = lookupBatch(batchJsonObject.getInt(ID));
+            batch = lookupBatch(batchJsonObject.getInt(ExperimentJSONConverter.ID));
         }
         else
         {
             batch = AssayService.get().createStandardBatch(getViewContext().getContainer(),
-                    batchJsonObject.has(NAME) ? batchJsonObject.getString(NAME) : null);
+                    batchJsonObject.has(ExperimentJSONConverter.NAME) ? batchJsonObject.getString(ExperimentJSONConverter.NAME) : null);
         }
 
         handleStandardProperties(batchJsonObject, batch, provider.getUploadSetDomain(protocol).getProperties());
@@ -243,17 +243,17 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
     private void handleStandardProperties(JSONObject jsonObject, ExpObject object, DomainProperty[] dps) throws ValidationException, SQLException
     {
-        if (jsonObject.has(NAME))
+        if (jsonObject.has(ExperimentJSONConverter.NAME))
         {
-            object.setName(jsonObject.getString(NAME));
+            object.setName(jsonObject.getString(ExperimentJSONConverter.NAME));
         }
 
         object.save(getViewContext().getUser());
         OntologyManager.ensureObject(object.getContainer(), object.getLSID());
 
-        if (jsonObject.has(PROPERTIES))
+        if (jsonObject.has(ExperimentJSONConverter.PROPERTIES))
         {
-            saveProperties(object, dps, jsonObject.getJSONObject(PROPERTIES));
+            saveProperties(object, dps, jsonObject.getJSONObject(ExperimentJSONConverter.PROPERTIES));
         }
     }
 

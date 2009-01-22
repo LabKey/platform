@@ -24,6 +24,7 @@ import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -444,7 +445,7 @@ public class AssayController extends SpringActionController
             data.setName(originalName);
             data.save(getViewContext().getUser());
 
-            return Integer.toString(data.getRowId());
+            return ExperimentJSONConverter.serializeData(data).toString();
         }
     }
 
