@@ -31,6 +31,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.view.ActionURL;
 import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.common.tools.DataLoader;
@@ -310,11 +311,15 @@ public class ListDefinitionImpl implements ListDefinition
     {
         List<String> errors = new ArrayList<String>();
         ArrayList<PropertyDescriptor> pds = new ArrayList<PropertyDescriptor>();
+        Set<String> qcIndicatorColumnNames = new CaseInsensitiveHashSet();
         for (DomainProperty property : getDomain().getProperties())
+        {
             pds.add(property.getPropertyDescriptor());
+            if (property.isQcEnabled())
+                qcIndicatorColumnNames.add(property.getName() + QcColumn.QC_INDICATOR_SUFFIX);
+        }
         Map<String, PropertyDescriptor> propertiesByName = OntologyManager.createImportPropertyMap(pds.toArray(new PropertyDescriptor[pds.size()]));
-        Map<String, PropertyDescriptor> properties = new CaseInsensitiveHashMap<PropertyDescriptor>();
-        Map<String, ColumnDescriptor> qcIndicatorColumnNames = new CaseInsensitiveHashMap<ColumnDescriptor>();
+        Map<String, PropertyDescriptor> foundProperties = new CaseInsensitiveHashMap<PropertyDescriptor>();
         ColumnDescriptor cdKey = null;
 
         Object errorValue = new Object();
@@ -326,38 +331,34 @@ public class ListDefinitionImpl implements ListDefinition
 
             if (property != null)
             {
-                cd.clazz = property.getPropertyType().getJavaType();
-
-                if (properties.containsKey(cd.name))
+                // Special handling for qc indicators -- they don't have real property descriptors.
+                if (qcIndicatorColumnNames.contains(cd.name))
                 {
-                    errors.add("The field '" + property.getName() + "' appears more than once.");
-                }
-                if (properties.containsValue(property))
-                {
-                    errors.add("The fields '" + property.getName() + "' and '" + property.getLabel() + "' refer to the same property.");
-                }
-                properties.put(cd.name, property);
-                cd.name = property.getPropertyURI();
-                if (property.isQcEnabled())
-                {
-                    cd.qcEnabled = true;
-                    cd.qcContainer = getContainer();
-                }
-            }
-            else if (cd.name.endsWith(QcColumn.QC_INDICATOR_SUFFIX))
-            {
-                if (qcIndicatorColumnNames.containsKey(cd.name))
-                {
-                    errors.add("The field '" + cd.name + "' appears more than once.");
-                }
-                else
-                {
-                    qcIndicatorColumnNames.put(cd.name, cd);
+                    cd.name = property.getPropertyURI();
                     cd.clazz = String.class;
                     cd.qcIndicator = true;
                     cd.qcContainer = getContainer();
                 }
+                else
+                {
+                    cd.clazz = property.getPropertyType().getJavaType();
 
+                    if (foundProperties.containsKey(cd.name))
+                    {
+                        errors.add("The field '" + property.getName() + "' appears more than once.");
+                    }
+                    if (foundProperties.containsValue(property) && !property.isQcEnabled())
+                    {
+                        errors.add("The fields '" + property.getName() + "' and '" + property.getLabel() + "' refer to the same property.");
+                    }
+                    foundProperties.put(cd.name, property);
+                    cd.name = property.getPropertyURI();
+                    if (property.isQcEnabled())
+                    {
+                        cd.qcEnabled = true;
+                        cd.qcContainer = getContainer();
+                    }
+                }
             }
             else if (!getKeyName().equalsIgnoreCase(cd.name))
             {
@@ -373,25 +374,6 @@ public class ListDefinitionImpl implements ListDefinition
                 {
                     cdKey = cd;
                 }
-            }
-        }
-
-        for (Map.Entry<String,ColumnDescriptor> entry : qcIndicatorColumnNames.entrySet())
-        {
-            String qcIndicatorName = entry.getKey();
-            // Lop off "QCIndicatorColumn"
-            String dataColumnName = qcIndicatorName.substring(0, qcIndicatorName.length() - QcColumn.QC_INDICATOR_SUFFIX.length()).trim();
-            PropertyDescriptor pd = propertiesByName.get(dataColumnName);
-
-            if (pd != null)
-            {
-                ColumnDescriptor qcIndicatorColumn = entry.getValue();
-                // The column name needs to be the URI, in order to match up with the real column later.
-                qcIndicatorColumn.name = pd.getPropertyURI();
-            }
-            else
-            {
-                errors.add("Could not find a column match for the field '" + qcIndicatorName + "'.");
             }
         }
 
@@ -482,7 +464,7 @@ public class ListDefinitionImpl implements ListDefinition
         if (errors.size() > 0)
             return errors;
 
-        doBulkInsert(user, cdKey, getDomain(), properties, rows, errors);
+        doBulkInsert(user, cdKey, getDomain(), foundProperties, rows, errors);
 
         return errors;
     }
@@ -506,7 +488,10 @@ public class ListDefinitionImpl implements ListDefinition
                     used.add(dp);
             ListImportHelper helper = new ListImportHelper(user, this, used.toArray(new DomainProperty[used.size()]), cdKey);
 
-            PropertyDescriptor[] pds = properties.values().toArray(new PropertyDescriptor[properties.size()]);
+            // our map of properties can have duplicates due to qc indicator columns (different columns, same URI)
+            Set<PropertyDescriptor> propSet = new HashSet<PropertyDescriptor>(properties.values());
+
+            PropertyDescriptor[] pds = propSet.toArray(new PropertyDescriptor[propSet.size()]);
             OntologyManager.insertTabDelimited(getContainer(), null, helper, pds, rows, true);
             if (transaction)
             {
