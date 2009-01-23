@@ -54,9 +54,9 @@ public class QCDisplayColumnFactory implements DisplayColumnFactory
 
         AliasedColumn rawValueCol = new AliasedColumn(table, valueColumn.getName() + RAW_VALUE_SUFFIX, valueColumn);
         rawValueCol.setIsHidden(true);
+        rawValueCol.setUserEditable(false);
 
         valueColumn.setDisplayColumnFactory(new QCDisplayColumnFactory());
-        valueColumn.setUserEditable(false);
 
         ColumnInfo[] result = new ColumnInfo[2];
         result[0] = qcColumn;

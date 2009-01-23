@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.SimpleFilter.ColumnNameFormatter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.util.DateUtil;
@@ -218,13 +219,18 @@ public enum CompareType
 
     public static class CompareClause extends FilterClause
     {
-        String _colName;
+        @NotNull
+        final String _colName;
+        
         CompareType _comparison;
 
 
         public CompareClause(String colName, CompareType comparison, Object value)
         {
+            if (colName == null)
+                throw new IllegalArgumentException("colName cannot be null");
             _colName = colName;
+
             _comparison = comparison;
 
             if (null == value)

@@ -18,6 +18,7 @@ package org.labkey.api.exp;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.beanutils.converters.BooleanConverter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
@@ -1965,7 +1966,12 @@ public class OntologyManager
                 label = name;
             String conceptURI = (String) m.get("conceptURI");
             String rangeURI = (String) m.get("rangeURI");
-            Boolean required = (Boolean) ConvertUtils.convert((String) m.get("NotNull"), Boolean.class);
+
+            BooleanConverter booleanConverter = new BooleanConverter(Boolean.FALSE);
+
+            boolean required = ((Boolean)booleanConverter.convert(Boolean.class, m.get("NotNull"))).booleanValue();
+            boolean qcEnabled = ((Boolean)booleanConverter.convert(Boolean.class, m.get("AllowsQC"))).booleanValue();
+
             String description = (String) m.get("description");
             String format = StringUtils.trimToNull((String)m.get("format"));
 
@@ -2026,12 +2032,9 @@ public class OntologyManager
             pd.setRangeURI(rangeURI);
             pd.setContainer(container);
             pd.setDescription(description);
-            pd.setRequired(null != required && required.booleanValue());
+            pd.setRequired(required);
             pd.setFormat(format);
-//          pd.setRequired();
-//          pd.setSearchTerms();
-//          pd.setSemanticType();
-//          pd.setOntologyURI();
+            pd.setQcEnabled(qcEnabled);
 
             if (null != allProps.put(pd.getPropertyURI(), pd))
             {

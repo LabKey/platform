@@ -64,6 +64,7 @@ public class GWTTabLoader
             prop.setRequired(isRequired(row));
             prop.setRangeURI(getRangeURI(row));
             prop.setFormat(row.get("format"));
+            prop.setQcEnabled(isQcEnabled(row));
             properties.add(prop);
         }
         propertiesEditor.setPropertyDescriptors(properties);
@@ -75,6 +76,12 @@ public class GWTTabLoader
     {
         String reqString = map.get("notnull");
         return reqString != null && reqString.equalsIgnoreCase("TRUE");
+    }
+
+    private boolean isQcEnabled(Map<String,String> map)
+    {
+        String qcString = map.get("allowsqc");
+        return qcString != null && qcString.equalsIgnoreCase("TRUE");
     }
 
     private String getRangeURI(Map map)

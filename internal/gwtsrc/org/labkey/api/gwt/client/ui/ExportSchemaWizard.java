@@ -26,7 +26,6 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 public class ExportSchemaWizard extends DialogBox
 {
     private final PropertiesEditor propertiesEditor;
-    private TextArea schemaTsv;
 
     public ExportSchemaWizard(PropertiesEditor propertiesEditor)
     {
@@ -40,7 +39,7 @@ public class ExportSchemaWizard extends DialogBox
         Label caption = new Label("The schema can be copied from the text area below:");
         vPanel.add(caption);
 
-        schemaTsv = new TextArea();
+        TextArea schemaTsv = new TextArea();
         schemaTsv.setCharacterWidth(80);
         schemaTsv.setHeight("300px");
         schemaTsv.setName("tsv");
@@ -76,7 +75,7 @@ public class ExportSchemaWizard extends DialogBox
         sb.append("RangeURI").append("\t");
         sb.append("Format").append("\t");
         sb.append("NotNull").append("\t");
-        sb.append("QcEnabled").append("\t");
+        sb.append("AllowsQC").append("\t");
         sb.append("Description").append("\n");
 
         int numProps = propertiesEditor.getPropertyCount();
