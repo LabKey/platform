@@ -75,7 +75,7 @@ public class DatasetController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_UPDATE)
+    @RequiresPermission(ACL.PERM_INSERT)
     public class InsertAction extends InsertUpdateAction
     {
 
@@ -118,7 +118,6 @@ public class DatasetController extends BaseStudyController
                 view = new UpdateView(updateForm, errors);
             
             DataRegion dataRegion = view.getDataRegion();
-            dataRegion.addHiddenFormField(DataSetDefinition.DATASETKEY, Integer.toString(form.getDatasetId()));
 
             String referer = form.getReturnURL();
             if (referer == null)
@@ -136,17 +135,25 @@ public class DatasetController extends BaseStudyController
                 cancelURL = new ActionURL(referer);
                 dataRegion.addHiddenFormField("returnURL", referer);
             }
-            ButtonBar buttonBar = dataRegion.getButtonBar(DataRegion.MODE_UPDATE);
-            buttonBar = new ButtonBar(buttonBar); // need to copy since the original is read-only
-            ActionButton cancelButton = new ActionButton(cancelURL.getLocalURIString(), "Cancel", DataRegion.MODE_UPDATE, ActionButton.Action.GET);
-            cancelButton.setURL(cancelURL);
-            buttonBar.add(1, cancelButton);
-            if (isInsert())
-            {
-                // Need to update the URL to be the insert action
-                buttonBar.getList().remove(0);
-                buttonBar.add(0, ActionButton.BUTTON_DO_INSERT);
-            }
+
+            ButtonBar buttonBar = new ButtonBar();
+            ActionButton btnSubmit = new ActionButton(new ActionURL(getClass(), getContainer()).addParameter(DataSetDefinition.DATASETKEY, form.getDatasetId()), "Submit");
+            ActionButton btnCancel = new ActionButton("Cancel", cancelURL);
+            buttonBar.add(btnSubmit);
+            buttonBar.add(btnCancel);
+
+
+//            ButtonBar buttonBar = dataRegion.getButtonBar(DataRegion.MODE_UPDATE);
+//            buttonBar = new ButtonBar(buttonBar); // need to copy since the original is read-only
+//            ActionButton cancelButton = new ActionButton(cancelURL.getLocalURIString(), "Cancel", DataRegion.MODE_UPDATE, ActionButton.Action.GET);
+//            cancelButton.setURL(cancelURL);
+//            buttonBar.add(1, cancelButton);
+//            if (isInsert())
+//            {
+//                // Need to update the URL to be the insert action
+//                buttonBar.getList().remove(0);
+//                buttonBar.add(0, ActionButton.BUTTON_DO_INSERT);
+//            }
             dataRegion.setButtonBar(buttonBar);
 
             return view;

@@ -33,8 +33,15 @@
     {
 %>
 <p>A schema definition should be imported for each dataset in this study.</p>
+<%
+    }
+%>
 <%= textLink("Bulk Import Schemas", "bulkImportDataTypes.view")%>&nbsp;
 
+<%
+    if (!undefined.isEmpty())
+    {
+%>
 <h3>Undefined datasets:</h3>
 <table>
     <tr>

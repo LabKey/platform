@@ -82,6 +82,11 @@ name and type id.  Additional columns will just be ignored.
         <td valign=top><code>false</code></td>
     </tr>
     <tr>
+        <th align=left valign=top nowrap>AllowsQC</th>
+        <td valign=top>Indicates whether this column can contain QC values (e.g. ".Q" or ".N")</td>
+        <td valign=top><code>false</code></td>
+    </tr>
+    <tr>
         <th align=left valign=top nowrap>Hidden</th>
         <td valign=top>Indicates whether this dataset should be hidden</td>
         <td valign=top><code>true</code></td>
