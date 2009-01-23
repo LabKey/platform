@@ -47,12 +47,14 @@
  *               	parameters for the web part. Each web part defines its own set of config parameters. See the 
  * 					<a href= https://www.labkey.org/wiki/home/Documentation/page.view?name=webPartConfig>
 					Web Part Configuration Properties</a> page for further information on these name/value pairs.
+ * @param {Function} [config.successCallback] Callback function that will be executed after the web part content as been inserted into the page.
  * @param {Function} [config.errorCallback] Callback function that will be executed if an error occurs. This function
  *                  should have two parameters: response and partConfig. The response parameter is the XMLHttpResponse
  *                  object, which can be used to determine the error code and obtain the error text if desired.
  *                  The partConfig parameter will contain all the parameters sent to the server.
  * @param {String} [config.containerPath] The container path in which this web part is defined. If not supplied,
  *                  the current container path will be used.
+ * @param {Object} [config.scope] An optional scope object to use when calling the successCallback or errorCallback functions (defaults to this).
  * @example Examples: <pre name="code" class="xml">For a Wiki Web Part:
  &lt;script type="text/javascript"&gt;
 	LABKEY.requiresClientAPI();
@@ -95,7 +97,9 @@ LABKEY.WebPart = function(config)
     var _titleHref = config.titleHref;
     var _partConfig = config.partConfig;
     var _errorCallback = config.errorCallback;
+    var _successCallback = config.successCallback;
     var _containerPath = config.containerPath;
+    var _scope = config.scope | this;
 
     //validate config
     if(!_partName)
@@ -132,7 +136,11 @@ LABKEY.WebPart = function(config)
         {
             var targetElem = Ext.get(_renderTo);
             if(targetElem)
+            {
                 targetElem.update(response.responseText, true); //execute scripts
+                if(_successCallback)
+                    _successCallback.call(_scope);
+            }
             else
                 Ext.Msg.alert("Rendering Error", "The element '" + _renderTo + "' does not exist in the document!");
         }
