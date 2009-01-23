@@ -17,7 +17,7 @@
 package org.labkey.query;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+//import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
@@ -28,6 +28,7 @@ import org.labkey.api.util.Cache;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.module.Module;
+import org.labkey.api.settings.AppProps;
 import org.labkey.common.util.Pair;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.persist.DbUserSchemaDef;
@@ -35,6 +36,7 @@ import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QuerySnapshotDef;
 import org.labkey.query.view.DbUserSchema;
+import org.labkey.query.data.Query;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -44,7 +46,7 @@ import java.io.FilenameFilter;
 
 public class QueryServiceImpl extends QueryService
 {
-    static private final Logger _log = Logger.getLogger(QueryServiceImpl.class);
+//    static private final Logger _log = Logger.getLogger(QueryServiceImpl.class);
 
     protected static final FilenameFilter moduleQueryFileFilter = new FilenameFilter(){
         public boolean accept(File dir, String name)
@@ -328,7 +330,7 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    public void ensureRequiredColumns(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort, Set<String> unresolvedColumns)
+    public void ensureRequiredColumns(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Set<String> unresolvedColumns)
     {
         AliasManager manager = new AliasManager(table, columns);
         Set<FieldKey> selectedColumns = new HashSet<FieldKey>();
@@ -451,16 +453,115 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    public ResultSet select(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort) throws SQLException
+	public ResultSet select(QuerySchema schema, String sql) throws SQLException
+	{
+		Query q = new Query(schema);
+		q.parse(sql);
+		if (q.getParseErrors().size() > 0)
+			throw q.getParseErrors().get(0);
+		TableInfo table = q.getTableInfo("QUERY");
+		if (q.getParseErrors().size() > 0)
+			throw q.getParseErrors().get(0);
+        SQLFragment sqlf = getSelectSQL(table, null, null, null, 0, 0);
+		return Table.executeQuery(table.getSchema(), sqlf);
+	}
+
+
+    public ResultSet select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort) throws SQLException
     {
+        ensureRequiredColumns(table, columns, filter, sort, null);
         SQLFragment sql = getSelectSQL(table, columns, filter, sort, 0, 0);
 		return Table.executeQuery(table.getSchema(), sql);
     }
 
 
-	public SQLFragment getSelectSQL(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset)
+	public SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset)
 	{
-		ensureRequiredColumns(table, columns, filter, sort, null);
-		return Table.getSelectSQL(table, columns, filter, sort, rowCount, offset);
+		SqlDialect dialect = table.getSqlDialect();
+		Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
+
+		SQLFragment selectFrag = new SQLFragment("SELECT");
+		String strComma = "\n";
+
+		if (null == columns)
+			columns =  table.getColumns();
+
+		for (ColumnInfo column : columns)
+		{
+			assert column.getParentTable() == table : "Column " + column + " is from the wrong table: " + column.getParentTable() + " instead of " + table;
+			column.declareJoins(joins);
+			selectFrag.append(strComma);
+			selectFrag.append(column.getSelectSql());
+			strComma = ",\n";
+		}
+
+		SQLFragment fromFrag = new SQLFragment("FROM ");
+		fromFrag.append(table.getFromSQL());
+		for (Map.Entry<String, SQLFragment> entry : joins.entrySet())
+		{
+			fromFrag.append("\n").append(entry.getValue());
+		}
+
+		SQLFragment filterFrag = null;
+		Map<String, ColumnInfo> columnMap = Table.createColumnMap(table, columns);
+		if (filter != null)
+		{
+			filterFrag = filter.getSQLFragment(dialect, columnMap);
+		}
+
+		String orderBy = null;
+		if ((sort == null || sort.getSortList().size() == 0) && (rowCount > 0 || offset > 0))
+		{
+			sort = createDefaultSort(columns);
+		}
+		if (sort != null)
+		{
+			orderBy = sort.getOrderByClause(dialect, columnMap);
+		}
+
+		if (filterFrag == null && sort == null && rowCount == 0 && offset == 0)
+		{
+			selectFrag.append("\n").append(fromFrag);
+			return selectFrag;
+		}
+
+		SQLFragment nestedFrom = new SQLFragment();
+		nestedFrom.append("FROM (\n").append(selectFrag).append("\n").append(fromFrag).append(") x\n");
+		if (AppProps.getInstance().isDevMode())
+		{
+			String s = StringUtils.replace(nestedFrom.getSQL(), "\n", "\n\t\t");
+			nestedFrom = new SQLFragment(s, nestedFrom.getParams());
+		}
+
+		return dialect.limitRows(new SQLFragment("SELECT *"), nestedFrom, filterFrag, orderBy, rowCount, offset);
 	}
+
+	private static Sort createDefaultSort(Collection<ColumnInfo> columns)
+	{
+		Sort sort = new Sort();
+		addSortableColumns(sort, columns, true);
+
+		if (sort.getSortList().size() == 0)
+		{
+			addSortableColumns(sort, columns, false);
+		}
+
+		return sort;
+	}
+
+	private static void addSortableColumns(Sort sort, Collection<ColumnInfo> columns, boolean usePrimaryKey)
+	{
+		for (ColumnInfo column : columns)
+		{
+			if (usePrimaryKey && !column.isKeyField())
+				continue;
+			ColumnInfo sortField = column.getSortField();
+			if (sortField != null)
+			{
+				sort.getSortList().add(sort.new SortField(sortField.getName(), column.getSortDirection()));
+				return;
+			}
+		}
+	}
+	
 }

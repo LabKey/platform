@@ -927,6 +927,7 @@ loop:
         return ret;
     }
 
+
     public QueryDocument getDesignDocument()
     {
         QueryDocument ret = QueryDocument.Factory.newInstance();
@@ -1094,7 +1095,7 @@ loop:
                 row[c++] = "" + (i%12);
                 row[c++] = days[i%7];
                 row[c++] = months[i%12];
-                row[c++] = DateUtil.toISO(Date.parse("1/1/2000") + i*24*60*60*1000);
+                row[c++] = DateUtil.toISO(DateUtil.parseDateTime("2000-01-01") + i*24*60*60*1000);
                 row[c++] = DateUtil.formatDuration(i*1000);
                 row[c] = GUID.makeGUID();
             }
@@ -1242,15 +1243,7 @@ loop:
         @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
         private CachedRowSetImpl resultset(String sql) throws Exception
         {
-            Query q = new Query(lists);
-            q.parse(sql);
-            if (q.getParseErrors().size() > 0)
-                fail("" + q.getParseErrors().get(0).getMessage() + ": " + sql);
-            TableInfo t = q.getTableInfo("JUNIT");
-            if (q.getParseErrors().size() > 0)
-                fail("" + q.getParseErrors().get(0).getMessage() + ": " + sql);
-            assertNotNull(sql, t);
-            CachedRowSetImpl rs = (CachedRowSetImpl)Table.select(t, Table.ALL_COLUMNS, null, null);
+			CachedRowSetImpl rs = (CachedRowSetImpl)QueryService.get().select(lists, sql);
             assertNotNull(sql, rs);
             return rs;
         }
