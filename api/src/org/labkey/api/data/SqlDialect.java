@@ -221,6 +221,89 @@ public abstract class SqlDialect
     }
 
 
+    public String sqlTypeNameFromSqlType(int sqlType)
+    {
+        String oldName = OLDsqlTypeNameFromSqlType(sqlType);
+        String newName = sqlTypeNameFromSqlTypeInt(sqlType);
+
+        if (!oldName.equals(newName))
+            _log.error("SqlTypeName mismatch for sqlType '" + sqlType + "': " + oldName + " vs. " + newName);
+
+        return oldName;
+    }
+
+
+    // TODO: Delete and move calls to new method
+    public String OLDsqlTypeNameFromSqlType(int sqlType)
+    {
+        boolean postgres = isPostgreSQL();
+
+        switch (sqlType)
+        {
+            case Types.ARRAY:
+                return "ARRAY";
+            case Types.BIGINT:
+                return "BIGINT";
+            case Types.BINARY:
+                return "BINARY";
+            case Types.BLOB:
+                return "BLOB";
+            case Types.BIT:
+            case Types.BOOLEAN:
+                return postgres ? "BOOLEAN" : "BIT";
+            case Types.CHAR:
+                return postgres ? "CHAR" : "NCHAR";
+            case Types.CLOB:
+                return "CLOB";
+            case Types.DATALINK:
+                return "DATALINK";
+            case Types.DATE:
+                return "DATE";
+            case Types.DECIMAL:
+                return "DECIMAL";
+            case Types.DISTINCT:
+                return "DISTINCT";
+            case Types.DOUBLE:
+            case Types.FLOAT:
+                return postgres ? "DOUBLE PRECISION" : "FLOAT";
+            case Types.INTEGER:
+                return "INTEGER";
+            case Types.JAVA_OBJECT:
+                return "JAVA_OBJECT";
+            case Types.LONGVARBINARY:
+                return postgres ? "LONGVARBINARY" : "IMAGE";
+            case Types.LONGVARCHAR:
+                return postgres ? "LONGVARCHAR" : "NTEXT";
+            case Types.NULL:
+                return "NULL";
+            case Types.NUMERIC:
+                return "NUMERIC";
+            case Types.OTHER:
+                return "OTHER";
+            case Types.REAL:
+                return "REAL";
+            case Types.REF:
+                return "REF";
+            case Types.SMALLINT:
+                return "SMALLINT";
+            case Types.STRUCT:
+                return "STRUCT";
+            case Types.TIME:
+                return "TIME";
+            case Types.TIMESTAMP:
+                return postgres ? "TIMESTAMP" : "DATETIME";  // DATETIME in mssql TIMESTAMP in pgsql
+            case Types.TINYINT:
+                return "TINYINT";
+            case Types.VARBINARY:
+                return "VARBINARY";
+            case Types.VARCHAR:
+                return postgres ? "VARCHAR" : "NVARCHAR";
+            default:
+                return "OTHER";
+        }
+    }
+
+
     protected String getDatabaseMaintenanceSql()
     {
         return null;
@@ -520,6 +603,10 @@ public abstract class SqlDialect
             DataSourceProperties props = new DataSourceProperties(ds);
             return getFromDriverClassName(props.getDriverClassName());
         }
+        catch (SqlDialectNotSupportedException e)
+        {
+            throw e;
+        }
         catch (Exception e)
         {
             throw new ServletException("Error determining SqlDialect from DataSource", e);
@@ -695,7 +782,7 @@ public abstract class SqlDialect
             }
             catch (Exception e)
             {
-                throw new ServletException("Unabled to retrieve DataSource property via " + methodName, e);
+                throw new ServletException("Unable to retrieve DataSource property via " + methodName, e);
             }
         }
 
@@ -725,72 +812,83 @@ public abstract class SqlDialect
     }
 
 
-    public String sqlTypeNameFromSqlType(int sqlType)
+    // Handles standard reading of column meta data
+    public static abstract class ColumnMetaDataReader
     {
-        boolean postgres = isPostgreSQL();
+        protected ResultSet _rsCols;
+        protected String _nameKey, _sqlTypeKey, _sqlTypeNameKey, _scaleKey, _nullableKey, _postionKey;
 
-        switch (sqlType)
+        public ColumnMetaDataReader(ResultSet rsCols)
         {
-            case Types.ARRAY:
-                return "ARRAY";
-            case Types.BIGINT:
-                return "BIGINT";
-            case Types.BINARY:
-                return "BINARY";
-            case Types.BLOB:
-                return "BLOB";
-            case Types.BIT:
-            case Types.BOOLEAN:
-                return postgres ? "BOOLEAN" : "BIT";
-            case Types.CHAR:
-                return postgres ? "CHAR" : "NCHAR";
-            case Types.CLOB:
-                return "CLOB";
-            case Types.DATALINK:
-                return "DATALINK";
-            case Types.DATE:
-                return "DATE";
-            case Types.DECIMAL:
-                return "DECIMAL";
-            case Types.DISTINCT:
-                return "DISTINCT";
-            case Types.DOUBLE:
-            case Types.FLOAT:
-                return postgres ? "DOUBLE PRECISION" : "FLOAT";
-            case Types.INTEGER:
-                return "INTEGER";
-            case Types.JAVA_OBJECT:
-                return "JAVA_OBJECT";
-            case Types.LONGVARBINARY:
-                return postgres ? "LONGVARBINARY" : "IMAGE";
-            case Types.LONGVARCHAR:
-                return postgres ? "LONGVARCHAR" : "NTEXT";
-            case Types.NULL:
-                return "NULL";
-            case Types.NUMERIC:
-                return "NUMERIC";
-            case Types.OTHER:
-                return "OTHER";
-            case Types.REAL:
-                return "REAL";
-            case Types.REF:
-                return "REF";
-            case Types.SMALLINT:
-                return "SMALLINT";
-            case Types.STRUCT:
-                return "STRUCT";
-            case Types.TIME:
-                return "TIME";
-            case Types.TIMESTAMP:
-                return postgres ? "TIMESTAMP" : "DATETIME";  // DATETIME in mssql TIMESTAMP in pgsql
-            case Types.TINYINT:
-                return "TINYINT";
-            case Types.VARBINARY:
-                return "VARBINARY";
-            case Types.VARCHAR:
-                return postgres ? "VARCHAR" : "NVARCHAR";
-            default:
-                return "OTHER";
+            _rsCols = rsCols;
+        }
+
+        public String getName() throws SQLException
+        {
+            return _rsCols.getString(_nameKey);
+        }
+
+        public int getSqlType() throws SQLException
+        {
+            int sqlType = _rsCols.getInt(_sqlTypeKey);
+
+            if (Types.OTHER == sqlType)
+                return Types.NULL;
+            else
+                return sqlType;
+        }
+
+        public String getSqlTypeName() throws SQLException
+        {
+            return _rsCols.getString(_sqlTypeNameKey);
+        }
+
+        public int getScale() throws SQLException
+        {
+            // TODO: Use type int instead?
+            String typeName = getSqlTypeName();
+
+            if (typeName.equalsIgnoreCase("ntext") || typeName.equalsIgnoreCase("text"))
+                return 0x7FFF;
+            else
+                return _rsCols.getInt(_scaleKey);
+        }
+
+        public boolean isNullable() throws SQLException
+        {
+            return _rsCols.getInt(_nullableKey) == 1;
+        }
+
+        public int getPosition() throws SQLException
+        {
+            return _rsCols.getInt(_postionKey);
+        }
+
+        public abstract boolean isAutoIncrement() throws SQLException;
+    }
+
+
+    // Handles standard reading of column meta data
+    public static class PkMetaDataReader
+    {
+        private ResultSet _rsCols;
+        private String _nameKey, _seqKey;
+
+        public PkMetaDataReader(ResultSet rsCols, String nameKey, String seqKey)
+        {
+            _rsCols = rsCols;
+            _nameKey = nameKey;
+            _seqKey = seqKey;
+        }
+
+        public String getName() throws SQLException
+        {
+            return _rsCols.getString(_nameKey);
+        }
+
+        public int getKeySeq() throws SQLException
+        {
+            return _rsCols.getInt(_seqKey);
         }
     }
 
@@ -800,6 +898,8 @@ public abstract class SqlDialect
     public abstract boolean isCaseSensitive();
     public abstract boolean isSqlServer();
     public abstract boolean isPostgreSQL();
+    public abstract ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols);
+    public abstract PkMetaDataReader getPkMetaDataReader(ResultSet rs);
     public abstract TestSuite getTestSuite();
 
 
@@ -811,7 +911,6 @@ public abstract class SqlDialect
             return CoreSchema.getInstance().getSqlDialect().getTestSuite();
         }
     }
-
 
 
     public static class TestUpgradeCode implements UpgradeCode

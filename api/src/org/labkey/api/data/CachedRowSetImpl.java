@@ -97,8 +97,17 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
             if (null == pred || pred.evaluate(m))
                 list.add(m);
         }
-        assert !rs.isAfterLast() || rs.getRow() == 0;
-        boolean isComplete = rs.getRow() == 0;
+        boolean isComplete;
+        try
+        {
+            // TODO: make this work for SAS 
+            assert !rs.isAfterLast() || rs.getRow() == 0;
+            isComplete = rs.getRow() == 0;
+        }
+        catch (SQLException e)
+        {
+            isComplete = true;
+        }
         init(rs.getMetaData(), list, isComplete);
     }
 

@@ -235,10 +235,22 @@ public class ResultSetUtil
         {
             int len = rs.getMetaData().getColumnCount();
 
-            if (0 == _row.size())                    // Stuff current row into rowMap
-                _row.add(rs.getRow());
+            // Stuff current row into rowMap
+            int row;
+
+            try
+            {
+                row = rs.getRow();
+            }
+            catch (SQLException e)
+            {
+                row = 1;   // TODO: Implement a counter for SAS
+            }
+
+            if (0 == _row.size())
+                _row.add(row);
             else
-                _row.set(0, rs.getRow());
+                _row.set(0, row);
 
             for (int i = 1; i <= len; i++)
             {
@@ -305,21 +317,65 @@ public class ResultSetUtil
 
             for (int i = 1; i <= md.getColumnCount(); i++)
             {
-                _log.debug("Name: " + md.getColumnName(i));
-                _log.debug("Label: " + md.getColumnLabel(i));
-                _log.debug("Type: " + md.getColumnType(i));
-                _log.debug("Display Size: " + md.getColumnDisplaySize(i));
-                _log.debug("Type Name: " + md.getColumnTypeName(i));
-                _log.debug("Precision: " + md.getPrecision(i));
-                _log.debug("Scale: " + md.getScale(i));
-                _log.debug("Schema: " + md.getSchemaName(i));
-                _log.debug("Table: " + md.getTableName(i));
-                _log.debug("========================");
+                _log.info("Name: " + md.getColumnName(i));
+                _log.info("Label: " + md.getColumnLabel(i));
+                _log.info("Type: " + md.getColumnType(i));
+                _log.info("Display Size: " + md.getColumnDisplaySize(i));
+                _log.info("Type Name: " + md.getColumnTypeName(i));
+                _log.info("Precision: " + md.getPrecision(i));
+                _log.info("Scale: " + md.getScale(i));
+                _log.info("Schema: " + md.getSchemaName(i));
+                _log.info("Table: " + md.getTableName(i));
+                _log.info("========================");
             }
         }
         catch (SQLException e)
         {
             _log.error("logMetaData: " + e);
+        }
+    }
+
+
+    // Just for testing purposes... splats ResultSet data to log
+    public static void logData(ResultSet rs)
+    {
+        try
+        {
+            StringBuilder sb = new StringBuilder();
+
+            ResultSetMetaData md = rs.getMetaData();
+            int columnCount = md.getColumnCount();
+
+            sb.append('\n');
+
+            for (int i = 1; i <= columnCount; i++)
+            {
+                sb.append(md.getColumnName(i)).append(" ");
+            }
+
+            sb.append('\n');
+
+            while (rs.next())
+            {
+                for (int i = 1; i <= columnCount; i++)
+                {
+                    Object value = rs.getObject(i);
+
+                    sb.append(null == value ? "-" : value.toString().trim()).append(" ");
+                }
+
+                sb.append('\n');
+            }
+
+            _log.info(sb);
+        }
+        catch (SQLException e)
+        {
+            _log.error("logMetaData: " + e);
+        }
+        finally
+        {
+            close(rs);
         }
     }
 

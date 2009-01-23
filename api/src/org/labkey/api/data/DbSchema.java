@@ -159,12 +159,6 @@ public class DbSchema
     }
 
 
-    public String getDataSourceName()
-    {
-        return getScope().getDataSourceName();
-    }
-
-
     public static Set<String> getNames()
     {
         Properties props = getDbSchemaProperties();
@@ -557,6 +551,8 @@ public class DbSchema
                      + "<br>"
                      + sOut + "</div>", sOut);
 
+/* TODO: Uncomment once we change to all generic type names in schema .xml files
+
             StringBuilder typeErrors = new StringBuilder();
 
             for (TableInfo ti : schema.getTables())
@@ -575,8 +571,8 @@ public class DbSchema
                 }
             }
 
-            // TODO: Uncomment once we change to all generic type names in schema .xml files
-            // assertTrue("<div>Type errors in schema " + schema.getName() + ":<br><br>" + typeErrors + "<div>", "".equals(typeErrors.toString()));
+            assertTrue("<div>Type errors in schema " + schema.getName() + ":<br><br>" + typeErrors + "<div>", "".equals(typeErrors.toString()));
+*/
         }
 
         public void testTransactions() throws Exception

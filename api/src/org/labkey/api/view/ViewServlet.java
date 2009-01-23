@@ -48,8 +48,8 @@ import java.util.Map;
  */
 public class ViewServlet extends HttpServlet
 {
-    static Logger _log = Logger.getLogger(ViewServlet.class);
-    static final boolean _debug = _log.isDebugEnabled();
+    private static final Logger _log = Logger.getLogger(ViewServlet.class);
+    private static final boolean _debug = _log.isDebugEnabled();
 
     public static final String ORIGINAL_URL = "LABKEY.OriginalURL";       // String
     public static final String REQUEST_URL = "LABKEY.RequestURL";         // ActionURL

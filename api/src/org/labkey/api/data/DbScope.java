@@ -44,10 +44,10 @@ public class DbScope
     private static final ConnectionMap _initializedConnections = newConnectionMap();
     private static final Map<String, DbScope> _scopes = new HashMap<String, DbScope>();
 
-    private String _dataSourceName;
     private DataSource _dataSource;
     private SqlDialect _dialect;
     private String _databaseName;
+
     private String _URL;
     private String _databaseProductName;
     private String _databaseProductVersion;
@@ -72,11 +72,13 @@ public class DbScope
 
     DbScope(String dsName) throws NamingException, ServletException, SQLException
     {
-        InitialContext ctx = new InitialContext();
-        Context envCtx = (Context) ctx.lookup("java:comp/env");
+        this(getDataSourceFromJNDI(dsName));
+    }
 
-        _dataSource = (DataSource) envCtx.lookup(dsName);
-        _dataSourceName = "java:comp/env/" + dsName;
+
+    public DbScope(DataSource dataSource) throws ServletException, SQLException
+    {
+        _dataSource = dataSource;
         _dialect = SqlDialect.get(_dataSource);
         _databaseName = _dialect.getDatabaseName(_dataSource);
 
@@ -117,9 +119,12 @@ public class DbScope
     }
 
 
-    public String getDataSourceName()
+    private static DataSource getDataSourceFromJNDI(String dsName) throws NamingException
     {
-        return _dataSourceName;
+        InitialContext ctx = new InitialContext();
+        Context envCtx = (Context) ctx.lookup("java:comp/env");
+
+        return (DataSource) envCtx.lookup(dsName);
     }
 
     public DataSource getDataSource()

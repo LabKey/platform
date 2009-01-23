@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpressionFactory.StringExpression;
 import org.labkey.data.xml.ColumnType;
 
@@ -68,7 +69,7 @@ public class ColumnInfo extends ColumnRenderProperties
     private TableInfo parentTable = null;
     static Set<String> nonEditableColNames = null;
     private DisplayColumnFactory _displayColumnFactory = DEFAULT_FACTORY;
-    private int _sqlTypeInt = Types.NULL;
+    private int sqlTypeInt = Types.NULL;
     private String metaDataName = null;
     private String selectName = null;
     private String description = null;
@@ -90,7 +91,7 @@ public class ColumnInfo extends ColumnRenderProperties
         this.name = rsmd.getColumnName(col);
         this.setColIndex(col);
         this.setSqlTypeName(rsmd.getColumnTypeName(col));
-        this._sqlTypeInt = rsmd.getColumnType(col);
+        this.sqlTypeInt = rsmd.getColumnType(col);
     }
 
     public ColumnInfo(String name, TableInfo parentTable)
@@ -145,7 +146,7 @@ public class ColumnInfo extends ColumnRenderProperties
         setDisplayColumnFactory(col.getDisplayColumnFactory());
         setScale(col.getScale());
         setSqlTypeName(col.getSqlTypeName());
-        this._sqlTypeInt = col._sqlTypeInt;
+        this.sqlTypeInt = col.sqlTypeInt;
         setTextAlign(col.getTextAlign());
         setUserEditable(col.isUserEditable());
         setWidth(col.getWidth());
@@ -483,16 +484,16 @@ public class ColumnInfo extends ColumnRenderProperties
 
     public int getSqlTypeInt()
     {
-        if (_sqlTypeInt == Types.NULL)
+        if (sqlTypeInt == Types.NULL)
         {
             SqlDialect d;
             if (getParentTable() == null)
                 d = CoreSchema.getInstance().getSqlDialect();
             else
                 d = getParentTable().getSqlDialect();
-            _sqlTypeInt = d.sqlTypeIntFromSqlTypeName(sqlTypeName);
+            sqlTypeInt = d.sqlTypeIntFromSqlTypeName(sqlTypeName);
         }
-        return _sqlTypeInt;
+        return sqlTypeInt;
     }
 
 
@@ -966,33 +967,22 @@ public class ColumnInfo extends ColumnRenderProperties
         //Use linked hash map to preserve ordering...
         LinkedHashMap<String, ColumnInfo> colList = new LinkedHashMap<String, ColumnInfo>();
         ResultSet rsCols = dbmd.getColumns(catalogName, schemaName, parentTable.getMetaDataName(), null);      // PostgreSQL change: query meta data with metaDataName
+        SqlDialect.ColumnMetaDataReader reader = parentTable.getSqlDialect().getColumnMetaDataReader(rsCols);
 
         while (rsCols.next())
         {
-            String metaDataName = rsCols.getString("COLUMN_NAME");
+            String metaDataName = reader.getName();
             ColumnInfo col = new ColumnInfo(metaDataName, parentTable);
             colList.put(col.name, col);
+
             col.metaDataName = metaDataName;
-            col.sqlTypeName = rsCols.getString("TYPE_NAME");
-            int type = rsCols.getInt("DATA_TYPE");
+            col.sqlTypeName = reader.getSqlTypeName();
+            col.sqlTypeInt = reader.getSqlType();
+            col.isAutoIncrement = reader.isAutoIncrement();
+            col.scale = reader.getScale();
+            col.nullable = reader.isNullable();
+            col.colIndex = reader.getPosition();
 
-            switch(type)
-            {
-                case Types.OTHER: col._sqlTypeInt = Types.NULL; break;
-                case Types.DISTINCT: col._sqlTypeInt = rsCols.getInt("SOURCE_DATA_TYPE"); break;  // PostgreSQL 8.3 returns DISTINCT for user-defined types
-                default: col._sqlTypeInt = type;
-            }
-            if (col.sqlTypeName.equalsIgnoreCase("int identity") || col.sqlTypeName.equalsIgnoreCase("serial") || col.sqlTypeName.equalsIgnoreCase("bigserial")) // PostgreSQL: add serial.  TODO: convert to a list/set of auto-increment type names from sql dialect
-                col.isAutoIncrement = true;
-            if (col.sqlTypeName.equalsIgnoreCase("ntext") || col.sqlTypeName.equalsIgnoreCase("text"))
-                col.scale = 0x7FFF;
-            else
-                col.scale = rsCols.getInt("COLUMN_SIZE");
-
-            col.nullable = rsCols.getInt("NULLABLE") == 1;
-            col.colIndex = rsCols.getInt("ORDINAL_POSITION");
-            //int sqlTypeInt = rsCols.getInt("DATA_TYPE");
-//			col.format = getDefaultFormat(sqlTypeInt);
             if (nonEditableColNames.contains(col.getPropertyName()))
                 col.setUserEditable(false);
         }
@@ -1002,13 +992,13 @@ public class ColumnInfo extends ColumnRenderProperties
         // 1) combine multi column keys
         // 2) update columns
 
-        ResultSet rsKeys = dbmd.getImportedKeys(catalogName, schemaName, parentTable.getMetaDataName());    // PostgreSQL change: query meta data with metaDataName
-        int iPkTableSchema = rsKeys.findColumn("PKTABLE_SCHEM");
-        int iPkTableName = rsKeys.findColumn("PKTABLE_NAME");
-        int iPkColumnName = rsKeys.findColumn("PKCOLUMN_NAME");
-        int iFkColumnName = rsKeys.findColumn("FKCOLUMN_NAME");
-        int iKeySequence = rsKeys.findColumn("KEY_SEQ");
-        int iFkName = rsKeys.findColumn("FK_NAME");
+        ResultSet rsKeys = dbmd.getImportedKeys(catalogName, schemaName, parentTable.getMetaDataName());
+        int iPkTableSchema = findColumn(rsKeys, "PKTABLE_SCHEM");
+        int iPkTableName = findColumn(rsKeys, "PKTABLE_NAME");
+        int iPkColumnName = findColumn(rsKeys, "PKCOLUMN_NAME");
+        int iFkColumnName = findColumn(rsKeys, "FKCOLUMN_NAME");
+        int iKeySequence = findColumn(rsKeys, "KEY_SEQ");
+        int iFkName = findColumn(rsKeys, "FK_NAME");
         
         ArrayList<ImportedKey> importedKeys = new ArrayList<ImportedKey>();
         while (rsKeys.next())
@@ -1081,6 +1071,21 @@ public class ColumnInfo extends ColumnRenderProperties
         }
 
         return new ArrayList<ColumnInfo>(colList.values());
+    }
+
+
+    // Safe version of findColumn().  Returns jdbc column index to specified column, or 0 if it doesn't exist or an
+    // exception occurs.  SAS JDBC driver throws when attempting to resolve indexes when no records exist.
+    private static int findColumn(ResultSet rs, String name)
+    {
+        try
+        {
+            return rs.findColumn(name);
+        }
+        catch (Exception e)
+        {
+            return 0;
+        }
     }
 
 
@@ -1227,7 +1232,7 @@ public class ColumnInfo extends ColumnRenderProperties
     public void setSqlTypeName(String sqlTypeName)
     {
         this.sqlTypeName = sqlTypeName;
-        this._sqlTypeInt = Types.NULL;
+        this.sqlTypeInt = Types.NULL;
     }
 
     public String getFriendlyTypeName()

@@ -176,7 +176,6 @@ public class TableXmlUtils
             }
 
             result += compareOldToNewNames(dbSchemaName);
-
         }
         catch (Exception e)
         {

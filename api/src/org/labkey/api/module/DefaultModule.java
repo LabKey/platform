@@ -24,16 +24,14 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.reports.report.ModuleQueryRReportDescriptor;
-import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ModuleRReportDescriptor;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.Cache;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.Cache;
 import org.labkey.api.view.*;
-import org.labkey.api.query.CustomView;
-import org.labkey.api.query.QueryDefinition;
 import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.mvc.Controller;
 

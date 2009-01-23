@@ -380,18 +380,26 @@ public class SchemaTableInfo implements TableInfo
             throws SQLException
     {
         loadColumnsFromMetaData(dbmd, catalogName, schemaName);
-        ResultSet rs = dbmd.getPrimaryKeys(catalogName, schemaName, metaDataName); // PostgreSQL change: use metaDataName
+        ResultSet rs = dbmd.getPrimaryKeys(catalogName, schemaName, metaDataName);
 
         // TODO: Change this to add directly to list
 
         String[] pkColArray = new String[5]; //Assume no more than 5
         int maxKeySeq = 0;
+
+        SqlDialect.PkMetaDataReader reader = getSqlDialect().getPkMetaDataReader(rs);
+
         while (rs.next())
         {
-            String colName = rs.getString("COLUMN_NAME");
+            String colName = reader.getName();
             ColumnInfo colInfo = getColumn(colName);
             colInfo.setKeyField(true);
-            int keySeq = rs.getInt("KEY_SEQ");
+            int keySeq = reader.getKeySeq();
+
+            // SAS doesn't return sequence information -- we could just increment a counter as a backup
+            if (0 == keySeq)
+                continue;
+
             pkColArray[keySeq - 1] = colInfo.getPropertyName();
             if (keySeq > maxKeySeq)
                 maxKeySeq = keySeq;
