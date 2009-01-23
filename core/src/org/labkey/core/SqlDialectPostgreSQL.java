@@ -675,6 +675,50 @@ class SqlDialectPostgreSQL extends SqlDialect
         return true;
     }
 
+    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols)
+    {
+        return new PostgreSQLColumnMetaDataReader(rsCols);
+    }
+
+
+    private class PostgreSQLColumnMetaDataReader extends ColumnMetaDataReader
+    {
+        public PostgreSQLColumnMetaDataReader(ResultSet rsCols)
+        {
+            super(rsCols);
+
+            _nameKey = "COLUMN_NAME";
+            _sqlTypeKey = "DATA_TYPE";
+            _sqlTypeNameKey = "TYPE_NAME";
+            _scaleKey = "COLUMN_SIZE";
+            _nullableKey = "NULLABLE";
+            _postionKey = "ORDINAL_POSITION";
+        }
+
+        public boolean isAutoIncrement() throws SQLException
+        {
+            String typeName = getSqlTypeName();
+            return typeName.equalsIgnoreCase("serial") || typeName.equalsIgnoreCase("bigserial");
+        }
+
+        @Override
+        public int getSqlType() throws SQLException
+        {
+            int sqlType = super.getSqlType();
+
+            // PostgreSQL 8.3 returns DISTINCT for user-defined types
+            if (Types.DISTINCT == sqlType)
+                return _rsCols.getInt("SOURCE_DATA_TYPE");
+            else
+                return sqlType;
+        }
+    }
+
+    public PkMetaDataReader getPkMetaDataReader(ResultSet rs)
+    {
+        return new PkMetaDataReader(rs, "COLUMN_NAME", "KEY_SEQ");
+    }
+
     public TestSuite getTestSuite()
     {
         TestSuite suite = new TestSuite();

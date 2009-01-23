@@ -22,10 +22,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.data.*;
 
 import javax.servlet.ServletException;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
+import java.sql.*;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Map;
@@ -548,6 +545,38 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     {
         return false;
     }
+
+    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols)
+    {
+        return new SqlServerColumnMetaDataReader(rsCols);
+    }
+
+    private static class SqlServerColumnMetaDataReader extends ColumnMetaDataReader
+    {
+        private SqlServerColumnMetaDataReader(ResultSet rsCols)
+        {
+            super(rsCols);
+
+            _nameKey = "COLUMN_NAME";
+            _sqlTypeKey = "DATA_TYPE";
+            _sqlTypeNameKey = "TYPE_NAME";
+            _scaleKey = "COLUMN_SIZE";
+            _nullableKey = "NULLABLE";
+            _postionKey = "ORDINAL_POSITION";
+        }
+
+        public boolean isAutoIncrement() throws SQLException
+        {
+            return getSqlTypeName().equalsIgnoreCase("int identity");
+        }
+    }
+
+
+    public PkMetaDataReader getPkMetaDataReader(ResultSet rs)
+    {
+        return new PkMetaDataReader(rs, "COLUMN_NAME", "KEY_SEQ");
+    }
+
 
     public TestSuite getTestSuite()
     {
