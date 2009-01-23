@@ -59,13 +59,13 @@ public class Sort
         String _colName = null;
         boolean _urlClause = false;
 
-        SortField(String str, SortDirection dir)
+        public SortField(String str, SortDirection dir)
         {
             _colName = str;
             _dir = dir;
         }
 
-        SortField(String str)
+        public SortField(String str)
         {
             if (str.charAt(0) == SortDirection.DESC.dir)
             {

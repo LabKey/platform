@@ -69,8 +69,7 @@ abstract public class QueryService
      * If <code>unresolvedColumns</code> is not null, then the Filter and Sort will be modified to remove any clauses that
      * involve unresolved columns, and <code>unresolvedColumns</code> will contain the names of the unresolved columns.
      */
-    abstract public void ensureRequiredColumns(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort, Set<String> unresolvedColumns);
-    abstract public ResultSet select(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort) throws SQLException;
+    abstract public void ensureRequiredColumns(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Set<String> unresolvedColumns);
 
     abstract public String[] getAvailableWebPartNames(UserSchema schema);
     abstract public WebPartView[] getWebParts(UserSchema schema, String location); 
@@ -81,5 +80,7 @@ abstract public class QueryService
 
     abstract public TableInfo overlayMetadata(TableInfo tableInfo, String tableName, UserSchema schema);
 
-	abstract public SQLFragment getSelectSQL(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset);
+	abstract public ResultSet select(QuerySchema schema, String sql) throws SQLException;
+	abstract public ResultSet select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort) throws SQLException;
+	abstract public SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset);
 }

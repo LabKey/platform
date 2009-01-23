@@ -546,25 +546,38 @@ public class Table
     public static <K> K[] executeArray(TableInfo table, ColumnInfo col, Filter filter, Sort sort, Class<K> c)
             throws SQLException
     {
-        HashMap cols = new HashMap<String,ColumnInfo>();
+        HashMap<String,ColumnInfo> cols = new HashMap<String,ColumnInfo>();
         cols.put(col.getName(), col);
         if (filter != null || sort != null)
             ensureRequiredColumns(table, cols, filter, sort);
-        SQLFragment sqlInner = getSelectSQL(table, cols.values(), filter, sort);
-        SQLFragment sql;
-        if (cols.size() == 1)
-        {
-            sql = sqlInner;
-        }
-        else
-        {
-            sql = new SQLFragment();
-            sql.append("SELECT " + col.getName() + " FROM (");
-            sql.append(sqlInner);
-            sql.append(") _array_");
-        }
+        SQLFragment sqlf = getSelectSQL(table, cols.values(), filter, sort);
 
-        return executeArray(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), c);
+        DbSchema schema = table.getSchema();
+        String sql = sqlf.getSQL();
+        Object[] parameters = sqlf.getParams().toArray();
+
+        Connection conn = null;
+        ResultSet rs = null;
+
+        try
+        {
+            conn = schema.getScope().getConnection();
+            rs = _executeQuery(conn, sql, parameters);
+            ArrayList<Object> list = new ArrayList<Object>();
+            int i = rs.findColumn(col.getName());
+            while (rs.next())
+                list.add(rs.getObject(i));
+            return list.toArray((K[]) Array.newInstance(c, list.size()));
+        }
+        catch(SQLException e)
+        {
+            _doCatch(sql, parameters, conn, e);
+            throw(e);
+        }
+        finally
+        {
+            _doFinally(rs, null, conn, schema);
+        }
     }
 
 
@@ -1214,90 +1227,9 @@ public class Table
      */
     public static SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset)
     {
-        SqlDialect dialect = table.getSqlDialect();
-        Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
-
-        SQLFragment selectFrag = new SQLFragment("SELECT");
-        String strComma = "\n";
-
-        for (ColumnInfo column : columns)
-        {
-            assert column.getParentTable() == table : "Column " + column + " is from the wrong table: " + column.getParentTable() + " instead of " + table;
-            column.declareJoins(joins);
-            selectFrag.append(strComma);
-            selectFrag.append(column.getSelectSql());
-            strComma = ",\n";
-        }
-
-        SQLFragment fromFrag = new SQLFragment("FROM ");
-        fromFrag.append(table.getFromSQL());
-        for (Map.Entry<String, SQLFragment> entry : joins.entrySet())
-        {
-            fromFrag.append("\n").append(entry.getValue());
-        }
-
-        SQLFragment filterFrag = null;
-        Map<String, ColumnInfo> columnMap = createColumnMap(table, columns);
-        if (filter != null)
-        {
-            filterFrag = filter.getSQLFragment(dialect, columnMap);
-        }
-
-        String orderBy = null;
-        if ((sort == null || sort.getSortList().size() == 0) && (rowCount > 0 || offset > 0))
-        {
-            sort = createDefaultSort(columns);
-        }
-        if (sort != null)
-        {
-            orderBy = sort.getOrderByClause(dialect, columnMap);
-        }
-
-		if (filterFrag == null && sort == null && rowCount == 0 && offset == 0)
-		{
-			selectFrag.append("\n").append(fromFrag);
-			return selectFrag;
-		}
-
-		SQLFragment nestedFrom = new SQLFragment();
-		nestedFrom.append("FROM (\n").append(selectFrag).append("\n").append(fromFrag).append(") x\n");
-		if (AppProps.getInstance().isDevMode())
-		{
-			String s = StringUtils.replace(nestedFrom.getSQL(), "\n", "\n\t\t");
-			nestedFrom = new SQLFragment(s, nestedFrom.getParams());
-		}
-
-        return dialect.limitRows(new SQLFragment("SELECT *"), nestedFrom, filterFrag, orderBy, rowCount, offset);
+		return QueryService.get().getSelectSQL(table, columns, filter, sort, rowCount, offset);
     }
 
-
-    public static Sort createDefaultSort(Collection<ColumnInfo> columns)
-    {
-        Sort sort = new Sort();
-        addSortableColumns(sort, columns, true);
-
-        if (sort.getSortList().size() == 0)
-        {
-            addSortableColumns(sort, columns, false);
-        }
-
-        return sort;
-    }
-
-    private static void addSortableColumns(Sort sort, Collection<ColumnInfo> columns, boolean usePrimaryKey)
-    {
-        for (ColumnInfo column : columns)
-        {
-            if (usePrimaryKey && !column.isKeyField())
-                continue;
-            ColumnInfo sortField = column.getSortField();
-            if (sortField != null)
-            {
-                sort.getSortList().add(sort.new SortField(sortField.getName(), column.getSortDirection()));
-                return;
-            }
-        }
-    }
 
     public static ResultSet select(TableInfo table, Set<String> select, Filter filter, Sort sort)
             throws SQLException
@@ -2217,7 +2149,6 @@ public class Table
 
     static public Map<String, ColumnInfo> createColumnMap(TableInfo table, Collection<ColumnInfo> columns)
     {
-        // TODO: instead of creating a map with all the known entries, we should return a map implementation that defers to TableInfo.getColumn()
         CaseInsensitiveHashMap<ColumnInfo> ret = new CaseInsensitiveHashMap<ColumnInfo>();
         if (columns != null)
         {
