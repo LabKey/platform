@@ -45,6 +45,7 @@ public class GWTProtocol implements IsSerializable
     private String _selectedPlateTemplate;
     private List<String> _validationScripts = new ArrayList<String>();
     private String _protocolValidationScript;
+    private boolean _allowValidationScript;
 
     public GWTProtocol()
     {
@@ -149,5 +150,15 @@ public class GWTProtocol implements IsSerializable
     public void setProtocolValidationScript(String protocolValidationScript)
     {
         _protocolValidationScript = protocolValidationScript;
+    }
+
+    public boolean isAllowValidationScript()
+    {
+        return _allowValidationScript;
+    }
+
+    public void setAllowValidationScript(boolean allowValidationScript)
+    {
+        _allowValidationScript = allowValidationScript;
     }
 }

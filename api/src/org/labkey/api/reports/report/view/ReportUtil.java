@@ -318,6 +318,16 @@ public class ReportUtil
                 record.put("editUrl", editUrl != null ? editUrl.toString() : null);
                 record.put("description", descriptor.getReportDescription());
 
+                String security;
+                if (descriptor.getOwner() != null)
+                    security = "private";
+                else if (r.getDescriptor().getACL() != null && !r.getDescriptor().getACL().isEmpty())
+                    security = "explicit";
+                else
+                    security = "public";
+
+                record.put("security", security);
+                
                 String iconPath = ReportService.get().getReportIcon(context, r.getType());
                 if (!StringUtils.isEmpty(iconPath))
                     record.put("type", "<img src=\"" + iconPath + "\">&nbsp;" + r.getTypeDescription());
