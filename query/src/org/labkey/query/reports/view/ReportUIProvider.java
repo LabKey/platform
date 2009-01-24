@@ -19,7 +19,10 @@ import org.labkey.api.reports.report.view.*;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ExternalScriptEngineReport;
+import org.labkey.api.reports.report.InternalScriptEngineReport;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryService;
@@ -49,24 +52,34 @@ public class ReportUIProvider extends DefaultReportUIProvider
         chartBean.setRedirectUrl(context.getActionURL().getLocalURIString());
         designers.add(new DesignerInfoImpl(ChartQueryReport.TYPE, "Chart View", ReportUtil.getChartDesignerURL(context, chartBean)));
 
-        RReportBean rBean = new RReportBean(settings);
-        rBean.setReportType(RReport.TYPE);
-        rBean.setRedirectUrl(context.getActionURL().getLocalURIString());
-        designers.add(new DesignerInfoImpl(RReport.TYPE, "R View", ReportUtil.getRReportDesignerURL(context, rBean)));
-
+        if (RReport.isEnabled())
+        {
+            RReportBean rBean = new RReportBean(settings);
+            rBean.setReportType(RReport.TYPE);
+            rBean.setRedirectUrl(context.getActionURL().getLocalURIString());
+            designers.add(new DesignerInfoImpl(RReport.TYPE, "R View", ReportUtil.getRReportDesignerURL(context, rBean)));
+        }
         ScriptEngineManager manager = ServiceRegistry.get().getService(ScriptEngineManager.class);
 
         for (ScriptEngineFactory factory : manager.getEngineFactories())
         {
             // don't add an entry for R, since we have a specific report type above.
-            if (!factory.getLanguageName().equalsIgnoreCase("R"))
+            if (LabkeyScriptEngineManager.isFactoryEnabled(factory) && !factory.getLanguageName().equalsIgnoreCase("R"))
             {
                 ScriptReportBean bean = new ScriptReportBean(settings);
-                bean.setReportType(ExternalScriptEngineReport.TYPE);
                 bean.setRedirectUrl(context.getActionURL().getLocalURIString());
                 bean.setScriptExtension(factory.getExtensions().get(0));
 
-                designers.add(new DesignerInfoImpl(ExternalScriptEngineReport.TYPE, factory.getLanguageName() + " View", ReportUtil.getScriptReportDesignerURL(context, bean)));
+                if (factory instanceof ExternalScriptEngineFactory)
+                {
+                    bean.setReportType(ExternalScriptEngineReport.TYPE);
+                    designers.add(new DesignerInfoImpl(ExternalScriptEngineReport.TYPE, factory.getLanguageName() + " View", ReportUtil.getScriptReportDesignerURL(context, bean)));
+                }
+                else
+                {
+                    bean.setReportType(InternalScriptEngineReport.TYPE);
+                    designers.add(new DesignerInfoImpl(InternalScriptEngineReport.TYPE, factory.getLanguageName() + " View", ReportUtil.getScriptReportDesignerURL(context, bean)));
+                }
             }
         }
 

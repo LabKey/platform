@@ -1096,40 +1096,6 @@ public class ReportsController extends SpringActionController
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
-            ManageReportsBean bean = new ManageReportsBean(getViewContext());
-            List<Map<String, String>> views = new ArrayList<Map<String, String>>();
-
-            for (Map.Entry<String, List<ManageReportsBean.ReportRecord>> entry : bean.getViews().entrySet())
-            {
-                if (entry.getValue().isEmpty())
-                    continue;
-
-                for (ManageReportsBean.ReportRecord r : entry.getValue())
-                {
-                    ReportDescriptor descriptor = r.getReport().getDescriptor();
-                    Map<String, String> record = new HashMap<String, String>();
-
-                    record.put("name", r.getName());
-                    record.put("displayName", "<a href=\"" + r.getDisplayURL() + "\">" + r.getName() + "</a>");
-                    record.put("reportId", descriptor.getReportId().toString());
-                    record.put("query", StringUtils.defaultIfEmpty(descriptor.getProperty(ReportDescriptor.Prop.queryName), "Unknown"));
-                    record.put("schema", descriptor.getProperty(ReportDescriptor.Prop.schemaName));
-                    record.put("owner", r.getCreatedBy().getDisplayName(getViewContext()));
-                    record.put("public", String.valueOf(r.isShared()));
-                    record.put("type", r.getReport().getTypeDescription());
-                    record.put("editable", String.valueOf(descriptor.canEdit(getViewContext())));
-                    record.put("editUrl", r.getEditURL());
-                    record.put("description", descriptor.getReportDescription());
-
-                    String iconPath = ReportService.get().getReportIcon(getViewContext(), r.getReport().getType());
-                    if (!StringUtils.isEmpty(iconPath))
-                        record.put("type", "<img src=\"" + iconPath + "\">&nbsp;" + r.getReport().getTypeDescription());
-                    else
-                    record.put("type", r.getReport().getTypeDescription());
-
-                    views.add(record);
-                }
-            }
             return new ApiSimpleResponse("views", ReportUtil.getViewsJson(getViewContext()));
         }
     }
@@ -1139,9 +1105,9 @@ public class ReportsController extends SpringActionController
     {
         public ApiResponse execute(DeleteViewsForm form, BindException errors) throws Exception
         {
-            for (int id : form.getReportId())
+            for (ReportIdentifier id : form.getReportId())
             {
-                Report report = ReportService.get().getReport(id);
+                Report report = id.getReport();
 
                 if (report != null)
                 {
@@ -1250,14 +1216,14 @@ public class ReportsController extends SpringActionController
 
     static class DeleteViewsForm
     {
-        int[] _reportId;
+        ReportIdentifier[] _reportId;
 
-        public int[] getReportId()
+        public ReportIdentifier[] getReportId()
         {
             return _reportId;
         }
 
-        public void setReportId(int[] reportId)
+        public void setReportId(ReportIdentifier[] reportId)
         {
             _reportId = reportId;
         }

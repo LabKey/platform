@@ -158,6 +158,9 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
 
             result.setValidationScripts(scriptNames);
         }
+        // only tsv providers support validation this release (9.1)
+        result.setAllowValidationScript(provider instanceof TsvAssayProvider);
+        
         return result;
     }
 
