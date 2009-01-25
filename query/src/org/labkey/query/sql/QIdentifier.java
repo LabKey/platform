@@ -17,7 +17,6 @@
 package org.labkey.query.sql;
 
 import org.labkey.api.query.FieldKey;
-import org.labkey.query.sql.SqlTokenTypes;
 import org.apache.commons.lang.StringUtils;
 
 public class QIdentifier extends QFieldKey
@@ -28,7 +27,7 @@ public class QIdentifier extends QFieldKey
 
     public QIdentifier(String str)
     {
-        if (QParser.isLegalIdentifier(str))
+        if (SqlParser.isLegalIdentifier(str))
         {
             setTokenType(SqlTokenTypes.IDENT);
             setTokenText(str);

@@ -1537,7 +1537,6 @@ query/src/org/labkey/query/sql/QNull.java -text
 query/src/org/labkey/query/sql/QNumber.java -text
 query/src/org/labkey/query/sql/QOperator.java -text
 query/src/org/labkey/query/sql/QOrder.java -text
-query/src/org/labkey/query/sql/QParser.java -text
 query/src/org/labkey/query/sql/QQuery.java -text
 query/src/org/labkey/query/sql/QRowStar.java -text
 query/src/org/labkey/query/sql/QSelect.java -text

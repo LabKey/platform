@@ -52,7 +52,7 @@ import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.DbUserSchemaDef;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
-import org.labkey.query.sql.QParser;
+import org.labkey.query.sql.SqlParser;
 import org.labkey.query.view.DbUserSchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1930,7 +1930,7 @@ public class QueryControllerSpring extends SpringActionController
             List<QueryParseException> errors = new ArrayList<QueryParseException>();
             try
             {
-                QParser.parseExpr(sql, errors);
+                (new SqlParser()).parseExpr(sql, errors);
             }
             catch (Throwable t)
             {

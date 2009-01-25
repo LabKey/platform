@@ -18,7 +18,6 @@ package org.labkey.query.data;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.list.ListDefinition;
@@ -99,7 +98,7 @@ public class Query
 
         try
         {
-            _root = QParser.parseStatement(queryText, _parseErrors);
+            _root = (new SqlParser()).parseStatement(queryText, _parseErrors);
             if (_parseErrors.isEmpty())
                 parseTree();
 
@@ -1009,7 +1008,7 @@ loop:
             }
             else if (value.isSetSql())
             {
-                field = QParser.parseExpr(value.getSql(), errors);
+                field = (new SqlParser()).parseExpr(value.getSql(), errors);
             }
             else
             {
@@ -1043,7 +1042,7 @@ loop:
             }
             for (DgOrderByString expr : query.getOrderBy().getSqlArray())
             {
-                _orderBy.addOrderByClause(QParser.parseExpr(expr.getStringValue(), errors), !"DESC".equals(expr.getDir()));
+                _orderBy.addOrderByClause((new SqlParser()).parseExpr(expr.getStringValue(), errors), !"DESC".equals(expr.getDir()));
             }
         }
     }

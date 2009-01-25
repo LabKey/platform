@@ -298,7 +298,7 @@ public class QWhere extends QNode<QExpr>
             else if (child instanceof XmlString)
             {
                 XmlString sql = (XmlString)child;
-                QExpr expr = QParser.parseExpr(sql.getStringValue(), errors); 
+                QExpr expr = (new SqlParser()).parseExpr(sql.getStringValue(), errors); 
                 appendChild(expr);
             }
         }
