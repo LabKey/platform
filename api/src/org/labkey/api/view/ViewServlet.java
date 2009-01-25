@@ -380,7 +380,7 @@ public class ViewServlet extends HttpServlet
     {
         super.init(config);
         _servletContext = config.getServletContext();
-        _log.info("ViewServlet.init: " + config);
+        _log.info("ViewServlet initialized");
     }
 
 
