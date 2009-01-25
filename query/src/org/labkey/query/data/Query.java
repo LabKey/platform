@@ -1100,7 +1100,7 @@ loop:
                 row[c] = GUID.makeGUID();
             }
 
-            for (String[] row : data) System.err.println(StringUtils.join(row,"\t")); System.err.flush();
+//            for (String[] row : data) System.err.println(StringUtils.join(row,"\t")); System.err.flush();
         }
 
         public String[][] getFirstNLines(int n) throws IOException
@@ -1163,7 +1163,9 @@ loop:
         new SqlTest("SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid FROM R", 8, Rsize),
         new SqlTest("SELECT R.duration AS elapsed FROM R WHERE R.rowid=1", 1, 1),
 		new SqlTest("SELECT R.rowid, R.seven, R.day FROM R WHERE R.day LIKE '%ues%'", 3, 12),
-		new SqlTest("SELECT R.rowid, R.twelve, R.month FROM R WHERE R.month BETWEEN 'L' and 'O'", 3, 3*7) // March, May, Nov
+		new SqlTest("SELECT R.rowid, R.twelve, R.month FROM R WHERE R.month BETWEEN 'L' and 'O'", 3, 3*7), // March, May, Nov
+        new SqlTest("SELECT R.rowid, R.twelve, (SELECT S.month FROM S WHERE S.rowid=R.rowid) as M FROM R WHERE R.day='Monday'", 3, 12),
+        new SqlTest("SELECT T.R, T.T, T.M FROM (SELECT R.rowid as R, R.twelve as T, (SELECT S.month FROM S WHERE S.rowid=R.rowid) as M FROM R WHERE R.day='Monday') T", 3, 12)
     };
     
 
