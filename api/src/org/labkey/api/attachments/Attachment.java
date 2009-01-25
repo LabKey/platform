@@ -24,6 +24,8 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.webdav.WebdavResolver;
 
 import javax.ejb.Entity;
 import javax.ejb.Transient;
@@ -32,6 +34,7 @@ import java.io.Serializable;
 import java.io.File;
 import java.util.Date;
 import java.util.Set;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 //import java.io.Serializable;
 
@@ -148,20 +151,42 @@ public class Attachment implements Serializable
         {
             if (icons.size() == 0)
             {
-                ServletContext context = ViewServlet.getViewServletContext();
-                if (context != null)
+                WebdavResolver staticFiles = ServiceRegistry.get().getService(WebdavResolver.class);
+                if (staticFiles != null)
                 {
-                    Set<String> paths = context.getResourcePaths("/_icons");
-                    for (String fileName : paths)
+                    List<String> names = staticFiles.lookup("/_icons").listNames();
+                    for (String fileName : names)
                     {
                         int index = fileName.lastIndexOf('/');
                         int dot = fileName.lastIndexOf('.');
                         String extension = fileName.substring(index + 1, dot).toLowerCase();
                         if (mime.isInlineImageFor(fileName))    // .jpg .png .gif
-                            icons.put(extension, fileName);
-                        String contenttype = mime.getContentType(extension);
-                        if (null != contenttype)
-                            icons.put(contenttype, fileName);
+                        {
+                            String path = "/_icons/" + fileName;
+                            icons.put(extension, path);
+                            String contenttype = mime.getContentType(extension);
+                            if (null != contenttype)
+                                icons.put(contenttype, path);
+                        }
+                    }
+                }
+                if (icons.size() == 0)
+                {
+                    ServletContext context = ViewServlet.getViewServletContext();
+                    if (context != null)
+                    {
+                        Set<String> paths = context.getResourcePaths("/_icons");
+                        for (String fileName : paths)
+                        {
+                            int index = fileName.lastIndexOf('/');
+                            int dot = fileName.lastIndexOf('.');
+                            String extension = fileName.substring(index + 1, dot).toLowerCase();
+                            if (mime.isInlineImageFor(fileName))    // .jpg .png .gif
+                                icons.put(extension, fileName);
+                            String contenttype = mime.getContentType(extension);
+                            if (null != contenttype)
+                                icons.put(contenttype, fileName);
+                        }
                     }
                 }
             }
