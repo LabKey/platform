@@ -82,7 +82,7 @@ public class JunitUtil
     /**
      * Returns the container called "_junit" to be used by test cases.
      */
-    public static Container getTestContainer() throws SQLException
+    public static Container getTestContainer()
     {
         return ContainerManager.ensureContainer(ContainerManager.getSharedContainer().getPath() + "/_junit");
     }
