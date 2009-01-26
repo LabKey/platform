@@ -24,6 +24,8 @@ import org.labkey.api.security.User;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.List;
+import java.util.ArrayList;
 
 /*
 * User: Dave
@@ -49,7 +51,16 @@ public class SimpleModule extends DefaultModule
 
     protected Collection<? extends WebPartFactory> createWebPartFactories()
     {
-        return null;
+        List<WebPartFactory> factories = new ArrayList<WebPartFactory>();
+        File viewsDir = new File(getExplodedPath(), SimpleController.VIEWS_DIRECTORY);
+        if(viewsDir.exists() && viewsDir.isDirectory())
+        {
+            for(File webPartFile : viewsDir.listFiles(SimpleWebPartFactory.webPartFileFilter))
+            {
+                factories.add(new SimpleWebPartFactory(this, webPartFile));
+            }
+        }
+        return factories;
     }
 
     public boolean hasScripts()

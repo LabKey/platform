@@ -20,6 +20,7 @@ import org.labkey.api.action.NavTrailAction;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.util.DOMUtil;
+import org.labkey.api.util.Cache;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
@@ -35,6 +36,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
 
 /*
 * User: Dave
@@ -47,6 +49,15 @@ import java.io.FileReader;
  */
 public class SimpleAction extends BaseViewAction implements NavTrailAction
 {
+    public static WebPartView getModuleHtmlView(Module module, String viewName) throws IOException
+    {
+        File viewFile = new File(new File(module.getExplodedPath(), SimpleController.VIEWS_DIRECTORY), viewName + ModuleHtmlView.HTML_VIEW_EXTENSION);
+        if(viewFile.exists() && viewFile.isFile())
+            return new ModuleHtmlView(viewFile);
+        else
+            return null;
+    }
+
     public enum Permission
     {
         login(0),
@@ -77,7 +88,7 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
     {
         try
         {
-            _view = new ModuleHtmlView(viewFile);
+            _view = getHtmlView(viewFile);
         }
         catch(Exception e)
         {
@@ -85,6 +96,12 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
             //store execption so we can throw it from handleRequest
             _exception = e;
         }
+    }
+
+    public static ModuleHtmlView getHtmlView(File viewFile) throws IOException
+    {
+        //consider caching?
+        return new ModuleHtmlView(viewFile);
     }
 
     protected String getCommandClassMethodName()

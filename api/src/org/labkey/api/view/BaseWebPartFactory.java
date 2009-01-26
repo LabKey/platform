@@ -67,6 +67,11 @@ public abstract class BaseWebPartFactory implements WebPartFactory
         return name;
     }
 
+    public void setName(String name)
+    {
+        this.name = name;
+    }
+
     public String getDefaultLocation()
     {
         return defaultLocation;

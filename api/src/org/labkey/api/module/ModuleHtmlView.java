@@ -48,6 +48,9 @@ public class ModuleHtmlView extends HtmlView
     private Logger _log = Logger.getLogger(ModuleHtmlView.class);
 
     private File _htmlFile;
+    private long _htmlLastModified = 0;
+    private File _metadataFile;
+    private long _metadataLastModified = 0;
     private String _name;
     private int _requiredPerms = 0;
     private boolean _requiresLogin = false;
@@ -57,6 +60,7 @@ public class ModuleHtmlView extends HtmlView
     {
         super(null);
         _htmlFile = htmlFile;
+        _htmlLastModified = _htmlFile.lastModified();
         _name = _htmlFile.getName().substring(0, _htmlFile.getName().length() - HTML_VIEW_EXTENSION.length());
         setTitle(StringUtils.capitalize(_name));
 
@@ -67,17 +71,18 @@ public class ModuleHtmlView extends HtmlView
     protected void loadMetaData()
     {
         //look for a file with the same base name as the view file with the metadata extension
-        File metadataFile = new File(_htmlFile.getParentFile(), _name + VIEW_METADATA_EXTENSION);
-        if(!metadataFile.exists() || !metadataFile.isFile())
+        _metadataFile = new File(_htmlFile.getParentFile(), _name + VIEW_METADATA_EXTENSION);
+        if(!_metadataFile.exists() || !_metadataFile.isFile())
             return;
 
+        _metadataLastModified = _metadataFile.lastModified();
         try
         {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             dbf.setValidating(false);
             DocumentBuilder db = dbf.newDocumentBuilder();
 
-            Document doc = db.parse(metadataFile);
+            Document doc = db.parse(_metadataFile);
             if(null == doc || !"view".equalsIgnoreCase(doc.getDocumentElement().getNodeName()))
                 return;
 
@@ -93,7 +98,7 @@ public class ModuleHtmlView extends HtmlView
         }
         catch(Exception e)
         {
-            _log.warn("Unable to load metadata file " + metadataFile.getAbsolutePath(), e);
+            _log.warn("Unable to load metadata file " + _metadataFile.getAbsolutePath(), e);
         }
     }
 
@@ -128,6 +133,12 @@ public class ModuleHtmlView extends HtmlView
         value = StringUtils.trimToNull(value);
         //page template enums are in title case!
         return null == value ? null : PageConfig.Template.valueOf(StringUtils.capitalize(value.toLowerCase()));
+    }
+
+    public boolean isStale()
+    {
+        return _htmlFile.lastModified() != _htmlLastModified ||
+                (_metadataFile.exists() && _metadataFile.lastModified() != _metadataLastModified);
     }
 
     public File getHtmlFile()

@@ -66,7 +66,7 @@ public abstract class DefaultModule implements Module
 
     private final Map<String, Class<? extends Controller>> _pageFlowNameToClass = new LinkedHashMap<String, Class<? extends Controller>>();
     private final Map<Class<? extends Controller>, String> _pageFlowClassToName = new HashMap<Class<? extends Controller>, String>();
-    private final Collection<? extends WebPartFactory> _webPartFactories;
+    private Collection<? extends WebPartFactory> _webPartFactories;
 
     private boolean _loadFromSource;
     private String _name = null;
@@ -82,7 +82,6 @@ public abstract class DefaultModule implements Module
     private String _buildPath = null;
     private String _sourcePath = null;
     private File _explodedPath = null;
-    private Cache _customViewCache = new Cache(1024, Cache.DAY);
     private Cache _reportDescriptorCache = new Cache(1024, Cache.DAY);
 
     private enum SchemaUpdateType
@@ -108,7 +107,6 @@ public abstract class DefaultModule implements Module
 
     protected DefaultModule()
     {
-        _webPartFactories = createWebPartFactories();
     }
 
     final public void initialize()
@@ -247,6 +245,9 @@ public abstract class DefaultModule implements Module
 
     public final Collection<? extends WebPartFactory> getWebPartFactories()
     {
+        if(null == _webPartFactories)
+            _webPartFactories = createWebPartFactories();
+
         return _webPartFactories;
     }
 
