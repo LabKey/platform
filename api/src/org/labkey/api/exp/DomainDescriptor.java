@@ -152,4 +152,23 @@ public class DomainDescriptor implements Cloneable
             throw UnexpectedException.wrap(cnse);
         }
     }
+
+    @Override
+    public int hashCode()
+    {
+        return new Integer(getDomainId()).hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (!(obj instanceof DomainDescriptor))
+            return false;
+        // domain descriptors that are not in the database are never equal:
+        if (((DomainDescriptor) obj).getDomainId() == 0 || getDomainId() == 0)
+            return false;
+
+        // two domain descriptors are equal if they have the same row ID:
+        return ((DomainDescriptor) obj).getDomainId() == getDomainId();
+    }
 }

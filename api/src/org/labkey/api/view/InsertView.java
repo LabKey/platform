@@ -70,6 +70,13 @@ public class InsertView extends DataView
         return _initialValues;
     }
 
+    public void setInitialValue(String inputName, Object value)
+    {
+        if (_initialValues == null)
+            _initialValues = new HashMap<String, Object>();
+        _initialValues.put(inputName, value);
+    }
+
     protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException, SQLException
     {
         TableViewForm form = ctx.getForm();

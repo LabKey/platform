@@ -68,6 +68,7 @@ public class QueryView extends WebPartView<Object>
     private List<QueryException> _errors = new ArrayList<QueryException>();
     private QuerySettings _settings;
     private boolean _showRecordSelectors = false;
+    private boolean _initializeButtonBar = true;
 
     private boolean _shadeAlternatingRows = false;
     private boolean _showBorders = false;
@@ -903,9 +904,12 @@ public class QueryView extends WebPartView<Object>
         DataRegion rgn = ret.getDataRegion();
         ret.setFrame(WebPartView.FrameType.NONE);
         rgn.setAllowAsync(true);
-        ButtonBar bb = new ButtonBar();
-        populateButtonBar(ret, bb);
-        rgn.setButtonBar(bb);
+        if (_initializeButtonBar)
+        {
+            ButtonBar bb = new ButtonBar();
+            populateButtonBar(ret, bb);
+            rgn.setButtonBar(bb);
+        }
 
         if (isPrintView())
         {
@@ -1076,6 +1080,7 @@ public class QueryView extends WebPartView<Object>
         TableInfo table = getTable();
         if (table != null)
         {
+            _initializeButtonBar = false;
             DataView view = createDataView();
             DataRegion rgn = view.getDataRegion();
 

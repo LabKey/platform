@@ -19,11 +19,13 @@ package org.labkey.api.study.assay;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.apache.struts.upload.MultipartRequestHandler;
+import org.springframework.validation.BindException;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
@@ -61,4 +63,8 @@ public interface AssayRunUploadContext
     AssayProvider getProvider();
 
     MultipartRequestHandler getMultipartRequestHandler();
+
+    Map<DomainProperty, String> getDefaultValues(Domain domain, BindException errors, String disambiguationId);
+
+    Map<DomainProperty, String> getDefaultValues(Domain domain, BindException errors);
 }

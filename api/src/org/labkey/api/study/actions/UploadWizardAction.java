@@ -49,7 +49,6 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
@@ -158,34 +157,34 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
     }
 
-    protected InsertView createInsertView(TableInfo baseTable, String lsidCol, Map<DomainProperty, String> domainProperties,
-                                          boolean reshow, boolean resetDefaultValues, String uploadStepName, FormType form, BindException errors)
+    protected InsertView createInsertView(TableInfo baseTable, String lsidCol, DomainProperty[] properties, boolean reshow, String uploadStepName, FormType form, BindException errors)
     {
-        DomainProperty[] dps = new DomainProperty[domainProperties.size()];
-        int i = 0;
-        for (DomainProperty pd : domainProperties.keySet())
-            dps[i++] = pd;
+        // First, find the domain from our domain properties.  We do this, rather than having the caller provide a domain,
+        // to allow insert views with a subset a given domain's properties.
+        Domain domain = null;
+        if (properties.length > 0)
+        {
+            Set<Domain> domains = new HashSet<Domain>();
+            for (DomainProperty property : properties)
+                domains.add(property.getDomain());
+            if (domains.size() > 1)
+                throw new IllegalStateException("Insert views cannot be created over properties from multiple domains.");
+            domain = domains.iterator().next();
+        }
 
-        InsertView view = new UploadWizardInsertView(createDataRegion(baseTable, lsidCol, dps, null), getViewContext(), errors);
-        if (resetDefaultValues)
-        {
-            clearDefaultValues(uploadStepName);
-        }
-        else if (reshow)
-        {
+        InsertView view = new UploadWizardInsertView(createDataRegion(baseTable, lsidCol, properties, null), getViewContext(), errors);
+        if (reshow)
             view.setInitialValues(getViewContext().getRequest().getParameterMap());
-        }
-        else
+        else if (domain != null)
         {
-            try
-            {
-                view.setInitialValues(getDefaultValuesByInputName(uploadStepName, form));
-            }
-            catch (ExperimentException e)
-            {
-                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-            }
+            if (form.isResetDefaultValues())
+                form.clearDefaultValues(domain);
+            Map<String, String> inputNameToValue = new HashMap<String, String>();
+            for (Map.Entry<DomainProperty, String> entry : form.getDefaultValues(domain, errors).entrySet())
+                inputNameToValue.put(getInputName(entry.getKey()), entry.getValue());
+            view.setInitialValues(inputNameToValue);
         }
+
         if (form.getBatchId() != null)
         {
             view.getDataRegion().addHiddenFormField("batchId", form.getBatchId().toString());
@@ -214,54 +213,6 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         return view;
     }
 
-    private String getPropertySetName(String suffix)
-    {
-        return "Assay" + _protocol.getRowId() + "-" + suffix;
-    }
-
-    protected void clearDefaultValues(String suffix)
-    {
-        Map<String, String> properties = PropertyManager.getWritableProperties(getViewContext().getUser().getUserId(),
-                        getViewContext().getContainer().getId(), getPropertySetName(suffix), false);
-        if (properties != null)
-        {
-            properties.clear();
-            PropertyManager.saveProperties(properties);
-        }
-    }
-
-    protected Map<String, String> getDefaultValuesByInputName(String suffix, FormType form) throws ExperimentException
-    {
-        ViewContext context = getViewContext();
-        Map<String, String> result = PropertyManager.getProperties(context.getUser().getUserId(),
-                        context.getContainer().getId(), getPropertySetName(suffix), false);
-        return result == null ? Collections.<String, String>emptyMap() : result;
-    }
-
-    protected void saveDefaultValues(Map<DomainProperty, String> values, HttpServletRequest request, AssayProvider provider, String suffix)
-    {
-        saveDefaultValues(values, request, provider, suffix, null);
-    }
-
-    protected void saveDefaultValues(Map<DomainProperty, String> values, HttpServletRequest request, AssayProvider provider,
-                                     String suffix, String disambiguationId)
-    {
-        Map<String, String> properties = PropertyManager.getWritableProperties(getViewContext().getUser().getUserId(),
-                        getViewContext().getContainer().getId(), getPropertySetName(suffix), true);
-        for (Map.Entry<DomainProperty, String> entry : values.entrySet())
-        {
-            DomainProperty pd = entry.getKey();
-            String value = entry.getValue();
-            properties.put(getInputName(pd, disambiguationId), value);
-            if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equals(pd.getName()) && value != null)
-            {
-                ParticipantVisitResolverType type = AbstractAssayProvider.findType(value, provider.getParticipantVisitResolverTypes());
-                type.putDefaultProperties(request, properties);
-            }
-        }
-        PropertyManager.saveProperties(properties);
-    }
-
     private ModelAndView getUploadSetPropertiesView(FormType runForm, boolean reshow, BindException errors) throws ServletException
     {
         ExpProtocol protocol = getProtocol(runForm);
@@ -276,8 +227,11 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             helper.addParameter("providerName", runForm.getProviderName());
             HttpView.throwRedirect(helper);
         }
+        Set<DomainProperty> propertySet = runForm.getUploadSetProperties().keySet();
+        DomainProperty[] properties = propertySet.toArray(new DomainProperty[propertySet.size()]);
+
         InsertView insertView = createInsertView(ExperimentService.get().getTinfoExperimentRun(),
-                "lsid", runForm.getUploadSetProperties(), reshow, runForm.isResetDefaultValues(), UploadSetStepHandler.NAME, runForm, errors);
+                "lsid", properties, reshow, UploadSetStepHandler.NAME, runForm, errors);
 
         ButtonBar bbar = new ButtonBar();
         addNextButton(bbar);
@@ -316,8 +270,10 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     protected InsertView createRunInsertView(FormType newRunForm, boolean reshow, BindException errors)
     {
+        Set<DomainProperty> propertySet = newRunForm.getRunProperties().keySet();
+        DomainProperty[] properties = propertySet.toArray(new DomainProperty[propertySet.size()]);
         return createInsertView(ExperimentService.get().getTinfoExperimentRun(),
-                "lsid", newRunForm.getRunProperties(), reshow, newRunForm.isResetDefaultValues(), RunStepHandler.NAME, newRunForm, errors);
+                "lsid", properties, reshow, RunStepHandler.NAME, newRunForm, errors);
     }
 
     private ModelAndView getRunPropertiesView(FormType newRunForm, boolean reshow, boolean warnings, BindException errors)
@@ -682,8 +638,8 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             ExpRun run = insertedValues.getKey();
             form.setBatchId(insertedValues.getValue().getRowId());
 
-            saveDefaultValues(form.getUploadSetProperties(), form.getRequest(), form.getProvider(), UploadSetStepHandler.NAME);
-            saveDefaultValues(form.getRunProperties(), form.getRequest(), form.getProvider(), RunStepHandler.NAME);
+            form.saveDefaultValues(form.getUploadSetProperties(), form.getRequest(), form.getProvider());
+            form.saveDefaultValues(form.getRunProperties(), form.getRequest(), form.getProvider());
             getCompletedUploadAttemptIDs().add(form.getUploadAttemptID());
             AssayDataCollector collector = form.getSelectedDataCollector();
             if (collector != null)

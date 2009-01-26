@@ -30,7 +30,9 @@ import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.GUID;
+import org.springframework.validation.BindException;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.io.File;
 import java.io.IOException;
@@ -114,11 +116,6 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         return _runProperties;
     }
 
-    public String getFormElementName(DomainProperty pd)
-    {
-        return ColumnInfo.propNameFromName(pd.getName());
-    }
-
     /** @return property descriptor to value */
     public Map<DomainProperty, String> getUploadSetProperties()
     {
@@ -139,7 +136,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         Map<DomainProperty, File> additionalFiles = getAdditionalPostedFiles(columns);
         for (DomainProperty pd : columns)
         {
-            String propName = getFormElementName(pd);
+            String propName = UploadWizardAction.getInputName(pd);
             String value = getRequest().getParameter(propName);
             if (pd.isRequired() && pd.getPropertyDescriptor().getPropertyType() == PropertyType.BOOLEAN &&
                     (value == null || value.length() == 0))
@@ -238,7 +235,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             for (DomainProperty pd : pds)
             {
                 if (pd.getPropertyDescriptor().getPropertyType() == PropertyType.FILE_LINK)
-                    fileParameters.put(getFormElementName(pd), pd);
+                    fileParameters.put(UploadWizardAction.getInputName(pd), pd);
             }
 
             if (!fileParameters.isEmpty())
@@ -420,5 +417,81 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     public void setBatchId(Integer batchId)
     {
         _batchId = batchId;
+    }
+
+    private String getPropertySetName(Domain domain)
+    {
+        return "Assay" + getRowId() + "-" + domain.getName();
+    }
+
+    public void clearDefaultValues(Domain domain)
+    {
+        Map<String, String> properties = PropertyManager.getWritableProperties(getViewContext().getUser().getUserId(),
+                        getViewContext().getContainer().getId(), getPropertySetName(domain), false);
+        if (properties != null)
+        {
+            properties.clear();
+            PropertyManager.saveProperties(properties);
+        }
+    }
+
+    protected void saveDefaultValues(Map<DomainProperty, String> values, HttpServletRequest request, AssayProvider provider)
+    {
+        saveDefaultValues(values, request, provider, null);
+    }
+
+    private int getDomainCount(Map<DomainProperty, String> values)
+    {
+        Set<Domain> domains = new HashSet<Domain>();
+        for (DomainProperty prop : values.keySet())
+            domains.add(prop.getDomain());
+        return domains.size();
+    }
+
+    public void saveDefaultValues(Map<DomainProperty, String> values, HttpServletRequest request, AssayProvider provider,
+                                  String disambiguationId)
+    {
+        if (values.isEmpty())
+            return;
+
+        assert getDomainCount(values) == 1 : "Default values must be saved one domain at a time.";
+        Domain domain = values.keySet().iterator().next().getDomain();
+
+        Map<String, String> properties = PropertyManager.getWritableProperties(getViewContext().getUser().getUserId(),
+                        getViewContext().getContainer().getId(), getPropertySetName(domain), true);
+        for (Map.Entry<DomainProperty, String> entry : values.entrySet())
+        {
+            DomainProperty pd = entry.getKey();
+            String value = entry.getValue();
+            properties.put(UploadWizardAction.getInputName(pd, disambiguationId), value);
+            if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equals(pd.getName()) && value != null)
+            {
+                ParticipantVisitResolverType type = AbstractAssayProvider.findType(value, provider.getParticipantVisitResolverTypes());
+                type.putDefaultProperties(request, properties);
+            }
+        }
+        PropertyManager.saveProperties(properties);
+    }
+
+    public Map<DomainProperty, String> getDefaultValues(Domain domain, BindException errors, String disambiguationId)
+    {
+        if (isResetDefaultValues())
+            clearDefaultValues(domain);
+
+        ViewContext context = getViewContext();
+        Map<String, String> result = PropertyManager.getProperties(context.getUser().getUserId(),
+                        context.getContainer().getId(), getPropertySetName(domain), false);
+        if (result == null)
+            return Collections.emptyMap();
+
+        Map<DomainProperty, String> ret = new HashMap<DomainProperty, String>();
+        for (DomainProperty property : domain.getProperties())
+            ret.put(property, result.get(UploadWizardAction.getInputName(property, disambiguationId)));
+        return ret;
+    }
+
+    public Map<DomainProperty, String> getDefaultValues(Domain domain, BindException errors)
+    {
+        return getDefaultValues(domain, errors, null);
     }
 }

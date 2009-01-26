@@ -47,7 +47,7 @@ import java.util.*;
  * Date: Sep 27, 2007
  * Time: 3:26:44 PM
  */
-public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvider
+public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvider implements PlateBasedAssayProvider
 {
     public static final String ASSAY_DOMAIN_SAMPLE_WELLGROUP = ExpProtocol.ASSAY_DOMAIN_PREFIX + "SampleWellGroup";
 

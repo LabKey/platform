@@ -19,7 +19,10 @@ package org.labkey.api.exp;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.study.actions.UploadWizardAction;
+import org.labkey.api.study.assay.AssayRunUploadContext;
+import org.labkey.api.view.InsertView;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
@@ -30,12 +33,12 @@ import java.util.*;
  */
 public abstract class SamplePropertyHelper<ObjectType>
 {
-    protected final DomainProperty[] _propertyDescriptors;
+    protected final DomainProperty[] _domainProperties;
     private Map<DomainProperty, DisplayColumnGroup> _groups;
 
-    public SamplePropertyHelper(DomainProperty[] propertyDescriptors)
+    public SamplePropertyHelper(DomainProperty[] domainProperties)
     {
-        _propertyDescriptors = propertyDescriptors;
+        _domainProperties = domainProperties;
     }
 
     public abstract List<String> getSampleNames();
@@ -51,7 +54,7 @@ public abstract class SamplePropertyHelper<ObjectType>
         for (int i = 0; i < names.size(); i++)
         {
             Map<DomainProperty, String> sampleProperties = new HashMap<DomainProperty, String>();
-            for (DomainProperty property : _propertyDescriptors)
+            for (DomainProperty property : _domainProperties)
             {
                 String inputName = UploadWizardAction.getInputName(property, names.get(i));
                 sampleProperties.put(property, request.getParameter(inputName));
@@ -61,25 +64,47 @@ public abstract class SamplePropertyHelper<ObjectType>
         return result;
     }
 
-    public void addSampleColumns(DataRegion region, User user)
+    public void addSampleColumns(InsertView view, User user)
     {
+        addSampleColumns(view, user, null, false);
+    }
+
+    public void addSampleColumns(InsertView view, User user, AssayRunUploadContext defaultValueContext, boolean reshow)
+    {
+        DataRegion region = view.getDataRegion();
         List<String> sampleNames = getSampleNames();
         if (sampleNames.isEmpty())
             return;
         _groups = new HashMap<DomainProperty, DisplayColumnGroup>();
-        for (DomainProperty sampleProperty : _propertyDescriptors)
+        Map<String, Map<DomainProperty, String>> domains = new HashMap<String, Map<DomainProperty, String>>();
+        for (DomainProperty sampleProperty : _domainProperties)
         {
             List<DisplayColumn> cols = new ArrayList<DisplayColumn>();
             for (String name : getSampleNames())
             {
+                String inputName = UploadWizardAction.getInputName(sampleProperty, name);
+                if (!reshow && defaultValueContext != null)
+                {
+                    // get the map of default values that corresponds to our current sample:
+                    String defaultValueKey = name + "_" + sampleProperty.getDomain().getName();
+                    Map<DomainProperty, String> defaultValues = domains.get(defaultValueKey);
+                    if (defaultValues == null)
+                    {
+                        defaultValues = defaultValueContext.getDefaultValues(sampleProperty.getDomain(), null, name);
+                        domains.put(defaultValueKey,  defaultValues);
+                    }
+                    view.setInitialValue(inputName, defaultValues.get(sampleProperty));
+                }
                 ColumnInfo col = sampleProperty.getPropertyDescriptor().createColumnInfo(OntologyManager.getTinfoObject(), "ObjectURI", user);
-                col.setName(UploadWizardAction.getInputName(sampleProperty, name));
+                col.setName(inputName);
                 cols.add(new SpecimenInputColumn(col));
             }
             DisplayColumnGroup group = new DisplayColumnGroup(cols, sampleProperty.getName(), isCopyable(sampleProperty));
             _groups.put(sampleProperty, group);
             region.addGroup(group);
         }
+        if (reshow)
+            view.setInitialValues(defaultValueContext.getRequest().getParameterMap());
         region.setGroupHeadings(sampleNames);
         region.setHorizontalGroups(true);
     }
@@ -95,7 +120,7 @@ public abstract class SamplePropertyHelper<ObjectType>
         for (String sampleName : getSampleNames())
         {
             Map<DomainProperty, String> values = new HashMap<DomainProperty, String>();
-            for (DomainProperty sampleProperty : _propertyDescriptors)
+            for (DomainProperty sampleProperty : _domainProperties)
             {
                 String name = UploadWizardAction.getInputName(sampleProperty, sampleName);
                 String inputName = ColumnInfo.propNameFromName(name);
