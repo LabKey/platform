@@ -17,6 +17,7 @@ package org.labkey.api.module;
 
 import junit.framework.TestCase;
 import org.apache.log4j.Logger;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
@@ -453,9 +454,11 @@ public abstract class DefaultModule implements Module
 
     public Map<String, String> getProperties()
     {
-        Map<String,String> props = new HashMap<String,String>();
+        Map<String,String> props = new LinkedHashMap<String,String>();
 
-        props.put("Module Class", getClass().toString());
+        props.put("Module Class", getClass().getName());
+        props.put("Version", getFormattedVersion());
+        props.put("Extracted Path", getExplodedPath().getAbsolutePath());
         props.put("Build Path", getBuildPath());
         props.put("SVN URL", getSvnUrl());
         props.put("SVN Revision", getSvnRevision());
@@ -463,7 +466,7 @@ public abstract class DefaultModule implements Module
         props.put("Build Time", getBuildTime());
         props.put("Build User", getBuildUser());
         props.put("Build Path", getBuildPath());
-        props.put("Module Dependencies", getModuleDependencies());
+        props.put("Module Dependencies", StringUtils.trimToNull(getModuleDependencies()) == null ? "<none>" : getModuleDependencies());
 
         return props;
     }

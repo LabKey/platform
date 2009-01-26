@@ -27,6 +27,7 @@ import org.labkey.api.study.assay.AssayRunType;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.actions.ShowSelectedDataAction;
+import org.labkey.api.study.actions.PublishStartAction;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
@@ -81,5 +82,15 @@ public class RunListQueryView extends ExperimentRunListView
         viewSelectedButton.setScript("return verifySelected(this.form, \"" + target.getLocalURIString() + "\", \"post\", \"runs\")");
         viewSelectedButton.setActionType(ActionButton.Action.POST);
         bar.add(viewSelectedButton);
+
+        if (AssayService.get().getProvider(_protocol).canCopyToStudy())
+        {
+            ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(getContainer(), _protocol, PublishStartAction.class);
+            copyURL.addParameter("runIds", true);
+            ActionButton copySelectedButton = new ActionButton(copyURL, "Copy Selected to Study");
+            copySelectedButton.setScript("return verifySelected(this.form, \"" + copyURL.getLocalURIString() + "\", \"post\", \"runs\")");
+            copySelectedButton.setActionType(ActionButton.Action.POST);
+            bar.add(copySelectedButton);
+        }
     }
 }

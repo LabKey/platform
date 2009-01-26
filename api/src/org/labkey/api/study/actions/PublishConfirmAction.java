@@ -18,13 +18,11 @@ package org.labkey.api.study.actions;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.labkey.api.data.ActionButton;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.TimepointType;
@@ -170,6 +168,10 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         AssayProvider provider = AssayService.get().getProvider(_protocol);
         List<Integer> selectedObjects = getCheckboxIds(false);
         Container targetStudy = ContainerManager.getForId(publishConfirmForm.getTargetStudy());
+        if (targetStudy == null)
+        {
+            throw new NotFoundException("Could not find target study");
+        }
         Map<Object, String> postedVisits = null;
         Map<Object, String> postedPtids = null;
         boolean dateBased = AssayPublishService.get().getTimepointType(targetStudy) == TimepointType.DATE;

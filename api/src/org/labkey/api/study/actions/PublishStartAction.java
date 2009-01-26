@@ -16,8 +16,7 @@
 
 package org.labkey.api.study.actions;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
@@ -27,12 +26,14 @@ import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.QueryService;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 /**
  * User: brittp
@@ -50,6 +51,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         private String _dataRegionSelectionKey;
         private String _returnURL;
         private String _containerFilterName;
+        private boolean _runIds;
 
         public String getViewType()
         {
@@ -89,6 +91,16 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         public void setContainerFilterName(String containerFilterName)
         {
             _containerFilterName = containerFilterName;
+        }
+
+        public boolean isRunIds()
+        {
+            return _runIds;
+        }
+
+        public void setRunIds(boolean runIds)
+        {
+            _runIds = runIds;
         }
     }
 
@@ -174,7 +186,48 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
     {
         _protocol = getProtocol(publishForm);
         AssayProvider provider = AssayService.get().getProvider(_protocol);
-        List<Integer> ids = getCheckboxIds(false);
+
+        List<Integer> ids;
+        if (publishForm.isRunIds())
+        {
+            // Need to convert the run ids into data row ids
+            List<Integer> runIds = getCheckboxIds(true);
+            // Get the assay results table
+            UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getContainer(), AssayService.ASSAY_SCHEMA_NAME);
+            TableInfo table = schema.getTable(AssayService.get().getRunDataTableName(_protocol), null);
+            if (table instanceof ContainerFilterable && publishForm.getContainerFilterName() != null)
+            {
+                ((ContainerFilterable)table).setContainerFilter(ContainerFilter.Filters.valueOf(publishForm.getContainerFilterName()), getViewContext().getUser());
+            }
+            ColumnInfo dataRowIdColumn = QueryService.get().getColumns(table, Collections.singleton(provider.getDataRowIdFieldKey())).get(provider.getDataRowIdFieldKey());
+            assert dataRowIdColumn  != null : "Could not find dataRowId column in assay results table";
+            ColumnInfo runIdColumn = QueryService.get().getColumns(table, Collections.singleton(provider.getRunIdFieldKeyFromDataRow())).get(provider.getRunIdFieldKeyFromDataRow());
+            assert runIdColumn  != null : "Could not find runId column in assay results table";
+
+            // Filter it to get only the rows from this set of runs
+            SimpleFilter filter = new SimpleFilter();
+            filter.addClause(new SimpleFilter.InClause(provider.getRunIdFieldKeyFromDataRow().toString(), runIds, true));
+
+            ResultSet rs = Table.selectForDisplay(table, Arrays.asList(dataRowIdColumn, runIdColumn), filter, new Sort(provider.getRunIdFieldKeyFromDataRow().toString()), Table.ALL_ROWS, 0);
+            try
+            {
+                // Pull out the data row ids
+                ids = new ArrayList<Integer>();
+                while (rs.next())
+                {
+                    ids.add(dataRowIdColumn.getIntValue(rs));
+                }
+            }
+            finally
+            {
+                if (rs != null) { try { rs.close(); } catch (SQLException e) {} }
+            }
+        }
+        else
+        {
+            ids = getCheckboxIds(false);
+        }
+
         Set<Container> containers = new HashSet<Container>();
         boolean nullsFound = false;
         boolean insufficientPermissions = false;

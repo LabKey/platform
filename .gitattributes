@@ -596,6 +596,7 @@ api/src/org/labkey/api/study/assay/AbstractAssayProvider.java -text
 api/src/org/labkey/api/study/assay/AbstractAssayTsvDataHandler.java -text
 api/src/org/labkey/api/study/assay/AbstractParticipantVisitResolver.java -text
 api/src/org/labkey/api/study/assay/AbstractPlateBasedAssayProvider.java -text
+api/src/org/labkey/api/study/assay/AbstractTsvAssayProvider.java -text
 api/src/org/labkey/api/study/assay/AssayDataCollector.java -text
 api/src/org/labkey/api/study/assay/AssayDataCollectorDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/AssayDataLinkDisplayColumn.java -text
