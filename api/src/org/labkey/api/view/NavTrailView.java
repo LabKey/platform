@@ -65,7 +65,8 @@ public class NavTrailView extends HttpView
 
         public Tab(ViewContext context, Module module, boolean selected)
         {
-            super(module.getTabName(context), module.getTabURL(context.getContainer(), context.getUser()).getLocalURIString());
+            super(module.getTabName(context), null == module.getTabURL(context.getContainer(), context.getUser())
+                    ? null : module.getTabURL(context.getContainer(), context.getUser()).getLocalURIString());
             setSelected(selected);
         }
     }

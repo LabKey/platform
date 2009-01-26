@@ -99,7 +99,7 @@ LABKEY.WebPart = function(config)
     var _errorCallback = config.errorCallback;
     var _successCallback = config.successCallback;
     var _containerPath = config.containerPath;
-    var _scope = config.scope | this;
+    var _scope = config.scope || this;
 
     //validate config
     if(!_partName)

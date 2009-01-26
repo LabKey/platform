@@ -238,7 +238,7 @@ public class HomeTemplate extends PrintTemplate
                     if (trailExtras.length <= 1)
                     {
                         ActionURL startUrl = curModule.getTabURL(context.getContainer(), context.getUser());
-                        if (!equalBaseUrls(startUrl, url))
+                        if (null != startUrl && !equalBaseUrls(startUrl, url))
                             extraChildren.add(new NavTree(curModule.getTabName(context), startUrl.getLocalURIString()));
                     }
                     extraChildren.addAll(Arrays.asList(trailExtras));

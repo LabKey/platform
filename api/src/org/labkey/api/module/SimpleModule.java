@@ -39,6 +39,7 @@ public class SimpleModule extends DefaultModule
     public SimpleModule(@NotNull String name)
     {
         setName(name);
+        addController(name, SimpleController.class);
     }
 
     protected void init()
@@ -67,9 +68,6 @@ public class SimpleModule extends DefaultModule
 
     public ActionURL getTabURL(Container c, User user)
     {
-        //simple modules will not have tabs for now
-        //once we develop a SimpleController for simple modules
-        //we can register a page flow name and a begin action
-        return null;
+        return SimpleController.getBeginViewUrl(this, c);
     }
 }
