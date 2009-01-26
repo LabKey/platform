@@ -155,8 +155,8 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
         }
         else
         {
-            assert _propertyDescriptors[0].getName().equals("Name");
-            return Collections.singletonList(_propertyDescriptors[0]);
+            assert _domainProperties[0].getName().equals("Name");
+            return Collections.singletonList(_domainProperties[0]);
         }
     }
 

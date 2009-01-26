@@ -2624,7 +2624,7 @@ public class ExperimentController extends SpringActionController
             InsertView insertView = new InsertView(new DataRegion(), errors);
 
             DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleSet, form.getOutputCount(), c, getUser());
-            helper.addSampleColumns(insertView.getDataRegion(), getViewContext().getUser());
+            helper.addSampleColumns(insertView, getViewContext().getUser());
 
             int[] rowIds = form.getRowIds();
             for (int i = 0; i < rowIds.length; i++)

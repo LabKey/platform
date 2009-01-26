@@ -434,4 +434,21 @@ public class DomainImpl implements Domain
         }
         return _dd;
     }
+
+    @Override
+    public int hashCode()
+    {
+        return _dd.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (!(obj instanceof DomainImpl))
+            return false;
+        // once a domain  has been edited, it no longer equals any other domain:
+        if (_ddOld != null || ((DomainImpl) obj)._ddOld != null)
+            return false;
+        return (_dd.equals(((DomainImpl) obj)._dd));
+    }
 }
