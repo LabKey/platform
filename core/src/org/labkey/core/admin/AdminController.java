@@ -83,7 +83,6 @@ public class AdminController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(AdminController.class);
     private static final NumberFormat _formatInteger = DecimalFormat.getIntegerInstance();
-    private static final Logger _log = Logger.getLogger(AdminController.class);
 
     private static long _errorMark = 0;
 
@@ -171,6 +170,7 @@ public class AdminController extends SpringActionController
         public String javaHome = System.getProperty("java.home");
         public String userName = System.getProperty("user.name");
         public String userHomeDir = System.getProperty("user.home");
+        public String webappDir = ModuleLoader.getServletContext().getRealPath("");
         public String osName = System.getProperty("os.name");
         public String mode = AppProps.getInstance().isDevMode() ? "Development" : "Production";
         public String servletContainer = ModuleLoader.getServletContext().getServerInfo();

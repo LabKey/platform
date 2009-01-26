@@ -47,7 +47,7 @@ import java.util.*;
  * Date: Jul 11, 2007
  * Time: 9:59:39 AM
  */
-public class TsvAssayProvider extends AbstractAssayProvider
+public class TsvAssayProvider extends AbstractTsvAssayProvider
 {
     public TsvAssayProvider()
     {
@@ -97,155 +97,6 @@ public class TsvAssayProvider extends AbstractAssayProvider
         return new JspView<AssayRunUploadForm>("/org/labkey/study/assay/view/tsvDataDescription.jsp", form);
     }
 
-    public ExpData getDataForDataRow(Object dataRowId)
-    {
-        if (dataRowId == null)
-            return null;
-
-        Integer id;
-        if (dataRowId instanceof Integer)
-        {
-            id = (Integer)dataRowId;
-        }
-        else
-        {
-            try
-            {
-                id = Integer.parseInt(dataRowId.toString());
-            }
-            catch (NumberFormatException nfe)
-            {
-                return null;
-            }
-        }
-
-        OntologyObject dataRow = OntologyManager.getOntologyObject(id.intValue());
-        if (dataRow == null)
-            return null;
-        OntologyObject dataRowParent = OntologyManager.getOntologyObject(dataRow.getOwnerObjectId().intValue());
-        if (dataRowParent == null)
-            return null;
-        return ExperimentService.get().getExpData(dataRowParent.getObjectURI());
-    }
-
-    public ActionURL copyToStudy(User user, ExpProtocol protocol, Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors)
-    {
-        try
-        {
-            TimepointType studyType = AssayPublishService.get().getTimepointType(study);
-
-            SimpleFilter filter = new SimpleFilter();
-            filter.addInClause(getDataRowIdFieldKey().toString(), dataKeys.keySet());
-            int rowIndex = 0;
-            OntologyObject[] dataRows = Table.select(OntologyManager.getTinfoObject(), Table.ALL_COLUMNS, filter,
-                    new Sort(getDataRowIdFieldKey().toString()), OntologyObject.class);
-
-            Map<String, Object>[] dataMaps = new Map[dataRows.length];
-
-            Map<Integer, ExpRun> runCache = new HashMap<Integer, ExpRun>();
-            Map<Integer, Map<String, Object>> runPropertyCache = new HashMap<Integer, Map<String, Object>>();
-
-            Set<PropertyDescriptor> typeList = new LinkedHashSet<PropertyDescriptor>();
-            typeList.add(createPublishPropertyDescriptor(study, getDataRowIdFieldKey().toString(), getDataRowIdType()));
-            typeList.add(createPublishPropertyDescriptor(study, "SourceLSID", getDataRowIdType()));
-
-            PropertyDescriptor[] runPDs = getPropertyDescriptors(getRunDomain(protocol));
-            PropertyDescriptor[] uploadSetPDs = getPropertyDescriptors(getUploadSetDomain(protocol));
-
-            List<PropertyDescriptor> pds = new ArrayList<PropertyDescriptor>();
-            pds.addAll(Arrays.asList(runPDs));
-            pds.addAll(Arrays.asList(uploadSetPDs));
-
-            Container sourceContainer = null;
-
-            // little hack here: since the property descriptors created by the 'addProperty' calls below are not in the database,
-            // they have no RowId, and such are never equal to each other.  Since the loop below is run once for each row of data,
-            // this will produce a types set that contains rowCount*columnCount property descriptors unless we prevent additions
-            // to the map after the first row.  This is done by nulling out the 'tempTypes' object after the first iteration:
-            Set<PropertyDescriptor> tempTypes = typeList;
-            PropertyDescriptor[] rowPropertyDescriptors = getPropertyDescriptors(getRunDataDomain(protocol));
-            for (OntologyObject row : dataRows)
-            {
-                Map<String, Object> dataMap = new HashMap<String, Object>();
-                Map<String, ObjectProperty> rowProperties = OntologyManager.getPropertyObjects(row.getContainer(), row.getObjectURI());
-                for (PropertyDescriptor pd : rowPropertyDescriptors)
-                {
-                    // We should skip properties that are set by the resolver: participantID,
-                    // and either date or visit, depending on the type of study
-                    boolean skipProperty = PARTICIPANTID_PROPERTY_NAME.equals(pd.getName());
-
-                    if (TimepointType.DATE == studyType)
-                            skipProperty = skipProperty || DATE_PROPERTY_NAME.equals(pd.getName());
-                    else // it's visit-based
-                        skipProperty = skipProperty || VISITID_PROPERTY_NAME.equals(pd.getName());
-
-                    if (!skipProperty)
-                        addProperty(pd, rowProperties.get(pd.getPropertyURI()), dataMap, tempTypes);
-                }
-
-                ExpRun run = runCache.get(row.getOwnerObjectId());
-                if (run == null)
-                {
-                    OntologyObject dataRowParent = OntologyManager.getOntologyObject(row.getOwnerObjectId().intValue());
-                    ExpData data = ExperimentService.get().getExpData(dataRowParent.getObjectURI());
-
-                    run = data.getRun();
-                    sourceContainer = run.getContainer();
-                    runCache.put(row.getOwnerObjectId(), run);
-                }
-
-                Map<String, Object> runProperties = runPropertyCache.get(run.getRowId());
-                if (runProperties == null)
-                {
-                    runProperties = OntologyManager.getProperties(run.getContainer(), run.getLSID());
-                    runPropertyCache.put(run.getRowId(), runProperties);
-                }
-
-                for (PropertyDescriptor pd : pds)
-                {
-                    if (!TARGET_STUDY_PROPERTY_NAME.equals(pd.getName()) && !PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equals(pd.getName()))
-                    {
-                        PropertyDescriptor publishPd = pd.clone();
-                        publishPd.setName("Run" + pd.getName());
-                        addProperty(publishPd, runProperties.get(pd.getPropertyURI()), dataMap, tempTypes);
-                    }
-                }
-
-                AssayPublishKey publishKey = dataKeys.get(row.getObjectId());
-                dataMap.put("ParticipantID", publishKey.getParticipantId());
-                dataMap.put("SequenceNum", publishKey.getVisitId());
-                if (TimepointType.DATE == studyType)
-                {
-                    dataMap.put("Date", publishKey.getDate());
-                }
-                dataMap.put("SourceLSID", run.getLSID());
-                dataMap.put(getDataRowIdFieldKey().toString(), publishKey.getDataId());
-
-                addStandardRunPublishProperties(study, tempTypes, dataMap, run);
-
-                dataMaps[rowIndex++] = dataMap;
-                tempTypes = null;
-            }
-            return AssayPublishService.get().publishAssayData(user, sourceContainer, study, protocol.getName(), protocol,
-                    dataMaps, new ArrayList<PropertyDescriptor>(typeList), getDataRowIdFieldKey().toString(), errors);
-        }
-        catch (SQLException e)
-        {
-            errors.add(e.getMessage());
-            return null;
-        }
-        catch (IOException e)
-        {
-            errors.add(e.getMessage());
-            return null;
-        }
-        catch (ServletException e)
-        {
-            errors.add(e.getMessage());
-            return null;
-        }
-    }
-
     public List<ParticipantVisitResolverType> getParticipantVisitResolverTypes()
     {
         return Arrays.asList(new StudyParticipantVisitResolverType(), new ThawListResolverType());
@@ -282,11 +133,6 @@ public class TsvAssayProvider extends AbstractAssayProvider
     public FieldKey getSpecimenIDFieldKey()
     {
         return FieldKey.fromParts("Properties", SPECIMENID_PROPERTY_NAME);
-    }
-
-    protected PropertyType getDataRowIdType()
-    {
-        return PropertyType.INTEGER;
     }
 
     protected Map<String, Set<String>> getRequiredDomainProperties()

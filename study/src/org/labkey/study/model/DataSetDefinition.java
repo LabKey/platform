@@ -25,13 +25,13 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.util.*;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.query.DataSetTable;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Category;
 import org.apache.commons.lang.StringUtils;
 
-import javax.servlet.ServletException;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -246,13 +246,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
      *
      * see StudyManager.importDatasetTSV()
      */
-    public synchronized TableInfo getTableInfo(User user) throws ServletException
+    public synchronized TableInfo getTableInfo(User user) throws UnauthorizedException
     {
         return getTableInfo(user, true, true);
     }
 
 
-    public synchronized TableInfo getTableInfo(User user, boolean checkPermission, boolean materialized) throws ServletException
+    public synchronized TableInfo getTableInfo(User user, boolean checkPermission, boolean materialized) throws UnauthorizedException
     {
         if (checkPermission && !canRead(user))
             HttpView.throwUnauthorized();

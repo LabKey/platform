@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.common.util.Pair" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.user.UserController" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AdminController.AdminBean> me = (HttpView<AdminController.AdminBean>) HttpView.currentView();
@@ -83,6 +84,7 @@
     <tr><td>Java Home</td><td><%=bean.javaHome%></td></tr>
     <tr><td>Username</td><td><%=bean.userName%></td></tr>
     <tr><td>User Home Dir</td><td><%=bean.userHomeDir%></td></tr>
+    <tr><td>Webapp Dir</td><td><%=bean.webappDir%></td></tr>
     <tr><td>OS</td><td><%=bean.osName%></td></tr>
 
     <tr><td>&nbsp;</td></tr>
@@ -98,17 +100,15 @@
                 <img src="<%= contextPath %>/_images/plus.gif">
             </a>
         </td>
-        <td><%=h(module.getName())%></td>
-        <td>Version</td>
-        <td><%=module.getFormattedVersion()%></td>
+        <td colspan="3"><%=h(module.getName())%> <%=h(module.getFormattedVersion())%></td>
     </tr><%
-        for (String property : module.getProperties().keySet())
+        for (Map.Entry<String, String> entry : module.getProperties().entrySet())
         {%>
     <tr style="display:none">
-        <td></td>
-        <td></td>
-        <td><%=h(property)%></td>
-        <td><%=h(module.getProperties().get( property ))%></td>
+        <td />
+        <td>&nbsp;&nbsp;</td>
+        <td><%=h(entry.getKey())%></td>
+        <td><%=h(entry.getValue())%></td>
     </tr><%
         }
     }%>

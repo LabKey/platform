@@ -46,6 +46,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.common.tools.DataLoader;
 import org.labkey.common.tools.TabLoader;
@@ -1990,7 +1991,7 @@ public class StudyManager
      * and do not delete anything
      *
      */
-    HashMap<String,Map> checkAndDeleteDups(Study study, DataSetDefinition def, Map[] rows) throws SQLException, ServletException
+    HashMap<String,Map> checkAndDeleteDups(Study study, DataSetDefinition def, Map[] rows) throws SQLException, UnauthorizedException
     {
         if (null == rows || rows.length == 0)
             return null;
@@ -2084,7 +2085,7 @@ public class StudyManager
      */
     public String[] importDatasetData(Study study, User user, DataSetDefinition def, Map<String, Object>[] dataMaps, long lastModified,
                                       List<String> errors, boolean checkDuplicates, QCState defaultQCState)
-            throws IOException, ServletException, SQLException
+            throws IOException, UnauthorizedException, SQLException
     {
         if (dataMaps.length == 0)
             return new String[0];
@@ -2524,7 +2525,7 @@ public class StudyManager
 
         TableInfo tinfo = StudySchema.getInstance().getTableInfoStudyData();
 
-        DatasetImportHelper(Connection conn, Container c, DataSetDefinition dataset, long lastModified) throws SQLException, ServletException
+        DatasetImportHelper(Connection conn, Container c, DataSetDefinition dataset, long lastModified) throws SQLException, UnauthorizedException
         {
             _containerId = c.getId();
             _study = StudyManager.getInstance().getStudy(c);
@@ -2787,14 +2788,14 @@ public class StudyManager
                 filter, new Sort("ParticipantId"), Participant.class);
     }
 
-    public void clearParticipantCohorts(User user, Study study) throws SQLException, ServletException
+    public void clearParticipantCohorts(User user, Study study) throws SQLException
     {
         // null out cohort for all participants in this container:
         Table.execute(StudySchema.getInstance().getSchema(),
                 "UPDATE study.Participant SET CohortId = NULL WHERE Container = ?", new Object[] { study.getContainer().getId() });
     }
 
-    public void updateParticipantCohorts(User user, Study study) throws SQLException, ServletException
+    public void updateParticipantCohorts(User user, Study study) throws SQLException, UnauthorizedException
     {
         if (study.isManualCohortAssignment() ||
                 study.getParticipantCohortDataSetId() == null ||

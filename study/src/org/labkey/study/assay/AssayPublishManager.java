@@ -32,6 +32,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.common.util.Pair;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
@@ -152,7 +153,7 @@ public class AssayPublishManager implements AssayPublishService.Service
 
     public ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, @Nullable ExpProtocol protocol,
                                           Map<String, Object>[] dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
-            throws SQLException, IOException, ServletException
+            throws SQLException, IOException, UnauthorizedException
     {
         Study targetStudy = StudyManager.getInstance().getStudy(targetContainer);
         assert verifyRequiredColumns(dataMaps, targetStudy.isDateBased());
@@ -307,7 +308,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     }
 
     private Map<String, String> ensurePropertyDescriptors(Container container, User user, DataSetDefinition dataset,
-                                                          Map<String, Object>[] dataMaps, List<PropertyDescriptor> types) throws SQLException, ServletException
+                                                          Map<String, Object>[] dataMaps, List<PropertyDescriptor> types) throws SQLException, UnauthorizedException
     {
         PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(dataset.getTypeURI(), container);
         // we'll return a mapping from column name to column uri
