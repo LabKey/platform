@@ -16,16 +16,13 @@
 package org.labkey.api.module;
 
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.WebPartView;
 import org.labkey.api.data.Container;
-import org.labkey.api.util.Cache;
+import org.labkey.api.view.ActionURL;
 import org.springframework.web.servlet.mvc.Controller;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
-import java.io.File;
-import java.io.IOException;
 
 /*
 * User: Dave
@@ -54,7 +51,7 @@ public class SimpleController extends SpringActionController implements SpringAc
         if(null == module)
             return null;
 
-        File viewFile = new File(new File(module.getExplodedPath(), VIEWS_DIRECTORY), actionName + ModuleHtmlView.HTML_VIEW_EXTENSION);
+        File viewFile = new File(new File(module.getExplodedPath(), VIEWS_DIRECTORY), actionName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
         if(viewFile.exists() && viewFile.isFile())
             return new SimpleAction(viewFile);
         else
@@ -72,7 +69,7 @@ public class SimpleController extends SpringActionController implements SpringAc
 
     public static ActionURL getBeginViewUrl(Module module, Container container)
     {
-        File beginViewFile = new File(new File(module.getExplodedPath(), VIEWS_DIRECTORY), BEGIN_VIEW_NAME + ModuleHtmlView.HTML_VIEW_EXTENSION);
+        File beginViewFile = new File(new File(module.getExplodedPath(), VIEWS_DIRECTORY), BEGIN_VIEW_NAME + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
         if(beginViewFile.exists() && beginViewFile.isFile())
             return new ActionURL(module.getName(), BEGIN_VIEW_NAME, container);
         else

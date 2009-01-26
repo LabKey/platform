@@ -51,7 +51,7 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
 {
     public static WebPartView getModuleHtmlView(Module module, String viewName) throws IOException
     {
-        File viewFile = new File(new File(module.getExplodedPath(), SimpleController.VIEWS_DIRECTORY), viewName + ModuleHtmlView.HTML_VIEW_EXTENSION);
+        File viewFile = new File(new File(module.getExplodedPath(), SimpleController.VIEWS_DIRECTORY), viewName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
         if(viewFile.exists() && viewFile.isFile())
             return new ModuleHtmlView(viewFile);
         else
@@ -80,7 +80,6 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
         }
     }
 
-    private Logger _log = Logger.getLogger(SimpleAction.class);
     private ModuleHtmlView _view;
     private Exception _exception;
 
@@ -88,20 +87,13 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
     {
         try
         {
-            _view = getHtmlView(viewFile);
+            _view = new ModuleHtmlView(viewFile);
         }
         catch(Exception e)
         {
-            _log.error("Unable to load the file-based HTML view " + viewFile.getAbsolutePath(), e);
-            //store execption so we can throw it from handleRequest
+            //hold onto it so we can show it during handleRequest()
             _exception = e;
         }
-    }
-
-    public static ModuleHtmlView getHtmlView(File viewFile) throws IOException
-    {
-        //consider caching?
-        return new ModuleHtmlView(viewFile);
     }
 
     protected String getCommandClassMethodName()

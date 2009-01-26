@@ -19,6 +19,7 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.util.DOMUtil;
+import org.labkey.api.util.Cache;
 import org.apache.log4j.Logger;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.io.IOUtils;
@@ -42,127 +43,43 @@ import java.io.IOException;
  */
 public class ModuleHtmlView extends HtmlView
 {
-    public static final String HTML_VIEW_EXTENSION = ".html";
-    public static final String VIEW_METADATA_EXTENSION = ".view.xml";
+    private static Cache _viewdefCache = new Cache(1024, Cache.HOUR);
 
-    private Logger _log = Logger.getLogger(ModuleHtmlView.class);
+    private ModuleHtmlViewDefinition _viewdef = null;
 
-    private File _htmlFile;
-    private long _htmlLastModified = 0;
-    private File _metadataFile;
-    private long _metadataLastModified = 0;
-    private String _name;
-    private int _requiredPerms = 0;
-    private boolean _requiresLogin = false;
-    private PageConfig.Template _pageTemplate = null;
-
-    public ModuleHtmlView(File htmlFile) throws IOException
+    public ModuleHtmlView(File htmlFile)
     {
         super(null);
-        _htmlFile = htmlFile;
-        _htmlLastModified = _htmlFile.lastModified();
-        _name = _htmlFile.getName().substring(0, _htmlFile.getName().length() - HTML_VIEW_EXTENSION.length());
-        setTitle(StringUtils.capitalize(_name));
-
-        setHtml(IOUtils.toString(new FileReader(_htmlFile)));
-        loadMetaData();
+        _viewdef = getViewDef(htmlFile);
+        setTitle(_viewdef.getTitle());
+        setHtml(_viewdef.getHtml());
+        if(null != _viewdef.getFrameType())
+            setFrame(_viewdef.getFrameType());
     }
 
-    protected void loadMetaData()
+    public static ModuleHtmlViewDefinition getViewDef(File htmlFile)
     {
-        //look for a file with the same base name as the view file with the metadata extension
-        _metadataFile = new File(_htmlFile.getParentFile(), _name + VIEW_METADATA_EXTENSION);
-        if(!_metadataFile.exists() || !_metadataFile.isFile())
-            return;
-
-        _metadataLastModified = _metadataFile.lastModified();
-        try
+        ModuleHtmlViewDefinition viewdef = (ModuleHtmlViewDefinition)_viewdefCache.get(htmlFile.getAbsolutePath());
+        if(null == viewdef || viewdef.isStale())
         {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            dbf.setValidating(false);
-            DocumentBuilder db = dbf.newDocumentBuilder();
-
-            Document doc = db.parse(_metadataFile);
-            if(null == doc || !"view".equalsIgnoreCase(doc.getDocumentElement().getNodeName()))
-                return;
-
-            Node docElem = doc.getDocumentElement();
-            setTitle(DOMUtil.getAttributeValue(docElem, "title", StringUtils.capitalize(_name)));
-
-            _requiredPerms = parseRequiredPerms(DOMUtil.getAttributeValue(docElem, "permissions"));
-            FrameType frameType = parseFrameType(DOMUtil.getAttributeValue(docElem, "frame"));
-            if(null != frameType)
-                setFrame(frameType);
-
-            _pageTemplate = parsePageTemplate(DOMUtil.getAttributeValue(docElem, "template"));
+            viewdef = new ModuleHtmlViewDefinition(htmlFile);
+            _viewdefCache.put(htmlFile.getAbsolutePath(), viewdef);
         }
-        catch(Exception e)
-        {
-            _log.warn("Unable to load metadata file " + _metadataFile.getAbsolutePath(), e);
-        }
-    }
-
-    protected int parseRequiredPerms(String perms)
-    {
-        if(null == perms || perms.length() == 0)
-            return 0;
-
-        int ret = 0;
-        //perms string can be comma-delimited
-        String[] permArray = perms.split(",");
-        for(String permItem : permArray)
-        {
-            SimpleAction.Permission perm = SimpleAction.Permission.valueOf(permItem);
-            if(SimpleAction.Permission.login == perm)
-                _requiresLogin = true;
-            else if(null != perm)
-                ret |= perm.toInt();
-        }
-
-        return ret;
-    }
-
-    protected WebPartView.FrameType parseFrameType(String value)
-    {
-        value = StringUtils.trimToNull(value);
-        return null == value ? null : WebPartView.FrameType.valueOf(value.toUpperCase());
-    }
-
-    protected PageConfig.Template parsePageTemplate(String value)
-    {
-        value = StringUtils.trimToNull(value);
-        //page template enums are in title case!
-        return null == value ? null : PageConfig.Template.valueOf(StringUtils.capitalize(value.toLowerCase()));
-    }
-
-    public boolean isStale()
-    {
-        return _htmlFile.lastModified() != _htmlLastModified ||
-                (_metadataFile.exists() && _metadataFile.lastModified() != _metadataLastModified);
-    }
-
-    public File getHtmlFile()
-    {
-        return _htmlFile;
-    }
-
-    public String getName()
-    {
-        return _name;
-    }
-
-    public int getRequiredPerms()
-    {
-        return _requiredPerms;
-    }
-
-    public boolean isRequiresLogin()
-    {
-        return _requiresLogin;
+        return viewdef;
     }
 
     public PageConfig.Template getPageTemplate()
     {
-        return _pageTemplate;
+        return _viewdef.getPageTemplate();
+    }
+
+    public boolean isRequiresLogin()
+    {
+        return _viewdef.isRequiresLogin();
+    }
+
+    public int getRequiredPerms()
+    {
+        return _viewdef.getRequiredPerms();
     }
 }
