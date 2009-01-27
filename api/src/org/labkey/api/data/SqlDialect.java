@@ -226,8 +226,8 @@ public abstract class SqlDialect
         String oldName = OLDsqlTypeNameFromSqlType(sqlType);
         String newName = sqlTypeNameFromSqlTypeInt(sqlType);
 
-        if (!oldName.equals(newName))
-            _log.error("SqlTypeName mismatch for sqlType '" + sqlType + "': " + oldName + " vs. " + newName);
+        // TODO: Temporary test to ensure that old and new approaches yield same result
+        assert oldName.equals(newName);
 
         return oldName;
     }

@@ -105,6 +105,7 @@ public class TableXmlUtils
         }
     }
 
+    // TODO: Delete?  Not used...
     public static TablesDocument getMergedXmlDocument(String dbSchemaName) throws Exception
     {
         TablesDocument tablesDocMetaData = null;
@@ -124,7 +125,8 @@ public class TableXmlUtils
 
             if ((null != tablesDocMetaData) && (null != tablesDocFromXml))
             {
-                String result = compareTableDocuments(tablesDocMetaData, tablesDocFromXml, true, true, tablesDocMerged);
+                StringBuilder sbOut = new StringBuilder();
+                compareTableDocuments(tablesDocMetaData, tablesDocFromXml, true, true, tablesDocMerged, sbOut);
             }
         }
         catch (XmlException e)
@@ -157,7 +159,7 @@ public class TableXmlUtils
 
     public static String compareXmlToMetaData(String dbSchemaName, boolean bFull, boolean bCaseSensitive)
     {
-        String result = null;
+        StringBuilder sbOut = new StringBuilder();
 
         InputStream xmlStream = null;
         try
@@ -172,10 +174,10 @@ public class TableXmlUtils
 
             if ((null != tablesDocMetaData) && (null != tablesDocFromXml))
             {
-                result = compareTableDocuments(tablesDocMetaData, tablesDocFromXml, bFull, bCaseSensitive, null);
+                compareTableDocuments(tablesDocMetaData, tablesDocFromXml, bFull, bCaseSensitive, null, sbOut);
             }
 
-            result += compareOldToNewNames(dbSchemaName);
+            compareOldToNewNames(dbSchemaName, sbOut);
         }
         catch (Exception e)
         {
@@ -192,19 +194,17 @@ public class TableXmlUtils
             {
             }
         }
-        if (null!=result && result.equals(""))
-            return null;
-        return result;
 
+        return (0 == sbOut.length() ? null : sbOut.toString());
     }
 
-    public static String compareTableDocuments(TablesDocument dbTablesDoc,
+    public static void compareTableDocuments(TablesDocument dbTablesDoc,
                                                TablesDocument xmlTablesDoc,
                                                boolean bFull,
                                                boolean bCaseSensitive,
-                                               TablesDocument mergedTablesDoc)
+                                               TablesDocument mergedTablesDoc,
+                                               StringBuilder sbOut)
     {
-        StringBuilder sbOut = new StringBuilder();
         boolean merge = (null != mergedTablesDoc);
         boolean bCopyTargetNode;
         TableType[] dbTables;
@@ -597,7 +597,6 @@ public class TableXmlUtils
             sbOut.append("ERROR: Exception in compare: ").append(e.getMessage());
             e.printStackTrace();
         }
-        return sbOut.toString();
     }
 
     private static boolean compareStringProperty(String refProp, String targetProp, String propName, StringBuilder sbOut, boolean bCaseSensitive)
@@ -676,11 +675,11 @@ public class TableXmlUtils
         return true;
     }
 
-    public static String compareOldToNewNames(String dbs)
+    // TODO: Delete?  Does nothing...
+    public static void compareOldToNewNames(String dbs, StringBuilder sbOut)
     {
         Map mcols = new HashMap();
         Map mtabs = new HashMap();
-        StringBuffer sbOut = new StringBuffer();
 
         for (Object o : mcols.values())
         {
@@ -699,10 +698,9 @@ public class TableXmlUtils
             if (!oldName.equals(newName))
                 sbOut.append("<br>Mismatch on tab name: ").append(key).append("  oldName: ").append(oldName).append(" newName: ").append(newName);
         }
-
-        return sbOut.toString();
     }
 
+    // TODO: Delete?  Not used...
     private static String getOldName(String newName, Map mnames, StringBuffer msgs)
     {
         String sqlNameFromList = (String) mnames.get(newName);

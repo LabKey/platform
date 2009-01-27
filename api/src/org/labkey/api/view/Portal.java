@@ -211,6 +211,11 @@ public class Portal
             ret.addParameter("index", Integer.toString(getIndex()));
             return ret;
         }
+
+        public String getHiddenFieldsHtml()
+        {
+            return "<input type=\"hidden\" name=\"pageId\" value=\"" + getPageId() + "\">\n<input type=\"hidden\" name=\"index\" value=\"" + getIndex() + "\">";
+        }
     }
 
 
@@ -476,13 +481,6 @@ public class Portal
                Location VARCHAR(16),	-- 'body', 'left', 'right'
 
                Properties VARCHAR(4000),	-- url encoded properties	*/
-
-    @Deprecated
-    public static void populatePortalView(ViewContext context, String id, HttpView template, String contextPath)
-            throws Exception
-    {
-        populatePortalView(context, id, template);
-    }
 
     public static void populatePortalView(ViewContext context, String id, HttpView template)
             throws Exception

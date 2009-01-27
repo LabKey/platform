@@ -1694,7 +1694,6 @@ internal/src/org/labkey/api/util/SessionTempFileHolder.java -text
 internal/src/org/labkey/api/util/TextExtractor.java -text
 internal/src/org/labkey/api/util/URLExpression.java -text
 internal/src/org/labkey/api/util/wiki_markup.properties -text
-internal/src/org/labkey/api/view/AbstractCustomizeWebPartView.java -text
 internal/src/org/labkey/api/view/CGIServlet.java -text
 internal/src/org/labkey/api/view/ClientAPIWebPartFactory.java -text
 internal/src/org/labkey/api/view/ContactWebPart.java -text
