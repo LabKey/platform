@@ -34,10 +34,8 @@ import org.labkey.study.model.*;
 import javax.servlet.ServletException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.sql.Types;
+import java.util.*;
 
 /**
  * User: jgarms
@@ -212,9 +210,9 @@ def:    for (DataSetDefinition def : defs)
         {
             if (!DataSetDefinition.isDefaultFieldName(column.getName(), def.getStudy()))
             {
-                // We can't search boolean columns due to sql limitations
+                // We can't search boolean or date columns due to sql limitations
                 Class columnClass = column.getJavaClass();
-                if (columnClass != Boolean.class && columnClass != Boolean.TYPE)
+                if (columnClass != Boolean.class && columnClass != Boolean.TYPE && columnClass != Date.class)
                     columnsToSearch.add(column.getName());
             }
         }
@@ -223,7 +221,16 @@ def:    for (DataSetDefinition def : defs)
         if (columnsToSearch.size() == 0)
             return;
 
-        String[] searchColumnNames = columnsToSearch.toArray(new String[columnsToSearch.size()]);
+        String[] searchColumnNames = new String[columnsToSearch.size()];
+        int i=0;
+        for (String searchColumn : columnsToSearch)
+        {
+            String nameCast = "CAST(" + searchColumn + " AS " +
+                    tInfo.getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR) + ")";
+            searchColumnNames[i] = nameCast;
+            i++;
+        }
+
 
         String from = tInfo.toString();
 

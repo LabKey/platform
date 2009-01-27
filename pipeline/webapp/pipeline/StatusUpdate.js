@@ -40,6 +40,12 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
     // private methods:
     var nextUpdate = function(iNext)
     {
+        if (LABKEY.DataRegions && LABKEY.DataRegions["StatusFiles"].selectionModified)
+        {
+            // Disable refresh if the user has toggled any checkboxes
+            return;
+        }
+        
         _iDelay = (iNext < _delays.length ? iNext : _delays.length - 1);
         var sec = _delays[_iDelay];
         setStatusFailure(_iDelay > 0, 'Waiting ' + sec + 's...');
@@ -59,6 +65,12 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
 
     var update = function()
     {
+        if (LABKEY.DataRegions && LABKEY.DataRegions["StatusFiles"].selectionModified)
+        {
+            // Disable refresh if the user has toggled any checkboxes
+            return;
+        }
+
         Ext.Ajax.request({
             url : LABKEY.ActionURL.buildURL(_controller, _action) + document.location.search,
             method : 'GET',
@@ -69,6 +81,12 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
 
     var onUpdateSuccess = function (response)
     {
+        if (LABKEY.DataRegions && LABKEY.DataRegions["StatusFiles"].selectionModified)
+        {
+            // Disable refresh if the user has toggled any checkboxes
+            return;
+        }
+
         // get div to update
         var el = Ext.get('statusRegionDiv');
 

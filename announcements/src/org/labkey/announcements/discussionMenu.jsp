@@ -100,7 +100,8 @@ var discussionMenu = {};
     {
         YAHOO.util.Event.stopPropagation(event);
         var span = document.getElementById("discussionMenuToggle");
-        discussionMenu.menu.moveTo(span.top, span.right);
+        var xy = YAHOO.util.Dom.getXY(span);
+        discussionMenu.menu.moveTo(xy[0] + span.offsetWidth, xy[1]);
         discussionMenu.menu.show();
     };
 

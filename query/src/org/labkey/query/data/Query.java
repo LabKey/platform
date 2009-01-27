@@ -628,10 +628,11 @@ loop:
 
     private void declareFields()
     {
-        for (QColumn column : _columns)
-        {
-            declareFields(column.getField());
-        }
+        if (null != _columns)
+            for (QColumn column : _columns)
+            {
+                declareFields(column.getField());
+            }
         for (QTable table : _from.values())
         {
             QExpr on = table.getOn();
@@ -741,6 +742,18 @@ loop:
      *
      */
     public QueryTableInfo getTableInfo(String tableAlias)
+    {
+        try
+        {
+            return _getTableInfo(tableAlias);
+        }
+        catch (RuntimeException x)
+        {
+            throw wrapRuntimeException(x);
+        }
+    }
+
+    public QueryTableInfo _getTableInfo(String tableAlias)
     {
         if (_parseErrors.size() != 0)
             return null;

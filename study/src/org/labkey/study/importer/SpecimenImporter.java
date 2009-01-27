@@ -354,7 +354,6 @@ public class SpecimenImporter
             new ImportableColumn("primary_type", "PrimaryType", "VARCHAR(100)")
         };
 
-    private Map<String, ImportableColumn> _tsvNameToColumnInfo = null;
     private String _specimenCols;
     private String _specimenEventCols;
     private Logger _logger;
@@ -503,7 +502,7 @@ public class SpecimenImporter
         populateSpecimenEvents(schema, container, info);
 
         cpuCurrentLocations.start();
-        updateCalculatedSpecimenData(container, user);
+        updateCalculatedSpecimenData(container, user, _logger);
         cpuCurrentLocations.stop();
         info("Time to determine locations: " + cpuCurrentLocations.toString());
 
@@ -526,13 +525,14 @@ public class SpecimenImporter
         DbScope scope = schema.getScope();
         boolean transactionOwner = !scope.isTransactionActive();
         Study[] studies = StudyManager.getInstance().getAllStudies();
+        Logger logger = Logger.getLogger(SpecimenImporter.class);
         for (Study study : studies)
         {
             try
             {
                 if (transactionOwner)
                     scope.beginTransaction();
-                updateCalculatedSpecimenData(study.getContainer(), user);
+                updateCalculatedSpecimenData(study.getContainer(), user, logger);
                 updateSpecimenCommentHashes(study.getContainer(), user);
                 if (transactionOwner)
                     scope.commitTransaction();
@@ -545,17 +545,22 @@ public class SpecimenImporter
         }
     }
 
-    private static void updateCalculatedSpecimenData(Container container, User user) throws SQLException
+    private static void updateCalculatedSpecimenData(Container container, User user, Logger logger) throws SQLException
     {
         // clear caches before determining current sites:
         SimpleFilter containerFilter = new SimpleFilter("Container", container.getId());
         SampleManager.getInstance().clearCaches(container);
         Specimen[] specimens;
         int offset = 0;
+        String sql = "UPDATE " + StudySchema.getInstance().getTableInfoSpecimen() +
+                " SET CurrentLocation = CAST(? AS INTEGER), SpecimenHash = ? WHERE RowId = ?";
         do
         {
+            if (logger != null)
+                logger.info("Calculating hashes and current locations for vials " + (offset + 1) + " through " + (offset + CURRENT_SITE_UPDATE_SIZE) + ".");
             specimens = Table.select(StudySchema.getInstance().getTableInfoSpecimen(), Table.ALL_COLUMNS,
                     containerFilter, null, Specimen.class, CURRENT_SITE_UPDATE_SIZE, offset);
+            List<Object[]> params = new ArrayList<Object[]>();
             for (Specimen specimen : specimens)
             {
                 Integer currentLocation = SampleManager.getInstance().getCurrentSiteId(specimen);
@@ -563,16 +568,16 @@ public class SpecimenImporter
                 if (!safeIntegerEqual(currentLocation, specimen.getCurrentLocation()) ||
                     !specimenHash.equals(specimen.getSpecimenHash()))
                 {
-                    specimen.setCurrentLocation(currentLocation);
-                    specimen.setSpecimenHash(specimenHash);
-                    Table.update(user, StudySchema.getInstance().getTableInfoSpecimen(), specimen, specimen.getRowId(), null);
+                    params.add(new Object[] { currentLocation, specimenHash, specimen.getRowId() });
                 }
             }
+            if (!params.isEmpty())
+                Table.batchExecute(StudySchema.getInstance().getSchema(), sql, params);
             offset += CURRENT_SITE_UPDATE_SIZE;
         }
         while (specimens.length > 0);
     }
-
+    
     private static String getSpecimenHash(Specimen specimen)
     {
         String separator = "~";
@@ -705,10 +710,12 @@ public class SpecimenImporter
         String deleteSQL = "DELETE FROM exp.Material WHERE RowId IN (SELECT exp.Material.RowId FROM exp.Material \n" +
                 "LEFT OUTER JOIN " + info.getTempTableName() + " ON\n" +
                 "\texp.Material.LSID = " + info.getTempTableName() + ".LSID\n" +
+                "LEFT OUTER JOIN exp.MaterialInput ON\n" +
+                "\texp.Material.RowId = exp.MaterialInput.MaterialId\n" +
                 "WHERE " + info.getTempTableName() + ".LSID IS NULL\n" +
+                "AND exp.MaterialInput.MaterialId IS NULL\n" +
                 "AND (exp.Material.CpasType = ? OR exp.Material.CpasType = 'StudySpecimen') \n" +
-                "AND exp.Material.Container = ? AND " +
-                "exp.Material.RowId NOT IN (SELECT MaterialId FROM exp.MaterialInput))";
+                "AND exp.Material.Container = ?)";
 
         String prefix = new Lsid("StudySpecimen", "Folder-" + container.getRowId(), "").toString();
 
