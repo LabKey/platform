@@ -1940,22 +1940,6 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    public static class CustomizeIssuesPartView extends AbstractCustomizeWebPartView<Object>
-    {
-        public CustomizeIssuesPartView()
-        {
-            super("/org/labkey/issue/issues_customize.gm");
-        }
-
-        @Override
-        public void prepareWebPart(Object model) throws ServletException
-        {
-            super.prepareWebPart(model);
-            addObject("containerName", getViewContext().getContainer().getName());
-        }
-    }
-
-
     public static class IssuesPreference
     {
         private List<ColumnInfo> _columns;

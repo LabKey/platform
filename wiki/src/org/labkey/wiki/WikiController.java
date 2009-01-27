@@ -108,43 +108,48 @@ public class WikiController extends SpringActionController
     }
 
 
-    public static class CustomizeWikiPartView extends AbstractCustomizeWebPartView<Object>
+    public static class CustomizeWikiPartView extends JspView<Portal.WebPart>
     {
-        public CustomizeWikiPartView()
+        private List<Container> _containerList;
+        private Container _currentContainer;
+        private Map<Container, List<Wiki>> _mapEntries;
+        private List<Wiki> _containerWikiList;
+
+        public CustomizeWikiPartView(Portal.WebPart webPart)
         {
-            super("/org/labkey/wiki/view/wiki_customize.gm");
+            super("/org/labkey/wiki/view/customizeWiki.jsp", webPart);
         }
 
         @Override
-        public void prepareWebPart(Object model) throws ServletException
+        public void prepareWebPart(Portal.WebPart webPart) throws ServletException
         {
-            super.prepareWebPart(model);
+            super.prepareWebPart(webPart);
 
             ViewContext context = getViewContext();
 
             try
             {
                 //get all containers that include wiki pages
-                List<Container> allWikiContainers = populateWikiContainerList(context);
-                addObject("containerList", allWikiContainers);
+                _containerList = populateWikiContainerList(context);
 
                 //build map of containers and their associated sets of wiki pages
                 Map<Container, List<Wiki>> containerMap = new LinkedHashMap<Container, List<Wiki>>();
-                for (Container c : allWikiContainers)
+                for (Container c : _containerList)
                 {
                     //get list of wiki pages for this container
                     List<Wiki> containerPageList = WikiManager.getPageList(c);
                     containerMap.put(c, containerPageList);
 
                     //track current container to fill list easily.
-                    if(c.getId().equals(context.getContainer().getId()))
-                        addObject("currentContainer", c);
+                    if (c.getId().equals(context.getContainer().getId()))
+                        _currentContainer = c;
                 }
-                addObject("mapEntries", containerMap);
+
+                _mapEntries = containerMap;
 
                 //get wiki page list for the currently stored container (or current container if null)
                 Container cStored;
-                Portal.WebPart webPart = (Portal.WebPart) context.get("webPart");
+
                 if (webPart == null)
                     cStored = context.getContainer();
                 else
@@ -158,20 +163,41 @@ public class WikiController extends SpringActionController
                     {
                         cStored = context.getContainer();
 
-                        //reset the webPartContainer property so that wiki_customize.gm selects the correct one in the UI
+                        //reset the webPartContainer property so that customizeWiki.jsp selects the correct one in the UI
                         webPart.getPropertyMap().put("webPartContainer", cStored.getId());
                     }
                 }
-                addObject("containerWikiList", containerMap.get(cStored));
+
+                _containerWikiList = containerMap.get(cStored);
             }
             catch(SQLException e)
             {
                 throw new RuntimeException("Failed to populate container or page list.", e);
             }
         }
+
+        public List<Container> getContainerList()
+        {
+            return _containerList;
+        }
+
+        public Container getCurrentContainer()
+        {
+            return _currentContainer;
+        }
+
+        public Map<Container, List<Wiki>> getMapEntries()
+        {
+            return _mapEntries;
+        }
+
+        public List<Wiki> getContainerWikiList()
+        {
+            return _containerWikiList;
+        }
     }
 
-    private static List<Container> populateWikiContainerList(ViewContext context)
+    public static List<Container> populateWikiContainerList(ViewContext context)
             throws SQLException, ServletException
     {
         //retrieve all containers
@@ -205,31 +231,6 @@ public class WikiController extends SpringActionController
 
                 //check container's children
                 populateWikiContainerListRecursive(context, cChild, children, mm);
-            }
-        }
-    }
-
-    public static class CustomizeWikiTOCPartView extends AbstractCustomizeWebPartView<Object>
-    {
-        public CustomizeWikiTOCPartView()
-        {
-            super("/org/labkey/wiki/view/wiki_customizetoc.gm");
-        }
-
-        @Override
-        public void prepareWebPart(Object model) throws ServletException
-        {
-            super.prepareWebPart(model);
-
-            try
-            {
-                List<Container> allContainers = populateWikiContainerList(getViewContext());
-                addObject("containerList", allContainers);
-                addObject("currentContainer", getViewContext().getContainer());
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeException("Failed to populate container or page list.", e);
             }
         }
     }

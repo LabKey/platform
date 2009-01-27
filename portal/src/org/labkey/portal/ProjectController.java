@@ -18,7 +18,7 @@ package org.labkey.portal;
 
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.*;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
@@ -30,15 +30,12 @@ import org.labkey.api.util.Search.SearchResultsView;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.attachments.Attachment;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.ServletException;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
-import java.beans.PropertyDescriptor;
 import java.util.*;
 
 
@@ -151,7 +148,7 @@ public class ProjectController extends SpringActionController
                 page.setTitle(title, appendPath);
             HttpView template = new HomeTemplate(getViewContext(), c, new VBox(), page, new NavTree[0]);
 
-            Portal.populatePortalView(getViewContext(), c.getId(), template, getViewContext().getContextPath());
+            Portal.populatePortalView(getViewContext(), c.getId(), template);
             
             getPageConfig().setTemplate(PageConfig.Template.None);
             return template;
@@ -364,29 +361,6 @@ public class ProjectController extends SpringActionController
         }
     }
 
-    public static class CustomizeWebPartView extends AbstractCustomizeWebPartView
-    {
-        /**
-         * Create a default web part that allows users to edit properties
-         * described with propertyDescriptors. Assumes that the
-         * WebPart being editied will be set in a parameter called "webPart"
-         *
-         * @param propertyDescriptors
-         */
-        public CustomizeWebPartView(PropertyDescriptor[] propertyDescriptors)
-        {
-            super("/org/labkey/portal/customizeWebPart.gm");
-            //Get nicer display names for default property names
-            for (PropertyDescriptor desc : propertyDescriptors)
-            {
-                String displayName = desc.getDisplayName();
-                if (Character.isLowerCase(displayName.charAt(0)) && displayName.equals(desc.getName()))
-                    desc.setDisplayName(ColumnInfo.captionFromName(displayName));
-            }
-            addObject("propertyDescriptors", propertyDescriptors);
-        }
-    }
-
     //
     // FORMS
     //
@@ -581,23 +555,6 @@ public class ProjectController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
-        }
-    }
-
-
-    public static class CustomizeSearchPartView extends AbstractCustomizeWebPartView<Object>
-    {
-        public CustomizeSearchPartView()
-        {
-            super("/org/labkey/portal/customizeSearchWebPart.gm");
-        }
-
-        @Override
-        public void prepareWebPart(Object model) throws ServletException
-        {
-            super.prepareWebPart(model);
-            Container c = getViewContext().getContainer(ACL.PERM_UPDATE);
-            addObject("postURL", PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(c).toString());  // TODO: Change to custom post action once subclassing of actions works
         }
     }
 

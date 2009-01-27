@@ -868,7 +868,7 @@ issues/src/org/labkey/issue/IssuesWebPartFactory.java -text
 issues/src/org/labkey/issue/detailList.jsp -text
 issues/src/org/labkey/issue/detailView.jsp -text
 issues/src/org/labkey/issue/emailPreferences.jsp -text
-issues/src/org/labkey/issue/issues_customize.gm -text
+issues/src/org/labkey/issue/issuesCustomize.jsp -text
 issues/src/org/labkey/issue/keywordAdmin.jsp -text
 issues/src/org/labkey/issue/list.jsp -text
 issues/src/org/labkey/issue/model/Issue.java -text
@@ -1382,8 +1382,7 @@ pipeline/webapp/share/schema/wsrf/servicegroup/WS-ServiceGroup_bindings.wsdl -te
 pipeline/webapp/share/schema/wsrf/servicegroup/WS-ServiceGroup_service.wsdl -text
 portal/module.properties -text
 portal/src/org/labkey/portal/PortalModule.java -text
-portal/src/org/labkey/portal/customizeSearchWebPart.gm -text
-portal/src/org/labkey/portal/customizeWebPart.gm -text
+portal/src/org/labkey/portal/customizeSearchWebPart.jsp -text
 portal/src/org/labkey/portal/search.jsp -text
 query/gwtsrc/org/labkey/query/metadata/MetadataEditor.gwt.xml -text
 query/gwtsrc/org/labkey/query/metadata/client/GWTColumnInfo.java -text
@@ -2321,6 +2320,8 @@ wiki/src/org/labkey/wiki/renderer/HtmlRenderer.java -text
 wiki/src/org/labkey/wiki/renderer/PlainTextRenderer.java -text
 wiki/src/org/labkey/wiki/renderer/WebPartSubstitutionHandler.java -text
 wiki/src/org/labkey/wiki/supportWiki.txt -text
+wiki/src/org/labkey/wiki/view/customizeWiki.jsp -text
+wiki/src/org/labkey/wiki/view/customizeWikiToc.jsp -text
 wiki/src/org/labkey/wiki/view/wiki.gm -text
 wiki/src/org/labkey/wiki/view/wikiCopy.jsp -text
 wiki/src/org/labkey/wiki/view/wikiDelete.jsp -text
@@ -2332,8 +2333,6 @@ wiki/src/org/labkey/wiki/view/wikiPrintRaw.jsp -text
 wiki/src/org/labkey/wiki/view/wikiRadeoxHelp.jsp -text
 wiki/src/org/labkey/wiki/view/wikiSearch.jsp -text
 wiki/src/org/labkey/wiki/view/wikiVersion.jsp -text
-wiki/src/org/labkey/wiki/view/wiki_customize.gm -text
-wiki/src/org/labkey/wiki/view/wiki_customizetoc.gm -text
 wiki/src/org/labkey/wiki/view/wiki_manage.gm -text
 wiki/src/org/labkey/wiki/welcomeWiki.txt -text
 wiki/webapp/_images/page.png -text

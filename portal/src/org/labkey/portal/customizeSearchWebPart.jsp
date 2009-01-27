@@ -16,20 +16,25 @@
  */
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<form name="frmCustomize" method="post" action="<%=postURL%>">
-<input type="hidden" name="pageId" value="<%=webPart.pageId%>">
-<input type="hidden" name="index" value="<%=webPart.index%>">
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.Portal" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%
+    JspView<Portal.WebPart> me = (JspView<Portal.WebPart>)HttpView.currentView();
+    Portal.WebPart webPart = me.getModelBean();
+%>
+<form name="frmCustomize" method="post">
 <table>
-<tr>
-    <td><input type="checkbox" name="includeSubfolders" <%="off".equals(webPart.propertyMap.includeSubfolders) ? "" : "checked"%>></td>
+  <tr>
+    <td><input type="checkbox" name="includeSubfolders" <%="off".equals(webPart.getPropertyMap().get("includeSubfolders")) ? "" : "checked"%>></td>
     <td>Search subfolders</td>
-</tr>
-
-<tr>
+  </tr>
+  <tr>
     <td colspan=2>
-        <%=PageFlowUtil.generateSubmitButton("Submit")%>
-        <%=PageFlowUtil.generateButton("Cancel", "begin.view")%>
+      <%=PageFlowUtil.generateSubmitButton("Submit")%>
+      <%=PageFlowUtil.generateButton("Cancel", "begin.view")%>
     </td>
-</tr>
+  </tr>
 </table>
 </form>

@@ -16,18 +16,29 @@
  */
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-
-<form name= "frmCustomize" method="post" action="${postURL}">
-<input type="hidden" name="pageId" value="${webPart.pageId}">
-<input type="hidden" name="index" value="${webPart.index}">
-
+<%@ page import="org.labkey.api.view.Portal" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="java.util.List" %>
+<%@ page import="org.labkey.wiki.WikiController" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%
+    JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
+    Portal.WebPart webPart = me.getModelBean();
+    String title = webPart.getPropertyMap().get("title");
+    Container currentContainer = getViewContext().getContainer();
+    List<Container> containerList = WikiController.populateWikiContainerList(getViewContext());
+%>
+<% // Post to current action; URL includes pageId and index parameters %>
+<form name="frmCustomize" method="post">
 <table>
     <tr>
         <td>
         Enter the title for the Wiki TOC web part.
         </td>
         <td>
-        <input name="title" type="text" value="<%= webPart.propertyMap.title == null ? "Pages" : filter(webPart.propertyMap.title) %>">
+        <input name="title" type="text" value="<%=title == null ? "Pages" : h(title) %>">
         </td>
      </tr>
     <tr>
@@ -37,15 +48,15 @@
         <td>
         <select name="webPartContainer">
             <%
-            for (container in containerList)
+            for (Container c : containerList)
             {
-                if(container == currentContainer && webPart.propertyMap.webPartContainer == null)
+                if (c.equals(currentContainer) && webPart.getPropertyMap().get("webPartContainer") == null)
                 {%>
-                    <option selected value="<%=container.getId()%>"><%=filter(container.getPath())%></option>
+                    <option selected value="<%=c.getId()%>"><%=h(c.getPath())%></option>
                 <%}
                 else
                 {%>
-                    <option <%=container.getId() == webPart.propertyMap.webPartContainer ? "selected" : "" %> value="<%=container.getId()%>"><%=filter(container.getPath())%></option>
+                    <option <%=c.getId().equals(webPart.getPropertyMap().get("webPartContainer")) ? "selected" : "" %> value="<%=c.getId()%>"><%=h(c.getPath())%></option>
                 <%}
             }
             %>

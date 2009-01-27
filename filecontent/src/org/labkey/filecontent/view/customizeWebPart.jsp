@@ -15,24 +15,21 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.filecontent.FilesWebPart" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="java.io.File" %>
-<%@ page import="org.labkey.api.attachments.AttachmentService" %>
-<%@ page import="org.labkey.filecontent.FileContentController" %>
-<%@ page import="org.labkey.filecontent.CustomizeFilesWebPartView" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.attachments.AttachmentParent" %>
-<%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.labkey.api.attachments.AttachmentDirectory" %>
+<%@ page import="org.labkey.api.attachments.AttachmentService" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.filecontent.CustomizeFilesWebPartView" %>
+<%@ page import="org.labkey.filecontent.FileContentController" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     CustomizeFilesWebPartView me = (CustomizeFilesWebPartView) HttpView.currentView();
     FileContentController.CustomizeWebPartForm form = me.getModelBean();
     ViewContext ctx = me.getViewContext();
-    ActionURL postUrl = new ActionURL("Project", "customizeWebPart.post", ctx.getContainer());
+    ActionURL postUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(ctx.getContainer());
     AttachmentDirectory [] attDirs = AttachmentService.get().getRegisteredDirectories(ctx.getContainer());
 
 %>

@@ -21,9 +21,9 @@ import java.lang.reflect.InvocationTargetException;
 
 /**
  * User: adam
-* Date: Nov 5, 2008
-* Time: 3:38:10 PM
-*/
+ * Date: Nov 5, 2008
+ * Time: 3:38:10 PM
+ */
 class IssuesWebPartFactory extends AlwaysAvailableWebPartFactory
 {
     public IssuesWebPartFactory()
@@ -46,8 +46,6 @@ class IssuesWebPartFactory extends AlwaysAvailableWebPartFactory
     @Override
     public HttpView getEditView(Portal.WebPart webPart)
     {
-        WebPartView v = new IssuesController.CustomizeIssuesPartView();
-        v.addObject("webPart", webPart);
-        return v;
+        return new JspView<Portal.WebPart>("/org/labkey/issue/issuesCustomize.jsp", webPart);
     }
 }

@@ -27,7 +27,6 @@ import org.labkey.wiki.WikiManager;
 import org.apache.log4j.Logger;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Jun 12, 2006
  * Time: 3:29:31 PM

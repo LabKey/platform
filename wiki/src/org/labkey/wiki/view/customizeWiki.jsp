@@ -15,28 +15,36 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-
+<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.Portal" %>
+<%@ page import="org.labkey.wiki.WikiController" %>
+<%@ page import="org.labkey.wiki.model.Wiki" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
+    WikiController.CustomizeWikiPartView me = (WikiController.CustomizeWikiPartView) HttpView.currentView();
+    Portal.WebPart webPart = me.getModelBean();
+    Container currentContainer = me.getCurrentContainer();
+
     //build array of containers/wiki lists
-    def construct = "var m = new Object();\n";
-    for (entry in mapEntries.entrySet())
+    String construct = "var m = new Object();\n";
+    for (Map.Entry<Container, List<Wiki>> entry : me.getMapEntries().entrySet())
     {
        construct += "m[\"" + entry.getKey().getId() + "\"] = ";
        construct += "null;\n";
     }
 %>
-
-
-
 <script type="text/javascript">
 LABKEY.requiresClientAPI(); //for Ext AJAX object
 
 //output variable definition for array of containers/pages
-${construct}
+<%=construct%>
 
 //store current container id on client
-var currentContainerId = "${currentContainer ? currentContainer.getId() : null}";
+var currentContainerId = "<%=currentContainer != null ? currentContainer.getId() : null%>";
 
 function updatePageList()
 {
@@ -63,7 +71,7 @@ function updatePageList()
             failure: onError,
             method: 'GET',
             params: {'id' : containerId}
-        })
+        });
     }
     return true;
 }
@@ -166,10 +174,7 @@ function restoreDefaultPage()
 </script>
 
 
-<form name= "frmCustomize" method="post" action="${postURL}">
-<input type="hidden" name="pageId" value="${webPart.pageId}">
-<input type="hidden" name="index" value="${webPart.index}">
-
+<form name= "frmCustomize" method="post">
 <table>
     <tr>
         <td colspan="2">
@@ -184,16 +189,16 @@ function restoreDefaultPage()
         <td width="80%">
         <select name="webPartContainer" onkeyup="updatePageList();" onchange="updatePageList();">
             <%
-            for (container in containerList)
+            for (Container c : me.getContainerList())
             {
                 //if there's no property setting for container, select the current container.
-                if(null != currentContainer && container.getId() == currentContainer.getId() && webPart.propertyMap.webPartContainer == null)
+                if (null != currentContainer && c.getId().equals(currentContainer.getId()) && webPart.getPropertyMap().get("webPartContainer") == null)
                 {%>
-                    <option selected value="<%=container.getId()%>"><%=filter(container.getPath())%></option>
+                    <option selected value="<%=c.getId()%>"><%=h(c.getPath())%></option>
                 <%}
                 else
                 {%>
-                    <option <%=container.getId() == webPart.propertyMap.webPartContainer ? "selected" : "" %> value="<%=container.getId()%>"><%=filter(container.getPath())%></option>
+                    <option <%=c.getId().equals(webPart.getPropertyMap().get("webPartContainer")) ? "selected" : "" %> value="<%=c.getId()%>"><%=h(c.getPath())%></option>
                 <%}
             }
             %>
@@ -209,22 +214,22 @@ function restoreDefaultPage()
         <select name="name">
             <%
             //if current container has no pages
-            if(null == containerWikiList || containerWikiList.size() == 0)
+            if (null == me.getContainerWikiList() || me.getContainerWikiList().size() == 0)
             {%>
                 <option selected value="">&lt;no pages&gt;</option>
             <%}
             else
             {
-                for (wikipage in containerWikiList)
+                for (Wiki wikipage : me.getContainerWikiList())
                 {
                     //if there's a "default" page and no other page has been selected as default, select it.
-                    if (wikipage.getName().toLowerCase() == "default" && webPart.propertyMap.name == null)
+                    if (wikipage.getName().equalsIgnoreCase("default") && webPart.getPropertyMap().get("name") == null)
                     {%>
-                        <option selected value="<%=filter(wikipage.getName())%>"><%=filter(wikipage.getName()) + " (" + filter(wikipage.latestVersion().getTitle()) + ")"%></option>
+                        <option selected value="<%=h(wikipage.getName())%>"><%=h(wikipage.getName()) + " (" + h(wikipage.latestVersion().getTitle()) + ")"%></option>
                     <%}
                     else
                     {%>
-                        <option <%= wikipage.getName() == webPart.propertyMap.name ? "selected" : "" %> value="<%=filter(wikipage.getName())%>"><%=filter(wikipage.getName()) + " (" + filter(wikipage.latestVersion().getTitle()) + ")"%></option>
+                        <option <%= wikipage.getName().equals(webPart.getPropertyMap().get("name")) ? "selected" : "" %> value="<%=h(wikipage.getName())%>"><%=h(wikipage.getName()) + " (" + h(wikipage.latestVersion().getTitle()) + ")"%></option>
                     <%}
                 }
             }%>
@@ -241,7 +246,6 @@ function restoreDefaultPage()
                 </td>
             </tr>
         </table>
-
     </td>
 </tr>
 </table>

@@ -501,8 +501,6 @@ public class LoginController extends SpringActionController
                 // Don't display the terms of use if user has already approved them (e.g., guest approves, then later logs in).  #4684
                 if (!SecurityManager.isTermsOfUseApproved(getViewContext(), project))
                     termsOfUseHtml = SecurityManager.getTermsOfUseHtml(project);
-
-                assert !(agreeOnly && null == termsOfUseHtml);
             }
             catch (Exception e)
             {

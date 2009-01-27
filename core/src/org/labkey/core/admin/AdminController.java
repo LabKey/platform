@@ -65,7 +65,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.beans.Introspector;
 import java.io.*;
 import java.lang.management.*;
-import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.SQLException;
@@ -374,7 +373,7 @@ public class AdminController extends SpringActionController
                 wikiSource = wikiSource + getErrors(wikiSource, creditsFilename, filenames, fileType, foundWhere, wikiSourceSearchPattern);
 
             WikiService wikiService = ServiceRegistry.get().getService(WikiService.class);
-            if(null != wikiService)
+            if (null != wikiService)
             {
                 WikiRenderer wf = wikiService.getRenderer(WikiRendererType.RADEOX);
                 _html = "<style type=\"text/css\">\ntr.table-odd td { background-color: #EEEEEE; }</style>\n" + wf.format(wikiSource).getHtml();

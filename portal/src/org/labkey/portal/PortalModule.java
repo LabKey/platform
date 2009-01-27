@@ -91,9 +91,7 @@ public class PortalModule extends DefaultModule
         @Override
         public HttpView getEditView(Portal.WebPart webPart)
         {
-            HttpView view = new ProjectController.CustomizeSearchPartView();
-            view.addObject("webPart", webPart);
-            return view;
+            return new JspView<Portal.WebPart>("/org/labkey/portal/customizeSearchWebPart.jsp", webPart);
         }
     }
 

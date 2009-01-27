@@ -24,7 +24,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Jul 16, 2007
  * Time: 2:27:37 PM
