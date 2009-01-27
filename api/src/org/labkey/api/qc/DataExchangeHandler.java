@@ -17,7 +17,9 @@ package org.labkey.api.qc;
 
 import org.labkey.api.study.assay.AssayRunUploadContext;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.view.ViewContext;
 
 import java.io.File;
 
@@ -34,4 +36,5 @@ public interface DataExchangeHandler
 {
     public File createValidationRunInfo(AssayRunUploadContext context, ExpRun run, File scriptDir) throws Exception;
     public void processValidationOutput(File runInfo) throws ValidationException;
+    public void createSampleData(ExpProtocol protocol, ViewContext viewContext, File scriptDir) throws Exception;
 }

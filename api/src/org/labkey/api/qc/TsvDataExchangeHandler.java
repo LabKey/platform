@@ -16,27 +16,36 @@
 package org.labkey.api.qc;
 
 import org.labkey.api.study.assay.AssayRunUploadContext;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.ExperimentDataHandler;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.security.User;
+import org.labkey.api.data.Container;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.tools.ColumnDescriptor;
 import org.apache.commons.lang.StringUtils;
+import org.apache.struts.upload.MultipartRequestHandler;
+import org.springframework.validation.BindException;
 
-import java.io.File;
-import java.io.PrintWriter;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.HashMap;
+import javax.servlet.http.HttpServletRequest;
+import java.io.*;
+import java.util.*;
+import java.lang.reflect.Array;
+import java.sql.Types;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 
 /*
 * User: Karl Lum
@@ -72,31 +81,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(runProps)));
 
         try {
-            Map<DomainProperty, String> runProperties = context.getRunProperties();
-            runProperties.putAll(context.getUploadSetProperties());
-            runProperties.putAll(context.getRunProperties());
-
             // serialize the run properties to a tsv
-            for (Map.Entry<DomainProperty, String> entry : runProperties.entrySet())
-            {
-                pw.append(entry.getKey().getName());
-                pw.append('\t');
-                pw.append(entry.getValue());
-                pw.append('\t');
-                pw.println(entry.getKey().getPropertyDescriptor().getPropertyType().getJavaType().getName());
-
-                _formFields.put(entry.getKey().getName(), entry.getValue());
-            }
-
-            // additional context properties
-            for (Map.Entry<String, String> entry : getContextProperties(context, scriptDir).entrySet())
-            {
-                pw.append(entry.getKey());
-                pw.append('\t');
-                pw.append(entry.getValue());
-                pw.append('\t');
-                pw.println(String.class.getName());
-            }
+            serializeRunProperties(context, scriptDir, pw);
 
             // add the run data entries
             for (ExpData expData : run.getDataOutputs())
@@ -125,6 +111,34 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         finally
         {
             pw.close();
+        }
+    }
+
+    private void serializeRunProperties(AssayRunUploadContext context, File scriptDir, PrintWriter pw)
+    {
+        Map<DomainProperty, String> runProperties = context.getRunProperties();
+        runProperties.putAll(context.getUploadSetProperties());
+
+        // serialize the run properties to a tsv
+        for (Map.Entry<DomainProperty, String> entry : runProperties.entrySet())
+        {
+            pw.append(entry.getKey().getName());
+            pw.append('\t');
+            pw.append(entry.getValue());
+            pw.append('\t');
+            pw.println(entry.getKey().getPropertyDescriptor().getPropertyType().getJavaType().getName());
+
+            _formFields.put(entry.getKey().getName(), entry.getValue());
+        }
+
+        // additional context properties
+        for (Map.Entry<String, String> entry : getContextProperties(context, scriptDir).entrySet())
+        {
+            pw.append(entry.getKey());
+            pw.append('\t');
+            pw.append(entry.getValue());
+            pw.append('\t');
+            pw.println(String.class.getName());
         }
     }
 
@@ -240,8 +254,9 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 pw.println();
 
                 // write the rows
-                for (Map<String, Object> row : data)
+                for (int i=1; i < data.length; i++)
                 {
+                    Map<String, Object> row = data[i];
                     sep = "";
                     for (String name : columns)
                     {
@@ -256,6 +271,166 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             {
                 pw.close();
             }
+        }
+    }
+
+    public void createSampleData(ExpProtocol protocol, ViewContext viewContext, File scriptDir) throws Exception
+    {
+        final int SAMPLE_DATA_ROWS = 5;
+        File runProps = new File(scriptDir, VALIDATION_RUN_INFO_FILE);
+        PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(runProps)));
+
+        try {
+            AssayRunUploadContext context = new SampleRunUploadContext(protocol, viewContext);
+
+            serializeRunProperties(context, scriptDir, pw);
+
+            // create the sample run data
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+            List<Map<String, Object>> dataRows = new ArrayList<Map<String, Object>>();
+            DomainProperty[] properties = provider.getRunDataDomain(protocol).getProperties();
+
+            Map<String, Object> row = new HashMap<String, Object>();
+            for (DomainProperty prop : properties)
+                row.put(prop.getName(), prop.getName());
+
+            dataRows.add(row);
+
+            for (int i=0; i < SAMPLE_DATA_ROWS; i++)
+            {
+                row = new HashMap<String, Object>();
+                for (DomainProperty prop : properties)
+                    row.put(prop.getName(), getSampleValue(prop));
+
+                dataRows.add(row);
+            }
+            File runData = new File(scriptDir, RUN_DATA_FILE);
+            pw.append(Props.runDataFile.name());
+            pw.append('\t');
+            pw.println(runData.getAbsolutePath());
+
+            // errors file location
+            File errorFile = new File(scriptDir, ERRORS_FILE);
+            pw.append(Props.errorsFile.name());
+            pw.append('\t');
+            pw.println(errorFile.getAbsolutePath());
+
+            writeRunData((Map<String, Object>[])(dataRows.toArray((Object[])Array.newInstance(Map.class, dataRows.size()))), runData);
+        }
+        finally
+        {
+            pw.close();
+        }
+    }
+
+    private static String getSampleValue(DomainProperty prop)
+    {
+        switch (prop.getPropertyDescriptor().getPropertyType().getSqlType())
+        {
+            case Types.BOOLEAN :
+                return "true";
+            case Types.TIMESTAMP:
+                DateFormat format = new SimpleDateFormat("MM/dd/yyyy");
+                return format.format(new Date());
+            case Types.DOUBLE:
+            case Types.INTEGER:
+                return "1234";
+            default:
+                return "demo value";
+        }
+    }
+
+    private static class SampleRunUploadContext implements AssayRunUploadContext
+    {
+        ExpProtocol _protocol;
+        ViewContext _context;
+
+        public SampleRunUploadContext(ExpProtocol protocol, ViewContext context)
+        {
+            _protocol = protocol;
+            _context = context;
+        }
+
+        public ExpProtocol getProtocol()
+        {
+            return _protocol;
+        }
+
+        public Map<DomainProperty, String> getRunProperties()
+        {
+            AssayProvider provider = AssayService.get().getProvider(_protocol);
+            Map<DomainProperty, String> runProperties = new HashMap<DomainProperty, String>();
+
+            for (DomainProperty prop : provider.getRunInputDomain(_protocol).getProperties())
+                runProperties.put(prop, getSampleValue(prop));
+
+            return runProperties;
+        }
+
+        public Map<DomainProperty, String> getUploadSetProperties()
+        {
+            AssayProvider provider = AssayService.get().getProvider(_protocol);
+            Map<DomainProperty, String> runProperties = new HashMap<DomainProperty, String>();
+
+            for (DomainProperty prop : provider.getUploadSetDomain(_protocol).getProperties())
+                runProperties.put(prop, getSampleValue(prop));
+
+            return runProperties;
+        }
+
+        public String getComments()
+        {
+            return "sample upload comments";
+        }
+
+        public String getName()
+        {
+            return "sample upload name";
+        }
+
+        public User getUser()
+        {
+            return _context.getUser();
+        }
+
+        public Container getContainer()
+        {
+            return _context.getContainer();
+        }
+
+        public HttpServletRequest getRequest()
+        {
+            return _context.getRequest();
+        }
+
+        public ActionURL getActionURL()
+        {
+            return _context.getActionURL();
+        }
+
+        public Map<String, File> getUploadedData() throws IOException, ExperimentException
+        {
+            return Collections.emptyMap();
+        }
+
+        public AssayProvider getProvider()
+        {
+            return AssayService.get().getProvider(_protocol);
+        }
+
+        public MultipartRequestHandler getMultipartRequestHandler()
+        {
+            return null;
+        }
+
+        public Map<DomainProperty, String> getDefaultValues(Domain domain, BindException errors, String disambiguationId)
+        {
+            return Collections.emptyMap();
+        }
+
+        public Map<DomainProperty, String> getDefaultValues(Domain domain, BindException errors)
+        {
+            return Collections.emptyMap();
         }
     }
 }

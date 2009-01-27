@@ -258,7 +258,18 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
                     "identifies the script engine that will be used to run the validation script. For example: a script named test.pl will " +
                     "be run with the Perl scripting engine. The scripting engine must be configured from the Admin panel."));
             table.setWidget(row, 0, namePanel);
-            table.setWidget(row++, 1, scriptFile);
+            table.setWidget(row, 1, scriptFile);
+
+            // add a download sample data button if the protocol already exists
+            if (_protocolId != null)
+            {
+                String url = PropertyUtil.getRelativeURL("downloadSampleQCData", "assay");
+                url += "?rowId=" + _protocolId;
+
+                LinkButton download = new LinkButton("Download Test Data", url);
+                table.setWidget(row, 2, download);
+            }
+            row++;
         }
 
         if (assay.getAvailablePlateTemplates() != null)

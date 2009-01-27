@@ -1288,7 +1288,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     /**
      * Return the helper to handle data exchange between the server and external scripts.
      */
-    protected DataExchangeHandler getDataExchangeHandler()
+    public DataExchangeHandler getDataExchangeHandler()
     {
         return null;
     }
