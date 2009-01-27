@@ -1717,6 +1717,8 @@ internal/src/org/labkey/api/webdav/WebdavResolverImpl.java -text
 internal/webapp/ColumnTree.css -text
 internal/webapp/ColumnTree.js -text
 internal/webapp/DataRegion.js -text
+internal/webapp/FileUploadField.css -text
+internal/webapp/FileUploadField.js -text
 internal/webapp/_.gif -text
 internal/webapp/_icons/_deleted.gif -text
 internal/webapp/_icons/_generic.gif -text
