@@ -17,40 +17,45 @@
 package org.labkey.study.controllers.assay;
 
 import org.labkey.api.action.*;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.exp.*;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.qc.DataExchangeHandler;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.actions.*;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.util.ContainerTree;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.api.query.QueryParam;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.assay.AssayServiceImpl;
 import org.labkey.study.assay.ModuleAssayProvider;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
-import org.labkey.study.controllers.assay.actions.SaveAssayBatchAction;
 import org.labkey.study.controllers.assay.actions.GetAssayBatchAction;
+import org.labkey.study.controllers.assay.actions.SaveAssayBatchAction;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * User: brittp
@@ -477,6 +482,74 @@ public class AssayController extends SpringActionController
                 .addChild("Assay List", assayListURL)
                 .addChild(_protocol.getName() + " Runs", runListURL)
                 .addChild("Data Import");
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_INSERT)
+    public class DownloadSampleQCDataAction extends SimpleViewAction<ProtocolIdForm>
+    {
+        public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception
+        {
+            ExpProtocol protocol = form.getProtocol(true);
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+            DataExchangeHandler handler = ((AbstractAssayProvider)provider).getDataExchangeHandler();
+
+            if (handler != null)
+            {
+                File tempDir = getTempFolder();
+
+                try {
+                    handler.createSampleData(protocol, getViewContext(), tempDir);
+                    File[] files = tempDir.listFiles();
+
+                    if (files.length > 0)
+                    {
+                        HttpServletResponse response = getViewContext().getResponse();
+
+                        response.reset();
+                        response.setContentType("application/zip");
+                        response.setHeader("Content-Disposition", "attachment; filename=\"" + "sampleQCData" + ".zip\"");
+                        ZipOutputStream stream = new ZipOutputStream(response.getOutputStream());
+                        byte[] buffer = new byte[1024];
+                        for (File file : files)
+                        {
+                            if (file.canRead())
+                            {
+                                ZipEntry entry = new ZipEntry(file.getName());
+                                stream.putNextEntry(entry);
+                                InputStream is = new FileInputStream(file);
+                                int cb;
+                                while((cb = is.read(buffer)) > 0)
+                                {
+                                    stream.write(buffer, 0, cb);
+                                }
+                                is.close();
+                            }
+                        }
+                        stream.close();
+                    }
+                }
+                finally
+                {
+                    FileUtil.deleteDir(tempDir);
+                }
+            }
+            return null;
+        }
+
+        private File getTempFolder()
+        {
+            File tempDir = new File(System.getProperty("java.io.tmpdir"));
+            File tempFolder = new File(tempDir.getAbsolutePath() + File.separator + "QCSampleData", String.valueOf(Thread.currentThread().getId()));
+            if (!tempFolder.exists())
+                tempFolder.mkdirs();
+
+            return tempFolder;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
         }
     }
 

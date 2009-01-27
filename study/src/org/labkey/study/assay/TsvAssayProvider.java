@@ -148,7 +148,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     }
 
     @Override
-    protected DataExchangeHandler getDataExchangeHandler()
+    public DataExchangeHandler getDataExchangeHandler()
     {
         return new TsvDataExchangeHandler();
     }
