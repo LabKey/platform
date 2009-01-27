@@ -86,10 +86,19 @@ public class LookupColumn extends ColumnInfo
     public SQLFragment getJoinCondition()
     {
         SQLFragment condition = new SQLFragment();
+        boolean typeMismatch = foreignKey.getSqlTypeInt() != lookupKey.getSqlTypeInt();
         condition.append("(");
-        condition.append(foreignKey.getValueSql());
+        if (getSqlDialect().isPostgreSQL() && typeMismatch)
+            condition.append("CAST((").append(foreignKey.getValueSql()).append(") AS VARCHAR)");
+        else
+            condition.append(foreignKey.getValueSql());
         condition.append(" = ");
-        condition.append(lookupKey.getValueSql(getTableAlias()));
+
+        if (getSqlDialect().isPostgreSQL() && typeMismatch)
+            condition.append("CAST((").append(lookupKey.getValueSql(getTableAlias())).append(") AS VARCHAR)");
+        else
+            condition.append(lookupKey.getValueSql(getTableAlias()));
+
         if (joinOnContainer)
         {
             condition.append(" AND ").append(foreignKey.getTableAlias());

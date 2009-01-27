@@ -20,7 +20,31 @@ function setFilterQueryString(s)
 function getFilterDiv()
 {
     if (!_filterDiv)
+    {
+        LABKEY.addMarkup('<div id="filterDiv" style="display:none;">' +
+        '  <table onkeypress="handleKey(event);">' +
+        '    <tr>' +
+        '      <td colspan=2 style="padding: 5px" nowrap>' +
+        '        <select id="compare_1" name="compare_1" onchange="doChange(this)">' +
+        '            <option value="">&lt;has any value></option>' +
+        '        </select><br>' +
+        '        <input disabled id="value_1" style="visibility:hidden" type=text name=value_1><br>' +
+        '        <span id="compareSpan_2" style="visibility:hidden">and<br>' +
+        '        <select id="compare_2" name="compare_2" onchange="doChange(this)">' +
+        '            <option value="">&lt;no other filter></option>' +
+        '        </select><br>' +
+        '        <input disabled style="visibility:hidden" id="value_2" type="text" name="value_2"><br><br>' +
+        '        </span>' +
+        '        <a class="labkey-button" href="#" onclick="doFilter();return false;"><span>OK</span> ' +
+        '        <a class="labkey-button" href="#" onclick="hideFilterDiv();return false;"><span>Cancel</span> ' +
+        '        <a class="labkey-button" href="#" onclick="clearFilter();return false;"><span>Clear Filter</span> ' +
+        '        <a class="labkey-button" href="#" onclick="clearAllFilters();return false;"><span>Clear All Filters</span> ' +
+        '      </td>' +
+        '    </tr>' +
+        '  </table>' +
+        '</div>');
         _filterDiv = document.getElementById("filterDiv");
+    }
     return _filterDiv;
 }
 
@@ -172,6 +196,7 @@ var _mappedType = "TEXT";
 
 function fillOptions(dataType)
 {
+    getFilterDiv();
     var mappedType = _typeMap[dataType.toUpperCase()];
     if (mappedType == undefined)
         mappedType = dataType.toUpperCase();
@@ -683,25 +708,3 @@ function handleKey(event)
             break;
     }
 }
-LABKEY.addMarkup('<div id="filterDiv" style="display:none;">' +
-'  <table onkeypress="handleKey(event);">' +
-'    <tr>' +
-'      <td colspan=2 style="padding: 5px" nowrap>' +
-'        <select id="compare_1" name="compare_1" onchange="doChange(this)">' +
-'            <option value="">&lt;has any value></option>' +
-'        </select><br>' +
-'        <input disabled id="value_1" style="visibility:hidden" type=text name=value_1><br>' +
-'        <span id="compareSpan_2" style="visibility:hidden">and<br>' +
-'        <select id="compare_2" name="compare_2" onchange="doChange(this)">' +
-'            <option value="">&lt;no other filter></option>' +
-'        </select><br>' +
-'        <input disabled style="visibility:hidden" id="value_2" type="text" name="value_2"><br><br>' +
-'        </span>' +
-'        <a class="labkey-button" href="#" onclick="doFilter();return false;"><span>OK</span> ' +
-'        <a class="labkey-button" href="#" onclick="hideFilterDiv();return false;"><span>Cancel</span> ' +
-'        <a class="labkey-button" href="#" onclick="clearFilter();return false;"><span>Clear Filter</span> ' +
-'        <a class="labkey-button" href="#" onclick="clearAllFilters();return false;"><span>Clear All Filters</span> ' +
-'      </td>' +
-'    </tr>' +
-'  </table>' +
-'</div>');

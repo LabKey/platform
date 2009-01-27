@@ -28,6 +28,8 @@ LABKEY.DataRegion = function (config)
     this.rowCount = config.rowCount; // may be null
     this.showRows = config.showRows;
 
+    this.selectionModified = false;
+
     this.showRecordSelectors = config.showRecordSelectors;
     this.selectionKey = config.selectionKey;
     this.selectorCols = config.selectorCols;
@@ -138,6 +140,7 @@ LABKEY.DataRegion.prototype = {
     {
         if (!this.selectionKey || ids.length == 0)
             return;
+        this.selectionModified = true;
         var url = LABKEY.ActionURL.buildURL("query", "setCheck.api", LABKEY.ActionURL.getContainer(),
             { 'key' : this.selectionKey, 'checked' : checked });
         for (var i = 0; i < ids.length; i++)

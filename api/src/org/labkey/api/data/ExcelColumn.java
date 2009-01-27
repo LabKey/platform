@@ -217,30 +217,44 @@ public class ExcelColumn extends RenderColumn
         if (null == o)
             return;
 
-        switch (_simpleType)
+        try
         {
-            case(TYPE_DATE):
-                // Careful here... need to make sure we adjust dates for GMT.  This constructor automatically does the conversion, but there seem to be
-                // bugs in other jxl 2.5.7 constructors: DateTime(c, r, d) forces the date to time-only, DateTime(c, r, d, gmt) doesn't adjust for gmt
-                cell = new DateTime(column, row, (Date) o, _format);
-                break;
-            case(TYPE_INT):
-            case(TYPE_DOUBLE):
-                cell = new Number(column, row, ((java.lang.Number) o).doubleValue(), _format);
-                break;
-            case(TYPE_STRING):
-            default:
-                URL url = createURL(_dc.getURL(ctx));
-                if (url != null)
-                    sheet.addHyperlink(new WritableHyperlink(column, row, column, row, url, o.toString()));
-                else
-                    cell = new Label(column, row, o.toString());
-                break;
+            switch (_simpleType)
+            {
+                case(TYPE_DATE):
+                    // Careful here... need to make sure we adjust dates for GMT.  This constructor automatically does the conversion, but there seem to be
+                    // bugs in other jxl 2.5.7 constructors: DateTime(c, r, d) forces the date to time-only, DateTime(c, r, d, gmt) doesn't adjust for gmt
+                    cell = new DateTime(column, row, (Date) o, _format);
+                    break;
+                case(TYPE_INT):
+                case(TYPE_DOUBLE):
+                    cell = new Number(column, row, ((java.lang.Number) o).doubleValue(), _format);
+                    break;
+                case(TYPE_STRING):
+                default:
+                    URL url = createURL(_dc.getURL(ctx));
+                    if (url != null)
+                        sheet.addHyperlink(new WritableHyperlink(column, row, column, row, url, o.toString()));
+                    else
+                        cell = new Label(column, row, o.toString());
+                    break;
+            }
+
+            if (cell != null)
+                sheet.addCell(cell);
         }
+        catch(ClassCastException cce)
+        {
+            _log.error("Can't cast \'" + o.toString() + "\', class \'" + o.getClass().getName() + "\', to class corresponding to simple type \'" + _simpleType + "\'");
+            _log.error("DisplayColumn.getCaption(): " + _dc.getCaption());
+            _log.error("DisplayColumn.getClass().getName(): " + _dc.getClass().getName());
+            _log.error("DisplayColumn.getDisplayValueClass(): " + _dc.getDisplayValueClass());
+            _log.error("DisplayColumn.getValueClass(): " + _dc.getValueClass());
+            _log.error("DisplayColumn.getColumnInfo().getSqlTypeInt(): " + _dc.getColumnInfo().getSqlTypeInt());
+            _log.error("DisplayColumn.getColumnInfo().getSqlTypeName(): " + _dc.getColumnInfo().getSqlTypeName());
 
-        if (cell != null)
-            sheet.addCell(cell);
-
+            throw cce;
+        }
     }
 
     private URL createURL(String urlString)
