@@ -238,7 +238,11 @@ public class SqlParser
 		LinkedList<QNode> l = new LinkedList<QNode>();
 		for ( ; null != child ; child = child.getNextSibling())
 		{
-			l.add(convertParseTree(child));
+			QNode q = convertParseTree(child);
+			if (q != null)
+				l.add(q);
+			else
+				assert _parseErrors.size() > 0;
 		}
 		return convertNode(node, l);
 	}
@@ -258,14 +262,26 @@ public class SqlParser
 				{
 					if (!(exprList instanceof QExprList))
 						 break;
-					LinkedList<QNode> args = exprList._children;
-					QNode constant = name.startsWith("c") ? second(args) : third(args);
-					if (null != constant && (constant instanceof QIdentifier))
-				    	args.set(args.indexOf(constant), toStringNode(constant));
-					break;
+					LinkedList<QNode> args = new LinkedList<QNode>();
+					int i = 1;
+					for (QNode n : exprList.children())
+					{
+						if (n instanceof QIdentifier && (name.equals("timestamp") ? i==3 : i==2))
+							args.push(toStringNode(n));
+						else
+							args.push(n);
+						i++;
+					}
+					exprList._replaceChildren(args);
 				}
 				break;
-			
+
+//			case SELECT_FROM:
+//				QNode select = qnode(node, children);
+//				QQuery qquery = new QQuery();
+//				qquery.appendChild(select);
+//				return qquery;
+
 			default:
 				break;
 		}
@@ -332,19 +348,21 @@ public class SqlParser
 
 	QNode qnode(Node n, LinkedList<QNode> children)
 	{
-		QNode<QNode> q = qnode(n);
-		q._children = children;
+		QNode q = qnode(n);
+		if (q != null)
+			q._replaceChildren(children);
 		return q;
 	}
 
 
-	QNode<QNode> qnode(Node n)
+	QNode qnode(Node n)
 	{
-		QNode<QNode> q = newQNode(n);
+		QNode q = newQNode(n);
+		if (q == null)
+			return null;
 		q.setTokenType(n.getType());
 		q.setTokenText(n.getText());
-		q._line = n._line;
-		q._column = n._column;
+		q.setLineAndColumn(n);
 		return q;
 	}
 
@@ -411,21 +429,15 @@ public class SqlParser
                 return new QDistinct();
 
 			case ON:
-			case RANGE:
 			case INNER:
 			case LEFT:
 			case RIGHT:
 			case OUTER:
 			case JOIN:
 			case FULL:
-			case HAVING:
 			case ASCENDING:
 			case DESCENDING:
-			case ESCAPE:
-			case EXISTS:
-			case ANY:
-			case SOME:
-			case ALL:
+			case RANGE:
 				return new QUnknownNode(type);
 
             case EQ: case NE: case GT: case LT: case GE: case LE: case IS: case IS_NOT: case BETWEEN:
@@ -435,29 +447,44 @@ public class SqlParser
                 Operator op = Operator.ofTokenType(type);
                 if (op != null)
                     return op.expr();
-            default:
-                _parseErrors.add(new RecognitionException("Unexpected token '" + node.getText() + "'"));
+
+			case EXISTS:
+			case ANY:
+			case SOME:
+			case ALL:
+				_parseErrors.add(new RecognitionException("EXISTS,ANY,ALL, and SOME are not supported"));
+				return null;
+			case ESCAPE:
+				_parseErrors.add(new RecognitionException("LIKE ESCAPE is not supported"));
+				return null;
+			case HAVING:
+				_parseErrors.add(new RecognitionException("HAVING is not supported"));
+				return null;
+
+			case TRAILING:
+			case LEADING:
+			case BOTH:
+			default:
+	            _parseErrors.add(new RecognitionException("Unexpected token '" + node.getText() + "'"));
                 return new QUnknownNode(type);
         }
     }
-
-
 
 
     //
     // TESTS
     //
 
-     /* UNDONE keywords
+    /* UNDONE keywords
     class delete elements fetch indices insert into limit new set update versioned both empty leading member of trailing
- */
+ 	*/
     static String[] testSql = new String[]
     {
         "SELECT 'text',1,-2,1.0f,3.1415926535897932384626433832795,6.02214179e23,TRUE,FALSE,0x0ab12,NULL FROM R",
 
         "SELECT DISTINCT R.a, b AS B FROM rel R INNER JOIN S ON R.x=S.x WHERE R.y=0 AND R.a IS NULL OR R.b IS NOT NULL",
 
-        "SELECT \"a\",\"b\",AVG(x),COUNT(x),MIN(x),MAX(x),SUM(x),STDDEV(x) FROM R WHERE R.x='key' GROUP BY a,b HAVING SUM(x)>100 ORDER BY a ASC, b DESC, SUM(x)",
+        "SELECT \"a\",\"b\",AVG(x),COUNT(x),MIN(x),MAX(x),SUM(x),STDDEV(x) FROM R WHERE R.x='key' GROUP BY a,b ORDER BY a ASC, b DESC, SUM(x)",
 
         "SELECT a = TRUE, b = FALSE, NOT c FROM R WHERE R.x IN (2,3,5,7) OR R.x BETWEEN 100 AND 200",
 
@@ -469,7 +496,8 @@ public class SqlParser
 
         "SELECT CASE WHEN R.a=R.b THEN 'same' WHEN R.c IS NULL THEN 'different' ELSE R.c END FROM R",
 
-        "SELECT R.a FROM R WHERE R.a LIKE 'a%' AND R.b LIKE 'a/%' ESCAPE '/'",
+        "SELECT R.a FROM R WHERE R.a LIKE 'a%'",
+//		"SELECT R.a FROM R WHERE R.a LIKE 'a%' AND R.b LIKE 'a/%' ESCAPE '/'",
 
         "SELECT MS2SearchRuns.Flag,MS2SearchRuns.Links,MS2SearchRuns.Name,MS2SearchRuns.Created,MS2SearchRuns.RunGroups FROM MS2SearchRuns",
 
@@ -482,17 +510,20 @@ public class SqlParser
 		"SELECT R.value AS V FROM R WHERE R.y > (SELECT MAX(S.y) FROM S WHERE S.x=R.x)",
 		"SELECT R.value, T.a, T.b FROM R INNER JOIN (SELECT S.a, S.b FROM S) T",
 
-		"SELECT R.a FROM R WHERE EXISTS (SELECT S.b FROM S WHERE S.x=R.x)",
-		"SELECT R.a FROM R WHERE NOT EXISTS (SELECT S.b FROM S WHERE S.x=R.x)",
-		"SELECT R.a FROM R WHERE R.value > ALL (SELECT value from S WHERE S.x=R.x)",
-		"SELECT R.a FROM R WHERE R.value > ANY (SELECT value from S WHERE S.x=R.x)",
-		"SELECT R.a FROM R WHERE R.value > SOME (SELECT value from S WHERE S.x=R.x)",
+//		"SELECT R.a FROM R WHERE EXISTS (SELECT S.b FROM S WHERE S.x=R.x)",
+//		"SELECT R.a FROM R WHERE NOT EXISTS (SELECT S.b FROM S WHERE S.x=R.x)",
+//		"SELECT R.a FROM R WHERE R.value > ALL (SELECT value from S WHERE S.x=R.x)",
+//		"SELECT R.a FROM R WHERE R.value > ANY (SELECT value from S WHERE S.x=R.x)",
+//		"SELECT R.a FROM R WHERE R.value > SOME (SELECT value from S WHERE S.x=R.x)",
 
         "SELECT a FROM R WHERE a=b AND b<>c AND b!=c AND b^=c AND c>d AND d<e AND e<=f AND f>=g AND g IS NULL AND h IS NOT NULL " +
                 " AND i BETWEEN 1 AND 2 AND j+k-l=-1 AND m/n=o AND p||q=r AND (NOT s OR t) AND u LIKE '%x%' AND u NOT LIKE '%xx%' " +
                 " AND v IN (1,2) AND v NOT IN (3,4) AND x&y=1 AND x|y=1 AND x^y=1",
 
         "BROKEN",
+
+		// HAVING
+		"SELECT \"a\",\"b\",AVG(x),COUNT(x),MIN(x),MAX(x),SUM(x),STDDEV(x) FROM R WHERE R.x='key' GROUP BY a,b HAVING SUM(x)>100 ORDER BY a ASC, b DESC, SUM(x)",
 
         // nested JOINS
         "SELECT R.a, \"S\".b FROM R LEFT OUTER JOIN (S RIGHT OUTER JOIN T ON S.y = T.y) ON R.x = S.x",
