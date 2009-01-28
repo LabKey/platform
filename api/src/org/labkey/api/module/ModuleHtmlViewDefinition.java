@@ -94,22 +94,24 @@ public class ModuleHtmlViewDefinition extends ModuleFileResource
         Node docElem = doc.getDocumentElement();
         _title = DOMUtil.getAttributeValue(docElem, "title", StringUtils.capitalize(_name));
 
-        _requiredPerms = parseRequiredPerms(DOMUtil.getAttributeValue(docElem, "permissions"));
+        _requiredPerms = parseRequiredPerms(DOMUtil.getFirstChildNodeWithName(docElem, "permissions"));
         _frameType = parseFrameType(DOMUtil.getAttributeValue(docElem, "frame"));
         _pageTemplate = parsePageTemplate(DOMUtil.getAttributeValue(docElem, "template"));
     }
 
-    protected int parseRequiredPerms(String perms)
+    protected int parseRequiredPerms(Node permsElem)
     {
-        if(null == perms || perms.length() == 0)
+        if(null == permsElem)
             return 0;
 
         int ret = 0;
-        //perms string can be white-space delimited
-        String[] permArray = perms.split("\\s");
-        for(String permItem : permArray)
+        for(Node childElem : DOMUtil.getChildNodesWithName(permsElem, "permission"))
         {
-            SimpleAction.Permission perm = SimpleAction.Permission.valueOf(permItem);
+            String nameAttr = DOMUtil.getAttributeValue(childElem, "name");
+            if(null == nameAttr)
+                continue;
+
+            SimpleAction.Permission perm = SimpleAction.Permission.valueOf(nameAttr);
             if(SimpleAction.Permission.login == perm)
                 _requiresLogin = true;
             else if(null != perm)

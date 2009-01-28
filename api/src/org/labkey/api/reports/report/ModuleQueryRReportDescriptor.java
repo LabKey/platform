@@ -65,12 +65,12 @@ public class ModuleQueryRReportDescriptor extends ModuleRReportDescriptor
 
     public String getDefaultReportType(String schemaName, String queryName)
     {
-        //try just schema name first
-        String reportType = _reportTypeMap.get(schemaName);
+        //try just schema/query first
+        String reportType = _reportTypeMap.get(schemaName + "/" + queryName);
 
-        //if not found try schema/query
+        //if not found try just schema
         if(null == reportType)
-            reportType = _reportTypeMap.get(schemaName + "/" + queryName);
+            reportType = _reportTypeMap.get(schemaName);
 
         //if not found just return standard r report type
         if(null == reportType)

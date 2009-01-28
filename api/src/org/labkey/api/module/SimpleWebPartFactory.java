@@ -52,6 +52,8 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
         }
     };
 
+    private File _webPartFile;
+    private long _lastModified = 0;
     private Module _module;
     private String _viewName;
 
@@ -60,6 +62,8 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
         super(getNameFromFile(webPartFile));
         _module = module;
         loadDefinition(webPartFile);
+        _webPartFile = webPartFile;
+        _lastModified = webPartFile.lastModified();
     }
 
     protected static String getNameFromFile(File webPartFile)
@@ -118,8 +122,16 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
         return _module;
     }
 
+    public boolean isStale()
+    {
+        return _webPartFile.lastModified() != _lastModified;
+    }
+
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
     {
+        if(isStale())
+            loadDefinition(_webPartFile);
+
         return SimpleAction.getModuleHtmlView(getModule(), getViewName());
     }
 }
