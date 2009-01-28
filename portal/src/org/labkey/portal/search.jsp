@@ -39,7 +39,7 @@ Search <%=h(bean.what)%> in this <%=(c.isProject() ? "project" : "folder")%><%
     { %>
 </tr>
 <tr>
-    <td width="1"><input type="checkbox" name="includeSubfolders" value="on" <%=bean.includeSubfolders ? "checked" : ""%>></td><td>Search subfolders</td>
+    <td width="1"><input type="checkbox" name="includeSubfolders" value="1" <%=bean.includeSubfolders ? "checked" : ""%>></td><td>Search subfolders</td>
 </tr>
 <tr>
     <td colspan=2>&nbsp;</td>
@@ -50,7 +50,7 @@ Search <%=h(bean.what)%> in this <%=(c.isProject() ? "project" : "folder")%><%
     }
     else
     { %>
-    <td><input type="hidden" name="includeSubfolders" value="<%=bean.includeSubfolders ? "on" : "off"%>"></td>
+    <td><input type="hidden" name="includeSubfolders" value="<%=bean.includeSubfolders ? "1" : "0"%>"></td>
     <td colspan=2><%=PageFlowUtil.generateSubmitButton("Search")%></td>
     <%
     }

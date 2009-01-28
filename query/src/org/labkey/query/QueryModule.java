@@ -22,6 +22,8 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.RExportScriptFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.chart.ChartRendererFactory;
@@ -88,6 +90,8 @@ public class QueryModule extends DefaultModule
         ReportService.get().registerReport(new RReport());
         ReportService.get().registerReport(new ExternalScriptEngineReport());
         ReportService.get().registerReport(new InternalScriptEngineReport());
+
+        QueryView.register(new RExportScriptFactory());
     }
 
     protected Collection<? extends WebPartFactory> createWebPartFactories()

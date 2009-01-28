@@ -67,7 +67,7 @@ import java.util.*;
 
 public class QueryControllerSpring extends SpringActionController
 {
-    static DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryControllerSpring.class);
+    private final static DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryControllerSpring.class);
 
     public QueryControllerSpring() throws Exception
     {
@@ -483,19 +483,37 @@ public class QueryControllerSpring extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
-    public class ExportRScriptAction extends SimpleViewAction<QueryForm>
+
+    public static class ExportScriptForm extends QueryForm
     {
-        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        private String _type;
+
+        public String getType()
+        {
+            return _type;
+        }
+
+        public void setType(String type)
+        {
+            _type = type;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class ExportScriptAction extends SimpleViewAction<ExportScriptForm>
+    {
+        public ModelAndView getView(ExportScriptForm form, BindException errors) throws Exception
         {
             assertQueryExists(form);
-            QueryView view = QueryView.create(form);
+            QueryView queryView = QueryView.create(form);
             getPageConfig().setTemplate(PageConfig.Template.None);
 
             getViewContext().getResponse().setContentType("text/plain");
-            JspView<ExportRScriptModel> jspview = new JspView<ExportRScriptModel>("/org/labkey/api/query/exportRScript.jsp", new ExportRScriptModel(view));
-            jspview.setFrame(WebPartView.FrameType.NONE);
-            return jspview;
+            ExportScriptFactory factory = QueryView.getExportScriptFactory(form.getType());
+            WebPartView scriptView = factory.getView(queryView);
+            scriptView.setFrame(WebPartView.FrameType.NONE);
+            return scriptView;
         }
 
         public NavTree appendNavTrail(NavTree root)

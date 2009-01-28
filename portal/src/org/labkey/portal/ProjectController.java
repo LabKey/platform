@@ -477,12 +477,24 @@ public class ProjectController extends SpringActionController
             return true;
         }
 
+        // UNDONE: use getBindPropertyValues()
         protected void populatePropertyMap(HttpServletRequest request, Portal.WebPart webPart)
         {
-            // UNDONE: use getBindPropertyValues()
+            Map<String, String> props = webPart.getPropertyMap();
+            props.clear();
+
+            // Loop once to find field markers -- this ensures, for example, that unchecked check boxes get set to 0
             Enumeration params = request.getParameterNames();
 
-            webPart.getPropertyMap().clear();
+            while (params.hasMoreElements())
+            {
+                String name = (String) params.nextElement();
+
+                if (name.startsWith(SpringActionController.FIELD_MARKER))
+                    props.put(name.substring(SpringActionController.FIELD_MARKER.length()), "0");
+            }
+
+            params = request.getParameterNames();
 
             // TODO: Clean this up. Type checking... (though type conversion also must be done by the webpart)
             while (params.hasMoreElements())
@@ -510,23 +522,6 @@ public class ProjectController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
-    public class CustomizeSearchWebPartAction extends CustomizeWebPartAction
-    {
-        private static final String PARAM = "includeSubfolders";
-
-        @Override
-        protected void populatePropertyMap(HttpServletRequest request, Portal.WebPart webPart)
-        {
-            String value = request.getParameter(PARAM);     // This is the only param we care about right now -- need special handling for "uncheck" case
-            if (null == value || "".equals(value.trim()))
-                webPart.getPropertyMap().put(PARAM, "off");
-            else
-                webPart.getPropertyMap().put(PARAM, value);
-        }
-    }
-
-
     public static ActionURL getSearchUrl(Container c)
     {
         return new ActionURL(SearchResultsAction.class, c);
@@ -541,7 +536,7 @@ public class ProjectController extends SpringActionController
             Container c = getContainer();
             String searchTerm = (String)getProperty("search", "");
 
-            boolean includeSubfolders = "on".equals(getProperty("includeSubfolders", null));
+            boolean includeSubfolders = Search.includeSubfolders(getPropertyValues());
 
             HttpView results = new SearchResultsView(c, Search.ALL_SEARCHABLES, searchTerm, getSearchUrl(c), getUser(), includeSubfolders, true);
 

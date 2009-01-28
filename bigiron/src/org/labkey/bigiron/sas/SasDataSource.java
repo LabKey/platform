@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.data.sas;
-
-import com.sas.net.sharenet.ShareNetDriver;
+package org.labkey.bigiron.sas;
 
 import javax.sql.DataSource;
 import java.sql.Connection;

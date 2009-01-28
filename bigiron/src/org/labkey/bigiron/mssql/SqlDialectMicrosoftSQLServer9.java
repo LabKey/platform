@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.data.mssql;
+package org.labkey.bigiron.mssql;
 
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.data.SQLFragment;

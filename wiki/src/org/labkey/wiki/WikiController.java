@@ -65,7 +65,6 @@ import java.sql.SQLException;
 import java.text.DateFormat;
 import java.util.*;
 
-
 public class WikiController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(WikiController.class);
@@ -2275,7 +2274,7 @@ public class WikiController extends SpringActionController
         {
             Container c = getViewContext().getContainer();
             String searchTerm = (String)getProperty("search", "");
-            boolean includeSubfolders = getProperty("includeSubfolders", "off").equals("on");
+            boolean includeSubfolders = Search.includeSubfolders(getPropertyValues());
 
             Module module = ModuleLoader.getInstance().getCurrentModule();
             List<Search.Searchable> l = new ArrayList<Search.Searchable>();

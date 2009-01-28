@@ -32,7 +32,7 @@
     }
 </script>
 <form action="<%=_ctx.getSearchUrl()%>" id="frmSearch">
-<input type="hidden" name="includeSubfolders" value="on"/>
+<input type="hidden" name="includeSubfolders" value="1"/>
 <table width="100%">
     <tr>
         <td width="99%" align="left">

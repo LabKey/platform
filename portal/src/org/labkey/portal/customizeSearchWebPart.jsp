@@ -15,7 +15,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.action.SpringActionController"%>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.Search" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
@@ -23,11 +25,12 @@
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>)HttpView.currentView();
     Portal.WebPart webPart = me.getModelBean();
+    boolean includeSubfolders = Search.includeSubfolders(webPart);
 %>
 <form name="frmCustomize" method="post">
 <table>
   <tr>
-    <td><input type="checkbox" name="includeSubfolders" <%="off".equals(webPart.getPropertyMap().get("includeSubfolders")) ? "" : "checked"%>></td>
+    <td><input type="hidden" name="<%=SpringActionController.FIELD_MARKER%>includeSubfolders"><input type="checkbox" name="includeSubfolders" value="1"<%=includeSubfolders ? " checked" : ""%>></td>
     <td>Search subfolders</td>
   </tr>
   <tr>

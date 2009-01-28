@@ -17,13 +17,15 @@
 package org.labkey.bigiron;
 
 import org.labkey.api.data.SqlDialect;
-import org.labkey.api.data.sas.SasController;
-import org.labkey.api.data.sas.SqlDialectSas;
-import org.labkey.api.data.mssql.SqlDialectMicrosoftSQLServer;
-import org.labkey.api.data.mssql.SqlDialectMicrosoftSQLServer9;
+import org.labkey.bigiron.sas.SasController;
+import org.labkey.bigiron.sas.SqlDialectSas;
+import org.labkey.bigiron.sas.SasExportScriptFactory;
+import org.labkey.bigiron.mssql.SqlDialectMicrosoftSQLServer;
+import org.labkey.bigiron.mssql.SqlDialectMicrosoftSQLServer9;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.query.QueryView;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -54,10 +56,11 @@ public class BigIronModule extends DefaultModule
 
     protected void init()
     {
-        addController("sas", SasController.class);
         SqlDialect.register(new SqlDialectMicrosoftSQLServer());
         SqlDialect.register(new SqlDialectMicrosoftSQLServer9());
         SqlDialect.register(new SqlDialectSas());
+        addController("sas", SasController.class);
+        QueryView.register(new SasExportScriptFactory());
     }
 
     public void startup(ModuleContext moduleContext)
