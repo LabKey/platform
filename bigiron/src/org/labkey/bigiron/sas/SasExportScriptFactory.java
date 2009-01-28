@@ -17,9 +17,8 @@ package org.labkey.bigiron.sas;
 
 import org.labkey.api.query.ExportScriptFactory;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.ExportRScriptModel;
-import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.WebPartView;
 
 /**
  * User: adam
@@ -41,6 +40,6 @@ public class SasExportScriptFactory implements ExportScriptFactory
 
     public WebPartView getView(QueryView queryView)
     {
-        return new JspView<ExportRScriptModel>("/org/labkey/bigiron/sas/exportSasScript.jsp", new ExportSasScriptModel(queryView));
+        return new JspView<ExportSasScriptModel>("/org/labkey/bigiron/sas/exportSasScript.jsp", new ExportSasScriptModel(queryView));
     }
 }
