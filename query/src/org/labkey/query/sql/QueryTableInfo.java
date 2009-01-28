@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.query.data;
+package org.labkey.query.sql;
 
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.SQLFragment;

@@ -1483,10 +1483,6 @@ query/src/org/labkey/query/data/DbUserSchemaTable.java -text
 query/src/org/labkey/query/data/DbUserSchemaUpdateService.java -text
 query/src/org/labkey/query/data/DefaultQueryUpdateService.java -text
 query/src/org/labkey/query/data/DefaultSchemaUpdateService.java -text
-query/src/org/labkey/query/data/JoinType.java -text
-query/src/org/labkey/query/data/Query.java -text
-query/src/org/labkey/query/data/QueryTableInfo.java -text
-query/src/org/labkey/query/data/SQLTableInfo.java -text
 query/src/org/labkey/query/metadata/MetadataServiceImpl.java -text
 query/src/org/labkey/query/persist/CstmView.java -text
 query/src/org/labkey/query/persist/DbUserSchemaDef.java -text
@@ -1512,6 +1508,7 @@ query/src/org/labkey/query/reports/view/reportsWebPartConfig.jsp -text
 query/src/org/labkey/query/sql/ASTUtil.java -text
 query/src/org/labkey/query/sql/Builder.java -text
 query/src/org/labkey/query/sql/IConstant.java -text
+query/src/org/labkey/query/sql/JoinType.java -text
 query/src/org/labkey/query/sql/Method.java -text
 query/src/org/labkey/query/sql/Node.java -text
 query/src/org/labkey/query/sql/Operator.java -text
@@ -1549,6 +1546,9 @@ query/src/org/labkey/query/sql/QUnknownNode.java -text
 query/src/org/labkey/query/sql/QUnsafeExpr.java -text
 query/src/org/labkey/query/sql/QWhen.java -text
 query/src/org/labkey/query/sql/QWhere.java -text
+query/src/org/labkey/query/sql/Query.java -text
+query/src/org/labkey/query/sql/QueryTableInfo.java -text
+query/src/org/labkey/query/sql/SQLTableInfo.java -text
 query/src/org/labkey/query/sql/SourceBuilder.java -text
 query/src/org/labkey/query/sql/SqlBuilder.java -text
 query/src/org/labkey/query/sql/SqlParser.java -text

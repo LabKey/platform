@@ -42,8 +42,8 @@ import org.labkey.query.reports.chart.TimeSeriesRenderer;
 import org.labkey.query.reports.chart.XYChartRenderer;
 import org.labkey.query.reports.view.ReportUIProvider;
 import org.labkey.query.view.QueryWebPartFactory;
-import org.labkey.query.data.Query;
 import org.labkey.query.sql.SqlParser;
+import org.labkey.query.sql.Query;
 
 import javax.script.ScriptEngineManager;
 import java.util.Arrays;

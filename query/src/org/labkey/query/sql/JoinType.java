@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.query.data;
+package org.labkey.query.sql;
 
 public enum JoinType
 {

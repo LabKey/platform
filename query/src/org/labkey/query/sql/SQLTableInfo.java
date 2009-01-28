@@ -14,15 +14,10 @@
  * limitations under the License.
  */
 
-package org.labkey.query.data;
+package org.labkey.query.sql;
 
 import org.labkey.api.data.*;
-import org.labkey.api.query.QuerySchema;
 
-import java.util.Set;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
 
 public class SQLTableInfo extends AbstractTableInfo
 {

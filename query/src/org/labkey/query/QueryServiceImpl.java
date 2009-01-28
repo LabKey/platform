@@ -36,7 +36,7 @@ import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QuerySnapshotDef;
 import org.labkey.query.view.DbUserSchema;
-import org.labkey.query.data.Query;
+import org.labkey.query.sql.Query;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

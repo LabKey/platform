@@ -24,9 +24,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ColumnInfo;
 
 import java.sql.Types;
-import java.util.Iterator;
 
-import org.labkey.query.data.SQLTableInfo;
 
 abstract public class QExpr extends QNode
 {
@@ -34,7 +32,7 @@ abstract public class QExpr extends QNode
     {
         super(QExpr.class);
     }
-	
+
 	public QExpr(Class validChildrenClass)
 	{
 		super(validChildrenClass);

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.query.data;
+package org.labkey.query.sql;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -29,7 +29,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.*;
 import org.labkey.common.tools.DataLoader;
 import org.labkey.query.design.*;
-import org.labkey.query.sql.*;
 import static org.labkey.query.sql.antlr.SqlBaseTokenTypes.ON;
 
 import java.io.IOException;

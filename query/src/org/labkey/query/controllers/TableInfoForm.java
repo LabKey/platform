@@ -21,7 +21,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ForeignKey;
-import org.labkey.query.data.Query;
+import org.labkey.query.sql.Query;
 import org.labkey.query.QueryDefinitionImpl;
 import org.springframework.validation.BindException;
 import org.springframework.beans.PropertyValues;

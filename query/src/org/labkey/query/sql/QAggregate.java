@@ -17,13 +17,10 @@
 package org.labkey.query.sql;
 
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.query.FieldKey;
 
 import java.sql.Types;
 import java.util.List;
 
-import org.labkey.query.data.SQLTableInfo;
 
 public class QAggregate extends QExpr
 {

@@ -25,7 +25,6 @@ import org.labkey.api.query.AliasedColumn;
 
 import java.sql.Types;
 
-import org.labkey.query.data.SQLTableInfo;
 
 public class QField extends QInternalExpr
 {

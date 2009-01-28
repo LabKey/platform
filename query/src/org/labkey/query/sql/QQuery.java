@@ -16,17 +16,12 @@
 
 package org.labkey.query.sql;
 
-import org.labkey.query.data.Query;
-import org.labkey.query.data.QueryTableInfo;
 import org.labkey.api.data.Table;
 import org.labkey.api.query.QueryParseException;
 
 import java.util.List;
 import java.util.LinkedList;
 
-
-// NOTE: (generics problem) QQuery extends QExpr because it can appear in an expression
-// HOWEVER, the child of a QQuery is a QSelectFrom not another QExpr (Grrr)
 
 public class QQuery extends QExpr
 {
@@ -54,7 +49,7 @@ public class QQuery extends QExpr
             return null;
         return selectFrom.getSelect();
     }
-	
+
     public QFrom getFrom()
     {
         QSelectFrom selectFrom = getChildOfType(QSelectFrom.class);

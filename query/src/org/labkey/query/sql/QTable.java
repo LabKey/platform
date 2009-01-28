@@ -18,7 +18,6 @@ package org.labkey.query.sql;
 
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.FieldKey;
-import org.labkey.query.data.JoinType;
 import org.labkey.api.data.TableInfo;
 
 public class QTable
