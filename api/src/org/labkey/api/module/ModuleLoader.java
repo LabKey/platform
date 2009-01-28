@@ -263,7 +263,7 @@ public class ModuleLoader implements Filter
 
         upgradeCoreModule();
 
-        ModuleContext[] contexts = Table.select(getTableInfoModules(), Table.ALL_COLUMNS, null, null, ModuleContext.class);
+        ModuleContext[] contexts = getAllModuleContexts();
 
         for (ModuleContext context : contexts)
             contextMap.put(context.getName(), context);
@@ -580,7 +580,7 @@ public class ModuleLoader implements Filter
         if (getTableInfoModules().getTableType() == TableInfo.TABLE_TYPE_NOT_IN_DB)
             coreContext = new ModuleContext(coreModule);
         else
-            coreContext = Table.selectObject(getTableInfoModules(), "Core", ModuleContext.class);
+            coreContext = getModuleContext("Core");
 
         // Does the core module need to be upgraded?
         if (coreContext.getInstalledVersion() == coreModule.getVersion())
@@ -749,11 +749,12 @@ public class ModuleLoader implements Filter
         }
     }
 
+
     void saveModuleContext(ModuleContext context)
     {
         try
         {
-            ModuleContext stored = Table.selectObject(getTableInfoModules(), context.getName(), ModuleContext.class);
+            ModuleContext stored = getModuleContext(context.getName());
             if (null == stored)
                 Table.insert(null, getTableInfoModules(), context);
             else
@@ -1135,5 +1136,38 @@ public class ModuleLoader implements Filter
         if (f.exists())
             return f;
         return null;
+    }
+
+
+
+    private ModuleContext getModuleContext(String name)
+    {
+        try
+        {
+            TableInfo modules = getTableInfoModules();
+            SQLFragment sql = new SQLFragment("SELECT * FROM " + modules.getFromSQL() + " WHERE Name=?", name);
+            ModuleContext[] contexts = Table.executeQuery(modules.getSchema(), sql, ModuleContext.class);
+            return contexts == null || contexts.length == 0 ? null : contexts[0];
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
+    private ModuleContext[] getAllModuleContexts()
+    {
+        try
+        {
+            TableInfo modules = getTableInfoModules();
+            SQLFragment sql = new SQLFragment("SELECT * FROM " + modules.getFromSQL());
+            ModuleContext[] contexts;
+            contexts = Table.executeQuery(modules.getSchema(), sql, ModuleContext.class);
+            return contexts;
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
     }
 }
