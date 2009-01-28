@@ -1123,14 +1123,16 @@ public class UserController extends SpringActionController
             SimpleFilter filter = new SimpleFilter();
             filter.addCondition("userId", user.getUserId(), CompareType.EQUAL);
 
-            Table.TableResultSet trs = Table.select(info, columns, filter, null);
-            try {
+			List<ColumnInfo> select = new ArrayList<ColumnInfo>(columns);
+			select.add(CoreSchema.getInstance().getTableInfoUsers().getColumn("userId"));
+            Table.TableResultSet trs = Table.select(info, select, filter, null);
+            try
+			{
                 // this should really only return one row
                 if (trs.next())
                 {
                     Map<String, Object> rowMap = null;
                     rowMap = ResultSetUtil.mapRow(trs, rowMap);
-
                     return !validateRequiredColumns(rowMap, info, new ActionMessage[0]);
                 }
             }
