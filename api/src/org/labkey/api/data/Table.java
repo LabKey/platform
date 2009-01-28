@@ -292,6 +292,13 @@ public class Table
     }
 
 
+    public static <K> K[] executeQuery(DbSchema schema, SQLFragment sqlf, Class<K> clss)
+            throws SQLException
+    {
+        return internalExecuteQueryArray(schema, sqlf.getSQL(), sqlf.getParamsArray(), clss, 0);
+    }
+
+
     public static <K> K[] executeQuery(DbSchema schema, String sql, Object[] parameters, Class<K> clss)
             throws SQLException
     {
@@ -345,7 +352,7 @@ public class Table
     public static int execute(DbSchema schema, SQLFragment f)
             throws SQLException
     {
-        return execute(schema, f.getSQL(), f.getParams().toArray());
+        return execute(schema, f.getSQL(), f.getParamsArray());
     }
 
 
