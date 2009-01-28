@@ -21,8 +21,13 @@ package org.labkey.query.sql;
  * Date: Jul 15, 2008
  * Time: 4:00:54 PM
  */
-public class QDistinct extends QNode<QExpr>
+public class QDistinct extends QNode
 {
+	public QDistinct()
+	{
+		super(QExpr.class);
+	}
+	
     public void appendSource(SourceBuilder builder)
     {
         builder.append(" DISTINCT ");

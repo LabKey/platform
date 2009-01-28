@@ -42,8 +42,9 @@ public class QMethodCall extends QExpr
             return;
         }
         List<SQLFragment> arguments = new ArrayList();
-        for (QExpr expr : getLastChild().children())
+        for (QNode n : getLastChild().children())
         {
+			QExpr expr = (QExpr)n;
             arguments.add(expr.getSqlFragment(builder.getDbSchema()));
         }
         builder.append(method.getSQL(builder.getDbSchema(), arguments.toArray(new SQLFragment[0])));
@@ -58,9 +59,9 @@ public class QMethodCall extends QExpr
         }
         List<ColumnInfo> arguments = new ArrayList();
 
-        for (ListIterator<QExpr> it = getLastChild().childList().listIterator(); it.hasNext();)
+        for (ListIterator<QNode> it = getLastChild().childList().listIterator(); it.hasNext();)
         {
-            QExpr expr = it.next();
+            QExpr expr = (QExpr)it.next();
             arguments.add(expr.createColumnInfo(table, "arg" + it.previousIndex()));
         }
         return method.createColumnInfo(table, arguments.toArray(new ColumnInfo[0]), alias);
@@ -77,8 +78,9 @@ public class QMethodCall extends QExpr
         builder.append("(");
         builder.pushPrefix("");
 
-        for (QExpr child : getLastChild().children())
+        for (QNode n : getLastChild().children())
         {
+			QExpr child = (QExpr)n;
             child.appendSource(builder);
             builder.nextPrefix(",");
         }

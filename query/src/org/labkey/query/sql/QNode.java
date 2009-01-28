@@ -22,23 +22,28 @@ import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.IdentityHashMap;
 
 
-abstract public class QNode<T extends QNode> implements Cloneable
+abstract public class QNode implements Cloneable
 {
-	int _tokenType;
-	String _tokenText;
-	int _line;
-	int _column;
+	private int _tokenType;
+	private String _tokenText;
+	private int _line;
+	private int _column;
 
-	LinkedList<T> _children = new LinkedList<T>();
-
+	private Class _validChildrenClass = QNode.class;
+	private LinkedList<QNode> _children = new LinkedList<QNode>();
 
 	protected QNode()
 	{
-
 	}
 	
+	protected QNode(Class validChildrenClass)
+	{
+		_validChildrenClass = validChildrenClass;
+	}
+
     public QNode(int type, String text)
     {
 		_tokenType = type;
@@ -55,12 +60,12 @@ abstract public class QNode<T extends QNode> implements Cloneable
         _tokenType = type;
     }
 
-    public Iterable<T> children()
+    public Iterable<QNode> children()
     {
 		return _children;
     }
 
-    public List<T> childList()
+    public List<QNode> childList()
     {
 		return _children;
     }
@@ -84,29 +89,37 @@ abstract public class QNode<T extends QNode> implements Cloneable
         return null;
     }
 
-    public void appendChildren(T... children)
+    public void appendChildren(QNode... children)
     {
-        if (children == null || children.length == 0)
-            return;
-		appendChildren(Arrays.asList(children));
+        if (children != null)
+			for (QNode n : children)
+				appendChild(n);
     }
 
-    public void appendChildren(List<? extends T> children)
+    public void appendChildren(List<QNode> children)
     {
-		_children.addAll(children);
+		for (QNode n : children())
+			appendChild(n);
     }
 
-    public void appendChild(T child)
+    public void appendChild(QNode child)
     {
+		assert _validChildrenClass.isAssignableFrom(child.getClass());
 		_children.add(child);
     }
 
-    public T getFirstChild()
+	void _replaceChildren(LinkedList<QNode> list)
+	{
+		for (QNode n : list) assert _validChildrenClass.isAssignableFrom(n.getClass());
+	   	_children = list;
+	}
+
+    public QNode getFirstChild()
     {
 		return _children.isEmpty() ? null : _children.getFirst();
     }
 
-    public T getLastChild()
+    public QNode getLastChild()
     {
 		return _children.isEmpty() ? null : _children.getLast();
     }
@@ -114,7 +127,7 @@ abstract public class QNode<T extends QNode> implements Cloneable
 	public void removeChildren()
 	{
 		if (!_children.isEmpty())
-			_children = new LinkedList<T>();
+			_children = new LinkedList<QNode>();
 	}
 
     public String getTokenText()
@@ -133,7 +146,7 @@ abstract public class QNode<T extends QNode> implements Cloneable
         try
         {
             QNode ret = (QNode) super.clone();
-			ret._children = new LinkedList<T>();
+			ret._children = new LinkedList<QNode>();
             return ret;
         }
         catch (CloneNotSupportedException e)
@@ -160,6 +173,14 @@ abstract public class QNode<T extends QNode> implements Cloneable
         _column = other.getColumn();
     }
 
+	public void setLineAndColumn(Node other)
+	{
+		if (other == null)
+			return;
+		_line = other.getLine();
+		_column = other.getColumn();
+	}
+
 
 //    public boolean equalsTree(QNode that)
 //    {
@@ -183,14 +204,16 @@ abstract public class QNode<T extends QNode> implements Cloneable
 
     public void dump(PrintWriter out)
     {
-        dump(out, "\n");
+        dump(out, "\n", new IdentityHashMap<Object,Object>());
         out.println();
     }
 
-    protected void dump(PrintWriter out, String nl)
+    protected void dump(PrintWriter out, String nl, IdentityHashMap<Object,Object> dumped)
     {
-        out.printf("%s%s: %s", nl, getClass().getSimpleName(), getTokenText());
-		for (QNode c : children())
-            c.dump(out, nl + "    |");
+		boolean seen = null != dumped.put(this, this);
+        out.printf("%s%s: %s\t\t{%d%s}", nl, getClass().getSimpleName(), getTokenText(), System.identityHashCode(this), seen ? " VISITED" : "");
+		if (!seen)
+			for (QNode c : children())
+            	c.dump(out, nl + "    |", dumped);
     }
 }

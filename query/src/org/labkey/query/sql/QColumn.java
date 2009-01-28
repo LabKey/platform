@@ -16,7 +16,6 @@
 
 package org.labkey.query.sql;
 
-import org.labkey.query.sql.SqlTokenTypes;
 import org.labkey.api.query.FieldKey;
 import org.apache.commons.lang.StringUtils;
 
@@ -26,7 +25,7 @@ public class QColumn
     QExpr _field;
     QIdentifier _alias;
 
-    public QColumn(QNode<QExpr> node)
+    public QColumn(QNode node)
     {
         _node = node;
         if (node instanceof QAs)

@@ -21,9 +21,9 @@ public class QCase extends QExpr
     public void appendSql(SqlBuilder builder)
     {
         builder.append(" CASE ");
-        for (QExpr child : children())
+        for (QNode child : children())
         {
-            child.appendSql(builder);
+            ((QExpr)child).appendSql(builder);
         }
         builder.append("\nEND");
     }
@@ -31,7 +31,7 @@ public class QCase extends QExpr
     public void appendSource(SourceBuilder builder)
     {
         builder.append(" CASE ");
-        for (QExpr child : children())
+        for (QNode child : children())
         {
             child.appendSource(builder);
         }

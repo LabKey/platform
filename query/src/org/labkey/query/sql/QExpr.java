@@ -22,18 +22,23 @@ import org.labkey.api.query.QueryParseException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.TableInfo;
 
 import java.sql.Types;
+import java.util.Iterator;
 
 import org.labkey.query.data.SQLTableInfo;
 
-abstract public class QExpr extends QNode<QExpr>
+abstract public class QExpr extends QNode
 {
     public QExpr()
     {
-        super();
+        super(QExpr.class);
     }
+	
+	public QExpr(Class validChildrenClass)
+	{
+		super(validChildrenClass);
+	}
 
     public FieldKey getFieldKey()
     {
@@ -64,8 +69,9 @@ abstract public class QExpr extends QNode<QExpr>
         // avoid ClassCastException org.labkey.query.sql.QSelectFrom cannot be cast to org.labkey.query.sql.QExpr  
         if (this instanceof QQuery)
             return false;
-        for (QExpr child : children())
+        for (QNode n : children())
         {
+			QExpr child = (QExpr)n;
             if (child.isAggregate())
                 return true;
         }

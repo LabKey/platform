@@ -16,11 +16,16 @@
 
 package org.labkey.query.sql;
 
-public class QAs extends QNode<QExpr>
+public class QAs extends QNode
 {
+	public QAs()
+	{
+		super(QExpr.class);
+	}
+	
     public QExpr getExpression()
     {
-        return getFirstChild();
+        return (QExpr)getFirstChild();
     }
 
     public QIdentifier getAlias()

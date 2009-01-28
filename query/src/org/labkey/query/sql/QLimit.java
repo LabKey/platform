@@ -16,8 +16,13 @@
 
 package org.labkey.query.sql;
 
-public class QLimit extends QNode<QExpr>
+public class QLimit extends QNode
 {
+	public QLimit()
+	{
+		super(QExpr.class);
+	}
+	
     public void appendSource(SourceBuilder builder)
     {
         builder.append("\nLIMIT ");
@@ -29,7 +34,7 @@ public class QLimit extends QNode<QExpr>
 
     public int getLimit()
     {
-        QExpr child = getFirstChild();
+        QExpr child = (QExpr)getFirstChild();
         if (!(child instanceof QNumber))
             return 0;
         return ((QNumber) child).getValue().intValue();

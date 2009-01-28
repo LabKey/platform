@@ -30,17 +30,19 @@ import javax.xml.namespace.QName;
 import java.util.List;
 import java.util.StringTokenizer;
 
-public class QWhere extends QNode<QExpr>
+public class QWhere extends QNode
 {
     public QWhere()
     {
+		super(QExpr.class);
     }
 
     public void appendSource(SourceBuilder builder)
     {
         builder.pushPrefix("\nWHERE ");
-        for (QExpr child : children())
+        for (QNode n : children())
         {
+			QExpr child = (QExpr)n;
             boolean fParen = Operator.and.needsParentheses(child, child == getFirstChild());
             if (fParen)
             {
@@ -63,7 +65,7 @@ public class QWhere extends QNode<QExpr>
             return false;
         }
         QOperator qop = (QOperator) expr;
-        List<QExpr> children = qop.childList();
+        List<QExpr> children = (List<QExpr>)(List)qop.childList();
         if (children.size() < 1 || children.size() > 2)
         {
             return false;
@@ -99,8 +101,9 @@ public class QWhere extends QNode<QExpr>
             comp.setOp(CompareType.IN.getUrlKey());
             StringBuilder sb = new StringBuilder();
             String separator = "";
-            for (QExpr child : valueList.children())
+            for (QNode n : valueList.children())
             {
+				QExpr child = (QExpr)n;
                 sb.append(separator);
                 separator = ", ";
                 if (!(child instanceof IConstant))
@@ -176,10 +179,11 @@ public class QWhere extends QNode<QExpr>
         return true;
     }
 
-    protected void fillWhere(DgQuery.Where where, QNode<QExpr> parent)
+    protected void fillWhere(DgQuery.Where where, QNode parent)
     {
-        for (QExpr child : parent.children())
+        for (QNode n : parent.children())
         {
+			QExpr child = (QExpr)n;
             if (Operator.and.is(child))
             {
                 fillWhere(where, child);

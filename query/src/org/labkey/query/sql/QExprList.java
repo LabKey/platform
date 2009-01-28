@@ -36,9 +36,9 @@ public class QExprList extends QExpr
     {
         builder.append("(");
         builder.pushPrefix("");
-        for (QExpr child : children())
+        for (QNode child : children())
         {
-            child.appendSql(builder);
+            ((QExpr)child).appendSql(builder);
             builder.nextPrefix(",");
         }
         builder.popPrefix();
@@ -49,9 +49,9 @@ public class QExprList extends QExpr
     {
         builder.append("(");
         builder.pushPrefix("");
-        for (QExpr child : children())
+        for (QNode child : children())
         {
-            child.appendSource(builder);
+            ((QNode)child).appendSource(builder);
             builder.nextPrefix(",");
         }
         builder.popPrefix();
@@ -62,9 +62,9 @@ public class QExprList extends QExpr
     {
         StringBuilder ret = new StringBuilder("(");
         String strComma = "";
-        for (QExpr child : children())
+        for (QNode child : children())
         {
-            String strChild = child.getValueString();
+            String strChild = ((QExpr)child).getValueString();
             if (StringUtils.isEmpty(strChild))
                 return null;
             ret.append(strComma);

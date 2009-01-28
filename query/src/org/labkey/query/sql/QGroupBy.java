@@ -16,12 +16,17 @@
 
 package org.labkey.query.sql;
 
-public class QGroupBy extends QNode<QExpr>
+public class QGroupBy extends QNode
 {
+	public QGroupBy()
+	{
+		super(QExpr.class);
+	}
+	
     public void appendSource(SourceBuilder builder)
     {
         builder.pushPrefix("\nGROUP BY ");
-        for (QExpr child : children())
+        for (QNode child : children())
         {
             child.appendSource(builder);
             builder.nextPrefix(",");

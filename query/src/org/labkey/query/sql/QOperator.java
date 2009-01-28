@@ -28,8 +28,9 @@ final public class QOperator extends QExpr
     public void appendSource(SourceBuilder builder)
     {
         builder.pushPrefix(_op.getPrefix());
-        for (QExpr child : children())
+        for (QNode n : children())
         {
+			QExpr child = (QExpr)n;
             boolean fParen = needsParentheses(child);
             if (fParen)
             {
@@ -64,8 +65,9 @@ final public class QOperator extends QExpr
     {
         StringBuilder ret = new StringBuilder(_op.getPrefix());
         boolean first = false;
-        for (QExpr child : children())
+        for (QNode n : children())
         {
+			QExpr child = (QExpr)n;
             String strChild = child.getValueString();
             if (strChild == null)
             {

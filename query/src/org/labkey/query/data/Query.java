@@ -62,6 +62,7 @@ public class Query
     private AliasManager _subqueryAliasManager;
     private AliasManager _queryAliasManager;
 
+
     public Query(QuerySchema schema)
     {
         _schema = schema;
@@ -71,7 +72,7 @@ public class Query
     }
 
 
-    public Query(Query parent, QQuery query, boolean inFromClause)
+    private Query(Query parent, QQuery query, boolean inFromClause)
     {
         this(parent._schema);
         _queryText = query == null ? null : query.getQuery() == null ? null : query.getQuery()._queryText;
@@ -138,7 +139,7 @@ public class Query
         if (select != null)
         {
             boolean first = true;
-            for (QNode<QExpr> node : _root.getSelect().children())
+            for (QNode node : _root.getSelect().children())
             {
                 if (node instanceof QDistinct)
                 {
@@ -599,7 +600,9 @@ loop:
     {
         if (expr instanceof QMethodCall)
         {
-            declareFields(expr.getLastChild());
+			assert expr.childList().size() == 1 || expr.childList().size() == 2;
+			if (expr.childList().size() == 2)
+            	declareFields((QExpr)expr.getLastChild());
             return;
         }
         if (expr instanceof QQuery)
@@ -619,9 +622,9 @@ loop:
             }
             return;
         }
-        for (QExpr child : expr.children())
+        for (QNode child : expr.children())
         {
-            declareFields(child);
+            declareFields((QExpr)child);
         }
     }
 
@@ -639,15 +642,15 @@ loop:
             if (on != null)
                 declareFields(on);
         }
-        for (QExpr expr : _filter.children())
+        for (QNode expr : _filter.children())
         {
-            declareFields(expr);
+            declareFields((QExpr)expr);
         }
         if (_groupBy != null)
         {
-            for (QExpr expr : _groupBy.children())
+            for (QNode expr : _groupBy.children())
             {
-                declareFields(expr);
+                declareFields((QExpr)expr);
             }
         }
     }
@@ -676,8 +679,8 @@ loop:
         }
 
         QExpr ret = (QExpr) expr.clone();
-		for (QExpr child : expr.children())
-            ret.appendChild(resolveFields(child, expr));
+		for (QNode child : expr.children())
+            ret.appendChild(resolveFields((QExpr)child, expr));
 
         QueryParseException error = ret.fieldCheck(parent);
         if (error != null)
@@ -686,7 +689,7 @@ loop:
     }
 
 
-    public List<QExpr> getFilter()
+    public List<QNode> getFilter()
     {
         return _filter.childList();
     }
@@ -781,6 +784,7 @@ loop:
             sql.pushPrefix("SELECT ");
         else
             sql.pushPrefix("SELECT DISTINCT ");
+
         QueryTableInfo ret = new QueryTableInfo(_subqueryTable, tableAlias, tableAlias);
         for (QColumn col : _columns)
         {
@@ -884,10 +888,10 @@ loop:
         if (_filter != null)
         {
             sql.pushPrefix("\nWHERE ");
-            for (QExpr expr : _filter.children())
+            for (QNode expr : _filter.children())
             {
                 sql.append("(");
-                resolveFields(expr, null).appendSql(sql);
+                resolveFields((QExpr)expr, null).appendSql(sql);
                 sql.append(")");
                 sql.nextPrefix("\nAND ");
             }
@@ -896,10 +900,10 @@ loop:
         if (_groupBy != null)
         {
             sql.pushPrefix("\nGROUP BY ");
-            for (QExpr expr : _groupBy.children())
+            for (QNode expr : _groupBy.children())
             {
                 sql.append("(");
-                resolveFields(expr, _groupBy).appendSql(sql);
+                resolveFields((QExpr)expr, _groupBy).appendSql(sql);
                 sql.append(")");
                 sql.nextPrefix(",");
             }

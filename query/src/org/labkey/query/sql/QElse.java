@@ -20,18 +20,18 @@ public class QElse extends QExpr
 {
     public void appendSql(SqlBuilder builder)
     {
-        builder.append("\nELSE(");
-        for (QExpr child : children())
+        builder.append("\nELSE (");
+        for (QNode child : children())
         {
-            child.appendSql(builder);
+            ((QExpr)child).appendSql(builder);
         }
         builder.append(")");
     }
 
     public void appendSource(SourceBuilder builder)
     {
-        builder.append("\nELSE(");
-        for (QExpr child : children())
+        builder.append("\nELSE (");
+        for (QNode child : children())
         {
             child.appendSource(builder);
         }

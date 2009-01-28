@@ -16,7 +16,7 @@
 
 package org.labkey.query.sql;
 
-public class QSelectFrom extends QNode<QNode>
+public class QSelectFrom extends QNode
 {
     public QSelect getSelect()
     {
@@ -27,7 +27,6 @@ public class QSelectFrom extends QNode<QNode>
     {
         return getChildOfType(QFrom.class);
     }
-
 
     public void appendSource(SourceBuilder builder)
     {

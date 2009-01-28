@@ -16,7 +16,7 @@
 
 package org.labkey.query.sql;
 
-public class QFrom extends QNode<QNode>
+public class QFrom extends QNode
 {
     public void appendSource(SourceBuilder builder)
     {

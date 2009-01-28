@@ -19,8 +19,6 @@ package org.labkey.query.sql;
 
 import java.util.*;
 
-import org.labkey.query.sql.SqlTokenTypes;
-
 public enum Operator
 {
     eq("=", Precedence.comparison, SqlTokenTypes.EQ),
@@ -33,16 +31,16 @@ public enum Operator
     is_not(" IS NOT ", Precedence.comparison, SqlTokenTypes.IS_NOT),
     between(" BETWEEN ", Precedence.comparison, SqlTokenTypes.BETWEEN)
     {
-        public void appendSql(SqlBuilder builder, Iterable<QExpr> operands)
+        public void appendSql(SqlBuilder builder, Iterable<QNode> operands)
         {
             builder.pushPrefix("");
             int i=0;
-            for (QExpr operand : operands)
+            for (QNode operand : operands)
             {
-                boolean paren = needsParentheses(operand, true);
+                boolean paren = needsParentheses((QExpr)operand, true);
                 if (paren)
                     builder.pushPrefix("(");
-                operand.appendSql(builder);
+                ((QExpr)operand).appendSql(builder);
                 if (paren)
                     builder.popPrefix(")");
                 if (i==0)
@@ -74,12 +72,12 @@ public enum Operator
     divide("/", Precedence.multiplication, SqlTokenTypes.DIV),
     concat("||", Precedence.addition, SqlTokenTypes.CONCAT)
     {
-        public void appendSql(SqlBuilder builder, Iterable<QExpr> operands)
+        public void appendSql(SqlBuilder builder, Iterable<QNode> operands)
         {
             builder.pushPrefix("");
-            for (QExpr operand : operands)
+            for (QNode operand : operands)
             {
-                operand.appendSql(builder);
+                ((QExpr)operand).appendSql(builder);
                 builder.nextPrefix(builder.getConcatOperator());
             }
             builder.popPrefix();
@@ -87,13 +85,14 @@ public enum Operator
     },
     not(" NOT ", Precedence.not, SqlTokenTypes.NOT)
     {
-        public void appendSql(SqlBuilder builder, Iterable<QExpr> operands)
+        public void appendSql(SqlBuilder builder, Iterable<QNode> operands)
         {
             builder.append(getOperator());
             builder.append("(");
-            Iterator<QExpr> i =operands.iterator();
+            Iterator<QNode> i = operands.iterator();
             assert i.hasNext();
-            i.next().appendSql(builder);
+			QExpr operand = (QExpr)i.next();
+            operand.appendSql(builder);
             assert !i.hasNext();
             builder.append(")");
         }
@@ -120,7 +119,7 @@ public enum Operator
     static HashMap<Integer,Operator> tokenTypeOperatorMap;
     static
     {
-        tokenTypeOperatorMap = new HashMap();
+        tokenTypeOperatorMap = new HashMap<Integer, Operator>();
         for (Operator op : values())
         {
             tokenTypeOperatorMap.put(op._tokenType, op);
@@ -153,12 +152,13 @@ public enum Operator
         return _strOp;
     }
 
-    public void appendSql(SqlBuilder builder, Iterable<QExpr> operands)
+    public void appendSql(SqlBuilder builder, Iterable<QNode> operands)
     {
         builder.pushPrefix(getPrefix());
         boolean first = true;
-        for (QExpr operand : operands)
+        for (QNode n : operands)
         {
+			QExpr operand = (QExpr)n;
             boolean paren = needsParentheses(operand, first);
             first = false;
             if (paren)
@@ -210,7 +210,7 @@ public enum Operator
         return ret;
     }
 
-    public QOperator expr(List<QExpr> operands)
+    public QOperator expr(List<QNode> operands)
     {
         QOperator ret = new QOperator(this);
         ret.appendChildren(operands);

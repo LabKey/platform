@@ -21,9 +21,9 @@ public class QWhen extends QExpr
     public void appendSql(SqlBuilder builder)
     {
         builder.append("\nWHEN(");
-        getFirstChild().appendSql(builder);
+        ((QExpr)getFirstChild()).appendSql(builder);
         builder.append(")THEN(");
-        getLastChild().appendSql(builder);
+        ((QExpr)getLastChild()).appendSql(builder);
         builder.append(")");
     }
 

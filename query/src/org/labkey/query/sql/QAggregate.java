@@ -35,9 +35,9 @@ public class QAggregate extends QExpr
             function = builder.getDialect().getStdDevFunction();
         }
         builder.append(" " + function + "(");
-        for (QExpr child : children())
+        for (QNode child : children())
         {
-            child.appendSql(builder);
+            ((QExpr)child).appendSql(builder);
         }
         builder.append(")");
     }
@@ -45,7 +45,7 @@ public class QAggregate extends QExpr
     public void appendSource(SourceBuilder builder)
     {
         builder.append(" " + getTokenText() + "(");
-        for (QExpr child : children())
+        for (QNode child : children())
         {
             child.appendSource(builder);
         }
@@ -58,10 +58,8 @@ public class QAggregate extends QExpr
         {
             return Types.INTEGER;
         }
-        for (QExpr child : children())
-        {
-            return child.getSqlType();
-        }
+		if (getFirstChild() != null)
+			return ((QExpr)getFirstChild()).getSqlType();
         return Types.OTHER;
     }
 
@@ -75,7 +73,7 @@ public class QAggregate extends QExpr
         ColumnInfo ret = super.createColumnInfo(table, alias);
         if ("max".equalsIgnoreCase(getTokenText()) || "min".equalsIgnoreCase(getTokenText()))
         {
-            List<QExpr> children = childList();
+            List<QNode> children = childList();
             if (children.size() == 1 && children.get(0) instanceof QField)
             {
                 QField field = (QField) children.get(0);

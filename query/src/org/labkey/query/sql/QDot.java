@@ -31,10 +31,10 @@ public class QDot extends QFieldKey
 
     public FieldKey getFieldKey()
     {
-        FieldKey left = getFirstChild().getFieldKey();
+        FieldKey left = ((QExpr)getFirstChild()).getFieldKey();
         if (left == null)
             return null;
-        FieldKey right = getLastChild().getFieldKey();
+        FieldKey right = ((QExpr)getLastChild()).getFieldKey();
         if (right == null || right.getTable() != null)
         {
             return null;
@@ -57,14 +57,14 @@ public class QDot extends QFieldKey
     {
         StringBuilder ret = new StringBuilder();
         boolean first = true;
-        for (QExpr child : children())
+        for (QNode child : children())
         {
             if (!first)
             {
                 ret.append(".");
             }
             first = false;
-            String strChild = child.getValueString();
+            String strChild = ((QExpr)child).getValueString();
             if (strChild == null)
                 return null;
             ret.append(strChild);

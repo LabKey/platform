@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-public class QOrder extends QNode<QNode>
+public class QOrder extends QNode
 {
     public void appendSource(SourceBuilder builder)
     {
