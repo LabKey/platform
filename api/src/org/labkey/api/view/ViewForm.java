@@ -17,6 +17,8 @@ package org.labkey.api.view;
 
 
 import org.apache.log4j.Logger;
+import org.apache.struts.action.ActionErrors;
+import org.apache.struts.action.ActionMapping;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -81,6 +83,12 @@ public class ViewForm implements HasViewContext
 
     
     final public void reset(Object actionMapping, HttpServletRequest request)
+    {
+        throw new IllegalStateException("This is not a FormData");
+    }
+
+
+    final public ActionErrors validate(ActionMapping mapping, HttpServletRequest request)
     {
         throw new IllegalStateException("This is not a FormData");
     }

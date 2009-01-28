@@ -7,7 +7,6 @@ api/src/java/sql/RowId.java -text
 api/src/java/sql/SQLClientInfoException.java -text
 api/src/java/sql/SQLXML.java -text
 api/src/org/apache/beehive/netui/pageflow/PageFlowControllerFIXED.java -text
-api/src/org/fhcrc/cpas/util/NetworkDrive.java -text
 api/src/org/json/CDL.java -text
 api/src/org/json/Cookie.java -text
 api/src/org/json/CookieList.java -text
@@ -410,6 +409,8 @@ api/src/org/labkey/api/query/DetailsURL.java -text
 api/src/org/labkey/api/query/DomainForeignKey.java -text
 api/src/org/labkey/api/query/DuplicateKeyException.java -text
 api/src/org/labkey/api/query/ExportRScriptModel.java -text
+api/src/org/labkey/api/query/ExportScriptFactory.java -text
+api/src/org/labkey/api/query/ExportScriptModel.java -text
 api/src/org/labkey/api/query/ExprColumn.java -text
 api/src/org/labkey/api/query/FieldKey.java -text
 api/src/org/labkey/api/query/FilteredTable.java -text
@@ -440,6 +441,7 @@ api/src/org/labkey/api/query/QueryUrls.java -text
 api/src/org/labkey/api/query/QueryView.java -text
 api/src/org/labkey/api/query/QueryWebPart.java -text
 api/src/org/labkey/api/query/QueryWrapperDynaClass.java -text
+api/src/org/labkey/api/query/RExportScriptFactory.java -text
 api/src/org/labkey/api/query/RowIdForeignKey.java -text
 api/src/org/labkey/api/query/RowIdQueryUpdateService.java -text
 api/src/org/labkey/api/query/SchemaUpdateService.java -text

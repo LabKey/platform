@@ -21,10 +21,8 @@ import org.labkey.api.data.SimpleFilter.OperationClause;
 import org.labkey.api.data.SimpleFilter.OrClause;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.VBox;
-import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.*;
+import org.springframework.beans.PropertyValues;
 
 import java.io.PrintWriter;
 import java.util.*;
@@ -45,6 +43,21 @@ public class Search
     public static void register(Searchable searchable)
     {
         _searchables.add(searchable);
+    }
+
+    public static boolean includeSubfolders(PropertyValues props)
+    {
+        return includeSubfolders(props.getPropertyValue("includeSubfolders"));
+    }
+
+    public static boolean includeSubfolders(Object value)
+    {
+        return !("0".equals(value) || "off".equals(value));
+    }
+
+    public static boolean includeSubfolders(Portal.WebPart part)
+    {
+        return includeSubfolders(part.getPropertyMap().get("includeSubfolders"));
     }
 
     public static Searchable getDomain(String domain)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2008 LabKey Corporation
+ * Copyright (c) 2009 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,35 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.labkey.api.query;
 
-public enum QueryAction
+import org.labkey.api.view.WebPartView;
+
+/**
+ * User: adam
+ * Date: Jan 27, 2009
+ * Time: 2:15:15 PM
+ */
+public interface ExportScriptFactory
 {
-    begin,
-    schema,
-    newQuery,
-    designQuery,
-    sourceQuery,
-    metadataQuery,
-    executeQuery,
-    deleteQuery,
-    propertiesQuery,
-    exportRowsExcel,
-    exportExcelTemplate,
-    exportRowsTsv,
-    exportScript,
-    printRows,
-    deleteQueryRows,
-    chooseColumns,
-    deleteView,
-    createChart,
-    createRReport,
-    tableInfo,
-    excelWebQueryDefinition,
-    admin,
-    adminNewDbUserSchema,
-    adminDeleteDbUserSchema,
-    createSnapshot,
-    editSnapshot,
+    public String getType();
+    public String getMenuText();
+    public WebPartView getView(QueryView queryView);
 }

@@ -34,7 +34,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.*;
-import org.labkey.common.util.Pair;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -44,12 +43,27 @@ import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class QueryView extends WebPartView<Object>
 {
     public static final String DATAREGIONNAME_DEFAULT = "query";
     protected DataRegion.ButtonBarPosition _buttonBarPosition = DataRegion.ButtonBarPosition.BOTH;
     private boolean _showDetailsColumn = true;
+
+    private static final Map<String, ExportScriptFactory> _exportScriptFactories = new ConcurrentHashMap<String, ExportScriptFactory>();
+
+    public static void register(ExportScriptFactory factory)
+    {
+        assert null == _exportScriptFactories.get(factory.getType());
+
+        _exportScriptFactories.put(factory.getType(), factory);
+    }
+
+    public static ExportScriptFactory getExportScriptFactory(String type)
+    {
+        return _exportScriptFactories.get(type);
+    }
 
     static public QueryView create(QueryForm form) throws ServletException
     {
@@ -275,7 +289,7 @@ public class QueryView extends WebPartView<Object>
 
             case exportRowsExcel:
             case exportRowsTsv:
-            case exportRScript:
+            case exportScript:
             case printRows:
             {
                 if (_useQueryViewActionExportURLs)
@@ -504,7 +518,13 @@ public class QueryView extends WebPartView<Object>
         {
             exportMenuButton.addMenuItem("Excel Web Query (.iqy)", urlFor(QueryAction.excelWebQueryDefinition).getLocalURIString());
             exportMenuButton.addSeparator();
-            exportMenuButton.addMenuItem("Create R Script", urlFor(QueryAction.exportRScript).getLocalURIString());
+
+            for (ExportScriptFactory factory : _exportScriptFactories.values())
+            {
+                ActionURL url = urlFor(QueryAction.exportScript);
+                url.addParameter("type", factory.getType());
+                exportMenuButton.addMenuItem(factory.getMenuText(), url);
+            }
         }
         return exportMenuButton;
     }

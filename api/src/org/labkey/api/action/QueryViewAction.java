@@ -93,7 +93,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
             result.setPrintView(true);
             return result;
         }
-        else if(QueryAction.exportRScript.name().equals(form.getExportType()))
+        else if(QueryAction.exportScript.name().equals(form.getExportType()))
         {
             return exportRScript(createInitializedQueryView(form, errors, true, form.getExportRegion()));
         }

@@ -14,8 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-%><%@ page import="org.labkey.api.query.ExportRScriptModel" %><%@ page import="org.labkey.api.view.JspView" %><%@ page import="org.labkey.api.view.HttpView" %>
-<%
+%><%@ page import="org.labkey.api.query.ExportRScriptModel" %><%@ page import="org.labkey.api.view.JspView" %><%@ page import="org.labkey.api.view.HttpView" %><%
     JspView<ExportRScriptModel> me = (JspView<ExportRScriptModel>) HttpView.currentView();
     ExportRScriptModel model = me.getModelBean();
     me.getViewContext().getResponse().setContentType("text/plain");

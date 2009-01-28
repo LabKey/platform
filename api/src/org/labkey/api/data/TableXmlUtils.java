@@ -15,20 +15,19 @@
  */
 package org.labkey.api.data;
 
-import org.labkey.data.xml.TablesDocument;
-import org.labkey.data.xml.TableType;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.log4j.Priority;
+import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.OntologyType;
-import org.labkey.api.util.CaseInsensitiveHashMap;
-import org.apache.log4j.Priority;
-import org.apache.log4j.Logger;
-import org.apache.log4j.Level;
-import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.XmlCursor;
+import org.labkey.data.xml.TableType;
+import org.labkey.data.xml.TablesDocument;
 
-import javax.xml.namespace.QName;
-import java.io.*;
-import java.util.*;
+import java.io.InputStream;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 /**
  * User: phussey
@@ -105,58 +104,6 @@ public class TableXmlUtils
         }
     }
 
-    // TODO: Delete?  Not used...
-    public static TablesDocument getMergedXmlDocument(String dbSchemaName) throws Exception
-    {
-        TablesDocument tablesDocMetaData = null;
-        TablesDocument tablesDocFromXml = null;
-        TablesDocument tablesDocMerged = null;
-        InputStream xmlStream = null;
-
-        try
-        {
-            tablesDocMetaData = getXmlDocumentFromMetaData(dbSchemaName, true);
-            xmlStream = DbSchema.getSchemaXmlStream(dbSchemaName);
-            if (null != xmlStream)
-                tablesDocFromXml = TablesDocument.Factory.parse(xmlStream);
-
-            tablesDocMerged = TablesDocument.Factory.newInstance();
-            tablesDocMerged.addNewTables();
-
-            if ((null != tablesDocMetaData) && (null != tablesDocFromXml))
-            {
-                StringBuilder sbOut = new StringBuilder();
-                compareTableDocuments(tablesDocMetaData, tablesDocFromXml, true, true, tablesDocMerged, sbOut);
-            }
-        }
-        catch (XmlException e)
-        {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        }
-        finally
-        {
-            try
-            {
-                if (null != xmlStream) xmlStream.close();
-            }
-            catch (Exception x)
-            {
-            }
-        }
-        XmlCursor cursor = tablesDocMerged.newCursor();
-        if (cursor.toFirstChild())
-        {
-            cursor.setAttributeText(new QName("http://www.w3.org/2001/XMLSchema-instance","schemaLocation"),
-                  "http://cpas.fhcrc.org/data/xml ..\\..\\..\\..\\schemas\\tableInfo.xsd");
-        }
-        return tablesDocMerged;
-    }
-
-
     public static String compareXmlToMetaData(String dbSchemaName, boolean bFull, boolean bCaseSensitive)
     {
         StringBuilder sbOut = new StringBuilder();
@@ -176,8 +123,6 @@ public class TableXmlUtils
             {
                 compareTableDocuments(tablesDocMetaData, tablesDocFromXml, bFull, bCaseSensitive, null, sbOut);
             }
-
-            compareOldToNewNames(dbSchemaName, sbOut);
         }
         catch (Exception e)
         {
@@ -363,7 +308,7 @@ public class TableXmlUtils
                     idc = mDbColOrdinals.get(xmlColName.toLowerCase()).intValue();
                     ColumnType columnType = dbCols[idc];
 
-                    bCopyTargetNode = compareStringProperty(columnType.getColumnName(), xmlCol.getColumnName(), "ColumnName", sbOut, bCaseSensitive, true);
+                    compareStringProperty(columnType.getColumnName(), xmlCol.getColumnName(), "ColumnName", sbOut, bCaseSensitive, true);
 
                     if (merge)
                     {
@@ -673,42 +618,5 @@ public class TableXmlUtils
         }
         sbOut.append("WARNING: property ").append(propName).append(" value ").append(refProp).append(" doesn't match xml: ").append(targetProp).append("  ; Xml value used<br>");
         return true;
-    }
-
-    // TODO: Delete?  Does nothing...
-    public static void compareOldToNewNames(String dbs, StringBuilder sbOut)
-    {
-        Map mcols = new HashMap();
-        Map mtabs = new HashMap();
-
-        for (Object o : mcols.values())
-        {
-            String key = ((String) o);
-            String oldName = (String) mcols.get(key);
-            String newName = key;
-            if (!oldName.equals(newName))
-                sbOut.append("<br>Mismatch on col name: ").append(key).append("  oldName: ").append(oldName).append(" newName: ").append(newName);
-        }
-
-        for (Object o : mtabs.values())
-        {
-            String key = ((String) o);
-            String oldName = (String) mtabs.get(key);
-            String newName = key;
-            if (!oldName.equals(newName))
-                sbOut.append("<br>Mismatch on tab name: ").append(key).append("  oldName: ").append(oldName).append(" newName: ").append(newName);
-        }
-    }
-
-    // TODO: Delete?  Not used...
-    private static String getOldName(String newName, Map mnames, StringBuffer msgs)
-    {
-        String sqlNameFromList = (String) mnames.get(newName);
-
-        if ((null == sqlNameFromList) || newName.equals(sqlNameFromList))
-            return newName;
-
-        msgs.append("---------- INFO: SqlNames: name ").append(newName).append(" changed to ").append(sqlNameFromList).append("<br>");
-        return sqlNameFromList;
     }
 }

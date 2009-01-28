@@ -138,8 +138,7 @@ public class ActionURL extends URLHelper implements Cloneable
     }
 
 
-    @Deprecated
-    public static String toPathString(String pageFlow, String action, String extraPath)
+    private static String toPathString(String pageFlow, String action, String extraPath)
     {
         String[] parts = new String[4];
         parts[indexContextPath] = AppProps.getInstance().getContextPath(); //request.getContextPath();

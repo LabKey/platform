@@ -38,7 +38,7 @@ import java.util.*;
  */
 public class RecompilingJspClassLoader extends JspClassLoader
 {
-    private static Logger _log = Logger.getLogger(JspClassLoader.class);
+    private static final Logger _log = Logger.getLogger(RecompilingJspClassLoader.class);
     private static final String JSP_PATH = "/jspTempDir/classes";
     private static final String JSP_PACKAGE_PATH = JSP_PACKAGE.replaceAll("\\.", "/");
     private static final Map<ResourceFinder, ClassLoader> _classLoaders = new HashMap<ResourceFinder, ClassLoader>();
