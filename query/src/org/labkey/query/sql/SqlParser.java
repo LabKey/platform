@@ -267,9 +267,9 @@ public class SqlParser
 					for (QNode n : exprList.children())
 					{
 						if (n instanceof QIdentifier && (name.equals("timestamp") ? i==3 : i==2))
-							args.push(toStringNode(n));
+							args.add(toStringNode(n));
 						else
-							args.push(n);
+							args.add(n);
 						i++;
 					}
 					exprList._replaceChildren(args);
