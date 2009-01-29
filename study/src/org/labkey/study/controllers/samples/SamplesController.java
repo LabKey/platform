@@ -1027,7 +1027,7 @@ public class SamplesController extends BaseController
                 inputWorkbook = null;
         }
 
-        Map<String,Object>[] defaultSpecimens = new Map[0];
+        List<Map<String,Object>> defaultSpecimens = new ArrayList<Map<String, Object>>();
         SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getStudy().isDateBased(), "ParticipantId");
         MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
         for (ExcelColumn col : xlWriter.getColumns())
@@ -1097,11 +1097,11 @@ public class SamplesController extends BaseController
                 labels.put(c.name, c.name);
         }
         importer.fixupSpecimenColumns(loader);
-        Map<String,Object>[] specimenRows;
+        List<Map<String,Object>> specimenRows;
         try
         {
             loader.setThrowOnErrors(true);
-            specimenRows = (Map<String,Object>[]) loader.load();
+            specimenRows = loader.load();
         }
         catch (ConversionException x)
         {

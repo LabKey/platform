@@ -494,7 +494,7 @@ public class ExternalReport extends AbstractReport
         {
             TabLoader tabLoader = new TabLoader(file);
             ColumnDescriptor[] cols = tabLoader.getColumns();
-            Map[] data = (Map[]) tabLoader.load();
+            List<Map<String, Object>> data = tabLoader.load();
             out.write("<table><tr>");
             for (ColumnDescriptor col : cols)
             {
@@ -503,7 +503,7 @@ public class ExternalReport extends AbstractReport
                 out.write("</td>");
             }
             out.write("</tr>");
-            for (Map m : data)
+            for (Map<String, Object> m : data)
             {
                 out.write("<tr>");
                 for (ColumnDescriptor col : cols)

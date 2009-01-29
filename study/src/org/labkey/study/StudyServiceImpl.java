@@ -116,7 +116,7 @@ public class StudyServiceImpl implements StudyService.Service
 
             StudyManager.getInstance().deleteDatasetRows(study, def, Collections.singletonList(lsid));
 
-            Map<String,Object>[] dataMap = convertMapToPropertyMapArray(newData, def);
+            List<Map<String,Object>> dataMap = convertMapToPropertyMapArray(newData, def);
             
             String[] result = StudyManager.getInstance().importDatasetData(
                 study, u, def, dataMap, System.currentTimeMillis(), errors, true, defaultQCState);
@@ -254,7 +254,7 @@ public class StudyServiceImpl implements StudyService.Service
             if (transactionOwner)
                 beginTransaction();
 
-            Map<String,Object>[] dataMap = convertMapToPropertyMapArray(data, def);
+            List<Map<String,Object>> dataMap = convertMapToPropertyMapArray(data, def);
 
             String[] result = StudyManager.getInstance().importDatasetData(
                 study, u, def, dataMap, System.currentTimeMillis(), errors, true, defaultQCState);
@@ -324,12 +324,10 @@ public class StudyServiceImpl implements StudyService.Service
      * Requests arrive as maps of name->value. The StudyManager expects arrays of maps
      * of property URI -> value. This is a convenience method to do that conversion.
      */
-    private Map<String,Object>[] convertMapToPropertyMapArray(Map<String,Object> origData, DataSetDefinition def)
+    private List<Map<String,Object>> convertMapToPropertyMapArray(Map<String,Object> origData, DataSetDefinition def)
         throws SQLException
     {
         Map<String,Object> map = new HashMap<String,Object>();
-        //noinspection unchecked
-        Map<String,Object>[] result = new Map[]{map};
 
         TableInfo tInfo;
         try
@@ -351,6 +349,8 @@ public class StudyServiceImpl implements StudyService.Service
             map.put(col.getPropertyURI(), value);
         }
 
+        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
+        result.add(map);
         return result;
     }
 

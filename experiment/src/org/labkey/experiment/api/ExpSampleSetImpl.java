@@ -82,7 +82,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return getIdCol1() != null;        
     }
 
-    private PropertyDescriptor getIdCol(String uri)
+    private PropertyDescriptor getPropertyDescriptor(String uri)
     {
         if (uri == null)
         {
@@ -134,7 +134,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     public PropertyDescriptor getIdCol1()
     {
-        PropertyDescriptor result = getIdCol(_object.getIdCol1());
+        PropertyDescriptor result = getPropertyDescriptor(_object.getIdCol1());
         if (result == null)
         {
             PropertyDescriptor[] props = getPropertiesForType();
@@ -148,12 +148,17 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     public PropertyDescriptor getIdCol2()
     {
-        return getIdCol(_object.getIdCol2());
+        return getPropertyDescriptor(_object.getIdCol2());
     }
 
     public PropertyDescriptor getIdCol3()
     {
-        return getIdCol(_object.getIdCol3());
+        return getPropertyDescriptor(_object.getIdCol3());
+    }
+
+    public PropertyDescriptor getParentCol()
+    {
+        return getPropertyDescriptor(_object.getParentCol());
     }
 
     public void setDescription(String s)
@@ -221,7 +226,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         }
     }
 
-    public void onSamplesChanged(User user, List<Material> materials) throws Exception
+    public void onSamplesChanged(User user, List<Material> materials) throws SQLException
     {
         ExpProtocol[] protocols = getProtocols(user);
         if (protocols.length == 0)

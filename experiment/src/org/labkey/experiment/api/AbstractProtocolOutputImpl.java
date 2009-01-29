@@ -23,7 +23,6 @@ import org.labkey.api.util.CsvSet;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Collections;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -154,6 +153,9 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
         _object.setSourceProtocolLSID(app == null ? null : app.getProtocol().getLSID());
         _object.setContainer(getContainer());
         _object.setRunId(app == null ? null : app.getRun().getRowId());
+        _sourceApp = null;
+        _successorAppList = null;
+        _successorRunIdList = null;
     }
 
     public void setSourceProtocol(ExpProtocol protocol)

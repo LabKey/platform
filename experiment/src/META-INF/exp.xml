@@ -178,12 +178,15 @@
       <ns:column columnName="LSID">
           <ns:isReadOnly>true</ns:isReadOnly>
       </ns:column>
-      <ns:column columnName="MaterialLSIDPrefix"/>
+      <ns:column columnName="MaterialLSIDPrefix">
+          <ns:isReadOnly>true</ns:isReadOnly>
+      </ns:column>
       <ns:column columnName="Description"/>
       <ns:column columnName="Created"/>
       <ns:column columnName="IdCol1"/>
       <ns:column columnName="IdCol2"/>
       <ns:column columnName="IdCol3"/>
+      <ns:column columnName="ParentCol"/>
       <ns:column columnName="CreatedBy">
         <ns:fk>
           <ns:fkColumnName>UserId</ns:fkColumnName>
@@ -215,6 +218,7 @@
         <ns:column columnName="IdCol1"/>
         <ns:column columnName="IdCol2"/>
         <ns:column columnName="IdCol3"/>
+        <ns:column columnName="ParentCol"/>
         <ns:column columnName="Created"/>
         <ns:column columnName="CreatedBy">
           <ns:fk>

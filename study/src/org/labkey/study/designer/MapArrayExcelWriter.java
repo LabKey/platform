@@ -38,21 +38,10 @@ import java.io.IOException;
  */
 public class MapArrayExcelWriter extends ExcelWriter
 {
-    Map<String,Object>[] maps;
+    List<Map<String,Object>> maps;
     int currentRow = 0;
 
-    public MapArrayExcelWriter(Map<String,Object>[] maps)
-    {
-        this.maps = maps;
-        assert maps.length > 0;
-        List<DisplayColumn> cols = new ArrayList<DisplayColumn>();
-        for (String key : maps[0].keySet())
-            cols.add(new MapArrayDisplayColumn(key, null != maps[0].get(key) ? maps[0].get(key).getClass() : Object.class));
-
-        setDisplayColumns(cols);
-    }
-
-    public MapArrayExcelWriter(Map<String,Object>[] maps, ColumnDescriptor[] cols)
+    public MapArrayExcelWriter(List<Map<String,Object>> maps, ColumnDescriptor[] cols)
     {
         this.maps = maps;
         List<DisplayColumn> xlcols = new ArrayList<DisplayColumn>();
@@ -67,7 +56,7 @@ public class MapArrayExcelWriter extends ExcelWriter
     {
         RenderContext ctx = new RenderContext(HttpView.currentContext());
 
-        for (currentRow = 0; currentRow < maps.length; currentRow++)
+        for (currentRow = 0; currentRow < maps.size(); currentRow++)
         {
             renderGridRow(sheet, ctx, visibleColumns);
         }
@@ -93,7 +82,7 @@ public class MapArrayExcelWriter extends ExcelWriter
         public Object getValue(RenderContext ctx)
         {
             //Ignore the context.
-            return maps[currentRow].get(getName());
+            return maps.get(currentRow).get(getName());
         }
 
         public Class getValueClass()

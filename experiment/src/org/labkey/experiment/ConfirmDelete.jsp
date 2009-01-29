@@ -100,10 +100,13 @@ else
                 }
             }
         %>
-        <% if (bean.getDataRegionSelectionKey() != null) { %>
+        <% if (bean.getSingleObjectRowId() != null) { %>
+            <input type="hidden" name="singleObjectRowId" value="<%= bean.getSingleObjectRowId() %>" />
+        <% }
+        if (bean.getDataRegionSelectionKey() != null) { %>
             <input type="hidden" name="<%= DataRegionSelection.DATA_REGION_SELECTION_KEY %>" value="<%= bean.getDataRegionSelectionKey() %>" />
         <% }
-           if (bean.getReturnURL() != null)
+        if (bean.getReturnURL() != null)
         { %>
             <input type="hidden" name="returnURL" value="<%= bean.getReturnURL() %>"/>
         <% } %>

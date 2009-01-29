@@ -1846,13 +1846,13 @@ public class StudyController extends BaseStudyController
             TabLoader loader = new TabLoader(form.tsv, true);
             loader.setLowerCaseHeaders(true);
             loader.setParseQuotes(true);
-            Map<String, Object>[] mapsLoad = (Map<String, Object>[]) loader.load();
+            List<Map<String, Object>> mapsLoad = loader.load();
 
             // CONSIDER: move all this into StudyManager
-            ArrayList<Map<String, Object>> mapsImport = new ArrayList<Map<String, Object>>(mapsLoad.length);
+            ArrayList<Map<String, Object>> mapsImport = new ArrayList<Map<String, Object>>(mapsLoad.size());
             PropertyDescriptor[] pds;
 
-            if (mapsLoad.length > 0)
+            if (mapsLoad.size() > 0)
             {
                 Map<Integer, DataSetImportInfo> datasetInfoMap = new HashMap<Integer, DataSetImportInfo>();
                 int missingTypeNames = 0;
@@ -2014,10 +2014,9 @@ public class StudyController extends BaseStudyController
                 }
 
                 String domainURI = getDomainURI(getContainer(), null);
-                Map[] m = mapsImport.toArray(new Map[mapsImport.size()]);
 
                 List<String> importErrors = new LinkedList<String>();
-                pds = OntologyManager.importTypes(domainURI, form.getTypeNameColumn(), m, importErrors, getContainer(), true);
+                pds = OntologyManager.importTypes(domainURI, form.getTypeNameColumn(), mapsImport, importErrors, getContainer(), true);
 
                 if (!importErrors.isEmpty())
                 {

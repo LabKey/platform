@@ -30,6 +30,8 @@ public class MaterialSource extends IdentifiableEntity
     private String _idCol2;
     /** PropertyURI */
     private String _idCol3;
+    /** PropertyURI */
+    private String _parentCol;
 
     public String getMaterialLSIDPrefix()
     {
@@ -85,5 +87,17 @@ public class MaterialSource extends IdentifiableEntity
     public void setIdCol3(String idCol3)
     {
         _idCol3 = idCol3;
+    }
+
+    /** @return PropertyURI for column that points at parent materials */
+    public String getParentCol()
+    {
+        return _parentCol;
+    }
+
+    /** @param parentCol PropertyURI for column that points at parent materials */
+    public void setParentCol(String parentCol)
+    {
+        _parentCol = parentCol;
     }
 }

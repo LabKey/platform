@@ -20,11 +20,14 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.security.User;
+import org.labkey.api.security.ACL;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.DotGraph;
+import org.labkey.experiment.ExperimentRunGraph;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -285,9 +288,55 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     public void deleteProtocolApplications(User user)
     {
+        deleteProtocolApplications(getOutputDatas(null), user);
+    }
+
+    public void deleteProtocolApplications(ExpData[] datasToDelete, User user)
+    {
         try
         {
-            ExperimentServiceImpl.get().deleteProtocolApplications(this, getOutputDatas(null), user);
+            if (user == null || !getContainer().hasPermission(user, ACL.PERM_DELETE))
+            {
+                throw new SQLException("Attempting to delete an ExperimentRun without having delete permissions for its container");
+            }
+            DbCache.remove(ExperimentServiceImpl.get().getTinfoExperimentRun(), ExperimentServiceImpl.get().getCacheKey(getLSID()));
+
+            ExperimentServiceImpl.get().beforeDeleteData(datasToDelete);
+
+            String sql = " ";
+            sql += "DELETE FROM exp.ProtocolApplicationParameter WHERE ProtocolApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ");\n";
+
+            sql += "UPDATE " + ExperimentServiceImpl.get().getTinfoData() + " SET SourceApplicationId = NULL, RunId = NULL, SourceProtocolLSID = NULL  " +
+                    " WHERE RowId IN (SELECT exp.Data.RowId FROM exp.Data " +
+                    " INNER JOIN exp.DataInput ON exp.Data.RowId = exp.DataInput.DataId " +
+                    " INNER JOIN exp.ProtocolApplication PAOther ON exp.DataInput.TargetApplicationId = PAOther.RowId " +
+                    " INNER JOIN exp.ProtocolApplication PA ON exp.Data.SourceApplicationId = PA.RowId " +
+                    " WHERE PAOther.RunId <> PA.RunId AND PA.RunId = " + getRowId() + ");\n";
+
+            sql += "UPDATE " + ExperimentServiceImpl.get().getTinfoMaterial() + " SET SourceApplicationId = NULL, RunId = NULL, SourceProtocolLSID = NULL  " +
+                    " WHERE RowId IN (SELECT exp.Material.RowId FROM exp.Material " +
+                    " INNER JOIN exp.MaterialInput ON exp.Material.RowId = exp.MaterialInput.MaterialId " +
+                    " INNER JOIN exp.ProtocolApplication PAOther ON exp.MaterialInput.TargetApplicationId = PAOther.RowId " +
+                    " INNER JOIN exp.ProtocolApplication PA ON exp.Material.SourceApplicationId = PA.RowId " +
+                    " WHERE PAOther.RunId <> PA.RunId AND PA.RunId = " + getRowId() + ");\n";
+
+            sql += "DELETE FROM exp.DataInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ");\n";
+            sql += "DELETE FROM exp.MaterialInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ");\n";
+            sql += "DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE RunId = " + getRowId() + ");\n";
+            sql += "DELETE FROM exp.MaterialInput WHERE MaterialId IN (SELECT RowId FROM exp.Material WHERE RunId = " + getRowId() + ");\n";
+
+            sql += "DELETE FROM exp.Data WHERE RunId = " + getRowId() + ";\n";
+            Table.execute(ExperimentServiceImpl.get().getExpSchema(), sql, new Object[]{});
+
+            ExpMaterial[] materialsToDelete = ExperimentServiceImpl.get().getExpMaterialsForRun(getRowId());
+            for (ExpMaterial expMaterial : materialsToDelete)
+            {
+                expMaterial.delete(user);
+            }
+
+            Table.execute(ExperimentServiceImpl.get().getExpSchema(), "DELETE FROM exp.ProtocolApplication WHERE RunId = " + getRowId(), new Object[]{});
+            
+            ExperimentRunGraph.clearCache(getContainer());
         }
         catch (SQLException e)
         {

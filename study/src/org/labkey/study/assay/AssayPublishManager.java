@@ -193,7 +193,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             if (!errors.isEmpty())
                 return null;
             Map<String, String> propertyNamesToUris = ensurePropertyDescriptors(targetContainer, user, dataset, dataMaps, types);
-            Map<String, Object>[] convertedDataMaps = convertPropertyNamesToURIs(dataMaps, propertyNamesToUris);
+            List<Map<String, Object>> convertedDataMaps = convertPropertyNamesToURIs(dataMaps, propertyNamesToUris);
             // re-retrieve the datasetdefinition: this is required to pick up any new columns that may have been created
             // in 'ensurePropertyDescriptors'.
             dataset = StudyManager.getInstance().getDataSetDefinition(targetStudy, dataset.getRowId());
@@ -291,18 +291,19 @@ public class AssayPublishManager implements AssayPublishService.Service
         return true;
     }
 
-    private Map<String, Object>[] convertPropertyNamesToURIs(Map<String, Object>[] dataMaps, Map<String, String> propertyNamesToUris)
+    private List<Map<String, Object>> convertPropertyNamesToURIs(Map<String, Object>[] dataMaps, Map<String, String> propertyNamesToUris)
     {
-        Map<String, Object>[] ret = new Map[dataMaps.length];
-        for (int i = 0; i < dataMaps.length; i++)
+        List<Map<String, Object>> ret = new ArrayList<Map<String, Object>>(dataMaps.length);
+        for (Map<String, Object> dataMap : dataMaps)
         {
-            ret[i] = new CaseInsensitiveHashMap<Object>(dataMaps[i].size());
-            for (Map.Entry<String,Object> entry : dataMaps[i].entrySet())
+            Map<String, Object> newMap = new CaseInsensitiveHashMap<Object>(dataMap.size());
+            for (Map.Entry<String, Object> entry : dataMap.entrySet())
             {
                 String uri = propertyNamesToUris.get(entry.getKey());
                 assert uri != null : "Expected all properties to already be present in assay type";
-                ret[i].put(uri, entry.getValue());
+                newMap.put(uri, entry.getValue());
             }
+            ret.add(newMap);
         }
         return ret;
     }

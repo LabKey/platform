@@ -142,7 +142,7 @@ public class GWTAssaySchedule implements Schedule, IsSerializable
         timepoints.remove(tp);
     }
 
-    public List/*<Timepoint>*/ getTimepoints()
+    public List<GWTTimepoint> getTimepoints()
     {
         return timepoints;
     }

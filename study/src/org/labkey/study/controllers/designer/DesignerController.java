@@ -276,8 +276,7 @@ public class DesignerController extends SpringActionController
             xlCols[0] = new ColumnDescriptor("SubjectId", Integer.class);
             xlCols[1] = new ColumnDescriptor("Cohort", String.class);
             xlCols[2] = new ColumnDescriptor("StartDate", Date.class);
-            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter
-                    (participantList.toArray(new Map[participantList.size()]), xlCols);
+            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(participantList, xlCols);
             xlWriter.setHeaders(Arrays.asList("#Update the SubjectId column of this spreadsheet to the identifiers used when sending a sample to labs", "#"));
             xlWriter.write(response);
         }
@@ -317,7 +316,7 @@ public class DesignerController extends SpringActionController
             }
 
             SimpleSpecimenImporter importer = new SimpleSpecimenImporter(true, "Subject Id");
-            Map<String,Object>[] defaultSpecimens = StudyDesignManager.get().generateSampleList(getStudyDefinition(form), getParticipants(), form.getBeginDate());
+            List<Map<String,Object>> defaultSpecimens = StudyDesignManager.get().generateSampleList(getStudyDefinition(form), getParticipants(), form.getBeginDate());
             MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
             for (ExcelColumn col : xlWriter.getColumns())
             {
@@ -379,11 +378,12 @@ public class DesignerController extends SpringActionController
                     break;
                 case CONFIRM:
                     //Put visitids back on uploaded participant info...
-                    Map<String,Object>[] participantMaps = new Map[getParticipants().length];
-                    for (int i = 0; i < getParticipants().length; i++)
+                    List<Map<String,Object>> participantMaps = new ArrayList<Map<String, Object>>(getParticipants().size());
+                    for (int i = 0; i < getParticipants().size(); i++)
                     {
-                        participantMaps[i] = new HashMap<String,Object>(getParticipants()[i]);
-                        participantMaps[i].put("Date", participantMaps[i].get("StartDate")); //Date of demographic data *is* StartDate by default
+                        HashMap<String, Object> newMap = new HashMap<String, Object>(getParticipants().get(i));
+                        newMap.put("Date", newMap.get("StartDate")); //Date of demographic data *is* StartDate by default
+                        participantMaps.add(newMap);
                     }
                     Study study = StudyDesignManager.get().generateStudyFromDesign(getUser(), ContainerManager.getForId(form.getParentFolderId()), form.getFolderName(), form.getBeginDate(), info, participantMaps, getSpecimens());
                     final ActionURL studyFolderUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(study.getContainer());
@@ -457,7 +457,7 @@ public class DesignerController extends SpringActionController
         else
         {
             GWTStudyDefinition def = getStudyDefinition(form);
-            Map<String,Object>[] participantDataset = StudyDesignManager.get().generateParticipantDataset(getUser(), def);
+            List<Map<String,Object>> participantDataset = StudyDesignManager.get().generateParticipantDataset(getUser(), def);
             setParticipants(participantDataset);
             form.setWizardStep(WizardStep.SHOW_PARTICIPANTS);
         }
@@ -469,7 +469,7 @@ public class DesignerController extends SpringActionController
         if (null != form.getParticipantTSV())
         {
             TabLoader tl = new TabLoader(form.getParticipantTSV(), true);
-            setParticipants((Map<String,Object>[]) tl.load());
+            setParticipants(tl.load());
         }
         if (form.isUploadParticipants())
             uploadParticipants(form);
@@ -491,13 +491,13 @@ public class DesignerController extends SpringActionController
         Set<String> participants = new HashSet<String>();
         Map<String,Integer> cohortCounts = new CaseInsensitiveHashMap<Integer>();
         GWTStudyDefinition def = getStudyDefinition(form);
-        for (GWTCohort group : (List<GWTCohort>) def.getGroups())
+        for (GWTCohort group : def.getGroups())
             cohortCounts.put(group.getName(), 0);
 
-        Map<String,Object>[] rows = (Map<String,Object>[]) loader.load();
+        List<Map<String,Object>> rows = loader.load();
         setParticipants(rows);
         int rowNum = 1;
-        for (Map row : rows)
+        for (Map<String, Object> row : rows)
         {
             String cohort = (String) row.get("Cohort");
             String participant = (String) row.get("ParticipantId");
@@ -594,7 +594,7 @@ public class DesignerController extends SpringActionController
             {
                 //Handle back->forward case by reloading
                 TabLoader tl = new TabLoader(form.getSpecimenTSV(), true);
-                setSpecimens((Map<String,Object>[]) tl.load());
+                setSpecimens(tl.load());
             }
             handleUploadSamples(form);
         }
@@ -641,7 +641,7 @@ public class DesignerController extends SpringActionController
         }
         importer.fixupSpecimenColumns(loader);
 
-        Map<String,Object>[] specimenRows = (Map<String,Object>[]) loader.load();
+        List<Map<String,Object>> specimenRows = loader.load();
         setSpecimens(specimenRows);
         Set<String> participants = new HashSet<String>();
         int rowNum = 1;
@@ -699,12 +699,12 @@ public class DesignerController extends SpringActionController
     }
 
     @SuppressWarnings("unchecked")
-    public static Map<String,Object>[] getParticipants()
+    public static List<Map<String,Object>> getParticipants()
     {
-        return (Map<String,Object>[])HttpView.currentContext().getSession().getAttribute(PARTICIPANT_KEY);
+        return (List<Map<String,Object>>)HttpView.currentContext().getSession().getAttribute(PARTICIPANT_KEY);
     }
 
-    private void setParticipants(Map<String,Object>[] participants)
+    private void setParticipants(List<Map<String,Object>> participants)
     {
         HttpSession session = HttpView.currentContext().getSession();
         if (participants == null)
@@ -716,12 +716,12 @@ public class DesignerController extends SpringActionController
     }
 
     @SuppressWarnings("unchecked")
-    public static Map<String,Object>[] getSpecimens()
+    public static List<Map<String,Object>> getSpecimens()
     {
-        return (Map<String,Object>[])HttpView.currentContext().getSession().getAttribute(SPECIMEN_KEY);
+        return (List<Map<String,Object>>)HttpView.currentContext().getSession().getAttribute(SPECIMEN_KEY);
     }
 
-    private void setSpecimens(Map<String,Object>[] specimens)
+    private void setSpecimens(List<Map<String,Object>> specimens)
     {
         HttpSession session = HttpView.currentContext().getSession();
         if (specimens == null)

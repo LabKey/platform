@@ -30,9 +30,10 @@ public class UploadMaterialSetForm extends ViewFormData
     private boolean importMoreSamples;
     private boolean nameReadOnly;
     private String data;
-    private Integer idColumn1;
-    private Integer idColumn2;
-    private Integer idColumn3;
+    private int idColumn1;
+    private int idColumn2;
+    private int idColumn3;
+    private int parentColumn;
     private OverwriteChoice overwriteChoice;
     public enum OverwriteChoice
     {
@@ -80,35 +81,45 @@ public class UploadMaterialSetForm extends ViewFormData
         return data;
     }
 
-    public void setIdColumn1(Integer idColumn)
+    public void setIdColumn1(int idColumn)
     {
         this.idColumn1 = idColumn;
     }
 
 
-    public Integer getIdColumn1()
+    public int getIdColumn1()
     {
         return idColumn1;
     }
 
-    public void setIdColumn2(Integer idColumn)
+    public void setIdColumn2(int idColumn)
     {
         this.idColumn2 = idColumn;
     }
 
-    public Integer getIdColumn2()
+    public int getIdColumn2()
     {
         return idColumn2;
     }
 
-    public void setIdColumn3(Integer idColumn)
+    public void setIdColumn3(int idColumn)
     {
         this.idColumn3 = idColumn;
     }
 
-    public Integer getIdColumn3()
+    public int getIdColumn3()
     {
         return this.idColumn3;
+    }
+
+    public int getParentColumn()
+    {
+        return parentColumn;
+    }
+
+    public void setParentColumn(int parentColumn)
+    {
+        this.parentColumn = parentColumn;
     }
 
     public String getOverwriteChoice()

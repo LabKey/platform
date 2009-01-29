@@ -43,8 +43,9 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
         private final String _detailAction;
         private String _returnURL;
         private String _dataRegionSelectionKey;
+        private Integer _singleObjectRowId;
 
-        public ConfirmDeleteBean(Map<ExpRun, Container> runsWithPermission, Map<ExpRun, Container> runsWithoutPermission, ViewContext viewContext, List<? extends ExpObject> objects, String objectType, String detailAction)
+        public ConfirmDeleteBean(Map<ExpRun, Container> runsWithPermission, Map<ExpRun, Container> runsWithoutPermission, ViewContext viewContext, List<? extends ExpObject> objects, String objectType, String detailAction, Integer singleObjectRowId)
         {
             _runsWithPermission = runsWithPermission;
             _runsWithoutPermission = runsWithoutPermission;
@@ -52,6 +53,7 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
             _objects = objects;
             _objectType = objectType;
             _detailAction = detailAction;
+            _singleObjectRowId = singleObjectRowId;
         }
 
         public Map<ExpRun, Container> getRunsWithPermission()
@@ -103,6 +105,11 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
         {
             _dataRegionSelectionKey = dataRegionSelectionKey;
         }
+
+        public Integer getSingleObjectRowId()
+        {
+            return _singleObjectRowId;
+        }
     }
 
     public ConfirmDeleteView(String objectType, String detailAction, List<? extends ExpObject> objects, ExperimentController.DeleteForm form) throws ServletException
@@ -129,7 +136,7 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
             }
         }
 
-        ConfirmDeleteBean bean = new ConfirmDeleteBean(runsWithPermission, runsWithoutPermission, getViewContext(), objects, objectType, detailAction);
+        ConfirmDeleteBean bean = new ConfirmDeleteBean(runsWithPermission, runsWithoutPermission, getViewContext(), objects, objectType, detailAction, form.getSingleObjectRowId());
         bean.setReturnURL(form.getReturnURL());
         bean.setDataRegionSelectionKey(form.getDataRegionSelectionKey());
         setModelBean(bean);

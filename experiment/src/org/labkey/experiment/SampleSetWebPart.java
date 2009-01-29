@@ -84,6 +84,7 @@ public class SampleSetWebPart extends WebPartView<Object>
         dr.getDisplayColumn("idcol1").setVisible(false);
         dr.getDisplayColumn("idcol2").setVisible(false);
         dr.getDisplayColumn("idcol3").setVisible(false);
+        dr.getDisplayColumn("parentcol").setVisible(false);
 
         ActionURL url = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, model.getContainer());
         dr.getDisplayColumn(1).setURL(url.toString() + "rowId=${RowId}");
@@ -94,20 +95,20 @@ public class SampleSetWebPart extends WebPartView<Object>
 
         ActionButton deleteButton = new ActionButton("deleteMaterialSource.view", "Delete Selected", DataRegion.MODE_GRID, ActionButton.Action.GET);
         deleteButton.setDisplayPermission(ACL.PERM_DELETE);
-        ActionURL deleteHelper = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, model.getContainer());
-        String script = "return verifySelected(" + dr.getJavascriptFormReference(true) + ", \"" + deleteHelper.getLocalURIString() + "\", \"post\", \"sample set\")";
+        ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, model.getContainer());
+        deleteURL.addParameter("returnURL", model.getActionURL().toString());
+        String script = "return verifySelected(" + dr.getJavascriptFormReference(true) + ", \"" + deleteURL.getLocalURIString() + "\", \"post\", \"sample set\")";
         deleteButton.setScript(script);
         deleteButton.setActionType(ActionButton.Action.POST);
         bb.add(deleteButton);
 
-        ActionButton uploadMaterialsButton = new ActionButton("showUploadMaterials.view", "Import Sample Set", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+        ActionButton uploadMaterialsButton = new ActionButton(ExperimentController.ShowUploadMaterialsAction.class, "Import Sample Set", DataRegion.MODE_GRID, ActionButton.Action.LINK);
         ActionURL uploadURL = new ActionURL(ExperimentController.ShowUploadMaterialsAction.class, model.getContainer());
         uploadMaterialsButton.setURL(uploadURL);
         uploadMaterialsButton.setDisplayPermission(ACL.PERM_UPDATE);
         bb.add(uploadMaterialsButton);
-        bb.add(new ActionButton("showUpdateMaterialSource.view", "Update", DataRegion.MODE_DETAILS, ActionButton.Action.GET));
-        bb.add(new ActionButton("updateMaterialSource.post", "Submit", DataRegion.MODE_UPDATE));
-        bb.add(new ActionButton("listMaterialSources.view", "Show Sample Sets", DataRegion.MODE_DETAILS, ActionButton.Action.LINK));
+        bb.add(new ActionButton(ExperimentController.ShowUpdateMaterialSourceAction.class, "Update", DataRegion.MODE_DETAILS, ActionButton.Action.GET));
+        bb.add(new ActionButton(ExperimentController.UpdateMaterialSourceAction.class, "Submit", DataRegion.MODE_UPDATE));
 
         ActionURL setAsActiveURL = model.cloneActionURL();
         setAsActiveURL.setAction(ExperimentController.SetActiveSampleSetAction.class);
@@ -119,7 +120,7 @@ public class SampleSetWebPart extends WebPartView<Object>
 
         ActionURL showAllURL = model.cloneActionURL();
         showAllURL.setAction(ExperimentController.ShowAllMaterialsAction.class);
-        ActionButton showAllButton = new ActionButton(showAllURL.toString(), "Show All Materials", DataRegion.MODE_GRID | DataRegion.MODE_DETAILS);
+        ActionButton showAllButton = new ActionButton(showAllURL.toString(), "Show All Materials", DataRegion.MODE_GRID);
         showAllButton.setURL(showAllURL);
         showAllButton.setDisplayPermission(ACL.PERM_READ);
         bb.add(showAllButton);
@@ -145,6 +146,8 @@ public class SampleSetWebPart extends WebPartView<Object>
             out.write("<font class=\"labkey-error\">" + PageFlowUtil.filter(_sampleSetError) + "</font><br>");
         }
         DataRegion dr = getMaterialSourceWithProjectRegion(getViewContext());
+        dr.setShadeAlternatingRows(!_narrow);
+        dr.setShowBorders(!_narrow);
         dr.render(new SampleSetRenderContext(getViewContext()), out);
     }
 

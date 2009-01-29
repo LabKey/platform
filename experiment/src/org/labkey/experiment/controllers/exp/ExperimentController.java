@@ -341,22 +341,13 @@ public class ExperimentController extends SpringActionController
                 {
                     super.populateButtonBar(view, bar);
 
-                        ActionURL deleteMaterialUrl = new ActionURL(DeleteMaterialByRowIdAction.class, getContainer());
-                        ActionButton deleteMaterial = new ActionButton("", "Delete Selected");
-                        deleteMaterial.setScript("return verifySelected(this.form, \"" + deleteMaterialUrl.getLocalURIString() + "\", \"post\", \"Samples\")");
-                        deleteMaterial.setActionType(ActionButton.Action.POST);
-                        deleteMaterial.setDisplayPermission(ACL.PERM_DELETE);
-                        bar.add(deleteMaterial);
-
-                    if (_source.canImportMoreSamples())
-                    {
-                        ActionURL urlUploadSamples = new ActionURL(ShowUploadMaterialsAction.class, getContainer());
-                        urlUploadSamples.addParameter("name", sourceName);
-                        urlUploadSamples.addParameter("importMoreSamples", "true");
-                        ActionButton uploadButton = new ActionButton(urlUploadSamples.toString(), "Import More Samples", DataRegion.MODE_ALL, ActionButton.Action.LINK);
-                        uploadButton.setDisplayPermission(ACL.PERM_UPDATE);
-                        bar.add(uploadButton);
-                    }
+                    ActionURL deleteMaterialUrl = new ActionURL(DeleteMaterialByRowIdAction.class, getContainer());
+                    deleteMaterialUrl.addParameter("returnURL", getViewContext().getActionURL().toString());
+                    ActionButton deleteMaterial = new ActionButton("", "Delete Selected");
+                    deleteMaterial.setScript("return verifySelected(this.form, \"" + deleteMaterialUrl.getLocalURIString() + "\", \"post\", \"Samples\")");
+                    deleteMaterial.setActionType(ActionButton.Action.POST);
+                    deleteMaterial.setDisplayPermission(ACL.PERM_DELETE);
+                    bar.add(deleteMaterial);
 
                     ActionURL urlDeriveSamples = new ActionURL(DeriveSamplesChooseTargetAction.class, getContainer());
                     ActionButton deriveButton = new ActionButton("", "Derive Samples");
@@ -367,11 +358,32 @@ public class ExperimentController extends SpringActionController
                 }
             };
             queryView.setShowRecordSelectors(getViewContext().hasPermission(ACL.PERM_DELETE) || getViewContext().hasPermission(ACL.PERM_INSERT));
+            queryView.setShowBorders(true);
+            queryView.setShadeAlternatingRows(true);
 
             queryView.setTitle("Sample Set Contents");
 
             DetailsView detailsView = new DetailsView(SampleSetWebPart.getMaterialSourceRegion(getViewContext()), form);
             detailsView.setTitle("Sample Set Properties");
+            ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete", DataRegion.MODE_DETAILS, ActionButton.Action.POST);
+            deleteButton.setDisplayPermission(ACL.PERM_DELETE);
+            ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, getViewContext().getContainer());
+            deleteURL.addParameter("singleObjectRowId", source.getRowId());
+            deleteURL.addParameter("returnURL", ExperimentUrlsImpl.get().getShowSampleSetListURL(getViewContext().getContainer()).toString());
+
+            deleteButton.setURL(deleteURL);
+            deleteButton.setActionType(ActionButton.Action.LINK);
+            detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(deleteButton);
+
+            if (_source.canImportMoreSamples())
+            {
+                ActionURL urlUploadSamples = new ActionURL(ShowUploadMaterialsAction.class, getViewContext().getContainer());
+                urlUploadSamples.addParameter("name", sourceName);
+                urlUploadSamples.addParameter("importMoreSamples", "true");
+                ActionButton uploadButton = new ActionButton(urlUploadSamples.toString(), "Import More Samples", DataRegion.MODE_ALL, ActionButton.Action.LINK);
+                uploadButton.setDisplayPermission(ACL.PERM_UPDATE);
+                detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(uploadButton);
+            }
 
             return new VBox(detailsView, queryView);
         }
@@ -971,7 +983,7 @@ public class ExperimentController extends SpringActionController
                     }
                     else if (lowerCaseFileName.endsWith(".tsv") || lowerCaseFileName.endsWith(".tsv") || lowerCaseFileName.endsWith(".csv"))
                     {
-                        TabLoader tabLoader = new TabLoader(realContent, Map.class);
+                        TabLoader tabLoader = new TabLoader(realContent);
                         if (lowerCaseFileName.endsWith(".csv"))
                         {
                             tabLoader.parseAsCSV();
@@ -1592,10 +1604,25 @@ public class ExperimentController extends SpringActionController
         private String _returnURL;
         private boolean _forceDelete;
         private String _dataRegionSelectionKey;
+        private Integer _singleObjectRowId;
 
         public int[] getIds(boolean clear)
         {
+            if (_singleObjectRowId != null)
+            {
+                return new int[] { _singleObjectRowId.intValue() };
+            }
             return PageFlowUtil.toInts(DataRegionSelection.getSelected(getViewContext(), clear));
+        }
+
+        public Integer getSingleObjectRowId()
+        {
+            return _singleObjectRowId;
+        }
+
+        public void setSingleObjectRowId(Integer singleObjectRowId)
+        {
+            _singleObjectRowId = singleObjectRowId;
         }
 
         public String getReturnURL()
@@ -1772,7 +1799,7 @@ public class ExperimentController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Sample Set", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer())).addChild("Import Sample Set");
+            return appendRootNavTrail(root).addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer())).addChild("Import Sample Set");
         }
     }
 

@@ -383,7 +383,7 @@ public class ListDefinitionImpl implements ListDefinition
         if (errors.size() > 0)
             return errors;
 
-        Map[] rows = (Map[]) loader.load();
+        List<Map<String, Object>> rows = loader.load();
 
         switch (getKeyType())
         {
@@ -467,7 +467,7 @@ public class ListDefinitionImpl implements ListDefinition
         return errors;
     }
 
-    private void doBulkInsert(User user, ColumnDescriptor cdKey, Domain domain, Map<String, PropertyDescriptor> properties, Map[] rows, List<String> errors)
+    private void doBulkInsert(User user, ColumnDescriptor cdKey, Domain domain, Map<String, PropertyDescriptor> properties, List<Map<String, Object>> rows, List<String> errors)
     {
         boolean transaction = false;
 

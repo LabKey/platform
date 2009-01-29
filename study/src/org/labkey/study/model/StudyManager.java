@@ -56,6 +56,7 @@ import org.labkey.study.SampleManager;
 import org.labkey.study.StudyCache;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
+import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.query.DataSetTable;
@@ -1890,7 +1891,7 @@ public class StudyManager
 
     private static final String CONVERSION_ERROR = "Conversion Error";
 
-    private Map<String, Object>[] parseData(DataSetDefinition def,
+    private List<Map<String, Object>> parseData(DataSetDefinition def,
                                    DataLoader loader,
                                    Map<String, String> columnMap,
                                    List<String> errors)
@@ -1980,9 +1981,7 @@ public class StudyManager
         loader.ensureColumn(new ColumnDescriptor(DataSetTable.QCSTATE_LABEL_COLNAME, String.class));
         loader.ensureColumn(new ColumnDescriptor(DataSetDefinition.getQCStateURI(), Integer.class));
 
-        Map<String, Object>[] maps = (Map<String, Object>[]) loader.load();
-
-        return maps;
+        return loader.load();
     }
 
 
@@ -1991,9 +1990,9 @@ public class StudyManager
      * and do not delete anything
      *
      */
-    HashMap<String,Map> checkAndDeleteDups(Study study, DataSetDefinition def, Map[] rows) throws SQLException, UnauthorizedException
+    HashMap<String,Map> checkAndDeleteDups(Study study, DataSetDefinition def, List<Map<String, Object>> rows) throws SQLException, UnauthorizedException
     {
-        if (null == rows || rows.length == 0)
+        if (null == rows || rows.size() == 0)
             return null;
 
         Container c = study.getContainer();
@@ -2067,7 +2066,7 @@ public class StudyManager
                                       QCState defaultQCState)
         throws IOException, ServletException, SQLException
     {
-        Map<String, Object>[] dataMaps = parseData(def, loader, columnMap, errors);
+        List<Map<String, Object>> dataMaps = parseData(def, loader, columnMap, errors);
         return importDatasetData(study, user, def, dataMaps, lastModified, errors, checkDuplicates, defaultQCState);
     }
 
@@ -2083,11 +2082,11 @@ public class StudyManager
     /**
      * dataMaps have keys which are property URIs, and values which have already been converted.
      */
-    public String[] importDatasetData(Study study, User user, DataSetDefinition def, Map<String, Object>[] dataMaps, long lastModified,
+    public String[] importDatasetData(Study study, User user, DataSetDefinition def, List<Map<String, Object>> dataMaps, long lastModified,
                                       List<String> errors, boolean checkDuplicates, QCState defaultQCState)
             throws IOException, UnauthorizedException, SQLException
     {
-        if (dataMaps.length == 0)
+        if (dataMaps.size() == 0)
             return new String[0];
 
         Container c = study.getContainer();
@@ -2126,9 +2125,9 @@ public class StudyManager
             if (col.getName().equalsIgnoreCase("lsid"))
                 continue;
             
-            for (int i = 0; i < dataMaps.length; i++)
+            for (int i = 0; i < dataMaps.size(); i++)
             {
-                Map<String,Object> dataMap = dataMaps[i];
+                Map<String,Object> dataMap = dataMaps.get(i);
                 Object val = dataMap.get(col.getPropertyURI());
                 if (null == val && !col.isNullable())
                 {
@@ -2144,7 +2143,7 @@ public class StudyManager
                                 // so we need to construct a copy and update our entry
                                 dataMap = new CaseInsensitiveHashMap<Object>(dataMap);
                                 dataMap.put(col.getPropertyURI(), study.getStartDate());
-                                dataMaps[i] = dataMap;
+                                dataMaps.set(i, dataMap);
                                 continue;
                             }
                         }
@@ -2157,7 +2156,7 @@ public class StudyManager
 
                                 // We introduce a sentinel, 0, as our SequenceNum
                                 dataMap.put(col.getPropertyURI(), 0);
-                                dataMaps[i] = dataMap;
+                                dataMaps.set(i, dataMap);
                                 continue;
                             }
                         }
@@ -2302,15 +2301,15 @@ public class StudyManager
                 {
                     int currentKey = getMaxKeyValue(def, user);
                     // Sadly, may have to create new maps, since TabLoader's aren't modifyable
-                    for (int i=0;i<dataMaps.length;i++)
+                    for (int i=0;i<dataMaps.size();i++)
                     {
                         // Only insert if there isn't already a value
-                        if (dataMaps[i].get(keyPropertyURI) == null)
+                        if (dataMaps.get(i).get(keyPropertyURI) == null)
                         {
                             currentKey++;
-                            Map data = new HashMap(dataMaps[i]);
+                            Map<String, Object> data = new HashMap<String, Object>(dataMaps.get(i));
                             data.put(keyPropertyURI, currentKey);
-                            dataMaps[i] = data;
+                            dataMaps.set(i, data);
                         }
                     }
                 }
@@ -2602,7 +2601,7 @@ public class StudyManager
         }
 
 
-        public String beforeImportObject(Map map) throws SQLException
+        public String beforeImportObject(Map<String, Object> map) throws SQLException
         {
             if (null == _stmt)
                 throw new IllegalStateException("No connection provided");
@@ -2735,7 +2734,7 @@ public class StudyManager
                     double sequenceNum = rs.getDouble(3);
                     String ptid = rs.getString(4);
                     Container c = ContainerManager.getForId(containerId);
-                    ActionURL url = new ActionURL("Study", "dataset", c);
+                    ActionURL url = new ActionURL(StudyController.DatasetAction.class, c);
                     url.addParameter(DataSetDefinition.DATASETKEY, String.valueOf(datasetId));
                     url.addParameter(Visit.SEQUENCEKEY, String.valueOf(sequenceNum));
                     url.addParameter("StudyData.participantId~eq", ptid);

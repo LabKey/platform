@@ -812,56 +812,16 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return datasToDelete;
     }
 
-    public void deleteProtocolApplications(ExpRun run, ExpData[] datasToDelete, User user) throws SQLException
-    {
-        if (user == null || !run.getContainer().hasPermission(user, ACL.PERM_DELETE))
-        {
-            throw new SQLException("Attempting to delete an ExperimentRun without having delete permissions for its container");
-        }
-        DbCache.remove(getTinfoExperimentRun(), getCacheKey(run.getLSID()));
-
-        beforeDeleteData(datasToDelete);
-
-        String sql = " ";
-        sql += "DELETE FROM exp.ProtocolApplicationParameter WHERE ProtocolApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + run.getRowId() + ");\n";
-
-        sql += "UPDATE " + getTinfoData() + " SET SourceApplicationId = NULL, RunId = NULL, SourceProtocolLSID = NULL  " +
-                " WHERE RowId IN (SELECT exp.Data.RowId FROM exp.Data " +
-                " INNER JOIN exp.DataInput ON exp.Data.RowId = exp.DataInput.DataId " +
-                " INNER JOIN exp.ProtocolApplication PAOther ON exp.DataInput.TargetApplicationId = PAOther.RowId " +
-                " INNER JOIN exp.ProtocolApplication PA ON exp.Data.SourceApplicationId = PA.RowId " +
-                " WHERE PAOther.RunId <> PA.RunId AND PA.RunId = " + run.getRowId() + ");\n";
-
-        sql += "UPDATE " + getTinfoMaterial() + " SET SourceApplicationId = NULL, RunId = NULL, SourceProtocolLSID = NULL  " +
-                " WHERE RowId IN (SELECT exp.Material.RowId FROM exp.Material " +
-                " INNER JOIN exp.MaterialInput ON exp.Material.RowId = exp.MaterialInput.MaterialId " +
-                " INNER JOIN exp.ProtocolApplication PAOther ON exp.MaterialInput.TargetApplicationId = PAOther.RowId " +
-                " INNER JOIN exp.ProtocolApplication PA ON exp.Material.SourceApplicationId = PA.RowId " +
-                " WHERE PAOther.RunId <> PA.RunId AND PA.RunId = " + run.getRowId() + ");\n";
-
-        sql += "DELETE FROM exp.DataInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + run.getRowId() + ");\n";
-        sql += "DELETE FROM exp.MaterialInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + run.getRowId() + ");\n";
-        sql += "DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE RunId = " + run.getRowId() + ");\n";
-        sql += "DELETE FROM exp.MaterialInput WHERE MaterialId IN (SELECT RowId FROM exp.Material WHERE RunId = " + run.getRowId() + ");\n";
-
-        sql += "DELETE FROM exp.Data WHERE RunId = " + run.getRowId() + ";\n";
-        sql += "DELETE FROM exp.Material WHERE RunId = " + run.getRowId() + ";\n";
-        sql += "DELETE FROM exp.ProtocolApplication WHERE RunId = " + run.getRowId() + ";\n";
-        Table.execute(getExpSchema(), sql, new Object[]{});
-
-        ExperimentRunGraph.clearCache(run.getContainer());
-    }
-
     private void deleteRun(int runId, ExpData[] datasToDelete, User user)
         throws SQLException
     {
-        ExpRun run = getExpRun(runId);
+        ExpRunImpl run = getExpRun(runId);
         if (run == null)
         {
             return;
         }
 
-        deleteProtocolApplications(run, datasToDelete, user);
+        run.deleteProtocolApplications(datasToDelete, user);
 
         //delete run properties and all children
         OntologyManager.deleteOntologyObject(run.getLSID(), run.getContainer(), true);
@@ -873,7 +833,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     }
 
 
-    private static DbSchema getExpSchema()
+    public DbSchema getExpSchema()
     {
         return DbSchema.get("exp");
     }
@@ -1953,12 +1913,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     }
 
 
-    private String getCacheKey(String lsid)
+    public String getCacheKey(String lsid)
     {
         return "LSID/" + lsid;
     }
 
-    private void beforeDeleteData(ExpData[] datas)
+    public void beforeDeleteData(ExpData[] datas)
     {
         try
         {
@@ -2729,41 +2689,24 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                                                      Collection<ExpData> inputDatas, Collection<ExpMaterial> outputMaterials,
                                                      Collection<ExpData> outputDatas, User user) throws SQLException
     {
+        // Save all the input and output objects to make sure they've been inserted
+        saveAll(inputMaterials, user);
+        saveAll(inputDatas, user);
+        saveAll(outputMaterials, user);
+        saveAll(outputDatas, user);
+
         List<ExpData> result = new ArrayList<ExpData>();
-        // insert input materials if they haven't been inserted already:
-        for (ExpMaterial inputMaterial : inputMaterials)
-        {
-            if (inputMaterial.getRowId() == 0)
-                inputMaterial.insert(user);
-        }
-
-        // insert input datas if they haven't been inserted already:
-        for (ExpData inputData : inputDatas)
-        {
-            if (inputData.getRowId() == 0)
-            {
-                inputData.insert(user);
-            }
-        }
         result.addAll(inputDatas);
-
-        // insert output materials if they haven't been inserted already:
-        for (ExpMaterial outputMaterial : outputMaterials)
-        {
-            if (outputMaterial.getRowId() == 0)
-                outputMaterial.insert(user);
-        }
-
-        // insert input datas if they haven't been inserted already:
-        for (ExpData outputData : outputDatas)
-        {
-            if (outputData.getRowId() == 0)
-            {
-                outputData.insert(user);
-            }
-        }
         result.addAll(outputDatas);
         return result;
+    }
+
+    private void saveAll(Iterable<? extends ExpObject> objects, User user)
+    {
+        for (ExpObject object : objects)
+        {
+            object.save(user);
+        }
     }
 
     public ExpRun insertSimpleExperimentRun(ExpRun baseRun, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException
@@ -2962,13 +2905,24 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             throw new IllegalArgumentException("The target container must have a valid pipeline root");
         }
+        if (outputMaterials.isEmpty())
+        {
+            throw new IllegalArgumentException("You must derive at least one child material");
+        }
+        if (inputMaterials.isEmpty())
+        {
+            throw new IllegalArgumentException("You must derive from at least one parent material");
+        }
 
         StringBuilder name = new StringBuilder("Derive ");
-        name.append(outputMaterials.size());
-        name.append(" sample");
-        if (outputMaterials.size() > 1)
+        if (outputMaterials.size() == 1)
         {
-            name.append("s");
+            name.append(" sample");
+        }
+        else
+        {
+            name.append(outputMaterials.size());
+            name.append(" samples");
         }
         name.append(" from ");
         String nameSeparator = " ";
@@ -3272,6 +3226,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             ExpProtocolImpl[] result = ExpProtocolImpl.fromProtocols(Table.executeQuery(getExpSchema(), sql, new Object[]{parentProtocolId}, Protocol.class));
             return Arrays.<ExpProtocol>asList(result);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+    public ExpMaterial[] getExpMaterialsForRun(int runId)
+    {
+        try
+        {
+            return ExpMaterialImpl.fromMaterials(Table.executeQuery(getExpSchema(),  "SELECT * FROM " + getTinfoMaterial() + " WHERE RunId = ?", new Object[] { runId }, Material.class));
         }
         catch (SQLException e)
         {

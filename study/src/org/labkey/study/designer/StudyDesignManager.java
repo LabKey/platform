@@ -288,7 +288,7 @@ public class StudyDesignManager
         Table.delete(getStudyDesignTable(), deleteDesignInfoFilter);
     }
 
-    public Study generateStudyFromDesign(User user, Container parent, String folderName, Date startDate, StudyDesignInfo info, Map<String,Object>[] participantDataset, Map<String,Object>[] specimens) throws SQLException, XmlException, IOException, ServletException
+    public Study generateStudyFromDesign(User user, Container parent, String folderName, Date startDate, StudyDesignInfo info, List<Map<String,Object>> participantDataset, List<Map<String,Object>> specimens) throws SQLException, XmlException, IOException, ServletException
     {
         Container studyFolder = parent.getChild(folderName);
         if (null == studyFolder)
@@ -307,7 +307,7 @@ public class StudyDesignManager
         study = StudyManager.getInstance().createStudy(user, study);
 
         GWTStudyDefinition def = XMLSerializer.fromXML(version.getXML());
-        List<GWTTimepoint> timepoints = (List<GWTTimepoint>) def.getAssaySchedule().getTimepoints();
+        List<GWTTimepoint> timepoints = def.getAssaySchedule().getTimepoints();
         Collections.sort(timepoints);
         if (timepoints.get(0).getDays() != 0)
             timepoints.add(0, new GWTTimepoint("Study Start", 0, GWTTimepoint.DAYS));
@@ -337,9 +337,9 @@ public class StudyDesignManager
 
         Map<String, PropertyType> nameMap = new HashMap<String, PropertyType>();
         //TODO: Not quite right. Really should use types culled from tabloader
-        for (String propertyId : participantDataset[0].keySet())
+        for (String propertyId : participantDataset.get(0).keySet())
         {
-            Object val = participantDataset[0].get(propertyId);
+            Object val = participantDataset.get(0).get(propertyId);
             nameMap.put(propertyId, null == val ? PropertyType.STRING : PropertyType.getFromClass(val.getClass()));
         }
         List<String> errors = new ArrayList<String>();
@@ -350,7 +350,7 @@ public class StudyDesignManager
         study.setParticipantCohortProperty("Cohort");
         StudyManager.getInstance().updateStudy(user, study);
         
-        AssayPublishService.get().publishAssayData(user, parent, studyFolder, "Subjects", null, participantDataset, nameMap, errors);
+        AssayPublishService.get().publishAssayData(user, parent, studyFolder, "Subjects", null, participantDataset.toArray(new Map[participantDataset.size()]), nameMap, errors);
         if (errors.size() > 0) //We were supposed to check these coming in
             throw new RuntimeException(StringUtils.join(errors, '\n'));
 
@@ -386,16 +386,15 @@ public class StudyDesignManager
         }
     }
 
-    public Map<String, Object>[] generateParticipantDataset(User user, GWTStudyDefinition def)
+    public List<Map<String, Object>> generateParticipantDataset(User user, GWTStudyDefinition def)
             throws SQLException
     {
-        List<GWTCohort> cohorts = (List<GWTCohort>) def.getGroups();
+        List<GWTCohort> cohorts = def.getGroups();
         int count = 0;
         for (GWTCohort cohort : cohorts)
             count += cohort.getCount();
 
-        Map<String,Object>[] participantInfo = new Map[count];
-        int index = 0;
+        List<Map<String,Object>> participantInfo = new ArrayList<Map<String, Object>>(count);
         for (int cohortNum = 0; cohortNum < cohorts.size(); cohortNum++)
         {
             GWTCohort cohort = cohorts.get(cohortNum);
@@ -409,7 +408,7 @@ public class StudyDesignManager
                 m.put("Cohort", cohort.getName());
                 m.put("Index", participantNum + 1);
                 m.put("SequenceNum", 1.0);
-                participantInfo[index++] = m;
+                participantInfo.add(m);
             }
         }
         return participantInfo;
@@ -428,7 +427,7 @@ public class StudyDesignManager
      * @param participantInfo
      * @return
      */
-    public Map<String,Object>[] generateSampleList(GWTStudyDefinition studyDefinition, Map[] participantInfo, Date studyStartDate)
+    public List<Map<String,Object>> generateSampleList(GWTStudyDefinition studyDefinition, List<Map<String, Object>> participantInfo, Date studyStartDate)
     {
         GWTAssaySchedule assaySchedule = studyDefinition.getAssaySchedule();
         List<GWTTimepoint> timepoints = assaySchedule.getTimepoints();
@@ -495,7 +494,7 @@ public class StudyDesignManager
             }
             timepointIndex++;
         }
-        return rows.toArray(new Map[0]);
+        return rows;
     }
 
     private Date getDay(Date startDate, int days)

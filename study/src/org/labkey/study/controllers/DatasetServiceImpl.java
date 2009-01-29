@@ -267,12 +267,12 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
                 return errors;
             }
 
-            Map[] maps = null;
+            List<Map<String, Object>> maps = null;
             if (null != tsv && tsv.length() > 0)
             {
                 TabLoader loader = new TabLoader(tsv, true);
                 loader.setLowerCaseHeaders(true);
-                maps = (Map[]) loader.load();
+                maps = loader.load();
             }
 
             PropertyDescriptor[] pds = OntologyManager.importOneType(domain.getDomainURI(), maps, errors, getContainer());

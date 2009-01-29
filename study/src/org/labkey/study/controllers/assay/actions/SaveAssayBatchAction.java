@@ -166,7 +166,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         ExpData newData = AbstractAssayProvider.createData(run.getContainer(), null, "Analysis Results", provider.getDataType());
         newData.save(getViewContext().getUser());
 
-        Map<String, Object>[] rawData = dataArray.toMapArray();
+        List<Map<String, Object>> rawData = dataArray.toMapList();
 
         run = ExperimentService.get().insertSimpleExperimentRun(run,
             Collections.<ExpMaterial, String>emptyMap(),

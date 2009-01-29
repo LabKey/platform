@@ -35,6 +35,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
+import java.util.List;
 
 /**
  * User: brittp
@@ -60,7 +61,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler
         return false;
     }
 
-    public Map<String, Object>[] loadFileData(Domain dataDomain, File inputFile) throws IOException, ExperimentException
+    public List<Map<String, Object>> loadFileData(Domain dataDomain, File inputFile) throws IOException, ExperimentException
     {
         DomainProperty[] columns = dataDomain.getProperties();
         Map<String, Class> expectedColumns = new CaseInsensitiveHashMap<Class>(columns.length);
@@ -116,8 +117,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler
                 }
                 column.errorValues = ERROR_VALUE;
             }
-            //noinspection unchecked
-            return (Map<String, Object>[]) loader.load();
+            return loader.load();
         }
         finally
         {

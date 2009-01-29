@@ -187,7 +187,7 @@ public class VisitMapImporter
     List<VisitMapRecord> getRecords(String content)
     {
         List<VisitMapRecord> records = new ArrayList<VisitMapRecord>();
-        Map[] maps;
+        List<Map<String, Object>> maps;
 
         String tsv = content.replace('|','\t');
         try
@@ -209,7 +209,7 @@ public class VisitMapImporter
                     });
 
             // UNDONE: TabLoader does not integerate with ObjectFactory yet...
-            maps = (Map[])loader.load();
+            maps = loader.load();
         }
         catch (IOException x)
         {
@@ -220,7 +220,7 @@ public class VisitMapImporter
             throw new RuntimeException(x);
         }
 
-        for (Map m : maps)
+        for (Map<String, Object> m : maps)
         {
             if (m.get("sequenceRange") != null)
                 records.add(new VisitMapRecord(m));

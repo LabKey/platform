@@ -101,7 +101,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         tl.setThrowOnErrors(true);
         fixupSpecimenColumns(tl);
 
-        process(user, container, (Map<String,Object>[]) tl.load(), logger);
+        process(user, container, tl.load(), logger);
     }
 
     public void fixupSpecimenColumns(TabLoader tl)
@@ -152,12 +152,12 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         return cols;
     }
 
-    public void process(User user, Container container, Map<String,Object>[] rows) throws SQLException, IOException
+    public void process(User user, Container container, List<Map<String,Object>> rows) throws SQLException, IOException
     {
         process(user, container, rows, Logger.getLogger(getClass()));
     }
 
-    public void process(User user, Container container, Map<String,Object>[] rows, Logger logger) throws SQLException, IOException
+    public void process(User user, Container container, List<Map<String,Object>> rows, Logger logger) throws SQLException, IOException
     {
         //Map from column name to
         Study study = StudyManager.getInstance().getStudy(container);
@@ -195,8 +195,8 @@ public class SimpleSpecimenImporter extends SpecimenImporter
             specimenRows.add(specimenRow);
         }
 
-        Map<String,Map[]> inputTSVs = new HashMap<String, Map[]>();
-        inputTSVs.put("specimens", specimenRows.toArray(new Map[0]));
+        Map<String,List<Map<String, Object>>> inputTSVs = new HashMap<String, List<Map<String, Object>>>();
+        inputTSVs.put("specimens", specimenRows);
         for (LookupTable lookupTable : lookupTables.values())
             inputTSVs.put(lookupTable.getName(), lookupTable.toMaps());
 
@@ -230,15 +230,20 @@ public class SimpleSpecimenImporter extends SpecimenImporter
             return i;
         }
 
-        Map[] toMaps()
+        List<Map<String, Object>> toMaps()
         {
-            Map[] maps = new Map[keyMap.size()];
+            List<Map<String, Object>> maps = new ArrayList<Map<String, Object>>(keyMap.size());
+            for (int i = 0; i < keyMap.size(); i++)
+            {
+                // Grow the list so that we can set them in any order
+                maps.add(null);
+            }
             for (Map.Entry<String,Integer> entry : keyMap.entrySet())
             {
                 Map<String,Object> m = new HashMap<String,Object>();
                 m.put(labelCol, entry.getKey());
                 m.put(idCol, entry.getValue());
-                maps[entry.getValue() - 1] = m;
+                maps.set(entry.getValue() - 1, m);
             }
             return maps;
         }
@@ -270,11 +275,11 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         }
 
         @Override
-        Map[] toMaps()
+        List<Map<String, Object>> toMaps()
         {
-            Map[] maps = super.toMaps();
+            List<Map<String, Object>> maps = super.toMaps();
             //Treat each like a repository so that specimens might be requestable.
-            for (Map m : maps)
+            for (Map<String, Object> m : maps)
             {
                 m.put("is_repository", Boolean.TRUE);
             }

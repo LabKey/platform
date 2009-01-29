@@ -18,26 +18,29 @@ package org.labkey.experiment.samples;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.*;
-import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.*;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.labkey.experiment.api.Material;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.samples.UploadMaterialSetForm.OverwriteChoice;
+import org.apache.log4j.Logger;
 
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.*;
+import java.io.IOException;
 
 public class UploadSamplesHelper
 {
+    private static final Logger _log = Logger.getLogger(UploadSamplesHelper.class);
+
     UploadMaterialSetForm _form;
 
     public UploadSamplesHelper(UploadMaterialSetForm form)
@@ -77,7 +80,7 @@ public class UploadSamplesHelper
         return _form.getContainer();
     }
 
-    public MaterialSource uploadMaterials() throws Exception
+    public MaterialSource uploadMaterials() throws ExperimentException, ValidationException, IOException
     {
         MaterialSource source;
         try
@@ -99,15 +102,8 @@ public class UploadSamplesHelper
             dd.setDomainURI(materialSourceLsid);
             dd.setContainer(getContainer());
 
-            //TODO: Consider using same id for all properties in same container with same name from user...
-            //String basePropertyLsid = new Lsid("Property", lsidPath + "." + setName, "").toString();
-
-            //TODO: Not clear we really want a transaction open all this time.
-            //Perhaps just cleanup manually.
-
-            for (int i = 0; i < columns.length; i++)
+            for (ColumnDescriptor cd : columns)
             {
-                ColumnDescriptor cd = columns[i];
                 PropertyDescriptor pd = descriptorsByName.get(cd.name);
                 if (pd == null || source == null)
                 {
@@ -127,51 +123,51 @@ public class UploadSamplesHelper
                 cd.name = pd.getPropertyURI();
             }
 
-            String idColName1;
-            String idColName2 = null;
-            String idColName3 = null;
-            List<String> idColPropertyURIs = new ArrayList<String>();
+            List<String> idColPropertyURIs;
             if (source != null && source.getIdCol1() != null)
             {
-                idColName1 = source.getIdCol1();
-                idColName2 = source.getIdCol2();
-                idColName3 = source.getIdCol3();
+                idColPropertyURIs = getIdColPropertyURIs(source);
             }
             else
             {
-                idColName1 = tl.getColumns()[_form.getIdColumn1()].name;
+                idColPropertyURIs = new ArrayList<String>();
+                idColPropertyURIs.add(tl.getColumns()[_form.getIdColumn1()].name);
                 if (_form.getIdColumn2() >= 0)
                 {
-                    idColName2 = tl.getColumns()[_form.getIdColumn2()].name;
+                    idColPropertyURIs.add(tl.getColumns()[_form.getIdColumn2()].name);
                 }
                 if (_form.getIdColumn3() >= 0)
                 {
-                    idColName3 = tl.getColumns()[_form.getIdColumn3()].name;
+                    idColPropertyURIs.add(tl.getColumns()[_form.getIdColumn3()].name);
                 }
             }
-            idColPropertyURIs.add(idColName1);
-            if (idColName2 != null)
+            String parentColPropertyURI;
+            if (source != null && source.getParentCol() != null)
             {
-                idColPropertyURIs.add(idColName2);
+                parentColPropertyURI = source.getParentCol();
             }
-            if (idColName3 != null)
+            else if (_form.getParentColumn() >= 0)
             {
-                idColPropertyURIs.add(idColName3);
+                parentColPropertyURI = tl.getColumns()[_form.getParentColumn()].name;
+            }
+            else
+            {
+                parentColPropertyURI = null;
             }
 
-            Map<String, Object>[] maps = (Map<String, Object>[]) tl.load();
+            List<Map<String, Object>> maps = tl.load();
 
-            if (maps.length > 0)
+            if (maps.size() > 0)
             {
                 for (String uri : idColPropertyURIs)
                 {
-                    if (!maps[0].containsKey(uri))
+                    if (!maps.get(0).containsKey(uri))
                     {
                         throw new ExperimentException("Id Columns must match");
                     }
-                    for (int i = 0; i < maps.length; i++)
+                    for (int i = 0; i < maps.size(); i++)
                     {
-                        if (maps[i].get(uri) == null)
+                        if (maps.get(i).get(uri) == null)
                         {
                             if (uri.contains("#"))
                             {
@@ -204,28 +200,24 @@ public class UploadSamplesHelper
                 Lsid lsid = ExperimentServiceImpl.get().getSampleSetLsid(_form.getName(), _form.getContainer());
                 source.setLSID(lsid.toString());
                 source.setName(_form.getName());
-                source.setIdCol1(idColName1);
-                source.setIdCol2(idColName2);
-                source.setIdCol3(idColName3);
+                setCols(idColPropertyURIs, parentColPropertyURI, source);
                 source.setMaterialLSIDPrefix(new Lsid("Sample", String.valueOf(_form.getContainer().getRowId()) + "." + setName, "").toString());
                 source = ExperimentServiceImpl.get().insertMaterialSource(_form.getUser(), source, dd);
             }
             else
             {
                 // 6088: update id cols for already existing material source if none have been set
-                if (source.getIdCol1() == null && idColName1 != null)
+                if (source.getIdCol1() == null || (source.getParentCol() == null && parentColPropertyURI != null))
                 {
                     assert source.getName().equals(_form.getName());
                     assert source.getLSID().equals(ExperimentServiceImpl.get().getSampleSetLsid(_form.getName(), _form.getContainer()).toString());
-                    source.setIdCol1(idColName1);
-                    source.setIdCol2(idColName2);
-                    source.setIdCol3(idColName3);
+                    setCols(idColPropertyURIs, parentColPropertyURI, source);
                     source = ExperimentServiceImpl.get().updateMaterialSource(_form.getUser(), source);
                 }
 
-                if (maps.length > 0)
+                if (maps.size() > 0)
                 {
-                    Set<String> uploadedPropertyURIs = maps[0].keySet();
+                    Set<String> uploadedPropertyURIs = maps.get(0).keySet();
                     if (!uploadedPropertyURIs.containsAll(idColPropertyURIs))
                     {
                         throw new ExperimentException("Your upload must contain the original id columns");
@@ -243,7 +235,7 @@ public class UploadSamplesHelper
                             newMaps.add(map);
                         }
                     }
-                    maps = newMaps.toArray(new Map[0]);
+                    maps = newMaps;
                 }
                 else if (_form.getOverwriteChoiceEnum() == OverwriteChoice.replace)
                 {
@@ -263,16 +255,52 @@ public class UploadSamplesHelper
                     }
                 }
             }
-            insertTabDelimitedMaterial(maps, descriptors.toArray(new PropertyDescriptor[descriptors.size()]), idColPropertyURIs, source.getMaterialLSIDPrefix(), source.getLSID(), reusedMaterialLSIDs);
+            insertTabDelimitedMaterial(maps, descriptors.toArray(new PropertyDescriptor[descriptors.size()]), source, reusedMaterialLSIDs);
             _form.getSampleSet().onSamplesChanged(_form.getUser(), null);
             ExperimentService.get().getSchema().getScope().commitTransaction();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
         }
         finally
         {
             ExperimentService.get().getSchema().getScope().closeConnection();
-
         }
         return source;
+    }
+
+    private List<String> getIdColPropertyURIs(MaterialSource source)
+    {
+        List<String> idColNames = new ArrayList<String>();
+        idColNames.add(source.getIdCol1());
+        if (source.getIdCol2() != null)
+        {
+            idColNames.add(source.getIdCol2());
+        }
+        if (source.getIdCol3() != null)
+        {
+            idColNames.add(source.getIdCol3());
+        }
+        return idColNames;
+    }
+
+    private void setCols(List<String> idColPropertyURIs, String parentColPropertyURI, MaterialSource source)
+    {
+        assert idColPropertyURIs.size() <= 3 : "Found " + idColPropertyURIs.size() + " id cols but 3 is the limit";
+        source.setIdCol1(idColPropertyURIs.get(0));
+        if (idColPropertyURIs.size() > 1)
+        {
+            source.setIdCol2(idColPropertyURIs.get(1));
+            if (idColPropertyURIs.size() > 2)
+            {
+                source.setIdCol3(idColPropertyURIs.get(2));
+            }
+        }
+        if (parentColPropertyURI != null)
+        {
+            source.setParentCol(parentColPropertyURI);
+        }
     }
 
     protected String decideName(Map<String, Object> rowMap, List<String> idCols)
@@ -291,61 +319,150 @@ public class UploadSamplesHelper
         return ret.toString();
     }
 
-    public void insertTabDelimitedMaterial(Map[] rows, PropertyDescriptor[] descriptors, List<String> idCols, String objectPrefix, String cpasType, Set<String> reusedMaterialLSIDs)
-            throws SQLException, ValidationException
+    public void insertTabDelimitedMaterial(List<Map<String, Object>> rows, PropertyDescriptor[] descriptors, MaterialSource source, Set<String> reusedMaterialLSIDs)
+            throws SQLException, ValidationException, ExperimentException
     {
-        if (rows.length == 0)
+        if (rows.size() == 0)
             return;
 
         Container c = getContainer();
 
         //Parent object is the MaterialSet type
-        int ownerObjectId = OntologyManager.ensureObject(c, cpasType);
-        Timestamp createDate = new Timestamp(System.currentTimeMillis());
-        OntologyManager.ImportHelper helper = new MaterialImportHelper(c, cpasType, createDate, idCols, objectPrefix, _form.getUser(), reusedMaterialLSIDs);
+        int ownerObjectId = OntologyManager.ensureObject(c, source.getLSID());
+        MaterialImportHelper helper = new MaterialImportHelper(c, source, _form.getUser(), reusedMaterialLSIDs);
 
         OntologyManager.insertTabDelimited(c, ownerObjectId, helper, descriptors, rows, false);
+
+        if (source.getParentCol() != null)
+        {
+            // Map from material name to material of all materials in all sample sets visible from this location
+            Map<String, ExpMaterial> potentialParents = lookupPotentialParents();
+
+            assert rows.size() == helper._materials.size() : "Didn't find as many materials as we have rows";
+            for (int i = 0; i < rows.size(); i++)
+            {
+                Map<String, Object> row = rows.get(i);
+                ExpMaterial material = helper._materials.get(i);
+
+                if (reusedMaterialLSIDs.contains(material.getLSID()))
+                {
+                    // Since this entry was already in the database, we may need to delete old derivation info
+                    ExpProtocolApplication existingSourceApp = material.getSourceApplication();
+                    if (existingSourceApp != null)
+                    {
+                        ExpRun existingDerivationRun = existingSourceApp.getRun();
+                        if (existingDerivationRun != null)
+                        {
+                            material.setSourceApplication(null);
+                            material.save(_form.getUser());
+                            existingDerivationRun.delete(_form.getUser());
+                        }
+                    }
+                }
+
+                String newParent = row.get(source.getParentCol()) == null ? null : row.get(source.getParentCol()).toString();
+                if (newParent != null)
+                {
+                    // Need to create a new derivation run
+                    List<ExpMaterial> parentMaterials = resolveParentMaterials(newParent, potentialParents);
+                    Map<ExpMaterial, String> parentMap = new HashMap<ExpMaterial, String>();
+                    int index = 1;
+                    for (ExpMaterial parentMaterial : parentMaterials)
+                    {
+                        parentMap.put(parentMaterial, "Sample" + (index == 1 ? "" : Integer.toString(index)));
+                        index++;
+                    }
+                    ExperimentService.get().deriveSamples(parentMap, Collections.singletonMap(material, "Sample"), new ViewBackgroundInfo(_form.getContainer(),  _form.getUser(), null), _log);
+                }
+            }
+        }
     }
 
-    class MaterialImportHelper implements OntologyManager.ImportHelper
+    private Map<String, ExpMaterial> lookupPotentialParents()
     {
-        Container container;
-        String cpasType;
-        Timestamp createDate;
-        List<String> idCols;
-        String objectPrefix;
-        User user;
-        private final Set<String> _reusedMaterialLSIDs;
-
-
-        MaterialImportHelper(Container container, String cpasType, Timestamp createDate, List<String> idCols, String objectPrefix, User user, Set<String> reusedMaterialLSIDs)
+        Map<String, ExpMaterial> potentialParents = new HashMap<String, ExpMaterial>();
+        for (ExpSampleSet sampleSet : ExperimentService.get().getSampleSets(_form.getContainer(), _form.getUser(), true))
         {
-            this.container = container;
-            this.cpasType = cpasType;
-            this.createDate = createDate;
-            this.idCols = idCols;
-            this.objectPrefix = objectPrefix;
-            this.user = user;
+            for (ExpMaterial expMaterial : sampleSet.getSamples())
+            {
+                if (potentialParents.containsKey(expMaterial.getName()))
+                {
+                    // If there are materials in different sample sets that have the same name, don't make them
+                    // available for resolving as parents
+                    potentialParents.put(expMaterial.getName(), null);
+                }
+                else
+                {
+                    potentialParents.put(expMaterial.getName(), expMaterial);
+                }
+            }
+        }
+        return potentialParents;
+    }
+
+    private List<ExpMaterial> resolveParentMaterials(String newParent, Map<String, ExpMaterial> materials) throws ValidationException, ExperimentException
+    {
+        List<ExpMaterial> parents = new ArrayList<ExpMaterial>();
+
+        String[] parentNames = newParent.split(",");
+        for (String parentName : parentNames)
+        {
+            parentName = parentName.trim();
+            ExpMaterial parent = materials.get(parentName);
+            if (parent == null)
+            {
+                if (materials.containsKey(parentName))
+                {
+                    // A value of null is a marker indicating that there was more than one match found
+                    throw new ExperimentException("More than one match for parent material '" + parentName + "' was found.");
+                }
+                else
+                {
+                    throw new ExperimentException("Could not find parent material '" + parentName + "'.");
+                }
+            }
+            parents.add(parent);
+        }
+        return parents;
+    }
+
+    private class MaterialImportHelper implements OntologyManager.ImportHelper
+    {
+        private Container _container;
+        private List<String> _idCols;
+        private User _user;
+        private MaterialSource _source;
+        private final Set<String> _reusedMaterialLSIDs;
+        private List<ExpMaterial> _materials = new ArrayList<ExpMaterial>();
+
+        MaterialImportHelper(Container container, MaterialSource source, User user, Set<String> reusedMaterialLSIDs)
+        {
+            _container = container;
+            _idCols = getIdColPropertyURIs(source);
+            _source = source;
+            _user = user;
             _reusedMaterialLSIDs = reusedMaterialLSIDs;
         }
 
-        public String beforeImportObject(Map map) throws SQLException
+        public String beforeImportObject(Map<String, Object> map) throws SQLException
         {
-            String name = decideName(map, idCols);
-            String lsid = new Lsid(objectPrefix + name).toString();
+            String name = decideName(map, _idCols);
+            String lsid = new Lsid(_source.getMaterialLSIDPrefix() + name).toString();
 
+            ExpMaterial material;
             if (!_reusedMaterialLSIDs.contains(lsid))
             {
-                Material mat = new Material();
-                mat.setContainer(container);
-                mat.setCpasType(cpasType);
-                mat.setCreated(createDate);
-
-                mat.setName(name);
-                mat.setLSID(lsid);
-
-                mat = ExperimentServiceImpl.get().insertMaterial(user, mat);
+                material = ExperimentService.get().createExpMaterial(_container, lsid, name);
+                material.setCpasType(_source.getLSID());
+                material.save(_user);
             }
+            else
+            {
+                material = ExperimentService.get().getExpMaterial(lsid);
+                assert material != null : "Could not find existing material with lsid " + lsid;
+            }
+            _materials.add(material);
+
             return lsid;
         }
 

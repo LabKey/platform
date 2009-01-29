@@ -114,11 +114,11 @@ public class TypesController extends SpringActionController
                 if (null != bytes && bytes.length > 0)
                 {
                     String tsv = new String(bytes, "UTF-8");
-                    Concept[] concepts = TypesController.readVocabularyTSV(tsv);
+                    List<Concept> concepts = TypesController.readVocabularyTSV(tsv);
                     TypesController.importConcepts(name, concepts);
 
                     successView = new HtmlView("Import Complete",
-                        "Successfully imported " + concepts.length + " concepts.<br>" +
+                        "Successfully imported " + concepts.size() + " concepts.<br>" +
                                 PageFlowUtil.generateButton("Search", "./findConcepts.view"));
                     return true;
                 }
@@ -711,18 +711,16 @@ public class TypesController extends SpringActionController
     }
 
 
-    public static Concept[] readVocabularyTSV(String tsv)
+    public static List<Concept> readVocabularyTSV(String tsv)
             throws Exception
     {
         BufferedReader r = new BufferedReader(new StringReader(tsv));
-        TabLoader loader = new TabLoader(r, true, Concept.class);
-        Concept[] concepts;
-        concepts = (Concept[]) loader.load();
-        return concepts;
+        TabLoader loader = new TabLoader(r, true);
+        return loader.createTransformer(Concept.class).load();
     }
 
 
-    public static void importConcepts(String prefix, Concept[] concepts)
+    public static void importConcepts(String prefix, List<Concept> concepts)
             throws SQLException
     {
         DbSchema expSchema = ExperimentService.get().getSchema();

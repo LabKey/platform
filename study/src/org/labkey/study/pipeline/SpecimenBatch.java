@@ -97,7 +97,7 @@ public class SpecimenBatch extends StudyBatch implements Serializable
             unzipDir = new File(_definitionFile.getParentFile(), tempDirName);
             try
             {
-                List<File> files = unzip(unzipDir);
+                File[] files = unzip(unzipDir);
                 info("Archive unzipped to " + unzipDir.getPath());
                 info("Starting import...");
                 setStatus("Processing");
@@ -143,7 +143,7 @@ public class SpecimenBatch extends StudyBatch implements Serializable
         return entryList;
     }
 
-    private List<File> unzip(File unzipDir) throws IOException
+    private File[] unzip(File unzipDir) throws IOException
     {
         List<File> files = new ArrayList<File>();
         setStatus("Unzipping");
@@ -184,7 +184,7 @@ public class SpecimenBatch extends StudyBatch implements Serializable
         {
             if (zip != null) try { zip.close(); } catch (IOException e) {}
         }
-        return files;
+        return files.toArray(new File[files.size()]);
     }
 
     private void delete(File file)

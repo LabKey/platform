@@ -18,7 +18,6 @@ package org.labkey.query.sql;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
@@ -32,8 +31,6 @@ import org.labkey.query.design.*;
 import static org.labkey.query.sql.antlr.SqlBaseTokenTypes.ON;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.*;
@@ -1118,12 +1115,12 @@ loop:
 
         int i=1;
         
-        protected Iterator<?> iterator() throws IOException
+        protected Iterator<Map<String, Object>> iterator() throws IOException
         {
             return new _Iterator();
         }
 
-        class _Iterator implements Iterator
+        class _Iterator implements Iterator<Map<String, Object>>
         {
             public boolean hasNext()
             {

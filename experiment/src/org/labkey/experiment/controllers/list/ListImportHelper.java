@@ -43,7 +43,7 @@ public class ListImportHelper implements OntologyManager.ImportHelper
         _cdKey = cdKey;
     }
     
-    public String beforeImportObject(Map map) throws SQLException
+    public String beforeImportObject(Map<String, Object> map) throws SQLException
     {
         try
         {

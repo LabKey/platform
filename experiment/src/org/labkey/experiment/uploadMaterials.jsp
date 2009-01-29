@@ -80,20 +80,52 @@
                 }
                 else
                 { %>
-                #1:
-                <select id="idCol1" name="idColumn1" >
-                    <labkey:options value="<%=form.getIdColumn1()%>" map="<%=form.getKeyOptions(false)%>"/>
-                </select><br>
-                #2 (if needed):<select id="idCol2" name="idColumn2">
-                    <labkey:options value="<%=form.getIdColumn2()%>" map="<%=form.getKeyOptions(true)%>" />
-                </select><br>
-                #3 (if needed):<select id="idCol3" name="idColumn3">
-                    <labkey:options value="<%=form.getIdColumn3()%>" map="<%=form.getKeyOptions(true)%>" />
-                </select>
+                <table>
+                    <tr>
+                        <td align="right">#1:</td>
+                        <td>
+                            <select id="idCol1" name="idColumn1" >
+                                <labkey:options value="<%=form.getIdColumn1()%>" map="<%=form.getKeyOptions(false)%>" />
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>#2 (if needed):</td>
+                        <td>
+                            <select id="idCol2" name="idColumn2">
+                                <labkey:options value="<%=form.getIdColumn2()%>" map="<%=form.getKeyOptions(true)%>" />
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>#3 (if needed):</td>
+                        <td>
+                            <select id="idCol3" name="idColumn3">
+                                <labkey:options value="<%=form.getIdColumn3()%>" map="<%=form.getKeyOptions(true)%>" />
+                            </select>
+                        </td>
+                    </tr>
+                </table>
             <% } %>
         </td>
+    </tr>
     <tr>
-        <td></td>
+        <td class="labkey-form-label">Parent Column<%= helpPopup("Parent Column", "The column that name of a parent sample that is visible from this folder. Parent samples are automatically linked to child samples. You may comma separate the names if a sample has more than one parent.")%></td>
+        <td>
+            <% if (form.isImportMoreSamples() && sampleSet != null && sampleSet.getParentCol() != null)
+            { %>
+                <%= h(sampleSet.getParentCol().getName())%>
+            <% }
+            else
+            { %>
+            <select id="parentCol" name="parentColumn">
+                <labkey:options value="<%=form.getParentColumn()%>" map="<%=form.getKeyOptions(true)%>" />
+            </select>
+            <% } %>
+        </td>
+    </tr>
+    <tr>
+        <td/>
         <td>
             <%=PageFlowUtil.generateSubmitButton("Submit")%>
             <%=PageFlowUtil.generateButton("Clear", "", "javascript:clearValues()")%></td>
@@ -101,9 +133,9 @@
 
 </table>
 
-<div style="display:none" id="uploading"><blink>Please Wait While Data is Uploaded.</blink></div>
+<div style="display:none" id="uploading"><blink>Please wait while data is uploaded.</blink></div>
 </form>
-<script>
+<script type="text/javascript">
 var fields = new Array();
 
 function updateIdSelect(select, header, allowBlank)
@@ -116,12 +148,9 @@ function updateIdSelect(select, header, allowBlank)
     select.options.length = 0;
     if (header.length == 0)
     {
-        if (!allowBlank)
-        {
-            var option = new Option("<Paste Data, then choose id field>", 0);
-            select.options[select.options.length] = option;
-            return;
-        }
+        var option = new Option("<Paste sample set data, then choose a field>", 0);
+        select.options[select.options.length] = option;
+        return;
     }
     if (allowBlank)
     {
@@ -156,6 +185,7 @@ if (rows.length >= 2)
 updateIdSelect(document.getElementById("idCol1"), header, false);
 updateIdSelect(document.getElementById("idCol2"), header, true);
 updateIdSelect(document.getElementById("idCol3"), header, true);
+updateIdSelect(document.getElementById("parentCol"), header, true);
 }
 
 function clearValues()
@@ -186,11 +216,35 @@ if (fields == null || fields.length < 2)
     return false;
 }
 var select1 = document.getElementById("idCol1");
-var col1 = parseInt(select1.options[select1.selectedIndex].value);
-var select2 = document.getElementById("idCol2");
-var col2 = parseInt(select2.options[select2.selectedIndex].value);
-var select3 = document.getElementById("idCol3");
-var col3 = parseInt(select3.options[select3.selectedIndex].value);
+var col1 = -1;
+var col2 = -1;
+var col3 = -1;
+if (select1)
+{
+    col1 = parseInt(select1.options[select1.selectedIndex].value);
+    var select2 = document.getElementById("idCol2");
+    col2 = parseInt(select2.options[select2.selectedIndex].value);
+    var select3 = document.getElementById("idCol3");
+    col3 = parseInt(select3.options[select3.selectedIndex].value);
+}
+else
+{
+    for (var col = 0; col < fields[0].length; col++)
+    {
+        if (fields[0][col] == '<%= h(sampleSet == null || sampleSet.getIdCol1() == null ? "" : sampleSet.getIdCol1().getName())%>')
+        {
+            col1 = col;
+        }
+        if (fields[0][col] == '<%= h(sampleSet == null || sampleSet.getIdCol2() == null ? "" : sampleSet.getIdCol2().getName())%>')
+        {
+            col2 = col;
+        }
+        if (fields[0][col] == '<%= h(sampleSet == null || sampleSet.getIdCol3() == null ? "" : sampleSet.getIdCol3().getName())%>')
+        {
+            col3 = col;
+        }
+    }
+}
 
 var hash = new Object();
 for (var i = 1; i < fields.length; i++)
@@ -206,7 +260,7 @@ for (var i = 1; i < fields.length; i++)
   }
   if (hash[val])
     {
-    alert("The ID columns chosen do not form a unique key:: " + val);
+    alert("The ID columns chosen do not form a unique key. The key " + val + " is used more than once.");
     return false;
     }
   hash[val]= true;
