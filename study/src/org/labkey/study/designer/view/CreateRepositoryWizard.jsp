@@ -214,12 +214,12 @@ You are about to create a study folder with the following settings:
 <ul>
    <li><b>Folder Name: </b><%=h(form.getFolderName())%> </li>
     <li><b>Start Date: </b><%=h(form.getBeginDate())%></li>
-    <li><b>Subjects: </b><%=h(DesignerController.getParticipants().length)%> <%
-        if (nParticipants != DesignerController.getParticipants().length) { %>
+    <li><b>Subjects: </b><%=h(DesignerController.getParticipants().size())%> <%
+        if (nParticipants != DesignerController.getParticipants().size()) { %>
             <span class="labkey-error">Warning: Study design called for <%=nParticipants%> subjects.</span>
         <%}
     %></li>
-    <li><b>Specimens: </b><%=h(DesignerController.getSpecimens().length)%> </li>
+    <li><b>Specimens: </b><%=h(DesignerController.getSpecimens().size())%> </li>
 </ul>
 <br>
 <%=PageFlowUtil.generateButton("Back", "javascript:window.history.back();")%>
