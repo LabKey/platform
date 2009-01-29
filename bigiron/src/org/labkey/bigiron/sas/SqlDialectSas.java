@@ -19,6 +19,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.module.ModuleContext;
 
 import javax.servlet.ServletException;
+import javax.sql.DataSource;
 import java.util.Map;
 import java.util.Collection;
 import java.sql.SQLException;
@@ -263,32 +264,26 @@ public class SqlDialectSas extends SqlDialect
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public JdbcHelper getJdbcHelper(String url) throws ServletException
+
+    // SAS has no database name, so override both getDatabaseName() methods and return null.
+
+    @Override
+    public String getDatabaseName(DataSource ds) throws ServletException
     {
-        return new SasJdbcHelper(url);
+        return null;
     }
 
-
-    /*
-        jdbc:sharenet://localhost:5010
-     */
-    private static class SasJdbcHelper extends JdbcHelper
+    @Override
+    public String getDatabaseName(String url) throws ServletException
     {
-        private SasJdbcHelper(String url) throws ServletException
-        {
-            if (!url.startsWith("jdbc:sharenet:"))
-                throw new ServletException("Unsupported connection url: " + url);
+        return null;
+    }
 
-            int dbEnd = url.indexOf('?');
-            if (-1 == dbEnd)
-                dbEnd = url.length();
-            int dbDelimiter = url.lastIndexOf('/', dbEnd);
-            if (-1 == dbDelimiter)
-                dbDelimiter = url.lastIndexOf(':', dbEnd);
+    // SAS has no database name, so need to parse the URL.  Overrides above ensure this is never called.
 
-            _database = url.substring(dbDelimiter + 1, dbEnd);
-        }
-
+    public JdbcHelper getJdbcHelper(String url) throws ServletException
+    {
+        return null;
     }
 
     public SQLFragment sqlLocate(SQLFragment littleString, SQLFragment bigString)

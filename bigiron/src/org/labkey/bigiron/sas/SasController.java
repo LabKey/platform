@@ -49,7 +49,7 @@ public class SasController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            DbSchema sas = DbSchema.get("shoes");
+            DbSchema sas = SasDbSchema.get("work");
             DbScope scope = sas.getScope();
             Connection con = scope.getConnection();
             DatabaseMetaData dbmd = con.getMetaData();
@@ -65,7 +65,7 @@ public class SasController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Sassy!", new ActionURL(BeginAction.class, getContainer()));
+            return root.addChild("SAS Data Set Browser", new ActionURL(BeginAction.class, getContainer()));
         }
     }
 
@@ -85,7 +85,7 @@ public class SasController extends SpringActionController
 
         public ModelAndView getView(SchemaForm form, BindException errors) throws Exception
         {
-            DbSchema sas = DbSchema.get("shoes");
+            DbSchema sas = SasDbSchema.get(form.getSchema());
             DbScope scope = sas.getScope();
             Connection con = scope.getConnection();
             DatabaseMetaData dma = con.getMetaData();
@@ -137,7 +137,7 @@ public class SasController extends SpringActionController
 
         public ModelAndView getView(TableForm form, BindException errors) throws Exception
         {
-            DbSchema sas = DbSchema.get("shoes");
+            DbSchema sas = SasDbSchema.get(form.getSchema());
             ResultSet rs = Table.executeQuery(sas, new SQLFragment("SELECT * FROM " + form.getSchema() + "." + form.getTable()));
             ModelAndView dataView = new ResultSetView(rs, "Table Data");
 

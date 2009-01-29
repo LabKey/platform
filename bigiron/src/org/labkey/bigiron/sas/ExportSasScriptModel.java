@@ -57,8 +57,8 @@ public class ExportSasScriptModel extends ExportScriptModel
     protected String makeFilterExpression(String name, CompareType operator, String value)
     {
         if (operator.isDataValueRequired())
-            return "\"" + name + "\",\"" + operator.getRName() + "\",\"" + value + "\"";
+            return "\"" + name + "\",\"" + operator.getScriptName() + "\",\"" + value + "\"";
         else
-            return "\"" + name + "\",\"" + operator.getRName() + "\"";
+            return "\"" + name + "\",\"" + operator.getScriptName() + "\"";
     }
 }
