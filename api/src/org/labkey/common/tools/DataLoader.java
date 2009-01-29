@@ -55,7 +55,7 @@ public abstract class DataLoader
 
     protected ColumnDescriptor[] _columns;
     private boolean columnsInitialized = false;
-    protected int _scanAheadLineCount = 20; // number of lines to scan trying to infer data types
+    protected int _scanAheadLineCount = 100; // number of lines to scan trying to infer data types
     // CONSIDER: explicit flags for hasHeaders, inferHeaders, skipLines etc.
     protected int _skipLines = -1;      // -1 means infer headers
     protected Class _returnElementClass = java.util.Map.class;

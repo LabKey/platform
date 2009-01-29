@@ -79,7 +79,11 @@ public class DomainImporter
         this.service = service;
         this.columnsToMap = columnsToMap;
         this.needToMapColumns = columnsToMap.size() > 0;
-        this.baseColumnNames = baseColumnNames;
+        this.baseColumnNames = new HashSet<String>();
+        for (String colName : baseColumnNames)
+        {
+            this.baseColumnNames.add(colName.toLowerCase());
+        }
 
         successURL = PropertyUtil.getServerProperty("successURL");
         cancelURL = PropertyUtil.getServerProperty("cancelURL");
@@ -145,6 +149,7 @@ public class DomainImporter
         });
     }
 
+    @SuppressWarnings("unchecked")
     protected void createColumnsOnServer(GWTDomain domain)
     {
         final GWTDomain newDomain = new GWTDomain(domain);
@@ -159,8 +164,12 @@ public class DomainImporter
             // Don't create properties for columns we're mapping, or that are already in the base table
             GWTPropertyDescriptor prop = column.getPropertyDescriptor();
             String propName = prop.getName();
-            if (ignoredColumns.contains(propName) || baseColumnNames.contains(propName))
+            if (ignoredColumns.contains(propName) || baseColumnNames.contains(propName.toLowerCase()))
                 continue;
+
+            DomainImportGrid.Type selectedType = grid.getTypeForColumn(column);
+            if (selectedType != null)
+                prop.setRangeURI(selectedType.getXsdType());
 
             newProps.add(prop);
         }
@@ -339,24 +348,27 @@ public class DomainImporter
             Grid mappingGrid = new Grid(columnsToMap.size(), 3);
             add(mappingGrid);
 
-            int row=0;
-            for (String destinationColumn : columnsToMap)
+            for (int row=0; row < columnsToMap.size(); row++)
             {
+                String destinationColumn = columnsToMap.get(row);
                 ListBox selector = new ListBox();
                 selector.setName(destinationColumn);
-                for (InferencedColumn column : columns)
+                int rowToSelect = row;
+                for (int inferencedIndex = 0; inferencedIndex < columns.size(); inferencedIndex++)
                 {
-                    selector.addItem(column.getPropertyDescriptor().getName());
+                    InferencedColumn column = columns.get(inferencedIndex);
+                    String name = column.getPropertyDescriptor().getName();
+                    selector.addItem(name);
+                    if (name.equalsIgnoreCase(destinationColumn))
+                        rowToSelect = inferencedIndex;
                 }
-                selector.setItemSelected(row, true); // Cascade down the columns
+                selector.setItemSelected(rowToSelect, true); // Cascade down the columns
                 columnSelectors.add(selector);
 
 
                 Label label = new Label(destinationColumn + ":");
                 mappingGrid.setWidget(row, 1, label);
                 mappingGrid.setWidget(row, 2, selector);
-
-                row++;
             }
         }
 

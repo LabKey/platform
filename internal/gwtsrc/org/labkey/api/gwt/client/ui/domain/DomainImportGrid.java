@@ -20,8 +20,9 @@ import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.ListBox;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: jgarms
@@ -29,9 +30,7 @@ import java.util.List;
  */
 public class DomainImportGrid extends Grid
 {
-    List<InferencedColumn> columns;
-    List<TypeListBox> typePickers;
-
+    Map<InferencedColumn,TypeListBox> column2typePicker = new HashMap<InferencedColumn,TypeListBox>();
     public DomainImportGrid()
     {
         super(1,0);
@@ -45,14 +44,10 @@ public class DomainImportGrid extends Grid
 
     public void setColumns(List<InferencedColumn> columns)
     {
-        this.columns = columns;
-        typePickers = new ArrayList<TypeListBox>(columns.size());
-
         resizeColumns(columns.size());
         int numDataRows = columns.get(0).getData().size();
         resizeRows(numDataRows + 2); // Need a row for the name and a row for the type
 
-        int numCols = columns.size();
         for(int columnIndex=0; columnIndex<columns.size(); columnIndex++)
         {
             InferencedColumn column = columns.get(columnIndex);
@@ -60,9 +55,9 @@ public class DomainImportGrid extends Grid
 
             setWidget(0, columnIndex, new HTML("<b>" + prop.getName() + "</b>"));
 
-            TypeListBox typePicker = new TypeListBox(Type.getTypeByXsdType(prop.getRangeURI()));
+            TypeListBox typePicker = new TypeListBox(prop);
             setWidget(1, columnIndex, typePicker);
-            typePickers.add(typePicker);
+            column2typePicker.put(column, typePicker);
 
             List<String> data = column.getData();
             for (int row=0; row<numDataRows; row++)
@@ -81,11 +76,17 @@ public class DomainImportGrid extends Grid
         }
     }
 
+    public Type getTypeForColumn(InferencedColumn col)
+    {
+        return column2typePicker.get(col).getSelectedType();
+    }
+
     private class TypeListBox extends ListBox
     {
-        public TypeListBox(Type type)
+        public TypeListBox(GWTPropertyDescriptor prop)
         {
             super();
+            Type type = Type.getTypeByXsdType(prop.getRangeURI());
             addItem(type);
             switch(type)
             {
@@ -111,6 +112,14 @@ public class DomainImportGrid extends Grid
         {
             addItem(type.getLabel());
         }
+
+        public Type getSelectedType()
+        {
+            String selectedLabel = getValue(getSelectedIndex());
+            return Type.getTypeByLabel(selectedLabel);
+        }
+
+
     }
 
     public enum Type

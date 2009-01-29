@@ -360,4 +360,10 @@ public class GWTPropertyDescriptor implements IsSerializable
         }
         return "(none)";
     }
+
+    @Override
+    public String toString()
+    {
+        return name.getString() + ": " + rangeURI.getString();
+    }
 }
