@@ -41,7 +41,7 @@ public class ProtocolImplementation
      * is the sampleset that these samples came from.
      * @param materials materials that were modified.
      */
-    public void onSamplesChanged(User user, ExpProtocol protocol, ExpMaterial[] materials) throws Exception
+    public void onSamplesChanged(User user, ExpProtocol protocol, ExpMaterial[] materials) throws SQLException
     {
 
     }

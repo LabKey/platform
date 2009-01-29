@@ -30,6 +30,7 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.List;
 
 /**
  * A JSONArray is an ordered sequence of values. Its external text form is a
@@ -903,8 +904,17 @@ public class JSONArray {
         return myArrayList.toArray(new JSONObject[length()]);
     }
 
-    public Map<String, Object>[] toMapArray()
+    public List<Map<String, Object>> toMapList()
     {
-        return myArrayList.toArray(new Map[length()]);
+        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
+        for (Object o : myArrayList)
+        {
+            if (o != null && !(o instanceof Map))
+            {
+                throw new IllegalStateException("Array contains something other than a map, a " + o.getClass());
+            }
+            result.add((Map<String, Object>)o);
+        }
+        return result;
     }
 }

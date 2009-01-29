@@ -23,6 +23,8 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.action.SpringActionController;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -145,11 +147,20 @@ public class ActionButton extends DisplayElement implements Cloneable
         _caption = StringExpressionFactory.create(caption);
     }
 
+    public ActionButton(Class<? extends Controller> action, String caption, int displayModes)
+    {
+        this(SpringActionController.getActionName(action) + ".view", caption, displayModes);
+    }
+    
     public ActionButton(String actionName, String caption, int displayModes)
     {
         this(actionName, caption);
         setDisplayModes(displayModes);
+    }
 
+    public ActionButton(Class<? extends Controller> action, String caption, int displayModes, Action actionType)
+    {
+        this(SpringActionController.getActionName(action) + ".view", caption, displayModes, actionType);
     }
 
     public ActionButton(String actionName, String caption, int displayModes, Action actionType)

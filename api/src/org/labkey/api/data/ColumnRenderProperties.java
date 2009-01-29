@@ -15,8 +15,8 @@ public class ColumnRenderProperties
 {
     protected Sort.SortDirection sortDirection = Sort.SortDirection.ASC;
     protected String inputType;
-    protected int inputLength;
-    protected int inputRows;
+    protected int inputLength = -1;
+    protected int inputRows = -1;
     protected String displayWidth;
     protected String formatString;
     protected String excelFormatString;

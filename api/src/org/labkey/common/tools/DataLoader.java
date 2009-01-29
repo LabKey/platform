@@ -16,16 +16,13 @@
 package org.labkey.common.tools;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.collections.Transformer;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.QcColumn;
 
-import java.beans.PropertyDescriptor;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.util.*;
 
 /**
@@ -58,7 +55,6 @@ public abstract class DataLoader
     protected int _scanAheadLineCount = 100; // number of lines to scan trying to infer data types
     // CONSIDER: explicit flags for hasHeaders, inferHeaders, skipLines etc.
     protected int _skipLines = -1;      // -1 means infer headers
-    protected Class _returnElementClass = java.util.Map.class;
     protected Transformer _transformer = null;
 
     public final ColumnDescriptor[] getColumns() throws IOException
@@ -95,9 +91,6 @@ public abstract class DataLoader
         //Take our best guess since some columns won't map
         if (null == _columns)
             inferColumnInfo();
-
-        if (null != _returnElementClass)
-            initColumnInfos(_returnElementClass);
     }
 
     protected void setSource(File inputFile) throws IOException
@@ -119,7 +112,7 @@ public abstract class DataLoader
     /**
      * Returns an iterator over the data in this file
      */
-    protected abstract Iterator<?> iterator() throws IOException;
+    protected abstract Iterator<Map<String, Object>> iterator() throws IOException;
 
     /**
      * Look at first <code>scanAheadLineCount</code> lines of the file and infer col names, data types.
@@ -293,86 +286,20 @@ public abstract class DataLoader
         this._skipLines = skipLines;
     }
 
-    private void initColumnInfos(Class clazz)
-    {
-        PropertyDescriptor origDescriptors[] = PropertyUtils.getPropertyDescriptors(clazz);
-        HashMap<String, PropertyDescriptor> mappedPropNames = new HashMap<String, PropertyDescriptor>();
-        for (PropertyDescriptor origDescriptor : origDescriptors)
-        {
-            if (origDescriptor.getName().equals("class"))
-                continue;
-
-            mappedPropNames.put(origDescriptor.getName().toLowerCase(), origDescriptor);
-        }
-
-        boolean isMapClass = java.util.Map.class.isAssignableFrom(clazz);
-        for (ColumnDescriptor column : _columns)
-        {
-            PropertyDescriptor prop = mappedPropNames.get(column.name.toLowerCase());
-            if (null != prop)
-            {
-                column.name = prop.getName();
-                column.clazz = prop.getPropertyType();
-                column.isProperty = true;
-                column.setter = prop.getWriteMethod();
-                if (column.clazz.isPrimitive())
-                {
-                    if (Float.TYPE.equals(column.clazz))
-                        column.missingValues = 0.0F;
-                    else if (Double.TYPE.equals(column.clazz))
-                        column.missingValues = 0.0;
-                    else if (Boolean.TYPE.equals(column.clazz))
-                        column.missingValues = Boolean.FALSE;
-                    else
-                        column.missingValues = 0; //Will get converted.
-                }
-            }
-            else if (isMapClass)
-            {
-                column.isProperty = false;
-            }
-            else
-            {
-                column.load = false;
-            }
-        }
-    }
-
-    public Class getReturnElementClass()
-    {
-        return _returnElementClass;
-    }
-
-    public void setReturnElementClass(Class returnElementClass)
-    {
-        this._returnElementClass = returnElementClass;
-    }
-
-    public Transformer getTransformer()
-    {
-        return _transformer;
-    }
-
-    public void setTransformer(Transformer transformer)
-    {
-        this._transformer = transformer;
-    }
-
     /**
      * Returns an array of objects one for each non-header row of the file.
      * By default the objects are maps, but may be java beans.
      */
-    public Object[] load() throws IOException
+    public List<Map<String, Object>> load() throws IOException
     {
         getColumns();
 
-        List<Object> rowList = new ArrayList<Object>();
-        Iterator it = iterator();
+        List<Map<String, Object>> rowList = new ArrayList<Map<String, Object>>();
+        Iterator<Map<String, Object>> it = iterator();
         while (it.hasNext())
             rowList.add(it.next());
 
-        Object[] oarr = rowList.toArray((Object[]) Array.newInstance(_returnElementClass, rowList.size()));
-        return oarr;
+        return rowList;
     }
 
     public void close() {}

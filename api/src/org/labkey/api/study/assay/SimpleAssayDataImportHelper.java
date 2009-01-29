@@ -35,7 +35,7 @@ public class SimpleAssayDataImportHelper implements OntologyManager.ImportHelper
         _dataLSID = dataLSID;
     }
 
-    public String beforeImportObject(Map map) throws SQLException
+    public String beforeImportObject(Map<String, Object> map) throws SQLException
     {
         return _dataLSID + ".DataRow-" + _id++;
     }

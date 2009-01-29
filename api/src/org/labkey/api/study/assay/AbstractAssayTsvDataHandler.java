@@ -64,7 +64,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         try
         {
-            Map<String, Object>[] rawData = loadFileData(dataDomain, dataFile);
+            List<Map<String, Object>> rawData = loadFileData(dataDomain, dataFile);
             importRows(data, info.getUser(), run, protocol, provider, rawData);
         }
         catch (IOException e)
@@ -73,7 +73,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     }
 
-    public void importRows(ExpData data, User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, Map<String, Object>[] rawData) throws ExperimentException
+    public void importRows(ExpData data, User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, List<Map<String, Object>> rawData) throws ExperimentException
     {
         boolean transaction = false;
         try
@@ -121,7 +121,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 resolver = new StudyParticipantVisitResolver(container, targetContainer);
             }
 
-            if (rawData.length == 0)
+            if (rawData.size() == 0)
             {
                 if (allowEmptyData())
                 {
@@ -141,7 +141,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             for (int i = 0; i < dataDPs.length; i++)
                 dataProperties[i] = dataDPs[i].getPropertyDescriptor();
             Map<String, PropertyDescriptor> propertyNameToDescriptor = OntologyManager.createImportPropertyMap(dataProperties);
-            Map<String, Object>[] fileData = convertPropertyNamesToURIs(rawData, propertyNameToDescriptor);
+            List<Map<String, Object>> fileData = convertPropertyNamesToURIs(rawData, propertyNameToDescriptor);
 
             if (!ExperimentService.get().isTransactionActive())
             {
@@ -186,9 +186,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     }
 
-    public abstract Map<String, Object>[] loadFileData(Domain dataDomain, File dataFile)  throws IOException, ExperimentException;
-
-    private void checkColumns(Domain dataDomain, Set<String> actual, List<String> missing, List<String> unexpected, Map<String, Object>[] rawData, boolean strict)
+    private void checkColumns(Domain dataDomain, Set<String> actual, List<String> missing, List<String> unexpected, List<Map<String, Object>> rawData, boolean strict)
     {
         Set<String> checkSet = new HashSet<String>();
         DomainProperty[] expected = dataDomain.getProperties();
@@ -221,7 +219,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     }
 
-    private void filterColumns(DomainProperty[] expected, Set<String> actual, Map<String, Object>[] rawData)
+    private void filterColumns(DomainProperty[] expected, Set<String> actual, List<Map<String, Object>> rawData)
     {
         Map<String,String> expectedKey2ActualKey = new HashMap<String,String>();
         for (DomainProperty expectedCol : expected)
@@ -238,26 +236,26 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
             }
         }
-        for (int i = 0; i < rawData.length; i++)
+        for (int i = 0; i < rawData.size(); i++)
         {
             Map<String, Object> filteredMap = new HashMap<String, Object>();
             for (Map.Entry<String,String> expectedAndActualKeys : expectedKey2ActualKey.entrySet())
             {
-                filteredMap.put(expectedAndActualKeys.getKey(), rawData[i].get(expectedAndActualKeys.getValue()));
+                filteredMap.put(expectedAndActualKeys.getKey(), rawData.get(i).get(expectedAndActualKeys.getValue()));
             }
-            rawData[i] = filteredMap;
+            rawData.set(i, filteredMap);
         }
     }
 
     /**
      * @return the set of materials that are inputs to this run
      */
-    private Set<ExpMaterial> checkData(Domain dataDomain, Map<String, Object>[] rawData, ParticipantVisitResolver resolver) throws IOException, ExperimentException
+    private Set<ExpMaterial> checkData(Domain dataDomain, List<Map<String, Object>> rawData, ParticipantVisitResolver resolver) throws IOException, ExperimentException
     {
         List<String> missing = new ArrayList<String>();
         List<String> unexpected = new ArrayList<String>();
 
-        Set<String> columnNames = rawData[0].keySet();
+        Set<String> columnNames = rawData.get(0).keySet();
         // For now, we'll only enforce that required columns are present.  In the future, we'd like to
         // do a strict check first, and then present ignorable warnings.
         checkColumns(dataDomain, columnNames, missing, unexpected, rawData, false);
@@ -327,9 +325,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         Set<ExpMaterial> materialInputs = new LinkedHashSet<ExpMaterial>();
 
-        for (int i = 0; i < rawData.length; i++)
+        for (int i = 0; i < rawData.size(); i++)
         {
-            Map<String, Object> map = new CaseInsensitiveHashMap<Object>(rawData[i]);
+            Map<String, Object> map = new CaseInsensitiveHashMap<Object>(rawData.get(i));
             String participantID = null;
             String specimenID = null;
             Double visitID = null;
@@ -371,17 +369,17 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             if (participantPD != null && map.get(participantPD.getName()) == null)
             {
                 map.put(participantPD.getName(), participantVisit.getParticipantID());
-                rawData[i] = map;
+                rawData.set(i, map);
             }
             if (visitPD != null && map.get(visitPD.getName()) == null)
             {
                 map.put(visitPD.getName(), participantVisit.getVisitID());
-                rawData[i] = map;
+                rawData.set(i, map);
             }
             if (datePD != null && map.get(datePD.getName()) == null)
             {
                 map.put(datePD.getName(), participantVisit.getDate());
-                rawData[i] = map;
+                rawData.set(i, map);
             }
 
             materialInputs.add(participantVisit.getMaterial());
@@ -395,19 +393,20 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         return materialInputs;
     }
 
-    private Map<String, Object>[] convertPropertyNamesToURIs(Map<String, Object>[] dataMaps, Map<String, PropertyDescriptor> propertyNamesToUris)
+    private List<Map<String, Object>> convertPropertyNamesToURIs(List<Map<String, Object>> dataMaps, Map<String, PropertyDescriptor> propertyNamesToUris)
     {
-        Map<String, Object>[] ret = new Map[dataMaps.length];
-        for (int i = 0; i < dataMaps.length; i++)
+        List<Map<String, Object>> ret = new ArrayList<Map<String, Object>>(dataMaps.size());
+        for (Map<String, Object> dataMap : dataMaps)
         {
-            ret[i] = new CaseInsensitiveHashMap<Object>(dataMaps[i].size());
-            for (Map.Entry<String,Object> entry : dataMaps[i].entrySet())
+            CaseInsensitiveHashMap<Object> newMap = new CaseInsensitiveHashMap<Object>(dataMap.size());
+            for (Map.Entry<String, Object> entry : dataMap.entrySet())
             {
                 PropertyDescriptor pd = propertyNamesToUris.get(entry.getKey().toLowerCase());
                 if (pd == null)
                     throw new RuntimeException("Expected uri for datamap property '" + entry.getKey() + "'.");
-                ret[i].put(pd.getPropertyURI(), entry.getValue());
+                newMap.put(pd.getPropertyURI(), entry.getValue());
             }
+            ret.add(newMap);
         }
         return ret;
     }

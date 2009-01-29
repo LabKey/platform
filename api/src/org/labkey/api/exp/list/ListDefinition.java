@@ -28,6 +28,7 @@ import org.labkey.common.tools.DataLoader;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.sql.SQLException;
 
 public interface ListDefinition

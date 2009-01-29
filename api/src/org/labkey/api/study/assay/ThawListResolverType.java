@@ -125,7 +125,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
                 cols = tabLoader.getColumns();
             }
 
-            for (Map<String, Object> data : (Map<String, Object>[]) tabLoader.load())
+            for (Map<String, Object> data : tabLoader.load())
             {
                 Object index = data.get("Index");
                 Object specimenIDObject = data.get("SpecimenID");

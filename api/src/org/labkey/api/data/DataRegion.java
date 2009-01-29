@@ -16,7 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.ACL;
@@ -56,7 +55,6 @@ public class DataRegion extends DisplayElement
     private boolean _showFilters = true;
     private boolean _sortable = true;
     private String _name = null;
-    private String _pageFlowUrl = null;
     private String _selectionKey = null;
     private ButtonBar _gridButtonBar = ButtonBar.BUTTON_BAR_GRID;
     private ButtonBar _insertButtonBar = ButtonBar.BUTTON_BAR_INSERT;
@@ -276,7 +274,7 @@ public class DataRegion extends DisplayElement
         if (null == getTable() || null == pkColNames)
             return null;
 
-        StringBuffer urlbuf = new StringBuffer((null != _pageFlowUrl ? _pageFlowUrl : "") + "details.view?");
+        StringBuffer urlbuf = new StringBuffer("details.view?");
         String sep = "";
         for (String pkColName : pkColNames)
         {
@@ -440,11 +438,6 @@ public class DataRegion extends DisplayElement
         _name = name;
     }
 
-    public String getPageFlowUrl()
-    {
-        return _pageFlowUrl;
-    }
-
     public String getSelectionKey()
     {
         return _selectionKey;
@@ -453,16 +446,6 @@ public class DataRegion extends DisplayElement
     public void setSelectionKey(String selectionKey)
     {
         _selectionKey = selectionKey;
-    }
-
-    public void setPageFlowUrl(String pageFlowUrl)
-    {
-        if (pageFlowUrl.charAt(pageFlowUrl.length() - 1) == '?')
-            pageFlowUrl = pageFlowUrl.substring(0, pageFlowUrl.length() - 1);
-        if (pageFlowUrl.charAt(pageFlowUrl.length() - 1) != '/')
-            _pageFlowUrl = pageFlowUrl + '/';
-        else
-            _pageFlowUrl = pageFlowUrl;
     }
 
     // TODO: Should get rid of getTable() & setTable() and just rely on the query columns associated with each display column.
@@ -1762,7 +1745,6 @@ public class DataRegion extends DisplayElement
         ActionURL urlhelp = ctx.getViewContext().cloneActionURL();
         // remove Ajax specific parameter
         urlhelp.deleteParameter("_dc");
-        String queryString = StringUtils.trimToEmpty(urlhelp.getRawQuery());
 
         out.write("<script type=\"text/javascript\">\n");
         out.write("LABKEY.requiresScript('filter.js');\n");

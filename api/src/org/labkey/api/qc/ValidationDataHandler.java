@@ -22,6 +22,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
 
 import java.util.Map;
+import java.util.List;
 import java.io.File;
 import java.io.IOException;
 
@@ -32,5 +33,5 @@ import java.io.IOException;
 */
 public interface ValidationDataHandler
 {
-    public Map<String, Object>[] loadFileData(Domain dataDomain, File dataFile)  throws IOException, ExperimentException;
+    public List<Map<String, Object>> loadFileData(Domain dataDomain, File dataFile)  throws IOException, ExperimentException;
 }

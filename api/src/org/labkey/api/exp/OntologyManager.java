@@ -123,7 +123,7 @@ public class OntologyManager
 
     public static final int MAX_PROPS_IN_BATCH = 10000;
 
-    public static String[] insertTabDelimited(Container c, Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, Map[] rows, boolean ensureObjects) throws SQLException, ValidationException
+    public static String[] insertTabDelimited(Container c, Integer ownerObjectId, ImportHelper helper, PropertyDescriptor[] descriptors, List<Map<String, Object>> rows, boolean ensureObjects) throws SQLException, ValidationException
     {
 		CPUTimer total  = new CPUTimer("insertTabDelimited");
 		CPUTimer before = new CPUTimer("beforeImport");
@@ -132,7 +132,7 @@ public class OntologyManager
 
 		assert total.start();
 		assert getExpSchema().getScope().isTransactionActive();
-		ArrayList<String> lsidList = new ArrayList<String>(rows.length);
+		ArrayList<String> lsidList = new ArrayList<String>(rows.size());
         // Make sure we have enough rows to hande the overflow of the current row so we don't have to resize the list
         List<PropertyRow> propsToInsert = new ArrayList<PropertyRow>(MAX_PROPS_IN_BATCH + descriptors.length);
 
@@ -249,7 +249,7 @@ public class OntologyManager
     public interface ImportHelper
 	{
 		/** return LSID for new or existing Object */
-		String beforeImportObject(Map map) throws SQLException;
+		String beforeImportObject(Map<String, Object> map) throws SQLException;
 		void afterImportObject(String lsid, ObjectProperty[] props) throws SQLException;
 	}
 
@@ -263,7 +263,7 @@ public class OntologyManager
 			this.expr = StringExpressionFactory.create(expr);
 		}
 
-		public String beforeImportObject(Map map) throws SQLException
+		public String beforeImportObject(Map<String, Object> map) throws SQLException
 		{
 			return expr.eval(map);
 		}
@@ -276,7 +276,7 @@ public class OntologyManager
 
 	public static class GuidImportHelper implements OntologyManager.ImportHelper
 	{
-		public String beforeImportObject(Map map) throws SQLException
+		public String beforeImportObject(Map<String, Object> map) throws SQLException
 		{
 			return GUID.makeURN();
 		}
@@ -1918,14 +1918,14 @@ public class OntologyManager
 	}
 
 
-    public static PropertyDescriptor[] importOneType(String domainURI, Map[] maps, Collection<String> errors, Container container)
+    public static PropertyDescriptor[] importOneType(String domainURI, List<Map<String, Object>> maps, Collection<String> errors, Container container)
             throws SQLException
     {
         return importTypes(domainURI, null, maps, errors, container, false);
     }
 
 
-    public static PropertyDescriptor[] importTypes(String domainPrefix, String typeColumn, Map[] maps, Collection<String> errors, Container container, boolean ignoreDuplicates)
+    public static PropertyDescriptor[] importTypes(String domainPrefix, String typeColumn, List<Map<String, Object>> maps, Collection<String> errors, Container container, boolean ignoreDuplicates)
             throws SQLException
     {
         //_log.debug("importTypes(" + vocabulary + "," + typeColumn + "," + maps.length + ")");

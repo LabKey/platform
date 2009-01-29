@@ -24,8 +24,6 @@ import jxl.Workbook;
 import jxl.read.biff.BiffException;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.collections.Transformer;
-import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.QcUtil;
 import org.labkey.api.exp.QcFieldWrapper;
 import org.labkey.api.settings.AppProps;
@@ -111,7 +109,7 @@ public class ExcelLoader extends DataLoader
         return cells.toArray(new String[cells.size()][]);
     }
 
-    protected Iterator<?> iterator() throws IOException
+    protected Iterator iterator() throws IOException
     {
         return new ExcelIterator();
     }
@@ -127,44 +125,20 @@ public class ExcelLoader extends DataLoader
         workbook.close();
     }
 
-    private static class SimpleTransformer implements Transformer
-    {
-        private final ObjectFactory<?> factory;
-
-        public SimpleTransformer(Class<?> clazz)
-        {
-            this.factory = ObjectFactory.Registry.getFactory(clazz);
-        }
-
-        public Object transform(Object o)
-        {
-            //noinspection unchecked
-            return factory.fromMap((Map)o);   
-        }
-    }
-
     private class ExcelIterator implements Iterator
     {
-        private boolean returnMaps;
         private int rowIndex;
         private Sheet sheet;
         private final int numRows;
         private final int numCols;
 
-        private Object nextRow;
+        private Map<String, Object> nextRow;
 
         public ExcelIterator()
         {
             // find a converter for each column type
             for (ColumnDescriptor column : _columns)
                 column.converter = ConvertUtils.lookup(column.clazz);
-
-            returnMaps = _returnElementClass == null || _returnElementClass.equals(java.util.Map.class);
-
-            if (_transformer == null && !returnMaps)
-            {
-                _transformer = new SimpleTransformer(_returnElementClass);
-            }
 
             sheet = getSheet();
             numRows = sheet.getRows();
@@ -180,16 +154,16 @@ public class ExcelLoader extends DataLoader
             return nextRow != null;
         }
 
-        public Object next()
+        public Map<String, Object> next()
         {
             if (nextRow == null || rowIndex > numRows)
                 throw new IllegalStateException("Attempt to call next() on a finished iterator");
-            Object row = nextRow;
+            Map<String, Object> row = nextRow;
             nextRow = getNextRow();
             return row;
         }
 
-        public Object getNextRow()
+        public Map<String, Object> getNextRow()
         {
             if (rowIndex >= numRows)
                 return null;
@@ -302,9 +276,6 @@ public class ExcelLoader extends DataLoader
             }
             rowIndex++;
 
-            if (_transformer != null)
-                return _transformer.transform(row);
-
             if (foundData)
                 return row;
             else
@@ -348,7 +319,6 @@ public class ExcelLoader extends DataLoader
             ExcelLoader loader = new ExcelLoader(metadataSample, true);
             checkColumnMetadata(loader);
             checkData(loader);
-            checkObject(loader);
             loader.close();
         }
 
@@ -369,32 +339,19 @@ public class ExcelLoader extends DataLoader
 
         private static void checkData(ExcelLoader loader) throws IOException
         {
-            Map[] data = (Map[])loader.load();
+            List<Map<String, Object>> data = loader.load();
 
-            assertTrue(data.length == 7);
+            assertTrue(data.size() == 7);
 
             for (Map map : data)
             {
                 assertTrue(map.size() == 18);
             }
 
-            Map firstRow = data[0];
+            Map firstRow = data.get(0);
             assertTrue(firstRow.get("scan").equals(96));
             assertTrue(firstRow.get("accurateMZ").equals(false));
             assertTrue(firstRow.get("description").equals("description"));
-        }
-
-        private static void checkObject(ExcelLoader loader) throws IOException
-        {
-            loader.setReturnElementClass(TestRow.class);
-            TestRow[] rows = (TestRow[])loader.load();
-
-            assertTrue(rows.length == 7);
-
-            TestRow firstRow = rows[0];
-            assertEquals(firstRow.getScan(), 96);
-            assertFalse(firstRow.isAccurateMZ());
-            assertEquals(firstRow.getDescription(), "description");
         }
     }
 }

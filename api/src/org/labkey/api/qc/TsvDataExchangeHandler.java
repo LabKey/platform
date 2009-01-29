@@ -42,7 +42,6 @@ import org.springframework.validation.BindException;
 import javax.servlet.http.HttpServletRequest;
 import java.io.*;
 import java.util.*;
-import java.lang.reflect.Array;
 import java.sql.Types;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -91,7 +90,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 if (handler instanceof ValidationDataHandler)
                 {
                     Domain runDataDomain = context.getProvider().getRunDataDomain(context.getProtocol());
-                    Map<String, Object>[] data = ((ValidationDataHandler)handler).loadFileData(runDataDomain, expData.getDataFile());
+                    List<Map<String, Object>> data = ((ValidationDataHandler)handler).loadFileData(runDataDomain, expData.getDataFile());
                     File runData = new File(scriptDir, RUN_DATA_FILE);
                     writeRunData(data, runData);
 
@@ -174,9 +173,9 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         new ColumnDescriptor("type", String.class)
                 });
 
-                Map[] maps = (Map[])loader.load();
+                List<Map<String, Object>> maps = loader.load();
                 File errorFile = null;
-                for (Map row : maps)
+                for (Map<String, Object> row : maps)
                 {
                     if (row.get("name").equals(Props.errorsFile.name()))
                     {
@@ -194,7 +193,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                             new ColumnDescriptor("message", String.class)
                     });
 
-                    for (Map row : (Map[])errorLoader.load())
+                    for (Map<String, Object> row : errorLoader.load())
                     {
                         if ("error".equalsIgnoreCase(row.get("type").toString()))
                         {
@@ -235,15 +234,15 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         return null;
     }
 
-    private void writeRunData(Map<String, Object>[] data, File runDataFile) throws Exception
+    private void writeRunData(List<Map<String, Object>> data, File runDataFile) throws Exception
     {
-        if (data.length > 0)
+        if (data.size() > 0)
         {
             PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(runDataFile)));
 
             try {
                 // write the column header
-                List<String> columns = new ArrayList<String>(data[0].keySet());
+                List<String> columns = new ArrayList<String>(data.get(0).keySet());
                 String sep = "";
                 for (String name : columns)
                 {
@@ -254,9 +253,9 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 pw.println();
 
                 // write the rows
-                for (int i=1; i < data.length; i++)
+                for (int i=1; i < data.size(); i++)
                 {
-                    Map<String, Object> row = data[i];
+                    Map<String, Object> row = data.get(i);
                     sep = "";
                     for (String name : columns)
                     {
@@ -315,7 +314,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             pw.append('\t');
             pw.println(errorFile.getAbsolutePath());
 
-            writeRunData((Map<String, Object>[])(dataRows.toArray((Object[])Array.newInstance(Map.class, dataRows.size()))), runData);
+            writeRunData(new ArrayList<Map<String, Object>>(dataRows), runData);
         }
         finally
         {

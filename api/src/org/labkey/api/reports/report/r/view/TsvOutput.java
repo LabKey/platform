@@ -84,7 +84,7 @@ public class TsvOutput extends AbstractParamReplacement
                 };
                 tabLoader.setParseQuotes(true);
                 ColumnDescriptor[] cols = tabLoader.getColumns();
-                Map[] data = (Map[]) tabLoader.load();
+                List<Map<String, Object>> data = tabLoader.load();
 
                 List<ColumnDescriptor> display = new ArrayList<ColumnDescriptor>();
                 HashMap<String, ColumnDescriptor> hrefs = new HashMap<String, ColumnDescriptor>(tabLoader.getColumns().length * 2);

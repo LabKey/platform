@@ -45,6 +45,7 @@ public interface ExpSampleSet extends ExpObject
     public PropertyDescriptor getIdCol1();
     public PropertyDescriptor getIdCol2();
     public PropertyDescriptor getIdCol3();
+    public PropertyDescriptor getParentCol();
 
     void setDescription(String s);
 

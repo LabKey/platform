@@ -22,6 +22,7 @@ import org.labkey.common.tools.ColumnDescriptor;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
+import java.util.List;
 import java.io.IOException;
 import java.io.File;
 import java.sql.Types;
@@ -50,18 +51,13 @@ public class TempTableLoader extends TabLoader
         _skipLines = hasColumnHeaders ? 1 : 0;
     }
 
-    public void setReturnElementClass(Class returnElementClass)
-    {
-        throw new UnsupportedOperationException();
-    }
-
     public Table.TempTableInfo loadTempTable(DbSchema schema) throws IOException, SQLException
     {
         //
         // Load the file
         //
 
-        Map[] maps = (Map[])load();
+        List<Map<String, Object>> maps = load();
 
 
         //
@@ -145,7 +141,7 @@ public class TempTableLoader extends TabLoader
         sqlInsert.append(sqlValues);
         sqlInsert.append(")");
 
-        ArrayList<Object[]> paramList = new ArrayList<Object[]>(maps.length);
+        ArrayList<Object[]> paramList = new ArrayList<Object[]>(maps.size());
         for (Map m : maps)
             paramList.add(((_RowMap)m).getArray());
 
