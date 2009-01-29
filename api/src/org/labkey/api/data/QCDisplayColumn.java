@@ -42,12 +42,22 @@ public class QCDisplayColumn extends DataColumn
 
     public String getFormattedValue(RenderContext ctx)
     {
-        Object qcValue = qcValueColumn.getValue(ctx);
+        String qcValue = getQcValue(ctx);
         if (qcValue != null)
         {
-            return qcValue.toString();
+            return qcValue;
         }
         return super.getFormattedValue(ctx);
+    }
+
+    private String getQcValue(RenderContext ctx)
+    {
+        Object qcValueObject = qcValueColumn.getValue(ctx);
+        if (qcValueObject != null)
+        {
+            return qcValueObject.toString();
+        }
+        return null;
     }
 
     public Object getDisplayValue(RenderContext ctx)
@@ -62,7 +72,16 @@ public class QCDisplayColumn extends DataColumn
 
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        String value = getFormattedValue(ctx);
+        String qcValue = getQcValue(ctx);
+        if (qcValue != null)
+        {
+            out.write("<font class=\"labkey-qc\">");
+            out.write(h(qcValue));
+            out.write("</font>");
+            return;
+        }
+        // Call super, as we don't want to check twice for the qc value
+        String value = super.getFormattedValue(ctx);
 
         if ("".equals(value.trim()))
         {
