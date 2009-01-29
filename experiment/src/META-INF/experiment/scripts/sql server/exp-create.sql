@@ -254,7 +254,7 @@ GO
         
 CREATE VIEW exp.MaterialSourceWithProject AS
     SELECT ms.RowId, ms.Name, ms.LSID, ms.MaterialLSIDPrefix, ms.Description,
-        ms.Created,	ms.CreatedBy, ms.Modified, ms.ModifiedBy, ms.Container , dd.Project, ms.IdCol1, ms.IdCol2, ms.IdCol3, ms2.ParentCol
+        ms.Created,	ms.CreatedBy, ms.Modified, ms.ModifiedBy, ms.Container , dd.Project, ms.IdCol1, ms.IdCol2, ms.IdCol3, ms.ParentCol
     FROM exp.MaterialSource ms
     LEFT OUTER JOIN exp.DomainDescriptor dd ON ms.lsid = dd.domainuri
 GO
