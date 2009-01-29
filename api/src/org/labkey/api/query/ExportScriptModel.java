@@ -19,8 +19,12 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.view.WebPartView;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.HttpServletResponse;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -149,4 +153,14 @@ public abstract class ExportScriptModel
     {
         return _view;
     }
+
+    public static ModelAndView getExportScriptView(QueryView queryView, String scriptType, PageConfig pageConfig, HttpServletResponse response)
+    {
+        pageConfig.setTemplate(PageConfig.Template.None);
+        response.setContentType("text/plain");
+        ExportScriptFactory factory = QueryView.getExportScriptFactory(scriptType);
+        WebPartView scriptView = factory.getView(queryView);
+        scriptView.setFrame(WebPartView.FrameType.NONE);
+        return scriptView;
+    }    
 }

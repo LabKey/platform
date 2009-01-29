@@ -25,7 +25,7 @@ import org.labkey.api.view.JspView;
  */
 public class RExportScriptFactory implements ExportScriptFactory
 {
-    public String getType()
+    public String getScriptType()
     {
         return "r";
     }

@@ -24,7 +24,7 @@ import org.labkey.api.view.WebPartView;
  */
 public interface ExportScriptFactory
 {
-    public String getType();
+    public String getScriptType();
     public String getMenuText();
     public WebPartView getView(QueryView queryView);
 }

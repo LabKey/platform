@@ -55,9 +55,9 @@ public class QueryView extends WebPartView<Object>
 
     public static void register(ExportScriptFactory factory)
     {
-        assert null == _exportScriptFactories.get(factory.getType());
+        assert null == _exportScriptFactories.get(factory.getScriptType());
 
-        _exportScriptFactories.put(factory.getType(), factory);
+        _exportScriptFactories.put(factory.getScriptType(), factory);
     }
 
     public static ExportScriptFactory getExportScriptFactory(String type)
@@ -522,7 +522,7 @@ public class QueryView extends WebPartView<Object>
             for (ExportScriptFactory factory : _exportScriptFactories.values())
             {
                 ActionURL url = urlFor(QueryAction.exportScript);
-                url.addParameter("type", factory.getType());
+                url.addParameter("scriptType", factory.getScriptType());
                 exportMenuButton.addMenuItem(factory.getMenuText(), url);
             }
         }

@@ -16,11 +16,14 @@
 
 package org.labkey.api.action;
 
+import org.labkey.api.query.ExportScriptModel;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.ExportRScriptModel;
 import org.labkey.api.security.ACL;
-import org.labkey.api.view.*;
+import org.labkey.api.view.RequestBasicAuthException;
+import org.labkey.api.view.TermsOfUseException;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
@@ -95,7 +98,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         }
         else if(QueryAction.exportScript.name().equals(form.getExportType()))
         {
-            return exportRScript(createInitializedQueryView(form, errors, true, form.getExportRegion()));
+            return ExportScriptModel.getExportScriptView(createInitializedQueryView(form, errors, true, form.getExportRegion()), form.getScriptType(), getPageConfig(), getViewContext().getResponse());
         }
         else
         {
@@ -117,15 +120,6 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         return result;
     }
 
-    protected ModelAndView exportRScript(ViewType view)
-    {
-        getPageConfig().setTemplate(PageConfig.Template.None);
-        getViewContext().getResponse().setContentType("text/plain");
-        JspView<ExportRScriptModel> jspview = new JspView<ExportRScriptModel>("/org/labkey/api/query/exportRScript.jsp", new ExportRScriptModel(view));
-        jspview.setFrame(WebPartView.FrameType.NONE);
-        return jspview;
-    }
-
     protected abstract ViewType createQueryView(Form form, BindException errors, boolean forExport, String dataRegion) throws Exception;
 
     public static class QueryExportForm
@@ -133,6 +127,18 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         private String _exportType;
         private boolean _exportAsWebPage;
         private String _exportRegion;
+
+        public String getScriptType()
+        {
+            return _scriptType;
+        }
+
+        public void setScriptType(String scriptType)
+        {
+            _scriptType = scriptType;
+        }
+
+        private String _scriptType;
 
         public String getExportType()
         {
