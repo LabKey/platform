@@ -386,6 +386,12 @@ regions on mouseover */
     color: #C0C0C0;
 }
 
+/* This lightens the text to make it look "grayed out", but still readable, unlike labkey-disabled, above. */
+font.labkey-qc
+{
+    color: #606060;
+}
+
 /* This is used for bold text in a couple places. */
 .labkey-strong
 {
