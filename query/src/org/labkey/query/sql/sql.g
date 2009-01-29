@@ -1,10 +1,8 @@
 header
 {
-
 package org.labkey.query.sql.antlr;
-import org.labkey.query.sql.ASTUtil;
-
 }
+
 /**
  * SQL language grammar.
  * This source code was taken from the Hibernate project ("hql.g").
@@ -159,15 +157,6 @@ tokens
     }
 
 	/**
-	 * Returns the negated equivalent of the expression.
-	 * @param x The expression to negate.
-	 */
-	public AST negateNode(AST x) {
-		// Just create a 'not' parent for the default behavior.
-		return ASTUtil.createParent(astFactory, NOT, "not", x);
-	}
-
-	/**
 	 * Returns the 'cleaned up' version of a comparison operator sub-tree.
 	 * @param x The comparison operator to clean up.
 	 */
@@ -225,9 +214,7 @@ optionalFromTokenFromClause!
 	;
 
 selectStatement
-	: queryRule {
-		#selectStatement = #([QUERY,"query"], #selectStatement);
-	}
+	: queryRule
 	;
 
 insertStatement
@@ -249,7 +236,7 @@ insertablePropertySpec
 	;
 
 union
-	: queryRule (UNION queryRule)*
+	: queryRule (UNION^ queryRule)*
 	;
 
 //## query:
@@ -260,7 +247,10 @@ queryRule
 		(whereClause)?
 		(groupByClause)?
 		(orderByClause)?
-		(limitClause)?
+		(limitClause)?  
+		{
+			#queryRule = #([QUERY,"query"], #queryRule);
+		}
 		;
 
 selectFrom!
@@ -465,10 +455,10 @@ logicalAndExpression
 
 // NOT nodes aren't generated.  Instead, the operator in the sub-tree will be
 // negated, if possible.   Expressions without a NOT parent are passed through.
-negatedExpression!
+negatedExpression
 { weakKeywords(); } // Weak keywords can appear in an expression, so look ahead.
-	: NOT^ x:negatedExpression { #negatedExpression = negateNode(#x); }
-	| y:bitwiseOrExpression { #negatedExpression = #y; }
+	: NOT^ negatedExpression
+	| bitwiseOrExpression
 	;
 
 bitwiseOrExpression
@@ -655,7 +645,6 @@ compoundExpr
 
 subQuery
 	: union
-	{ #subQuery = #([QUERY,"query"], #subQuery); }
 	;
 
 exprList

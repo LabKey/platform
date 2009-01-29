@@ -35,12 +35,12 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.util.*;
 
 
 public class Query
 {
-    private static Logger _log = Logger.getLogger(Query.class);
     private String _queryText = null;
     private List<QColumn> _columns;
     private QuerySchema _schema;
@@ -98,18 +98,10 @@ public class Query
 
         try
         {
-            _root = (new SqlParser()).parseStatement(queryText, _parseErrors);
+            _root = (new SqlParser()).parseUnion(queryText, _parseErrors);
+//			_root = (new SqlParser()).parseStatement(queryText, _parseErrors);
             if (_parseErrors.isEmpty())
                 parseTree();
-
-            if (null != _root && _log.isDebugEnabled())
-            {
-                StringWriter sw = new StringWriter();
-                PrintWriter pw = new PrintWriter(sw);
-                _root.dump(pw);
-                pw.close();
-                _log.debug(sw.toString());
-            }
         }
         catch (RuntimeException ex)
         {
@@ -755,6 +747,7 @@ loop:
         }
     }
 
+
     public QueryTableInfo _getTableInfo(String tableAlias)
     {
         if (_parseErrors.size() != 0)
@@ -1260,9 +1253,22 @@ loop:
         @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
         private CachedRowSetImpl resultset(String sql) throws Exception
         {
-			CachedRowSetImpl rs = (CachedRowSetImpl)QueryService.get().select(lists, sql);
-            assertNotNull(sql, rs);
-            return rs;
+			try
+			{
+				CachedRowSetImpl rs = (CachedRowSetImpl)QueryService.get().select(lists, sql);
+				assertNotNull(sql, rs);
+				return rs;
+			}
+			catch (QueryParseException x)
+			{
+				fail(x.getMessage() + "\n" + sql);
+				return null;
+			}
+			catch (SQLException x)
+			{
+				fail(x.getMessage() + "\n" + sql);
+				return null;
+			}
         }
 
 
@@ -1292,20 +1298,21 @@ loop:
             assertNotNull(Sinfo);
 
             // custom tests
-            CachedRowSetImpl rs = resultset("SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration FROM R");
+			String sql = "SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration FROM R";
+            CachedRowSetImpl rs = resultset(sql);
             ResultSetMetaData md = rs.getMetaData();
-            assertTrue(0 < rs.findColumn("d"));
-            assertTrue(0 < rs.findColumn("seven"));
-            assertTrue(0 < rs.findColumn("twelve"));
-            assertTrue(0 < rs.findColumn("day"));
-            assertTrue(0 < rs.findColumn("month"));
-            assertTrue(0 < rs.findColumn("date"));
-            assertTrue(0 < rs.findColumn("duration"));
-            assertEquals(7, md.getColumnCount());
-            assertEquals(Rsize, rs.getSize());
+            assertTrue(sql, 0 < rs.findColumn("d"));
+            assertTrue(sql, 0 < rs.findColumn("seven"));
+            assertTrue(sql, 0 < rs.findColumn("twelve"));
+            assertTrue(sql, 0 < rs.findColumn("day"));
+            assertTrue(sql, 0 < rs.findColumn("month"));
+            assertTrue(sql, 0 < rs.findColumn("date"));
+            assertTrue(sql, 0 < rs.findColumn("duration"));
+            assertEquals(sql, 7, md.getColumnCount());
+            assertEquals(sql, Rsize, rs.getSize());
 			rs.next();
 			for (int c=1; c<=md.getColumnCount() ; c++)
-				assertNotNull(rs.getObject(c));
+				assertNotNull(sql, rs.getObject(c));
             rs.close();
 
             // simple tests

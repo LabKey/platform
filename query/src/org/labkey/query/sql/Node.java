@@ -32,19 +32,9 @@ public class Node extends CommonAST implements Cloneable
         return (Node) down;
     }
 
-    public Node getLastChild()
-    {
-        return (Node) ASTUtil.getLastChild(this);
-    }
-
     public Node getNextSibling()
     {
         return (Node) right;
-    }
-
-    public Node findPreviousSibling(Node child)
-    {
-        return (Node) ASTUtil.findPreviousSibling(this, child);
     }
 
     public void setFirstChild(Node node)

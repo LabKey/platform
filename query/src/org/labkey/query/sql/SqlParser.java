@@ -21,10 +21,9 @@ import antlr.ASTFactory;
 import antlr.TokenStreamRecognitionException;
 
 import java.io.StringReader;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.Set;
+import java.io.StringWriter;
+import java.io.PrintWriter;
+import java.util.*;
 
 import org.labkey.query.sql.antlr.SqlBaseLexer;
 import org.labkey.query.sql.antlr.SqlBaseParser;
@@ -34,6 +33,7 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.query.QueryParseException;
+import org.apache.log4j.Logger;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -41,6 +41,8 @@ import junit.framework.TestSuite;
 @SuppressWarnings({"ThrowableResultOfMethodCallIgnored","ThrowableInstanceNeverThrown"})
 public class SqlParser
 {
+	private static Logger _log = Logger.getLogger(Query.class);
+
     ArrayList<Exception> _parseErrors;
 
     //
@@ -50,6 +52,52 @@ public class SqlParser
     public SqlParser()
     {
     }
+
+	public QQuery parseUnion(String str, List<? super QueryParseException> errors)
+	{
+		_parseErrors = new ArrayList<Exception>();
+		try
+		{
+			_SqlParser parser = new _SqlParser(str, _parseErrors);
+			try
+			{
+				parser.union();
+				int last = parser.LA(1);
+				if (SqlBaseTokenTypes.EOF != last)
+					//noinspection ThrowableInstanceNeverThrown
+					_parseErrors.add(new RecognitionException("EOF expected"));
+			}
+			catch (Exception x)
+			{
+				_parseErrors.add(x);
+			}
+			if (_parseErrors.size() != 0)
+				return null;
+
+			Node parseRoot = (Node) parser.getAST();
+			MemTracker.put(parseRoot);
+			if (null == parseRoot)
+				return null;
+
+			QNode qnodeRoot = convertParseTree(parseRoot);
+			assert dump(qnodeRoot);
+			assert MemTracker.put(qnodeRoot);
+
+			QQuery ret = qnodeRoot != null && qnodeRoot instanceof QQuery ? (QQuery) qnodeRoot : null;
+			if (ret != null)
+				ret.syntaxCheck(errors);
+			for (Throwable e : _parseErrors)
+			{
+				errors.add(wrapParseException(e));
+			}
+			return ret;
+		}
+		catch (Exception e)
+		{
+			errors.add(wrapParseException(e));
+			return null;
+		}
+	}
 
     public QQuery parseStatement(String str, List<? super QueryParseException> errors)
     {
@@ -64,6 +112,9 @@ public class SqlParser
                 if (SqlBaseTokenTypes.UNION == last)
                     //noinspection ThrowableInstanceNeverThrown
                     _parseErrors.add(new RecognitionException("UNION is not supported"));
+				else if (SqlBaseTokenTypes.EOF != last)
+					//noinspection ThrowableInstanceNeverThrown
+					_parseErrors.add(new RecognitionException("EOF expected"));
             }
             catch (Exception x)
             {
@@ -78,6 +129,7 @@ public class SqlParser
                 return null;
 
             QNode qnodeRoot = convertParseTree(parseRoot);
+			assert dump(qnodeRoot);
             assert MemTracker.put(qnodeRoot);
 
             QQuery ret = qnodeRoot != null && qnodeRoot instanceof QQuery ? (QQuery) qnodeRoot : null;
@@ -123,6 +175,7 @@ public class SqlParser
                 return null;
 
             QNode qnodeRoot = convertParseTree(parseRoot);
+			assert dump(qnodeRoot);
             assert MemTracker.put(qnodeRoot);
 
             QQuery ret = qnodeRoot != null && qnodeRoot instanceof QQuery ? (QQuery) qnodeRoot : null;
@@ -140,6 +193,20 @@ public class SqlParser
             return null;
         }
     }
+
+
+	private boolean dump(QNode node)
+	{
+		if (null != node && _log.isDebugEnabled())
+		{
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			node.dump(pw);
+			pw.close();
+			_log.debug(sw.toString());
+		}
+		return true;
+	}
 
     static public boolean isLegalIdentifierChar(char ch, boolean fFirst)
     {
@@ -253,27 +320,27 @@ public class SqlParser
 		switch (node.getType())
 		{
 			case METHOD_CALL:
-				QNode id = first(children), exprList = second(children);
-				if (!(id instanceof QIdentifier))
-					break;
-				String name = ((QIdentifier)id).getIdentifier().toLowerCase();
+                QNode id = first(children), exprList = second(children);
+                if (!(id instanceof QIdentifier))
+                        break;
+                String name = ((QIdentifier)id).getIdentifier().toLowerCase();
 
-				if (name.equals("convert") || name.equals("cast") || name.equals("timestampdiff"))
-				{
-					if (!(exprList instanceof QExprList))
-						 break;
-					LinkedList<QNode> args = new LinkedList<QNode>();
-					int i = 1;
-					for (QNode n : exprList.children())
-					{
-						if (n instanceof QIdentifier && (name.equals("timestamp") ? i==3 : i==2))
-							args.add(toStringNode(n));
-						else
-							args.add(n);
-						i++;
-					}
-					exprList._replaceChildren(args);
-				}
+                if (name.equals("convert") || name.equals("cast") || name.equals("timestampdiff"))
+                {
+                    if (!(exprList instanceof QExprList))
+                             break;
+                    LinkedList<QNode> args = new LinkedList<QNode>();
+                    int i = 1;
+                    for (QNode n : exprList.children())
+                    {
+                        if (n instanceof QIdentifier && (name.equals("timestamp") ? i==3 : i==2))
+                            args.add(toStringNode(n));
+                        else
+                            args.add(n);
+                        i++;
+                    }
+                    exprList._replaceChildren(args);
+                }
 				break;
 
 //			case SELECT_FROM:
@@ -285,7 +352,7 @@ public class SqlParser
 			default:
 				break;
 		}
-		
+
 		return qnode(node, children);
 	}
 
@@ -301,11 +368,6 @@ public class SqlParser
 		return children.size() > 1 ? children.get(1) : null;
 	}
 	
-	private static QNode third(LinkedList<QNode> children)
-	{
-		return children.size() > 2 ? children.get(2) : null;
-	}
-
 
 	/* convert identifier to string */
 	private QString toStringNode(QNode node)
@@ -465,7 +527,7 @@ public class SqlParser
 			case LEADING:
 			case BOTH:
 			default:
-	            _parseErrors.add(new RecognitionException("Unexpected token '" + node.getText() + "'"));
+	            _parseErrors.add(new RecognitionException("Unexpected token '" + node.getText() + "'", null, node.getLine(), node.getColumn()));
                 return new QUnknownNode(type);
         }
     }
@@ -567,7 +629,7 @@ public class SqlParser
         private boolean parse(String sql)
         {
             List<QueryParseException> errors = new ArrayList<QueryParseException>();
-            QQuery q = (new SqlParser()).parseStatement(sql,errors);
+			QQuery q = (new SqlParser()).parseUnion(sql,errors);
             return !(errors.size() > 0 || null == q);
         }
 

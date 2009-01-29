@@ -1505,7 +1505,6 @@ query/src/org/labkey/query/reports/view/manageViews.jsp -text
 query/src/org/labkey/query/reports/view/queryReportHeader.jsp -text
 query/src/org/labkey/query/reports/view/rReportTabHeader.jsp -text
 query/src/org/labkey/query/reports/view/reportsWebPartConfig.jsp -text
-query/src/org/labkey/query/sql/ASTUtil.java -text
 query/src/org/labkey/query/sql/Builder.java -text
 query/src/org/labkey/query/sql/IConstant.java -text
 query/src/org/labkey/query/sql/JoinType.java -text
