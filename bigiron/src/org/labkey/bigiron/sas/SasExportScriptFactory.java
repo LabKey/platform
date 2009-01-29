@@ -28,7 +28,7 @@ import org.labkey.api.view.WebPartView;
 
 public class SasExportScriptFactory implements ExportScriptFactory
 {
-    public String getType()
+    public String getScriptType()
     {
         return "sas";
     }

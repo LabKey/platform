@@ -488,12 +488,12 @@ public class QueryControllerSpring extends SpringActionController
     {
         private String _type;
 
-        public String getType()
+        public String getScriptType()
         {
             return _type;
         }
 
-        public void setType(String type)
+        public void setScriptType(String type)
         {
             _type = type;
         }
@@ -506,14 +506,8 @@ public class QueryControllerSpring extends SpringActionController
         public ModelAndView getView(ExportScriptForm form, BindException errors) throws Exception
         {
             assertQueryExists(form);
-            QueryView queryView = QueryView.create(form);
-            getPageConfig().setTemplate(PageConfig.Template.None);
 
-            getViewContext().getResponse().setContentType("text/plain");
-            ExportScriptFactory factory = QueryView.getExportScriptFactory(form.getType());
-            WebPartView scriptView = factory.getView(queryView);
-            scriptView.setFrame(WebPartView.FrameType.NONE);
-            return scriptView;
+            return ExportScriptModel.getExportScriptView(QueryView.create(form), form.getScriptType(), getPageConfig(), getViewContext().getResponse());
         }
 
         public NavTree appendNavTrail(NavTree root)
