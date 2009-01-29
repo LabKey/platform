@@ -206,7 +206,7 @@ public enum CompareType
         return _sql;
     }
 
-    public String getRName()
+    public String getScriptName()
     {
         return _rName;
     }

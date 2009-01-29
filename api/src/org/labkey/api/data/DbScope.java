@@ -20,15 +20,15 @@ import org.apache.log4j.Logger;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.sql.DataSource;
 import javax.servlet.ServletException;
+import javax.sql.DataSource;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -46,7 +46,7 @@ public class DbScope
 
     private DataSource _dataSource;
     private SqlDialect _dialect;
-    private String _databaseName;
+    private String _databaseName;          // Possibly null, e.g., for SAS datasources
 
     private String _URL;
     private String _databaseProductName;
@@ -368,20 +368,6 @@ public class DbScope
             threadConnection.remove();
             _transactedRemovals.remove();
         }
-    }
-
-
-    public List<DbSchema> getSchemas()
-    {
-        List<DbSchema> list = new ArrayList<DbSchema>();
-        for (String name : DbSchema.getNames())
-        {
-            DbSchema schema = DbSchema.get(name);
-            if (schema.getScope() == this)
-                list.add(schema);
-        }
-
-        return list;
     }
 
 

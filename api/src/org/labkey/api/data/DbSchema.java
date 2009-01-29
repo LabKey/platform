@@ -57,6 +57,11 @@ public class DbSchema
 
     public static DbSchema get(String schemaName)
     {
+        return get(schemaName, "dbschema");
+    }
+
+    protected static DbSchema get(String schemaName, String jndiName)
+    {
         // synchronized ensures one thread at a time.  This assert detects same-thread re-entrancy (e.g., the schema
         // load process directly or indirectly causing another call to this method.)
         assert !Thread.holdsLock(_loadedSchemas) : "Schema load re-entrancy detected";
@@ -91,7 +96,7 @@ public class DbSchema
                         return schema;
                 }
 
-                schema = createFromMetaData(schemaName);
+                schema = createFromMetaData(schemaName, jndiName);
                 if (null != schema)
                 {
                     if (pair != null)
@@ -159,18 +164,7 @@ public class DbSchema
     }
 
 
-    public static Set<String> getNames()
-    {
-        Properties props = getDbSchemaProperties();
-        Set<String> set = new HashSet<String>(props.size());
-
-        for (Object key : props.keySet())
-            set.add((String)key);
-
-        return set;
-    }
-
-    private static Properties getDbSchemaProperties()
+    private static Properties getDbSchemaProperties(String jndiName)
     {
         Properties result = new Properties();
 
@@ -178,14 +172,14 @@ public class DbSchema
         {
             InitialContext ctx = new InitialContext();
             Context envCtx = (Context) ctx.lookup("java:comp/env");
-            CompositeName rootName = new CompositeName("dbschema");
+            CompositeName rootName = new CompositeName(jndiName);
             NamingEnumeration<NameClassPair> e = envCtx.list(rootName);
 
             while (e.hasMoreElements())
             {
                 NameClassPair pair = e.next();
                 String key = pair.getName();
-                String schemaInfo = (String) envCtx.lookup("dbschema/" + key);
+                String schemaInfo = (String) envCtx.lookup(jndiName + "/" + key);
                 result.setProperty(key, schemaInfo);
             }
         }
@@ -198,7 +192,7 @@ public class DbSchema
 
     public static DbSchema getDbSchema(String catalog, String owner)
     {
-        Properties props = getDbSchemaProperties();
+        Properties props = getDbSchemaProperties("dbschema");
         String schemaInfo;
         String [] schemaStrings;
         String catalogName = null;
@@ -237,8 +231,14 @@ public class DbSchema
     */
     public static DbSchema createFromMetaData(String dbSchemaName) throws SQLException, NamingException, ServletException
     {
+        return createFromMetaData(dbSchemaName, "dbschema");
+    }
+
+
+    protected static DbSchema createFromMetaData(String dbSchemaName, String jndiName) throws SQLException, NamingException, ServletException
+    {
         DbSchema dbSchema;
-        Properties props = getDbSchemaProperties();
+        Properties props = getDbSchemaProperties(jndiName);
         String schemaInfo = props.getProperty(dbSchemaName);
         if (null == schemaInfo)
         {
@@ -389,7 +389,7 @@ public class DbSchema
         }
     }
 
-    private DbSchema(String name, DbScope scope, String owner)
+    protected DbSchema(String name, DbScope scope, String owner)
     {
         _name = name;
         _scope = scope;

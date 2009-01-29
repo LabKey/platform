@@ -69,6 +69,6 @@ public class ExportRScriptModel extends ExportScriptModel
 
     protected String makeFilterExpression(String name, CompareType operator, String value)
     {
-        return "c(\"" + name + "\",\"" + operator.getRName() + "\",\"" + value + "\")";
+        return "c(\"" + name + "\",\"" + operator.getScriptName() + "\",\"" + value + "\")";
     }
 }
