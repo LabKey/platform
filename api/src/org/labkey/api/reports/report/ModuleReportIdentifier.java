@@ -99,6 +99,7 @@ public class ModuleReportIdentifier extends AbstractReportIdentifier
         if(null == getModule())
             return null;
 
-        return ReportService.get().createReportInstance(getModule().getReportDescriptor(getReportPath()));
+        ReportDescriptor descriptor = getModule().getReportDescriptor(getReportPath());
+        return null == descriptor ? null : ReportService.get().createReportInstance(descriptor);
     }
 }

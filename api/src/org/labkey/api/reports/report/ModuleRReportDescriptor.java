@@ -48,20 +48,25 @@ public class ModuleRReportDescriptor extends RReportDescriptor
     private long _sourceLastModified = 0;
     private long _metaDataLastModified = 0;
 
-    public ModuleRReportDescriptor(Module module, String reportKey, File sourceFile)
+    public ModuleRReportDescriptor(Module module, String reportKey, File sourceFile, String reportPath)
     {
         _module = module;
         _sourceFile = sourceFile;
-        _reportPath = reportKey + "/" + sourceFile.getName();
+        _reportPath = reportPath;
 
         String name = sourceFile.getName().substring(0, sourceFile.getName().length() -
                 FILE_EXTENSION.length());
 
         setReportKey(reportKey);
         setReportName(name);
-        setReportType(RReport.TYPE);
+        setReportType(getDefaultReportType(reportKey));
         _metaDataFile = new File(sourceFile.getParentFile(), getReportName() + REPORT_METADATA_EXTENSION);
         loadMetaData();
+    }
+
+    public String getDefaultReportType(String reportKey)
+    {
+        return RReport.TYPE;
     }
 
     public boolean isStale()

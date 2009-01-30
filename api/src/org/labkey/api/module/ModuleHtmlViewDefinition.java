@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.util.DOMUtil;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.data.ColumnInfo;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
@@ -58,7 +59,7 @@ public class ModuleHtmlViewDefinition extends ModuleFileResource
     {
         super(htmlFile);
         _name = htmlFile.getName().substring(0, htmlFile.getName().length() - HTML_VIEW_EXTENSION.length());
-        _title = StringUtils.capitalize(_name);
+        _title = getTitleFromName(_name);
 
         try
         {
@@ -86,13 +87,19 @@ public class ModuleHtmlViewDefinition extends ModuleFileResource
         }
     }
 
+    protected String getTitleFromName(String name)
+    {
+        //convert camel case to separate words
+        return ColumnInfo.captionFromName(name);
+    }
+
     protected void loadMetaData(Document doc)
     {
         if(null == doc || !"view".equalsIgnoreCase(doc.getDocumentElement().getNodeName()))
             return;
 
         Node docElem = doc.getDocumentElement();
-        _title = DOMUtil.getAttributeValue(docElem, "title", StringUtils.capitalize(_name));
+        _title = DOMUtil.getAttributeValue(docElem, "title", _title);
 
         _requiredPerms = parseRequiredPerms(DOMUtil.getFirstChildNodeWithName(docElem, "permissions"));
         _frameType = parseFrameType(DOMUtil.getAttributeValue(docElem, "frame"));

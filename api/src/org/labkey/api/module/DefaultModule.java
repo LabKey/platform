@@ -33,9 +33,6 @@ import org.labkey.api.util.Cache;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
-import org.labkey.api.view.template.AppBar;
-import org.labkey.api.query.CustomView;
-import org.labkey.api.query.QueryDefinition;
 import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -526,7 +523,8 @@ public abstract class DefaultModule implements Module
 
         //currently we support only R reports under the queries directory
         //in the future, we can also support R reports that are not tied to a schema/query
-        File keyDir = new File(getQueryReportsDir(), key);
+        File queryReportsDir = getQueryReportsDir();
+        File keyDir = new File(queryReportsDir, key);
         if(keyDir.exists() && keyDir.isDirectory())
         {
             List<ReportDescriptor> reportDescriptors = new ArrayList<ReportDescriptor>();
@@ -535,8 +533,7 @@ public abstract class DefaultModule implements Module
                 ModuleRReportDescriptor descriptor = (ModuleRReportDescriptor)_reportDescriptorCache.get(file.getAbsolutePath());
                 if(null == descriptor || descriptor.isStale())
                 {
-                    //currently these are
-                    descriptor = new ModuleQueryRReportDescriptor(this, key, file);
+                    descriptor = createReportDescriptor(key, file);
                     _reportDescriptorCache.put(file.getAbsolutePath(), descriptor);
                 }
                 reportDescriptors.add(descriptor);
@@ -552,18 +549,23 @@ public abstract class DefaultModule implements Module
         if(null == path)
             return null;
 
-        String key = path;
-        int pos = path.lastIndexOf('/');
-        if(pos != -1)
-            key = path.substring(0, pos);
+        //the report path is a relative path from the module's reports directory
+        //so the report key will be the middle two sections of the path
+        //e.g., for path 'schemas/ms2/peptides/myreport.r', key is 'ms2/peptides'
+        String key = null;
+        String[] pathParts = path.split("/");
+        if(getQueryReportsDir().getName().equalsIgnoreCase(pathParts[0]) && pathParts.length >= 3)
+            key = pathParts[1] + "/" + pathParts[2];
+        else
+            key = path.substring(0, path.lastIndexOf('/'));
 
-        File reportFile = new File(getQueryReportsDir(), path);
+        File reportFile = new File(getReportsDir(), path);
         if(reportFile.exists() && reportFile.isFile())
         {
             ModuleRReportDescriptor descriptor = (ModuleRReportDescriptor)_reportDescriptorCache.get(reportFile.getAbsolutePath());
             if(null == descriptor || descriptor.isStale())
             {
-                descriptor = new ModuleQueryRReportDescriptor(this, key, reportFile);
+                descriptor = createReportDescriptor(key, reportFile);
                 _reportDescriptorCache.put(reportFile.getAbsolutePath(), descriptor);
             }
             return descriptor;
@@ -572,10 +574,20 @@ public abstract class DefaultModule implements Module
             return null;
     }
 
+    protected ModuleRReportDescriptor createReportDescriptor(String key, File reportFile)
+    {
+        //for now, all we create are query r report descriptors
+        return new ModuleQueryRReportDescriptor(this, key, reportFile, getQueryReportsDir().getName() + "/" + key + "/" + reportFile.getName());
+    }
+
+    protected File getReportsDir()
+    {
+        return new File(getExplodedPath(), "reports");
+    }
+
     protected File getQueryReportsDir()
     {
-        File reportsDir = new File(getExplodedPath(), "reports");
-        return new File(reportsDir, "schemas");
+        return new File(getReportsDir(), "schemas");
     }
 
     public Set<ModuleResourceLoader> getResourceLoaders()

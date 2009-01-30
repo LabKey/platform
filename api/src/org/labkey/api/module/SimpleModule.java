@@ -41,7 +41,7 @@ public class SimpleModule extends DefaultModule
     public SimpleModule(@NotNull String name)
     {
         setName(name);
-        addController(name, SimpleController.class);
+        addController(name.toLowerCase(), SimpleController.class);
     }
 
     protected void init()
