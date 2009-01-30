@@ -27,7 +27,7 @@
 
 /*  Select rows into a data set called 'mydata' */
 
-%selectRows(ds=mydata,
+%selectRows(dsn=mydata,
             baseUrl="<%=model.getBaseUrl()%>",
             folderPath="<%=model.getFolderPath()%>",
             schemaName="<%=model.getSchemaName()%>",
