@@ -2133,7 +2133,20 @@ public class StudyManager
             {
                 Map<String,Object> dataMap = dataMaps.get(i);
                 Object val = dataMap.get(col.getPropertyURI());
-                if (null == val && !col.isNullable())
+                boolean valueMissing;
+                if (val == null)
+                {
+                    valueMissing = true;
+                }
+                else if (val instanceof QcFieldWrapper)
+                {
+                    valueMissing = ((QcFieldWrapper)val).isEmpty();
+                }
+                else
+                {
+                    valueMissing = false;
+                }
+                if (valueMissing && !col.isNullable())
                 {
                     // Demographic data gets special handling for visit or date fields, depending on the type of study,
                     // since there is usually only one entry for demographic data per dataset

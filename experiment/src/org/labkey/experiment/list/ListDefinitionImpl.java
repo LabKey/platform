@@ -419,8 +419,20 @@ public class ListDefinitionImpl implements ListDefinition
             for (DomainProperty domainProperty : domainProperties)
             {
                 Object o = row.get(domainProperty.getPropertyURI());
-                String value = o == null ? null : o.toString();
-                boolean valueMissing = (value == null || value.length() == 0);
+                boolean valueMissing;
+                if (o == null)
+                {
+                    valueMissing = true;
+                }
+                else if (o instanceof QcFieldWrapper)
+                {
+                    valueMissing = ((QcFieldWrapper)o).isEmpty();
+                }
+                else
+                {
+                    valueMissing = o.toString().length() == 0;
+                }
+                
                 if (domainProperty.isRequired() && valueMissing && !missingValues.contains(domainProperty.getName()))
                 {
                     missingValues.add(domainProperty.getName());
