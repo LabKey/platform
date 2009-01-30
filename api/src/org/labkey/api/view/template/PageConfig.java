@@ -38,6 +38,7 @@ public class PageConfig
         Home,
         Fast,   // NYI (same as Home)
         Print,
+        Framed, // In an Iframe same as print except tries to maintain template on navigate
         Dialog,
         Custom  // must be handled by module
     }
@@ -62,6 +63,7 @@ public class PageConfig
     private String _script;
     private boolean _showHeader = false;
     private List<NavTree> _navTrail;
+    private AppBar _appBar;
 
     public PageConfig()
     {
@@ -280,4 +282,16 @@ public class PageConfig
     {
         _navTrail = navTrail;
     }
+
+    public AppBar getAppBar()
+    {
+        return _appBar;
+    }
+
+    public void setAppBar(AppBar appBar)
+    {
+        _appBar = appBar;
+    }
+
+
 }

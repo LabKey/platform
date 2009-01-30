@@ -94,7 +94,17 @@ if (bean.showHeader())
                 <% me.include(me.getView("header"),out); %>
                 <!-- /HEADER -->
             </td>
-        </tr>
+        </tr><%
+    if (null != me.getView("topmenu"))
+    {%>
+        <tr id="topmenu" class="labkey-header-panel">
+            <td colspan=3>
+                <!-- HEADER -->
+                <% me.include(me.getView("topmenu"),out); %>
+                <!-- /HEADER -->
+            </td>
+        </tr><%
+     }%>
         <tr>
             <td id="leftmenupanel" class="labkey-site-nav-panel">
 <%            if (HttpView.currentContext().isShowFolders())
@@ -106,6 +116,14 @@ if (bean.showHeader())
             <td class="labkey-proj">
                 <!--content area-->
                 <table class="labkey-proj">
+                    <% if (null != me.getView("appbar"))
+                    {%>
+                    <tr>
+                        <td id="appbar" class="labkey-proj-nav-panel" colspan="2">
+                            <%me.include(me.getView("appbar"), out); %>
+                        </td>
+                    </tr>
+                  <%}%>
 <%    if (me.getView("nav") instanceof HttpView && ((HttpView)me.getView("nav")).isVisible())
           { %>
         <tr>

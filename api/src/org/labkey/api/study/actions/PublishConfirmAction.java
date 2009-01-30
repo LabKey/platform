@@ -29,6 +29,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.study.query.PublishRunDataQueryView;
 import org.labkey.api.view.*;
+import org.labkey.api.view.template.AppBar;
 import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
@@ -347,5 +348,10 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         result.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
         result.addChild("Copy to Study: " + _protocol.getName() + ": Verify Data");
         return result;
+    }
+
+    public AppBar getAppBar()
+    {
+        return getAppBar(_protocol);
     }
 }

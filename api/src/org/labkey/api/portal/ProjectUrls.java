@@ -18,6 +18,7 @@ package org.labkey.api.portal;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.Portal;
 
 /**
  * <code>ProjectUrls</code> a UrlProvider for the project UI.
@@ -27,4 +28,8 @@ public interface ProjectUrls extends UrlProvider
     ActionURL getStartURL(Container container);
     ActionURL getHomeURL();
     ActionURL getCustomizeWebPartURL(Container c);
+    ActionURL getAddWebPartURL(Container c);
+    ActionURL getCustomizeWebPartURL(Container c, Portal.WebPart webPart, ActionURL returnURL);
+    ActionURL getMoveWebPartURL(Container c, Portal.WebPart webPart, int direction, ActionURL returnURL);
+    ActionURL getDeleteWebPartURL(Container c, Portal.WebPart webPart, ActionURL returnURL);
 }

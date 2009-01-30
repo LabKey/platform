@@ -24,6 +24,7 @@ import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.template.AppBar;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.util.PageFlowUtil;
@@ -242,13 +243,13 @@ public class DefaultFolderType implements FolderType
             defaultModules.add(getModule("Issues"));
             s_defaultModules = defaultModules;
         }
-        
+
         Set<Module> modules = new HashSet<Module>(s_defaultModules);
         modules.addAll(Arrays.asList(additionalModules));
 
         return modules;
     }
-    
+
     protected static Module getModule(String moduleName)
     {
         return ModuleLoader.getInstance().getModule(moduleName);
@@ -258,5 +259,10 @@ public class DefaultFolderType implements FolderType
     {
         adminNavTree.addChild(new NavTree("Manage Assays", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(container)));
         adminNavTree.addChild(new NavTree("Manage Lists", ListService.get().getManageListsURL(container)));
+    }
+
+    public AppBar getAppBar(ViewContext context)
+    {
+        return null;
     }
 }

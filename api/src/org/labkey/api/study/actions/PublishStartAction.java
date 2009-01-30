@@ -25,6 +25,7 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.template.AppBar;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.QueryService;
@@ -262,5 +263,10 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         result.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
         result.addChild("Copy to Study: " + _protocol.getName() + ": Choose Study");
         return result;
+    }
+
+    public AppBar getAppBar()
+    {
+        return getAppBar(_protocol);
     }
 }

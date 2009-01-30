@@ -49,7 +49,7 @@ public class MenuView extends VBox
     {
         boolean showFolders = getViewContext().isShowFolders();
         FolderDisplayMode displayMode = LookAndFeelProperties.getInstance(getViewContext().getContainer()).getFolderDisplayMode();
-        boolean renderFolderExpander = !HttpView.currentContext().isAdminMode() && (displayMode == FolderDisplayMode.OPTIONAL_OFF || displayMode == FolderDisplayMode.OPTIONAL_ON);
+        boolean renderFolderExpander = false;
 
         PrintWriter out = response.getWriter();
 

@@ -27,7 +27,7 @@ import java.util.List;
 public class ThemeFont
 {
     //protected final static ThemeFont VERYSMALL = new ThemeFont("Very small", "7pt", "13pt", "10pt", "18pt", "9pt", "9pt", "10", "11");
-    protected final static ThemeFont SMALL = new ThemeFont("Small", "8pt", "10pt", "14pt", "11pt", "19pt", "10pt", "10pt", "11", "12");
+    protected final static ThemeFont SMALL = new ThemeFont("Small", "8pt", "10pt", "14pt", "14pt", "19pt", "10pt", "10pt", "11", "12");
     protected final static ThemeFont MEDIUM = new ThemeFont("Medium", "10pt", "10pt", "16pt", "13pt", "21pt", "12pt", "12pt", "13", "14");
     protected final static ThemeFont LARGE = new ThemeFont("Large", "12pt", "12pt", "18pt", "15pt", "23pt", "14pt", "14pt", "15", "16");
 

@@ -30,12 +30,10 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.api.view.template.DialogTemplate;
-import org.labkey.api.view.template.HomeTemplate;
-import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.view.template.PrintTemplate;
+import org.labkey.api.view.template.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.multipart.MultipartException;
@@ -221,6 +219,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
         if (null != StringUtils.trimToNull(request.getParameter("_print")) ||
             null != StringUtils.trimToNull(request.getParameter("_print.x")))
             page.setTemplate(PageConfig.Template.Print);
+        if (null != StringUtils.trimToNull(request.getParameter("_frame")) ||
+            null != StringUtils.trimToNull(request.getParameter("_frame.x")))
+            page.setTemplate(PageConfig.Template.Framed);
         return page;
     }
 
@@ -428,6 +429,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         {
             return null;
         }
+        case Framed:
         case Print:
         {
             PrintTemplate template = new PrintTemplate(mv, page);
@@ -451,6 +453,8 @@ public abstract class SpringActionController implements Controller, HasViewConte
 //            if (page.getTemplate() == PageConfig.Template.Fast)
 //                template = new FastTemplate(context, context.getContainer(), mv, page, root.getChildren());
 //            else
+            if(LookAndFeelProperties.getInstance(getContainer()).isAppBarUIEnabled())
+                page.setAppBar(getAppBar(action));
             HomeTemplate template = new HomeTemplate(context, context.getContainer(), mv, page, root.getChildren());
             return template;
         }
@@ -493,6 +497,11 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
     }
 
+
+    protected AppBar getAppBar(Controller action)
+    {
+        return null;
+    }
 
     protected void beforeAction(Controller action)
     {

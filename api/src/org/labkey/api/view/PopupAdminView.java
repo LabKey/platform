@@ -42,7 +42,6 @@ import java.io.PrintWriter;
  */
 public class PopupAdminView extends PopupMenuView
 {
-    private boolean adminMode;
     private ActionURL adminURL;
     private boolean canAdmin;
 
@@ -51,28 +50,19 @@ public class PopupAdminView extends PopupMenuView
         if ("post".equals(getViewContext().getRequest().getMethod().toLowerCase()))
             return;
 
-        if (adminMode)
-            super.renderInternal(model, out);    //To change body of overridden methods use File | Settings | File Templates.
+        if (canAdmin)
+            super.renderInternal(model, out);
         else
-        {
-            if (canAdmin)
-                out.write("<a class=\"labkey-wp-title\" href=\"" + PageFlowUtil.filter(adminURL.toString()) + "\">Show Admin</a>");
-            else
-                out.write("&nbsp;");
-        }
+            out.write("&nbsp;");
     }
 
-    public PopupAdminView(final ViewContext context, PageConfig page)
+    public PopupAdminView(final ViewContext context)
     {
-        adminMode = context.isAdminMode();
         adminURL = MenuService.get().getSwitchAdminModeURL(context);
         canAdmin = context.hasPermission(ACL.PERM_ADMIN);
         if (!canAdmin)
             return;
         
-        if (!adminMode) //For now, don't even bother with menu until switch into admin mode
-            return;
-
         NavTree navTree = new NavTree("Admin");
         Container c = context.getContainer();
         User user = context.getUser();

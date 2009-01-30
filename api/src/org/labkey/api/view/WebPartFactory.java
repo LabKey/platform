@@ -28,6 +28,7 @@ import java.util.List;
 public interface WebPartFactory
 {
     String LOCATION_RIGHT = "right";
+    String LOCATION_MENUBAR = "menubar";
 
     String getName();
 

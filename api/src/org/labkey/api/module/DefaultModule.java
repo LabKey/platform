@@ -33,6 +33,9 @@ import org.labkey.api.util.Cache;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
+import org.labkey.api.view.template.AppBar;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.QueryDefinition;
 import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.mvc.Controller;
 

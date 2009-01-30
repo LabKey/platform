@@ -21,6 +21,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.ACL;
 import org.labkey.api.view.GWTView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.study.assay.AssayUrls;
@@ -89,5 +90,10 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
         }
         result.addChild(_form.getProviderName() + " Assay Designer", new ActionURL(DesignerAction.class, getContainer()));
         return result;
+    }
+
+    public AppBar getAppBar()
+    {
+        return getAppBar(_form.getProtocol());
     }
 }

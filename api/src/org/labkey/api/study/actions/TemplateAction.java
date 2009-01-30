@@ -25,6 +25,7 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.data.*;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.template.AppBar;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
@@ -40,11 +41,12 @@ import java.util.Map;
 @RequiresPermission(ACL.PERM_INSERT)
 public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
 {
+    ExpProtocol _protocol;
     public ModelAndView getView(ProtocolIdForm rowIdForm, BindException errors) throws Exception
     {
-        ExpProtocol protocol = getProtocol(rowIdForm);
-        AssayProvider provider = AssayService.get().getProvider(protocol);
-        Domain runDataDomain = provider.getRunDataDomain(protocol);
+        _protocol = getProtocol(rowIdForm);
+        AssayProvider provider = AssayService.get().getProvider(_protocol);
+        Domain runDataDomain = provider.getRunDataDomain(_protocol);
         Map<String, String> colNameToPdname = new CaseInsensitiveHashMap<String>();
         DataRegion dr = createDataRegion(OntologyManager.getTinfoObject(), "ObjectURI", runDataDomain.getProperties(), colNameToPdname);
         SimpleFilter filter = new SimpleFilter();
@@ -69,5 +71,10 @@ public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
     public NavTree appendNavTrail(NavTree root)
     {
         throw new UnsupportedOperationException("Not Yet Implemented");
+    }
+
+    public AppBar getAppBar()
+    {
+        return getAppBar(_protocol);
     }
 }

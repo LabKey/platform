@@ -402,14 +402,14 @@ public class ViewContext extends BoundMap implements MessageSource
         if (isAdminMode())
             return true;
 
-        switch (LookAndFeelProperties.getInstance(getContainer()).getFolderDisplayMode())
+        LookAndFeelProperties laf = LookAndFeelProperties.getInstance(getContainer());
+        switch (laf.getFolderDisplayMode())
         {
             case ALWAYS:
                 return true;
-            case OPTIONAL_ON:
-                return null == showFolders ? true : showFolders;
             case OPTIONAL_OFF:
-                return null == showFolders ? false : showFolders;
+            case OPTIONAL_ON:
+                return false; //The menu bar takes care of this now...
             case ADMIN:
                 return isAdminMode();
             default:

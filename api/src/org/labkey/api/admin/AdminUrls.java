@@ -39,6 +39,7 @@ public interface AdminUrls extends UrlProvider
     ActionURL getCreateProjectURL();
     ActionURL getMemTrackerURL();
     ActionURL getLookAndFeelSettingsURL(Container c);
+    ActionURL getLookAndFeelMenuURL(Container c);
 
     NavTree appendAdminNavTrail(NavTree root, String childTitle, ActionURL childURL);
 }

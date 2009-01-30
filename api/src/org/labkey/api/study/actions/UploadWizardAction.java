@@ -42,6 +42,7 @@ import org.labkey.api.study.assay.*;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
+import org.labkey.api.view.template.AppBar;
 import org.labkey.common.util.Pair;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.BindException;
@@ -676,6 +677,11 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         if (participantVisitResolverName != null)
             return AbstractAssayProvider.findType(participantVisitResolverName, provider.getParticipantVisitResolverTypes());
         return null;
+    }
+
+    public AppBar getAppBar()
+    {
+        return getAppBar(_protocol);
     }
 
     private static class UploadWizardInsertView extends InsertView

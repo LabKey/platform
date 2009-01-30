@@ -26,6 +26,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.util.*;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.action.ReturnUrlForm;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.beans.PropertyValues;
 import org.springframework.beans.MutablePropertyValues;
@@ -485,11 +486,14 @@ public class Portal
     public static void populatePortalView(ViewContext context, String id, HttpView template)
             throws Exception
     {
+        populatePortalView(context, id, template, context.getContainer().hasPermission(context.getUser(), ACL.PERM_ADMIN) && context.isAdminMode());
+    }
+
+    public static void populatePortalView(ViewContext context, String id, HttpView template, boolean canCustomize)
+            throws Exception
+    {
         String contextPath = context.getContextPath();
         WebPart[] parts = getParts(id, false);
-        Container c = context.getContainer();
-        User u = context.getUser();
-        boolean canCustomize = c.hasPermission(u, ACL.PERM_ADMIN) && context.isAdminMode();
 
         MultiMap locationMap = getPartsByLocation(parts);
         Collection locations = locationMap.keySet();
@@ -551,35 +555,19 @@ public class Portal
 
     public static String getCustomizeURL(ViewContext context, Portal.WebPart webPart)
     {
-        ActionURL helper = context.cloneActionURL();
-        helper.setAction("customizeWebPart");
-        helper.deleteParameters();
-        helper.addParameter("pageId", webPart.getPageId());
-        helper.addParameter("index", String.valueOf(webPart.getIndex()));
-        return helper.getLocalURIString();
+        return PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(context.getContainer(), webPart, context.getActionURL()).getLocalURIString();
     }
 
 
     public static String getMoveURL(ViewContext context, Portal.WebPart webPart, int direction)
     {
-        ActionURL helper = context.cloneActionURL();
-        helper.setAction("moveWebPart");
-        helper.deleteParameters();
-        helper.addParameter("pageId", webPart.getPageId());
-        helper.addParameter("index", String.valueOf(webPart.getIndex()));
-        helper.addParameter("direction", String.valueOf(direction));
-        return helper.getLocalURIString();
+        return PageFlowUtil.urlProvider(ProjectUrls.class).getMoveWebPartURL(context.getContainer(), webPart, direction, context.getActionURL()).getLocalURIString();
     }
 
 
     public static String getDeleteURL(ViewContext context, Portal.WebPart webPart)
     {
-        ActionURL helper = context.cloneActionURL();
-        helper.setAction("deleteWebPart");
-        helper.deleteParameters();
-        helper.addParameter("pageId", webPart.getPageId());
-        helper.addParameter("index", String.valueOf(webPart.getIndex()));
-        return helper.getLocalURIString();
+        return PageFlowUtil.urlProvider(ProjectUrls.class).getDeleteWebPartURL(context.getContainer(), webPart, context.getActionURL()).getLocalURIString();
     }
 
 

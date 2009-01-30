@@ -22,6 +22,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.template.AppBar;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AbstractAssayProvider;
@@ -76,5 +77,10 @@ public class AssayDataDetailsAction extends BaseAssayAction<DataDetailsForm>
             .addChild(_protocol.getName() + " Runs", runListURL)
             .addChild(run.getName() + " Run", runDataURL)
             .addChild(_dataRowId + " Details");
+    }
+
+    public AppBar getAppBar()
+    {
+        return getAppBar(_protocol);
     }
 }

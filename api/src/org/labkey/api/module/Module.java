@@ -23,6 +23,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.template.AppBar;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryDefinition;

@@ -24,6 +24,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.view.template.AppBar;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 

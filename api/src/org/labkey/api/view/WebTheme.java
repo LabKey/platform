@@ -140,5 +140,6 @@ public class WebTheme
     {
         return toRGB(_titleColor);
     }
+
 }
 

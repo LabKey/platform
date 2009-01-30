@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.admin.AdminUrls"%><%@ page import="org.labkey.api.security.AuthenticationManager" %><%@ page import="org.labkey.api.security.User" %><%@ page import="org.labkey.api.security.UserUrls" %>
+<%@ page import="org.labkey.api.admin.AdminUrls"%>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -25,7 +25,8 @@
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.security.LoginUrls" %>
+<%@ page import="org.labkey.api.security.*" %>
+<%@ page import="org.labkey.api.view.PopupAdminView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     TemplateHeaderView.TemplateHeaderBean bean = ((TemplateHeaderView) HttpView.currentView()).getModelBean();
@@ -38,15 +39,9 @@
 %>
 <table id="header"><tr>
 <td class="labkey-main-icon"><a href="<%=h(laf.getLogoHref())%>"><img src="<%=h(TemplateResourceHandler.LOGO.getURL(c))%>" alt="<%=h(laf.getShortName())%>"><br><img alt="<%=h(laf.getLogoHref())%>" src="<%=contextPath%>/_.gif" width="146" height="1" border="0"></a></td>
-<td class="labkey-main-title-area"><span><a id="labkey-main-title" class="labkey-main-title" href="<%= app.getHomePageUrl() %>"><%=h(laf.getShortName())%></a></span><br><span class="normal"><a href="<%= app.getHomePageUrl() %>"><%= h(laf.getDescription())%></a><%
-if (bean.containerLinks != null)
-    {
-    for (String containerLink : bean.containerLinks)
-        {
-        %> &gt;&nbsp;<%= containerLink %><%
-        }
-    }
-%></span></td>
+        <td class="labkey-main-title-area"><span><a id="labkey-main-title" class="labkey-main-title" href="<%= app.getHomePageUrl() %>"><%=h(laf.getShortName())%></a></span>
+            </td>
+
 <td class="labkey-main-nav" align="right"><%
 
     User user = (User) request.getUserPrincipal();

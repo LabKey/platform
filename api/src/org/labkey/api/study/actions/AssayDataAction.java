@@ -26,6 +26,7 @@ import org.labkey.api.study.query.RunDataQueryView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.AppBar;
 import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
@@ -81,4 +82,8 @@ public class AssayDataAction extends BaseAssayAction<ProtocolIdForm>
         return result;
     }
 
+    public AppBar getAppBar()
+    {
+        return getAppBar(_protocol);
+    }
 }

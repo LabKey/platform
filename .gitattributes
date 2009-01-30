@@ -36,6 +36,7 @@ api/src/org/labkey/api/action/ApiResponseWriter.java -text
 api/src/org/labkey/api/action/ApiSimpleResponse.java -text
 api/src/org/labkey/api/action/ApiVersion.java -text
 api/src/org/labkey/api/action/ApiVersionException.java -text
+api/src/org/labkey/api/action/AppBarAction.java -text
 api/src/org/labkey/api/action/BaseViewAction.java -text
 api/src/org/labkey/api/action/BeehivePortingActionResolver.java -text
 api/src/org/labkey/api/action/ConfirmAction.java -text
@@ -730,14 +731,19 @@ api/src/org/labkey/api/view/menu/ProjectAdminMenu.java -text
 api/src/org/labkey/api/view/menu/ProjectsMenu.java -text
 api/src/org/labkey/api/view/menu/SiteAdminMenu.java -text
 api/src/org/labkey/api/view/tabstrip.jsp -text
+api/src/org/labkey/api/view/template/AppBar.java -text
+api/src/org/labkey/api/view/template/AppBarView.java -text
 api/src/org/labkey/api/view/template/CommonTemplate.jsp -text
 api/src/org/labkey/api/view/template/EmptyView.java -text
 api/src/org/labkey/api/view/template/FastTemplate.jsp -text
+api/src/org/labkey/api/view/template/MenuBarView.java -text
 api/src/org/labkey/api/view/template/PageConfig.java -text
 api/src/org/labkey/api/view/template/PrintTemplate.java -text
 api/src/org/labkey/api/view/template/TemplateHeaderView.java -text
+api/src/org/labkey/api/view/template/appBar.jsp -text
 api/src/org/labkey/api/view/template/dialogTemplate.jsp -text
 api/src/org/labkey/api/view/template/header.jsp -text
+api/src/org/labkey/api/view/template/menuBar.jsp -text
 api/src/org/labkey/api/webdav/HistoryImpl.java -text
 api/src/org/labkey/api/webdav/WebdavResolver.java -text
 api/src/org/labkey/api/webdav/WebdavService.java -text
@@ -810,6 +816,7 @@ api/webapp/clientapi/Experiment.js -text
 api/webapp/clientapi/ExtJsConfig.js -text
 api/webapp/clientapi/Filter.js -text
 api/webapp/clientapi/GridView.js -text
+api/webapp/clientapi/HoverPopup.js -text
 api/webapp/clientapi/LongTextEditor.js -text
 api/webapp/clientapi/MultiRequest.js -text
 api/webapp/clientapi/NavTrail.js -text
@@ -1770,6 +1777,9 @@ internal/webapp/_icons/xml.gif -text
 internal/webapp/_icons/zip.gif -text
 internal/webapp/_images/beta.gif -text
 internal/webapp/_images/button_arrow.gif -text
+internal/webapp/_images/button_bar_bg.gif -text
+internal/webapp/_images/button_bar_left.gif -text
+internal/webapp/_images/button_bar_right.gif -text
 internal/webapp/_images/cancel.gif -text
 internal/webapp/_images/cart.gif -text
 internal/webapp/_images/cart_added.gif -text

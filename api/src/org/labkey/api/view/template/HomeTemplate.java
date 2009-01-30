@@ -41,7 +41,6 @@ import java.util.Map;
 public class HomeTemplate extends PrintTemplate
 {
     static ArrayList mainMenu = null;
-    static NavTree adminMenu = null;
 
     @Deprecated
     public HomeTemplate(ViewContext context, ModelAndView body, NavTrailConfig trailConfig)
@@ -122,6 +121,12 @@ public class HomeTemplate extends PrintTemplate
             setView("header", header);
         else
             setView("header", getHeaderView(getModelBean()));
+
+        setView("topmenu", new MenuBarView(context.getContainer()));
+
+        LookAndFeelProperties laf = LookAndFeelProperties.getInstance(context.getContainer());
+        if (laf.isAppBarUIEnabled())
+            setView("appbar", getAppBarView(context, page, page.getTitle()));
         setBody(body);
     }
 
@@ -161,6 +166,31 @@ public class HomeTemplate extends PrintTemplate
             this.links = links;
         }
     }
+
+    protected HttpView getAppBarView(ViewContext context, PageConfig page, String pageTitle)
+    {
+        AppBar appBar = page.getAppBar();
+
+        if (null == appBar)
+        {
+            appBar = context.getContainer().getFolderType().getAppBar(context);
+            page.setAppBar(appBar);
+        }
+
+        //HACK to fix up navTrail to delete navBar items
+        if (null != appBar)
+            page.setNavTrail(appBar.fixCrumbTrail(page.getNavTrail()));
+
+        if (null == appBar)
+            return null;
+        
+        return new AppBarView(appBar);
+    }
+
+//    protected HttpView getNavTrailView(ViewContext context, PageConfig page, String pageTitle)
+//    {
+//        return new NavTrailView(context, pageTitle, page, page.getNavTrail());
+//    }
 
     protected HttpView getNavTrailView(ViewContext context, PageConfig page, String pageTitle)
     {
@@ -248,7 +278,7 @@ public class HomeTemplate extends PrintTemplate
             {
                 context.getRequest().getSession().removeAttribute(PARENT_TRAIL_INFO);
             }
-            
+
 /*            if (trailExtras.length == 0)
             {
                 int dashPos = pageFlow.indexOf('-');
@@ -323,7 +353,7 @@ public class HomeTemplate extends PrintTemplate
                 page.setTitle(page.getTitle() + ": " + getRootContext().getActionURL().getExtraPath());
         }
 
-        if (null == getView("nav"))
+        if (null == getView("nav") && null == getView("appbar"))
             setView("nav", getNavTrailView(getRootContext(), page, title));
 
         if (null == getView("header"))

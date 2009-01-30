@@ -22,6 +22,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.assay.AssayRunsView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.template.AppBar;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -61,5 +62,10 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
     public NavTree appendNavTrail(NavTree root)
     {
         return root.addChild(_protocol.getName() + " Runs");
+    }
+
+    public AppBar getAppBar()
+    {
+        return getAppBar(_protocol);
     }
 }

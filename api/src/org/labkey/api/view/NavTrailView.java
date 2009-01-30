@@ -205,7 +205,7 @@ public class NavTrailView extends HttpView
         // CRUMB TRAIL
         //
 
-        _out.print("<table class=\"labkey-tab-strip\">\n");
+        _out.print("<table >\n");
         boolean hasCrumbTrail = null != _crumbTrail && _crumbTrail.size() > 1;
         _out.print("<tr><td colspan=");
         _out.print(hasCrumbTrail ? "1" : "2");
@@ -223,7 +223,6 @@ public class NavTrailView extends HttpView
             }
             _out.print(and);
             _out.print("</span></td>");
-            drawAdminTd(context);
         }
 
         out.print("</tr>\n<tr><td colspan=");
@@ -237,8 +236,6 @@ public class NavTrailView extends HttpView
             _out.print("<span id=\"labkey-nav-trail-current-page\" style=\"visibility:hidden\">");_out.print(filter(_title));_out.print("</span>");
         }
         _out.print("</td>");
-        if (!hasCrumbTrail)
-            drawAdminTd(context);
         _out.print("</tr>\n</table>");
     }
 
@@ -246,7 +243,7 @@ public class NavTrailView extends HttpView
     {
         _out.print("<td align=right>");
         if (context.hasPermission(ACL.PERM_ADMIN))
-            include(new PopupAdminView(context, _pageConfig));
+            include(new PopupAdminView(context));
         else
             _out.print("&nbsp;");
         _out.print("</td>");

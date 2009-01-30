@@ -33,6 +33,7 @@ public class WebThemeManager
 {
     private static final WebTheme BLUE = new WebTheme("Blue", "e1ecfc", "89a1b4", "ffdf8c", "336699", "ebf4ff", "89a1b4");
     private static final WebTheme BROWN = new WebTheme("Brown", "cccc99", "929146", "e1e1c4", "666633", "e1e1c4", "929146");
+    private static final WebTheme KIM = new WebTheme("Kim", "e0e6ea", "e0e6ea", "ffdf8c", "336699", "e0e6ea", "e0e6ea");//, "f8f8f8", "126495", "3px solid #e0e6ea");
 
     // handle Web Theme color management
     private static final String THEME_NAMES_KEY = "themeNames";
@@ -104,6 +105,7 @@ public class WebThemeManager
             // add the defaults if nothing was loaded
             addToMap(BLUE);
             addToMap(BROWN);
+            addToMap(KIM);
         }
     }
 

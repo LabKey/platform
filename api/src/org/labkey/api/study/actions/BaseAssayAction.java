@@ -17,6 +17,7 @@
 package org.labkey.api.study.actions;
 
 import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.AppBarAction;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -28,6 +29,7 @@ import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.template.AppBar;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
@@ -40,7 +42,7 @@ import java.util.Set;
  * Date: Jul 26, 2007
  * Time: 7:01:48 PM
  */
-public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleViewAction<T>
+public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleViewAction<T> implements AppBarAction
 {
     public BaseAssayAction()
     {
@@ -109,6 +111,29 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
     public NavTree appendNavTrail(NavTree root)
     {
         return root.addChild("Assay List", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getContainer()));
+    }
+
+    public AppBar getAppBar(ExpProtocol protocol)
+    {
+        AssayUrls urls = PageFlowUtil.urlProvider(AssayUrls.class);
+        if (null != protocol)
+        {
+            AssayService.Interface svc = AssayService.get();
+            return new AppBar("Assay: " + protocol.getName(),
+                    new NavTree("Add Runs", "#"),
+                    new NavTree("View Runs", urls.getAssayRunsURL(getContainer(), protocol)),
+                    new NavTree("View Data", urls.getAssayDataURL(getContainer(), protocol)),
+                    new NavTree("Manage", urls.getDesignerURL(getContainer(), protocol, false)));
+        }
+        else
+        {
+            return new AppBar("Assays", new NavTree("Add Runs", "javascript:alert('NYI');return null;"), new NavTree("View Assay Types", urls.getAssayListURL(getContainer())));
+        }
+    }
+
+    public AppBar getAppBar()
+    {
+        return getAppBar(null);
     }
 
     protected List<Integer> getCheckboxIds(boolean clear)
