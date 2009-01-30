@@ -19,6 +19,8 @@ package org.labkey.query.reports.view;
 import org.labkey.api.view.*;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.Report;
+import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.reports.report.DbReportIdentifier;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang.BooleanUtils;
 
@@ -50,7 +52,17 @@ public class ReportsWebPart extends WebPartView
     protected void renderView(Object model, PrintWriter out) throws Exception
     {
         Map<String, String> properties = _webPart.getPropertyMap();
-        String reportId = properties.get(Report.renderParam.reportId.name());
+        ReportIdentifier reportId = null;
+        String reportIdString = properties.get(Report.renderParam.reportId.name());
+        if(null != reportIdString)
+        {
+            reportId = ReportService.get().getReportIdentifier(reportIdString);
+
+            //allow bare report ids for backward compatibility 
+            if(null == reportId)
+                reportId = new DbReportIdentifier(Integer.parseInt(reportIdString));
+        }
+
         boolean showTabs = BooleanUtils.toBoolean(properties.get(Report.renderParam.showTabs.name()));
         getViewContext().put(Report.renderParam.reportWebPart.name(), "true");
 
@@ -59,7 +71,7 @@ public class ReportsWebPart extends WebPartView
 
         if (reportId != null)
         {
-            Report report = ReportService.get().getReport( NumberUtils.toInt(reportId));
+            Report report = reportId.getReport();
 
             if (report != null)
             {
