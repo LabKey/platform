@@ -20,8 +20,8 @@ import junit.framework.TestSuite;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
-import org.labkey.announcements.AnnouncementsController;
 import org.labkey.api.announcements.CommSchema;
+import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
@@ -29,8 +29,6 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.*;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.common.util.Pair;
 
@@ -592,233 +590,10 @@ public class AnnouncementManager
         }
     }
 
-    public static class Settings
-    {
-        String _boardName = "Messages";
-        String _conversationName = "Message";
-        boolean _secure = false;
-        boolean _status = false;
-        boolean _expires = false;
-        boolean _assignedTo = false;
-        Integer _defaultAssignedTo = null;
-        boolean _formatPicker = false;
-        boolean _memberList = false;
-        boolean _titleEditable = false;
-        boolean _includeGroups = false;
-        SortOrder _sortOrder = SortOrder.getDefaultSortOrder();
-
-        String _statusOptions = "Active;Closed";
-
-        public enum SortOrder
-        {
-            CreationDate(0, "-Created"), LatestResponseDate(1, "-ResponseCreated");
-
-            private int _index;
-            private String _sortString;
-
-            SortOrder(int index, String sortString)
-            {
-                _index = index;
-                _sortString = sortString;
-            }
-
-            public int getIndex()
-            {
-                return _index;
-            }
-
-            public Sort getSort()
-            {
-                return new Sort(_sortString);
-            }
-
-            public static SortOrder getByIndex(int index)
-            {
-                for (SortOrder so : values())
-                {
-                    if (index == so.getIndex())
-                        return so;
-                }
-                return getDefaultSortOrder();  // Bad index -- just return default
-            }
-
-            public static SortOrder getDefaultSortOrder()
-            {
-                return CreationDate;
-            }
-
-
-            // For convenience, used in customize.jsp
-            @Override
-            public String toString()
-            {
-                return String.valueOf(_index);
-            }
-        }
-
-        // Set the defaults that will be used for un-customized message boards.  We must set them all to false above to
-        // workaround the "checkbox doesn't post if false" problem.
-        public void setDefaults()
-        {
-            _expires = true;
-            _formatPicker = true;
-            _titleEditable = true;
-        }
-
-        public String getBoardName()
-        {
-            return _boardName;
-        }
-
-        public void setBoardName(String boardName)
-        {
-            _boardName = boardName;
-        }
-
-        public String getConversationName()
-        {
-            return _conversationName;
-        }
-
-        public void setConversationName(String itemName)
-        {
-            _conversationName = itemName;
-        }
-
-        public boolean isSecure()
-        {
-            return _secure;
-        }
-
-        public void setSecure(boolean secure)
-        {
-            _secure = secure;
-        }
-
-        public boolean hasExpires()
-        {
-            return _expires;
-        }
-
-        public void setExpires(boolean expires)
-        {
-            _expires = expires;
-        }
-
-        public boolean hasFormatPicker()
-        {
-            return _formatPicker;
-        }
-
-        public void setFormatPicker(boolean formatPicker)
-        {
-            _formatPicker = formatPicker;
-        }
-
-        public boolean hasAssignedTo()
-        {
-            return _assignedTo;
-        }
-
-        public void setAssignedTo(boolean assignedTo)
-        {
-            _assignedTo = assignedTo;
-        }
-
-        public Integer getDefaultAssignedTo()
-        {
-            return _defaultAssignedTo;
-        }
-
-        public void setDefaultAssignedTo(Integer defaultAssignedTo)
-        {
-            _defaultAssignedTo = defaultAssignedTo;
-        }
-
-        public boolean hasStatus()
-        {
-            return _status;
-        }
-
-        public void setStatus(boolean status)
-        {
-            _status = status;
-        }
-
-        public boolean hasMemberList()
-        {
-            return _memberList;
-        }
-
-        public void setMemberList(boolean memberList)
-        {
-            _memberList = memberList;
-        }
-
-        // Keep this for backward compatibility with message boards that saved a "userList" setting.  These settings are loaded by reflection.
-        @Deprecated
-        public boolean hasUserList()
-        {
-            return hasMemberList();
-        }
-
-        // Keep this for backward compatibility with message boards that saved a "userList" setting.  These settings are loaded by reflection.
-        @Deprecated
-        public void setUserList(boolean memberList)
-        {
-            setMemberList(memberList);
-        }
-
-        public int getSortOrderIndex()
-        {
-            return _sortOrder.getIndex();
-        }
-
-        public void setSortOrderIndex(int index)
-        {
-            _sortOrder = SortOrder.getByIndex(index);
-        }
-
-        public Sort getSort()
-        {
-            return _sortOrder.getSort();
-        }
-
-        public boolean isTitleEditable()
-        {
-            return _titleEditable;
-        }
-
-        public void setTitleEditable(boolean titleEditable)
-        {
-            _titleEditable = titleEditable;
-        }
-
-        public String getStatusOptions()
-        {
-            return _statusOptions;
-        }
-
-        public void setStatusOptions(String options)
-        {
-            _statusOptions = options;
-        }
-
-        public boolean includeGroups()
-        {
-            return _includeGroups;
-        }
-
-        public void setIncludeGroups(boolean includeGroups)
-        {
-            _includeGroups = includeGroups;
-        }
-    }
-
 
     private static final String MESSAGE_BOARD_SETTINGS = "messageBoardSettings";
 
-    public static void saveMessageBoardSettings(Container c, Settings settings) throws SQLException, IllegalAccessException, InvocationTargetException
+    public static void saveMessageBoardSettings(Container c, DiscussionService.Settings settings) throws SQLException, IllegalAccessException, InvocationTargetException
     {
         Map<String, String> props = PropertyManager.getWritableProperties(0, c.getId(), MESSAGE_BOARD_SETTINGS, true);
         props.put("boardName", settings.getBoardName());
@@ -836,10 +611,10 @@ public class AnnouncementManager
         PropertyManager.saveProperties(props);
     }
 
-    public static Settings getMessageBoardSettings(Container c) throws SQLException, IllegalAccessException, InvocationTargetException
+    public static DiscussionService.Settings getMessageBoardSettings(Container c) throws SQLException, IllegalAccessException, InvocationTargetException
     {
         Map<String, String> props = PropertyManager.getProperties(0, c.getId(), MESSAGE_BOARD_SETTINGS, false);
-        Settings settings = new Settings();
+        DiscussionService.Settings settings = new DiscussionService.Settings();
         settings.setDefaults();
         BeanUtils.populate(settings, props);
         return settings;

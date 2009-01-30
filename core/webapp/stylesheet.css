@@ -431,6 +431,77 @@ table.labkey-tab-strip
     border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
 }
 
+/* Used for tabs */
+table#navBar.labkey-tab-strip
+{
+    padding-top:8px;
+    background-color:#ffffff;
+}
+
+/* Used for the "App Bar" containing the main title and the application button bar */
+/* Used for tabs */
+.labkey-app-bar
+{
+    width: 100%;
+    border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
+    border-top: 1px solid #89A1B4;
+    padding-left:8;
+    padding-right:8;
+    padding-top:12;
+    padding-bottom:12;
+    background-color:#ffffff;
+    font-family:Arial,Verdana,sans-serif;
+    font-size:18pt;
+    font-weight:bold;
+}
+
+table.labkey-app-bar td
+{
+    width:100%;
+    background-color:#ffffff;
+    font-family:Arial,Verdana,sans-serif;
+    font-size:18pt;
+    font-weight:bold;
+}
+
+.labkey-app-button-bar-left
+{
+    height:41px;
+    width:15px;
+    background-image:url(./_images/button_bar_left.gif);
+    background-repeat:no-repeat;
+}
+
+.labkey-app-button-bar-right
+{
+    height:41px;
+    width:15px;
+    background-image:url(./_images/button_bar_right.gif);
+    background-repeat:no-repeat;
+    padding-right:12px;
+}
+
+.labkey-app-button-bar-button
+{
+    background-image:url(./_images/button_bar_bg.gif);
+    background-repeat:repeat-x;
+    height:41px;
+    white-space:nowrap;
+}
+
+td.labkey-app-button-bar-button a
+{
+    font-family:verdana sans-serif;
+    color:#126495;
+    font-size:10pt;
+    text-transform:uppercase;
+    text-align:center;
+    vertical-align:middle;
+    padding-left:8px;
+    padding-right:8px;
+    white-space:nowrap;
+}
+
 /* Used for text fields with auto completion */
 div.labkey-completion
 {
@@ -808,6 +879,7 @@ td.labkey-main-icon
     height: 56px;
     margin-left: auto;
     margin-right: auto;
+    padding:8px 0;
 }
 
 /* The middle of the header panel */
@@ -816,11 +888,49 @@ td.labkey-main-title-area
     vertical-align: bottom;
     padding: 5px;
     width: 100%;
+    padding:8px 0;
 }
 
 .labkey-main-title-area span
 {
     vertical-align: bottom;
+}
+
+
+td.labkey-main-menu
+{
+    background-color:#e1ecfb;
+    margin:4px;
+    padding:4px;
+    border-top:1px solid #88a1b4;
+}
+
+td.labkey-main-menu a
+{
+    font-weight:bold;
+    padding-left:1em;
+    padding-right:1em;
+    position:relative;
+    z-index:1001;
+    border-bottom:1px solid transparent;
+}
+
+td.labkey-main-menu a.selected
+{
+    background-color:white;
+    color:black;
+    border-bottom-color:white;
+}
+
+.labkey-webpart-menu
+{
+    display:none;
+    position:absolute;
+    border:5px solid #dae1e6;
+    margin:3;
+    background-color:white;
+    padding:8px;
+    z-index:1000
 }
 
 /* The site title */
@@ -845,9 +955,9 @@ a.labkey-main-title:hover {
 /* The right side links and username on the header panel */
 td.labkey-main-nav
 {
-    padding: 5px;
     vertical-align: bottom;
     white-space: nowrap;
+    padding:8px 5px;
 }
 
 /* The strip at the top of the left side panel that is used to set its minimum width */
@@ -1015,8 +1125,10 @@ td.labkey-tab-selected, .labkey-tab-selected
     border-left:solid 1px #89A1B4;
     border-right:solid 1px #89A1B4;
     border-bottom:solid 1px #ffffff;
+    background-color:white;
     color: #003399;
     text-decoration: none;
+    white-space:nowrap;
     font-weight: bold;
     cursor: pointer;
 }
@@ -1029,9 +1141,11 @@ td.labkey-tab, .labkey-tab
     padding-left:0.5em;
     padding-right:0.5em;
     border:solid 1px #89A1B4;
+    background-color:white;
     color: #003399;
     text-decoration: none;
     vertical-align:bottom;
+    white-space:nowrap;
     cursor: pointer;
 }
 
@@ -1057,6 +1171,7 @@ td.labkey-tab-content, .labkey-tab-content
     border-right: solid 1px #89A1B4;
     border-bottom: solid 1px #89A1B4;
     color: #003399;
+    background-color:white;
     vertical-align:bottom;
 }
 
@@ -1078,6 +1193,11 @@ td.labkey-tab-space, .labkey-tab-space
     border-left: 0px;
     border-right: 0px;
     border-bottom: 1px solid #89A1B4;
+}
+
+table#navBar td.labkey-tab-space
+{
+    background-color:#ffffff;
 }
 
 /* This is used as the final tab in a tab strip */
@@ -1118,7 +1238,7 @@ table.labkey-wp
 td.labkey-wp-body
 {
     width: 100%;
-    padding-top: 2px;
+    padding: 4px;
     background: #FFFFFF;
 }
 

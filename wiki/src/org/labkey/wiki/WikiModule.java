@@ -73,7 +73,8 @@ public class WikiModule extends DefaultModule
     {
         return Arrays.asList(new WikiWebPartFactory(),
                 new WikiTOCFactory(),
-                new WikiWebPartFactory(WEB_PART_NAME, "right"));
+                new WikiWebPartFactory(WEB_PART_NAME, "right"),
+                new MenuWikiWebPartFactory());
     }
 
     public boolean hasScripts()

@@ -32,10 +32,7 @@ import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
-import org.labkey.api.query.AliasManager;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.ValidationError;
-import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.Group;
@@ -227,6 +224,13 @@ public class StudyManager
     public Study[] getAllStudies() throws SQLException
     {
         return Table.select(StudySchema.getInstance().getTableInfoStudy(), Table.ALL_COLUMNS, null, null, Study.class);
+    }
+
+    public Study[] getAllStudies(Container root, User user) throws SQLException
+    {
+        FilteredTable t = new FilteredTable(StudySchema.getInstance().getTableInfoStudy(), root, ContainerFilter.Filters.CURRENT_AND_SUBFOLDERS, user);
+        t.wrapAllColumns(true);
+        return Table.select(t, Table.ALL_COLUMNS, null, null, Study.class);
     }
 
     public Study createStudy(User user, Study study) throws SQLException

@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.view.ThemeFont" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%=formatMissedErrors("form")%>
@@ -116,6 +117,16 @@
         <input name="navigationBarWidth" value="<%=laf.getNavigationBarWidth() %>" type="text" size="4">
     </td>
 </tr>
+<%
+if (AppProps.getInstance().isDevMode())
+{ %>
+    <tr>
+        <td class="labkey-form-label">Show Button Bar (experimental, devMode)</td>
+        <td>
+            <input name="appBarUIEnabled" value="true" type="checkbox" <%=laf.isAppBarUIEnabled() ? "CHECKED" : ""%>>
+        </td>
+    </tr><%
+}%>
 
 <tr>
     <td class="labkey-form-label">Logo link (specifies page that header logo links to)</td>

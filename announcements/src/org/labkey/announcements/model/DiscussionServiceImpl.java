@@ -32,6 +32,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.Map;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * User: matthewb
@@ -258,6 +259,30 @@ public class DiscussionServiceImpl implements DiscussionService.Service
         return getDiscussions(container, identifier).length > 0;
     }
 
+
+    public DiscussionService.Settings getSettings(Container container)
+    {
+        try
+        {
+            return AnnouncementManager.getMessageBoardSettings(container);
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void setSettings(Container container, DiscussionService.Settings settings)
+    {
+        try
+        {
+            AnnouncementManager.saveMessageBoardSettings(container, settings);
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
 
     public static class AnchorView extends HtmlView
     {

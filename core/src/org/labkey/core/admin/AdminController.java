@@ -243,6 +243,13 @@ public class AdminController extends SpringActionController
             return url;
         }
 
+        public ActionURL getLookAndFeelMenuURL(Container c)
+        {
+            ActionURL url = getLookAndFeelSettingsURL(c);
+            url.addParameter("tabId", "menubar");
+            return url;
+        }
+
         public ActionURL getResetLookAndFeelPropertiesURL(Container c)
         {
             return new ActionURL(ResetPropertiesAction.class, c);
@@ -616,6 +623,8 @@ public class AdminController extends SpringActionController
 
             if (form.isResourcesTab())
                 return handleResourcesPost(c, errors);
+            else if (form.isMenuTab())
+                return handleMenuPost(c, form, errors);
             else
                 return handlePropertiesPost(c, form, errors);
         }
@@ -672,6 +681,7 @@ public class AdminController extends SpringActionController
             props.setSystemShortName(form.getSystemShortName());
             props.setNavigationBarWidth(form.getNavigationBarWidth());
             props.setReportAProblemPath(form.getReportAProblemPath());
+            props.setAppBarUIEnabled(form.isAppBarUIEnabled());
             FolderDisplayMode folderDisplayMode = FolderDisplayMode.ALWAYS;
             try
             {
@@ -747,10 +757,23 @@ public class AdminController extends SpringActionController
             return true;
         }
 
+        public boolean handleMenuPost(Container c, LookAndFeelSettingsForm form, BindException errors) throws SQLException
+        {
+            WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
+
+            props.setMenuUIEnabled(form.isEnableMenuBar());
+            props.writeAuditLogEvent(getViewContext().getUser(), props.getOldProperties());
+            props.save();
+            return true;
+
+        }
+
         public ActionURL getSuccessURL(LookAndFeelSettingsForm form)
         {
             if (form.isResourcesTab())
                 return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
+            else if (form.isMenuTab())
+                return new AdminUrlsImpl().getLookAndFeelMenuURL(getContainer());
             else
                 return new AdminUrlsImpl().getLookAndFeelSettingsURL(getContainer());
         }
@@ -786,6 +809,7 @@ public class AdminController extends SpringActionController
 
             tabs.add(new TabInfo("Properties", "properties", url));
             tabs.add(new TabInfo("Resources", "resources", url));
+            tabs.add(new TabInfo("Menu Bar", "menubar", url));
 
             return tabs;
         }
@@ -801,10 +825,17 @@ public class AdminController extends SpringActionController
                     LookAndFeelResourcesBean bean = new LookAndFeelResourcesBean(c);
                     return new JspView<LookAndFeelResourcesBean>("/org/labkey/core/admin/lookAndFeelResources.jsp", bean, _errors);
                 }
-                else
+                else if ("properties".equals(tabId))
                 {
                     LookAndFeelPropertiesBean bean = new LookAndFeelPropertiesBean(c, _form.getThemeName());
                     return new JspView<LookAndFeelPropertiesBean>("/org/labkey/core/admin/lookAndFeelProperties.jsp", bean, _errors);
+                }
+                else
+                {
+                    WebPartView v = new JspView<Object>(AdminController.class, "editMenuBar.jsp", null);
+                    v.setView("menubar", new VBox());
+                    Portal.populatePortalView(getViewContext(), c.getId(), v, true);
+                    return v;
                 }
             }
             else
@@ -1203,6 +1234,8 @@ public class AdminController extends SpringActionController
         private String _companyName;
         private String _systemEmailAddress;
         private String _reportAProblemPath;
+        private boolean _appBarUIEnabled;
+        private boolean _enableMenuBar;
         private String _tabId;
 
         public String getSystemDescription()
@@ -1318,6 +1351,31 @@ public class AdminController extends SpringActionController
         public boolean isResourcesTab()
         {
             return "resources".equals(getTabId());
+        }
+
+        public boolean isMenuTab()
+        {
+            return "menubar".equals(getTabId());
+        }
+
+        public boolean isEnableMenuBar()
+        {
+            return _enableMenuBar;
+        }
+
+        public void setEnableMenuBar(boolean enableMenuBar)
+        {
+            _enableMenuBar = enableMenuBar;
+        }
+
+        public boolean isAppBarUIEnabled()
+        {
+            return _appBarUIEnabled;
+        }
+
+        public void setAppBarUIEnabled(boolean appBarUIEnabled)
+        {
+            _appBarUIEnabled = appBarUIEnabled;
         }
     }
 

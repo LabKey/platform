@@ -378,6 +378,7 @@ core/src/org/labkey/core/admin/customizeEmail.jsp -text
 core/src/org/labkey/core/admin/customizeFolder.jsp -text
 core/src/org/labkey/core/admin/customizeSite.jsp -text
 core/src/org/labkey/core/admin/deleteFolder.jsp -text
+core/src/org/labkey/core/admin/editMenuBar.jsp -text
 core/src/org/labkey/core/admin/emailProps.jsp -text
 core/src/org/labkey/core/admin/emailTest.jsp -text
 core/src/org/labkey/core/admin/folderAliases.jsp -text
@@ -801,6 +802,7 @@ experiment/src/org/labkey/experiment/pipeline/XarTemplateSubstitutionTask.java -
 experiment/src/org/labkey/experiment/runTypeFilters.jsp -text
 experiment/src/org/labkey/experiment/samples/UploadMaterialSetForm.java -text
 experiment/src/org/labkey/experiment/samples/UploadSamplesHelper.java -text
+experiment/src/org/labkey/experiment/samplesAndAnalytes.jsp -text
 experiment/src/org/labkey/experiment/summarizeMaterialInputs.jsp -text
 experiment/src/org/labkey/experiment/types/Concept.java -text
 experiment/src/org/labkey/experiment/types/TypesController.java -text
@@ -2098,6 +2100,7 @@ study/src/org/labkey/study/security/sites.jsp -text
 study/src/org/labkey/study/security/study.jsp -text
 study/src/org/labkey/study/security/studySecurity.jsp -text
 study/src/org/labkey/study/view/AssayDetailsWebPartFactory.java -text
+study/src/org/labkey/study/view/AssayList2WebPartFactory.java -text
 study/src/org/labkey/study/view/AssayListWebPartFactory.java -text
 study/src/org/labkey/study/view/BaseStudyPage.java -text
 study/src/org/labkey/study/view/CrosstabView.java -text
@@ -2105,8 +2108,10 @@ study/src/org/labkey/study/view/DataHeader.java -text
 study/src/org/labkey/study/view/DataSetSummaryPage.java -text
 study/src/org/labkey/study/view/DatasetsWebPartView.java -text
 study/src/org/labkey/study/view/ParticipantWebPartFactory.java -text
+study/src/org/labkey/study/view/StudyListWebPartFactory.java -text
 study/src/org/labkey/study/view/StudyNavigationView.java -text
 study/src/org/labkey/study/view/StudySummaryWebPartFactory.java -text
+study/src/org/labkey/study/view/assayList2.jsp -text
 study/src/org/labkey/study/view/bulkDatasetDelete.jsp -text
 study/src/org/labkey/study/view/bulkImportDataTypes.jsp -text
 study/src/org/labkey/study/view/columnPicker.gm -text
@@ -2186,6 +2191,7 @@ study/src/org/labkey/study/view/samples/webPart.jsp -text
 study/src/org/labkey/study/view/saveReportView.jsp -text
 study/src/org/labkey/study/view/securityTabHeader.jsp -text
 study/src/org/labkey/study/view/snapshotData.jsp -text
+study/src/org/labkey/study/view/studyList.jsp -text
 study/src/org/labkey/study/view/studySummary.jsp -text
 study/src/org/labkey/study/view/typeNotFound.jsp -text
 study/src/org/labkey/study/view/typeSummary.jsp -text
@@ -2303,6 +2309,7 @@ timeline/webapp/similetimeline/timeline-api.js -text
 timeline/webapp/timeline.js -text
 wiki/module.properties -text
 wiki/src/org/labkey/wiki/BaseWikiPermissions.java -text
+wiki/src/org/labkey/wiki/MenuWikiWebPartFactory.java -text
 wiki/src/org/labkey/wiki/ServiceImpl.java -text
 wiki/src/org/labkey/wiki/WikiCache.java -text
 wiki/src/org/labkey/wiki/WikiContainerListener.java -text
@@ -2342,6 +2349,23 @@ wiki/src/org/labkey/wiki/view/wiki_manage.gm -text
 wiki/src/org/labkey/wiki/welcomeWiki.txt -text
 wiki/webapp/_images/page.png -text
 wiki/webapp/wiki/js/wikiEdit.js -text
+workbook/Workbook.iml -text
+workbook/build.xml -text
+workbook/module.properties -text
+workbook/src/META-INF/workbook.xml -text
+workbook/src/META-INF/workbook/scripts/postgresql/workbook-0.00-0.01.sql -text
+workbook/src/META-INF/workbook/scripts/sql[!!-~]server/workbook-0.00-0.01.sql -text
+workbook/src/org/labkey/workbook/WorkbookContainerListener.java -text
+workbook/src/org/labkey/workbook/WorkbookController.java -text
+workbook/src/org/labkey/workbook/WorkbookFolderType.java -text
+workbook/src/org/labkey/workbook/WorkbookManager.java -text
+workbook/src/org/labkey/workbook/WorkbookModule.java -text
+workbook/src/org/labkey/workbook/WorkbookSchema.java -text
+workbook/src/org/labkey/workbook/view/CreateWorkbookView.java -text
+workbook/src/org/labkey/workbook/view/WorkbookList.java -text
+workbook/src/org/labkey/workbook/view/createWorkbook.jsp -text
+workbook/src/org/labkey/workbook/view/hello.jsp -text
+workbook/src/org/labkey/workbook/view/workbookList.jsp -text
 xarassay/ListTableData.xls -text
 xarassay/build.xml -text
 xarassay/module.properties -text

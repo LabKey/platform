@@ -1,0 +1,51 @@
+<%
+/*
+ * Copyright (c) 2007-2008 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+%>
+<%@ page import="org.labkey.api.view.*" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.security.ACL" %>
+<%@ page import="static org.labkey.api.data.ContainerManager.*" %>
+<%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.module.FolderType" %>
+<%@ page import="org.labkey.api.wiki.WikiService" %>
+<%@ page import="org.labkey.api.services.ServiceRegistry" %>
+<%@ page import="org.labkey.workbook.WorkbookModule" %>
+<%@ page import="org.labkey.workbook.WorkbookController" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%
+    JspView me = (JspView) HttpView.currentView();
+    ViewContext ctx = me.getViewContext();
+    Container proj = ctx.getContainer().getProject();
+    Set<Container> containers = ContainerManager.getAllChildren(proj, ctx.getUser(), ACL.PERM_READ);
+%>
+<%
+    WikiService wikiSvc = ServiceRegistry.get().getService(WikiService.class);
+    for (Container c : containers)
+    {
+        FolderType ft = c.getFolderType();
+        if (!"Workbook".equals(ft.getName()))
+            continue;
+        String html = wikiSvc.getHtml(c, WorkbookModule.EXPERIMENT_DESCRIPTION_WIKI_NAME, false);
+        %>
+<a href="<%=h(ft.getStartURL(c, ctx.getUser()))%>"><%=h(c.getName())%></a> <div><%=null == html ? "" : html%>
+    </div>
+<%
+    }
+%>
+<br>
+<%=generateButton("Create Workbook", new ActionURL(WorkbookController.CreateWorkbookAction.class, proj))%>

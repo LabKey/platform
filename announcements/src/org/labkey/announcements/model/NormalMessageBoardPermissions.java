@@ -17,6 +17,7 @@
 package org.labkey.announcements.model;
 
 import org.labkey.api.announcements.CommSchema;
+import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.ACL;
@@ -32,10 +33,10 @@ public class NormalMessageBoardPermissions implements Permissions
 {
     protected Container _c;
     protected User _user;
-    protected AnnouncementManager.Settings _settings;
+    protected DiscussionService.Settings _settings;
     protected static CommSchema _comm = CommSchema.getInstance();
 
-    public NormalMessageBoardPermissions(Container c, User user, AnnouncementManager.Settings settings)
+    public NormalMessageBoardPermissions(Container c, User user, DiscussionService.Settings settings)
     {
         _c = c;
         _user = user;

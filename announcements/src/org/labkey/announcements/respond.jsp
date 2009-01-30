@@ -23,12 +23,13 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
 <%@ page import="org.labkey.api.action.ReturnUrlForm" %>
+<%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<BaseInsertView.InsertBean> me = (HttpView<BaseInsertView.InsertBean>) HttpView.currentView();
     BaseInsertView.InsertBean bean = me.getModelBean();
 
-    AnnouncementManager.Settings settings = bean.settings;
+    DiscussionService.Settings settings = bean.settings;
     AnnouncementForm form = bean.form;
 
     Container c = me.getViewContext().getContainer();

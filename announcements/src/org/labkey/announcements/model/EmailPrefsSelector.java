@@ -20,6 +20,7 @@ import org.labkey.announcements.AnnouncementsController;
 import org.labkey.announcements.model.AnnouncementManager.EmailPref;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.announcements.DiscussionService;
 
 import javax.servlet.ServletException;
 import java.sql.SQLException;
@@ -98,7 +99,7 @@ public abstract class EmailPrefsSelector
         if(!user.isActive())
             return false;
 
-        AnnouncementManager.Settings settings = AnnouncementsController.getSettings(_c);
+        DiscussionService.Settings settings = AnnouncementsController.getSettings(_c);
 
         if (AnnouncementManager.EMAIL_PREFERENCE_MINE == emailPreference)
         {

@@ -20,12 +20,14 @@ import org.labkey.api.module.DefaultFolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.AppBar;
 import org.labkey.study.model.Study;
 
 import java.util.Arrays;
 import java.util.Set;
 
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.controllers.StudyController;
 
 /**
  * Created by IntelliJ IDEA.
@@ -55,6 +57,14 @@ public class StudyFolderType extends DefaultFolderType
     {
         Study study = StudyManager.getInstance().getStudy(ctx.getContainer());
         return study == null ? "New Study" : study.getLabel();
+    }
+
+    @Override
+    public AppBar getAppBar(ViewContext context)
+    {
+        StudyController controller = new StudyController();
+        controller.setViewContext(context);
+        return controller.getAppBar(null);
     }
 
     private static Set<Module> _activeModulesForOwnedFolder = null;

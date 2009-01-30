@@ -29,6 +29,9 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
+import org.labkey.api.view.menu.MenuView;
+import org.labkey.api.view.menu.ContainerMenu;
+import org.labkey.api.view.menu.ProjectsMenu;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.core.admin.AdminController;
@@ -130,13 +133,22 @@ public class CoreModule extends SpringModule
 
     protected Collection<? extends WebPartFactory> createWebPartFactories()
     {
-        return Collections.singletonList(new BaseWebPartFactory("Contacts")
+        return Arrays.asList(new BaseWebPartFactory("Contacts")
             {
                 public WebPartView getWebPartView(ViewContext ctx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
                 {
                     return new ContactWebPart();
                 }
-            });
+            },
+                new AlwaysAvailableWebPartFactory("Folders", "menubar", false, false) {
+                    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+                    {
+                        HBox v = new HBox(new ContainerMenu(portalCtx), new HtmlView("&nbsp;&nbsp;"), new ProjectsMenu(portalCtx));
+                        v.setTitle("Folders");
+                        v.setFrame(WebPartView.FrameType.PORTAL);
+                        return v;
+                    }
+                });
     }
 
 

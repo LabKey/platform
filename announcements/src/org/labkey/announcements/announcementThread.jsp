@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.action.ReturnUrlForm" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
+<%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!--ANNOUNCEMENTS-->
 <%
@@ -37,7 +38,7 @@
     Container c = context.getContainer();
     AnnouncementsController.ThreadViewBean bean = me.getModelBean();
     Announcement announcement = bean.announcement;
-    AnnouncementManager.Settings settings = bean.settings;
+    DiscussionService.Settings settings = bean.settings;
     String contextPath = context.getContextPath();
 
     if (null == announcement)

@@ -176,6 +176,14 @@ public class ExperimentModule extends SpringModule
         };
         narrowSampleSetFactory.addLegacyNames("Narrow Sample Sets");
         result.add(narrowSampleSetFactory);
+        result.add(new AlwaysAvailableWebPartFactory("Samples Menu", WebPartFactory.LOCATION_MENUBAR, false, false) {
+            public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+            {
+                WebPartView view = new JspView<Portal.WebPart>(ExperimentModule.class, "samplesAndAnalytes.jsp", webPart);
+                view.setTitle("Samples");
+                return view;
+            }
+        });
         BaseWebPartFactory narrowProtocolFactory = new BaseWebPartFactory(PROTOCOL_WEB_PART_NAME, WebPartFactory.LOCATION_RIGHT)
         {
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException

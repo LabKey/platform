@@ -25,13 +25,14 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.action.ReturnUrlForm" %>
+<%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<InsertBean> me = (HttpView<InsertBean>) HttpView.currentView();
     InsertBean bean = me.getModelBean();
 
     Container c = HttpView.currentContext().getContainer();
-    AnnouncementManager.Settings settings = bean.settings;
+    DiscussionService.Settings settings = bean.settings;
     AnnouncementsController.AnnouncementForm form = bean.form;
     URLHelper cancelUrl = bean.cancelURL;
     String insertUrl = AnnouncementsController.getInsertURL(c).getEncodedLocalURIString();

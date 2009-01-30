@@ -38,6 +38,7 @@ import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
+import org.labkey.api.view.template.AppBar;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.assay.AssayServiceImpl;
 import org.labkey.study.assay.ModuleAssayProvider;
@@ -99,6 +100,11 @@ public class AssayController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
+        }
+
+        public AppBar getAppBar()
+        {
+            return getAppBar(null);
         }
     }
 
@@ -266,19 +272,30 @@ public class AssayController extends SpringActionController
             return root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer())).addChild(_protocol.getName(),
                     new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId())).addChild("Copy Assay Design");
         }
+
+        public AppBar getAppBar()
+        {
+            return getAppBar(_protocol);
+        }
     }
 
     @RequiresPermission(ACL.PERM_READ)
     public class SummaryRedirectAction extends BaseAssayAction<ProtocolIdForm>
     {
+        ExpProtocol _protocol;
         public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception
         {
-            ExpProtocol protocol = getProtocol(form);
-            HttpView.throwRedirect(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), protocol));
+            _protocol = getProtocol(form);
+            HttpView.throwRedirect(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
             return null;
         }
 
         public NavTree appendNavTrail(NavTree root)
+        {
+            throw new UnsupportedOperationException("Redirects should not show nav trails");
+        }
+
+        public AppBar getAppBar()
         {
             throw new UnsupportedOperationException("Redirects should not show nav trails");
         }
@@ -295,6 +312,11 @@ public class AssayController extends SpringActionController
         }
 
         public NavTree appendNavTrail(NavTree root)
+        {
+            throw new UnsupportedOperationException("Redirects should not show nav trails");
+        }
+
+        public AppBar getAppBar()
         {
             throw new UnsupportedOperationException("Redirects should not show nav trails");
         }
@@ -322,6 +344,11 @@ public class AssayController extends SpringActionController
             NavTree result = super.appendNavTrail(root);
             result.addChild("New Assay Design");
             return result;
+        }
+
+        public AppBar getAppBar()
+        {
+            return getAppBar(null);
         }
     }
 
@@ -423,6 +450,11 @@ public class AssayController extends SpringActionController
             return root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer())).addChild(_protocol.getName(),
                     new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId())).addChild("Copy-to-Study History");
         }
+
+        public AppBar getAppBar()
+        {
+            return getAppBar(_protocol);
+        }
     }
 
     @RequiresPermission(ACL.PERM_INSERT)
@@ -445,7 +477,7 @@ public class AssayController extends SpringActionController
         protected String handleFile(File file, String originalName) throws UploadException
         {
             ExpData data = ExperimentService.get().createData(getContainer(), ModuleAssayProvider.RAW_DATA_TYPE);
-            
+
             data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI());
             data.setName(originalName);
             data.save(getViewContext().getUser());
@@ -568,6 +600,15 @@ public class AssayController extends SpringActionController
         }
     }
 
+    @Override
+    protected AppBar getAppBar(Controller action)
+    {
+        if (action instanceof AppBarAction)
+            return ((AppBarAction) action).getAppBar();
+        else
+            return new AppBar("Assays", new NavTree("Add Runs", "#"), new NavTree("View Assay Types", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getContainer())));
+    }
+
     public static class AssayUrlsImpl implements AssayUrls
     {
         public ActionURL getProtocolURL(Container container, ExpProtocol protocol, Class<? extends Controller> action)
@@ -668,5 +709,4 @@ public class AssayController extends SpringActionController
             return getProtocolURL(container, protocol, DeleteAction.class);
         }
     }
-
 }

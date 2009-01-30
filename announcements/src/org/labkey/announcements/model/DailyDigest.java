@@ -20,8 +20,9 @@ import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.announcements.DailyDigestPage;
-import org.labkey.announcements.model.AnnouncementManager.Settings;
+import org.labkey.api.announcements.DiscussionService.Settings;
 import org.labkey.api.announcements.CommSchema;
+import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.data.*;
 import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.security.User;
@@ -123,7 +124,7 @@ public class DailyDigest
 
     private static void sendDailyDigest(Container c, Date min, Date max) throws Exception
     {
-        Settings settings = AnnouncementManager.getMessageBoardSettings(c);
+        DiscussionService.Settings settings = AnnouncementManager.getMessageBoardSettings(c);
         Announcement[] announcements = getRecentAnnouncementsInContainer(c, min, max);
 
         DailyDigestEmailPrefsSelector sel = new DailyDigestEmailPrefsSelector(c);
@@ -155,7 +156,7 @@ public class DailyDigest
     }
 
 
-    private static MailHelper.ViewMessage getDailyDigestMessage(Container c, Settings settings, Permissions perm, List<Announcement> announcements, User user) throws Exception
+    private static MailHelper.ViewMessage getDailyDigestMessage(Container c, DiscussionService.Settings settings, Permissions perm, List<Announcement> announcements, User user) throws Exception
     {
         MailHelper.ViewMessage m = MailHelper.createMultipartViewMessage(LookAndFeelProperties.getInstance(c).getSystemEmailAddress(), user.getEmail());
         m.setSubject("New posts to " + c.getPath());

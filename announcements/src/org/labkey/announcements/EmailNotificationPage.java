@@ -17,8 +17,8 @@
 package org.labkey.announcements;
 
 import org.labkey.api.jsp.JspBase;
+import org.labkey.api.announcements.DiscussionService;
 import org.labkey.announcements.model.Announcement;
-import org.labkey.announcements.model.AnnouncementManager;
 
 
 abstract public class EmailNotificationPage extends JspBase
@@ -30,7 +30,7 @@ abstract public class EmailNotificationPage extends JspBase
     public String siteURL;
     public Announcement announcement;
     public String body;
-    public AnnouncementManager.Settings settings;
+    public DiscussionService.Settings settings;
     public String removeUrl;
     public Reason reason;
     public boolean includeGroups;

@@ -23,7 +23,7 @@ import org.labkey.announcements.EmailNotificationPage.Reason;
 import org.labkey.announcements.model.*;
 import org.labkey.announcements.model.AnnouncementManager.EmailOption;
 import org.labkey.announcements.model.AnnouncementManager.EmailPref;
-import org.labkey.announcements.model.AnnouncementManager.Settings;
+import org.labkey.api.announcements.DiscussionService.Settings;
 import org.labkey.api.action.*;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
@@ -80,13 +80,13 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private Settings getSettings()
+    private DiscussionService.Settings getSettings()
     {
         return getSettings(getContainer());
     }
 
 
-    public static Settings getSettings(Container c)
+    public static DiscussionService.Settings getSettings(Container c)
     {
         try
         {
@@ -105,7 +105,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    public static Permissions getPermissions(Container c, User user, AnnouncementManager.Settings settings)
+    public static Permissions getPermissions(Container c, User user, DiscussionService.Settings settings)
     {
         if (settings.isSecure())
             return new SecureMessageBoardPermissions(c, user, settings);
@@ -707,7 +707,7 @@ public class AnnouncementsController extends SpringActionController
 
     public static class RemoveUserView extends JspView<RemoveUserView.RemoveUserBean>
     {
-        public RemoveUserView(Announcement ann, String email, Settings settings)
+        public RemoveUserView(Announcement ann, String email, DiscussionService.Settings settings)
         {
             super("/org/labkey/announcements/confirmRemoveUser.jsp", new RemoveUserBean(ann, email, settings));
         }
@@ -889,14 +889,14 @@ public class AnnouncementsController extends SpringActionController
 
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class CustomizeAction extends FormViewAction<Settings>
+    public class CustomizeAction extends FormViewAction<DiscussionService.Settings>
     {
-        public ActionURL getSuccessURL(Settings form)
+        public ActionURL getSuccessURL(DiscussionService.Settings form)
         {
             throw new IllegalStateException("Shouldn't get here; post handler should have redirected.");
         }
 
-        public ModelAndView getView(Settings form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(DiscussionService.Settings form, boolean reshow, BindException errors) throws Exception
         {
             CustomizeBean bean = new CustomizeBean();
 
@@ -912,7 +912,7 @@ public class AnnouncementsController extends SpringActionController
             return new JspView<CustomizeBean>("/org/labkey/announcements/customize.jsp", bean);
         }
 
-        public boolean handlePost(Settings form, BindException errors) throws Exception
+        public boolean handlePost(DiscussionService.Settings form, BindException errors) throws Exception
         {
             AnnouncementManager.saveMessageBoardSettings(getContainer(), form);
 
@@ -920,7 +920,7 @@ public class AnnouncementsController extends SpringActionController
             return true;
         }
 
-        public void validateCommand(Settings settings, Errors errors)
+        public void validateCommand(DiscussionService.Settings settings, Errors errors)
         {
         }
 
@@ -936,7 +936,7 @@ public class AnnouncementsController extends SpringActionController
 
     public static class CustomizeBean
     {
-        public Settings settings;
+        public DiscussionService.Settings settings;
         public URLHelper returnURL;
         public String securityWarning;
         public String assignedToSelect;
@@ -1095,7 +1095,7 @@ public class AnnouncementsController extends SpringActionController
         public ModelAndView getInsertUpdateView(AnnouncementForm form, boolean reshow, BindException errors) throws Exception
         {
             Container c = getContainer();
-            Settings settings = getSettings(c);
+            DiscussionService.Settings settings = getSettings(c);
             Permissions perm = getPermissions(c, getUser(), settings);
 
             if (!perm.allowInsert())
@@ -1191,7 +1191,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private static String getStatusSelect(Settings settings, String currentValue)
+    private static String getStatusSelect(DiscussionService.Settings settings, String currentValue)
     {
         List<String> options = Arrays.asList(settings.getStatusOptions().split(";"));
 
@@ -1350,7 +1350,7 @@ public class AnnouncementsController extends SpringActionController
             WikiRendererType currentRendererType;
             Integer assignedTo;
 
-            Settings settings = getSettings(c);
+            DiscussionService.Settings settings = getSettings(c);
 
             if (reshow)
             {
@@ -1404,7 +1404,7 @@ public class AnnouncementsController extends SpringActionController
         public static class InsertBean
         {
             public boolean allowBroadcast = false;
-            public Settings settings;
+            public DiscussionService.Settings settings;
             public String assignedToSelect;
             public String statusSelect;
             public String memberList;
@@ -1736,7 +1736,7 @@ public class AnnouncementsController extends SpringActionController
     private void sendNotificationEmails(Announcement a, WikiRendererType currentRendererType) throws Exception
     {
         Container c = getContainer();
-        Settings settings = getSettings();
+        DiscussionService.Settings settings = getSettings();
 
         boolean isResponse = null != a.getParent();
         Announcement parent = a;
@@ -1810,7 +1810,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private ViewMessage getMessage(Container c, Settings settings, Permissions perm, Announcement parent, Announcement a, boolean isResponse, String removeUrl, WikiRendererType currentRendererType, Reason reason) throws Exception
+    private ViewMessage getMessage(Container c, DiscussionService.Settings settings, Permissions perm, Announcement parent, Announcement a, boolean isResponse, String removeUrl, WikiRendererType currentRendererType, Reason reason) throws Exception
     {
         ViewMessage m = MailHelper.createMultipartViewMessage(LookAndFeelProperties.getInstance(c).getSystemEmailAddress(), null);
         m.setSubject(StringUtils.trimToEmpty(isResponse ? "RE: " + parent.getTitle() : a.getTitle()));
@@ -2226,7 +2226,7 @@ public class AnnouncementsController extends SpringActionController
 
     public abstract static class LinkBarBean
     {
-        public Settings settings;
+        public DiscussionService.Settings settings;
         public String filterText;
         public ActionURL customizeURL;
         public ActionURL emailPrefsURL;
@@ -2234,7 +2234,7 @@ public class AnnouncementsController extends SpringActionController
         public ActionURL insertURL;
         public boolean includeGroups;
 
-        protected void init(Container c, ActionURL url, User user, Settings settings, Permissions perm, boolean displayAll, boolean isFiltered, int rowLimit)
+        protected void init(Container c, ActionURL url, User user, DiscussionService.Settings settings, Permissions perm, boolean displayAll, boolean isFiltered, int rowLimit)
         {
             this.settings = settings;
             filterText = getFilterText(settings, displayAll, isFiltered, rowLimit);
@@ -2249,7 +2249,7 @@ public class AnnouncementsController extends SpringActionController
 
     public static class ListLinkBar extends JspView<ListLinkBar.ListBean>
     {
-        private ListLinkBar(Container c, ActionURL url, User user, Settings settings, Permissions perm, boolean displayAll)
+        private ListLinkBar(Container c, ActionURL url, User user, DiscussionService.Settings settings, Permissions perm, boolean displayAll)
         {
             super("/org/labkey/announcements/announcementListLinkBar.jsp", new ListBean(c, url, user, settings, perm, displayAll));
         }
@@ -2259,7 +2259,7 @@ public class AnnouncementsController extends SpringActionController
             public ActionURL messagesURL;
             public String urlFilterText;
 
-            private ListBean(Container c, ActionURL url, User user, Settings settings, Permissions perm, boolean displayAll)
+            private ListBean(Container c, ActionURL url, User user, DiscussionService.Settings settings, Permissions perm, boolean displayAll)
             {
                 SimpleFilter urlFilter = new SimpleFilter(url, "Threads");
                 boolean isFiltered = !urlFilter.getWhereParamNames().isEmpty();
@@ -2315,7 +2315,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private static SimpleFilter getFilter(Settings settings, Permissions perm, boolean displayAll)
+    private static SimpleFilter getFilter(DiscussionService.Settings settings, Permissions perm, boolean displayAll)
     {
         // Filter out threads that this user can't read
         SimpleFilter filter = perm.getThreadFilter();
@@ -2333,7 +2333,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private static String getFilterText(Settings settings, boolean displayAll, boolean isFiltered, int rowLimit)
+    private static String getFilterText(DiscussionService.Settings settings, boolean displayAll, boolean isFiltered, int rowLimit)
     {
         StringBuilder sb = new StringBuilder();
 
@@ -2395,7 +2395,7 @@ public class AnnouncementsController extends SpringActionController
             User user = ctx.getUser();
             ActionURL url = ctx.getActionURL();
 
-            Settings settings = getSettings(c);
+            DiscussionService.Settings settings = getSettings(c);
             Permissions perm = getPermissions(c, user, settings);
             DataRegion rgn = getDataRegion(perm, settings);
 
@@ -2456,7 +2456,7 @@ public class AnnouncementsController extends SpringActionController
             _vbox = new VBox(new ListLinkBar(c, url, user, settings, perm, displayAll), gridView);
         }
 
-        protected DataRegion getDataRegion(Permissions perm, Settings settings)
+        protected DataRegion getDataRegion(Permissions perm, DiscussionService.Settings settings)
         {
             DataRegion rgn = new DataRegion();
             rgn.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
@@ -2505,7 +2505,7 @@ public class AnnouncementsController extends SpringActionController
         }
 
         @Override
-        protected DataRegion getDataRegion(Permissions perm, Settings settings)
+        protected DataRegion getDataRegion(Permissions perm, DiscussionService.Settings settings)
         {
             DataRegion rgn = super.getDataRegion(perm, settings);
 
@@ -2537,7 +2537,7 @@ public class AnnouncementsController extends SpringActionController
         public String message = "";
         public Permissions perm = null;
         public boolean isResponse = false;
-        public Settings settings;
+        public DiscussionService.Settings settings;
         public ActionURL messagesURL;
         public ActionURL listURL;
         public URLHelper printURL;

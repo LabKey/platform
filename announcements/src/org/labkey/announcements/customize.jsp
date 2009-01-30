@@ -16,16 +16,15 @@
  */
 %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.CustomizeBean" %>
-<%@ page import="org.labkey.announcements.model.AnnouncementManager.Settings" %>
-<%@ page import="org.labkey.announcements.model.AnnouncementManager.Settings.SortOrder" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.action.ReturnUrlForm" %>
+<%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<CustomizeBean> me = (HttpView<CustomizeBean>) HttpView.currentView();
     CustomizeBean bean = me.getModelBean();
-    Settings settings = bean.settings;
+    DiscussionService.Settings settings = bean.settings;
 
 %><form action="customize.post" method="post">
 <input type="hidden" name="<%=ReturnUrlForm.Params.returnUrl%>" value="<%=h(bean.returnURL)%>">
@@ -43,11 +42,11 @@
         <td>
             <table>
                 <tr>
-                    <td valign="top"><input type="radio" name="sortOrderIndex" value="<%=SortOrder.CreationDate%>" <%=settings.getSortOrderIndex() == SortOrder.CreationDate.getIndex() ? "checked" : ""%>></td>
+                    <td valign="top"><input type="radio" name="sortOrderIndex" value="<%=DiscussionService.Settings.SortOrder.CreationDate%>" <%=settings.getSortOrderIndex() == DiscussionService.Settings.SortOrder.CreationDate.getIndex() ? "checked" : ""%>></td>
                     <td><b>Initial Post</b> - Sort lists of conversations by date of the first posting.  This is appropriate for announcements and blogs.</td>
                 </tr>
                 <tr>
-                    <td valign="top"><input type="radio" name="sortOrderIndex" value="<%=SortOrder.LatestResponseDate%>" <%=settings.getSortOrderIndex() == SortOrder.LatestResponseDate.getIndex() ? "checked" : ""%>></td>
+                    <td valign="top"><input type="radio" name="sortOrderIndex" value="<%=DiscussionService.Settings.SortOrder.LatestResponseDate%>" <%=settings.getSortOrderIndex() == DiscussionService.Settings.SortOrder.LatestResponseDate.getIndex() ? "checked" : ""%>></td>
                     <td><b>Most Recent Post</b> - Sort lists of conversations by date of the most recent post.  This is often preferred for discussion boards.</td>
                 </tr>
             </table>

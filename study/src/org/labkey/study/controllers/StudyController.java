@@ -67,6 +67,8 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.api.view.template.PrintTemplate;
+import org.labkey.api.view.template.AppBar;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.Pair;
 import org.labkey.study.SampleManager;
@@ -5620,6 +5622,57 @@ public class StudyController extends BaseStudyController
             }
             root.addChild("Samples");
             return root;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class ViewDataAction extends SimpleViewAction<Object>
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new VBox(
+                StudyModule.reportsWidePartFactory.getWebPartView(getViewContext(), StudyModule.reportsPartFactory.createWebPart()),
+                StudyModule.datasetsPartFactory.getWebPartView(getViewContext(), StudyModule.datasetsPartFactory.createWebPart())
+            );
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
+    }
+
+    @Override
+    public AppBar getAppBar(Controller action)
+    {
+        try
+        {
+            Study study = getStudy(true);
+            if (study == null)
+            {
+                List<NavTree> buttons;
+                if (getViewContext().hasPermission(ACL.PERM_ADMIN))
+                    buttons = Collections.singletonList(new NavTree("Create Study", new ActionURL(ShowCreateStudyAction.class, getContainer())));
+                else
+                    buttons = Collections.emptyList();
+                return new AppBar("Study: None", buttons);
+            }
+            else
+            {
+                List<NavTree> buttons = new ArrayList<NavTree>();
+                buttons.add(new NavTree("Overview", PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getContainer())));
+                buttons.add(new NavTree("Participants", "#"));
+                buttons.add(new NavTree("View Data", new ActionURL(ViewDataAction.class, getContainer())));
+                if (getContainer().hasPermission(getUser(), ACL.PERM_ADMIN))
+                    buttons.add(new NavTree("Manage", new ActionURL(ManageStudyAction.class, getContainer())));
+
+                return new AppBar("Study: " + study.getLabel(), buttons);
+            }
+        }
+        catch (ServletException e)
+        {
+            _log.error("getAppBar", e);
+            return null;
         }
     }
 }

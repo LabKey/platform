@@ -21,6 +21,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.SecurityManager.PermissionSet;
 import org.labkey.api.security.User;
+import org.labkey.api.announcements.DiscussionService;
 
 /**
  * User: adam
@@ -31,7 +32,7 @@ public class SecureMessageBoardPermissions extends NormalMessageBoardPermissions
 {
     protected final static int EDITOR_PERM = PermissionSet.EDITOR.getPermissions();
 
-    public SecureMessageBoardPermissions(Container c, User user, AnnouncementManager.Settings settings)
+    public SecureMessageBoardPermissions(Container c, User user, DiscussionService.Settings settings)
     {
         super(c, user, settings);
     }

@@ -25,13 +25,14 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
 <%@ page import="org.labkey.api.action.ReturnUrlForm" %>
+<%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     AnnouncementUpdateView me = (AnnouncementUpdateView) HttpView.currentView();
     UpdateBean bean = me.getModelBean();
 
     Announcement ann = bean.ann;
-    AnnouncementManager.Settings settings = bean.settings;
+    DiscussionService.Settings settings = bean.settings;
 %>
 <%=formatMissedErrors("form")%>
 <form method="post" action="update.post">

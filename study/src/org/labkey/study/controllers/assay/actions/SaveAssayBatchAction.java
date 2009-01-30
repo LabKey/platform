@@ -108,7 +108,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             throw new NotFoundException("Pipeline root is not configured for folder " + getViewContext().getContainer());
         }
         run.setFilePathRoot(pipeRoot.getRootPath());
-        handleStandardProperties(runJsonObject, run, provider.getRunDataDomain(protocol).getProperties());
+        handleStandardProperties(runJsonObject, run, provider.getRunDomain(protocol).getProperties());
 
         if (runJsonObject.has(DATA_ROWS) || runJsonObject.has(ExperimentJSONConverter.DATA_INPUTS))
         {

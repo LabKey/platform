@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.ThemeFont" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.api.view.WebThemeManager" %>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container c = getViewContext().getContainer();
@@ -341,6 +342,13 @@ td.labkey-wiki-tab-content
     border-left: 1px solid #<%=navBorder%>;
     border-right: 1px solid #<%=navBorder%>;
     border-bottom: 1px solid #<%=navBorder%>;
+}
+
+td.labkey-main-menu
+{
+    background-color:#<%=navBackground%>;
+    border-top: 1px solid #<%=navBorder%>
+    border-bottom: 1px solid #<%=navBorder%>
 }
 
 /* GWT */

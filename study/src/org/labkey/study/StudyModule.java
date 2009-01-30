@@ -93,6 +93,8 @@ public class StudyModule extends DefaultModule
     public static final WebPartFactory assayListWebPartFactory = new AssayListWebPartFactory();
     public static final WebPartFactory assayDetailsWebPartFactory = new AssayDetailsWebPartFactory();
     public static final WebPartFactory participantWebPartFactory = new ParticipantWebPartFactory();
+    public static final WebPartFactory assayList2WebPartFactory = new AssayList2WebPartFactory();
+    public static final WebPartFactory studyListWebPartFactory = new StudyListWebPartFactory();
 
     public String getName()
     {
@@ -153,7 +155,7 @@ public class StudyModule extends DefaultModule
         return Arrays.asList(reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
                 samplesWidePartFactory, datasetsPartFactory, manageStudyPartFactory,
                 enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
-                assayListWebPartFactory, assayDetailsWebPartFactory, participantWebPartFactory);
+                assayListWebPartFactory, assayDetailsWebPartFactory, participantWebPartFactory, assayList2WebPartFactory, studyListWebPartFactory);
     }
 
     public Collection<String> getSummary(Container c)

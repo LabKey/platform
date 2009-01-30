@@ -30,6 +30,7 @@ import org.labkey.api.util.Search.SearchResultsView;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.admin.AdminUrls;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -58,6 +59,39 @@ public class ProjectController extends SpringActionController
         public ActionURL getCustomizeWebPartURL(Container c)
         {
             return new ActionURL(CustomizeWebPartAction.class, c);
+        }
+
+        public ActionURL getAddWebPartURL(Container c)
+        {
+            return new ActionURL(AddWebPartAction.class, c);
+        }
+
+        public ActionURL getCustomizeWebPartURL(Container c, Portal.WebPart webPart, ActionURL returnURL)
+        {
+            ActionURL url = getCustomizeWebPartURL(c);
+            url.addParameter("pageId", webPart.getPageId());
+            url.addParameter("index", String.valueOf(webPart.getIndex()));
+            url.addParameter(ReturnUrlForm.Params.returnUrl, returnURL.getLocalURIString());
+            return url;
+        }
+
+        public ActionURL getMoveWebPartURL(Container c, Portal.WebPart webPart, int direction, ActionURL returnURL)
+        {
+            ActionURL url = new ActionURL(MoveWebPartAction.class, c);
+            url.addParameter("pageId", webPart.getPageId());
+            url.addParameter("index", String.valueOf(webPart.getIndex()));
+            url.addParameter("direction", String.valueOf(direction));
+            url.addParameter(ReturnUrlForm.Params.returnUrl, returnURL.getLocalURIString());
+            return url;
+        }
+
+        public ActionURL getDeleteWebPartURL(Container c, Portal.WebPart webPart, ActionURL returnURL)
+        {
+            ActionURL url = new ActionURL(DeleteWebPartAction.class, c);
+            url.addParameter("pageId", webPart.getPageId());
+            url.addParameter("index", String.valueOf(webPart.getIndex()));
+            url.addParameter(ReturnUrlForm.Params.returnUrl, returnURL.getLocalURIString());
+            return url;
         }
     }
 
@@ -247,7 +281,7 @@ public class ProjectController extends SpringActionController
 
         public ActionURL getSuccessURL(MovePortletForm movePortletForm)
         {
-            return beginURL();
+            return movePortletForm.getReturnActionURL(beginURL());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -293,7 +327,7 @@ public class ProjectController extends SpringActionController
                         .addParameter("index", ""+_newPart.getIndex());
             }
             else
-                return beginURL();
+                return form.getReturnActionURL();
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -336,7 +370,7 @@ public class ProjectController extends SpringActionController
 
         public ActionURL getSuccessURL(CustomizePortletForm customizePortletForm)
         {
-            return beginURL();
+            return customizePortletForm.getReturnActionURL(beginURL());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -365,27 +399,11 @@ public class ProjectController extends SpringActionController
     // FORMS
     //
 
-    public static class CreateForm
-    {
-        private String name;
-
-
-        public void setName(String name)
-        {
-            this.name = name;
-        }
-
-
-        public String getName()
-        {
-            return this.name;
-        }
-    }
-
-    public static class AddWebPartForm extends CreateForm
+    public static class AddWebPartForm extends ReturnUrlForm
     {
         private String pageId;
         private String location;
+        private String name;
 
         public String getPageId()
         {
@@ -407,9 +425,20 @@ public class ProjectController extends SpringActionController
             this.location = location;
         }
 
+
+        public void setName(String name)
+        {
+            this.name = name;
+        }
+
+
+        public String getName()
+        {
+            return this.name;
+        }
     }
 
-    public static class CustomizePortletForm
+    public static class CustomizePortletForm extends ReturnUrlForm
     {
         private int index;
         private String pageId;
@@ -511,6 +540,14 @@ public class ProjectController extends SpringActionController
 
         public ActionURL getSuccessURL(CustomizePortletForm customizePortletForm)
         {
+            Portal.WebPart webPart = Portal.getPart(customizePortletForm.getPageId(), customizePortletForm.getIndex());
+            //TODO: This is a hack to get this working, should use returnUrl and pass through in webpart
+            if ("menubar".equals(webPart.getLocation()))
+            {
+                ActionURL url = PageFlowUtil.urlProvider(AdminUrls.class).getLookAndFeelSettingsURL(getContainer());
+                url.addParameter(TabStripView.TAB_PARAM, "menubar");
+                return url;
+            }
             return beginURL();
         }
 
