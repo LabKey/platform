@@ -60,7 +60,6 @@ public class Query
     public Query(QuerySchema schema)
     {
         _schema = schema;
-		_select = new QuerySelect(_schema);
         assert MemTracker.put(this);
     }
 
@@ -78,9 +77,7 @@ public class Query
 		try
 		{
 			QNode root = (new SqlParser()).parseUnion(queryText, _parseErrors);
-			if (!_parseErrors.isEmpty())
-				return;
-			
+            
 			if (root instanceof QQuery)
 			{
 				_select = new QuerySelect(this, (QQuery)root);
@@ -147,8 +144,8 @@ public class Query
     public String getQueryText()
     {
 		return _select == null ? null :  _select.getQueryText();
-
     }
+
 
     public Set<FieldKey> getFromTables()
     {
