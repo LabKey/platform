@@ -351,8 +351,19 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 {
                     date = o instanceof Date ? (Date) o : null;
                 }
-                String value = o == null ? null : o.toString();
-                boolean valueMissing = (value == null || value.length() == 0);
+                boolean valueMissing;
+                if (o == null)
+                {
+                    valueMissing = true;
+                }
+                else if (o instanceof QcFieldWrapper)
+                {
+                    valueMissing = ((QcFieldWrapper)o).isEmpty();
+                }
+                else
+                {
+                    valueMissing = false;
+                }
                 if (pd.isRequired() && valueMissing && !missingValues.contains(pd.getName()))
                 {
                     missingValues.add(pd.getName());

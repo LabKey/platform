@@ -54,4 +54,9 @@ public class QcFieldWrapper
     {
         return "QcFieldWrapper: value=" + value + ", qcValue=" + qcValue;
     }
+
+    public boolean isEmpty()
+    {
+        return value == null && qcValue == null;
+    }
 }

@@ -81,6 +81,7 @@ public class QCDisplayColumnFactory implements DisplayColumnFactory
         AliasedColumn rawValueCol = new AliasedColumn(table, valueColumn.getName() + RAW_VALUE_SUFFIX, valueColumn);
         rawValueCol.setUserEditable(false);
         rawValueCol.setIsHidden(true);
+        rawValueCol.setNullable(true); // Otherwise we get complaints on import for required fields
 
         valueColumn.setDisplayColumnFactory(new QCDisplayColumnFactory());
 
