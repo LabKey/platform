@@ -1546,11 +1546,13 @@ query/src/org/labkey/query/sql/QSelect.java -text
 query/src/org/labkey/query/sql/QSelectFrom.java -text
 query/src/org/labkey/query/sql/QString.java -text
 query/src/org/labkey/query/sql/QTable.java -text
+query/src/org/labkey/query/sql/QUnion.java -text
 query/src/org/labkey/query/sql/QUnknownNode.java -text
 query/src/org/labkey/query/sql/QUnsafeExpr.java -text
 query/src/org/labkey/query/sql/QWhen.java -text
 query/src/org/labkey/query/sql/QWhere.java -text
 query/src/org/labkey/query/sql/Query.java -text
+query/src/org/labkey/query/sql/QuerySelect.java -text
 query/src/org/labkey/query/sql/QueryTableInfo.java -text
 query/src/org/labkey/query/sql/SQLTableInfo.java -text
 query/src/org/labkey/query/sql/SourceBuilder.java -text

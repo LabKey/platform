@@ -16,47 +16,43 @@
 
 package org.labkey.query.sql;
 
-import org.apache.commons.lang.StringUtils;
+import org.labkey.api.data.Table;
 import org.labkey.api.query.QueryParseException;
-import org.labkey.query.sql.SqlTokenTypes;
 
-import java.sql.Types;
+import java.util.List;
+import java.util.LinkedList;
 
-public class QBoolean extends QExpr implements IConstant
+
+public class QUnion extends QExpr
 {
-    public QBoolean()
+    public QUnion()
     {
-		super(false);
+		super(QNode.class);
     }
 
-    public QBoolean(boolean value)
-    {
-		super(false);
-        setTokenText(value ? "true" : "false");
-    }
 
-    public Boolean getValue()
+    public void appendSource(SourceBuilder builder)
     {
-        return "true".equalsIgnoreCase(getTokenText());
+        builder.pushPrefix("(");
+        for (QNode node : children())
+        {
+            node.appendSource(builder);
+			builder.popPrefix();
+			builder.pushPrefix(") UNION (");
+        }
+        builder.append(")");
     }
 
     public void appendSql(SqlBuilder builder)
     {
-        builder.append(getValue().toString());
+		builder.pushPrefix("(");
+		for (QNode node : children())
+		{
+			((QExpr)node).appendSql(builder);
+			builder.popPrefix();
+			builder.pushPrefix(") UNION (");
+		}
+		builder.append(")");
     }
 
-    public void appendSource(SourceBuilder builder)
-    {
-        builder.append(getValue().toString());
-    }
-
-    public int getSqlType()
-    {
-        return Types.BOOLEAN;
-    }
-
-    public String getValueString()
-    {
-        return getValue().toString();
-    }
 }

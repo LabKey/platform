@@ -16,87 +16,116 @@
 
 package org.labkey.query.sql;
 
-import org.apache.commons.lang.StringUtils;
-import org.labkey.api.query.QueryParseException;
-import org.labkey.query.sql.SqlTokenTypes;
-
 import java.sql.Types;
+import java.math.BigInteger;
+import java.math.BigDecimal;
 
 public class QNumber extends QExpr implements IConstant
 {
-    public QNumber()
+	Number _value = null;
+	int _sqlType = Types.DOUBLE;
+	
+    public QNumber(Node n)
     {
+		super(false);
+		from(n);
+
+		try
+		{
+			switch (getTokenType())
+			{
+				case SqlTokenTypes.NUM_DOUBLE:
+				case SqlTokenTypes.NUM_FLOAT:
+					setValue(convertDouble(getTokenText()));
+					break;
+				case SqlTokenTypes.NUM_LONG:
+				case SqlTokenTypes.NUM_INT:
+					setValue(convertInteger(getTokenText()));
+					break;
+				default:
+					throw new IllegalArgumentException(getTokenText());
+			}
+		}
+		catch (NumberFormatException x)
+		{
+			//
+		}
     }
 
-	@Override
-    public void setTokenText(String str)
+		
+	public QNumber(Number value)
     {
-        super.setTokenText(str);
-    }
+		setValue(value);
+	}
 
 
-    public QNumber(Number value)
-    {
-        if (value instanceof Double)
-        {
-            setTokenType(SqlTokenTypes.NUM_DOUBLE);
-        }
-        else if (value instanceof Float)
-        {
-            setTokenType(SqlTokenTypes.NUM_FLOAT);
-        }
-        else if (value instanceof Integer)
-        {
-            setTokenType(SqlTokenTypes.NUM_INT);
-        }
-        else if (value instanceof Long)
-        {
-            setTokenType(SqlTokenTypes.NUM_LONG);
-        }
-        else
-        {
-            throw new IllegalArgumentException();
-        }
+	private void setValue(Number value)
+	{
+		_value = value;
+		if (value instanceof Double || value instanceof Float)
+			_sqlType = Types.DOUBLE;
+        else if (value instanceof Integer || value instanceof Long)
+			_sqlType = Types.INTEGER;
+		else if (value instanceof BigInteger || value instanceof BigDecimal)
+			_sqlType = Types.DECIMAL;
         setTokenText(value.toString());
     }
 
+
     public Number getValue()
     {
-        String text = getTokenText();
-        if (StringUtils.isEmpty(text))
-            return null;
-        switch (getTokenType())
-        {
-            case SqlTokenTypes.NUM_DOUBLE:
-                return Double.valueOf(text);
-            case SqlTokenTypes.NUM_FLOAT:
-                return Float.valueOf(text);
-            case SqlTokenTypes.NUM_INT:
-                return Integer.valueOf(text);
-            case SqlTokenTypes.NUM_LONG:
-                return Long.valueOf(text);
-            default:
-                throw new QueryParseException("Unexpected", null, getLine(), getColumn());
-        }
+		return _value;
     }
 
     public void appendSql(SqlBuilder builder)
     {
-        builder.append(getValue().toString());
+        builder.append(getValueString());
     }
 
     public void appendSource(SourceBuilder builder)
     {
-        builder.append(getValue().toString());
+        builder.append(getValueString());
     }
 
     public int getSqlType()
     {
-        return Types.DOUBLE;
+        return _sqlType;
     }
 
     public String getValueString()
     {
-        return getValue().toString();
+        return _value == null ? getTokenText() : _value.toString();
     }
+
+
+	Number convertInteger(String s)
+	{
+		int base = 10;
+		if (s.startsWith("0x"))
+		{
+			base = 16;
+			s = s.substring(2);
+		}
+		try
+		{
+			return Long.parseLong(s, base);
+		}
+		catch (NumberFormatException x)
+		{
+			return new BigInteger(s, base);
+		}
+	}
+	
+
+	Number convertDouble(String s)
+	{
+		try
+		{
+			return Double.parseDouble(s);
+		}
+		catch (NumberFormatException x)
+		{
+			return new BigDecimal(s);
+		}
+	}
 }

@@ -21,6 +21,11 @@ import org.labkey.api.query.QueryParseException;
 
 public class QRowStar extends QExpr
 {
+	public QRowStar()
+	{
+		super(false);
+	}
+	
     public void appendSource(SourceBuilder builder)
     {
         builder.append("*");
@@ -29,11 +34,6 @@ public class QRowStar extends QExpr
     public FieldKey getFieldKey()
     {
         return null;
-    }
-
-    public QueryParseException syntaxCheck(QNode parent)
-    {
-        return new QueryParseException("COUNT(*) is not supported", null, getLine(), getColumn());
     }
 
     public void appendSql(SqlBuilder builder)

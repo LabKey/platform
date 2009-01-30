@@ -84,18 +84,18 @@
         else
         { %>
         <td>
-            <labkey:button text="Design" alt="<%="Design " + query.getName()%>" href="<%=currentSchema.urlFor(QueryAction.designQuery, query)%>"/>
+            <labkey:button text="Design" alt='<%="Design " + query.getName()%>' href="<%=currentSchema.urlFor(QueryAction.designQuery, query)%>"/>
         </td>
         <td>
-            <labkey:button text="Source" alt="<%="Source " + query.getName()%>" href="<%=currentSchema.urlFor(QueryAction.sourceQuery, query)%>"/>
+            <labkey:button text="Source" alt='<%="Source " + query.getName()%>' href="<%=currentSchema.urlFor(QueryAction.sourceQuery, query)%>"/>
         </td>
         <td><% if (query.canEdit(context.getUser()))
         { %>
-            <labkey:button text="Delete" alt="<%="Delete " + query.getName()%>" href="<%=currentSchema.urlFor(QueryAction.deleteQuery, query)%>"/>
+            <labkey:button text="Delete" alt='<%="Delete " + query.getName()%>' href="<%=currentSchema.urlFor(QueryAction.deleteQuery, query)%>"/>
             <% } %></td>
         <td>
             <labkey:button text="Properties"
-                         name="<%="Properties " + query.getName()%>"
+                         name='<%="Properties " + query.getName()%>'
                          href="<%=currentSchema.urlFor(QueryAction.propertiesQuery, query)%>"/>
         </td>
         <% } %>
@@ -152,5 +152,5 @@
 
 <% if (context.getContainer().hasPermission(context.getUser(), ACL.PERM_ADMIN))
 {%>
-    <labkey:link href="<%=new ActionURL("query", "admin", context.getContainer())%>" text="Schema Administration" />
+    <labkey:link href='<%=new ActionURL("query", "admin", context.getContainer())%>' text="Schema Administration" />
 <% } %>

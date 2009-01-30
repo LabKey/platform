@@ -45,11 +45,12 @@ public class QString extends QExpr implements IConstant
 
     public QString()
     {
-
+		super(false);
     }
 
     public QString(String value)
-    {
+	{
+		this();
         setTokenText(quote(value));
     }
 

@@ -25,19 +25,19 @@ import java.util.LinkedList;
 
 public class QQuery extends QExpr
 {
-    Query _query;
+    QuerySelect _query;
 
     public QQuery()
     {
 		super(QNode.class);
     }
 
-    public QQuery(Query query)
+    public QQuery(QuerySelect query)
     {
         _query = query;
     }
 
-    public Query getQuery()
+    public QuerySelect getQuery()
     {
         return _query;
     }
@@ -103,27 +103,5 @@ public class QQuery extends QExpr
         builder.append("(");
         builder.append(Table.getSelectSQL(table, table.getColumns(), null, null));
         builder.append(")");
-    }
-
-    public void syntaxCheck(List<? super QueryParseException> errors)
-    {
-        List<QNode> children = new LinkedList<QNode>();
-        children.add(this);
-        while (!children.isEmpty())
-        {
-            QNode child = children.remove(0);
-            for (QNode grandChild : child.children())
-            {
-                if (grandChild instanceof QExpr)
-                {
-                    QueryParseException error = ((QExpr) grandChild).syntaxCheck(child);
-                    if (error != null)
-                    {
-                        errors.add(error);
-                    }
-                }
-                children.add(0, grandChild);
-            }
-        }
     }
 }

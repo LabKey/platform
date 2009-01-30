@@ -117,7 +117,7 @@ function disableQuerySelect(disable)
                 <select name="schemaName" id="schemaName"
                         title="Select a Schema Name"
                         onchange="updateQueries(this.value)">
-                    <labkey:options value="<%=pm.get("schemaName")%>" map="<%=schemaOptions%>" />
+                    <labkey:options value='<%=pm.get("schemaName")%>' map="<%=schemaOptions%>" />
                 </select>
             </td>
         </tr>

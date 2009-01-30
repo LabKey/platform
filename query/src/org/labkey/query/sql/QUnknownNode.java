@@ -25,9 +25,9 @@ public class QUnknownNode extends QNode
         _type = 0;
     }
 
-    public QUnknownNode(int type)
+    public QUnknownNode(Node n)
     {
-        _type = type;
+		super(n);
     }
     
     public void appendSource(SourceBuilder builder)

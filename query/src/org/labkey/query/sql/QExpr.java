@@ -33,6 +33,11 @@ abstract public class QExpr extends QNode
         super(QExpr.class);
     }
 
+	public QExpr(boolean allowChildren)
+	{
+		super(allowChildren ? QExpr.class : null);
+	}
+
 	public QExpr(Class validChildrenClass)
 	{
 		super(validChildrenClass);
@@ -84,11 +89,6 @@ abstract public class QExpr extends QNode
     }
 
     public QueryParseException fieldCheck(QNode parent)
-    {
-        return null;
-    }
-
-    public QueryParseException syntaxCheck(QNode parent)
     {
         return null;
     }

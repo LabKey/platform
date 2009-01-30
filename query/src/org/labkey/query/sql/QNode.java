@@ -38,6 +38,18 @@ abstract public class QNode implements Cloneable
 	protected QNode()
 	{
 	}
+
+	protected QNode(Node n)
+	{
+		from(n);
+	}
+
+	protected void from(Node n)
+	{
+		setTokenType(n.getType());
+		setTokenText(n.getText());
+		setLineAndColumn(n);
+	}
 	
 	protected QNode(Class validChildrenClass)
 	{
@@ -104,13 +116,13 @@ abstract public class QNode implements Cloneable
 
     public void appendChild(QNode child)
     {
-		assert _validChildrenClass.isAssignableFrom(child.getClass());
+		assert _validChildrenClass != null && _validChildrenClass.isAssignableFrom(child.getClass());
 		_children.add(child);
     }
 
 	void _replaceChildren(LinkedList<QNode> list)
 	{
-		for (QNode n : list) assert _validChildrenClass.isAssignableFrom(n.getClass());
+		for (QNode n : list) assert _validChildrenClass != null &&_validChildrenClass.isAssignableFrom(n.getClass());
 	   	_children = list;
 	}
 

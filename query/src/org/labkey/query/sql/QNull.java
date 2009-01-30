@@ -18,6 +18,11 @@ package org.labkey.query.sql;
 
 public class QNull extends QExpr
 {
+	public QNull()
+	{
+		super(false);
+	}
+	
     public void appendSql(SqlBuilder builder)
     {
         builder.append("NULL");

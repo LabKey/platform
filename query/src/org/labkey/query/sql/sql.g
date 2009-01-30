@@ -643,8 +643,10 @@ compoundExpr
 	| (OPEN! ( (expression (COMMA! expression)*) | subQuery ) CLOSE!)
 	;
 
+// UNDONE: nested union is not yet supported
 subQuery
-	: union
+//	: union
+	: queryRule
 	;
 
 exprList
@@ -720,7 +722,7 @@ EQ: '=';
 LT: '<';
 GT: '>';
 SQL_NE: "<>";
-NE: "!=" | "^=";
+NE: "!=";
 LE: "<=";
 GE: ">=";
 
