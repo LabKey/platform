@@ -57,14 +57,14 @@ public enum CompareType
             }
         },
     NEQ("Does Not Equal", "neq", true, " <> ?", "NOT_EQUALS"),
-    ISBLANK("Is Blank", "isblank", false, " IS NULL", "IS_NULL")
+    ISBLANK("Is Blank", "isblank", false, " IS NULL", "IS_MISSING")
         {
             public FilterClause createFilterClause(String colName, Object value)
             {
                 return super.createFilterClause(colName, null);
             }
         },
-    NONBLANK("Is Not Blank", "isnonblank", false, " IS NOT NULL", "IS_NOT_NULL")
+    NONBLANK("Is Not Blank", "isnonblank", false, " IS NOT NULL", "IS_NOT_MISSING")
         {
             public FilterClause createFilterClause(String colName, Object value)
             {
@@ -137,15 +137,15 @@ public enum CompareType
     private String _displayValue;
     private boolean _dataValueRequired;
     private String _sql;
-    private String _rName;
+    private String _scriptName;
 
-    CompareType(String displayValue, String urlKey, boolean dataValueRequired, String sql, String rName)
+    CompareType(String displayValue, String urlKey, boolean dataValueRequired, String sql, String scriptName)
     {
         _urlKey = urlKey;
         _displayValue = displayValue;
         _dataValueRequired = dataValueRequired;
         _sql = sql;
-        _rName = rName;
+        _scriptName = scriptName;
     }
 
     public static List<CompareType> getValidCompareSet(ColumnInfo info)
@@ -208,7 +208,7 @@ public enum CompareType
 
     public String getScriptName()
     {
-        return _rName;
+        return _scriptName;
     }
 
     // Each compare type uses CompareClause by default
