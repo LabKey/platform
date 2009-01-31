@@ -108,6 +108,7 @@ tokens
 	SELECT_FROM;
 	UNARY_MINUS;
 	UNARY_PLUS;
+	UNION_ALL;
 	VECTOR_EXPR;		// ( x, y, z )
 	WEIRD_IDENT;		// Identifiers that were keywords when they came in.
 
@@ -236,7 +237,7 @@ insertablePropertySpec
 	;
 
 union
-	: queryRule (UNION^ queryRule)*
+	: queryRule (u:UNION^ (ALL! { #u.setType(UNION_ALL); } )? queryRule)*
 	;
 
 //## query:

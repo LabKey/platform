@@ -43,12 +43,12 @@ public class QuerySelect
     private Map<FieldKey, TableInfo> _tables;
     private Map<FieldKey, ColumnInfo> _declaredFields = new HashMap<FieldKey, ColumnInfo>();
     private SQLTableInfo _subqueryTable;
-    private List<QueryParseException> _parseErrors = new ArrayList<QueryParseException>();
+    private List<QueryParseException> _parseErrors;
     private AliasManager _subqueryAliasManager;
     private AliasManager _queryAliasManager;
 
 
-    QuerySelect(QuerySchema schema)
+    private QuerySelect(QuerySchema schema)
     {
         _schema = schema;
         _subqueryAliasManager = new AliasManager(schema.getDbSchema());
@@ -271,6 +271,7 @@ public class QuerySelect
         }
         return builder.getText();
     }
+    
 
     public Set<FieldKey> getFromTables()
     {
@@ -808,16 +809,25 @@ loop:
         {
             getSqlDialect().limitRows(sql, _limit.getLimit());
         }
-        sql.insert(0, "(");
-        sql.append(")");
         _subqueryTable.setFromSQL(sql);
         if (!_parseErrors.isEmpty())
             return null;
 
         assert MemTracker.put(ret);
+        _selectSql = sql;
         return ret;
     }
 
+
+    SQLFragment _selectSql = null;
+    
+    SQLFragment getSelectSql()
+    {
+        if (_selectSql == null)
+            getTableInfo("SQL");
+        return _selectSql;
+    }
+    
 
 	private void parseError(String message, QNode node)
 	{

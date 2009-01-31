@@ -25,9 +25,10 @@ import java.util.LinkedList;
 
 public class QUnion extends QExpr
 {
-    public QUnion()
+    public QUnion(Node node)
     {
-		super(QNode.class);
+		super(QQuery.class);
+        from(node);
     }
 
 
@@ -38,21 +39,17 @@ public class QUnion extends QExpr
         {
             node.appendSource(builder);
 			builder.popPrefix();
-			builder.pushPrefix(") UNION (");
+            if (getTokenType() == SqlTokenTypes.UNION_ALL)
+                builder.pushPrefix(") UNION ALL (");
+            else
+			    builder.pushPrefix(") UNION (");
         }
         builder.append(")");
     }
 
+
     public void appendSql(SqlBuilder builder)
     {
-		builder.pushPrefix("(");
-		for (QNode node : children())
-		{
-			((QExpr)node).appendSql(builder);
-			builder.popPrefix();
-			builder.pushPrefix(") UNION (");
-		}
-		builder.append(")");
+        throw new UnsupportedOperationException("UNION in subquery");
     }
-
-}
+ }

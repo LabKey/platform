@@ -54,7 +54,7 @@ public class Query
 	private ArrayList<QueryParseException> _parseErrors = new ArrayList<QueryParseException>();
 
 	private QuerySelect _select;
-	private QUnion _qunion;
+	private QueryUnion _union;
 
 	
     public Query(QuerySchema schema)
@@ -84,7 +84,7 @@ public class Query
 			}
 			else if (root instanceof QUnion)
 			{
-				_qunion = (QUnion)root;
+				_union = new QueryUnion(this, (QUnion)root);
 			}
 		}
 		catch (RuntimeException ex)
@@ -143,7 +143,11 @@ public class Query
 
     public String getQueryText()
     {
-		return _select == null ? null :  _select.getQueryText();
+        if (_union != null)
+            return _union.getQueryText();
+        else if (_select != null)
+		    return _select.getQueryText();
+        return null;
     }
 
 
@@ -167,13 +171,17 @@ public class Query
 
     public boolean hasSubSelect()
     {
-		return _select != null && _select.hasSubSelect();
+		return _union != null || _select != null && _select.hasSubSelect();
     }
 
 
     public QueryTableInfo getTableInfo(String tableAlias)
     {
-		return _select == null ? null : _select.getTableInfo(tableAlias);
+        if (_union != null)
+            return _union.getTableInfo(tableAlias);
+        else if (_select != null)
+		    return _select.getTableInfo(tableAlias);
+        return null;
     }
 
 
@@ -359,7 +367,10 @@ public class Query
 		new SqlTest("SELECT R.rowid, R.seven, R.day FROM R WHERE R.day LIKE '%ues%'", 3, 12),
 		new SqlTest("SELECT R.rowid, R.twelve, R.month FROM R WHERE R.month BETWEEN 'L' and 'O'", 3, 3*7), // March, May, Nov
         new SqlTest("SELECT R.rowid, R.twelve, (SELECT S.month FROM S WHERE S.rowid=R.rowid) as M FROM R WHERE R.day='Monday'", 3, 12),
-        new SqlTest("SELECT T.R, T.T, T.M FROM (SELECT R.rowid as R, R.twelve as T, (SELECT S.month FROM S WHERE S.rowid=R.rowid) as M FROM R WHERE R.day='Monday') T", 3, 12)
+        new SqlTest("SELECT T.R, T.T, T.M FROM (SELECT R.rowid as R, R.twelve as T, (SELECT S.month FROM S WHERE S.rowid=R.rowid) as M FROM R WHERE R.day='Monday') T", 3, 12),
+        new SqlTest("SELECT R.seven FROM R UNION SELECT S.seven FROM S", 1, 7),
+        new SqlTest("SELECT R.seven FROM R UNION ALL SELECT S.seven FROM S", 1, Rsize*2),
+        new SqlTest("SELECT 'R' as x, R.seven FROM R UNION SELECT 'S' as x, S.seven FROM S", 2, 14)
     };
 
 
@@ -398,15 +409,11 @@ public class Query
         @Override
         protected void setUp() throws Exception
         {
+            tearDown();
+
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
             ListService.Interface s = ListService.get();
-
-            Map<String,ListDefinition> m = s.getLists(c);
-            if (m.containsKey("R"))
-                m.get("R").delete(user);
-            if (m.containsKey("S"))
-                m.get("S").delete(user);
 
             R = s.createList(c, "R");
             R.setKeyType(ListDefinition.KeyType.AutoIncrementInteger);
@@ -431,8 +438,13 @@ public class Query
         protected void tearDown() throws Exception
         {
             User user = TestContext.get().getUser();
-            S.delete(user);
-            R.delete(user);
+            Container c = JunitUtil.getTestContainer();
+            ListService.Interface s = ListService.get();
+            Map<String,ListDefinition> m = s.getLists(c);
+            if (m.containsKey("R"))
+                m.get("R").delete(user);
+            if (m.containsKey("S"))
+                m.get("S").delete(user);
         }
 
 
@@ -465,8 +477,10 @@ public class Query
             {
                 rs = resultset(test.sql);
                 ResultSetMetaData md = rs.getMetaData();
-                assertTrue(test.sql, test.countColumns == -1 || test.countColumns == md.getColumnCount());
-                assertTrue(test.sql, test.countRows == -1 || test.countRows == rs.getSize());
+                if (test.countColumns >= 0)
+                    assertEquals(test.sql, test.countColumns, md.getColumnCount());
+                if (test.countRows >= 0)
+                    assertEquals(test.sql, test.countRows, rs.getSize());
             }
             finally
             {
@@ -475,7 +489,7 @@ public class Query
         }
 
 
-        public void test() throws Exception
+        public void testSQL() throws Exception
         {
             assertNotNull(lists);
             TableInfo Rinfo = lists.getTable("R", "R");
@@ -507,6 +521,12 @@ public class Query
                 validate(test);
             }
         }
+
+
+        public void testAPI() throws Exception
+        {
+        }
+        
 
         public static Test suite()
         {

@@ -36,8 +36,9 @@ public class SQLTableInfo extends AbstractTableInfo
     public SQLFragment getFromSQL(String aliasName)
     {
         SQLFragment ret = new SQLFragment();
+        ret.append("(");
         ret.append(_fromSQL);
-        ret.append(" AS " + aliasName);
+        ret.append(") AS " + aliasName);
         return ret;
     }
 

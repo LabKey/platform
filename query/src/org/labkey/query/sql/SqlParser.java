@@ -509,8 +509,8 @@ public class SqlParser
                 q = new QDistinct();
 				break;
 			case UNION:
-				q = new QUnion();
-				break;
+            case UNION_ALL:
+				return new QUnion(node);
 
 			case ON:
 			case INNER:
@@ -620,22 +620,18 @@ public class SqlParser
                 " AND v IN (1,2) AND v NOT IN (3,4) AND x&y=1 AND x|y=1 AND x^y=1",
 
 		"SELECT a FROM R UNION SELECT b FROM S",
+        "SELECT a FROM R UNION ALL SELECT b FROM S",
 
         "BROKEN",
 
 		// HAVING
 		"SELECT \"a\",\"b\",AVG(x),COUNT(x),MIN(x),MAX(x),SUM(x),STDDEV(x) FROM R WHERE R.x='key' GROUP BY a,b HAVING SUM(x)>100 ORDER BY a ASC, b DESC, SUM(x)",
-
         // nested JOINS
         "SELECT R.a, \"S\".b FROM R LEFT OUTER JOIN (S RIGHT OUTER JOIN T ON S.y = T.y) ON R.x = S.x",
-
         // OUTER should be optionally allowed
         "SELECT 'R'.a, S.b FROM R FULL OUTER JOIN S ON R.x = S.x",
-
-        "SELECT R.* FROM R",
-
-		// UNION ALL
-		"SELECT a FROM R UNION ALL SELECT b FROM S"
+        // .*
+        "SELECT R.* FROM R"
     };
 
 
@@ -650,6 +646,7 @@ public class SqlParser
 		"SELECT a FROM (SELECT a FROM R UNION SELECT a FROM S) u",			
 
         "BROKEN",
+            
         // empty select list
         "SELECT FROM R",
         // missing FROM
