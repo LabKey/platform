@@ -33,6 +33,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
+import org.labkey.api.query.QueryView;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -315,7 +316,11 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
 
     public HttpView renderDataView(ViewContext context) throws Exception
     {
-        return createQueryView(context, getDescriptor());
+        QueryView view = createQueryView(context, getDescriptor());
+        if (view != null)
+            return view;
+        else
+            return new HtmlView("No Data view available for this report");
     }
 
     public ActionURL getRunReportURL(ViewContext context)

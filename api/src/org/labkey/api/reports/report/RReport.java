@@ -89,11 +89,16 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
         return mgr.getEngineByExtension("r");
     }
 
-    protected String getScriptProlog(ViewContext context)
+    protected String getScriptProlog(ViewContext context, File inputFile)
     {
         StringBuffer labkey = new StringBuffer();
-        labkey.append("labkey.data <- read.table(\"${input_data}\", header=TRUE, sep=\"\\t\", quote=\"\", comment.char=\"\")\n" +
-            "labkey.url <- function (controller, action, list){paste(labkey.url.base,controller,labkey.url.path,action,\".view?\",paste(names(list),list,sep=\"=\",collapse=\"&\"),sep=\"\")}\n" +
+
+        if (inputFile.exists())
+        {
+            labkey.append("labkey.data <- read.table(\"${input_data}\", header=TRUE, sep=\"\\t\", quote=\"\", comment.char=\"\")\n");
+        }
+
+        labkey.append("labkey.url <- function (controller, action, list){paste(labkey.url.base,controller,labkey.url.path,action,\".view?\",paste(names(list),list,sep=\"=\",collapse=\"&\"),sep=\"\")}\n" +
             "labkey.resolveLSID <- function(lsid){paste(labkey.url.base,\"experiment/resolveLSID.view?lsid=\",lsid,sep=\"\");}\n");
         labkey.append("labkey.user.email=\"" + context.getUser().getEmail() + "\"\n");
 

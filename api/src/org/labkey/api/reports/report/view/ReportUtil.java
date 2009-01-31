@@ -25,6 +25,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.*;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.TabStripView;
@@ -69,6 +70,7 @@ public class ReportUtil
     {
         ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlCreateRReport(context.getContainer());
         url.addParameters(context.getActionURL().getParameters());
+        url.replaceParameter(TabStripView.TAB_PARAM, RunScriptReportView.TAB_SOURCE);
 
         return _getChartDesignerURL(url, bean);
     }
@@ -78,6 +80,7 @@ public class ReportUtil
         ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlCreateScriptReport(context.getContainer());
         url.addParameters(context.getActionURL().getParameters());
         url.replaceParameter(RReportDescriptor.Prop.scriptExtension.name(), bean.getScriptExtension());
+        url.replaceParameter(TabStripView.TAB_PARAM, RunScriptReportView.TAB_SOURCE);
 
         return _getChartDesignerURL(url, bean);
     }
@@ -303,19 +306,20 @@ public class ReportUtil
                 Map<String, String> record = new HashMap<String, String>();
 
                 User createdBy = UserManager.getUser(descriptor.getCreatedBy());
-                boolean shared = descriptor.getOwner() == null;
-                ActionURL editUrl = r.getEditReportURL(context);
+                User modifiedBy = UserManager.getUser(descriptor.getModifiedBy());
 
                 record.put("name", descriptor.getReportName());
-                record.put("displayName", "<a href=\"" + r.getRunReportURL(context) + "\">" + descriptor.getReportName() + "</a>");
                 record.put("reportId", descriptor.getReportId().toString());
-                record.put("query", StringUtils.defaultIfEmpty(descriptor.getProperty(ReportDescriptor.Prop.queryName), "Unknown"));
+                record.put("query", StringUtils.defaultIfEmpty(descriptor.getProperty(ReportDescriptor.Prop.queryName), "None"));
                 record.put("schema", descriptor.getProperty(ReportDescriptor.Prop.schemaName));
-                record.put("owner", createdBy != null ? createdBy.getDisplayName(context) : String.valueOf(descriptor.getCreatedBy()));
-                record.put("public", String.valueOf(shared));
+                record.put("createdBy", createdBy != null ? createdBy.getDisplayName(context) : String.valueOf(descriptor.getCreatedBy()));
+                record.put("created", DateUtil.formatDate(descriptor.getCreated()));
+                record.put("modifiedBy", modifiedBy != null ? modifiedBy.getDisplayName(context) : String.valueOf(descriptor.getModifiedBy()));
+                record.put("modified", DateUtil.formatDate(descriptor.getModified()));
                 record.put("type", r.getTypeDescription());
                 record.put("editable", String.valueOf(descriptor.canEdit(context)));
-                record.put("editUrl", editUrl != null ? editUrl.toString() : null);
+                record.put("editUrl", r.getEditReportURL(context) != null ? r.getEditReportURL(context).getLocalURIString() : null);
+                record.put("runUrl", r.getRunReportURL(context) != null ? r.getRunReportURL(context).getLocalURIString() : null);
                 record.put("description", descriptor.getReportDescription());
 
                 String security;
@@ -326,13 +330,11 @@ public class ReportUtil
                 else
                     security = "public";
 
-                record.put("security", security);
+                record.put("permissions", security);
                 
                 String iconPath = ReportService.get().getReportIcon(context, r.getType());
                 if (!StringUtils.isEmpty(iconPath))
-                    record.put("type", "<img src=\"" + iconPath + "\">&nbsp;" + r.getTypeDescription());
-                else
-                record.put("type", r.getTypeDescription());
+                    record.put("icon", iconPath);
 
                 views.add(record);
             }

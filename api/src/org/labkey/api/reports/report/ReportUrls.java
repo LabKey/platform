@@ -39,5 +39,4 @@ public interface ReportUrls extends UrlProvider
     ActionURL urlManageViews(Container c);
     ActionURL urlPlotChart(Container c);
     ActionURL urlDeleteReport(Container c);
-    ActionURL urlRenderScriptReport(Container c);
 }

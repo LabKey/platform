@@ -123,15 +123,18 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
         if (context != null && schemaName != null)
         {
             UserSchema base = (UserSchema) DefaultSchema.get(context.getUser(), context.getContainer()).getSchema(schemaName);
-            QuerySettings settings = base.getSettings(context, dataRegionName);
-            settings.setSchemaName(schemaName);
-            settings.setQueryName(queryName);
-            settings.setViewName(viewName);
-            // need to reset the report id since we want to render the data grid, not the report
-            settings.setReportId(null);
+            if (base != null)
+            {
+                QuerySettings settings = base.getSettings(context, dataRegionName);
+                settings.setSchemaName(schemaName);
+                settings.setQueryName(queryName);
+                settings.setViewName(viewName);
+                // need to reset the report id since we want to render the data grid, not the report
+                settings.setReportId(null);
 
-            UserSchema schema = base.createView(context, settings).getSchema();
-            return new ReportQueryView(schema, settings);
+                UserSchema schema = base.createView(context, settings).getSchema();
+                return new ReportQueryView(schema, settings);
+            }
         }
         return null;
     }
@@ -198,17 +201,18 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
      */
     public File createInputDataFile(ViewContext context) throws Exception
     {
+        File resultFile = new File(getReportDir(), DATA_INPUT);
+
         if (context != null)
         {
-            File resultFile = new File(getReportDir(), DATA_INPUT);
-
             ResultSet rs = generateResultSet(context);
-            TSVGridWriter tsv = createGridWriter(rs);
-            tsv.write(resultFile);
-
-            return resultFile;
+            if (rs != null)
+            {
+                TSVGridWriter tsv = createGridWriter(rs);
+                tsv.write(resultFile);
+            }
         }
-        return null;
+        return resultFile;
     }
 
     public File getReportDir()
@@ -356,7 +360,7 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
     {
         if (!StringUtils.isEmpty(script))
         {
-            script = StringUtils.defaultString(getScriptProlog(context)) + script;
+            script = StringUtils.defaultString(getScriptProlog(context, inputFile)) + script;
 
             script = processInputReplacement(script, inputFile);
             script = processOutputReplacements(script, outputSubst);
@@ -364,7 +368,7 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
         return script;
     }
 
-    protected String getScriptProlog(ViewContext context)
+    protected String getScriptProlog(ViewContext context, File inputFile)
     {
         return null;
     }

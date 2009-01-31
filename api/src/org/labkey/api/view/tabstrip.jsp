@@ -30,13 +30,13 @@
 %>
 <table class="labkey-tab-strip">
     <tr>
-        <td class="labkey-tab-space">
-            <img src="<%=request.getContextPath()%>/_.gif" height=1 width=5>
-        </td>
     <%
         for (NavTree tab : tabs)
         {
-            %><td id="<%=view._prefix%>tab<%=tab.getId()%>" class="<%=(tab.getId().equals(tabId) ? "labkey-tab-selected" : "labkey-tab")%>"><%
+            %>
+            <td class="labkey-tab-space"><img src="<%=request.getContextPath()%>/_.gif" width="3"></td>
+            <td id="<%=view._prefix%>tab<%=tab.getId()%>" class="<%=(tab.getId().equals(tabId) ? "labkey-tab-selected" : "labkey-tab")%>"><%
+
             if (tab.getScript() == null && tab.getValue() == null)
             {
                 %><%=h(tab.getKey())%><%   
@@ -58,7 +58,7 @@
         </td>
     </tr>
     <tr>
-        <td colspan="<%=tabs.size() + 2%>" class="labkey-tab-content" style="border-top:none;text-align:left;" width=100%>
+        <td colspan="<%=tabs.size() * 2 + 2%>" class="labkey-tab-content" style="border-top:none;text-align:left;" width=100%>
             <div id="<%=view._prefix%>tabContent"><%
     ModelAndView tabView = view.getTabView(tabId);
     if (tabView != null)

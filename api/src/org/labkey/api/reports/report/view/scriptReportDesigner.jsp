@@ -23,15 +23,12 @@
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.reports.report.ReportIdentifier" %>
 <%@ page import="org.labkey.api.reports.report.view.*" %>
+<%@ page import="org.labkey.api.view.*" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -40,6 +37,10 @@
     ScriptReportBean bean = me.getModelBean();
     String renderAction = (String)HttpView.currentRequest().getAttribute("renderAction");
     ViewContext context = HttpView.currentContext();
+
+    // the url for the execute script button
+    ActionURL executeUrl = context.cloneActionURL().replaceParameter(TabStripView.TAB_PARAM, RunReportView.TAB_VIEW).
+            replaceParameter(RunReportView.CACHE_PARAM, String.valueOf(bean.getReportId()));
 
     boolean readOnly = (Boolean)HttpView.currentRequest().getAttribute("readOnly");
     boolean isAdmin = context.getContainer().hasPermission(context.getUser(), ACL.PERM_ADMIN);
@@ -137,8 +138,8 @@
 
 <form id="renderReport" action="<%=renderAction%>" method="post">
     <table class="labkey-wp">
-        <tr class="labkey-wp-header"><th align="left">R View Builder</th></tr>
-        <tr><td>Create an R script to be executed on the server:<br/></td></tr>
+        <tr class="labkey-wp-header"><th align="left">Script View Builder</th></tr>
+        <tr><td>Create a script to be executed on the server:<br/></td></tr>
         <tr><td><a href="javascript:void(0)" onclick="javascript:downloadData()">Download input data
             <%=PageFlowUtil.helpPopup("Download input data", "LabKey Server automatically exports your chosen dataset into " +
                     "a data frame called: labkey.data. You can download it to help with the development of your R script.")%></a> <br/><br/></td></tr>
@@ -155,7 +156,7 @@
 <%          if (!readOnly)
             {
                 if (renderAction == null)
-                    out.println(PageFlowUtil.generateButton("Execute Script", "javascript:void(0)", "javascript:switchTab('" + HttpView.currentContext().cloneActionURL().replaceParameter("tabId", "View") + "', saveChanges)"));
+                    out.println(PageFlowUtil.generateButton("Execute Script", "javascript:void(0)", "javascript:switchTab('" + executeUrl.getLocalURIString() + "', saveChanges)"));
                 else
                     out.println(PageFlowUtil.generateButton("Execute Script", "javascript:void(0)", "javascript:runScript()"));
                 if (!context.getUser().isGuest())
@@ -180,9 +181,9 @@
 %>
     </table>
     <input type="hidden" name="<%=ReportDescriptor.Prop.reportType%>" value="<%=bean.getReportType()%>">
-    <input type="hidden" name="queryName" value="<%=bean.getQueryName()%>">
+    <input type="hidden" name="queryName" value="<%=StringUtils.trimToEmpty(bean.getQueryName())%>">
     <input type="hidden" name="viewName" value="<%=StringUtils.trimToEmpty(bean.getViewName())%>">
-    <input type="hidden" name="schemaName" value="<%=bean.getSchemaName()%>">
+    <input type="hidden" name="schemaName" value="<%=StringUtils.trimToEmpty(bean.getSchemaName())%>">
     <input type="hidden" name="dataRegionName" value="<%=StringUtils.trimToEmpty(bean.getDataRegionName())%>">
     <input type="hidden" name="redirectUrl" value="<%=h(bean.getRedirectUrl())%>">
     <% if(null != bean.getReportId()) { %>
@@ -190,7 +191,7 @@
     <% } %>
     <input type="hidden" name="cacheKey" value="<%=RunRReportView.getReportCacheKey(bean.getReportId(), HttpView.currentContext().getContainer())%>">
     <input type="hidden" name="showDebug" value="true">
-    <input type="hidden" name="<%=RReportDescriptor.Prop.scriptExtension%>" value="<%=bean.getScriptExtension()%>">
+    <input type="hidden" name="<%=RReportDescriptor.Prop.scriptExtension%>" value="<%=StringUtils.trimToEmpty(bean.getScriptExtension())%>">
 
     <div style="display:none;" id="saveDialog">
         <div class="hd">Save View</div>

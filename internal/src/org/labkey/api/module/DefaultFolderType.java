@@ -28,6 +28,7 @@ import org.labkey.api.view.template.AppBar;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.reports.report.ReportUrls;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -259,6 +260,7 @@ public class DefaultFolderType implements FolderType
     {
         adminNavTree.addChild(new NavTree("Manage Assays", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(container)));
         adminNavTree.addChild(new NavTree("Manage Lists", ListService.get().getManageListsURL(container)));
+        adminNavTree.addChild(new NavTree("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(container)));
     }
 
     public AppBar getAppBar(ViewContext context)

@@ -73,6 +73,7 @@ public class CreateScriptReportView extends RunScriptReportView
         _formParams.put(TabStripView.TAB_PARAM, TabStripView.TAB_PARAM);
     }
 
+/*
     protected ActionURL getRenderAction() throws Exception
     {
         ViewContext context = getViewContext();
@@ -86,4 +87,5 @@ public class CreateScriptReportView extends RunScriptReportView
         }
         return url;
     }
+*/
 }
