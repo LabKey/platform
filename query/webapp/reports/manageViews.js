@@ -5,6 +5,135 @@
  */
 LABKEY.requiresExtJs(true);
 
+Ext.grid.RowExpander = function(config){
+    Ext.apply(this, config);
+
+    this.addEvents({
+        beforeexpand : true,
+        expand: true,
+        beforecollapse: true,
+        collapse: true
+    });
+
+    Ext.grid.RowExpander.superclass.constructor.call(this);
+
+    if(this.tpl){
+        if(typeof this.tpl == 'string'){
+            this.tpl = new Ext.Template(this.tpl);
+        }
+        this.tpl.compile();
+    }
+
+    this.state = {};
+    this.bodyContent = {};
+};
+
+Ext.extend(Ext.grid.RowExpander, Ext.util.Observable, {
+    header: "",
+    width: 20,
+    sortable: false,
+    fixed:true,
+    menuDisabled:true,
+    dataIndex: '',
+    id: 'expander',
+    lazyRender : true,
+    enableCaching: true,
+
+    getRowClass : function(record, rowIndex, p, ds){
+        p.cols = p.cols-1;
+        var content = this.bodyContent[record.id];
+        if(!content && !this.lazyRender){
+            content = this.getBodyContent(record, rowIndex);
+        }
+        if(content){
+            p.body = content;
+        }
+        return this.state[record.id] ? 'x-grid3-row-expanded' : 'x-grid3-row-collapsed';
+    },
+
+    init : function(grid){
+        this.grid = grid;
+
+        var view = grid.getView();
+        view.getRowClass = this.getRowClass.createDelegate(this);
+
+        view.enableRowBody = true;
+
+        grid.on('render', function(){
+            view.mainBody.on('mousedown', this.onMouseDown, this);
+        }, this);
+    },
+
+    getBodyContent : function(record, index){
+        if(!this.enableCaching){
+            return this.tpl.apply(record.data);
+        }
+        var content = this.bodyContent[record.id];
+        if(!content){
+            content = this.tpl.apply(record.data);
+            this.bodyContent[record.id] = content;
+        }
+        return content;
+    },
+
+    onMouseDown : function(e, t){
+        if(t.className == 'x-grid3-row-expander'){
+            e.stopEvent();
+            var row = e.getTarget('.x-grid3-row');
+            this.toggleRow(row);
+        }
+    },
+
+    renderer : function(v, p, record){
+        p.cellAttr = 'rowspan="2"';
+        return '<div class="x-grid3-row-expander">&#160;</div>';
+    },
+
+    beforeExpand : function(record, body, rowIndex){
+        if(this.fireEvent('beforeexpand', this, record, body, rowIndex) !== false){
+            if(this.tpl && this.lazyRender){
+                body.innerHTML = this.getBodyContent(record, rowIndex);
+            }
+            return true;
+        }else{
+            return false;
+        }
+    },
+
+    toggleRow : function(row){
+        if(typeof row == 'number'){
+            row = this.grid.view.getRow(row);
+        }
+        this[Ext.fly(row).hasClass('x-grid3-row-collapsed') ? 'expandRow' : 'collapseRow'](row);
+    },
+
+    expandRow : function(row){
+        if(typeof row == 'number'){
+            row = this.grid.view.getRow(row);
+        }
+        var record = this.grid.store.getAt(row.rowIndex);
+        var body = Ext.DomQuery.selectNode('tr:nth(2) div.x-grid3-row-body', row);
+        if(this.beforeExpand(record, body, row.rowIndex)){
+            this.state[record.id] = true;
+            Ext.fly(row).replaceClass('x-grid3-row-collapsed', 'x-grid3-row-expanded');
+            this.fireEvent('expand', this, record, body, row.rowIndex);
+        }
+    },
+
+    collapseRow : function(row){
+        if(typeof row == 'number'){
+            row = this.grid.view.getRow(row);
+        }
+        var record = this.grid.store.getAt(row.rowIndex);
+        var body = Ext.fly(row).child('tr:nth(1) div.x-grid3-row-body', true);
+        if(this.fireEvent('beforecollapse', this, record, body, row.rowIndex) !== false){
+            this.state[record.id] = false;
+            Ext.fly(row).replaceClass('x-grid3-row-expanded', 'x-grid3-row-collapsed');
+            this.fireEvent('collapse', this, record, body, row.rowIndex);
+        }
+    }
+});
+
 LABKEY.ViewsPanel = function(config) {
     config = config || {};
 
@@ -36,6 +165,9 @@ LABKEY.ViewsPanel.prototype = {
     // the grid selection model
     selModel : new Ext.grid.CheckboxSelectionModel(),
 
+    // an array of menu items to insert into the create dropdown button
+    createMenu : undefined,
+
     /**
      * The connection object
      */
@@ -45,6 +177,22 @@ LABKEY.ViewsPanel.prototype = {
             method: 'GET'
         }));
     },
+
+    /**
+     * The row expander object, display when the row is expanded
+     */
+    expander : new Ext.grid.RowExpander({
+        tpl : new Ext.XTemplate(
+                '<table>',
+                    '<tpl if="description != undefined"><tr><td><b>description</b></td><td>{description}</td></tr></tpl>',
+                    '<tr><td><b>query name</b></td><td>{query}</td></tr>',
+                    '<tpl if="schema != undefined"><tr><td><b>schema name</b></td><td>{schema}</td></tr></tpl>',
+                    '<tr><td><b>permissions</b></td><td>{permissions}</td>',
+                    '<tr><td><b>links</b></td><td>',
+                        '<tpl if="runUrl != undefined">&nbsp;[<a href="{runUrl}">display</a>]</tpl>',
+                        '<tpl if="editUrl != undefined">&nbsp;[<a href="{editUrl}">edit</a>]</tpl></td></tr>',
+                '</table>')
+        }),
 
     /**
      * Create the data store used to parse view record information returned by the
@@ -57,24 +205,29 @@ LABKEY.ViewsPanel.prototype = {
                         {name:'query'},
                         {name:'schema'},
                         {name:'name'},
-                        {name:'owner'},
-                        {name:'public'},
-                        {name:'security'},
-                        {name:'displayName'},
-                        {name:'description'},
-                        {name:'editable'},
-                        {name:'editUrl'},
-                        {name:'reportId'},
+                        {name:'createdBy'},
+                        {name:'created'},
+                        {name:'modifiedBy'},
+                        {name:'modified'},
+                        {name:'permissions'},
+                        {name:'description', defaultValue:undefined},
+                        {name:'editable', type:'boolean'},
+                        {name:'icon', defaultValue:undefined},
+                        {name:'runUrl', defaultValue:undefined},
+                        {name:'editUrl', defaultValue:undefined},
+                        {name:'reportId', defaultValue:undefined},
                         {name:'type'}]),
             proxy: this.getConnectionProxy(),
             autoLoad: true,
             sortInfo: {field:'query', direction:"ASC"},
+/*
             listeners: {
                 load: function(store, records) {
                     if (records.length == 0)
                         Ext.Msg.alert("Manage Views", "You have no views in this container.");
                 }
             },
+*/
             groupField:'query'});
 
         return store;
@@ -89,6 +242,7 @@ LABKEY.ViewsPanel.prototype = {
             autoScroll:false,
             autoHeight:true,
             width:800,
+            plugins: this.expander,
             store: this.getStore(),
             selModel: this.selModel,
             listeners: {
@@ -122,12 +276,26 @@ LABKEY.ViewsPanel.prototype = {
             listeners:{click:function(button, event) {this.editSelected(button);}, scope:this}
         });
 
-        return [
+        var buttons = [
             {text:'Expand All', tooltip: {text:'Expands all groups', title:'Expand All'}, listeners:{click:function(button, event) {this.grid.view.expandAllGroups();}, scope:this}},
             {text:'Collapse All', tooltip: {text:'Collapses all groups', title:'Collapse All'}, listeners:{click:function(button, event) {this.grid.view.collapseAllGroups();}, scope:this}},
             {text:'Delete Selected', id: 'btn_deleteView', tooltip: {text:'Delete selected view', title:'Delete Views'}, listeners:{click:function(button, event) {deleteSelections(this.grid);}, scope:this}},
-            {text:'Edit', id: 'btn_editView', tooltip: {text:'Edit an existing view (you can also double click on the view to edit)', title:'Edit View'}, listeners:{click:function(button, event) {this.editSelected(button);}, scope:this}}
+            {text:'Rename', id: 'btn_editView', tooltip: {text:'Rename or edit the description of an existing view (you can also double click on the view to edit)', title:'Rename View'}, listeners:{click:function(button, event) {this.editSelected(button);}, scope:this}}
         ];
+
+        if (this.createMenu != undefined)
+        {
+            var item = new Ext.Button({
+                text:'Create',
+                id: 'btn_createView',
+                menu: {
+                    id: 'mainMenu',
+                    cls:'extContainer',
+                    items: this.createMenu }
+            });
+            buttons.splice(0,0,item);
+        }
+        return buttons;
     },
 
     /**
@@ -135,14 +303,18 @@ LABKEY.ViewsPanel.prototype = {
      */
     getColumns : function() {
         return [
+            this.expander,    
             //this.selModel,
-            {header:'Title', dataIndex:'displayName', width:200, renderer:renderRow},
-            {header:'Type', dataIndex:'type', renderer:renderRow},
+            {header:'Title', dataIndex:'name', width:200},
+            {header:'Type', dataIndex:'type', renderer:typeRenderer},
+            {header:'Created By', dataIndex:'createdBy'},
+            {header:'Created', dataIndex:'created', hidden:true},
+            {header:'Modified By', dataIndex:'modifiedBy', hidden:true},
+            {header:'Modified', dataIndex:'modified', hidden:true},
+            {header:'Permissions', dataIndex:'permissions'},
+            {header:'Query', dataIndex:'query'},
             {header:'Description', dataIndex:'description', hidden:true},
-            {header:'Created By', dataIndex:'owner', renderer:renderRow},
-            {header:'Shared', dataIndex:'public', renderer:renderRow},
-            {header:'Schema', dataIndex:'schema', hidden:true},
-            {header:'Query', dataIndex:'query'}
+            {header:'Schema', dataIndex:'schema', hidden:true}
         ];
     },
 
@@ -165,21 +337,33 @@ LABKEY.ViewsPanel.prototype = {
 
         if (selections.length == 0)
         {
-            Ext.Msg.alert("Edit Views", "There are no views selected");
+            Ext.Msg.alert("Rename Views", "There are no views selected");
             return false;
         }
 
         if (selections.length > 1)
         {
-            Ext.Msg.alert("Edit Views", "Only one view can be edited at a time");
+            Ext.Msg.alert("Rename Views", "Only one view can be edited at a time");
             return false;
         }
 
+        if (selections[0].data.reportId == undefined)
+        {
+            Ext.Msg.alert("Rename Views", "Only reports can be renamed, to convert a custom query to a report expand the row and click on the [convert to report] link");
+            return false;
+        }
         editRecord(button, this.grid, selections[0].data);
     }
 };
 
 
+function typeRenderer(value, p, record)
+{
+    if (record.data.icon != undefined)
+        return '<img src="' + record.data.icon + '">&nbsp;' + value;
+    else
+        return value;
+}
 
 function renderRow(value, p, record)
 {
@@ -223,18 +407,24 @@ function deleteSelections(grid)
             params.push("reportId=" + selections[i].id);
         }
 
-        Ext.Msg.confirm('Delete Views', msg, function(btn, text) {
-            if (btn == 'yes')
-            {
-                Ext.Ajax.request({
+        Ext.Msg.show({
+                title : 'Delete Views',
+                msg : msg,
+                buttons: Ext.Msg.YESNO,
+                icon: Ext.Msg.QUESTION,
+                fn: function(btn, text) {
+                    if (btn == 'yes')
+                    {
+                        Ext.Ajax.request({
 
-                    url: LABKEY.ActionURL.buildURL("reports", "manageViewsDeleteReports") + '?' + params.join('&'),
-                    method: "POST",
-                    scope: this,
-                    success: function(){grid.store.load();},
-                    failure: function(){Ext.Msg.alert("Delete Views", "Deletion Failed");}
-                });
-            }
+                            url: LABKEY.ActionURL.buildURL("reports", "manageViewsDeleteReports") + '?' + params.join('&'),
+                            method: "POST",
+                            scope: this,
+                            success: function(){grid.store.load();},
+                            failure: function(){Ext.Msg.alert("Delete Views", "Deletion Failed");}
+                        });
+                    }},
+                id: 'delete_views'
         });
     }
 }
@@ -260,7 +450,9 @@ function editRecord(button, grid, record)
             name: 'reportId',
             xtype: 'hidden',
             value: record.reportId
-        },{
+        }]
+/*
+            ,{
             name: 'editUrl',
             xtype: 'button',
             text: 'Edit Source...',
@@ -270,13 +462,14 @@ function editRecord(button, grid, record)
             handler: function(){doAdvancedEdit(this);}
         }]
 
+*/
     });
     var win = new Ext.Window({
         title: 'Edit View',
         layout:'form',
         border: false,
         width: 450,
-        height: 220,
+        height: 185,
         closeAction:'close',
         modal: false,
         items: formPanel,
@@ -337,3 +530,4 @@ function setFormFieldTooltip(component)
         title: ''
     });
 }
+

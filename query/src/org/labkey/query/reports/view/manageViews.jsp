@@ -15,6 +15,10 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.reports.report.RReport" %>
+<%@ page import="org.labkey.api.reports.report.view.RReportBean" %>
+<%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
@@ -22,20 +26,32 @@
 
 <%
     ViewContext context = HttpView.currentContext();
+
+    RReportBean bean = new RReportBean();
+    bean.setReportType(RReport.TYPE);
+    bean.setRedirectUrl(context.getActionURL().getLocalURIString());
+
+    ActionURL newRView = ReportUtil.getRReportDesignerURL(context, bean);
 %>
 
 <script type="text/javascript">
+
     LABKEY.requiresScript("reports/manageViews.js");
 
     Ext.onReady(function()
     {
         var gridConfig = {
             renderTo: 'viewsGrid',
-            container: '<%=context.getContainer().getPath()%>'
+            container: '<%=context.getContainer().getPath()%>',
+            createMenu :[{
+                id: 'create_rView',
+                text:'New R View',
+                listeners:{click:function(button, event) {window.location = '<%=newRView.getLocalURIString()%>';}}}]
         };
         var panel = new LABKEY.ViewsPanel(gridConfig);
         panel.show();
     });
+    
 </script>
 
 <labkey:errors/>

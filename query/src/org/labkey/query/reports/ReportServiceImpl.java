@@ -18,6 +18,7 @@ package org.labkey.query.reports;
 
 import org.apache.log4j.Logger;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.beanutils.BeanUtils;
 import org.labkey.api.data.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -286,14 +287,15 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
             ReportDescriptor descriptor = ReportDescriptor.createFromXML(r.getDescriptorXML());
             if (descriptor != null)
             {
+                try {
+                    BeanUtils.copyProperties(descriptor, r);
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException(e);
+                }
                 descriptor.setReportId(new DbReportIdentifier(r.getRowId()));
-                descriptor.setReportKey(r.getReportKey());
-                descriptor.setContainerId(r.getContainerId());
-                descriptor.setEntityId(r.getEntityId());
                 descriptor.setOwner(r.getReportOwner());
-                descriptor.setModifiedBy(r.getModifiedBy());
-                descriptor.setCreatedBy(r.getCreatedBy());
-                descriptor.setFlags(r.getFlags());
 
                 String type = descriptor.getReportType();
                 Report report = createReportInstance(type);

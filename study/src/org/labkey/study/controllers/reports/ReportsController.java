@@ -20,9 +20,7 @@ import org.apache.beehive.netui.pageflow.FormData;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
-import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.*;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.*;
@@ -33,13 +31,11 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
-import org.labkey.api.reports.report.view.ChartDesignerBean;
-import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.reports.report.view.RReportBean;
-import org.labkey.api.reports.report.view.ReportDesignBean;
+import org.labkey.api.reports.report.view.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -176,8 +172,110 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermission(ACL.PERM_READ)
     public class ManageReportsAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            setHelpTopic(new HelpTopic("manageReportsAndViews", HelpTopic.Area.STUDY));
+            StudyManageReportsBean bean = new StudyManageReportsBean(getViewContext(), true, false);
+            bean.setErrors(errors);
+
+            return new StudyJspView<StudyManageReportsBean>(getStudy(), "manageViews.jsp", bean, errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return _appendNavTrail(root, "Manage Reports and Views");
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class ManageViewsSummaryAction extends ApiAction
+    {
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            return new ApiSimpleResponse("views", getViews());
+        }
+
+        private List<Map<String, String>> getViews()
+        {
+            ViewContext context = getViewContext();
+            List<Map<String, String>> views = ReportUtil.getViewsJson(getViewContext());
+
+            Study study = StudyManager.getInstance().getStudy(context.getContainer());
+            UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "study");
+            if (study != null)
+            {
+                for (DataSetDefinition dsd : study.getDataSets())
+                {
+                    if (dsd.getLabel() != null)
+                    {
+                        QueryDefinition qd = QueryService.get().getQueryDef(study.getContainer(), "study", dsd.getLabel());
+                        if (qd == null)
+                            qd = schema.getQueryDefForTable(dsd.getLabel());
+                        Map<String, CustomView> qviews = qd.getCustomViews(context.getUser(), context.getRequest());
+
+                        // we don't display any customized default views
+                        qviews.remove(null);
+                        if (qviews.size() > 0)
+                        {
+                            for (Map.Entry<String, CustomView> entry : qviews.entrySet())
+                            {
+                                if (entry.getValue().isHidden())
+                                    continue;
+
+                                Map<String, String> record = new HashMap<String, String>();
+
+                                User createdBy = entry.getValue().getOwner();
+                                boolean shared = createdBy == null;
+
+                                record.put("name", entry.getKey());
+                                record.put("displayName", entry.getKey());
+                                //record.put("reportId", descriptor.getReportId().toString());
+                                record.put("query", qd.getName());
+                                record.put("schema", qd.getSchemaName());
+                                record.put("owner", createdBy != null ? createdBy.getDisplayName(context) : "unknown");
+                                record.put("public", String.valueOf(shared));
+                                record.put("type", "query view");
+                                record.put("editable", "false");
+
+                                QueryDefinition def = entry.getValue().getQueryDefinition();
+
+                                record.put("runUrl", def.urlFor(QueryAction.executeQuery, context.getContainer()).getLocalURIString());
+                                record.put("editUrl", def.urlFor(QueryAction.designQuery, context.getContainer()).getLocalURIString());
+
+                                //record.put("editUrl", editUrl != null ? editUrl.toString() : null);
+                                //record.put("description", descriptor.getReportDescription());
+
+                                views.add(record);
+/*
+                                displayURL.replaceParameter("Dataset.viewName", entry.getKey());
+                                deleteURL.replaceParameter("reportView", entry.getKey());
+                                ActionURL redirect = new ActionURL("Study-Security", "reportPermissions", _context.getContainer());
+                                final ActionURL permissionURL = getQueryConversionURL(dsd.getLabel(), entry.getKey(), dsd.getDataSetId(), redirect.getLocalURIString());
+
+                                StudyReportRecordImpl rec = new StudyReportRecordImpl(null, entry.getKey(),
+                                        displayURL.toString(),
+                                        deleteURL.toString(),
+                                        //PageFlowUtil.helpPopup("Permissions Unavailable", STUDY_SECURITY_UNSUPPORTED),
+                                        null,
+                                        getSharedURL(entry.getValue()));
+
+                                rec.setConversionURL(permissionURL.getLocalURIString());
+                                rpts.add(rec);
+*/
+                            }
+                        }
+                    }
+                }
+            }
+            return views;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class OldManageReportsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {

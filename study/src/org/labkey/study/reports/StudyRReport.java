@@ -19,12 +19,14 @@ package org.labkey.study.reports;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.reports.report.view.RunRReportView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.TabStripView;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.controllers.reports.ReportsController;
 
 /**
@@ -74,7 +76,7 @@ public class StudyRReport extends RReport
         {
             return getRunReportURL(context).
                     addParameter(TabStripView.TAB_PARAM, RunRReportView.TAB_SOURCE).
-                    addParameter("redirectUrl", context.getActionURL().getLocalURIString());
+                    addParameter("redirectUrl", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(context.getContainer()).getLocalURIString());
         }
         return null;
     }

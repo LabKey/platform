@@ -112,11 +112,6 @@ public class ReportsController extends SpringActionController
             return new ActionURL(CreateScriptReportAction.class, c);
         }
 
-        public ActionURL urlRenderScriptReport(Container c)
-        {
-            return new ActionURL(RenderScriptReportAction.class, c);
-        }
-
         public ActionURL urlStreamFile(Container c)
         {
             return new ActionURL(StreamFileAction.class, c);
@@ -441,6 +436,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
+/*
     protected static class CreateRReportView extends RunRReportView
     {
         public CreateRReportView(Report report)
@@ -497,7 +493,9 @@ public class ReportsController extends SpringActionController
             return url;
         }
     }
+*/
 
+/*
     protected static class RenderRReportView extends RunRReportView
     {
         public RenderRReportView(Report report)
@@ -543,9 +541,13 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    /**
+*/
+/*
+    */
+/**
      * The view used to render external reports in design mode.
      */
+/*
     protected static class RenderExternalReportView extends RunScriptReportView
     {
         public RenderExternalReportView(Report report)
@@ -589,6 +591,7 @@ public class ReportsController extends SpringActionController
             return tabs;
         }
     }
+*/
 
     @RequiresPermission(ACL.PERM_NONE)
     public class CreateRReportAction extends FormViewAction<RReportBean>
@@ -600,7 +603,7 @@ public class ReportsController extends SpringActionController
         public ModelAndView getView(RReportBean form, boolean reshow, BindException errors) throws Exception
         {
             validatePermissions();
-            CreateRReportView view = new CreateRReportView(form.getReport());
+            RunRReportView view = new RunRReportView(form.getReport());
             view.setErrors(errors);
 
             return view;
@@ -631,7 +634,7 @@ public class ReportsController extends SpringActionController
 
         public ModelAndView getView(ScriptReportBean form, boolean reshow, BindException errors) throws Exception
         {
-            CreateScriptReportView view = new CreateScriptReportView(form.getReport());
+            RunScriptReportView view = new RunScriptReportView(form.getReport());
             view.setErrors(errors);
 
             return view;
@@ -731,6 +734,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
+/*
     @RequiresPermission(ACL.PERM_READ)
     public class RenderRReportAction extends CreateRReportAction
     {
@@ -742,7 +746,9 @@ public class ReportsController extends SpringActionController
             return view;
         }
     }
+*/
 
+/*
     @RequiresPermission(ACL.PERM_READ)
     public class RenderScriptReportAction extends CreateScriptReportAction
     {
@@ -755,6 +761,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
+*/
     protected void validatePermissions() throws Exception
     {
         if (!getViewContext().getUser().isDeveloper())

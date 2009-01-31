@@ -2153,6 +2153,7 @@ study/src/org/labkey/study/view/manageStudyProperties.jsp -text
 study/src/org/labkey/study/view/manageTimepoints.jsp -text
 study/src/org/labkey/study/view/manageTypes.jsp -text
 study/src/org/labkey/study/view/manageUndefinedTypes.jsp -text
+study/src/org/labkey/study/view/manageViews.jsp -text
 study/src/org/labkey/study/view/manageVisits.jsp -text
 study/src/org/labkey/study/view/moduleNav.gm -text
 study/src/org/labkey/study/view/overview.jsp -text
