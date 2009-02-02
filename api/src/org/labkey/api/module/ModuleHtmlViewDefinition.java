@@ -72,9 +72,9 @@ public class ModuleHtmlViewDefinition extends ModuleFileResource
         }
 
         _metadataFile = new File(htmlFile.getParentFile(), _name + VIEW_METADATA_EXTENSION);
+        addAssociatedFile(_metadataFile);
         if(_metadataFile.exists() && _metadataFile.isFile())
         {
-            addAssociatedFile(_metadataFile);
             try
             {
                 XmlOptions xmlOptions = new XmlOptions();
