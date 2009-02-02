@@ -18,16 +18,20 @@ package org.labkey.api.module;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.util.DOMUtil;
+import org.apache.xmlbeans.XmlOptions;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.data.ColumnInfo;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
+import org.labkey.data.xml.view.PermissionType;
+import org.labkey.data.xml.view.PermissionsListType;
+import org.labkey.data.xml.view.ViewDocument;
+import org.labkey.data.xml.view.ViewType;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Map;
+import java.util.HashMap;
 
 /*
 * User: Dave
@@ -46,28 +50,24 @@ public class ModuleHtmlViewDefinition extends ModuleFileResource
 
     private String _name;
     private String _html;
-    private String _title;
     private File _metadataFile;
     private int _requiredPerms = 0;
     private boolean _requiresLogin = false;
-    private WebPartView.FrameType _frameType = null;
-    private PageConfig.Template _pageTemplate = null;
-
-    private Logger _log = Logger.getLogger(ModuleHtmlViewDefinition.class);
+    private ViewType _viewDef = null;
 
     public ModuleHtmlViewDefinition(File htmlFile)
     {
         super(htmlFile);
         _name = htmlFile.getName().substring(0, htmlFile.getName().length() - HTML_VIEW_EXTENSION.length());
-        _title = getTitleFromName(_name);
 
+        Logger log = Logger.getLogger(ModuleHtmlViewDefinition.class);
         try
         {
             _html = IOUtils.toString(new FileReader(htmlFile));
         }
         catch(IOException e)
         {
-            _log.error("Error trying to read HTML content from " + htmlFile.getAbsolutePath(), e);
+            log.error("Error trying to read HTML content from " + htmlFile.getAbsolutePath(), e);
             throw new RuntimeException(e);
         }
 
@@ -77,11 +77,19 @@ public class ModuleHtmlViewDefinition extends ModuleFileResource
             addAssociatedFile(_metadataFile);
             try
             {
-                loadMetaData(parseFile(_metadataFile));
+                XmlOptions xmlOptions = new XmlOptions();
+                Map<String,String> namespaceMap = new HashMap<String,String>();
+                namespaceMap.put("", "http://labkey.org/data/xml/view");
+                xmlOptions.setLoadSubstituteNamespaces(namespaceMap);
+
+                ViewDocument viewDoc = ViewDocument.Factory.parse(_metadataFile, xmlOptions);
+                _viewDef = viewDoc.getView();
+                if(null != _viewDef)
+                    calculatePermissions();
             }
             catch(Exception e)
             {
-                _log.error("Error trying to read and parse the metadata XML content from " + _metadataFile.getAbsolutePath(), e);
+                log.error("Error trying to read and parse the metadata XML content from " + _metadataFile.getAbsolutePath(), e);
                 throw new RuntimeException(e);
             }
         }
@@ -93,52 +101,24 @@ public class ModuleHtmlViewDefinition extends ModuleFileResource
         return ColumnInfo.captionFromName(name);
     }
 
-    protected void loadMetaData(Document doc)
+    protected void calculatePermissions()
     {
-        if(null == doc || !"view".equalsIgnoreCase(doc.getDocumentElement().getNodeName()))
+        PermissionsListType permsList = _viewDef.getPermissions();
+        if(null == permsList)
             return;
 
-        Node docElem = doc.getDocumentElement();
-        _title = DOMUtil.getAttributeValue(docElem, "title", _title);
+        PermissionType[] perms = permsList.getPermissionArray();
+        if(null == perms)
+            return;
 
-        _requiredPerms = parseRequiredPerms(DOMUtil.getFirstChildNodeWithName(docElem, "permissions"));
-        _frameType = parseFrameType(DOMUtil.getAttributeValue(docElem, "frame"));
-        _pageTemplate = parsePageTemplate(DOMUtil.getAttributeValue(docElem, "template"));
-    }
-
-    protected int parseRequiredPerms(Node permsElem)
-    {
-        if(null == permsElem)
-            return 0;
-
-        int ret = 0;
-        for(Node childElem : DOMUtil.getChildNodesWithName(permsElem, "permission"))
+        for(PermissionType permEntry : perms)
         {
-            String nameAttr = DOMUtil.getAttributeValue(childElem, "name");
-            if(null == nameAttr)
-                continue;
-
-            SimpleAction.Permission perm = SimpleAction.Permission.valueOf(nameAttr);
+            SimpleAction.Permission perm = SimpleAction.Permission.valueOf(permEntry.getName().toString());
             if(SimpleAction.Permission.login == perm)
                 _requiresLogin = true;
             else if(null != perm)
-                ret |= perm.toInt();
+                _requiredPerms |= perm.toInt();
         }
-
-        return ret;
-    }
-
-    protected WebPartView.FrameType parseFrameType(String value)
-    {
-        value = StringUtils.trimToNull(value);
-        return null == value ? null : WebPartView.FrameType.valueOf(value.toUpperCase());
-    }
-
-    protected PageConfig.Template parsePageTemplate(String value)
-    {
-        value = StringUtils.trimToNull(value);
-        //page template enums are in title case!
-        return null == value ? null : PageConfig.Template.valueOf(StringUtils.capitalize(value.toLowerCase()));
     }
 
     public String getName()
@@ -158,7 +138,7 @@ public class ModuleHtmlViewDefinition extends ModuleFileResource
 
     public String getTitle()
     {
-        return _title;
+        return null != _viewDef && null != _viewDef.getTitle() ? _viewDef.getTitle() : getTitleFromName(_name);
     }
 
     public int getRequiredPerms()
@@ -173,11 +153,13 @@ public class ModuleHtmlViewDefinition extends ModuleFileResource
 
     public WebPartView.FrameType getFrameType()
     {
-        return _frameType;
+        return null != _viewDef && null != _viewDef.getFrame() ?
+                WebPartView.FrameType.valueOf(_viewDef.getFrame().toString().toUpperCase()) : null;
     }
 
     public PageConfig.Template getPageTemplate()
     {
-        return _pageTemplate;
+        return null != _viewDef && null != _viewDef.getTemplate() ?
+            PageConfig.Template.valueOf(StringUtils.capitalize(_viewDef.getTemplate().toString().toLowerCase())) : null;
     }
 }

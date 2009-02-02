@@ -19,17 +19,16 @@ import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.Portal;
-import org.labkey.api.util.DOMUtil;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
+import org.labkey.data.xml.webpart.WebpartDocument;
+import org.labkey.data.xml.webpart.WebpartType;
+import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlOptions;
+import org.apache.xmlbeans.SchemaProperty;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.FilenameFilter;
-import java.io.IOException;
+import java.util.Map;
+import java.util.HashMap;
 
 /*
 * User: Dave
@@ -55,7 +54,8 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
     private File _webPartFile;
     private long _lastModified = 0;
     private Module _module;
-    private String _viewName;
+    private WebpartType _webPartDef = null;
+    private Exception _loadException = null;
 
     public SimpleWebPartFactory(Module module, File webPartFile)
     {
@@ -74,47 +74,39 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
 
     protected void loadDefinition(File webPartFile)
     {
+        Logger log = Logger.getLogger(SimpleWebPartFactory.class);
         try
         {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            dbf.setValidating(false);
-            DocumentBuilder db = dbf.newDocumentBuilder();
+            _loadException = null;
+            XmlOptions xmlOptions = new XmlOptions();
 
-            Document doc = db.parse(webPartFile);
-            if(null == doc || !"webpart".equalsIgnoreCase(doc.getDocumentElement().getNodeName()))
-                throw new RuntimeException("Webpart definition file " + webPartFile.getAbsolutePath() + " does not contain a root 'webpart' element!");
+            Map<String,String> namespaceMap = new HashMap<String,String>();
+            namespaceMap.put("", "http://labkey.org/data/xml/webpart");
+            xmlOptions.setLoadSubstituteNamespaces(namespaceMap);
+            
+            WebpartDocument doc = WebpartDocument.Factory.parse(webPartFile, xmlOptions);
+            if(null == doc || null == doc.getWebpart())
+                throw new Exception("Webpart definition file " + webPartFile.getAbsolutePath() + " does not contain a root 'webpart' element!");
 
-            //optional title attribute for overriding name
-            String title = DOMUtil.getAttributeValue(doc.getDocumentElement(), "title");
-            if(null != title)
-                setName(title);
-
-            Node viewElem = DOMUtil.getFirstChildNodeWithName(doc.getDocumentElement(), "view");
-            if(null == viewElem)
-                throw new RuntimeException("Webpart definition file " + webPartFile.getAbsolutePath() + " does not contain a 'view' element!");
-
-            //for now, view element may only contain a name attribute naming a view in the views directory
-            _viewName = DOMUtil.getAttributeValue(viewElem, "name");
-            if(null == _viewName)
-                throw new RuntimeException("No view name specified in webpart definition file " + webPartFile.getAbsolutePath());
+            _webPartDef = doc.getWebpart();
         }
-        catch(IOException e)
+        catch(Exception e)
         {
-            throw new RuntimeException(e);
+            _loadException = e;
+            log.error(e);
         }
-        catch(SAXException e)
-        {
-            throw new RuntimeException(e);
-        }
-        catch(ParserConfigurationException e)
-        {
-            throw new RuntimeException(e);
-        }
+    }
+
+    @Override
+    public String getName()
+    {
+        return null != _webPartDef && null != _webPartDef.getTitle() ? _webPartDef.getTitle() : super.getName();
     }
 
     public String getViewName()
     {
-        return _viewName;
+        return null != _webPartDef && null != _webPartDef.getView() && null != _webPartDef.getView().getName() ?
+                _webPartDef.getView().getName() : null;
     }
 
     public Module getModule()
@@ -131,6 +123,12 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
     {
         if(isStale())
             loadDefinition(_webPartFile);
+
+        if(null != _loadException)
+            throw _loadException;
+
+        if(null == getViewName())
+            throw new Exception("No view name specified for the module web part defined in " + _webPartFile.getAbsolutePath());
 
         return SimpleAction.getModuleHtmlView(getModule(), getViewName());
     }
