@@ -269,13 +269,25 @@ public class Sort
         {
             sb.append(sep);
             String alias = sf.getColumnName();
+            // If we have a qc indicator column, we need to sort on it secondarily
+            ColumnInfo qcIndicatorCol = null;
             ColumnInfo colinfo = columns.get(alias);
             if (colinfo != null)
             {
                 alias = colinfo.getAlias();
+                if (colinfo.isQcEnabled())
+                {
+                    qcIndicatorCol = columns.get(colinfo.getQcColumnName());
+                }
             }
 
             sb.append(sf.toOrderByString(dialect, alias));
+            if (qcIndicatorCol != null)
+            {
+                SortField qcSortField = new SortField(qcIndicatorCol.getName(), sf.getSortDirection());
+                sb.append(", ");
+                sb.append(qcSortField.toOrderByString(dialect, qcIndicatorCol.getAlias()));
+            }
             sep = ", ";
         }
 
