@@ -83,12 +83,12 @@ public class ListTable extends FilteredTable
             column.setScale(property.getScale());
             column.setInputType(property.getInputType());
             column.setDescription(property.getDescription());
+            safeAddColumn(column);
             property.initColumn(user, column);
             if (property.isQcEnabled())
             {
                 QCDisplayColumnFactory.addQCColumns(this, column, property, colObjectId);
             }
-            safeAddColumn(column);
             defaultVisible.add(FieldKey.fromParts(column.getName()));
 
             if (property.getPropertyDescriptor().getPropertyType() == PropertyType.MULTI_LINE)
