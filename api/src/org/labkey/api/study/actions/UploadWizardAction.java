@@ -222,7 +222,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         if (!showUploadSetStep(runForm, uploadDomain))
         {
             ActionURL helper = getViewContext().cloneActionURL();
-            helper.addParameter("uploadStep", UploadSetStepHandler.NAME);
+            helper.replaceParameter("uploadStep", UploadSetStepHandler.NAME);
             HttpView.throwRedirect(helper);
         }
         InsertView insertView = createUploadSetInsertView(runForm, reshow, errors);
@@ -244,7 +244,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     protected boolean showUploadSetStep(FormType runForm, Domain uploadDomain)
     {
         DomainProperty[] uploadSetColumns = uploadDomain.getProperties();
-        return uploadSetColumns == null || uploadSetColumns.length == 0;
+        return uploadSetColumns != null && uploadSetColumns.length != 0;
     }
 
     protected void addNextButton(ButtonBar bbar)
