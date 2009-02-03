@@ -1315,7 +1315,7 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            return new ConfirmDeleteView("ExperimentRun", "showRunGraph", runs, deleteForm);
+            return new ConfirmDeleteView("run", "showRunGraph", runs, deleteForm);
         }
 
         protected void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException

@@ -47,7 +47,6 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
-import org.labkey.experiment.ExperimentRunGraph;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
@@ -285,6 +284,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         data.setCpasType("Data");
         data.setContainer(container);
         return new ExpDataImpl(data);
+    }
+
+    public ExpMaterialImpl getExpMaterialByName(String name, Container container, User user)
+    {
+        return getSamplesByName(container, user).get(name);
     }
 
     public ExpMaterialImpl getExpMaterial(int rowid)
@@ -2659,15 +2663,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         Table.insert(user, getTinfoProtocolActionPredecessor(), mValsPredecessor);
     }
 
-    public ExpMaterial[] getMaterialsForSampleSet(String sampleSetLSID, Container container) throws SQLException
-    {
-        SimpleFilter filter = new SimpleFilter();
-        filter.addCondition("Container", container.getId());
-        filter.addCondition("CpasType", sampleSetLSID);
-        Sort sort = new Sort("Name");
-        return ExpMaterialImpl.fromMaterials(Table.select(getTinfoMaterial(), Table.ALL_COLUMNS, filter, sort, Material.class));
-    }
-
     public ExpRun getCreatingRun(File file, Container c)
         throws IOException
     {
@@ -3244,4 +3239,32 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             throw new RuntimeSQLException(e);
         }
     }
+
+    /**
+     * @return all of the samples visible from the current container, mapped from name to sample. If more than one
+     * sample has the same name, the map will contain a null entry
+     */
+    public Map<String, ExpMaterialImpl> getSamplesByName(Container container, User user)
+    {
+        Map<String, ExpMaterialImpl> potentialParents = new HashMap<String, ExpMaterialImpl>();
+        for (ExpSampleSetImpl sampleSet : ExperimentServiceImpl.get().getSampleSets(container, user, true))
+        {
+            for (ExpMaterialImpl expMaterial : sampleSet.getSamples())
+            {
+                if (potentialParents.containsKey(expMaterial.getName()))
+                {
+                    // If there are materials in different sample sets that have the same name, don't make them
+                    // available for resolving as parents
+                    potentialParents.put(expMaterial.getName(), null);
+                }
+                else
+                {
+                    potentialParents.put(expMaterial.getName(), expMaterial);
+                }
+            }
+        }
+        return potentialParents;
+    }
+
+
 }

@@ -183,11 +183,15 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         }
     }
 
-    public ExpMaterial[] getSamples()
+    public ExpMaterialImpl[] getSamples()
     {
         try
         {
-            return ExperimentServiceImpl.get().getMaterialsForSampleSet(getLSID(), getContainer());
+            SimpleFilter filter = new SimpleFilter();
+            filter.addCondition("Container", getContainer().getId());
+            filter.addCondition("CpasType", getLSID());
+            Sort sort = new Sort("Name");
+            return ExpMaterialImpl.fromMaterials(Table.select(ExperimentServiceImpl.get().getTinfoMaterial(), Table.ALL_COLUMNS, filter, sort, Material.class));
         }
         catch (SQLException e)
         {

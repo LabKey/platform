@@ -61,6 +61,12 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler
         return false;
     }
 
+    @Override
+    protected boolean shouldAddInputMaterials()
+    {
+        return true;
+    }
+
     public List<Map<String, Object>> loadFileData(Domain dataDomain, File inputFile) throws IOException, ExperimentException
     {
         DomainProperty[] columns = dataDomain.getProperties();

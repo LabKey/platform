@@ -30,6 +30,7 @@ import org.labkey.common.tools.TabLoader;
 import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
+import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.samples.UploadMaterialSetForm.OverwriteChoice;
 import org.apache.log4j.Logger;
 
@@ -336,7 +337,7 @@ public class UploadSamplesHelper
         if (source.getParentCol() != null)
         {
             // Map from material name to material of all materials in all sample sets visible from this location
-            Map<String, ExpMaterial> potentialParents = lookupPotentialParents();
+            Map<String, ExpMaterialImpl> potentialParents = ExperimentServiceImpl.get().getSamplesByName(_form.getContainer(), _form.getUser());
 
             assert rows.size() == helper._materials.size() : "Didn't find as many materials as we have rows";
             for (int i = 0; i < rows.size(); i++)
@@ -378,29 +379,7 @@ public class UploadSamplesHelper
         }
     }
 
-    private Map<String, ExpMaterial> lookupPotentialParents()
-    {
-        Map<String, ExpMaterial> potentialParents = new HashMap<String, ExpMaterial>();
-        for (ExpSampleSet sampleSet : ExperimentService.get().getSampleSets(_form.getContainer(), _form.getUser(), true))
-        {
-            for (ExpMaterial expMaterial : sampleSet.getSamples())
-            {
-                if (potentialParents.containsKey(expMaterial.getName()))
-                {
-                    // If there are materials in different sample sets that have the same name, don't make them
-                    // available for resolving as parents
-                    potentialParents.put(expMaterial.getName(), null);
-                }
-                else
-                {
-                    potentialParents.put(expMaterial.getName(), expMaterial);
-                }
-            }
-        }
-        return potentialParents;
-    }
-
-    private List<ExpMaterial> resolveParentMaterials(String newParent, Map<String, ExpMaterial> materials) throws ValidationException, ExperimentException
+    private List<ExpMaterial> resolveParentMaterials(String newParent, Map<String, ? extends ExpMaterial> materials) throws ValidationException, ExperimentException
     {
         List<ExpMaterial> parents = new ArrayList<ExpMaterial>();
 
