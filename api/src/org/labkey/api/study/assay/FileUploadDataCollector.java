@@ -17,7 +17,6 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,6 +25,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.io.File;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 
 /**
  * User: jeckels
@@ -55,7 +55,7 @@ public class FileUploadDataCollector extends AbstractAssayDataCollector
         
         Map<String, File> files = savePostedFiles(context, Collections.singleton("uploadedFile"));
         if (files.isEmpty())
-            throw new ExperimentException("No data file was uploaded. Please enter a file name.");
+            throw new FileNotFoundException("No data file was uploaded. Please enter a file name.");
         return files;
     }
 

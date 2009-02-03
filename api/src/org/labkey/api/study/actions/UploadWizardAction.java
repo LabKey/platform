@@ -87,7 +87,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         return new UploadSetStepHandler();
     }
 
-    protected StepHandler<FormType> getRunStepHandler()
+    protected RunStepHandler getRunStepHandler()
     {
         return new RunStepHandler();
     }
@@ -138,7 +138,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         return handler.handleStep(form, errors);
     }
 
-    protected ModelAndView afterRunCreation(FormType form, ExpRun run, BindException errors) throws ServletException, SQLException
+    protected ModelAndView afterRunCreation(FormType form, ExpRun run, BindException errors) throws ServletException
     {
         return runUploadComplete(form, errors);
     }
@@ -194,7 +194,6 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         view.getDataRegion().addHiddenFormField("multiRunUpload", "false");
         view.getDataRegion().addHiddenFormField("resetDefaultValues", "false");
         view.getDataRegion().addHiddenFormField("rowId", Integer.toString(_protocol.getRowId()));
-        view.getDataRegion().addHiddenFormField("providerName", AssayService.get().getProvider(_protocol).getName());
         view.getDataRegion().addHiddenFormField("uploadAttemptID", form.getUploadAttemptID());
 
         DisplayColumn targetStudyCol = view.getDataRegion().getDisplayColumn(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
@@ -220,19 +219,13 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         AssayProvider provider = AssayService.get().getProvider(protocol);
         runForm.setProviderName(provider.getName());
         Domain uploadDomain = provider.getUploadSetDomain(protocol);
-        DomainProperty[] uploadSetColumns = uploadDomain.getProperties();
-        if (uploadSetColumns == null || uploadSetColumns.length == 0)
+        if (!showUploadSetStep(runForm, uploadDomain))
         {
             ActionURL helper = getViewContext().cloneActionURL();
             helper.addParameter("uploadStep", UploadSetStepHandler.NAME);
-            helper.addParameter("providerName", runForm.getProviderName());
             HttpView.throwRedirect(helper);
         }
-        Set<DomainProperty> propertySet = runForm.getUploadSetProperties().keySet();
-        DomainProperty[] properties = propertySet.toArray(new DomainProperty[propertySet.size()]);
-
-        InsertView insertView = createInsertView(ExperimentService.get().getTinfoExperimentRun(),
-                "lsid", properties, reshow, UploadSetStepHandler.NAME, runForm, errors);
+        InsertView insertView = createUploadSetInsertView(runForm, reshow, errors);
 
         ButtonBar bbar = new ButtonBar();
         addNextButton(bbar);
@@ -246,6 +239,12 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
         JspView<AssayRunUploadForm> headerView = new JspView<AssayRunUploadForm>("/org/labkey/study/assay/view/newUploadSet.jsp", runForm);
         return new VBox(headerView, insertView);
+    }
+
+    protected boolean showUploadSetStep(FormType runForm, Domain uploadDomain)
+    {
+        DomainProperty[] uploadSetColumns = uploadDomain.getProperties();
+        return uploadSetColumns == null || uploadSetColumns.length == 0;
     }
 
     protected void addNextButton(ButtonBar bbar)
@@ -275,6 +274,14 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         DomainProperty[] properties = propertySet.toArray(new DomainProperty[propertySet.size()]);
         return createInsertView(ExperimentService.get().getTinfoExperimentRun(),
                 "lsid", properties, reshow, RunStepHandler.NAME, newRunForm, errors);
+    }
+
+    protected InsertView createUploadSetInsertView(FormType runForm, boolean reshow, BindException errors)
+    {
+        Set<DomainProperty> propertySet = runForm.getUploadSetProperties().keySet();
+        DomainProperty[] properties = propertySet.toArray(new DomainProperty[propertySet.size()]);
+        return createInsertView(ExperimentService.get().getTinfoExperimentRun(),
+                "lsid", properties, reshow, UploadSetStepHandler.NAME, runForm, errors);
     }
 
     private ModelAndView getRunPropertiesView(FormType newRunForm, boolean reshow, boolean warnings, BindException errors)
@@ -626,7 +633,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             return afterRunCreation(form, run, errors);
         }
 
-        protected ExpRun saveExperimentRun(FormType form) throws ExperimentException, ValidationException
+        public ExpRun saveExperimentRun(FormType form) throws ExperimentException, ValidationException
         {
             ExpExperiment exp = null;
             if (form.getBatchId() != null)

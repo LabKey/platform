@@ -167,7 +167,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
         if (files.size() == 0)
         {
-            throw new IllegalStateException("AssayRunUploadContext " + context + "provided no upload data");
+            throw new IllegalStateException("AssayRunUploadContext " + context + " provided no upload data");
         }
 
         assert files.size() == 1;
@@ -498,7 +498,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         {
             if (entry.getKey().getName().equals(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
             {
-                resolverType = AbstractAssayProvider.findType(entry.getValue(), context.getProvider().getParticipantVisitResolverTypes());
+                resolverType = AbstractAssayProvider.findType(entry.getValue(), getParticipantVisitResolverTypes());
                 resolverType.configureRun(context, run, runProperties, uploadSetProperties, inputDatas);
                 break;
             }

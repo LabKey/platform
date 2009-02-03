@@ -157,7 +157,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 throw new ExperimentException("Could not find any input samples in the data");
             }
 
-            AbstractAssayProvider.addInputMaterials(run, user, inputMaterials);
+            if (shouldAddInputMaterials())
+            {
+                AbstractAssayProvider.addInputMaterials(run, user, inputMaterials);
+            }
 
             if (transaction)
             {
@@ -185,6 +188,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             }
         }
     }
+
+    protected abstract boolean shouldAddInputMaterials();
 
     private void checkColumns(Domain dataDomain, Set<String> actual, List<String> missing, List<String> unexpected, List<Map<String, Object>> rawData, boolean strict)
     {

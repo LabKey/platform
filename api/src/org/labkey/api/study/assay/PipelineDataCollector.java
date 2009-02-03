@@ -25,6 +25,7 @@ import org.labkey.common.util.Pair;
 import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.util.*;
 
 /**
@@ -85,7 +86,7 @@ public class PipelineDataCollector extends AbstractAssayDataCollector
         existingFiles.addAll(files);
     }
 
-    private List<Map<String, File>> getFileCollection(AssayRunUploadContext context)
+    public List<Map<String, File>> getFileCollection(AssayRunUploadContext context)
     {
         return getFileCollection(context.getRequest().getSession(true), context.getContainer(), context.getProtocol());
     }
@@ -113,7 +114,7 @@ public class PipelineDataCollector extends AbstractAssayDataCollector
         List<Map<String, File>> files = getFileCollection(context);
         if (files.isEmpty())
         {
-            throw new ExperimentException("No files have been selected");
+            throw new FileNotFoundException("No files from the pipeline directory have been selected");
         }
         return files.get(0);
     }

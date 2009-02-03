@@ -17,9 +17,6 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.study.assay.AssayRunUploadContext;
-import org.labkey.api.study.actions.AssayRunUploadForm;
-import org.labkey.api.view.InsertView;
 
 import java.util.Map;
 import java.io.File;

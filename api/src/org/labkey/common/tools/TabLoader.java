@@ -166,136 +166,15 @@ public class TabLoader extends DataLoader
         return new BufferedReader(new FileReader(_file));
     }
 
-
     public void setLowerCaseHeaders(boolean lowerCaseHeaders)
     {
         _lowerCaseHeaders = lowerCaseHeaders;
     }
 
-
     public Map getComments()
     {
         //noinspection unchecked
         return Collections.unmodifiableMap(_comments);
-    }
-
-
-    public Object[] loadColsAsArrays() throws IOException
-    {
-        initColNameMap();
-        ColumnDescriptor[] columns = getColumns();
-        Object[] valueLists = new Object[columns.length];
-
-        for (int i = 0; i < valueLists.length; i++)
-        {
-            if (!columns[i].load)
-                continue;
-
-            Class clazz = columns[i].clazz;
-            if (clazz.isPrimitive())
-            {
-                if (clazz.equals(Double.TYPE))
-                    valueLists[i] = new DoubleArray();
-                else if (clazz.equals(Float.TYPE))
-                    valueLists[i] = new FloatArray();
-                else if (clazz.equals(Integer.TYPE))
-                    valueLists[i] = new IntegerArray();
-            }
-            else
-            {
-                valueLists[i] = new ArrayList();
-            }
-        }
-
-        BufferedReader reader = null;
-        try
-        {
-            reader = getReader();
-            int line = 0;
-
-            String s;
-            for (int skip = 0; skip < _skipLines; skip++)
-            {
-                //noinspection UnusedAssignment
-                s = reader.readLine();
-                line++;
-            }
-
-            while ((s = reader.readLine()) != null)
-            {
-                line++;
-                if ("".equals(s.trim()))
-                    continue;
-
-                String[] fields = parseLine(s);
-                for (int i = 0; i < fields.length && i < columns.length; i++)
-                {
-                    if (!columns[i].load)
-                        continue;
-
-                    String value = fields[i];
-
-                    Class clazz = columns[i].clazz;
-                    if (clazz.isPrimitive())
-                    {
-                        if (clazz.equals(Double.TYPE))
-                            ((DoubleArray) valueLists[i]).add(Double.parseDouble(value));
-                        else if (clazz.equals(Float.TYPE))
-                            ((FloatArray) valueLists[i]).add(Float.parseFloat(value));
-                        else if (clazz.equals(Integer.TYPE))
-                            ((IntegerArray) valueLists[i]).add(Integer.parseInt(value));
-                    }
-                    else
-                    {
-                        try
-                        {
-                            if ("".equals(value))
-                                ((List<Object>) valueLists[i]).add(columns[i].missingValues);
-                            else
-                                ((List<Object>) valueLists[i]).add(ConvertUtils.convert(value, columns[i].clazz));
-                        }
-                        catch (Exception x)
-                        {
-                            if (_throwOnErrors)
-                                throw new ConversionException("Conversion error: line " + line + " column " + (i+ 1), x);
-
-                            ((List<Object>) valueLists[i]).add(columns[i].errorValues);
-                        }
-                    }
-
-                }
-            }
-        }
-        finally
-        {
-            if (null != reader)
-                reader.close();
-        }
-
-        Object[] returnArrays = new Object[columns.length];
-        for (int i = 0; i < columns.length; i++)
-        {
-            if (!columns[i].load)
-                continue;
-
-            Class clazz = columns[i].clazz;
-            if (clazz.isPrimitive())
-            {
-                if (clazz.equals(Double.TYPE))
-                    returnArrays[i] = ((DoubleArray) valueLists[i]).toArray(null);
-                else if (clazz.equals(Float.TYPE))
-                    returnArrays[i] = ((FloatArray) valueLists[i]).toArray(null);
-                else if (clazz.equals(Integer.TYPE))
-                    returnArrays[i] = ((IntegerArray) valueLists[i]).toArray(null);
-            }
-            else
-            {
-                Object[] values = (Object[]) Array.newInstance(columns[i].clazz, ((List) valueLists[i]).size());
-                returnArrays[i] = ((List<Object>) valueLists[i]).toArray(values);
-            }
-        }
-
-        return returnArrays;
     }
 
 

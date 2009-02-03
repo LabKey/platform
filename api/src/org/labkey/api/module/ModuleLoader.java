@@ -349,7 +349,7 @@ public class ModuleLoader implements Filter
             }
             catch (Throwable t)
             {
-                _log.error("Unable to instantiate module " + moduleDir);
+                _log.error("Unable to instantiate module " + moduleDir, t);
                 _moduleFailures.put(moduleDir.getName(), t);
             }
         }

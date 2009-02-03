@@ -45,8 +45,8 @@ import java.sql.SQLException;
 */
 public class AssayRunUploadForm<ProviderType extends AssayProvider> extends ProtocolIdForm implements AssayRunUploadContext
 {
-    private Map<DomainProperty, String> _uploadSetProperties = null;
-    private Map<DomainProperty, String> _runProperties = null;
+    protected Map<DomainProperty, String> _uploadSetProperties = null;
+    protected Map<DomainProperty, String> _runProperties = null;
     private String _comments;
     private String _name;
     private String _dataCollectorName;
@@ -60,6 +60,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     private String _uploadAttemptID = GUID.makeGUID();
     private Map<DomainProperty, File> _additionalFiles;
     private Integer _batchId;
+    protected BindException _errors;
 
     // Unfortunate query hackery that orders display columns based on default view
     protected DomainProperty[] reorderDomainColumns(DomainProperty[] unorderedColumns, ViewContext context, ExpProtocol protocol)
@@ -183,7 +184,8 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     /** Used after the data has been successfully loaded - we don't need to offer to use it again */ 
     public void clearUploadedData()
     {
-        _uploadedData = Collections.emptyMap();
+        _uploadedData = null;
+        _runProperties = null;
     }
 
     public AssayDataCollector getSelectedDataCollector()
@@ -207,20 +209,18 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     {
         if (_uploadedData == null)
         {
-            for (AssayDataCollector collector : getProvider().getDataCollectors(Collections.<String, File>emptyMap()))
+            AssayDataCollector collector = getSelectedDataCollector();
+            if (collector != null)
             {
-                if (collector.getShortName().equals(_dataCollectorName))
+                try
                 {
-                    try
-                    {
-                        _uploadedData = collector.createData(this);
-                    }
-                    catch (IOException e)
-                    {
-                        throw new ExperimentException(e);
-                    }
-                    return _uploadedData;
+                    _uploadedData = collector.createData(this);
                 }
+                catch (IOException e)
+                {
+                    throw new ExperimentException(e);
+                }
+                return _uploadedData;
             }
             return Collections.emptyMap();
         }
@@ -265,7 +265,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
 
     public ProviderType getProvider()
     {
-        return (ProviderType)AssayService.get().getProvider(getProviderName());
+        return (ProviderType)AssayService.get().getProvider(getProtocol());
     }
 
     public ActionURL getActionURL()
@@ -493,5 +493,10 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     public Map<DomainProperty, String> getDefaultValues(Domain domain, BindException errors)
     {
         return getDefaultValues(domain, errors, null);
+    }
+
+    public void setErrors(BindException errors)
+    {
+        _errors = errors;
     }
 }
