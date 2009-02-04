@@ -400,7 +400,24 @@ LABKEY.Security = new function()
                 success: getCallbackWrapper(config.successCallback, config.scope),
                 failure: getCallbackWrapper(config.errorCallback, config.scope)
             });
-        }
+        },
+
+        /**
+         * Exposes limited information about the current user. This property returns a JavaScript object
+         * with the following properties:
+         * <ul>
+         * <li>id: the user's unique id number</li>
+         * <li>displayName: the user's display name</li>
+         * <li>email: the user's email address</li>
+         * <li>canInsert: set to true if this user can insert data in the current folder</li>
+         * <li>canUpdate: set to true if this user can update data in the current folder</li>
+         * <li>canUpdateOwn: set to true if this user can update data this user created in the current folder</li>
+         * <li>canDelete: set to true if this user can delete data in the current folder</li>
+         * <li>canDeleteOwn: set to true if this user can delete data this user created in the current folder</li>
+         * <li>isAdmin: set to true if this user is a system administrator</li>
+         * </ul>
+         */
+        currentUser : LABKEY.user
 
     };
 };
