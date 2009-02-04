@@ -173,20 +173,21 @@ public class Attachment implements Serializable
                 if (icons.size() == 0)
                 {
                     ServletContext context = ViewServlet.getViewServletContext();
-                    if (context != null)
+                    if (null != context)
                     {
                         Set<String> paths = context.getResourcePaths("/_icons");
-                        for (String fileName : paths)
-                        {
-                            int index = fileName.lastIndexOf('/');
-                            int dot = fileName.lastIndexOf('.');
-                            String extension = fileName.substring(index + 1, dot).toLowerCase();
-                            if (mime.isInlineImageFor(fileName))    // .jpg .png .gif
-                                icons.put(extension, fileName);
-                            String contenttype = mime.getContentType(extension);
-                            if (null != contenttype)
-                                icons.put(contenttype, fileName);
-                        }
+						if (null != paths)
+							for (String fileName : paths)
+							{
+								int index = fileName.lastIndexOf('/');
+								int dot = fileName.lastIndexOf('.');
+								String extension = fileName.substring(index + 1, dot).toLowerCase();
+								if (mime.isInlineImageFor(fileName))    // .jpg .png .gif
+									icons.put(extension, fileName);
+								String contenttype = mime.getContentType(extension);
+								if (null != contenttype)
+									icons.put(contenttype, fileName);
+							}
                     }
                 }
             }
