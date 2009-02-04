@@ -27,6 +27,9 @@ public class QcUtil
 {
     private static final String[] QC_STATES = new String[] {".Q", ".N"};
 
+    private static final String Q_TEXT = "This value has been flagged as failing QC";
+    private static final String N_TEXT = "This value is missing";
+
     private QcUtil() {}
 
     public static Set<String> getQcValues(Container c)
@@ -48,5 +51,14 @@ public class QcUtil
     public static boolean isQcValue(String value, Container c)
     {
         return getQcValues(c).contains(value);
+    }
+
+    public static String getHoverText(String qcValue)
+    {
+        if (".N".equals(qcValue))
+            return N_TEXT;
+        if (".Q".equals(qcValue))
+            return Q_TEXT;
+        return "";
     }
 }

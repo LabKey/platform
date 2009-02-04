@@ -54,7 +54,7 @@ function doChange(obj)
     var index = name.split("_")[1];
     var valueInput = document.getElementById("value_" + index);
     var compare = obj.options[obj.selectedIndex].value;
-    if (compare == "" || compare == "isblank" || compare == "isnonblank")
+    if (compare == "" || compare == "isblank" || compare == "isnonblank" || compare == "noqcvalue" || compare == "hasqcvalue")
     {
         if (index == "1")
             document.getElementById("compareSpan_2").style.visibility = "hidden";
@@ -80,12 +80,12 @@ if (navigator.userAgent.toLowerCase().indexOf("httpunit") < 0)
     LABKEY.requiresYahoo('dragdrop');
 }
 
-function showFilterPanel(elem, tableName, colName, caption, dataType)
+function showFilterPanel(elem, tableName, colName, caption, dataType, allowsQC)
 {
     _fieldName = colName;
     _fieldCaption = caption;
     _tableName = tableName;
-    fillOptions(dataType);
+    fillOptions(dataType, allowsQC);
 
     var paramValPairs = getParamValPairs(null);
     //Fill in existing filters...
@@ -194,7 +194,7 @@ var _typeMap = {
 }
 var _mappedType = "TEXT";
 
-function fillOptions(dataType)
+function fillOptions(dataType, allowsQC)
 {
     getFilterDiv();
     var mappedType = _typeMap[dataType.toUpperCase()];
@@ -279,6 +279,19 @@ function fillOptions(dataType)
             opt = document.createElement("OPTION");
             opt.value = "doesnotcontain";
             opt.text = "Does Not Contain";
+            appendOption(select, opt);
+        }
+
+        if (allowsQC)
+        {
+            opt = document.createElement("OPTION");
+            opt.value = "hasqcvalue";
+            opt.text = "Has a QC Value";
+            appendOption(select, opt);
+
+            opt = document.createElement("OPTION");
+            opt.value = "noqcvalue";
+            opt.text = "Does not have a QC Value";
             appendOption(select, opt);
         }
 
@@ -466,7 +479,7 @@ function getValidComparesFromForm(formIndex, newParamValPairs)
     if (comparison != "")
     {
         var pair;
-        if (comparison == "isblank" || comparison == "isnonblank")
+        if (comparison == "isblank" || comparison == "isnonblank" || comparison == "noqcvalue" || comparison == "hasqcvalue")
         {
             pair = [_tableName + "." + _fieldName + "~" + comparison];
         }

@@ -22,6 +22,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.SimpleFilter.ColumnNameFormatter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
+import org.labkey.api.exp.QcColumn;
 import org.labkey.api.util.DateUtil;
 
 import java.sql.Types;
@@ -119,6 +120,22 @@ public enum CompareType
                         }
                     }
                     return new SimpleFilter.InClause(colName, values, true);
+                }
+            },
+    HAS_QC("Has a QC Value", "hasqcvalue", false, null, "HAS_QC_VALUE")
+            {
+                @Override
+                QcClause createFilterClause(String colName, Object value)
+                {
+                    return new QcClause(colName, false);
+                }
+            },
+    NO_QC("Does not have a QC Value", "noqcvalue", false, null, "NO_QC_VALUE")
+            {
+                @Override
+                QcClause createFilterClause(String colName, Object value)
+                {
+                    return new QcClause(colName, true);
                 }
             };
 
@@ -548,6 +565,34 @@ public enum CompareType
             String neq = CompareType.NEQ.getSql();
             String isNull = CompareType.ISBLANK.getSql();
             return "(" + dialect.getColumnSelectName(alias) + neq + " OR " + dialect.getColumnSelectName(alias) + isNull + ")";
+        }
+    }
+
+    private static class QcClause extends CompareClause
+    {
+        private final boolean isNull;
+
+        QcClause(String colName, boolean isNull)
+        {
+            super(colName, isNull ? CompareType.NO_QC : CompareType.HAS_QC, null);
+            this.isNull = isNull;
+        }
+
+        @Override
+        public List<String> getColumnNames()
+        {
+            List<String> names = new ArrayList<String>();
+            names.add(_colName);
+            names.add(_colName + QcColumn.QC_INDICATOR_SUFFIX);
+            return names;
+        }
+
+        @Override
+        public SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        {
+            ColumnInfo qcColumn = columnMap.get(_colName + QcColumn.QC_INDICATOR_SUFFIX);
+            SQLFragment sql = new SQLFragment(qcColumn.getAlias() + " IS " + (isNull ? "" : "NOT ") + "NULL");
+            return sql;
         }
     }
 }

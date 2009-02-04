@@ -243,7 +243,9 @@ public class DataColumn extends DisplayColumn
         out.write(h(strCaption.toString()));
         out.write("', '");
         out.write(_filterColumn.getSqlDataTypeName());
-        out.write("')   ");
+        out.write("', ");
+        out.write(Boolean.toString(_filterColumn.isQcEnabled()));
+        out.write(")");
     }
 
     public String getClearFilter(RenderContext ctx)

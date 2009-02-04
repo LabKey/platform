@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.view.HttpView;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Set;
@@ -78,6 +80,14 @@ public class QCDisplayColumn extends DataColumn
             out.write("<font class=\"labkey-qc\">");
             out.write(h(qcValue));
             out.write("</font>");
+            out.write("<img align=\"top\" src=\"");
+            out.write(HttpView.currentView().getViewContext().getContextPath());
+            out.write("/_images/qc_indicator.gif\"");
+            out.write(" class=\"labkey-qc-indicator\"");
+            out.write(" alt=\"");
+            out.write(h(QcUtil.getHoverText(qcValue)));
+            out.write("\"");
+            out.write(">");
             return;
         }
         // Call super, as we don't want to check twice for the qc value
