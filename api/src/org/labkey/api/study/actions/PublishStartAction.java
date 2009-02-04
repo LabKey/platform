@@ -195,7 +195,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             List<Integer> runIds = getCheckboxIds(true);
             // Get the assay results table
             UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getContainer(), AssayService.ASSAY_SCHEMA_NAME);
-            TableInfo table = schema.getTable(AssayService.get().getRunDataTableName(_protocol), null);
+            TableInfo table = schema.getTable(AssayService.get().getResultsTableName(_protocol), null);
             if (table instanceof ContainerFilterable && publishForm.getContainerFilterName() != null)
             {
                 ((ContainerFilterable)table).setContainerFilter(ContainerFilter.Filters.valueOf(publishForm.getContainerFilterName()), getViewContext().getUser());

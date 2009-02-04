@@ -22,12 +22,11 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.*;
-import org.labkey.api.study.query.PublishRunDataQueryView;
+import org.labkey.api.study.query.PublishResultsQueryView;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.util.PageFlowUtil;
@@ -279,13 +278,13 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
                 }
             }
         }
-        String name = AssayService.get().getRunDataTableName(_protocol);
+        String name = AssayService.get().getResultsTableName(_protocol);
         UserSchema schema = AssayService.get().createSchema(context.getUser(), getContainer());
         QuerySettings settings = new QuerySettings(context, name);
         settings.setSchemaName(schema.getSchemaName());
         settings.setQueryName(name);
         settings.setAllowChooseView(false);
-        PublishRunDataQueryView queryView = new PublishRunDataQueryView(_protocol, context, settings,
+        PublishResultsQueryView queryView = new PublishResultsQueryView(_protocol, context, settings,
                 selectedObjects, targetStudy, postedVisits, postedPtids);
 
         if (publishConfirmForm.getContainerFilterName() != null)

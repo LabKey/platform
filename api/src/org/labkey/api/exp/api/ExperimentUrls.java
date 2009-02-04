@@ -34,6 +34,8 @@ public interface ExperimentUrls extends UrlProvider
     ActionURL getRunTextURL(Container c, int rowId);
     ActionURL getRunTextURL(ExpRun run);
 
+    ActionURL getDeleteExperimentsURL(Container container, ActionURL returnURL);
+
     ActionURL getDeleteDatasURL(Container container, ActionURL returnURL);
 
     ActionURL getExperimentDetailsURL(Container c, ExpExperiment expExperiment);

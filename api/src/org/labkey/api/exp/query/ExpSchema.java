@@ -205,9 +205,9 @@ public class ExpSchema extends AbstractExpSchema
         return setupTable(ret);
     }
 
-    public ForeignKey getProtocolLSIDForeignKey()
+    public ForeignKey getProtocolForeignKey(String targetColumnName)
     {
-        return new LookupForeignKey("LSID")
+        return new LookupForeignKey(targetColumnName)
         {
             public TableInfo getLookupTableInfo()
             {

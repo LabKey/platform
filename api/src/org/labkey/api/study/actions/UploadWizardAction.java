@@ -218,7 +218,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         ExpProtocol protocol = getProtocol(runForm);
         AssayProvider provider = AssayService.get().getProvider(protocol);
         runForm.setProviderName(provider.getName());
-        Domain uploadDomain = provider.getUploadSetDomain(protocol);
+        Domain uploadDomain = provider.getBatchDomain(protocol);
         if (!showUploadSetStep(runForm, uploadDomain))
         {
             ActionURL helper = getViewContext().cloneActionURL();
@@ -233,9 +233,9 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         addCancelButton(bbar);
         insertView.getDataRegion().setButtonBar(bbar, DataRegion.MODE_INSERT);
 
-        insertView.setTitle("Run Set Properties");
+        insertView.setTitle("Batch Properties");
 
-        _stepDescription = "Run Set Properties";
+        _stepDescription = "Batch Properties";
 
         JspView<AssayRunUploadForm> headerView = new JspView<AssayRunUploadForm>("/org/labkey/study/assay/view/newUploadSet.jsp", runForm);
         return new VBox(headerView, insertView);
@@ -278,7 +278,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     protected InsertView createUploadSetInsertView(FormType runForm, boolean reshow, BindException errors)
     {
-        Set<DomainProperty> propertySet = runForm.getUploadSetProperties().keySet();
+        Set<DomainProperty> propertySet = runForm.getBatchProperties().keySet();
         DomainProperty[] properties = propertySet.toArray(new DomainProperty[propertySet.size()]);
         return createInsertView(ExperimentService.get().getTinfoExperimentRun(),
                 "lsid", properties, reshow, UploadSetStepHandler.NAME, runForm, errors);
@@ -289,7 +289,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         InsertView insertView = createRunInsertView(newRunForm, reshow, errors);
         addHiddenUploadSetProperties(newRunForm, insertView);
 
-        for (Map.Entry<DomainProperty, String> entry : newRunForm.getUploadSetProperties().entrySet())
+        for (Map.Entry<DomainProperty, String> entry : newRunForm.getBatchProperties().entrySet())
         {
             if (entry.getKey().getName().equals(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
             {
@@ -335,7 +335,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     protected void addHiddenUploadSetProperties(AssayRunUploadForm newRunForm, InsertView insertView)
     {
-        addHiddenProperties(newRunForm.getUploadSetProperties(), insertView);
+        addHiddenProperties(newRunForm.getBatchProperties(), insertView);
     }
 
     protected void addHiddenRunProperties(AssayRunUploadForm newRunForm, InsertView insertView)
@@ -558,7 +558,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
         public ModelAndView handleStep(FormType form, BindException errors) throws ServletException
         {
-            if (!form.isResetDefaultValues() && validatePostedProperties(form.getUploadSetProperties(), errors))
+            if (!form.isResetDefaultValues() && validatePostedProperties(form.getBatchProperties(), errors))
                 return getRunPropertiesView(form, false, false, errors);
             else
                 return getUploadSetPropertiesView(form, true, errors);
@@ -646,7 +646,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             ExpRun run = insertedValues.getKey();
             form.setBatchId(insertedValues.getValue().getRowId());
 
-            form.saveDefaultValues(form.getUploadSetProperties(), form.getRequest(), form.getProvider());
+            form.saveDefaultValues(form.getBatchProperties(), form.getRequest(), form.getProvider());
             form.saveDefaultValues(form.getRunProperties(), form.getRequest(), form.getProvider());
             getCompletedUploadAttemptIDs().add(form.getUploadAttemptID());
             AssayDataCollector collector = form.getSelectedDataCollector();
@@ -673,7 +673,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     protected ParticipantVisitResolverType getSelectedParticipantVisitResolverType(AssayProvider provider, AssayRunUploadForm<? extends AssayProvider> newRunForm)
     {
         String participantVisitResolverName = null;
-        for (Map.Entry<DomainProperty, String> uploadSetProperty : newRunForm.getUploadSetProperties().entrySet())
+        for (Map.Entry<DomainProperty, String> uploadSetProperty : newRunForm.getBatchProperties().entrySet())
         {
             if (uploadSetProperty.getKey().getName().equals(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
             {

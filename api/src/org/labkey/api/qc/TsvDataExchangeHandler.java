@@ -116,7 +116,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     private void serializeRunProperties(AssayRunUploadContext context, File scriptDir, PrintWriter pw)
     {
         Map<DomainProperty, String> runProperties = context.getRunProperties();
-        runProperties.putAll(context.getUploadSetProperties());
+        runProperties.putAll(context.getBatchProperties());
 
         // serialize the run properties to a tsv
         for (Map.Entry<DomainProperty, String> entry : runProperties.entrySet())
@@ -366,12 +366,12 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             return runProperties;
         }
 
-        public Map<DomainProperty, String> getUploadSetProperties()
+        public Map<DomainProperty, String> getBatchProperties()
         {
             AssayProvider provider = AssayService.get().getProvider(_protocol);
             Map<DomainProperty, String> runProperties = new HashMap<DomainProperty, String>();
 
-            for (DomainProperty prop : provider.getUploadSetDomain(_protocol).getProperties())
+            for (DomainProperty prop : provider.getBatchDomain(_protocol).getProperties())
                 runProperties.put(prop, getSampleValue(prop));
 
             return runProperties;

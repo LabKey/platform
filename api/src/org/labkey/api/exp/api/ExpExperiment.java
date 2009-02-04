@@ -16,14 +16,29 @@
 
 package org.labkey.api.exp.api;
 
-import java.util.Date;
 import org.labkey.api.security.User;
 
 public interface ExpExperiment extends ExpObject
 {
     ExpRun[] getRuns();
     ExpRun[] getRuns(ExpProtocol parentProtocol, ExpProtocol childProtocol);
-    ExpProtocol[] getProtocols();
+
+    /**
+     * If this experiment is a batch, it only allows runs that are of the same parent protocol.
+     * @return the protocol for which this object is a batch. May be null.
+     */
+    ExpProtocol getBatchProtocol();
+
+    /**
+     * If this experiment is a batch, it only allows runs that are of the same parent protocol.
+     * @param protocol the protocol for which this object is a batch. May be null.
+     */
+    void setBatchProtocol(ExpProtocol protocol);
+
+    /**
+     * @return all the parent protocols for all of the member runs 
+     */
+    ExpProtocol[] getAllProtocols();
     void removeRun(User user, ExpRun run) throws Exception;
     void addRuns(User user, ExpRun... run);
     boolean isHidden();

@@ -80,8 +80,9 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
                 _managePopupView.setButtonStyle(PopupMenu.ButtonStyle.TEXTBUTTON);
             }
 
+            _links.put("view all batches", PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(getViewContext().getContainer(), _protocol, containerFilter));
             _links.put("view all runs", PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getViewContext().getContainer(), _protocol, containerFilter));
-            _links.put("view all data", PageFlowUtil.urlProvider(AssayUrls.class).getAssayDataURL(getViewContext().getContainer(), _protocol, containerFilter));
+            _links.put("view all results", PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getViewContext().getContainer(), _protocol, containerFilter));
 
             if (AuditLogService.get().isViewable() && _provider.canCopyToStudy())
                 _links.put("view copy-to-study history", AssayPublishService.get().getPublishHistory(getViewContext().getContainer(), protocol, containerFilter));

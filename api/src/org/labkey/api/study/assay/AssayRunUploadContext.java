@@ -44,7 +44,7 @@ public interface AssayRunUploadContext
 
     Map<DomainProperty, String> getRunProperties();
 
-    Map<DomainProperty, String> getUploadSetProperties();
+    Map<DomainProperty, String> getBatchProperties();
 
     String getComments();
 

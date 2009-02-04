@@ -20,7 +20,6 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.beanutils.PropertyUtils;
 import static org.apache.commons.lang.StringUtils.stripEnd;
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
 import org.labkey.api.attachments.AttachmentFile;
@@ -28,9 +27,9 @@ import org.labkey.api.data.collections.Join;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.*;
-import org.labkey.api.settings.AppProps;
 import org.labkey.common.util.BoundMap;
 import org.labkey.common.util.Pair;
+import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.rowset.CachedRowSet;
@@ -305,7 +304,7 @@ public class Table
         return internalExecuteQueryArray(schema, sql, parameters, clss, 0);
     }
 
-
+    @NotNull
     private static <K> K[] internalExecuteQueryArray(DbSchema schema, String sql, Object[] parameters, Class<K> clss, long scrollOffset)
             throws SQLException
     {
@@ -1253,6 +1252,7 @@ public class Table
     }
 
 
+    @NotNull
     public static <K> K[] select(TableInfo table, Set<String> select, Filter filter, Sort sort, Class<K> clss)
             throws SQLException
     {
@@ -1260,6 +1260,7 @@ public class Table
     }
 
 
+    @NotNull
     public static <K> K[] select(TableInfo table, Set<String> select, Filter filter, Sort sort, Class<K> clss, int rowCount, long offset)
             throws SQLException
     {
@@ -1267,12 +1268,14 @@ public class Table
     }
 
 
+    @NotNull
     public static <K> K[] select(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort, Class<K> clss)
             throws SQLException
     {
         return select(table, columns, filter, sort, clss, 0, 0);
     }
 
+    @NotNull
     public static <K> K[] select(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort, Class<K> clss, int rowCount, long offset)
             throws SQLException
     {

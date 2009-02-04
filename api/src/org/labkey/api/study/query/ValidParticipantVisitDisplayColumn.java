@@ -29,11 +29,11 @@ import java.io.Writer;
  */
 public class ValidParticipantVisitDisplayColumn extends SimpleDisplayColumn
 {
-    private final PublishRunDataQueryView.ResolverHelper _resolverHelper;
+    private final PublishResultsQueryView.ResolverHelper _resolverHelper;
     private boolean _firstMatch = true;
     private boolean _firstNoMatch = true;
 
-    public ValidParticipantVisitDisplayColumn(PublishRunDataQueryView.ResolverHelper resolverHelper)
+    public ValidParticipantVisitDisplayColumn(PublishResultsQueryView.ResolverHelper resolverHelper)
     {
         _resolverHelper = resolverHelper;
         setCaption("Specimen Match");

@@ -48,7 +48,7 @@ public class RunDataLinkDisplayColumn extends SimpleDisplayColumn
     {
         int runId = ((Integer)runIdCol.getValue(ctx)).intValue();
         ExpRun run = ExperimentService.get().getExpRun(runId);
-        ActionURL runURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayDataURL(run.getContainer(), protocol, runId);
+        ActionURL runURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(run.getContainer(), protocol, runId);
         out.write("<a href=\"");
         out.write(runURL.getLocalURIString());
         out.write("\" onclick=\"return confirm('Are you sure you wish to leave this page?\\n\\nAny changes you have made will be lost.');\">View Run</a>");

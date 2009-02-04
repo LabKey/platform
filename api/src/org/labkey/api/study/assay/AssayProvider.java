@@ -32,7 +32,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.actions.AssayRunUploadForm;
-import org.labkey.api.study.query.RunDataQueryView;
+import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.study.query.RunListQueryView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -53,7 +53,7 @@ import java.util.Set;
  */
 public interface AssayProvider extends Handler<ExpProtocol>
 {
-    Domain getUploadSetDomain(ExpProtocol protocol);
+    Domain getBatchDomain(ExpProtocol protocol);
 
     Domain getRunDomain(ExpProtocol protocol);
 
@@ -122,11 +122,11 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     HttpView getDisallowedUploadMessageView(User user, Container container, ExpProtocol protocol);
 
-    RunDataQueryView createRunDataQueryView(ViewContext context, ExpProtocol protocol);
+    ResultsQueryView createResultsQueryView(ViewContext context, ExpProtocol protocol);
 
     RunListQueryView createRunQueryView(ViewContext context, ExpProtocol protocol);
 
-    ModelAndView createRunDataView(ViewContext context, ExpProtocol protocol);
+    ModelAndView createResultsView(ViewContext context, ExpProtocol protocol);
 
     void deleteProtocol(ExpProtocol protocol, User user) throws ExperimentException;
 

@@ -23,11 +23,10 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.security.User;
 
-abstract public interface ExpTable<C extends Enum> extends TableInfo
+abstract public interface ExpTable<C extends Enum> extends ContainerFilterable
 {
     static public final String COLUMN_DATAINPUT_DATAID = "exp.datainput.dataid";
     public Container getContainer();
-    public void setContainerFilter(ContainerFilter filter, User user);
 
     public ColumnInfo addColumn(C column);
     public ColumnInfo addColumn(String alias, C column);

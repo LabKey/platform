@@ -63,7 +63,7 @@ public class RunListQueryView extends ExperimentRunListView
     public static QuerySettings getDefaultQuerySettings(ExpProtocol protocol, ViewContext context)
     {
         UserSchema schema = getDefaultUserSchema(context);
-        return ExperimentRunListView.getRunListQuerySettings(schema, context, AssayService.get().getRunListTableName(protocol), true);
+        return ExperimentRunListView.getRunListQuerySettings(schema, context, AssayService.get().getRunsTableName(protocol), true);
     }
 
     public static UserSchema getDefaultUserSchema(ViewContext context)
@@ -78,7 +78,7 @@ public class RunListQueryView extends ExperimentRunListView
         ActionURL target = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(getContainer(), _protocol, ShowSelectedDataAction.class);
         if (getTable().getContainerFilter() != null)
             target.addParameter("containerFilterName", getTable().getContainerFilter().name());
-        ActionButton viewSelectedButton = new ActionButton(target, "Show Data For Runs");
+        ActionButton viewSelectedButton = new ActionButton(target, "Show Results For Selected");
         viewSelectedButton.setScript("return verifySelected(this.form, \"" + target.getLocalURIString() + "\", \"post\", \"runs\")");
         viewSelectedButton.setActionType(ActionButton.Action.POST);
         bar.add(viewSelectedButton);

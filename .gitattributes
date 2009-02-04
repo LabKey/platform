@@ -122,6 +122,7 @@ api/src/org/labkey/api/data/DataRegionSelection.java -text
 api/src/org/labkey/api/data/DatabaseCache.java -text
 api/src/org/labkey/api/data/DbCache.java -text
 api/src/org/labkey/api/data/DbScope.java -text
+api/src/org/labkey/api/data/DelegatingContainerFilter.java -text
 api/src/org/labkey/api/data/DetailsColumn.java -text
 api/src/org/labkey/api/data/DimensionColumnInfo.java -text
 api/src/org/labkey/api/data/DisplayColumnFactory.java -text
@@ -576,9 +577,10 @@ api/src/org/labkey/api/study/Well.java -text
 api/src/org/labkey/api/study/WellData.java -text
 api/src/org/labkey/api/study/WellGroup.java -text
 api/src/org/labkey/api/study/WellGroupTemplate.java -text
-api/src/org/labkey/api/study/actions/AssayDataAction.java -text
+api/src/org/labkey/api/study/actions/AssayBatchesAction.java -text
 api/src/org/labkey/api/study/actions/AssayDataDetailsAction.java -text
 api/src/org/labkey/api/study/actions/AssayHeaderView.java -text
+api/src/org/labkey/api/study/actions/AssayResultsAction.java -text
 api/src/org/labkey/api/study/actions/AssayRunUploadForm.java -text
 api/src/org/labkey/api/study/actions/AssayRunsAction.java -text
 api/src/org/labkey/api/study/actions/BaseAssayAction.java -text
@@ -590,6 +592,7 @@ api/src/org/labkey/api/study/actions/ProtocolIdForm.java -text
 api/src/org/labkey/api/study/actions/PublishConfirmAction.java -text
 api/src/org/labkey/api/study/actions/PublishStartAction.java -text
 api/src/org/labkey/api/study/actions/ShowSelectedDataAction.java -text
+api/src/org/labkey/api/study/actions/ShowSelectedRunsAction.java -text
 api/src/org/labkey/api/study/actions/TemplateAction.java -text
 api/src/org/labkey/api/study/actions/UploadWizardAction.java -text
 api/src/org/labkey/api/study/actions/assayHeader.jsp -text
@@ -601,6 +604,7 @@ api/src/org/labkey/api/study/assay/AbstractAssayTsvDataHandler.java -text
 api/src/org/labkey/api/study/assay/AbstractParticipantVisitResolver.java -text
 api/src/org/labkey/api/study/assay/AbstractPlateBasedAssayProvider.java -text
 api/src/org/labkey/api/study/assay/AbstractTsvAssayProvider.java -text
+api/src/org/labkey/api/study/assay/AssayBatchesView.java -text
 api/src/org/labkey/api/study/assay/AssayDataCollector.java -text
 api/src/org/labkey/api/study/assay/AssayDataCollectorDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/AssayDataLinkDisplayColumn.java -text
@@ -614,6 +618,7 @@ api/src/org/labkey/api/study/assay/AssayRunsView.java -text
 api/src/org/labkey/api/study/assay/AssayService.java -text
 api/src/org/labkey/api/study/assay/AssayUrls.java -text
 api/src/org/labkey/api/study/assay/AssayWarningsDisplayColumn.java -text
+api/src/org/labkey/api/study/assay/BatchListQueryView.java -text
 api/src/org/labkey/api/study/assay/FileLinkDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/FileUploadDataCollector.java -text
 api/src/org/labkey/api/study/assay/ParticipantVisitImpl.java -text
@@ -637,9 +642,9 @@ api/src/org/labkey/api/study/assay/ThawListResolverType.java -text
 api/src/org/labkey/api/study/assay/thawListSelector.jsp -text
 api/src/org/labkey/api/study/query/AssayBaseQueryView.java -text
 api/src/org/labkey/api/study/query/PlateBasedAssayRunDataTable.java -text
-api/src/org/labkey/api/study/query/PublishRunDataQueryView.java -text
+api/src/org/labkey/api/study/query/PublishResultsQueryView.java -text
+api/src/org/labkey/api/study/query/ResultsQueryView.java -text
 api/src/org/labkey/api/study/query/RunDataLinkDisplayColumn.java -text
-api/src/org/labkey/api/study/query/RunDataQueryView.java -text
 api/src/org/labkey/api/study/query/RunListQueryView.java -text
 api/src/org/labkey/api/study/query/ValidParticipantVisitDisplayColumn.java -text
 api/src/org/labkey/api/util/BooleanExpression.java -text

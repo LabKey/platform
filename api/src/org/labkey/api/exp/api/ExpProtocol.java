@@ -31,7 +31,7 @@ public interface ExpProtocol extends ExpObject
 
     public static final String ASSAY_DOMAIN_PREFIX = "AssayDomain-";
     public static final String ASSAY_DOMAIN_RUN = AssayDomainTypes.Run.getPrefix();
-    public static final String ASSAY_DOMAIN_UPLOAD_SET = AssayDomainTypes.Batch.getPrefix();
+    public static final String ASSAY_DOMAIN_BATCH = AssayDomainTypes.Batch.getPrefix();
     public static final String ASSAY_DOMAIN_DATA = AssayDomainTypes.Data.getPrefix();
 
     /**

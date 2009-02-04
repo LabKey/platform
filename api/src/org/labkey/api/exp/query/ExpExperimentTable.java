@@ -24,6 +24,8 @@ public interface ExpExperimentTable extends ExpTable<ExpExperimentTable.Column>
 {
     void addExperimentMembershipColumn(ExpRun run);
 
+    void setBatchProtocol(ExpProtocol protocol);
+
     enum Column
     {
         RowId,
@@ -37,6 +39,7 @@ public interface ExpExperimentTable extends ExpTable<ExpExperimentTable.Column>
         ModifiedBy,
         RunCount,
         Folder,
+        BatchProtocolId,
     }
 
     ColumnInfo createRunCountColumn(String alias, ExpProtocol parentProtocol, ExpProtocol childProtocol);

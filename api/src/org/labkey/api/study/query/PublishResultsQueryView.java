@@ -46,7 +46,7 @@ import java.util.*;
  * Date: Jul 30, 2007
  * Time: 10:07:07 AM
  */
-public class PublishRunDataQueryView extends RunDataQueryView
+public class PublishResultsQueryView extends ResultsQueryView
 {
     private SimpleFilter _filter;
     private List<ActionButton> _buttons;
@@ -55,13 +55,13 @@ public class PublishRunDataQueryView extends RunDataQueryView
     private Map<Object, String> _reshowVisits;
     private Map<Object, String> _reshowPtids;
 
-    public PublishRunDataQueryView(ExpProtocol protocol, ViewContext context, QuerySettings settings,
+    public PublishResultsQueryView(ExpProtocol protocol, ViewContext context, QuerySettings settings,
                                    List<Integer> objectIds, Container targetStudyContainer)
     {
         this(protocol, context, settings, objectIds, targetStudyContainer, null, null);
     }
 
-    public PublishRunDataQueryView(ExpProtocol protocol, ViewContext context, QuerySettings settings,
+    public PublishResultsQueryView(ExpProtocol protocol, ViewContext context, QuerySettings settings,
                                    List<Integer> objectIds, Container targetStudyContainer,
                                    Map<Object, String> reshowVisits, Map<Object, String> reshowPtids)
     {

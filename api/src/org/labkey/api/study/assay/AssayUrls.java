@@ -40,10 +40,11 @@ public interface AssayUrls extends UrlProvider
      */
     ActionURL getDesignerURL(Container container, ExpProtocol protocol, boolean copy);
     ActionURL getAssayListURL(Container container);
+    ActionURL getAssayBatchesURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter);
     ActionURL getAssayRunsURL(Container container, ExpProtocol protocol);
-    ActionURL getAssayRunsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter);
-    ActionURL getAssayDataURL(Container container, ExpProtocol protocol, int... runIds);
-    ActionURL getAssayDataURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... runIds);
+    ActionURL getAssayRunsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... batchIds);
+    ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, int... runIds);
+    ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... runIds);
 
     ActionURL getChooseCopyDestinationURL(ExpProtocol protocol, Container container);
 

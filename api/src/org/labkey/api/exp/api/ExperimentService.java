@@ -106,7 +106,7 @@ public class ExperimentService
         ExpExperiment createExpExperiment(Container container, String name);
         ExpExperiment getExpExperiment(int rowid);
         ExpExperiment getExpExperiment(String lsid);
-        ExpExperiment[] getExperiments(Container container, User user, boolean includeOtherContainers);
+        ExpExperiment[] getExperiments(Container container, User user, boolean includeOtherContainers, boolean includeBatches);
 
         ExpProtocol getExpProtocol(int rowid);
         ExpProtocol getExpProtocol(String lsid);
@@ -174,10 +174,10 @@ public class ExperimentService
         public String getDefaultSampleSetLsid();
 
         ExpRun[] getRunsUsingMaterials(int... materialIds) throws SQLException;
-        List<ExpRun> getRunsUsingDatas(List<ExpData> datas) throws SQLException;
+        List<? extends ExpRun> getRunsUsingDatas(List<ExpData> datas) throws SQLException;
 
         ExpRun getCreatingRun(File file, Container c) throws IOException;
-        List<ExpRun> getExpRunsForProtocolIds(boolean includeRelated, int... rowIds) throws SQLException;
+        List<? extends ExpRun> getExpRunsForProtocolIds(boolean includeRelated, int... rowIds) throws SQLException;
         ExpRun[] getRunsUsingSampleSets(ExpSampleSet... sampleSets) throws SQLException;
 
         /**
@@ -188,7 +188,6 @@ public class ExperimentService
         void deleteProtocolByRowIds(Container container, User user, int... rowIds) throws ExperimentException;
         void deleteAllExpObjInContainer(Container container, User user) throws Exception;
         void deleteSampleSet(int rowId, Container c, User user) throws SQLException, ExperimentException;
-        void deleteExperimentByRowIds(Container container, int... experimentRowIds);
         void deleteExperimentRunsByRowIds(Container container, User user, int... rowIds);
 
         Lsid getSampleSetLsid(String name, Container container);

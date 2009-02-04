@@ -19,10 +19,11 @@ package org.labkey.api.study.actions;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.ActionNames;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
-import org.labkey.api.study.query.RunDataQueryView;
+import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
@@ -37,7 +38,8 @@ import org.springframework.web.servlet.ModelAndView;
 * Time: 7:30:05 PM
 */
 @RequiresPermission(ACL.PERM_READ)
-public class AssayDataAction extends BaseAssayAction<ProtocolIdForm>
+@ActionNames( "assayData, assayResults" )
+public class AssayResultsAction extends BaseAssayAction<ProtocolIdForm>
 {
     private ExpProtocol _protocol;
 
@@ -47,15 +49,15 @@ public class AssayDataAction extends BaseAssayAction<ProtocolIdForm>
         _protocol = getProtocol(form);
         AssayProvider provider = AssayService.get().getProvider(_protocol);
 
-        ModelAndView runDataView = provider.createRunDataView(context, _protocol);
-        if (runDataView != null)
-            return runDataView;
+        ModelAndView resultsView = provider.createResultsView(context, _protocol);
+        if (resultsView != null)
+            return resultsView;
         return getView(context, provider);
     }
 
     protected ModelAndView getView(ViewContext context, AssayProvider provider)
     {
-        RunDataQueryView dataQueryView = provider.createRunDataQueryView(context, _protocol);
+        ResultsQueryView dataQueryView = provider.createResultsQueryView(context, _protocol);
 
         AssayHeaderView headerView = new AssayHeaderView(
             _protocol,

@@ -17,7 +17,6 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.ShowRows;
@@ -31,8 +30,6 @@ import org.labkey.api.view.ViewContext;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
-
-import java.sql.SQLException;
 
 public class QuerySettings
 {

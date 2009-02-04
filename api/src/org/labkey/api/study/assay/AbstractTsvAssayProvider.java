@@ -91,7 +91,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
             typeList.add(createPublishPropertyDescriptor(study, "SourceLSID", PropertyType.INTEGER));
 
             PropertyDescriptor[] runPDs = getPropertyDescriptors(getRunDomain(protocol));
-            PropertyDescriptor[] uploadSetPDs = getPropertyDescriptors(getUploadSetDomain(protocol));
+            PropertyDescriptor[] uploadSetPDs = getPropertyDescriptors(getBatchDomain(protocol));
 
             List<PropertyDescriptor> pds = new ArrayList<PropertyDescriptor>();
             pds.addAll(Arrays.asList(runPDs));

@@ -36,7 +36,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.actions.DesignerAction;
-import org.labkey.api.study.query.RunDataQueryView;
+import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.study.query.RunListQueryView;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
@@ -86,6 +86,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public static final String IMPORT_DATA_LINK_NAME = "Import Data";
 
+    public static final FieldKey BATCH_ROWID_FROM_RUN = FieldKey.fromParts("Batch", "RowId");
+
     protected final String _protocolLSIDPrefix;
     protected final String _runLSIDPrefix;
     protected final DataType _dataType;
@@ -125,7 +127,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 ExpProtocol protocol = run.getProtocol();
                 if (protocol == null)
                     return null;
-                ActionURL dataURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayDataURL(run.getContainer(), protocol, run.getRowId());
+                ActionURL dataURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(run.getContainer(), protocol, run.getRowId());
                 return dataURL.getLocalURIString();
             }
 
@@ -239,15 +241,15 @@ public abstract class AbstractAssayProvider implements AssayProvider
         Domain runDomain = getRunDomain(protocol);
         if (runDomain != null)
             Collections.addAll(cols, getPropertyDescriptors(runDomain));
-        Domain uploadSetDomain = getUploadSetDomain(protocol);
-        if (uploadSetDomain != null)
-            Collections.addAll(cols, getPropertyDescriptors(uploadSetDomain));
+        Domain batchDomain = getBatchDomain(protocol);
+        if (batchDomain != null)
+            Collections.addAll(cols, getPropertyDescriptors(batchDomain));
         return cols;
     }
 
-    public Domain getUploadSetDomain(ExpProtocol protocol)
+    public Domain getBatchDomain(ExpProtocol protocol)
     {
-        return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_UPLOAD_SET);
+        return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_BATCH);
     }
 
     public Domain getRunInputDomain(ExpProtocol protocol)
@@ -354,9 +356,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return domain;
     }
 
-    protected Domain createUploadSetDomain(Container c, User user)
+    protected Domain createBatchDomain(Container c, User user)
     {
-        Domain domain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_UPLOAD_SET), "Run Set Fields");
+        Domain domain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_BATCH), "Batch Fields");
         List<ParticipantVisitResolverType> resolverTypes = getParticipantVisitResolverTypes();
         if (resolverTypes != null && resolverTypes.size() > 0)
             addProperty(domain, PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME, PARTICIPANT_VISIT_RESOLVER_PROPERTY_CAPTION, PropertyType.STRING).setRequired(true);
@@ -364,7 +366,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         DomainProperty studyProp = addProperty(domain, TARGET_STUDY_PROPERTY_NAME, TARGET_STUDY_PROPERTY_CAPTION, PropertyType.STRING);
         studyProp.setLookup(new Lookup(null, "study", "Study"));
 
-        domain.setDescription("The user is prompted for run set properties once for each set of runs they import. The run " +
+        domain.setDescription("The user is prompted for batch properties once for each set of runs they import. The run " +
                 "set is a convenience to let users set properties that seldom change in one place and import many runs " +
                 "using them. This is the first step of the import process.");
         return domain;
@@ -382,7 +384,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 transaction = true;
             }
 
-            Domain batchDomain = createUploadSetDomain(c, user);
+            Domain batchDomain = createBatchDomain(c, user);
             result.add(batchDomain);
 
             Domain runDomain = createRunDomain(c, user);
@@ -487,11 +489,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
         Map<ExpData, String> outputDatas = new HashMap<ExpData, String>();
 
         Map<DomainProperty, String> runProperties = context.getRunProperties();
-        Map<DomainProperty, String> uploadSetProperties = context.getUploadSetProperties();
+        Map<DomainProperty, String> batchProperties = context.getBatchProperties();
 
         Map<DomainProperty, String> allProperties = new HashMap<DomainProperty, String>();
         allProperties.putAll(runProperties);
-        allProperties.putAll(uploadSetProperties);
+        allProperties.putAll(batchProperties);
 
         ParticipantVisitResolverType resolverType = null;
         for (Map.Entry<DomainProperty, String> entry : allProperties.entrySet())
@@ -499,7 +501,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             if (entry.getKey().getName().equals(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
             {
                 resolverType = AbstractAssayProvider.findType(entry.getValue(), getParticipantVisitResolverTypes());
-                resolverType.configureRun(context, run, runProperties, uploadSetProperties, inputDatas);
+                resolverType.configureRun(context, run, runProperties, batchProperties, inputDatas);
                 break;
             }
         }
@@ -549,7 +551,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 scope.beginTransaction();
 
             savePropertyObject(run.getLSID(), runProperties, context.getContainer());
-            savePropertyObject(run.getLSID(), uploadSetProperties, context.getContainer());
+            savePropertyObject(run.getLSID(), batchProperties, context.getContainer());
 
             run = ExperimentService.get().insertSimpleExperimentRun(run,
                 inputMaterials,
@@ -561,9 +563,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
             if (batch == null)
             {
-                batch = AssayService.get().createStandardBatch(run.getContainer(), null);
+                // Make sure that we have a batch to associate with this run
+                batch = AssayService.get().createStandardBatch(run.getContainer(), null, context.getProtocol());
                 batch.save(context.getUser());
-                savePropertyObject(batch.getLSID(), uploadSetProperties, context.getContainer());
+                savePropertyObject(batch.getLSID(), batchProperties, context.getContainer());
             }
             batch.addRuns(context.getUser(), run);
             validate(context, run);
@@ -646,9 +649,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     protected DomainProperty getRunTargetStudyColumn(ExpProtocol protocol)
     {
-        Domain uploadDomain = getUploadSetDomain(protocol);
-        DomainProperty[] uploadSetColumns = uploadDomain.getProperties();
-        for (DomainProperty pd : uploadSetColumns)
+        Domain batchDomain = getBatchDomain(protocol);
+        DomainProperty[] domainColumns = batchDomain.getProperties();
+        for (DomainProperty pd : domainColumns)
         {
             if (TARGET_STUDY_PROPERTY_NAME.equals(pd.getName()))
                 return pd;
@@ -792,9 +795,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         Set<String> reservedNames = new HashSet<String>();
         boolean runDomain = isDomainType(domain, protocol, ExpProtocol.ASSAY_DOMAIN_RUN);
-        boolean uploadSetDomain = isDomainType(domain, protocol, ExpProtocol.ASSAY_DOMAIN_UPLOAD_SET);
+        boolean batchDomain = isDomainType(domain, protocol, ExpProtocol.ASSAY_DOMAIN_BATCH);
 
-        if (runDomain || uploadSetDomain)
+        if (runDomain || batchDomain)
         {
             TableInfo runTable = ExperimentService.get().getTinfoExperimentRun();
             for (ColumnInfo column : runTable.getColumns())
@@ -863,21 +866,21 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public boolean isFileLinkPropertyAllowed(ExpProtocol protocol, Domain domain)
     {
         Lsid domainLsid = new Lsid(domain.getTypeURI());
-        return domainLsid.getNamespacePrefix().equals(ExpProtocol.ASSAY_DOMAIN_UPLOAD_SET) ||
+        return domainLsid.getNamespacePrefix().equals(ExpProtocol.ASSAY_DOMAIN_BATCH) ||
                 domainLsid.getNamespacePrefix().equals(ExpProtocol.ASSAY_DOMAIN_RUN);
     }
 
     public Container getTargetStudy(ExpRun run)
     {
         ExpProtocol protocol = run.getProtocol();
-        Domain uploadSetDomain = getUploadSetDomain(protocol);
-        DomainProperty[] uploadSetColumns = uploadSetDomain.getProperties();
+        Domain batchDomain = getBatchDomain(protocol);
+        DomainProperty[] batchColumns = batchDomain.getProperties();
         Domain runDomain = getRunDomain(protocol);
         DomainProperty[] runColumns = runDomain.getProperties();
 
         List<DomainProperty> pds = new ArrayList<DomainProperty>();
         pds.addAll(Arrays.asList(runColumns));
-        pds.addAll(Arrays.asList(uploadSetColumns));
+        pds.addAll(Arrays.asList(batchColumns));
 
         Map<String, ObjectProperty> props = run.getObjectProperties();
 
@@ -908,13 +911,13 @@ public abstract class AbstractAssayProvider implements AssayProvider
     protected Map<String, Set<String>> getRequiredDomainProperties()
     {
         Map<String, Set<String>> domainMap = new HashMap<String, Set<String>>();
-        Set<String> uploadSetProperties = domainMap.get(ExpProtocol.ASSAY_DOMAIN_UPLOAD_SET);
-        if (uploadSetProperties == null)
+        Set<String> batchProperties = domainMap.get(ExpProtocol.ASSAY_DOMAIN_BATCH);
+        if (batchProperties == null)
         {
-            uploadSetProperties = new HashSet<String>();
-            domainMap.put(ExpProtocol.ASSAY_DOMAIN_UPLOAD_SET, uploadSetProperties);
+            batchProperties = new HashSet<String>();
+            domainMap.put(ExpProtocol.ASSAY_DOMAIN_BATCH, batchProperties);
         }
-        uploadSetProperties.add(PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME);
+        batchProperties.add(PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME);
         return domainMap;
     }
 
@@ -993,23 +996,23 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return new RunListQueryView(protocol, context);
     }
 
-    public RunDataQueryView createRunDataQueryView(ViewContext context, ExpProtocol protocol)
+    public ResultsQueryView createResultsQueryView(ViewContext context, ExpProtocol protocol)
     {
-        String name = AssayService.get().getRunDataTableName(protocol);
+        String name = AssayService.get().getResultsTableName(protocol);
         QuerySettings settings = new QuerySettings(context, name);
         settings.setSchemaName(AssayService.ASSAY_SCHEMA_NAME);
         settings.setQueryName(name);
-        return new RunDataQueryView(protocol, context, settings);
+        return new ResultsQueryView(protocol, context, settings);
     }
 
-    public ModelAndView createRunDataView(ViewContext context, ExpProtocol protocol)
+    public ModelAndView createResultsView(ViewContext context, ExpProtocol protocol)
     {
         return null;
     }
 
     public ModelAndView createDataDetailsView(ViewContext context, ExpProtocol protocol, ExpData data, Object dataRowId)
     {
-        QueryView queryView = createRunDataQueryView(context, protocol);
+        QueryView queryView = createResultsQueryView(context, protocol);
 
         DataRegion region = new DataRegion();
 
@@ -1025,7 +1028,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         region.setDisplayColumns(columns);
 
         ExpRun run = data.getRun();
-        ActionURL runUrl = PageFlowUtil.urlProvider(AssayUrls.class).getAssayDataURL(
+        ActionURL runUrl = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(
             context.getContainer(), protocol,
             queryView.getTable().getContainerFilter(), run.getRowId());
 

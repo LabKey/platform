@@ -53,14 +53,14 @@
         <td class="labkey-form-label" nowrap="true">Description</td>
         <td><%= h(bean.getProtocol().getProtocolDescription()) %></td>
     </tr>
-    <% if (!bean.getUploadSetProperties().isEmpty())
+    <% if (!bean.getBatchProperties().isEmpty())
     { %>
         <tr><td>&nbsp;</td></tr>
         <tr class="labkey-wp-header">
-            <td colspan="2">Run Set Properties</td>
+            <td colspan="2">Batch Properties</td>
         </tr>
         <%
-            for (Map.Entry<DomainProperty, String> entry : bean.getUploadSetProperties().entrySet())
+            for (Map.Entry<DomainProperty, String> entry : bean.getBatchProperties().entrySet())
             {
                 %>
                 <tr>

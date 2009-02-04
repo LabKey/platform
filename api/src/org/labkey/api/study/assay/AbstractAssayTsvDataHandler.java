@@ -82,7 +82,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             Integer id = OntologyManager.ensureObject(container, data.getLSID());
 
             List<DomainProperty> allProps = new ArrayList<DomainProperty>();
-            allProps.addAll(Arrays.asList(provider.getUploadSetDomain(protocol).getProperties()));
+            allProps.addAll(Arrays.asList(provider.getBatchDomain(protocol).getProperties()));
             allProps.addAll(Arrays.asList(provider.getRunDomain(protocol).getProperties()));
 
             Map<String, Object> runProps = OntologyManager.getProperties(container, run.getLSID());
@@ -450,7 +450,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         if (run != null)
         {
             ExpProtocol protocol = run.getProtocol();
-            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayDataURL(container, protocol, run.getRowId());
+            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(container, protocol, run.getRowId());
         }
         return null;
     }

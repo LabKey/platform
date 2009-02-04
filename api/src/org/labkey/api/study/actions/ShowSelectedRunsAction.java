@@ -33,7 +33,7 @@ import java.util.Set;
 * Date: Dec 30, 2008
 */
 @RequiresPermission(ACL.PERM_READ)
-public class ShowSelectedDataAction extends RedirectAction<ShowSelectedDataAction.ShowSelectedForm>
+public class ShowSelectedRunsAction extends RedirectAction<ShowSelectedRunsAction.ShowSelectedForm>
 {
     public static class ShowSelectedForm extends ProtocolIdForm
     {
@@ -62,7 +62,7 @@ public class ShowSelectedDataAction extends RedirectAction<ShowSelectedDataActio
         if (form.getContainerFilterName() != null)
             containerFilter = ContainerFilter.Filters.valueOf(form.getContainerFilterName());
 
-        ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getViewContext().getContainer(), form.getProtocol(), containerFilter, selectedIds);
+        ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getViewContext().getContainer(), form.getProtocol(), containerFilter, selectedIds);
         if (form.getContainerFilterName() != null)
             url.addParameter("containerFilterName", form.getContainerFilterName());
         return url;

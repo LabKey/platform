@@ -41,9 +41,9 @@ import java.util.List;
  * Date: Jun 29, 2007
  * Time: 11:13:44 AM
  */
-public class RunDataQueryView extends AssayBaseQueryView
+public class ResultsQueryView extends AssayBaseQueryView
 {
-    public RunDataQueryView(ExpProtocol protocol, ViewContext context, QuerySettings settings)
+    public ResultsQueryView(ExpProtocol protocol, ViewContext context, QuerySettings settings)
     {
         super(protocol, context, settings);
         setViewItemFilter(new ReportService.ItemFilter() {

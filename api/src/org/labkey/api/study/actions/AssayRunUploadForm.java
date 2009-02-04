@@ -73,7 +73,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
 
         List<DomainProperty> orderedColumns = new ArrayList<DomainProperty>();
         // add all columns that are found in the default view in the correct order:
-        QueryView dataView = getProvider().createRunDataQueryView(context, protocol);
+        QueryView dataView = getProvider().createResultsQueryView(context, protocol);
         List<DisplayColumn> allColumns = dataView.getDisplayColumns();
         for (DisplayColumn dc : allColumns)
         {
@@ -118,12 +118,12 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     }
 
     /** @return property descriptor to value */
-    public Map<DomainProperty, String> getUploadSetProperties()
+    public Map<DomainProperty, String> getBatchProperties()
     {
         if (_uploadSetProperties == null)
         {
             AssayProvider provider = AssayService.get().getProvider(getProtocol());
-            Domain domain = provider.getUploadSetDomain(getProtocol());
+            Domain domain = provider.getBatchDomain(getProtocol());
             DomainProperty[] properties = domain.getProperties();
             properties = reorderDomainColumns(properties, getViewContext(), getProtocol());
             _uploadSetProperties = getPropertyMapFromRequest(Arrays.asList(properties));

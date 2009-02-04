@@ -61,8 +61,9 @@ public class AssayService
 
         public UserSchema createSchema(User user, Container container);
 
-        public String getRunListTableName(ExpProtocol protocol);
-        public String getRunDataTableName(ExpProtocol protocol);
+        public String getBatchesTableName(ExpProtocol protocol);
+        public String getRunsTableName(ExpProtocol protocol);
+        public String getResultsTableName(ExpProtocol protocol);
 
         List<ExpProtocol> getAssayProtocols(Container container);
 
@@ -73,8 +74,8 @@ public class AssayService
          * Creates a batch object but does not save it to the database
          * @param container location for this batch to live
          * @param name preferred name for the batch. If null, a default name will be assigned. If the name is already in
-         * use, a different name will be chosen. 
+         * @param protocol
          */
-        public ExpExperiment createStandardBatch(Container container, String name);
+        public ExpExperiment createStandardBatch(Container container, String name, ExpProtocol protocol);
     }
 }
