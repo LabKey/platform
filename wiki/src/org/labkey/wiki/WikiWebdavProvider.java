@@ -270,11 +270,6 @@ class WikiWebdavProvider implements WebdavService.Provider
             return true;
         }
 
-        public boolean isFile()
-        {
-            return exists();
-        }
-
         public boolean canRename()
         {
             return false; // NYI
@@ -400,11 +395,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             }
         }
 
-        public WebdavResolver.Resource find(String name)
-        {
-            return null;
-        }
-
+		@Override
         public String getExecuteHref(ViewContext context)
         {
             return new ActionURL(WikiController.PageAction.class, _folder._c).addParameter("name",_wiki.getName()).toString();
@@ -450,11 +441,6 @@ class WikiWebdavProvider implements WebdavService.Provider
         public boolean isVirtual()
         {
             return true;
-        }
-
-        public boolean isFile()
-        {
-            return exists();
         }
 
         public boolean canRename()
@@ -518,16 +504,13 @@ class WikiWebdavProvider implements WebdavService.Provider
             return 0;
         }
 
-        public WebdavResolver.Resource find(String name)
-        {
-            return null;
-        }
-
+		@Override
         public int getPermissions(User user)
         {
             return super.getPermissions(user) & ACL.PERM_READ;
         }
 
+		@Override
         public File getFile()
         {
             assert false;

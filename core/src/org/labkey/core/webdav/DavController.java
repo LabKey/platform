@@ -988,6 +988,9 @@ public class DavController extends SpringActionController
                         xml.writeElement(null, "getetag", XMLWriter.NO_CONTENT);
                         xml.writeElement(null, "getlastmodified", XMLWriter.NO_CONTENT);
                     }
+					xml.writeElement(null, "href", XMLWriter.NO_CONTENT);
+					xml.writeElement(null, "ishidden", XMLWriter.NO_CONTENT);
+					xml.writeElement(null, "isreadonly", XMLWriter.NO_CONTENT);
                     xml.writeElement(null, "resourcetype", XMLWriter.NO_CONTENT);
                     xml.writeElement(null, "source", XMLWriter.NO_CONTENT);
 //					 generatedXML.writeElement(null, "lockdiscovery", XMLWriter.NO_CONTENT);
@@ -1083,6 +1086,24 @@ public class DavController extends SpringActionController
                                 xml.writeProperty(null, "getlastmodified", getHttpDateFormat(resource.getLastModified()));
                             }
                         }
+						else if (property.equals("href"))
+						{
+							xml.writeElement(null, "href", XMLWriter.OPENING);
+							xml.writeText(h(resource.getLocalHref(getViewContext())));
+							xml.writeElement(null, "href", XMLWriter.CLOSING);
+						}
+						else if (property.equals("ishidden"))
+						{
+							xml.writeElement(null, "ishidden", XMLWriter.OPENING);
+							xml.writeText("0");
+							xml.writeElement(null, "ishidden", XMLWriter.CLOSING);
+						}
+						else if (property.equals("isreadonly"))
+						{
+							xml.writeElement(null, "isreadonly", XMLWriter.OPENING);
+							xml.writeText(resource.canWrite(getUser()) ? "0" : "1");
+							xml.writeElement(null, "isreadonly", XMLWriter.CLOSING);
+						}
                         else if (property.equals("resourcetype"))
                         {
                             if (resource.isCollection())

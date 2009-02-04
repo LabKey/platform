@@ -31,6 +31,7 @@ import org.labkey.api.reports.report.*;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.webdav.WebdavService;
 import org.labkey.query.controllers.QueryControllerSpring;
 import org.labkey.query.controllers.dbuserschema.DbUserSchemaController;
 import org.labkey.query.persist.QueryManager;
@@ -92,6 +93,7 @@ public class QueryModule extends DefaultModule
         ReportService.get().registerReport(new InternalScriptEngineReport());
 
         QueryView.register(new RExportScriptFactory());
+		WebdavService.addProvider(new QueryWebdavprovider());
     }
 
     protected Collection<? extends WebPartFactory> createWebPartFactories()
