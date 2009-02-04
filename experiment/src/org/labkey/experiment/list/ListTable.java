@@ -110,8 +110,9 @@ public class ListTable extends FilteredTable
         // check getInputType(), otherwise it may stash an incorrect, intermediate result.
         for (ColumnInfo col : getColumns())
         {
-            if ("file".equals(col.getInputType()))
-            {
+//          if ("file".equals(col.getInputType()))
+			if ("image".equalsIgnoreCase(col.getSqlDataTypeName()))
+			{
                 col.setDisplayColumnFactory(new DisplayColumnFactory() {
                     public DisplayColumn createRenderer(final ColumnInfo colInfo)
                     {
