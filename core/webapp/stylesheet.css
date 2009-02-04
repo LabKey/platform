@@ -331,6 +331,19 @@ img.labkey-button-arrow
     right: 0.5em;
 }
 
+/* This is the class for the qc indicator icon that can be included in a table cell.
+ The image src should be ./_images/qc_indicator.gif */
+img.labkey-qc-indicator
+{
+    background-color: transparent;
+    color: red;
+    width: 0.6em;
+    height: auto;
+    position: relative;
+    top: 0.1em;
+    right: 0.1em;
+}
+
 .labkey-disabled-button, .labkey-disabled-button:visited, .labkey-disabled-menu-button, .labkey-disabled-menu-button:visited
 {
     color: #808080;
