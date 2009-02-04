@@ -19,17 +19,19 @@ package org.labkey.study.assay.query;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpExperimentTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.*;
-import org.labkey.api.study.query.RunDataQueryView;
+import org.labkey.api.study.query.ResultsQueryView;
+import org.labkey.api.study.actions.ShowSelectedRunsAction;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.controllers.assay.AssayController;
 
@@ -73,19 +75,25 @@ public class AssaySchema extends UserSchema
             AssayProvider provider = AssayService.get().getProvider(protocol);
             if (provider != null)
             {
-                names.add(getRunListTableName(protocol));
-                names.add(getRunDataTableName(protocol));
+                names.add(getBatchesTableName(protocol));
+                names.add(getRunsTableName(protocol));
+                names.add(getResultsTableName(protocol));
             }
         }
         return names;
     }
 
-    public static String getRunListTableName(ExpProtocol protocol)
+    public static String getBatchesTableName(ExpProtocol protocol)
+    {
+        return protocol.getName() + " Batches";
+    }
+
+    public static String getRunsTableName(ExpProtocol protocol)
     {
         return protocol.getName() + " Runs";
     }
 
-    public static String getRunDataTableName(ExpProtocol protocol)
+    public static String getResultsTableName(ExpProtocol protocol)
     {
         return protocol.getName() + " Data";
     }
@@ -102,11 +110,15 @@ public class AssaySchema extends UserSchema
                 AssayProvider provider = AssayService.get().getProvider(protocol);
                 if (provider != null)
                 {
-                    if (name.equals(getRunListTableName(protocol)))
+                    if (name.equalsIgnoreCase(getBatchesTableName(protocol)))
+                    {
+                        return createBatchesTable(alias, protocol, provider, null);
+                    }
+                    if (name.equalsIgnoreCase(getRunsTableName(protocol)))
                     {
                         return createRunTable(alias, protocol, provider);
                     }
-                    else if (name.equals(getRunDataTableName(protocol)))
+                    else if (name.equalsIgnoreCase(getResultsTableName(protocol)) || name.equalsIgnoreCase(protocol.getName() + " Data"))
                     {
                         return provider.createDataTable(this, alias, protocol);
                     }
@@ -114,6 +126,43 @@ public class AssaySchema extends UserSchema
             }
         }
         return null;
+    }
+
+    public ExpExperimentTable createBatchesTable(String alias, ExpProtocol protocol, AssayProvider provider, final ContainerFilter containerFilter)
+    {
+        final ExpExperimentTable result = new ExpSchema(getUser(), getContainer()).createExperimentsTable(getBatchesTableName(protocol), alias);
+        if (containerFilter != null)
+        {
+            result.setContainerFilter(containerFilter, getUser());
+        }
+        ActionURL runsURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), protocol, result.getContainerFilter());
+
+        // Unfortunately this seems to be the best way to figure out the name of the URL parameter to filter by batch id
+        ActionURL fakeURL = new ActionURL(ShowSelectedRunsAction.class, getContainer());
+        fakeURL.addFilter(AssayService.get().getRunsTableName(protocol),
+                AbstractAssayProvider.BATCH_ROWID_FROM_RUN, CompareType.EQUAL, "${RowId}");
+        String paramName = fakeURL.getParameters()[0].getKey();
+
+        Map<String, String> urlParams = new HashMap<String, String>();
+        urlParams.put(paramName, "RowId");
+        result.setDetailsURL(new DetailsURL(runsURL, urlParams));
+
+        result.getColumn(ExpExperimentTable.Column.Name).setURL(runsURL.toString() + "&" + paramName + "=${RowId}");
+        result.setBatchProtocol(protocol);
+        List<FieldKey> defaultCols = new ArrayList<FieldKey>();
+        defaultCols.add(FieldKey.fromParts(ExpExperimentTable.Column.Name));
+        defaultCols.add(FieldKey.fromParts(ExpExperimentTable.Column.CreatedBy));
+        defaultCols.add(FieldKey.fromParts(ExpExperimentTable.Column.RunCount));
+        List<PropertyDescriptor> pds = new ArrayList<PropertyDescriptor>();
+        for (DomainProperty prop : provider.getBatchDomain(protocol).getProperties())
+        {
+            pds.add(prop.getPropertyDescriptor());
+            defaultCols.add(FieldKey.fromParts("Batch Properties", prop.getName()));
+        }
+        
+        result.addPropertyColumns("Batch Properties", pds.toArray(new PropertyDescriptor[pds.size()]), this);
+        result.setDefaultVisibleColumns(defaultCols);
+        return result;
     }
 
     public ExpRunTable createRunTable(String alias, final ExpProtocol protocol, final AssayProvider provider)
@@ -135,23 +184,15 @@ public class AssaySchema extends UserSchema
         batchSQL.append(ExperimentService.get().getTinfoExperiment());
         batchSQL.append(" e WHERE e.RowId = rl.ExperimentId AND rl.ExperimentRunId = ");
         batchSQL.append(ExprColumn.STR_TABLE_ALIAS);
-        batchSQL.append(".RowId AND e.LSID LIKE '%:Experiment.Folder-%AssayBatch:%')");
+        batchSQL.append(".RowId AND e.BatchProtocolId = ");
+        batchSQL.append(protocol.getRowId());
+        batchSQL.append(")");
         ExprColumn batchColumn = new ExprColumn(runTable, "Batch", batchSQL, Types.INTEGER, runTable.getColumn(ExpRunTable.Column.RowId));
         batchColumn.setFk(new LookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
             {
-                ExpExperimentTable result = ExperimentService.get().createExperimentTable("Experiments", null, AssaySchema.this);
-                result.populate();
-                result.setContainerFilter(runTable.getContainerFilter(), getUser());
-                Domain uploadSetDomain = provider.getUploadSetDomain(protocol);
-                DomainProperty[] properties = uploadSetDomain.getProperties();
-                PropertyDescriptor[] batchPDs = new PropertyDescriptor[properties.length];
-                for (int i = 0; i < properties.length; i++)
-                    batchPDs[i] = properties[i].getPropertyDescriptor();
-                ColumnInfo batchPropsCol = result.addPropertyColumns("Batch Properties", batchPDs, AssaySchema.this);
-                batchPropsCol.setFk(new AssayPropertyForeignKey(batchPDs));
-                return result;
+                return createBatchesTable(null, protocol, provider, runTable.getContainerFilter());
             }
         });
         runTable.addColumn(batchColumn);
@@ -177,9 +218,9 @@ public class AssaySchema extends UserSchema
             AssayProvider provider = AssayService.get().getProvider(protocol);
             if (provider != null)
             {
-                if (name != null && name.equals(AssayService.get().getRunDataTableName(protocol)))
+                if (name != null && name.equals(AssayService.get().getResultsTableName(protocol)))
                 {
-                    return new RunDataQueryView(protocol, context, settings);
+                    return new ResultsQueryView(protocol, context, settings);
                 }
             }
         }

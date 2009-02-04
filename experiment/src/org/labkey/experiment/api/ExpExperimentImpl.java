@@ -20,21 +20,21 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.apache.log4j.Logger;
+import org.labkey.api.security.ACL;
 
 import java.sql.SQLException;
-import java.util.Date;
+import java.util.Set;
+import java.util.HashSet;
 
 public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> implements ExpExperiment
 {
-    static final private Logger _log = Logger.getLogger(ExpExperimentImpl.class);
-
     public ExpExperimentImpl(Experiment experiment)
     {
         super(experiment);
@@ -55,10 +55,21 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         return _object.getRowId();
     }
 
-    public ExpRun[] getRuns()
+    public ExpRunImpl[] getRuns()
     {
-        ExperimentRun[] runs = ExperimentServiceImpl.get().getRunsForExperiment(getLSID());
-        return ExpRunImpl.fromRuns(runs);
+        try
+        {
+            String sql = "SELECT ER.* FROM " + ExperimentServiceImpl.get().getTinfoExperiment() + " E "
+                    + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoRunList()  + " RL ON (E.RowId = RL.ExperimentId) "
+                    + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoExperimentRun()  + " ER ON (ER.RowId = RL.ExperimentRunId) "
+                    + " WHERE E.LSID = ?" ;
+
+            return ExpRunImpl.fromRuns(Table.executeQuery(ExperimentServiceImpl.get().getExpSchema(), sql, new Object[] { getLSID() }, ExperimentRun.class));
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public ExpRun[] getRuns(ExpProtocol parentProtocol, ExpProtocol childProtocol)
@@ -87,14 +98,35 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         }
         catch (SQLException e)
         {
-            _log.error("Error", e);
-            return new ExpRun[0];
+            throw new RuntimeSQLException(e);
         }
     }
 
-    public ExpProtocol[] getProtocols()
+    public ExpProtocol getBatchProtocol()
     {
-        return ExperimentServiceImpl.get().getProtocolsForExperiment(getRowId());
+        if (_object.getBatchProtocolId() == null)
+        {
+            return null;
+        }
+        return ExperimentService.get().getExpProtocol(_object.getBatchProtocolId().intValue());
+    }
+
+    public void setBatchProtocol(ExpProtocol protocol)
+    {
+        _object.setBatchProtocolId(protocol == null ? null : protocol.getRowId());
+    }
+
+    public ExpProtocolImpl[] getAllProtocols()
+    {
+        try
+        {
+            String sql = "SELECT p.* FROM " + ExperimentServiceImpl.get().getTinfoProtocol() + " p, " + ExperimentServiceImpl.get().getTinfoExperimentRun() + " r WHERE p.LSID = r.ProtocolLSID AND r.RowId IN (SELECT ExperimentRunId FROM " + ExperimentServiceImpl.get().getTinfoRunList() + " WHERE ExperimentId = ?)";
+            return ExpProtocolImpl.fromProtocols(Table.executeQuery(ExperimentServiceImpl.get().getSchema(), sql, new Object[] { getRowId() }, Protocol.class));
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public void removeRun(User user, ExpRun run) throws Exception
@@ -104,7 +136,41 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
 
     public void addRuns(User user, ExpRun... runs)
     {
-        ExperimentServiceImpl.get().addRunsToExperiment(this, runs);
+        boolean containingTrans = ExperimentServiceImpl.get().getExpSchema().getScope().isTransactionActive();
+        try
+        {
+            if (!containingTrans)
+                ExperimentServiceImpl.get().getExpSchema().getScope().beginTransaction();
+
+            ExpRun[] existingRunIds = getRuns();
+            Set<Integer> newRuns = new HashSet<Integer>();
+            for (ExpRun run : runs)
+                newRuns.add(new Integer(run.getRowId()));
+
+            for (ExpRun er : existingRunIds)
+            {
+                if (newRuns.contains(er.getRowId()))
+                    newRuns.remove(er.getRowId());
+            }
+
+            String sql = " INSERT INTO " + ExperimentServiceImpl.get().getTinfoRunList() + " ( ExperimentId, ExperimentRunId )  VALUES ( ? , ? ) ";
+            for (Integer runId : newRuns)
+            {
+                Table.execute(ExperimentServiceImpl.get().getExpSchema(), sql, new Object[]{getRowId(), runId});
+            }
+
+            if (!containingTrans)
+                ExperimentServiceImpl.get().getExpSchema().getScope().commitTransaction();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            if (!containingTrans)
+                ExperimentServiceImpl.get().getExpSchema().getScope().closeConnection();
+        }
     }
 
     public void save(User user)
@@ -114,7 +180,55 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
 
     public void delete(User user)
     {
-        ExperimentServiceImpl.get().deleteExperimentByRowIds(getContainer(), getRowId());
+        try
+        {
+            if (!getContainer().hasPermission(user, ACL.PERM_DELETE))
+            {
+                throw new IllegalStateException("Not permitted");
+            }
+            boolean containingTrans = ExperimentServiceImpl.get().getExpSchema().getScope().isTransactionActive();
+
+            try
+            {
+                if (!containingTrans)
+                    ExperimentServiceImpl.get().getExpSchema().getScope().beginTransaction();
+
+                // If we're a batch, delete all the runs too
+                if (_object.getBatchProtocolId() != null)
+                {
+                    for (ExpRunImpl expRun : getRuns())
+                    {
+                        expRun.delete(user);
+                    }
+                }
+
+                String sql = "DELETE FROM " + ExperimentServiceImpl.get().getTinfoRunList()
+                        + " WHERE ExperimentId IN ("
+                        + " SELECT E.RowId FROM " + ExperimentServiceImpl.get().getTinfoExperiment() + " E "
+                        + " WHERE E.RowId = " + getRowId()
+                        + " AND E.Container = ? ); ";
+                Table.execute(ExperimentServiceImpl.get().getExpSchema(), sql, new Object[]{getContainer().getId()});
+
+                OntologyManager.deleteOntologyObjects(getContainer(), getLSID());
+
+                sql = "  DELETE FROM " + ExperimentServiceImpl.get().getTinfoExperiment()
+                        + " WHERE RowId = " + getRowId()
+                        + " AND Container = ? ";
+                Table.execute(ExperimentServiceImpl.get().getExpSchema(), sql, new Object[]{getContainer().getId()});
+
+                if (!containingTrans)
+                    ExperimentServiceImpl.get().getExpSchema().getScope().commitTransaction();
+            }
+            finally
+            {
+                if (!containingTrans)
+                    ExperimentServiceImpl.get().getExpSchema().getScope().closeConnection();
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public void setHidden(boolean hidden)

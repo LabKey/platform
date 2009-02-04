@@ -231,12 +231,19 @@ public class ExperimentController extends SpringActionController
             b.setDisplayPermission(ACL.PERM_UPDATE);
             bb.add(b);
             detailsView.getDataRegion().setButtonBar(bb);
-            detailsView.setTitle("Run Group Details");
+            if (_experiment.getBatchProtocol() != null)
+            {
+                detailsView.setTitle("Batch Details");
+            }
+            else
+            {
+                detailsView.setTitle("Run Group Details");
+            }
 
             VBox vbox = new VBox();
             vbox.addView(new StandardAndCustomPropertiesView(detailsView, customPropertiesView));
 
-            ExpProtocol[] protocols = _experiment.getProtocols();
+            ExpProtocol[] protocols = _experiment.getAllProtocols();
 
             Set<ExperimentRunType> types = new TreeSet<ExperimentRunType>(ExperimentService.get().getExperimentRunTypes(getContainer()));
             ExperimentRunType selectedType = ExperimentRunType.getSelectedFilter(types, getViewContext().getRequest().getParameter("experimentRunFilter"));
@@ -1300,7 +1307,7 @@ public class ExperimentController extends SpringActionController
     {
         public DeleteSelectedExpRunsAction()
         {
-            super("Experiment Run");
+            super();
         }
 
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
@@ -1326,13 +1333,6 @@ public class ExperimentController extends SpringActionController
 
     private abstract class AbstractDeleteAction extends FormViewAction<DeleteForm>
     {
-        private final String _objectType;
-
-        public AbstractDeleteAction(String objectType)
-        {
-            _objectType = objectType;
-        }
-
         public void validateCommand(DeleteForm target, Errors errors)
         {
         }
@@ -1361,7 +1361,7 @@ public class ExperimentController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Confirm " + _objectType + " Deletion");
+            return appendRootNavTrail(root).addChild("Confirm Deletion");
         }
 
         protected abstract void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException, ServletException;
@@ -1372,12 +1372,12 @@ public class ExperimentController extends SpringActionController
     {
         public DeleteProtocolByRowIdsAction()
         {
-            super("Protocol");
+            super();
         }
 
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
         {
-            List<ExpRun> runs = ExperimentService.get().getExpRunsForProtocolIds(false, deleteForm.getIds(false));
+            List<? extends ExpRun> runs = ExperimentService.get().getExpRunsForProtocolIds(false, deleteForm.getIds(false));
             List<ExpProtocol> protocols = new ArrayList<ExpProtocol>();
             for (int protocolId : deleteForm.getIds(false))
             {
@@ -1402,7 +1402,7 @@ public class ExperimentController extends SpringActionController
     {
         public DeleteMaterialByRowIdAction()
         {
-            super("Sample");
+            super();
         }
 
         protected void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException, ServletException
@@ -1455,7 +1455,7 @@ public class ExperimentController extends SpringActionController
     {
         public DeleteSelectedDataAction()
         {
-            super("Data");
+            super();
         }
 
         protected void deleteObjects(DeleteForm deleteForm) throws ExperimentException, ServletException
@@ -1469,7 +1469,7 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
         {
             List<ExpData> datas = getDatas(deleteForm, false);
-            List<ExpRun> runs = ExperimentService.get().getRunsUsingDatas(datas);
+            List<? extends ExpRun> runs = ExperimentService.get().getRunsUsingDatas(datas);
 
             return new ConfirmDeleteView("Data", "showData", datas, deleteForm, runs);
         }
@@ -1494,15 +1494,40 @@ public class ExperimentController extends SpringActionController
     {
         public DeleteSelectedExperimentsAction()
         {
-            super("Run Group");
+            super();
         }
 
         protected void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException, ServletException
         {
-            ExperimentService.get().deleteExperimentByRowIds(getContainer(), deleteForm.getIds(true));
+            for (ExpExperiment exp : lookupExperiments(deleteForm))
+            {
+                exp.delete(getUser());
+            }
         }
 
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
+        {
+            List<ExpExperiment> experiments = lookupExperiments(deleteForm);
+
+            List<ExpRun> runs = new ArrayList<ExpRun>();
+            boolean allBatches = true;
+            for (ExpExperiment experiment : experiments)
+            {
+                // Deleting a batch also deletes all of its runs
+                if (experiment.getBatchProtocol() != null)
+                {
+                    runs.addAll(Arrays.asList(experiment.getRuns()));
+                }
+                else
+                {
+                    allBatches = false;
+                }
+            }
+
+            return new ConfirmDeleteView(allBatches ? "batch" : "run group", "details", experiments, deleteForm, runs);
+        }
+
+        private List<ExpExperiment> lookupExperiments(DeleteForm deleteForm)
         {
             List<ExpExperiment> experiments = new ArrayList<ExpExperiment>();
             for (int experimentId : deleteForm.getIds(false))
@@ -1513,8 +1538,7 @@ public class ExperimentController extends SpringActionController
                     experiments.add(experiment);
                 }
             }
-
-            return new ConfirmDeleteView("Run Group", "details", experiments, deleteForm);
+            return experiments;
         }
     }
 
@@ -1523,7 +1547,7 @@ public class ExperimentController extends SpringActionController
     {
         public DeleteMaterialSourceAction()
         {
-            super("Sample Set");
+            super();
         }
 
         protected void deleteObjects(DeleteForm deleteForm) throws SQLException, ExperimentException, ServletException
@@ -3448,6 +3472,11 @@ public class ExperimentController extends SpringActionController
         public ActionURL getRunTextURL(ExpRun run)
         {
             return getRunTextURL(run.getContainer(), run.getRowId());
+        }
+
+        public ActionURL getDeleteExperimentsURL(Container container, ActionURL returnURL)
+        {
+            return new ActionURL(DeleteSelectedExperimentsAction.class, container).addParameter("returnURL", returnURL.toString());
         }
 
         public ActionURL getAddRunsToExperimentURL(Container c, ExpExperiment exp)

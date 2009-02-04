@@ -32,7 +32,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.security.ACL;
-import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.PageFlowUtil;
@@ -114,7 +113,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
                 {
                     ds.setSourceAssayName(protocol.getName());
 
-                    ActionURL assayURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayDataURL(protocol.getContainer(), protocol);
+                    ActionURL assayURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(protocol.getContainer(), protocol);
                     ds.setSourceAssayURL(assayURL.getLocalURIString());
 
                     ActionURL unlinkAssayURL = new ActionURL(DatasetController.UnlinkAssayAction.class, getContainer());

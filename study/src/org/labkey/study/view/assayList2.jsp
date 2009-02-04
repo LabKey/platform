@@ -17,10 +17,6 @@
 %>
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.api.study.assay.AssayService" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="java.util.TreeMap" %>
-<%@ page import="org.labkey.api.study.assay.AssayProvider" %>
-<%@ page import="org.labkey.study.view.AssayDetailsWebPartFactory" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.study.controllers.assay.AssayController" %>

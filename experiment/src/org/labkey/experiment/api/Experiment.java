@@ -29,6 +29,7 @@ public class Experiment extends IdentifiableEntity implements Serializable
     private String _experimentDescriptionURL;
     private String _comments;
     private String _contactId;
+    private Integer _batchProtocolId;
     private boolean _hidden;
 
     public String getHypothesis()
@@ -89,5 +90,15 @@ public class Experiment extends IdentifiableEntity implements Serializable
     public void setHidden(boolean hidden)
     {
         _hidden = hidden;
+    }
+
+    public Integer getBatchProtocolId()
+    {
+        return _batchProtocolId;
+    }
+
+    public void setBatchProtocolId(Integer batchProtocolId)
+    {
+        _batchProtocolId = batchProtocolId;
     }
 }

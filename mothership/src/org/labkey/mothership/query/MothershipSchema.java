@@ -43,7 +43,7 @@ public class MothershipSchema extends UserSchema
     public static final String SOFTWARE_RELEASES_TABLE_NAME = "SoftwareReleases";
 
     private static Set<String> TABLE_NAMES = Collections.unmodifiableSet(new LinkedHashSet<String>(
-        Arrays.asList(SERVER_INSTALLATIONS_TABLE_NAME, SERVER_SESSIONS_TABLE_NAME, EXCEPTION_REPORT_TABLE_NAME)
+        Arrays.asList(SERVER_INSTALLATIONS_TABLE_NAME, SERVER_SESSIONS_TABLE_NAME, EXCEPTION_REPORT_TABLE_NAME, EXCEPTION_STACK_TRACE_TABLE_NAME)
     ));
 
     public MothershipSchema(User user, Container container)

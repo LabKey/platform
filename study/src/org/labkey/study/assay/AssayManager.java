@@ -21,7 +21,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -119,14 +118,19 @@ public class AssayManager implements AssayService.Interface
         return new AssaySchema(user, container);
     }
 
-    public String getRunListTableName(ExpProtocol protocol)
+    public String getBatchesTableName(ExpProtocol protocol)
     {
-        return AssaySchema.getRunListTableName(protocol);
+        return AssaySchema.getBatchesTableName(protocol);
     }
 
-    public String getRunDataTableName(ExpProtocol protocol)
+    public String getRunsTableName(ExpProtocol protocol)
     {
-        return AssaySchema.getRunDataTableName(protocol);
+        return AssaySchema.getRunsTableName(protocol);
+    }
+
+    public String getResultsTableName(ExpProtocol protocol)
+    {
+        return AssaySchema.getResultsTableName(protocol);
     }
 
     public List<ExpProtocol> getAssayProtocols(Container container)
@@ -231,7 +235,7 @@ public class AssayManager implements AssayService.Interface
         return result;
     }
 
-    public ExpExperiment createStandardBatch(Container container, String namePrefix)
+    public ExpExperiment createStandardBatch(Container container, String namePrefix, ExpProtocol protocol)
     {
         if (namePrefix == null)
         {
@@ -246,11 +250,9 @@ public class AssayManager implements AssayService.Interface
             {
                 name = namePrefix + " " + batchNumber;
             }
-             batchNumber++;
+            batchNumber++;
             batch = ExperimentService.get().createExpExperiment(container, name);
-            Lsid lsid = new Lsid(batch.getLSID());
-            lsid.setNamespaceSuffix(lsid.getNamespaceSuffix() + "AssayBatch");
-            batch.setLSID(lsid);
+            batch.setBatchProtocol(protocol);
         }
         while(ExperimentService.get().getExpExperiment(batch.getLSID()) != null);
         return batch;

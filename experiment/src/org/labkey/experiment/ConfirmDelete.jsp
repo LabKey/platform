@@ -41,7 +41,7 @@
 <% }
 else
 { %>
-    <p>Are you sure you want to delete the following <%= bean.getObjectType() %><%= bean.getObjects().size() > 1 ? "s" : "" %>?</p>
+    <p>Are you sure you want to delete the following <%= bean.getObjectType() %><%= bean.getObjects().size() > 1 ? (bean.getObjectType().endsWith("h") ? "es" : "s") : "" %>?</p>
 
     <ul>
     <% for (ExpObject object : bean.getObjects()) { %>
@@ -50,7 +50,7 @@ else
     </ul>
 
     <% if (bean.getRunsWithPermission().size() > 0) { %>
-        The following experiment run<%= bean.getRunsWithPermission().size() > 1 ? "s" : "" %> will also be deleted:
+        The following run<%= bean.getRunsWithPermission().size() > 1 ? "s" : "" %> will also be deleted:
 
         <ul>
         <% for (Map.Entry<ExpRun, Container> runEntry : bean.getRunsWithPermission().entrySet()) {
@@ -71,7 +71,7 @@ else
 
     <% if (bean.getRunsWithoutPermission().size() > 0) { %>
         <font class="labkey-error">The <%= bean.getObjectType() %><%= bean.getObjects().size() > 1 ? "s" : "" %> are also referenced by the following
-            experiment run<%= bean.getRunsWithoutPermission().size() > 1 ? "s" : "" %>, which you do not have permission to delete:</font>
+            run<%= bean.getRunsWithoutPermission().size() > 1 ? "s" : "" %>, which you do not have permission to delete:</font>
 
         <ul>
         <% for (Map.Entry<ExpRun, Container> runEntry : bean.getRunsWithoutPermission().entrySet()) {

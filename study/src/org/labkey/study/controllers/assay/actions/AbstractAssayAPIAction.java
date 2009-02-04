@@ -117,7 +117,7 @@ public abstract class AbstractAssayAPIAction<FORM> extends ApiAction<FORM>
 
     protected JSONObject serializeBatch(ExpExperiment batch, AssayProvider provider, ExpProtocol protocol) throws SQLException
     {
-        JSONObject jsonObject = ExperimentJSONConverter.serializeRunGroup(batch, provider.getUploadSetDomain(protocol));
+        JSONObject jsonObject = ExperimentJSONConverter.serializeRunGroup(batch, provider.getBatchDomain(protocol));
 
         JSONArray runsArray = new JSONArray();
         for (ExpRun run : batch.getRuns())

@@ -30,6 +30,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.actions.*;
@@ -74,9 +75,11 @@ public class AssayController extends SpringActionController
             DeleteAction.class,
             DesignerAction.class,
             TemplateAction.class,
+            AssayBatchesAction.class,
             AssayRunsAction.class,
-            AssayDataAction.class,
+            AssayResultsAction.class,
             AssayDataDetailsAction.class,
+            ShowSelectedRunsAction.class,
             ShowSelectedDataAction.class
         );
 
@@ -653,14 +656,30 @@ public class AssayController extends SpringActionController
             return getAssayRunsURL(container, protocol, null);
         }
 
-        public ActionURL getAssayRunsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter)
+        public ActionURL getAssayRunsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... batchIds)
         {
-            ActionURL url = getProtocolURL(container, protocol, AssayRunsAction.class);
-            if (containerFilter != null)
+            ActionURL result = getProtocolURL(container, protocol, AssayRunsAction.class);
+            FieldKey batchIdFieldKey = FieldKey.fromParts("Batch", "RowId");
+            if (batchIds.length > 1)
             {
-                url.addParameter(protocol.getName() + " Runs." + QueryParam.containerFilterName, containerFilter.name());
+                String sep = "";
+                StringBuilder filterValue = new StringBuilder();
+                for (int batchId : batchIds)
+                {
+                    filterValue.append(sep).append(batchId);
+                    sep = ";";
+                }
+                result.addFilter(AssayService.get().getRunsTableName(protocol),
+                        batchIdFieldKey, CompareType.IN, filterValue.toString());
             }
-            return url;
+            else if (batchIds.length == 1)
+            {
+                result.addFilter(AssayService.get().getResultsTableName(protocol),
+                        batchIdFieldKey, CompareType.EQUAL, batchIds[0]);
+            }
+            if (containerFilter != null)
+                result.addParameter(protocol.getName() + " Runs." + QueryParam.containerFilterName, containerFilter.name());
+            return result;
         }
 
         public ActionURL getAssayListURL(Container container)
@@ -668,14 +687,24 @@ public class AssayController extends SpringActionController
             return getProtocolURL(container, null, AssayController.BeginAction.class);
         }
 
-        public ActionURL getAssayDataURL(Container container, ExpProtocol protocol, int... runIds)
+        public ActionURL getAssayBatchesURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter)
         {
-            return getAssayDataURL(container, protocol, null, runIds);
+            ActionURL url = getProtocolURL(container, protocol, AssayBatchesAction.class);
+            if (containerFilter != null)
+            {
+                url.addParameter(protocol.getName() + " Batches." + QueryParam.containerFilterName, containerFilter.name());
+            }
+            return url;
         }
 
-        public ActionURL getAssayDataURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... runIds)
+        public ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, int... runIds)
         {
-            ActionURL result = getProtocolURL(container, protocol, AssayDataAction.class);
+            return getAssayResultsURL(container, protocol, null, runIds);
+        }
+
+        public ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... runIds)
+        {
+            ActionURL result = getProtocolURL(container, protocol, AssayResultsAction.class);
             AssayProvider provider = AssayService.get().getProvider(protocol);
             if (runIds.length > 1)
             {
@@ -686,12 +715,12 @@ public class AssayController extends SpringActionController
                     filterValue.append(sep).append(runId);
                     sep = ";";
                 }
-                result.addFilter(AssayService.get().getRunDataTableName(protocol),
+                result.addFilter(AssayService.get().getResultsTableName(protocol),
                         provider.getRunIdFieldKeyFromDataRow(), CompareType.IN, filterValue.toString());
             }
             else if (runIds.length == 1)
             {
-                result.addFilter(AssayService.get().getRunDataTableName(protocol),
+                result.addFilter(AssayService.get().getResultsTableName(protocol),
                         provider.getRunIdFieldKeyFromDataRow(), CompareType.EQUAL, runIds[0]);
             }
             if (containerFilter != null)

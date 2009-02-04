@@ -207,10 +207,10 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         else
         {
             batch = AssayService.get().createStandardBatch(getViewContext().getContainer(),
-                    batchJsonObject.has(ExperimentJSONConverter.NAME) ? batchJsonObject.getString(ExperimentJSONConverter.NAME) : null);
+                    batchJsonObject.has(ExperimentJSONConverter.NAME) ? batchJsonObject.getString(ExperimentJSONConverter.NAME) : null, protocol);
         }
 
-        handleStandardProperties(batchJsonObject, batch, provider.getUploadSetDomain(protocol).getProperties());
+        handleStandardProperties(batchJsonObject, batch, provider.getBatchDomain(protocol).getProperties());
 
         List<ExpRun> runs = new ArrayList<ExpRun>();
         if (batchJsonObject.has(RUNS))

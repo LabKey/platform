@@ -54,26 +54,35 @@
         nameToId.put(provider.getName() + ": " + protocol.getName(), protocol.getRowId());
     }
 %>
-<p>Each Assays webpart can be customized to display a list of all available assays or a summary of a specific assay.</p>
+<p>This web part displays a list of runs for a specific assay.</p>
 
-<p>This webpart should display:<br>
 <form action="<%=postUrl%>" method="post">
     <input type="hidden" name="pageId" value="<%=bean.getPageId()%>">
     <input type="hidden" name="index" value="<%=bean.getIndex()%>">
-    <select name="<%= AssayDetailsWebPartFactory.PREFERENCE_KEY %>">
-<%
-    for (Map.Entry<String, Integer> entry : nameToId.entrySet())
-    {
-%>
-     <option value="<%= entry.getValue() %>" <%= viewProtocolId == entry.getValue() ? "SELECTED" : ""%>>
-        <%= h(entry.getKey()) %></option>
-<%
-    }
-%>
-    </select>
-<p>
-    <input type="checkbox" name="<%= AssayDetailsWebPartFactory.SHOW_BUTTONS_KEY%>" value="true" <%= showButtons ? "CHECKED" : "" %>> Show buttons in web part<br>
-</p>
-    <%=generateSubmitButton("Submit")%> <%=generateButton("Cancel", "begin.view")%>
-
+    <table>
+        <tr>
+            <td class="labkey-form-label">Assay</td>
+            <td>
+                <select name="<%= AssayDetailsWebPartFactory.PREFERENCE_KEY %>">
+                    <%
+                        for (Map.Entry<String, Integer> entry : nameToId.entrySet())
+                        {
+                    %>
+                         <option value="<%= entry.getValue() %>" <%= viewProtocolId == entry.getValue() ? "SELECTED" : ""%>>
+                            <%= h(entry.getKey()) %></option>
+                    <%
+                        }
+                    %>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td class="labkey-form-label">Show buttons in web part</td>
+            <td><input type="checkbox" name="<%= AssayDetailsWebPartFactory.SHOW_BUTTONS_KEY%>" value="true" <%= showButtons ? "CHECKED" : "" %>></td>
+        </tr>
+        <tr>
+            <td/>
+            <td><%=generateSubmitButton("Submit")%> <%=generateButton("Cancel", "begin.view")%></td>
+        </tr>
+    </table>
 </form>

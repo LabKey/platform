@@ -23,6 +23,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
@@ -226,6 +227,7 @@ public class StudyManager
         return Table.select(StudySchema.getInstance().getTableInfoStudy(), Table.ALL_COLUMNS, null, null, Study.class);
     }
 
+    @NotNull
     public Study[] getAllStudies(Container root, User user) throws SQLException
     {
         FilteredTable t = new FilteredTable(StudySchema.getInstance().getTableInfoStudy(), root, ContainerFilter.Filters.CURRENT_AND_SUBFOLDERS, user);

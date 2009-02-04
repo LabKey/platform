@@ -117,7 +117,7 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
         this(objectType, detailAction, objects, form, Collections.<ExpRun>emptyList());
     }
 
-    public ConfirmDeleteView(String objectType, String detailAction, List<? extends ExpObject> objects, ExperimentController.DeleteForm form, List<ExpRun> runs) throws ServletException
+    public ConfirmDeleteView(String objectType, String detailAction, List<? extends ExpObject> objects, ExperimentController.DeleteForm form, List<? extends ExpRun> runs) throws ServletException
     {
         super("/org/labkey/experiment/ConfirmDelete.jsp");
 

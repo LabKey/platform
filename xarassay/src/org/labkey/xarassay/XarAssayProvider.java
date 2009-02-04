@@ -84,8 +84,8 @@ public class XarAssayProvider extends AbstractAssayProvider
     protected Domain createUploadSetDomain(Container c, User user)
     {
         // don't call the standard upload set create because we don't want the target study or participant data resolver
-        Domain domain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_UPLOAD_SET), "Run Set Fields");
-        domain.setDescription("The user is prompted for run set properties once for each set of runs they import. The run " +
+        Domain domain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_UPLOAD_SET), "Batch Fields");
+        domain.setDescription("The user is prompted for batch properties once for each set of runs they import. The run " +
                 "set is a convenience to let users set properties that seldom change in one place and import many runs " +
                 "using them. This is the first step of the import process.");
 

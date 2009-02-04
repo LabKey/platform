@@ -20,6 +20,8 @@ import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.query.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentMembershipDisplayColumnFactory;
@@ -64,6 +66,13 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
                 return wrapColumn(alias, _rootTable.getColumn("RowId"));
             case RunCount:
                 return new ExprColumn(this, "RunCount", new SQLFragment("(SELECT COUNT(*) FROM " + ExperimentServiceImpl.get().getTinfoRunList() + " WHERE ExperimentId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId)"), Types.INTEGER);
+            case BatchProtocolId:
+            {
+                ColumnInfo batchProtocolCol = wrapColumn(alias, _rootTable.getColumn("BatchProtocolId"));
+                batchProtocolCol.setCaption("Batch Protocol");
+                batchProtocolCol.setFk(getExpSchema().getProtocolForeignKey("RowId"));
+                return batchProtocolCol;
+            }
             default:
                 throw new UnsupportedOperationException("Unknown column " + column);
         }
@@ -93,6 +102,20 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         addColumn(result);
     }
 
+    public void setBatchProtocol(ExpProtocol protocol)
+    {
+        SimpleFilter filter = new SimpleFilter();
+        if (protocol != null)
+        {
+            filter.addClause(new CompareType.CompareClause(Column.BatchProtocolId.name(), CompareType.EQUAL, protocol.getRowId()));
+        }
+        else
+        {
+            filter.addClause(new CompareType.CompareClause(Column.BatchProtocolId.name(), CompareType.ISBLANK, null));
+        }
+        addCondition(filter);
+    }
+
     public void populate()
     {
         ColumnInfo colRowId = addColumn(Column.RowId);
@@ -107,6 +130,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         addColumn(Column.Modified);
         addColumn(Column.ModifiedBy);
         addColumn(Column.RunCount);
+        addColumn(Column.BatchProtocolId);
         addContainerColumn(Column.Folder);
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
         defaultCols.add(FieldKey.fromParts(Column.Name.toString()));

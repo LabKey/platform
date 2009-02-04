@@ -42,7 +42,6 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.study.controllers.assay.AssayController;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
-import org.jetbrains.annotations.NotNull;
 
 import javax.script.ScriptEngineManager;
 import java.io.File;
@@ -109,12 +108,12 @@ public class ModuleAssayProvider extends TsvAssayProvider
     }
 
     @Override
-    protected Domain createUploadSetDomain(Container c, User user)
+    protected Domain createBatchDomain(Container c, User user)
     {
         Domain domain = createDomain(c, user, AssayDomainTypes.Batch);
         if (domain != null)
             return domain;
-        return super.createUploadSetDomain(c, user);
+        return super.createBatchDomain(c, user);
     }
 
     @Override
@@ -220,7 +219,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     }
 
     @Override
-    public ModelAndView createRunDataView(ViewContext context, ExpProtocol protocol)
+    public ModelAndView createResultsView(ViewContext context, ExpProtocol protocol)
     {
         ModelAndView runDataView = getView(AssayDomainTypes.Run);
         if (runDataView == null)

@@ -296,7 +296,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 "\nWHERE exp.ProtocolApplication.RunId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId" +
                 "\nAND exp.ProtocolApplication.CpasType = '" + ExpProtocol.ApplicationType.ExperimentRun + "')");
         ColumnInfo ret = new ExprColumn(this, alias, sql, Types.INTEGER);
-        ret.setFk(new InputForeignKey(schema, ExpProtocol.ApplicationType.ExperimentRun, createLazyContainerFilter()));
+        ret.setFk(new InputForeignKey(schema, ExpProtocol.ApplicationType.ExperimentRun, new DelegatingContainerFilter(this)));
         ret.setIsUnselectable(true);
         return ret;
     }
@@ -307,7 +307,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 "\nWHERE exp.ProtocolApplication.RunId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId" +
                 "\nAND exp.ProtocolApplication.CpasType = '" + ExpProtocol.ApplicationType.ExperimentRunOutput + "')");
         ColumnInfo ret = new ExprColumn(this, alias, sql, Types.INTEGER);
-        ret.setFk(new InputForeignKey(schema, ExpProtocol.ApplicationType.ExperimentRunOutput, createLazyContainerFilter()));
+        ret.setFk(new InputForeignKey(schema, ExpProtocol.ApplicationType.ExperimentRunOutput, new DelegatingContainerFilter(this)));
         ret.setIsUnselectable(true);
         return ret;
     }
@@ -331,7 +331,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addContainerColumn(Column.Folder);
         addColumn(Column.FilePathRoot).setIsHidden(true);
         addColumn(Column.LSID).setIsHidden(true);
-        addColumn(Column.Protocol).setFk(schema.getProtocolLSIDForeignKey());
+        addColumn(Column.Protocol).setFk(schema.getProtocolForeignKey("LSID"));
         addColumn(Column.RunGroups);
 
         addColumn(createInputLookupColumn("Input", schema));
@@ -376,7 +376,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             String separator = "";
             if (_experiments == null)
             {
-                _experiments = ExperimentService.get().getExperiments(ctx.getContainer(), ctx.getViewContext().getUser(), true);
+                _experiments = ExperimentService.get().getExperiments(ctx.getContainer(), ctx.getViewContext().getUser(), true, false);
             }
             for (ColumnInfo runGroupColumn : _runGroupColumns)
             {
@@ -492,7 +492,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         {
             if (_experiments == null)
             {
-                _experiments = ExperimentServiceImpl.get().getExperiments(getContainer(), _schema.getUser(), true);
+                _experiments = ExperimentServiceImpl.get().getExperiments(getContainer(), _schema.getUser(), true, false);
             }
             return _experiments;
         }

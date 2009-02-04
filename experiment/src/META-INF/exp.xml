@@ -76,6 +76,7 @@
       </ns:column>
       <ns:column columnName="Container"/>
       <ns:column columnName="Hidden"/>
+      <ns:column columnName="BatchProtocolId"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="ExperimentRun" tableDbType="TABLE">

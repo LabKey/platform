@@ -43,9 +43,9 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     private List<ExpMaterial> _materialOutputs = new ArrayList<ExpMaterial>();
     private List<ExpData> _dataOutputs = new ArrayList<ExpData>();
 
-    static public ExpRun[] fromRuns(ExperimentRun[] runs)
+    static public ExpRunImpl[] fromRuns(ExperimentRun[] runs)
     {
-        ExpRun[] ret = new ExpRun[runs.length];
+        ExpRunImpl[] ret = new ExpRunImpl[runs.length];
         for (int i = 0; i < runs.length; i ++)
         {
             ret[i] = new ExpRunImpl(runs[i]);

@@ -16,21 +16,10 @@
  */
 %>
 <%@ page import="org.labkey.api.view.*" %>
-<%@ page import="org.labkey.api.study.assay.AssayService" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="java.util.TreeMap" %>
-<%@ page import="org.labkey.api.study.assay.AssayProvider" %>
-<%@ page import="org.labkey.study.view.AssayDetailsWebPartFactory" %>
-<%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.study.controllers.assay.AssayController" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.Study" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.module.FolderType" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -40,7 +29,7 @@
     Container proj = ctx.getContainer().getProject();
 
     Study[] studies = StudyManager.getInstance().getAllStudies(proj, ctx.getUser());
-    if (null == studies || studies.length == 0)
+    if (studies.length == 0)
     {
         out.print("No Studies found in project " + proj.getName());
     }

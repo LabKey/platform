@@ -82,7 +82,7 @@ public class ExperimentModule extends SpringModule
 
     public double getVersion()
     {
-        return 8.35;
+        return 8.36;
     }
 
     protected void init()
@@ -273,7 +273,7 @@ public class ExperimentModule extends SpringModule
     public Collection<String> getSummary(Container c)
     {
         Collection<String> list = new LinkedList<String>();
-        int count = ExperimentService.get().getExperiments(c, null, false).length;
+        int count = ExperimentService.get().getExperiments(c, null, false, true).length;
         if (count > 0)
             list.add("" + count + " Run Group" + (count > 1 ? "s" : ""));
         return list;
