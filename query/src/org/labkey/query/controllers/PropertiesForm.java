@@ -20,22 +20,38 @@ import org.labkey.api.query.QueryForm;
 
 public class PropertiesForm extends QueryForm
 {
-    public String ff_description;
-    public boolean ff_inheritable = false;
-    public boolean ff_hidden = false;
+	public String rename;
+    public String description;
+    public boolean inheritable = false;
+    public boolean hidden = false;
 
-    public void setFf_inheritable(boolean b)
+	public PropertiesForm()
+	{
+		super();
+	}
+
+	public PropertiesForm(String schemaName, String queryName)
+	{
+		super(schemaName, queryName);
+	}
+
+	public void setRename(String name)
+	{
+		this.rename = name;
+	}
+	
+    public void setInheritable(boolean b)
     {
-        ff_inheritable = b;
+        inheritable = b;
     }
 
-    public void setFf_description(String description)
+    public void setDescription(String description)
     {
-        ff_description = description;
+        this.description = description;
     }
 
-    public void setFf_hidden(boolean b)
+    public void setHidden(boolean b)
     {
-        ff_hidden = b;
+        hidden = b;
     }
 }

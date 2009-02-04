@@ -25,27 +25,27 @@
     <table width="100%">
         <tr>
             <td class="labkey-form-label">Name:</td>
-            <td><%=h(form.getQueryDef().getName())%></td>
+            <td><input name="rename" value="<%=h(form.getQueryDef().getName())%>"></td>
         </tr>
         <tr>
             <td class="labkey-form-label">Description:</td>
-            <td width="100%"><textarea style="width: 100%;" name="ff_description" rows="5" cols="40"><%=h(form.ff_description)%></textarea></td>
+            <td width="100%"><textarea style="width: 100%;" name="description" rows="5" cols="40"><%=h(form.description)%></textarea></td>
         </tr>
         <tr>
             <td class="labkey-form-label" nowrap="true">Available in child folders?</td>
             <td>
-                <select name="ff_inheritable">
-                    <option value="true"<%=form.ff_inheritable ? " selected" : ""%>>Yes</option>
-                    <option value="false"<%=!form.ff_inheritable ? " selected" : ""%>>No</option>
+                <select name="inheritable">
+                    <option value="true"<%=form.inheritable ? " selected" : ""%>>Yes</option>
+                    <option value="false"<%=!form.inheritable ? " selected" : ""%>>No</option>
                 </select>
             </td>
         </tr>
         <tr>
             <td class="labkey-form-label" nowrap="true">Hidden from the user?</td>
             <td>
-                <select name="ff_hidden">
-                    <option value="true"<%=form.ff_hidden ? " selected" : ""%>>Yes</option>
-                    <option value="false"<%=!form.ff_hidden ? " selected" : ""%>>No</option>
+                <select name="hidden">
+                    <option value="true"<%=form.hidden ? " selected" : ""%>>Yes</option>
+                    <option value="false"<%=!form.hidden ? " selected" : ""%>>No</option>
                 </select>
             </td>
         </tr>

@@ -1060,11 +1060,14 @@ public class QueryControllerSpring extends SpringActionController
             // assertQueryExists(form);
             QueryDefinition queryDef = form.getQueryDef();
             if (queryDef == null)
+			{
                 HttpView.throwNotFound("Query not found");
+				return null;
+			}
             _form = form;
-            _form.setFf_description(queryDef.getDescription());
-            _form.setFf_inheritable(queryDef.canInherit());
-            _form.setFf_hidden(queryDef.isHidden());
+            _form.setDescription(queryDef.getDescription());
+            _form.setInheritable(queryDef.canInherit());
+            _form.setHidden(queryDef.isHidden());
             return new JspView<PropertiesForm>(QueryControllerSpring.class, "propertiesQuery.jsp", form, errors);
         }
 
@@ -1075,16 +1078,34 @@ public class QueryControllerSpring extends SpringActionController
             if (!form.canEdit())
                 HttpView.throwUnauthorized();
             QueryDefinition queryDef = form.getQueryDef();
-            if (queryDef == null)
+            if (queryDef == null || !queryDef.getContainer().getId().equals(getContainer().getId()))
                 HttpView.throwNotFound("Query not found");
-            queryDef.setDescription(form.ff_description);
-            queryDef.setCanInherit(form.ff_inheritable);
-            queryDef.setIsHidden(form.ff_hidden);
+
+			_form = form;
+			
+			if (!StringUtils.isEmpty(form.rename) && !form.rename.equalsIgnoreCase(queryDef.getName()))
+			{
+				QueryService s = QueryService.get();
+				QueryDefinition copy = s.createQueryDef(queryDef.getContainer(), queryDef.getSchemaName(), form.rename);
+				copy.setSql(queryDef.getSql());
+				copy.setMetadataXml(queryDef.getMetadataXml());
+				copy.setDescription(form.description);
+				copy.setCanInherit(form.inheritable);
+				copy.setIsHidden(form.hidden);
+				copy.save(getUser(), copy.getContainer());
+				queryDef.delete(getUser());
+				// update form so getSuccessURL() works
+				_form = new PropertiesForm(form.getSchemaName(), form.rename);
+				_form.setViewContext(form.getViewContext());
+				return true;
+			}
+
+            queryDef.setDescription(form.description);
+            queryDef.setCanInherit(form.inheritable);
+            queryDef.setIsHidden(form.hidden);
             queryDef.save(getUser(), getContainer());
-            _form = form;
             return true;
         }
-
 
         public ActionURL getSuccessURL(PropertiesForm propertiesForm)
         {
