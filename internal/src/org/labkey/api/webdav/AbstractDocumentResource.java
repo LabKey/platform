@@ -36,9 +36,18 @@ public abstract class AbstractDocumentResource extends AbstractResource
     {
         super(parent, name);
     }
-    
-    
-    public List<WebdavResolver.Resource> list()
+
+	public boolean isFile()
+	{
+		return exists();
+	}
+
+	public WebdavResolver.Resource find(String name)
+	{
+		return null;
+	}
+
+	public List<WebdavResolver.Resource> list()
     {
         return Collections.emptyList();
     }
