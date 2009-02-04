@@ -21,6 +21,7 @@ import junit.framework.TestSuite;
 import org.labkey.api.data.CachedRowSetImpl;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
@@ -31,6 +32,7 @@ import org.labkey.api.util.*;
 import org.labkey.common.tools.DataLoader;
 import org.labkey.query.design.DgQuery;
 import org.labkey.query.design.QueryDocument;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
 import java.sql.ResultSetMetaData;
@@ -50,6 +52,7 @@ import java.util.*;
 public class Query
 {
     private QuerySchema _schema;
+	@SuppressWarnings({"FieldCanBeLocal"})
 	private String _querySource;
 	private ArrayList<QueryParseException> _parseErrors = new ArrayList<QueryParseException>();
 
@@ -243,12 +246,22 @@ public class Query
 	static TableInfo resolveTable(QuerySchema schema, List<QueryParseException> errors, QNode node, FieldKey key, String alias)
 	{
 		List<String> parts = key.getParts();
+		List<String> names = new ArrayList<String>(parts.size());
+		for (String part : parts)
+			names.add(FieldKey.decodePart(part));
+
 		for (int i = 0; i < parts.size() - 1; i ++)
 		{
-			schema = schema.getSchema(parts.get(i));
+			String name = names.get(i);
+			if (name.startsWith("/"))
+			{
+				parseError(errors, "Schema name should not start with '/'", node);
+				return null;
+			}
+			schema = schema.getSchema(name);
 			if (schema == null)
 			{
-				parseError(errors, "Table " + key + " not found.", node);
+				parseError(errors, "Table " + StringUtils.join(names,".") + " not found.", node);
 				return null;
 			}
 		}
@@ -256,7 +269,7 @@ public class Query
 		TableInfo ret = schema.getTable(key.getName(), alias);
 		if (ret == null)
 		{
-			parseError(errors, "Table " + key + " not found.", node);
+			parseError(errors, "Table " + StringUtils.join(names,".") + " not found.", node);
 			return null;
 		}
 
@@ -366,14 +379,23 @@ public class Query
         new SqlTest("SELECT R.duration AS elapsed FROM R WHERE R.rowid=1", 1, 1),
 		new SqlTest("SELECT R.rowid, R.seven, R.day FROM R WHERE R.day LIKE '%ues%'", 3, 12),
 		new SqlTest("SELECT R.rowid, R.twelve, R.month FROM R WHERE R.month BETWEEN 'L' and 'O'", 3, 3*7), // March, May, Nov
-        new SqlTest("SELECT R.rowid, R.twelve, (SELECT S.month FROM S WHERE S.rowid=R.rowid) as M FROM R WHERE R.day='Monday'", 3, 12),
-        new SqlTest("SELECT T.R, T.T, T.M FROM (SELECT R.rowid as R, R.twelve as T, (SELECT S.month FROM S WHERE S.rowid=R.rowid) as M FROM R WHERE R.day='Monday') T", 3, 12),
-        new SqlTest("SELECT R.seven FROM R UNION SELECT S.seven FROM S", 1, 7),
-        new SqlTest("SELECT R.seven FROM R UNION ALL SELECT S.seven FROM S", 1, Rsize*2),
-        new SqlTest("SELECT 'R' as x, R.seven FROM R UNION SELECT 'S' as x, S.seven FROM S", 2, 14)
+        new SqlTest("SELECT R.rowid, R.twelve, (SELECT S.month FROM Folder.qtest.lists.S S WHERE S.rowid=R.rowid) as M FROM R WHERE R.day='Monday'", 3, 12),
+        new SqlTest("SELECT T.R, T.T, T.M FROM (SELECT R.rowid as R, R.twelve as T, (SELECT S.month FROM Folder.qtest.lists.S S WHERE S.rowid=R.rowid) as M FROM R WHERE R.day='Monday') T", 3, 12),
+        new SqlTest("SELECT R.seven FROM R UNION SELECT S.seven FROM Folder.qtest.lists.S S", 1, 7),
+        new SqlTest("SELECT R.seven FROM R UNION ALL SELECT S.seven FROM Folder.qtest.lists.S S", 1, Rsize*2),
+        new SqlTest("SELECT 'R' as x, R.seven FROM R UNION SELECT 'S' as x, S.seven FROM Folder.qtest.lists.S S", 2, 14)
     };
 
 
+	static SqlTest[] negative = new SqlTest[]
+	{
+		new SqlTest("SELECT S.d, S.seven FROM S"),
+		new SqlTest("SELECT S.d, S.seven FROM Folder.S"),
+		new SqlTest("SELECT S.d, S.seven FROM Folder.qtest.S"),
+		new SqlTest("SELECT S.d, S.seven FROM Folder.qtest.list.S")
+	};
+
+	
     public static class TestCase extends junit.framework.TestCase
     {
         public TestCase()
@@ -389,9 +411,12 @@ public class Query
 
         String hash = GUID.makeHash();
         QuerySchema lists;
-        ListDefinition R;
-        ListDefinition S;
 
+
+		Container getSubfolder()
+		{
+			return ContainerManager.ensureContainer(JunitUtil.getTestContainer().getPath() + "/qtest");
+		}
 
         private void addProperties(ListDefinition l)
         {
@@ -413,16 +438,17 @@ public class Query
 
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
+			Container qtest = getSubfolder();
             ListService.Interface s = ListService.get();
 
-            R = s.createList(c, "R");
+            ListDefinition R = s.createList(c, "R");
             R.setKeyType(ListDefinition.KeyType.AutoIncrementInteger);
             R.setKeyName("rowid");
             addProperties(R);
             R.save(user);
             R.insertListItems(user, new TestDataLoader(R.getName() + hash, Rsize));
 
-            S = s.createList(c, "S");
+            ListDefinition S = s.createList(qtest, "S");
             S.setKeyType(ListDefinition.KeyType.AutoIncrementInteger);
             S.setKeyName("rowid");
             addProperties(S);
@@ -437,14 +463,24 @@ public class Query
         @Override
         protected void tearDown() throws Exception
         {
+			ListService.Interface s = ListService.get();
             User user = TestContext.get().getUser();
-            Container c = JunitUtil.getTestContainer();
-            ListService.Interface s = ListService.get();
-            Map<String,ListDefinition> m = s.getLists(c);
-            if (m.containsKey("R"))
-                m.get("R").delete(user);
-            if (m.containsKey("S"))
-                m.get("S").delete(user);
+
+			Container c = JunitUtil.getTestContainer();
+			{
+				Map<String,ListDefinition> m = s.getLists(c);
+				if (m.containsKey("R"))
+					m.get("R").delete(user);
+				if (m.containsKey("S"))
+					m.get("S").delete(user);
+			}
+
+			Container qtest = getSubfolder();
+			{
+				Map<String,ListDefinition> m = s.getLists(qtest);
+				if (m.containsKey("S"))
+					m.get("S").delete(user);
+			}
         }
 
 
@@ -488,13 +524,42 @@ public class Query
             }
         }
 
+		private void failidate(SqlTest test) throws Exception
+		{
+			CachedRowSetImpl rs = null;
+			try
+			{
+				rs = (CachedRowSetImpl)QueryService.get().select(lists, test.sql);
+				fail("should fail: " + test.sql);
+			}
+			catch (SQLException x)
+			{
+				// should fail with SQLException not runtime exception
+			}
+			catch (QueryParseException x)
+			{
+				// OK
+			}
+			catch (Exception x)
+			{
+				fail("unexpected exception: " + x.toString());
+			}
+			finally
+			{
+				ResultSetUtil.close(rs);
+			}
+		}
+		
 
         public void testSQL() throws Exception
         {
+			ListService.Interface s = ListService.get();
+            User user = TestContext.get().getUser();
+			
             assertNotNull(lists);
             TableInfo Rinfo = lists.getTable("R", "R");
             assertNotNull(Rinfo);
-            TableInfo Sinfo = lists.getTable("S", "S");
+			TableInfo Sinfo = DefaultSchema.get(user, getSubfolder()).getSchema(s.getSchemaName()).getTable("S","S");
             assertNotNull(Sinfo);
 
             // custom tests
@@ -520,13 +585,12 @@ public class Query
             {
                 validate(test);
             }
+			for (SqlTest test : negative)
+			{
+				failidate(test);
+			}
         }
 
-
-        public void testAPI() throws Exception
-        {
-        }
-        
 
         public static Test suite()
         {
