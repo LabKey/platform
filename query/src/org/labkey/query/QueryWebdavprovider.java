@@ -3,6 +3,7 @@ package org.labkey.query;
 import org.labkey.api.webdav.*;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.jetbrains.annotations.NotNull;
@@ -199,7 +200,7 @@ public class QueryWebdavprovider implements WebdavService.Provider
 			}
 			catch (SQLException sqlx)
 			{
-				throw new IOException(sqlx);
+				throw new RuntimeSQLException(sqlx);
 			}
 			return getContentLength();
 		}
