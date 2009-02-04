@@ -19,11 +19,9 @@ package org.labkey.api.query;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
+import org.labkey.api.util.FileUtil;
 
-import java.util.Set;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.Collections;
+import java.util.*;
 
 abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
 {
@@ -60,9 +58,15 @@ abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
             return null;
         }
 
-        public QuerySchema getSchema(String name)
+		@Override
+		public TableInfo getTable(String name, String alias, boolean includeExtraMetadata)
+		{
+			return null;
+		}
+
+		public QuerySchema getSchema(String name)
         {
-            if (_fallback != null)
+            if (_fallback != null && !name.contains("/"))
             {
                 QuerySchema ret = _fallback.getSchema(name);
                 if (ret != null)
@@ -70,11 +74,20 @@ abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
                     return ret;
                 }
             }
-            Container child = getChildContainers().get(name);
+
+			ArrayList<String> parts = FileUtil.normalizeSplit(name);
+			Container child = _container;
+			for (String part : parts)
+			{
+				child = child.getChild(part);
+				if (child == null)
+					break;
+			}
             if (child == null)
             {
                 return DefaultSchema.get(_user, _container).getSchema(name);
             }
+
             QuerySchema fallback = null;
 
             if (_user != null && child.hasPermission(_user, ACL.PERM_READ))

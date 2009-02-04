@@ -41,7 +41,7 @@ abstract public class UserSchema extends AbstractSchema
         _name = name;
     }
 
-    public final TableInfo getTable(String name, String alias, boolean includeExtraMetadata)
+    public TableInfo getTable(String name, String alias, boolean includeExtraMetadata)
     {
         if (name == null)
             return null;
