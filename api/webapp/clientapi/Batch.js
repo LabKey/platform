@@ -25,10 +25,14 @@ LABKEY.Assay.BatchState = {
     complete : "Batch has been validated and saved"
 };
 
+/**
+ * @namespace Assay batch information
+*/
 LABKEY.Assay.Batch = function (assayId, batchId) {
 
     /**
      * Read-only. The assay id.  Provided by the server.
+     * @type {Integer}
      */
     this.assayId = assayId;
     /**
