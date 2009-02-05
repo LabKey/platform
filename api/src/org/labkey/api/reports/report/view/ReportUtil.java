@@ -20,7 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Container;
-import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.*;
@@ -294,11 +294,16 @@ public class ReportUtil
         return false;
     }
 
-    public static List<Map<String, String>> getViewsJson(ViewContext context)
+    public static List<Map<String, String>> getViewsJson(ViewContext context, String schemaName, String queryName, boolean includeQueries)
     {
+        String reportKey = null;
+
+        if (schemaName != null && queryName != null)
+            reportKey = ReportUtil.getReportKey(schemaName, queryName);
+
         List<Map<String, String>> views = new ArrayList<Map<String, String>>();
 
-        for (Report r : ReportUtil.getReports(context, null, true))
+        for (Report r : ReportUtil.getReports(context, reportKey, true))
         {
             if (!StringUtils.isEmpty(r.getDescriptor().getReportName()))
             {
@@ -339,6 +344,81 @@ public class ReportUtil
                 views.add(record);
             }
         }
+        if (includeQueries)
+        {
+            if (schemaName != null && queryName != null)
+            {
+                QueryDefinition qd = QueryService.get().getQueryDef(context.getContainer(), schemaName, queryName);
+                addCustomViews(qd, context, views);
+
+                // table based queries
+                UserSchema userSchema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), schemaName);
+                if (userSchema != null)
+                {
+                    QueryDefinition def = userSchema.getQueryDefForTable(queryName);
+                    addCustomViews(def, context, views);
+                }
+            }
+            else
+                getAllCustomViews(context, views);
+        }
         return views;
+    }
+
+    private static void getAllCustomViews(ViewContext context, List<Map<String, String>> views)
+    {
+        DefaultSchema schema = DefaultSchema.get(context.getUser(), context.getContainer());
+
+        for (String schemaName : schema.getUserSchemaNames())
+        {
+            for (QueryDefinition qd : QueryService.get().getQueryDefs(context.getContainer(), schemaName).values())
+            {
+                addCustomViews(qd, context, views);
+            }
+
+            // table based queries
+            UserSchema userSchema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), schemaName);
+            for (String name : userSchema.getTableNames())
+            {
+                QueryDefinition def = userSchema.getQueryDefForTable(name);
+                addCustomViews(def, context, views);
+            }
+        }
+    }
+
+    private static void addCustomViews(QueryDefinition qd, ViewContext context, List<Map<String, String>> views)
+    {
+        if (qd == null) return;
+
+        Map<String, CustomView> qviews = qd.getCustomViews(context.getUser(), context.getRequest());
+
+        // we don't display any customized default views
+        qviews.remove(null);
+        if (qviews.size() > 0)
+        {
+            for (Map.Entry<String, CustomView> entry : qviews.entrySet())
+            {
+                if (entry.getValue().isHidden())
+                    continue;
+
+                Map<String, String> record = new HashMap<String, String>();
+
+                User createdBy = entry.getValue().getOwner();
+                boolean shared = createdBy == null;
+
+                record.put("name", entry.getKey());
+                record.put("query", qd.getName());
+                record.put("schema", qd.getSchemaName());
+                record.put("type", "query view");
+                record.put("editable", "false");
+                record.put("createdBy", createdBy != null ? createdBy.getDisplayName(context) : null);
+                record.put("permissions", createdBy != null ? "private" : "public");
+
+                record.put("runUrl", qd.urlFor(QueryAction.executeQuery, context.getContainer()).getLocalURIString());
+                record.put("editUrl", qd.urlFor(QueryAction.designQuery, context.getContainer()).getLocalURIString());
+
+                views.add(record);
+            }
+        }
     }
 }

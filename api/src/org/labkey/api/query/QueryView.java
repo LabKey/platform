@@ -646,7 +646,9 @@ public class QueryView extends WebPartView<Object>
             }
         }
         addCustomizeViewItems(button);
-        button.addMenuItem("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getViewContext().getContainer()));
+        button.addMenuItem("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getViewContext().getContainer()).
+                addParameter("schemaName", getSchema().getSchemaName()).
+                addParameter("queryName", getSettings().getQueryName()));
 
         return button;
     }
