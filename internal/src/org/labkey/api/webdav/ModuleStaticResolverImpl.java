@@ -76,14 +76,14 @@ public class ModuleStaticResolverImpl implements WebdavResolver
     public Resource lookup(String path)
     {
         String normalized = FileUtil.normalize(path).toLowerCase();
+		boolean isRoot = normalized.equals("/");
+		
         Resource r = _files.get(normalized);
         if (r == null)
         {
-            r = resolve(normalized);
+            r = resolve(isRoot ? "/index.html" : normalized);
             if (null == r)
                 return null;
-//            if (null == r)
-//                r = new ServletResource(normalized);
             if (r.exists())
             {
                 if (r instanceof StaticResource)
@@ -95,7 +95,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         }
 
         boolean directory = path.endsWith("/") || path.endsWith("/.") || path.endsWith("/..");
-        if (!directory || r.isCollection())
+        if (isRoot || !directory || r.isCollection())
             return r;
         return null;
     }
