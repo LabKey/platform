@@ -51,7 +51,7 @@ If you want to let users change the list that's displayed or customize the view 
             <td>List:</td>
             <td>
                 <select name="listId">
-                    <labkey:options value="<%=props.get("listId")%>" map="<%=listOptions%>" />
+                    <labkey:options value="<%=props.get(\"listId\")%>" map="<%=listOptions%>" />
                 </select>
             </td>
         </tr>
