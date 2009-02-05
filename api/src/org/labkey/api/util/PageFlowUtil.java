@@ -2109,7 +2109,7 @@ public class PageFlowUtil
      */
     public static void streamTextAsImage(HttpServletResponse response, String text, int width, int height, Color textColor) throws IOException
     {
-        Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
+        Font font = new Font("SansSerif", Font.PLAIN, 12);
 
         BufferedImage buffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2 = buffer.createGraphics();
