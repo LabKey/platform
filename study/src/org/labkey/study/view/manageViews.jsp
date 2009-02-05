@@ -25,6 +25,9 @@
 <%@ page import="org.labkey.api.reports.report.view.RReportBean" %>
 <%@ page import="org.labkey.api.reports.report.RReport" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
+<%@ page import="org.labkey.api.query.QueryParam" %>
+<%@ page import="org.labkey.study.query.DataSetQueryView" %>
+<%@ page import="org.labkey.study.reports.StudyQueryReport" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 
 <%
@@ -45,6 +48,8 @@
 <script type="text/javascript">
     LABKEY.requiresScript("reports/manageViews.js");
 
+    var panel;
+
     function securityRenderer(value, p, record)
     {
         var href = '<%=permissionURL.getLocalURIString()%>';
@@ -59,29 +64,55 @@
     {
         // subclass the views panel
         StudyViewsPanel = Ext.extend(LABKEY.ViewsPanel, {
-
-            /**
-             * The connection object
-             */
-            getConnectionProxy : function() {
-                return new Ext.data.HttpProxy(new Ext.data.Connection({
-                    url: LABKEY.ActionURL.buildURL("study-reports", "manageViewsSummary", this.container),
-                    method: 'GET'
-                }));
-            },
-
             /**
              * Override and append a custom button
              */
             getButtons : function() {
                 var buttons = StudyViewsPanel.superclass.getButtons.call(this);
-                buttons.push({text:'Customize Participant View', listeners:{click:function(button, event) {window.location = '<%=bean.getCustomizeParticipantViewURL()%>';}}});
+                buttons.push('-', {text:'Customize Participant View', listeners:{click:function(button, event) {window.location = '<%=bean.getCustomizeParticipantViewURL()%>';}}}, '-');
 
                 return buttons;
+            },
+
+            convertQuery : function(schema, query, view) {
+                var params = [];
+
+                params.push("schemaName=" + schema);
+                params.push("queryName=" + query);
+                params.push("viewName=" + view);
+                params.push("<%=QueryParam.dataRegionName.toString()%>" + "=", "<%=DataSetQueryView.DATAREGION%>");
+                params.push("reportType=", "<%=StudyQueryReport.TYPE%>");
+
+                Ext.Msg.show({
+                        title : 'Convert Query',
+                        msg : "Are you sure you want to convert the query view into a report query view?",
+                        buttons: Ext.Msg.YESNO,
+                        icon: Ext.Msg.QUESTION,
+                        fn: function(btn, text) {
+                            if (btn == 'yes')
+                            {
+                                Ext.Ajax.request({
+
+                                    url: LABKEY.ActionURL.buildURL("study-reports", "convertQueryToReport"), // + '?' + params.join('&'),
+                                    method: "POST",
+                                    scope: this,
+                                    params: {
+                                        schemaName: schema,
+                                        queryName: query,
+                                        viewName: view,
+                                        reportType: '<%=StudyQueryReport.TYPE%>',
+                                        '<%=QueryParam.dataRegionName%>': '<%=DataSetQueryView.DATAREGION%>'
+                                    },
+                                    success: function(){panel.grid.store.load();},
+                                    failure: function(){Ext.Msg.alert("Convert Query", "Conversion Failed");}
+                                });
+                            }},
+                        id: 'convert_queryView'
+                });
             }
         });
 
-        var panel = new StudyViewsPanel({
+        panel = new StudyViewsPanel({
             renderTo: 'viewsGrid',
             container: '<%=context.getContainer().getPath()%>',
             expander : new Ext.grid.RowExpander({
@@ -94,7 +125,8 @@
                             '<tr><td><b>links</b></td><td>',
                                 '<tpl if="runUrl != undefined">&nbsp;[<a href="{runUrl}">display</a>]</tpl>',
                                 '<tpl if="editUrl != undefined">&nbsp;[<a href="{editUrl}">edit</a>]</tpl>',
-                                '<tpl if="reportId != undefined">&nbsp;[<a href="<%=permissionURL.getLocalURIString()%>reportId={reportId}">permissions</a>]</tpl></td></tr>',
+                                '<tpl if="reportId != undefined">&nbsp;[<a href="<%=permissionURL.getLocalURIString()%>reportId={reportId}">permissions</a>]</tpl>',
+                                '<tpl if="reportId == undefined">&nbsp;[<a href=\'#\' onclick=\'panel.convertQuery("{schema}","{query}","{name}");return false;\'>convert to report</a>]</tpl></td></tr>',
                         '</table>')
                 }),
             createMenu :[{

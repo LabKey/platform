@@ -21,10 +21,15 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.query.reports.ReportsController" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
+    JspView<ReportsController.ViewsSummaryForm> me = (JspView<ReportsController.ViewsSummaryForm>) HttpView.currentView();
+    ReportsController.ViewsSummaryForm form = me.getModelBean();
+
     ViewContext context = HttpView.currentContext();
 
     RReportBean bean = new RReportBean();
@@ -42,6 +47,12 @@
     {
         var gridConfig = {
             renderTo: 'viewsGrid',
+            <% if (form.getSchemaName() != null && form.getQueryName() != null) { %>
+                baseQuery: {
+                    schemaName: '<%=form.getSchemaName()%>',
+                    queryName: '<%=form.getQueryName()%>'
+                },
+            <% } %>
             container: '<%=context.getContainer().getPath()%>',
             createMenu :[{
                 id: 'create_rView',
@@ -57,3 +68,4 @@
 <labkey:errors/>
 
 <div id="viewsGrid" class="extContainer"></div>
+<div id="treeDiv" class="extContainer"></div>

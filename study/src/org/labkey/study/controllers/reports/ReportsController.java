@@ -190,90 +190,6 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
-    public class ManageViewsSummaryAction extends ApiAction
-    {
-        public ApiResponse execute(Object o, BindException errors) throws Exception
-        {
-            return new ApiSimpleResponse("views", getViews());
-        }
-
-        private List<Map<String, String>> getViews()
-        {
-            ViewContext context = getViewContext();
-            List<Map<String, String>> views = ReportUtil.getViewsJson(getViewContext());
-
-            Study study = StudyManager.getInstance().getStudy(context.getContainer());
-            UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "study");
-            if (study != null)
-            {
-                for (DataSetDefinition dsd : study.getDataSets())
-                {
-                    if (dsd.getLabel() != null)
-                    {
-                        QueryDefinition qd = QueryService.get().getQueryDef(study.getContainer(), "study", dsd.getLabel());
-                        if (qd == null)
-                            qd = schema.getQueryDefForTable(dsd.getLabel());
-                        Map<String, CustomView> qviews = qd.getCustomViews(context.getUser(), context.getRequest());
-
-                        // we don't display any customized default views
-                        qviews.remove(null);
-                        if (qviews.size() > 0)
-                        {
-                            for (Map.Entry<String, CustomView> entry : qviews.entrySet())
-                            {
-                                if (entry.getValue().isHidden())
-                                    continue;
-
-                                Map<String, String> record = new HashMap<String, String>();
-
-                                User createdBy = entry.getValue().getOwner();
-                                boolean shared = createdBy == null;
-
-                                record.put("name", entry.getKey());
-                                record.put("displayName", entry.getKey());
-                                //record.put("reportId", descriptor.getReportId().toString());
-                                record.put("query", qd.getName());
-                                record.put("schema", qd.getSchemaName());
-                                record.put("owner", createdBy != null ? createdBy.getDisplayName(context) : "unknown");
-                                record.put("public", String.valueOf(shared));
-                                record.put("type", "query view");
-                                record.put("editable", "false");
-
-                                QueryDefinition def = entry.getValue().getQueryDefinition();
-
-                                record.put("runUrl", def.urlFor(QueryAction.executeQuery, context.getContainer()).getLocalURIString());
-                                record.put("editUrl", def.urlFor(QueryAction.designQuery, context.getContainer()).getLocalURIString());
-
-                                //record.put("editUrl", editUrl != null ? editUrl.toString() : null);
-                                //record.put("description", descriptor.getReportDescription());
-
-                                views.add(record);
-/*
-                                displayURL.replaceParameter("Dataset.viewName", entry.getKey());
-                                deleteURL.replaceParameter("reportView", entry.getKey());
-                                ActionURL redirect = new ActionURL("Study-Security", "reportPermissions", _context.getContainer());
-                                final ActionURL permissionURL = getQueryConversionURL(dsd.getLabel(), entry.getKey(), dsd.getDataSetId(), redirect.getLocalURIString());
-
-                                StudyReportRecordImpl rec = new StudyReportRecordImpl(null, entry.getKey(),
-                                        displayURL.toString(),
-                                        deleteURL.toString(),
-                                        //PageFlowUtil.helpPopup("Permissions Unavailable", STUDY_SECURITY_UNSUPPORTED),
-                                        null,
-                                        getSharedURL(entry.getValue()));
-
-                                rec.setConversionURL(permissionURL.getLocalURIString());
-                                rpts.add(rec);
-*/
-                            }
-                        }
-                    }
-                }
-            }
-            return views;
-        }
-    }
-
     @RequiresPermission(ACL.PERM_ADMIN)
     public class OldManageReportsAction extends SimpleViewAction
     {
@@ -597,40 +513,30 @@ public class ReportsController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class QueryConversionAction extends SimpleViewAction<SaveReportViewForm>
+    public class ConvertQueryToReportAction extends ApiAction<SaveReportViewForm>
     {
-        private ReportIdentifier _reportId;
-
-        public ModelAndView getView(SaveReportViewForm form, BindException errors) throws Exception
+        public ApiResponse execute(SaveReportViewForm form, BindException errors) throws Exception
         {
             Report report = form.getReport();
-            Report oldReport;
-            final String redirect = (String)getViewContext().get("redirect");
             final String key = ReportUtil.getReportQueryKey(report.getDescriptor());
 
             if (!reportNameExists(getViewContext(), form.getViewName(), key))
             {
                 if (report instanceof StudyQueryReport)
                 {
-                    _reportId = ((StudyQueryReport)report).renameReport(getViewContext(), key, form.getViewName());
-
-                    if (!StringUtils.isEmpty(redirect))
+                    // add the dataset id
+                    DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getQueryName());
+                    if (def != null)
                     {
-                        ActionURL url = new ActionURL(redirect);
-                        url.addParameter("reportId", _reportId.toString());
-
-                        return HttpView.redirect(url);
+                        report.getDescriptor().setProperty("showWithDataset", String.valueOf(def.getDataSetId()));
+                        ((StudyQueryReport)report).renameReport(getViewContext(), key, form.getViewName());
+                        return new ApiSimpleResponse("success", true);
                     }
-                    return HttpView.redirect(new ActionURL(ManageReportsAction.class, getContainer()));
                 }
             }
-            HttpView.throwUnauthorized("A report of the same name already exists");
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
+            else
+                HttpView.throwUnauthorized("A report of the same name already exists");
+            return new ApiSimpleResponse("success", false);
         }
     }
 
@@ -2121,7 +2027,7 @@ public class ReportsController extends BaseStudyController
 
     public static class TimePlotForm extends FormData
     {
-        private int reportId;
+        private ReportIdentifier reportId;
         private int datasetId;
         /** UNDONE: should this be renamed sequenceNum? */ 
         private double visitId;
@@ -2157,12 +2063,12 @@ public class ReportsController extends BaseStudyController
             this.visitId = visitId;
         }
 
-        public int getReportId()
+        public ReportIdentifier getReportId()
         {
             return reportId;
         }
 
-        public void setReportId(int reportId)
+        public void setReportId(ReportIdentifier reportId)
         {
             this.reportId = reportId;
         }
@@ -2173,7 +2079,7 @@ public class ReportsController extends BaseStudyController
     {
         public ModelAndView getView(TimePlotForm form, BindException errors) throws Exception
         {
-            Report report = ReportService.get().getReport(form.getReportId());
+            Report report = form.getReportId().getReport();
             if (report != null)
             {
                 report.renderReport(getViewContext());

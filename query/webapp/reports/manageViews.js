@@ -169,14 +169,15 @@ LABKEY.ViewsPanel.prototype = {
     createMenu : undefined,
 
     /**
-     * The connection object
+     * the query this view is filtered to, if undefined will result in all queries being
+     * used to gather views from
      */
-    getConnectionProxy : function() {
-        return new Ext.data.HttpProxy(new Ext.data.Connection({
-            url: LABKEY.ActionURL.buildURL("reports", "manageViewsSummary", this.container),
-            method: 'GET'
-        }));
-    },
+    baseQuery : undefined,
+
+    dataConnection : new Ext.data.Connection({
+        url: LABKEY.ActionURL.buildURL("reports", "manageViewsSummary", this.container),
+        method: 'GET'
+    }),
 
     /**
      * The row expander object, display when the row is expanded
@@ -217,7 +218,7 @@ LABKEY.ViewsPanel.prototype = {
                         {name:'editUrl', defaultValue:undefined},
                         {name:'reportId', defaultValue:undefined},
                         {name:'type'}]),
-            proxy: this.getConnectionProxy(),
+            proxy: new Ext.data.HttpProxy(this.dataConnection),
             autoLoad: true,
             sortInfo: {field:'query', direction:"ASC"},
 /*
@@ -243,6 +244,7 @@ LABKEY.ViewsPanel.prototype = {
             autoHeight:true,
             width:800,
             plugins: this.expander,
+            loadMask:{msg:"Loading, please wait..."},
             store: this.getStore(),
             selModel: this.selModel,
             listeners: {
@@ -258,7 +260,8 @@ LABKEY.ViewsPanel.prototype = {
                 forceFit:true,
                 groupTextTpl: '{values.group}'
             }),
-            buttons: this.getButtons(),
+            tbar: this.getButtons(),
+            //buttons: this.getButtons(),
             buttonAlign:'center',
             columns: this.getColumns()
         };
@@ -277,9 +280,9 @@ LABKEY.ViewsPanel.prototype = {
         });
 
         var buttons = [
-            {text:'Expand All', tooltip: {text:'Expands all groups', title:'Expand All'}, listeners:{click:function(button, event) {this.grid.view.expandAllGroups();}, scope:this}},
-            {text:'Collapse All', tooltip: {text:'Collapses all groups', title:'Collapse All'}, listeners:{click:function(button, event) {this.grid.view.collapseAllGroups();}, scope:this}},
-            {text:'Delete Selected', id: 'btn_deleteView', tooltip: {text:'Delete selected view', title:'Delete Views'}, listeners:{click:function(button, event) {deleteSelections(this.grid);}, scope:this}},
+            {text:'Expand All', tooltip: {text:'Expands all groups', title:'Expand All'}, listeners:{click:function(button, event) {this.grid.view.expandAllGroups();}, scope:this}},'-',
+            {text:'Collapse All', tooltip: {text:'Collapses all groups', title:'Collapse All'}, listeners:{click:function(button, event) {this.grid.view.collapseAllGroups();}, scope:this}},'-',
+            {text:'Delete Selected', id: 'btn_deleteView', tooltip: {text:'Delete selected view', title:'Delete Views'}, listeners:{click:function(button, event) {deleteSelections(this.grid);}, scope:this}},'-',
             {text:'Rename', id: 'btn_editView', tooltip: {text:'Rename or edit the description of an existing view (you can also double click on the view to edit)', title:'Rename View'}, listeners:{click:function(button, event) {this.editSelected(button);}, scope:this}}
         ];
 
@@ -293,8 +296,26 @@ LABKEY.ViewsPanel.prototype = {
                     cls:'extContainer',
                     items: this.createMenu }
             });
-            buttons.splice(0,0,item);
+            buttons.splice(0,0,item,'-');
         }
+
+        // selection button
+        if (this.baseQuery != undefined)
+        {
+            var queryBtn = new Ext.Button({
+                text:'Queries',
+                id: 'btn_selectQuery',
+                tooltip: {text: 'Show more or less queries', title: 'Queries'},
+                menu: {
+                    cls:'extContainer',
+                    items: [
+                        {text:'Show views from all Queries', listeners:{click:function(button, event) {this.dataConnection.extraParams = undefined; this.grid.store.load();}, scope:this}},
+                        {text:'Show views only from the ' + this.baseQuery.queryName + ' Query', listeners:{click:function(button, event) {this.dataConnection.extraParams = this.baseQuery; this.grid.store.load();}, scope:this}}
+                    ]}
+            });
+            buttons.splice(0,0,queryBtn,'-');
+        }
+
         return buttons;
     },
 
@@ -323,6 +344,7 @@ LABKEY.ViewsPanel.prototype = {
      */
     show : function() {
 
+        this.dataConnection.extraParams = this.baseQuery;
         this.grid = new Ext.grid.GridPanel(this.getGridConfig());
         this.grid.render();
     },
@@ -482,6 +504,90 @@ function editRecord(button, grid, record)
             id: 'btn_cancel',
             handler: function(){win.close();}
         }]
+    });
+
+    win.show(button);
+}
+
+function filterQueries(button, grid)
+{
+    var proxy = new Ext.data.HttpProxy(new Ext.data.Connection({
+        url: LABKEY.ActionURL.buildURL("reports", "manageViewsQuerySummary", this.container),
+        method: 'GET'
+    }));
+    var selModel = new Ext.grid.CheckboxSelectionModel();
+    var store = new Ext.data.GroupingStore({
+        reader: new Ext.data.JsonReader({root:'queries'},
+                [{name:'schema'},
+                    {name:'userDefined'},
+                    {name:'name'}]),
+        proxy: proxy,
+        autoLoad: true,
+        sortInfo: {field:'schema', direction:"ASC"},
+        groupField:'schema'});
+
+    var gridPanel = new Ext.grid.GridPanel({
+        autoScroll:false,
+        autoHeight:true,
+        autoWidth:true,
+        loadMask:{msg:"Loading, please wait..."},
+        store: store,
+        selModel: selModel,
+        view: new Ext.grid.GroupingView({
+            startCollapsed:false,
+            hideGroupedColumn:true,
+            forceFit:true
+            //groupTextTpl: '{values.group}'
+        }),
+        columns: [
+            selModel,
+            {header:'query name', dataIndex:'name', width:200},
+            {header:'user defined', dataIndex:'userDefined'},
+            {header:'schema', dataIndex:'schema', hidden:true}
+        ]
+    });
+
+    // selection button
+    var selectBtn = new Ext.Button({
+        text:'Select',
+        id: 'btn_selectQuery',
+        tooltip: {text: 'Select or clear all rows', title: 'Select'},
+        menu: {
+            cls:'extContainer',
+            items: [
+                {text:'Select All', listeners:{click:function(button, event) {selModel.selectAll();}, scope:this}},
+                {text:'Clear All', listeners:{click:function(button, event) {selModel.clearSelections();}, scope:this}}
+            ]}
+    });
+
+    // expand button
+    var expandBtn = new Ext.Button({
+        text:'Expand',
+        id: 'btn_expandGroups',
+        tooltip: {text: 'Expand or Collapse all groups', title: 'Expand'},
+        menu: {
+            cls:'extContainer',
+            items: [
+                {text:'Expand All', listeners:{click:function(button, event) {gridPanel.view.expandAllGroups();}, scope:this}},
+                {text:'Collapse All', listeners:{click:function(button, event) {gridPanel.view.collapseAllGroups();}, scope:this}},
+            ]}
+    });
+
+    var win = new Ext.Window({
+        title: 'Filter Queries',
+        border: false,
+        width: 550,
+        height: 375,
+        closeAction:'close',
+        modal: false,
+        autoScroll: true,
+        items: gridPanel,
+        buttons: [
+            selectBtn,
+            expandBtn,
+            {text: 'Submit', id: 'btn_submit', handler: function(){win.close();}},
+            {text: 'Cancel', id: 'btn_cancel', handler: function(){win.close();}}
+        ]
     });
 
     win.show(button);

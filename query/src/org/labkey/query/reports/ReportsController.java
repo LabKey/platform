@@ -31,10 +31,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.*;
 import org.labkey.api.reports.*;
 import org.labkey.api.reports.report.*;
 import org.labkey.api.reports.report.r.ParamReplacement;
@@ -1082,14 +1079,11 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_READ)
-    public class ManageViewsAction extends SimpleViewAction
+    public class ManageViewsAction extends SimpleViewAction<ViewsSummaryForm>
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(ViewsSummaryForm form, BindException errors) throws Exception
         {
-            ManageReportsBean bean = new ManageReportsBean(getViewContext());
-            bean.setErrors(errors);
-
-            return new JspView<ManageReportsBean>("/org/labkey/query/reports/view/manageViews.jsp", bean, errors);
+            return new JspView<ViewsSummaryForm>("/org/labkey/query/reports/view/manageViews.jsp", form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1098,12 +1092,78 @@ public class ReportsController extends SpringActionController
         }
     }
 
+    public static class ViewsSummaryForm
+    {
+        private String _schemaName;
+        private String _queryName;
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+
+        public String getQueryName()
+        {
+            return _queryName;
+        }
+
+        public void setQueryName(String queryName)
+        {
+            _queryName = queryName;
+        }
+    }
+
     @RequiresPermission(ACL.PERM_READ)
-    public class ManageViewsSummaryAction extends ApiAction
+    public class ManageViewsSummaryAction extends ApiAction<ViewsSummaryForm>
+    {
+        public ApiResponse execute(ViewsSummaryForm form, BindException errors) throws Exception
+        {
+            return new ApiSimpleResponse("views", ReportUtil.getViewsJson(getViewContext(), form.getSchemaName(), form.getQueryName(), true));
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class ManageViewsQuerySummaryAction extends ApiAction
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
-            return new ApiSimpleResponse("views", ReportUtil.getViewsJson(getViewContext()));
+            List<Map<String, String>> queries = new ArrayList<Map<String, String>>();
+            ViewContext context = getViewContext();
+
+            DefaultSchema schema = DefaultSchema.get(context.getUser(), context.getContainer());
+
+            for (String schemaName : schema.getUserSchemaNames())
+            {
+                for (QueryDefinition qd : QueryService.get().getQueryDefs(context.getContainer(), schemaName).values())
+                {
+                    addQueryDefinition(queries, qd);
+                }
+
+                // table based queries
+                UserSchema userSchema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), schemaName);
+                for (String name : userSchema.getTableNames())
+                {
+                    QueryDefinition qd = userSchema.getQueryDefForTable(name);
+                    addQueryDefinition(queries, qd);
+                }
+            }
+            return new ApiSimpleResponse("queries", queries);
+        }
+
+        private void addQueryDefinition(List<Map<String, String>> queries, QueryDefinition def)
+        {
+            Map<String, String> record = new HashMap<String, String>();
+
+            record.put("name", def.getName());
+            record.put("schema", def.getSchemaName());
+            record.put("userDefined", String.valueOf(!def.isTableQueryDefinition()));
+
+            queries.add(record);
         }
     }
 
