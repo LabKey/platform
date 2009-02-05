@@ -619,7 +619,16 @@ public class ExperimentController extends SpringActionController
             ExpRunImpl experimentRun = form.lookupRun();
             ensureCorrectContainer(getContainer(), experimentRun, getViewContext());
 
-            ExperimentRunGraph.RunGraphFiles files = ExperimentRunGraph.generateRunGraph(getViewContext(), experimentRun, detail, focus);
+            ExperimentRunGraph.RunGraphFiles files;
+            try
+            {
+                files = ExperimentRunGraph.generateRunGraph(getViewContext(), experimentRun, detail, focus);
+            }
+            catch (ExperimentException e)
+            {
+                PageFlowUtil.streamTextAsImage(getViewContext().getResponse(), "ERROR: " + e.getMessage(), 600, 150, java.awt.Color.RED);
+                return null;
+            }
 
             try
             {
@@ -1524,7 +1533,7 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            return new ConfirmDeleteView(allBatches ? "batch" : "run group", "details", experiments, deleteForm, runs);
+            return new ConfirmDeleteView(allBatches ? "batch" : "run Group", "details", experiments, deleteForm, runs);
         }
 
         private List<ExpExperiment> lookupExperiments(DeleteForm deleteForm)

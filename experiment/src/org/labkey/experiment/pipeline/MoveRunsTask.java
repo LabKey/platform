@@ -103,7 +103,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
         {
             Map<String,Integer> dataFiles = new HashMap<String,Integer>();
 
-            for (ExpData oldData : ExperimentServiceImpl.get().getAllDataUsedByRun(experimentRun.getRowId()))
+            for (ExpData oldData : experimentRun.getAllDataUsedByRun())
             {
                 ExperimentDataHandler handler = oldData.findDataHandler();
                 handler.beforeMove(oldData, experimentRun.getContainer(), job.getUser());

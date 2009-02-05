@@ -588,7 +588,7 @@ public class XarReader extends AbstractXarImporter
         if (existingRun != null)
         {
             getLog().warn("Experiment run already exists, it will NOT be reimported, LSID '" + runLSID + "'");
-            for (ExpData d : ExperimentServiceImpl.get().getAllDataUsedByRun(existingRun.getRowId()))
+            for (ExpData d : existingRun.getAllDataUsedByRun())
             {
                 _deferredDataLoads.add(new DeferredDataLoad(d, existingRun));
             }

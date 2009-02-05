@@ -23,7 +23,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.DotGraph;
@@ -595,6 +594,26 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             }
         }
         setProtocolApplications(allPA.toArray(new ExpProtocolApplicationImpl[allPA.size()]));
+    }
+
+    public ExpDataImpl[] getAllDataUsedByRun()
+    {
+        try
+        {
+            StringBuilder sql = new StringBuilder();
+            sql.append("select d.* from ");
+            sql.append(ExperimentServiceImpl.get().getTinfoDataInput());
+            sql.append(" di, ");
+            sql.append(ExperimentServiceImpl.get().getTinfoData());
+            sql.append(" d, ");
+            sql.append(ExperimentServiceImpl.get().getTinfoProtocolApplication());
+            sql.append(" pa where di.targetapplicationid=pa.rowid and pa.runid=? and di.dataid=d.rowid");
+            return ExpDataImpl.fromDatas(Table.executeQuery(ExperimentServiceImpl.get().getSchema(), sql.toString(), new Object[] { getRowId() }, Data.class));
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
 

@@ -1778,19 +1778,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ExpDataImpl.fromDatas(Table.select(getTinfoData(), Table.ALL_COLUMNS, filter, null, Data.class));
     }
 
-    public ExpData[] getAllDataUsedByRun(int runId) throws SQLException
-    {
-        StringBuilder sql = new StringBuilder();
-        sql.append("select d.* from ");
-        sql.append(getTinfoDataInput());
-        sql.append(" di, ");
-        sql.append(getTinfoData());
-        sql.append(" d, ");
-        sql.append(getTinfoProtocolApplication());
-        sql.append(" pa where di.targetapplicationid=pa.rowid and pa.runid=? and di.dataid=d.rowid");
-        return ExpDataImpl.fromDatas(Table.executeQuery(getSchema(), sql.toString(), new Object[] { runId }, Data.class));
-    }
-
     public void moveRuns(ViewBackgroundInfo info, Container sourceContainer, List<ExpRun> runs) throws IOException
     {
         int[] rowIds = new int[runs.size()];

@@ -134,7 +134,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         ExperimentServiceImpl.get().dropRunsFromExperiment(getLSID(), run.getRowId());
     }
 
-    public void addRuns(User user, ExpRun... runs)
+    public void addRuns(User user, ExpRun... newRuns)
     {
         boolean containingTrans = ExperimentServiceImpl.get().getExpSchema().getScope().isTransactionActive();
         try
@@ -143,18 +143,23 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
                 ExperimentServiceImpl.get().getExpSchema().getScope().beginTransaction();
 
             ExpRun[] existingRunIds = getRuns();
-            Set<Integer> newRuns = new HashSet<Integer>();
-            for (ExpRun run : runs)
-                newRuns.add(new Integer(run.getRowId()));
+            Set<Integer> newRunIds = new HashSet<Integer>();
+            for (ExpRun run : newRuns)
+            {
+                if (_object.getBatchProtocolId() != null && run.getProtocol().getRowId() != _object.getBatchProtocolId().intValue())
+                {
+                    throw new IllegalArgumentException("Attempting to add a run of a different protocol to a batch.");
+                }
+                newRunIds.add(new Integer(run.getRowId()));
+            }
 
             for (ExpRun er : existingRunIds)
             {
-                if (newRuns.contains(er.getRowId()))
-                    newRuns.remove(er.getRowId());
+                newRunIds.remove(er.getRowId());
             }
 
             String sql = " INSERT INTO " + ExperimentServiceImpl.get().getTinfoRunList() + " ( ExperimentId, ExperimentRunId )  VALUES ( ? , ? ) ";
-            for (Integer runId : newRuns)
+            for (Integer runId : newRunIds)
             {
                 Table.execute(ExperimentServiceImpl.get().getExpSchema(), sql, new Object[]{getRowId(), runId});
             }

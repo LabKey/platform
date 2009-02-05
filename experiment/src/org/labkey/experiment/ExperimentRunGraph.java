@@ -152,8 +152,8 @@ public class ExperimentRunGraph
                 sb.append(dotExePath);
                 sb.append(" due to system configuration error. \n<BR>");
                 sb.append("For help on fixing your system configuration, please consult the Graphviz section of the <a href=\"");
-                 sb.append((new HelpTopic("thirdPartyCode", HelpTopic.Area.SERVER)).getHelpTopicLink());
-                 sb.append("\" target=\"_blank\">LabKey Server documentation on third party components</a>.<br>");
+                sb.append((new HelpTopic("thirdPartyCode", HelpTopic.Area.SERVER)).getHelpTopicLink());
+                sb.append("\" target=\"_blank\">LabKey Server documentation on third party components</a>.<br>");
                 throw new ExperimentException(sb.toString());
             }
 

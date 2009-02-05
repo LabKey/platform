@@ -120,7 +120,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
 
         GWTProtocol result = new GWTProtocol();
         result.setProtocolId(protocol.getRowId() > 0 ? protocol.getRowId() : null);
-        result.setDomains(orderDomainList(gwtDomains, false));
+        result.setDomains(gwtDomains);
         result.setName(protocol.getName());
         result.setProviderName(provider.getName());
         result.setDescription(protocol.getDescription());
@@ -190,19 +190,6 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             protocol.setAvailablePlateTemplates(plateTemplates);
         }
     }
-
-    private List<GWTDomain> orderDomainList(List<GWTDomain> domains, final boolean asc)
-    {
-        Collections.sort(domains, new Comparator<GWTDomain>(){
-
-            public int compare(GWTDomain dom1, GWTDomain dom2)
-            {
-                return (asc ? 1 : -1) * dom1.getName().compareTo(dom2.getName());
-            }
-        });
-        return domains;
-    }
-
 
     private void setPropertyDomainURIs(ExpProtocol protocol, Set<String> uris)
     {
