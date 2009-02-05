@@ -204,8 +204,6 @@ public class ExperimentService
 
         ExpData[] deleteExperimentRunForMove(int runId, User user) throws SQLException, ExperimentException;
 
-        ExpData[] getAllDataUsedByRun(int runId) throws SQLException;
-
         /** Kicks off an asynchronous move - a PipelineJob is submitted to the queue to perform the move */
         void moveRuns(ViewBackgroundInfo targetInfo, Container sourceContainer, List<ExpRun> runs) throws IOException;
         public ExpProtocol insertSimpleProtocol(ExpProtocol baseProtocol, User user);

@@ -90,11 +90,12 @@ public class ViewServlet extends HttpServlet
     {
         long startTime = System.currentTimeMillis(); 
         request.setAttribute(REQUEST_STARTTIME, startTime);
+        HttpSession session = request.getSession(true);
         
         if (_debug)
         {
             User user = (User) request.getUserPrincipal();
-            String description = request.getMethod() + " " + request.getRequestURI() + "?" + _toString(request.getQueryString()) + " (" + (user.isGuest() ? "guest" : user.getEmail()) + ";" + request.getSession(true).getId() + ")";
+            String description = request.getMethod() + " " + request.getRequestURI() + "?" + _toString(request.getQueryString()) + " (" + (user.isGuest() ? "guest" : user.getEmail()) + ";" + session.getId() + ")";
             _log.debug(">> " + description);
         }
 
@@ -103,7 +104,6 @@ public class ViewServlet extends HttpServlet
         String userAgent = request.getHeader("User-Agent");
         if (userAgent != null && (userAgent.indexOf("Googlebot") != -1 || userAgent.indexOf("Yahoo! Slurp") != -1 || userAgent.indexOf("msnbot") != -1))
         {
-            HttpSession session = request.getSession(true);
             session.setMaxInactiveInterval(10);
         }
 

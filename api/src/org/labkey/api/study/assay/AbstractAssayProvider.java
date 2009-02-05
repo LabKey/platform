@@ -788,6 +788,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             Domain domain = PropertyService.get().getDomain(protocol.getContainer(), uri);
             domains.add(domain);
         }
+        sortDomainList(domains);
         return domains;
     }
 
@@ -817,6 +818,20 @@ public abstract class AbstractAssayProvider implements AssayProvider
         ExpProtocol copy = ExperimentService.get().createExpProtocol(targetContainer, ExpProtocol.ApplicationType.ExperimentRun, "Unknown");
         copy.setName(null);
         return new Pair<ExpProtocol, List<Domain>>(copy, createDefaultDomains(targetContainer, user));
+    }
+
+    protected void sortDomainList(List<Domain> domains)
+    {
+        // Rely on the assay provider to return a list of default domains in the right order (Collections.sort() is
+        // stable so that domains that haven't been inserted and have id 0 stay in the same order), and rely on the fact
+        // that they get inserted in the same order, so they will have ascending ids.
+        Collections.sort(domains, new Comparator<Domain>(){
+
+            public int compare(Domain dom1, Domain dom2)
+            {
+                return new Integer(dom1.getTypeId()).compareTo(new Integer(dom2.getTypeId()));
+            }
+        });
     }
 
     public Pair<ExpProtocol, List<Domain>> getAssayTemplate(User user, Container targetContainer, ExpProtocol toCopy)

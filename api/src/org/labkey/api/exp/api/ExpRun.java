@@ -53,6 +53,7 @@ public interface ExpRun extends ExpObject
     List<ExpMaterial> getMaterialOutputs();
 
     List<ExpData> getDataOutputs();
+    ExpData[] getAllDataUsedByRun();
 
     ExpProtocolApplication[] getProtocolApplications();
 

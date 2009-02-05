@@ -57,6 +57,8 @@ import org.w3c.dom.NodeList;
 import org.w3c.tidy.Tidy;
 import org.xml.sax.*;
 import org.xml.sax.helpers.XMLReaderFactory;
+import org.jfree.chart.encoders.EncoderUtil;
+import org.jfree.chart.encoders.ImageFormat;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
@@ -75,11 +77,14 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.InflaterInputStream;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 
 
 public class PageFlowUtil
@@ -2097,5 +2102,45 @@ public class PageFlowUtil
     public static String getSessionId(HttpServletRequest request)
     {
         return WebUtils.getSessionId(request);
+    }
+
+    /**
+     * Stream the text back to the browser as a PNG
+     */
+    public static void streamTextAsImage(HttpServletResponse response, String text, int width, int height, Color textColor) throws IOException
+    {
+        Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
+
+        BufferedImage buffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2 = buffer.createGraphics();
+        g2.setColor(Color.WHITE);
+        g2.fillRect(0, 0, width, height);
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setColor(textColor);
+        g2.setFont(font);
+        FontMetrics metrics = g2.getFontMetrics();
+        int fontHeight = metrics.getHeight();
+        int spaceWidth = metrics.stringWidth(" ");
+
+        int x = 5;
+        int y = fontHeight + 5;
+
+        StringTokenizer st = new StringTokenizer(text, " ");
+        // Line wrap to fit
+        while (st.hasMoreTokens())
+        {
+            String token = st.nextToken();
+            int tokenWidth = metrics.stringWidth(token);
+            if (x != 5 && tokenWidth + x > width)
+            {
+                x = 5;
+                y += fontHeight;
+            }
+            g2.drawString(token, x, y);
+            x += tokenWidth + spaceWidth;
+        }
+
+        response.setContentType("image/png");
+        EncoderUtil.writeBufferedImage(buffer, ImageFormat.PNG, response.getOutputStream());
     }
 }
