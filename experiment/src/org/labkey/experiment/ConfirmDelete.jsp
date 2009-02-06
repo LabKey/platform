@@ -108,7 +108,7 @@ else
         <% }
         if (bean.getReturnURL() != null)
         { %>
-            <input type="hidden" name="returnURL" value="<%= bean.getReturnURL() %>"/>
+            <input type="hidden" name="returnURL" value="<%= h(bean.getReturnURL()) %>"/>
         <% } %>
         <input type="hidden" name="forceDelete" value="true"/>
         <% if (bean.getRunsWithoutPermission().isEmpty() )

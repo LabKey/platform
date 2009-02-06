@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.query.QueryAction" %>
 <%@ page import="org.labkey.query.controllers.DesignForm" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.query.controllers.Page" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <labkey:errors />
@@ -52,7 +53,7 @@
     var designer = new QueryDesigner(<%=q(urlCheckSyntax.toString())%>, new TableInfoService(<%=q(urlTableInfo.toString())%>));
     <% if (form.getDefaultTab() != null)
     { %>
-        designer.defaultTab = '<%= form.getDefaultTab() %>';
+        designer.defaultTab = <%=PageFlowUtil.jsString(form.getDefaultTab())%>;
     <% } %>
     designerInit();
 </script>

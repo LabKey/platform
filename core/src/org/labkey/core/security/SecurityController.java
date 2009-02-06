@@ -1142,11 +1142,11 @@ public class SecurityController extends SpringActionController
                     final ValidEmail emailToClone = new ValidEmail(cloneUser);
                     userToClone = UserManager.getUser(emailToClone);
                     if (userToClone == null)
-                        errors.addError(new LabkeyError("Failed to clone user permissions " + emailToClone + ": User email does not exist in the system<br>"));
+                        errors.addError(new FormattedError("Failed to clone user permissions " + emailToClone + ": User email does not exist in the system"));
                 }
                 catch (ValidEmail.InvalidEmailException e)
                 {
-                    errors.addError(new LabkeyError("Failed to clone user permissions " + cloneUser.trim() + ": Invalid email address<br>"));
+                    errors.addError(new FormattedError("Failed to clone user permissions " + cloneUser.trim() + ": Invalid email address"));
                 }
             }
 
@@ -1160,7 +1160,7 @@ public class SecurityController extends SpringActionController
             {
                 // Ignore lines of all whitespace, otherwise show an error.
                 if (!"".equals(rawEmail.trim()))
-                    errors.addError(new LabkeyError("Failed to create user " + rawEmail.trim() + ": Invalid email address<br>"));
+                    errors.addError(new FormattedError("Failed to create user " + PageFlowUtil.filter(rawEmail.trim()) + ": Invalid email address"));
             }
 
             List<Pair<String, String>> extraParams = new ArrayList<Pair<String, String>>(2);
@@ -1183,7 +1183,7 @@ public class SecurityController extends SpringActionController
                 {
                     clonePermissions(userToClone, email);
                 }
-                errors.addError(new LabkeyError(result));
+                errors.addError(new FormattedError(result));
             }
 
             return false;

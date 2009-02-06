@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.query.controllers.ChooseColumnsForm" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <labkey:errors />
@@ -56,7 +57,7 @@
     var designer = new ViewDesigner(new TableInfoService(<%=q(urlTableInfo.toString())%>));
     <% if (form.getDefaultTab() != null)
     { %>
-        designer.defaultTab = '<%= form.getDefaultTab() %>';
+        designer.defaultTab = <%=PageFlowUtil.jsString(form.getDefaultTab())%>;
     <% } %>
     designer.setShowHiddenFields(<%= form.getQuerySettings().isShowHiddenFieldsWhenCustomizing() %>);
     designerInit();
