@@ -53,10 +53,9 @@ public abstract class DownloadOutputView extends ROutputView
             if (_parent.getEntityId() != null)
             {
                 MimeMap mimeMap = new MimeMap();
-                DownloadFormFile form = new DownloadFormFile(getFile());
-                form.setContentType(mimeMap.getContentTypeFor(getFile().getName()));
+                AttachmentFile form = new FileAttachmentFile(getFile());
                 AttachmentService.get().deleteAttachment(_parent, getFile().getName());
-                AttachmentService.get().addAttachments(getViewContext().getUser(), _parent, Collections.singletonList((AttachmentFile)new StrutsAttachmentFile(form)));
+                AttachmentService.get().addAttachments(getViewContext().getUser(), _parent, Collections.singletonList(form));
             }
             out.write("<table class=\"labkey-output\">");
             renderTitle(model, out);
