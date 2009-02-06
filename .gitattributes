@@ -47,6 +47,7 @@ api/src/org/labkey/api/action/ExtFormResponseWriter.java -text
 api/src/org/labkey/api/action/FormArrayList.java -text
 api/src/org/labkey/api/action/FormHandlerAction.java -text
 api/src/org/labkey/api/action/FormViewAction.java -text
+api/src/org/labkey/api/action/FormattedError.java -text
 api/src/org/labkey/api/action/HasBindParameters.java -text
 api/src/org/labkey/api/action/HasPageConfig.java -text
 api/src/org/labkey/api/action/HasValidator.java -text

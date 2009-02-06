@@ -479,7 +479,7 @@ public class ExceptionUtil
             _renderer.renderStart(out);
             if (null != _renderer.message)
             {
-                out.println("<h3 style=\"color:red;\">" + _renderer.message + "</h3>");
+                out.println("<h3 style=\"color:red;\">" + PageFlowUtil.filter(_renderer.message) + "</h3>");
             }
 
             // These buttons are useless if the server fails to start up.  Also, they try to hit a database that probably doesn't exist.

@@ -20,6 +20,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.action.FormattedError;
 import org.springframework.validation.BindingResult;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.NoSuchMessageException;
@@ -65,7 +66,10 @@ public class ErrorsTag extends TagSupport
                                 out.print("<div class=\"labkey-error\">");
                             try
                             {
-                                out.print(context.getMessage(m));
+                                if (m instanceof FormattedError)
+                                    out.print(context.getMessage(m));
+                                else
+                                    out.print(PageFlowUtil.filter(context.getMessage(m)));
                             }
                             catch (NoSuchMessageException nsme)
                             {
