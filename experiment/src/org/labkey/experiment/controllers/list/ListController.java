@@ -727,7 +727,7 @@ public class ListController extends SpringActionController
 
             for (String error : errorList)
             {
-                errors.reject(ERROR_MSG, PageFlowUtil.filter(error));
+                errors.reject(ERROR_MSG, error);
             }
             return false;
         }
