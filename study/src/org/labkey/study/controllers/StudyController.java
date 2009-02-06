@@ -95,6 +95,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
+import static org.labkey.api.util.PageFlowUtil.filter;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -566,11 +567,11 @@ public class StudyController extends BaseStudyController
             StringBuffer sb = new StringBuffer();
             if (def.getDescription() != null && def.getDescription().length() > 0)
                 sb.append(PageFlowUtil.filter(def.getDescription(), true, true)).append("<br/>");
-            sb.append("<br/><span><b>View :</b> ").append(getViewName()).append("</span>");
+            sb.append("<br/><span><b>View :</b> ").append(filter(getViewName())).append("</span>");
             if (cohort != null)
-                sb.append("<br/><span><b>Cohort :</b> ").append(cohort.getLabel()).append("</span>");
+                sb.append("<br/><span><b>Cohort :</b> ").append(filter(cohort.getLabel())).append("</span>");
             if (qcStateSet != null)
-                sb.append("<br/><span><b>QC States:</b> ").append(qcStateSet.getLabel()).append("</span>");
+                sb.append("<br/><span><b>QC States:</b> ").append(filter(qcStateSet.getLabel())).append("</span>");
             HtmlView header = new HtmlView(sb.toString());
 
             HttpView view = new VBox(header, queryView);
