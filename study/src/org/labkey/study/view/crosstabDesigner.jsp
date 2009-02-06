@@ -39,7 +39,7 @@
 
 %>
 
-<form action="participantCrosstab.view" method="post">
+<form action="" method="post">
     Design crosstab view.
 
     <table>
@@ -75,8 +75,10 @@
     </table>
 
     <input type="hidden" name="<%=ReportDescriptor.Prop.reportType%>" value="<%=StudyCrosstabReport.TYPE%>">
+<%--
     <input type="hidden" name="<%=DataSetDefinition.DATASETKEY%>" value="<%=bean.getDatasetId()%>">
     <input type="hidden" name="<%=Visit.VISITKEY%>" value="<%=bean.getVisitRowId()%>">
+--%>
     <input type="hidden" name="<%=QueryParam.queryName%>" value="<%=bean.getQueryName()%>">
     <input type="hidden" name="<%=QueryParam.viewName%>" value="<%=StringUtils.trimToEmpty(bean.getViewName())%>">
     <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=bean.getSchemaName()%>">

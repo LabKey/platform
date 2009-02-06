@@ -189,9 +189,11 @@ LABKEY.ViewsPanel.prototype = {
                     '<tr><td><b>query name</b></td><td>{query}</td></tr>',
                     '<tpl if="schema != undefined"><tr><td><b>schema name</b></td><td>{schema}</td></tr></tpl>',
                     '<tr><td><b>permissions</b></td><td>{permissions}</td>',
-                    '<tr><td><b>links</b></td><td>',
-                        '<tpl if="runUrl != undefined">&nbsp;[<a href="{runUrl}">display</a>]</tpl>',
-                        '<tpl if="editUrl != undefined">&nbsp;[<a href="{editUrl}">edit</a>]</tpl></td></tr>',
+                    '<tpl if="runUrl != undefined && editUrl != undefined">',
+                        '<tr><td><b>links</b></td><td>',
+                            '<tpl if="runUrl != undefined">&nbsp;[<a href="{runUrl}">display</a>]</tpl>',
+                            '<tpl if="editUrl != undefined">&nbsp;[<a href="{editUrl}">edit</a>]</tpl></td></tr>',
+                    '</tpl>',
                 '</table>')
         }),
 

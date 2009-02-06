@@ -829,7 +829,10 @@ public class ListController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendListNavTrail(root, _list, "List Item Details");
+            if (_list != null)
+                return appendListNavTrail(root, _list, "List Item Details");
+            else
+                return root.addChild("List Item Details"); 
         }
     }
 

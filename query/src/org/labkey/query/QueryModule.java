@@ -64,7 +64,7 @@ public class QueryModule extends DefaultModule
 
     public double getVersion()
     {
-        return 8.31;
+        return 8.32;
     }
 
     protected void init()

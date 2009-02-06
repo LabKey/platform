@@ -90,7 +90,7 @@
 <table>
     <tr>
         <th align="right">Label for View</th>
-        <td><input type="text" size="30" id="label" name="label"></td>
+        <td><input type="text" maxlength="50" size="30" id="label" name="label"></td>
     </tr>
     <tr>
         <th align="right">Base Dataset</th>

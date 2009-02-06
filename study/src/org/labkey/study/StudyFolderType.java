@@ -20,7 +20,14 @@ import org.labkey.api.module.DefaultFolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.template.AppBar;
+import org.labkey.api.data.Container;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.exp.list.ListService;
+import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.study.model.Study;
 
 import java.util.Arrays;
@@ -28,6 +35,7 @@ import java.util.Set;
 
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.reports.ReportsController;
 
 /**
  * Created by IntelliJ IDEA.
@@ -80,5 +88,12 @@ public class StudyFolderType extends DefaultFolderType
             active.add(ModuleLoader.getInstance().getModule(moduleName));
        _activeModulesForOwnedFolder = active;
         return active;
+    }
+
+    public void addManageLinks(NavTree adminNavTree, Container container)
+    {
+        adminNavTree.addChild(new NavTree("Manage Assays", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(container)));
+        adminNavTree.addChild(new NavTree("Manage Lists", ListService.get().getManageListsURL(container)));
+        adminNavTree.addChild(new NavTree("Manage Views", new ActionURL(ReportsController.ManageReportsAction.class, container)));
     }
 }
