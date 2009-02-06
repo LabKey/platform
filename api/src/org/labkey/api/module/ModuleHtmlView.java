@@ -17,6 +17,7 @@ package org.labkey.api.module;
 
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.util.DOMUtil;
 import org.labkey.api.util.Cache;
@@ -52,9 +53,17 @@ public class ModuleHtmlView extends HtmlView
         super(null);
         _viewdef = getViewDef(htmlFile);
         setTitle(_viewdef.getTitle());
-        setHtml(_viewdef.getHtml());
+        setHtml(replaceTokens(_viewdef.getHtml()));
         if(null != _viewdef.getFrameType())
             setFrame(_viewdef.getFrameType());
+    }
+
+    public String replaceTokens(String html)
+    {
+        ViewContext context = getViewContext();
+        String ret = html.replaceAll("<%=\\s*contextPath\\s*%>", context.getContextPath());
+        ret = ret.replaceAll("<%=\\s*containerPath\\s*%>", context.getContainer().getPath());
+        return ret;
     }
 
     public static ModuleHtmlViewDefinition getViewDef(File htmlFile)
