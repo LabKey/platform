@@ -6,6 +6,7 @@ import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.Participant;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
+import static org.labkey.api.util.PageFlowUtil.filter;
 
 import java.sql.SQLException;
 
@@ -126,7 +127,7 @@ public class ParticipantWebPartFactory extends BaseWebPartFactory
             return new HtmlView("This folder does not contain a study.");
         Participant participant = StudyManager.getInstance().getParticipant(study, participantId);
         if (participant == null)
-            return new HtmlView("Participant \"" + participantId + "\" does not exist in study \"" + study.getLabel() + "\".");
+            return new HtmlView("Participant \"" + filter(participantId) + "\" does not exist in study \"" + study.getLabel() + "\".");
 
         StudyManager.ParticipantViewConfig config = new StudyManager.ParticipantViewConfig()
         {
