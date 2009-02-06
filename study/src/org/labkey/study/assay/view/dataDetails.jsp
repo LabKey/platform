@@ -44,7 +44,7 @@
                 loader.assay = assayDesigns[0];
         },
         failureCallback: function (response, options) {
-            Ext.Msg.alert("failed to get assay design");
+            Ext.Msg.alert("failed to get assay design for assay id: <%=protocol.getRowId()%>");
         }
     });
     loader.add(LABKEY.Query.selectRows, {
@@ -58,7 +58,7 @@
                 loader.data = data;
         },
         failureCallback: function (response, options) {
-            Ext.Msg.alert("failed to get assay design");
+            Ext.Msg.alert("failed to get data for row: <%=bean.objectId%>");
         }
     });
 </script>
