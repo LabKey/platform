@@ -1039,8 +1039,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             {
                 filter.addCondition("BatchProtocolId", null, CompareType.ISBLANK);
             }
-            Sort sort = new Sort("Name");
-            sort.insertSort(new Sort("RowId"));
+            Sort sort = new Sort("RowId");
+            sort.insertSort(new Sort("Name"));
             return ExpExperimentImpl.fromExperiments(Table.select(getTinfoExperiment(), Table.ALL_COLUMNS, filter, sort, Experiment.class));
         }
         catch (SQLException x)
