@@ -60,6 +60,15 @@ LABKEY.Assay = new function()
         };
     }
 
+    function getNabRunSuccessCallbackWrapper(successCallback)
+    {
+        return function(response, options)
+        {
+            var data = Ext.util.JSON.decode(response.responseText);
+            successCallback(data.runs);
+        };
+    }
+
     function moveParameter(config, param)
     {
         if (!config.parameters) config.parameters = {};
@@ -211,6 +220,92 @@ LABKEY.Assay = new function()
             moveParameter(config, "id");
             config.successCallback = getSuccessCallbackWrapper(config.successCallback);
             getAssays(config);
+        },
+
+
+        /**
+        * Select NAb assay data.
+        * @param {Object} config An object which contains the following configuration properties.
+         * @param {String} config.assayName  String description of the sort.  It includes the column names
+         * @param {Boolean} [config.includeStats]  Whether or not statistics (standard deviation, max, min, etc.) should
+         * be returned with calculations and well data.
+         * @param {Boolean} [config.includeWells]  Whether well-level data should be included in the response.
+         * @param {Boolean} [config.calculateNeut]  Whether neutralization should be calculated on the server.
+        * @param {Function} config.successCallback
+                Function called when the "selectRows" function executes successfully.
+                This function will be called with the following arguments:
+                <ul>
+                    <li>data: an instance of {@link LABKEY.Query.SelectRowsResults}</li>
+                    <li>options: the options used for the AJAX request</li>
+                    <li>responseObj: the XMLHttpResponseObject instance used to make the AJAX request</li>
+                </ul>
+        * @param {Function} [config.errorCallback] Function called when execution of the "selectRows" function fails.
+        *       This function will be called with the following arguments:
+                <ul>
+                    <li>responseObj: The XMLHttpRequest object containing the response data.</li>
+                    <li>exceptionObj: A JavaScript Error object caught by the calling code.</li>
+                </ul>
+        *
+        * @param {Array} [config.filterArray] Array of objects created by {@link LABKEY.Filter#create}.
+        * @param {String} [config.sort]  String description of the sort.  It includes the column names
+        *       listed in the URL of a sorted data region (with an optional minus prefix to indicate
+        *       descending order). In the case of a multi-column sort, up to three column names can be
+        *       included, separated by commas.
+        * @param {String} [config.containerPath] The path to the container in which the schema and query are defined,
+        *       if different than the current container. If not supplied, the current container's path will be used.
+        * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to 100).
+        *        If you want to return all possible rows, set this config property to -1.
+        * @param {Integer} [config.offset] The index of the first row to return from the server (defaults to 0).
+        *        Use this along with the maxRows config property to request pages of data.
+        * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
+        *       generating a timeout error (defaults to 30000).
+        * @example Example: <pre name="code" class="xml">
+        */
+        getNAbRuns : function(config)
+        {
+            var dataObject = {};
+
+            dataObject['assayName'] = config['assayName'];
+            dataObject['includeStats'] = config['includeStats'];
+            dataObject['includeWells'] = config['includeWells'];
+            dataObject['calculateNeut'] = config['calculateNeut'];
+            dataObject['sort'] = config['sort'];
+            dataObject['offset'] = config['offset'];
+            dataObject['dir'] = config['dir'];
+            if (config.sort)
+                dataObject['query.sort'] = config.sort;
+            if(config.offset)
+                dataObject['query.offset'] = config.offset;
+            if(config.maxRows)
+            {
+                if(config.maxRows < 0)
+                    dataObject['query.showRows'] = "all";
+                else
+                    dataObject['query.maxRows'] = config.maxRows;
+            }
+
+            if (config.filterArray)
+            {
+                for (var i = 0; i < config.filterArray.length; i++)
+                {
+                    var filter = config.filterArray[i];
+                    dataObject[filter.getURLParameterName()] = filter.getURLParameterValue();
+                }
+            }
+
+            if(config.timeout)
+                Ext.Ajax.timeout = config.timeout;
+
+            if (!config.errorCallback)
+               config.errorCallback = LABKEY.Utils.displayAjaxErrorResponse;
+
+            Ext.Ajax.request({
+                url : LABKEY.ActionURL.buildURL('nabassay', 'getNabRuns', config.containerPath),
+                method : 'GET',
+                success: getNabRunSuccessCallbackWrapper(config.successCallback),
+                failure: config.errorCallback,
+                params : dataObject
+            });
         }
     };
 };

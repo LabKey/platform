@@ -72,6 +72,6 @@ public class SaveButtonBar extends FlexTable
     public void setAllowSave(boolean dirty)
     {
         saveButton.setEnabled(dirty);
-    }    
+    }
 
 }

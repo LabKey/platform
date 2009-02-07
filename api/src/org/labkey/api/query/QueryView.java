@@ -65,6 +65,11 @@ public class QueryView extends WebPartView<Object>
         return _exportScriptFactories.get(type);
     }
 
+    static public QueryView create(ViewContext context, UserSchema schema, QuerySettings settings) throws ServletException
+    {
+        return schema.createView(context, settings);
+    }
+
     static public QueryView create(QueryForm form) throws ServletException
     {
         UserSchema s = form.getSchema();
@@ -73,7 +78,7 @@ public class QueryView extends WebPartView<Object>
             HttpView.throwNotFound("Could not find schema: " + form.getSchemaName());
             return null;
         }
-        return s.createView(form.getViewContext(), form.getQuerySettings());
+        return create(form.getViewContext(), s, form.getQuerySettings());
     }
 
     private QueryDefinition _queryDef;

@@ -16,11 +16,8 @@
 
 package org.labkey.api.study.assay;
 
-import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.view.InsertView;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -28,7 +25,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.security.User;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 import java.util.Collection;
 import java.io.IOException;
@@ -69,22 +65,22 @@ public class StudyParticipantVisitResolverType implements ParticipantVisitResolv
     {
     }
 
-    public void addHiddenFormFields(InsertView view, AssayRunUploadForm form)
+    public void addHiddenFormFields(AssayRunUploadContext form, InsertView view)
     {
         // Don't need to add any form fields - the data's already all there
     }
 
-    public void configureRun(AssayRunUploadContext context, ExpRun run, Map<DomainProperty, String> runProperties, Map<DomainProperty, String> uploadSetProperties, Map<ExpData, String> inputDatas)
+    public void configureRun(AssayRunUploadContext context, ExpRun run, Map<ExpData, String> inputDatas)
     {
         // Don't need to do anything - the data's already all there
     }
 
-    public void putDefaultProperties(HttpServletRequest request, Map<String, String> properties)
+    public void putDefaultProperties(AssayRunUploadContext uploadContext, Map<String, String> properties)
     {
         // No form fields, so we don't need to add anything
     }
 
-    public boolean collectPropertyOnUpload(String propertyName, AssayRunUploadContext uploadContext)
+    public boolean collectPropertyOnUpload(AssayRunUploadContext uploadContext, String propertyName)
     {
         return true;
     }

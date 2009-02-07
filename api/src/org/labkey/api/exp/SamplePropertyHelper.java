@@ -19,10 +19,10 @@ package org.labkey.api.exp;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.AssayRunUploadContext;
 import org.labkey.api.view.InsertView;
+import org.labkey.api.gwt.client.DefaultValueType;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
@@ -66,31 +66,39 @@ public abstract class SamplePropertyHelper<ObjectType>
 
     public void addSampleColumns(InsertView view, User user)
     {
-        addSampleColumns(view, user, null, false);
+        try
+        {
+            addSampleColumns(view, user, null, false);
+        }
+        catch (ExperimentException e)
+        {
+            // experiment exception should never be thrown if defaultValueContext is not provided
+            throw new RuntimeException(e);
+        }
     }
 
-    public void addSampleColumns(InsertView view, User user, AssayRunUploadContext defaultValueContext, boolean reshow)
+    public void addSampleColumns(InsertView view, User user, AssayRunUploadContext defaultValueContext, boolean errorReshow) throws ExperimentException
     {
         DataRegion region = view.getDataRegion();
         List<String> sampleNames = getSampleNames();
         if (sampleNames.isEmpty())
             return;
         _groups = new HashMap<DomainProperty, DisplayColumnGroup>();
-        Map<String, Map<DomainProperty, String>> domains = new HashMap<String, Map<DomainProperty, String>>();
+        Map<String, Map<DomainProperty, Object>> domains = new HashMap<String, Map<DomainProperty, Object>>();
         for (DomainProperty sampleProperty : _domainProperties)
         {
             List<DisplayColumn> cols = new ArrayList<DisplayColumn>();
             for (String name : getSampleNames())
             {
                 String inputName = UploadWizardAction.getInputName(sampleProperty, name);
-                if (!reshow && defaultValueContext != null)
+                if (defaultValueContext != null)
                 {
                     // get the map of default values that corresponds to our current sample:
                     String defaultValueKey = name + "_" + sampleProperty.getDomain().getName();
-                    Map<DomainProperty, String> defaultValues = domains.get(defaultValueKey);
+                    Map<DomainProperty, Object> defaultValues = domains.get(defaultValueKey);
                     if (defaultValues == null)
                     {
-                        defaultValues = defaultValueContext.getDefaultValues(sampleProperty.getDomain(), null, name);
+                        defaultValues = defaultValueContext.getDefaultValues(sampleProperty.getDomain(), name);
                         domains.put(defaultValueKey,  defaultValues);
                     }
                     view.setInitialValue(inputName, defaultValues.get(sampleProperty));
@@ -103,7 +111,7 @@ public abstract class SamplePropertyHelper<ObjectType>
             _groups.put(sampleProperty, group);
             region.addGroup(group);
         }
-        if (reshow)
+        if (errorReshow)
             view.setInitialValues(defaultValueContext.getRequest().getParameterMap());
         region.setGroupHeadings(sampleNames);
         region.setHorizontalGroups(true);

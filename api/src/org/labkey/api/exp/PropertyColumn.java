@@ -61,6 +61,7 @@ public class PropertyColumn extends LookupColumn
 
         this.containerId = containerId;
         setFk(new PdLookupForeignKey(user, pd));
+        setDefaultValueType(pd.getDefaultValueTypeEnum());
     }
 
 

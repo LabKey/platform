@@ -43,7 +43,7 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
 
     private List<PropertyPaneItem<DomainType, FieldType>> _items = new ArrayList<PropertyPaneItem<DomainType, FieldType>>();
 
-    public PropertyPane(Element backgroundElement, PropertiesEditor<DomainType, FieldType> propertiesEditor)
+    public PropertyPane(GWTDomain domain, Element backgroundElement, PropertiesEditor<DomainType, FieldType> propertiesEditor)
     {
         _backgroundElement = backgroundElement;
         _propertiesEditor = propertiesEditor;
@@ -90,7 +90,8 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
 
             for (PropertyPaneItem<DomainType, FieldType> item : _items)
             {
-                changed = changed || item.copyValuesToPropertyDescriptor(_currentPD);
+                if (item.copyValuesToPropertyDescriptor(_currentPD))
+                    changed = true;
             }
 
             if (changed)
@@ -111,6 +112,11 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
         {
             item.setEnabled(enabled);
         }
+    }
+
+    public int getDomainId()
+    {
+        return _propertiesEditor.getCurrentDomain().getDomainId();
     }
 
     public void showPropertyDescriptor(FieldType newPD, boolean editable)

@@ -26,6 +26,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.gwt.client.DefaultValueType;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -315,8 +316,24 @@ public class DataColumn extends DisplayColumn
         return formatted;
     }
 
+    private void renderHiddenFormInput(RenderContext ctx, Writer out, String formFieldName, Object value) throws IOException
+    {
+        out.write("<input type=hidden");
+        outputName(ctx, out, formFieldName);
+        out.write(" value=\"");
+        if (null != value)
+            out.write(PageFlowUtil.filter(value.toString()));
+        out.write("\">");
+    }
+
+    protected boolean isDisabledInput()
+    {
+        return _boundColumn.getDefaultValueType() == DefaultValueType.FIXED_NON_EDITABLE;
+    }
+
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
+        boolean disabledInput = isDisabledInput();
         String formFieldName = ctx.getForm().getFormFieldName(_boundColumn);
         if (_boundColumn.isVersionColumn())
         {
@@ -324,12 +341,7 @@ public class DataColumn extends DisplayColumn
         }
         else if (_boundColumn.isAutoIncrement())
         {
-            out.write("<input type=hidden");
-            outputName(ctx, out, formFieldName);
-            out.write(" value=\"");
-            if (null != value)
-                out.write(PageFlowUtil.filter(value.toString()));
-            out.write("\">");
+            renderHiddenFormInput(ctx, out, formFieldName, value);
             if (null != value)
             {
                 if (null != _format)
@@ -352,6 +364,8 @@ public class DataColumn extends DisplayColumn
 
             out.write("<select");
             outputName(ctx, out, formFieldName);
+            if (disabledInput)
+                out.write(" DISABLED");
             out.write(">\n");
             out.write("<option value=\"\"></option>");
             for (NamedObject entry : entries)
@@ -368,6 +382,9 @@ public class DataColumn extends DisplayColumn
                 out.write("</option>\n");
             }
             out.write("</select>");
+            // disabled inputs are not posted with the form, so we output a hidden form element:
+            if (disabledInput)
+                renderHiddenFormInput(ctx, out, formFieldName, value);
         }
         else if (_inputType.equalsIgnoreCase("textarea"))
         {
@@ -377,9 +394,14 @@ public class DataColumn extends DisplayColumn
             out.write(String.valueOf(_inputRows));
             out.write("'");
             outputName(ctx, out, formFieldName);
+            if (disabledInput)
+                out.write(" DISABLED");
             out.write(">");
             out.write(null == value ? "" : PageFlowUtil.filter(value.toString()));
             out.write("</textarea>\n");
+            // disabled inputs are not posted with the form, so we output a hidden form element:
+            if (disabledInput)
+                renderHiddenFormInput(ctx, out, formFieldName, value);
         }
         else if (_inputType.equalsIgnoreCase("file"))
         {
@@ -393,6 +415,8 @@ public class DataColumn extends DisplayColumn
             out.write("<input type='checkbox'");
             if (checked)
                 out.write(" CHECKED");
+            if (disabledInput)
+                out.write(" DISABLED");
             outputName(ctx, out, formFieldName);
             out.write(" value='1'>");
             /*
@@ -405,6 +429,9 @@ public class DataColumn extends DisplayColumn
             out.write("<input type='hidden' name='~checkboxes' value=\"");
             out.write(formFieldName);
             out.write("\">");
+            // disabled inputs are not posted with the form, so we output a hidden form element:
+            if (disabledInput)
+                renderHiddenFormInput(ctx, out, formFieldName, value);
         }
         else if (_inputType.equalsIgnoreCase("none"))
             ; //do nothing. Used 
@@ -414,6 +441,8 @@ public class DataColumn extends DisplayColumn
             out.write(Integer.toString(_inputLength));
             out.write("'");
             outputName(ctx, out, formFieldName);
+            if (disabledInput)
+                out.write(" DISABLED");
             out.write(" value=\"");
             String strVal = "";
             //UNDONE: Should use output format here.
@@ -433,6 +462,9 @@ public class DataColumn extends DisplayColumn
             }
             out.write(value == null ? "" : PageFlowUtil.filter(strVal));
             out.write("\">");
+            // disabled inputs are not posted with the form, so we output a hidden form element:
+            if (disabledInput)
+                renderHiddenFormInput(ctx, out, formFieldName, value);
         }
     }
 
@@ -520,11 +552,16 @@ public class DataColumn extends DisplayColumn
                 {
                     out.write(PageFlowUtil.helpPopup(_boundColumn.getCaption(), sb.toString()));
                 }
-                if (!_boundColumn.isNullable())
+                if (renderRequiredIndicators() && !_boundColumn.isNullable())
                     out.write(" *");
             }
         }
         out.write("</td>");
+    }
+
+    protected boolean renderRequiredIndicators()
+    {
+        return true;
     }
 
     public boolean isEditable()

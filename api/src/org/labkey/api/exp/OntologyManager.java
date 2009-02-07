@@ -2984,4 +2984,23 @@ public class OntologyManager
             throw new ChangePropertyDescriptorException(e);
         }
     }
+
+    static public boolean checkObjectExistence(String lsid)
+    {
+        ResultSet rs = null;
+        try
+        {
+            rs = Table.select(getTinfoObject(), Table.ALL_COLUMNS, new SimpleFilter("ObjectURI", lsid), null);
+            return (rs.next());
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            if (rs != null)
+                try { rs.close(); } catch (SQLException e) { /* fall through */ }
+        }
+    }
 }

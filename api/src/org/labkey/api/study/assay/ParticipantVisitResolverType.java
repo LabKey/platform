@@ -54,11 +54,11 @@ public interface ParticipantVisitResolverType
 
     public void render(RenderContext ctx) throws Exception;
 
-    public void addHiddenFormFields(InsertView view, AssayRunUploadForm form);
+    public void addHiddenFormFields(AssayRunUploadContext form, InsertView view);
 
-    public void configureRun(AssayRunUploadContext context, ExpRun run, Map<DomainProperty, String> runProperties, Map<DomainProperty, String> uploadSetProperties, Map<ExpData, String> inputDatas) throws ExperimentException;
+    public void configureRun(AssayRunUploadContext context, ExpRun run, Map<ExpData, String> inputDatas) throws ExperimentException;
 
-    public void putDefaultProperties(HttpServletRequest request, Map<String, String> properties);
+    public void putDefaultProperties(AssayRunUploadContext uploadContext, Map<String, String> properties);
 
-    public boolean collectPropertyOnUpload(String propertyName, AssayRunUploadContext uploadContext);
+    public boolean collectPropertyOnUpload(AssayRunUploadContext uploadContext, String propertyName);
 }

@@ -22,14 +22,12 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
-import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.GWTView;
 import org.labkey.api.view.InsertView;
@@ -37,7 +35,6 @@ import org.labkey.api.view.JspView;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.tools.ColumnDescriptor;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -182,7 +179,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
         ContainerManager.getAllChildren(ContainerManager.getRoot());
     }
 
-    public void addHiddenFormFields(InsertView view, AssayRunUploadForm form)
+    public void addHiddenFormFields(AssayRunUploadContext form, InsertView view)
     {
         view.getDataRegion().addHiddenFormField(THAW_LIST_TYPE_INPUT_NAME, form.getRequest().getParameter(THAW_LIST_TYPE_INPUT_NAME));
         view.getDataRegion().addHiddenFormField(THAW_LIST_LIST_DEFINITION_INPUT_NAME, form.getRequest().getParameter(THAW_LIST_LIST_DEFINITION_INPUT_NAME));
@@ -193,7 +190,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
     }
 
 
-    public void configureRun(AssayRunUploadContext context, ExpRun run, Map<DomainProperty, String> runProperties, Map<DomainProperty, String> uploadSetProperties, Map<ExpData, String> inputDatas) throws ExperimentException
+    public void configureRun(AssayRunUploadContext context, ExpRun run, Map<ExpData, String> inputDatas) throws ExperimentException
     {
         String type = context.getRequest().getParameter(THAW_LIST_TYPE_INPUT_NAME);
 
@@ -293,19 +290,19 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
         inputDatas.put(thawListData, "ThawList");
     }
 
-    public void putDefaultProperties(HttpServletRequest request, Map<String, String> properties)
+    public void putDefaultProperties(AssayRunUploadContext uploadContext, Map<String, String> properties)
     {
-        String type = request.getParameter(THAW_LIST_TYPE_INPUT_NAME);
+        String type = uploadContext.getRequest().getParameter(THAW_LIST_TYPE_INPUT_NAME);
         properties.put(THAW_LIST_TYPE_INPUT_NAME, type);
         if (LIST_NAMESPACE_SUFFIX.equals(type))
         {
-            properties.put(THAW_LIST_LIST_CONTAINER_INPUT_NAME, request.getParameter(THAW_LIST_LIST_CONTAINER_INPUT_NAME));
-            properties.put(THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME, request.getParameter(THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME));
-            properties.put(THAW_LIST_LIST_QUERY_NAME_INPUT_NAME, request.getParameter(THAW_LIST_LIST_QUERY_NAME_INPUT_NAME));
+            properties.put(THAW_LIST_LIST_CONTAINER_INPUT_NAME, uploadContext.getRequest().getParameter(THAW_LIST_LIST_CONTAINER_INPUT_NAME));
+            properties.put(THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME, uploadContext.getRequest().getParameter(THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME));
+            properties.put(THAW_LIST_LIST_QUERY_NAME_INPUT_NAME, uploadContext.getRequest().getParameter(THAW_LIST_LIST_QUERY_NAME_INPUT_NAME));
         }
     }
 
-    public boolean collectPropertyOnUpload(String propertyName, AssayRunUploadContext uploadContext)
+    public boolean collectPropertyOnUpload(AssayRunUploadContext uploadContext, String propertyName)
     {
         return !(propertyName.equals(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME) ||
                 propertyName.equals(AbstractAssayProvider.VISITID_PROPERTY_NAME) ||

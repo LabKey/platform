@@ -22,13 +22,11 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.data.Container;
+import org.labkey.api.view.ViewContext;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.*;
 
 /**
@@ -167,5 +165,20 @@ public class AssayFileWriter
             }
         }
         return files;
+    }
+
+    public File safeDuplicate(ViewContext context, File file) throws ExperimentException
+    {
+        File dir = ensureUploadDirectory(context.getContainer());
+        File newFile = findUniqueFileName(file.getName(), dir);
+        try
+        {
+            writeFile(new FileInputStream(file), newFile);
+            return newFile;
+        }
+        catch (IOException e)
+        {
+            throw new ExperimentException(e);
+        }
     }
 }

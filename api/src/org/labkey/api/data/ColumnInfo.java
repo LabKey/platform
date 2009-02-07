@@ -24,6 +24,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpressionFactory.StringExpression;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.data.xml.ColumnType;
 
 import java.beans.Introspector;
@@ -75,6 +76,7 @@ public class ColumnInfo extends ColumnRenderProperties
     private String description = null;
     protected ColumnInfo displayField;
     private String propertyURI = null;
+    private DefaultValueType _defaultValueType = null;
 
     // Only set if we have an associated qc column for this column
     private String qcColumnName = null;
@@ -153,6 +155,7 @@ public class ColumnInfo extends ColumnRenderProperties
         setFk(col.getFk());
         setPropertyURI(col.getPropertyURI());
         setIsUnselectable(col.isUnselectable());
+        setDefaultValueType(col.getDefaultValueType());
 
         // We intentionally do not copy "isHidden", since it is usually not applicable.
         // We also do not copy URL since the column aliases do not get fixed up.
@@ -1431,5 +1434,15 @@ public class ColumnInfo extends ColumnRenderProperties
         if (map == null)
             return null;
         return map.get(getAlias());
+    }
+
+    public DefaultValueType getDefaultValueType()
+    {
+        return _defaultValueType;
+    }
+
+    public void setDefaultValueType(DefaultValueType defaultValueType)
+    {
+        _defaultValueType = defaultValueType;
     }
 }

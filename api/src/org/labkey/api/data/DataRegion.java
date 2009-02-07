@@ -1394,7 +1394,7 @@ public class DataRegion extends DisplayElement
         out.write("  </tr>\n");
     }
 
-    private void renderInputError(RenderContext ctx, Writer out, int span, DisplayColumn... renderers)
+    protected void renderInputError(RenderContext ctx, Writer out, int span, DisplayColumn... renderers)
             throws IOException
     {
         TableViewForm viewForm = ctx.getForm();
@@ -1578,7 +1578,7 @@ public class DataRegion extends DisplayElement
                         DisplayColumn col = group.getColumns().get(i);
                         if (!shouldRender(col, ctx))
                             continue;
-                        col.renderInputCell(ctx, out, 1);
+                            col.renderInputCell(ctx, out, 1);
                     }
                     out.write("\t</tr>");
                 }

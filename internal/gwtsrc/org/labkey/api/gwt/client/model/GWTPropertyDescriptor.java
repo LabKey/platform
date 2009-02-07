@@ -21,6 +21,7 @@ import org.labkey.api.gwt.client.util.BooleanProperty;
 import org.labkey.api.gwt.client.util.IPropertyWrapper;
 import org.labkey.api.gwt.client.util.IntegerProperty;
 import org.labkey.api.gwt.client.util.StringProperty;
+import org.labkey.api.gwt.client.DefaultValueType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +51,7 @@ public class GWTPropertyDescriptor implements IsSerializable
     private StringProperty lookupContainer = new StringProperty();
     private StringProperty lookupSchema = new StringProperty();
     private StringProperty lookupQuery = new StringProperty();
+    private StringProperty defaultValueType = new StringProperty();
     private BooleanProperty qcEnabled = new BooleanProperty(false);
 
     private List<GWTPropertyValidator> validators = new ArrayList<GWTPropertyValidator>();
@@ -76,6 +78,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         setLookupContainer(s.getLookupContainer());
         setLookupSchema(s.getLookupSchema());
         setLookupQuery(s.getLookupQuery());
+        setDefaultValueType(s.getDefaultValueType());
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
@@ -248,6 +251,15 @@ public class GWTPropertyDescriptor implements IsSerializable
         this.qcEnabled.setBool(qcEnabled);
     }
 
+    public String getDefaultValueType()
+    {
+        return defaultValueType.getString();
+    }
+
+    public void setDefaultValueType(String defaultValueType)
+    {
+        this.defaultValueType.set(defaultValueType);
+    }
 
     public String debugString()
     {
@@ -281,7 +293,8 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (getRangeURI() != null ? !getRangeURI().equals(that.getRangeURI()) : that.getRangeURI() != null) return false;
         if (getSearchTerms() != null ? !getSearchTerms().equals(that.getSearchTerms()) : that.getSearchTerms() != null) return false;
         if (getSemanticType() != null ? !getSemanticType().equals(that.getSemanticType()) : that.getSemanticType() != null) return false;
-        
+        if (getDefaultValueType() != null ? !getDefaultValueType().equals(that.getDefaultValueType()) : that.getDefaultValueType() != null) return false;
+
         if (getPropertyValidators().size() != that.getPropertyValidators().size()) return false;
         GWTPropertyValidator[] cur = getPropertyValidators().toArray(new GWTPropertyValidator[getPropertyValidators().size()]);
         GWTPropertyValidator[] prev = that.getPropertyValidators().toArray(new GWTPropertyValidator[that.getPropertyValidators().size()]);
@@ -312,6 +325,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         result = 31 * result + (lookupContainer.getString() != null ? lookupContainer.getString().hashCode() : 0);
         result = 31 * result + (lookupSchema.getString() != null ? lookupSchema.getString().hashCode() : 0);
         result = 31 * result + (lookupQuery.getString() != null ? lookupQuery.getString().hashCode() : 0);
+        result = 31 * result + (defaultValueType.getString() != null ? defaultValueType.getString().hashCode() : 0);
 
         for (GWTPropertyValidator gwtPropertyValidator : getPropertyValidators())
         {
@@ -338,6 +352,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         if ("lookupSchema".equals(prop)) return lookupSchema;
         if ("lookupQuery".equals(prop)) return lookupQuery;
         if ("qcEnabled".equals(prop)) return qcEnabled;
+        if ("defaultValueType".equals(prop)) return defaultValueType;
         return null;
     }
 

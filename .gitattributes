@@ -173,6 +173,10 @@ api/src/org/labkey/api/data/VirtualTable.java -text
 api/src/org/labkey/api/data/WrappedColumn.java -text
 api/src/org/labkey/api/data/collections/CaseInsensitiveMap.java -text
 api/src/org/labkey/api/data/collections/Join.java -text
+api/src/org/labkey/api/defaults/ClearDefaultValuesAction.java -text
+api/src/org/labkey/api/defaults/DefaultValueService.java -text
+api/src/org/labkey/api/defaults/DefaultValuesAction.java -text
+api/src/org/labkey/api/defaults/SetDefaultValuesAction.java -text
 api/src/org/labkey/api/exp/AbstractParameter.java -text
 api/src/org/labkey/api/exp/ChangePropertyDescriptorException.java -text
 api/src/org/labkey/api/exp/DomainDescriptor.java -text
@@ -1582,6 +1586,7 @@ api/webapp/ext-2.2/source/widgets/tree/TreeSelectionModel.js -text
 api/webapp/ext-2.2/source/widgets/tree/TreeSorter.js -text
 api/webapp/ext-2.2/ux-exception.html -text
 internal/gwtsrc/org/labkey/api/gwt/Internal.gwt.xml -text
+internal/gwtsrc/org/labkey/api/gwt/client/DefaultValueType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/AssayDesignerMainPanel.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/AssayException.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/AssayService.java -text
@@ -1637,6 +1642,7 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/DomainImporterService.java -
 internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/DomainImporterServiceAsync.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/ImportException.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/InferencedColumn.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/property/DefaultValueItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/DescriptionItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/FormatItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/PropertyPaneItem.java -text

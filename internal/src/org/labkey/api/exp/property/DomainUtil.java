@@ -104,6 +104,7 @@ public class DomainUtil
         gwtProp.setRangeURI(prop.getType().getTypeURI());
         gwtProp.setRequired(prop.isRequired());
         gwtProp.setQcEnabled(prop.isQcEnabled());
+        gwtProp.setDefaultValueType(prop.getDefaultValueTypeEnum() != null ? prop.getDefaultValueTypeEnum().name() : "");
 
         List<GWTPropertyValidator> validators = new ArrayList<GWTPropertyValidator>();
         for (IPropertyValidator pv : prop.getValidators())

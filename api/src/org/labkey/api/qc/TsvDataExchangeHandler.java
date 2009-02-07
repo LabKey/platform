@@ -422,14 +422,29 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             return null;
         }
 
-        public Map<DomainProperty, String> getDefaultValues(Domain domain, BindException errors, String disambiguationId)
+        public Map<DomainProperty, Object> getDefaultValues(Domain domain, String scope) throws ExperimentException
         {
-            return Collections.emptyMap();
+            throw new UnsupportedOperationException("Not Supported");
         }
 
-        public Map<DomainProperty, String> getDefaultValues(Domain domain, BindException errors)
+        public Map<DomainProperty, Object> getDefaultValues(Domain domain) throws ExperimentException
         {
-            return Collections.emptyMap();
+            throw new UnsupportedOperationException("Not Supported");
+        }
+
+        public void saveDefaultValues(Map<DomainProperty, String> values, String scope) throws ExperimentException
+        {
+            throw new UnsupportedOperationException("Not Supported");
+        }
+
+        public void saveDefaultValues(Map<DomainProperty, String> values) throws ExperimentException
+        {
+            throw new UnsupportedOperationException("Not Supported");
+        }
+
+        public void clearDefaultValues(Domain domain) throws ExperimentException
+        {
+            throw new UnsupportedOperationException("Not Supported");
         }
     }
 }

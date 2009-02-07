@@ -21,16 +21,19 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.ACL;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
+import org.labkey.api.defaults.SetDefaultValuesAction;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.List;
 
 /**
  * User: jeckels
@@ -72,6 +75,24 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
 
                 ActionURL exportURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getExportProtocolOptionsURL(getViewContext().getContainer(), _protocol);
                 manageMenu.addChild("export assay design", exportURL.toString());
+            }
+
+            if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), ACL.PERM_ADMIN))
+            {
+                List<Domain> domains = _provider.getDomains(_protocol);
+                if (!domains.isEmpty())
+                {
+                    NavTree setDefaultsTree = new NavTree("set default values");
+                    ActionURL baseEditUrl = new ActionURL(SetDefaultValuesAction.class, getViewContext().getContainer());
+                    baseEditUrl.addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString());
+                    for (Domain domain : domains)
+                    {
+                        ActionURL currentEditUrl = baseEditUrl.clone();
+                        currentEditUrl.addParameter("domainId", domain.getTypeId());
+                        setDefaultsTree.addChild(domain.getName(), currentEditUrl);
+                    }
+                    manageMenu.addChild(setDefaultsTree);
+                }
             }
 
             if (manageMenu.getChildCount() > 0)

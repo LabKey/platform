@@ -20,6 +20,9 @@ import com.google.gwt.user.client.rpc.IsSerializable;
 
 import java.util.*;
 
+import org.labkey.api.gwt.client.util.StringProperty;
+import org.labkey.api.gwt.client.DefaultValueType;
+
 /**
  * Created by IntelliJ IDEA.
  * User: matthewb
@@ -34,6 +37,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     private String description;
     private boolean allowFileLinkProperties;
     private boolean allowAttachmentProperties;
+    private StringProperty defaultDefaultValueType = new StringProperty(DefaultValueType.FIXED_EDITABLE.name());
     private List<FieldType> fields = new ArrayList<FieldType>();
 
     private Set<String> mandatoryPropertyDescriptorNames = new HashSet<String>();
@@ -177,5 +181,15 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     public void setReservedFieldNames(Set<String> reservedFieldNames)
     {
         this.reservedFieldNames = reservedFieldNames;
+    }
+
+    public String getDefaultDefaultValueType()
+    {
+        return defaultDefaultValueType.getString();
+    }
+
+    public void setDefaultDefaultValueType(String defaultDefaultValueType)
+    {
+        this.defaultDefaultValueType.set(defaultDefaultValueType);
     }
 }

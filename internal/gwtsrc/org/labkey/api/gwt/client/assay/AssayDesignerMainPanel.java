@@ -35,7 +35,7 @@ import java.util.*;
  * Date: Jun 20, 2007
  * Time: 2:24:04 PM
  */
-public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, DirtyCallback
+public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GWTProtocol>, DirtyCallback
 {
     private RootPanel _rootPanel;
     private AssayServiceAsync _testService;
@@ -172,9 +172,74 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
         _rootPanel.add(mainPanel);
     }
 
+    private class DomainProtocolSaveable implements Saveable<GWTDomain>
+    {
+        private GWTDomain _domain;
+        private Saveable<GWTProtocol> _protocolSavable;
+
+        public DomainProtocolSaveable(Saveable<GWTProtocol> protocolSavable, GWTDomain domain)
+        {
+            _protocolSavable = protocolSavable;
+            _domain = domain;
+        }
+
+        public void save()
+        {
+            _protocolSavable.save();
+        }
+
+        public void save(final SaveListener<GWTDomain> gwtDomainSaveListener)
+        {
+            _protocolSavable.save(new SaveListener<GWTProtocol>()
+            {
+                public void saveSuccessful(GWTProtocol result)
+                {
+                    GWTDomain match = null;
+                    if (_domain.getDomainId() == 0)
+                    {
+                        // special case handling for the first save:
+                        for (Iterator<GWTDomain> it = result.getDomains().iterator(); it.hasNext() && match == null;)
+                        {
+                            GWTDomain domain = it.next();
+                            if (domain.getName().endsWith(_domain.getName()))
+                                match = domain;
+                        }
+                    }
+                    else
+                    {
+                        // if this is not the first save, we can use the domain ID to find the new domain:
+                        for (Iterator<GWTDomain> it = result.getDomains().iterator(); it.hasNext() && match == null;)
+                        {
+                            GWTDomain domain = it.next();
+                            if (domain.getDomainId() == _domain.getDomainId())
+                                match = domain;
+                        }
+                    }
+                    gwtDomainSaveListener.saveSuccessful(match);
+                }
+            });
+        }
+
+        public void cancel()
+        {
+            _protocolSavable.cancel();
+        }
+
+        public void finish()
+        {
+            _protocolSavable.finish();
+        }
+
+        public boolean isDirty()
+        {
+            return _protocolSavable.isDirty();
+        }
+    }
+
+
     protected PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor> createPropertiesEditor(GWTDomain domain)
     {
-        return new PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor>(getService());
+        return new PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor>(new DomainProtocolSaveable(this, domain), getService(), true);
     }
 
     protected FlexTable createAssayInfoTable(final GWTProtocol assay)
@@ -315,6 +380,11 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
         _dirty = dirty;
     }
 
+    public boolean isDirty()
+    {
+        return _dirty;
+    }
+
     private void setAllowSave(boolean dirty)
     {
         if (saveBarTop != null)
@@ -363,7 +433,12 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
 
     public void save()
     {
-        save(new AsyncCallback<GWTProtocol>()
+        save(null);
+    }
+
+    public void save(final SaveListener<GWTProtocol> listener)
+    {
+        saveAsync(new AsyncCallback<GWTProtocol>()
         {
             public void onFailure(Throwable caught)
             {
@@ -378,12 +453,14 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
                 _assay = result;
                 _copy = false;
                 show(_assay);
+                if (listener != null)
+                    listener.saveSuccessful(result);
             }
         });
         setAllowSave(false);
     }
 
-    public void save(AsyncCallback<GWTProtocol> callback)
+    private void saveAsync(AsyncCallback<GWTProtocol> callback)
     {
         if (validate())
         {
@@ -424,7 +501,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable, D
         }
         else
         {
-            save(new AsyncCallback<GWTProtocol>()
+            saveAsync(new AsyncCallback<GWTProtocol>()
             {
                 public void onFailure(Throwable caught)
                 {

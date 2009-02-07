@@ -22,20 +22,32 @@ package org.labkey.api.gwt.client.ui;
  * Date: Jun 2, 2008
  * Time: 11:01:14 AM
  */
-public interface Saveable
+public interface Saveable<ObjectType>
 {
+    public interface SaveListener<ObjectType>
+    {
+        void saveSuccessful(ObjectType result);
+    }
+
     /**
      * Save button clicked
      */
-    public void save();
+    void save();
+
+    /**
+     * Save button clicked
+     */
+    void save(SaveListener<ObjectType> listener);
 
     /**
      * Cancel button clicked
      */
-    public void cancel();
+    void cancel();
 
     /**
      * Finish button clicked
      */
-    public void finish();
+    void finish();
+
+    boolean isDirty();
 }

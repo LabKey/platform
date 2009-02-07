@@ -64,7 +64,14 @@ public interface AssayRunUploadContext
 
     MultipartRequestHandler getMultipartRequestHandler();
 
-    Map<DomainProperty, String> getDefaultValues(Domain domain, BindException errors, String disambiguationId);
+    Map<DomainProperty, Object> getDefaultValues(Domain domain, String scope) throws ExperimentException;
 
-    Map<DomainProperty, String> getDefaultValues(Domain domain, BindException errors);
+    Map<DomainProperty, Object> getDefaultValues(Domain domain) throws ExperimentException;
+
+    void saveDefaultValues(Map<DomainProperty, String> values, String scope) throws ExperimentException;
+
+    void saveDefaultValues(Map<DomainProperty, String> values) throws ExperimentException;
+
+    void clearDefaultValues(Domain domain) throws ExperimentException;
+
 }

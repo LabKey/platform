@@ -33,7 +33,6 @@ import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.WellGroupTemplate;
-import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.InsertView;
@@ -257,7 +256,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
             List<DomainProperty> selected = new ArrayList<DomainProperty>();
             for (DomainProperty possible : allSampleProperties)
             {
-                if (filterInputsForType.collectPropertyOnUpload(possible.getName(), context))
+                if (filterInputsForType.collectPropertyOnUpload(context, possible.getName()))
                     selected.add(possible);
             }
             selectedSampleProperties = selected.toArray(new DomainProperty[selected.size()]);
@@ -292,7 +291,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
             view.render(ctx.getRequest(), ctx.getViewContext().getResponse());
         }
 
-        public boolean collectPropertyOnUpload(String propertyName, AssayRunUploadContext uploadContext)
+        public boolean collectPropertyOnUpload(AssayRunUploadContext uploadContext, String propertyName)
         {
             if (propertyName.equals(AbstractAssayProvider.DATE_PROPERTY_NAME))
                 return false;
@@ -314,7 +313,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
             return true;
         }
 
-        public void addHiddenFormFields(InsertView view, AssayRunUploadForm form)
+        public void addHiddenFormFields(AssayRunUploadContext form, InsertView view)
         {
             view.getDataRegion().addHiddenFormField(INCLUDE_PARTICIPANT_AND_VISIT,
                     form.getRequest().getParameter(INCLUDE_PARTICIPANT_AND_VISIT));
@@ -333,7 +332,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
             return "Participant id and visit id.";
         }
 
-        public boolean collectPropertyOnUpload(String propertyName, AssayRunUploadContext uploadContext)
+        public boolean collectPropertyOnUpload(AssayRunUploadContext uploadContext, String propertyName)
         {
             return !(propertyName.equals(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME) ||
                     propertyName.equals(AbstractAssayProvider.DATE_PROPERTY_NAME));
@@ -352,7 +351,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
             return "Participant id and date.";
         }
 
-        public boolean collectPropertyOnUpload(String propertyName, AssayRunUploadContext uploadContext)
+        public boolean collectPropertyOnUpload(AssayRunUploadContext uploadContext, String propertyName)
         {
             return !(propertyName.equals(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME) ||
                     propertyName.equals(AbstractAssayProvider.VISITID_PROPERTY_NAME));

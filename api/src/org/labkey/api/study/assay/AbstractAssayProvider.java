@@ -501,7 +501,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             if (entry.getKey().getName().equals(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
             {
                 resolverType = AbstractAssayProvider.findType(entry.getValue(), getParticipantVisitResolverTypes());
-                resolverType.configureRun(context, run, runProperties, batchProperties, inputDatas);
+                resolverType.configureRun(context, run, inputDatas);
                 break;
             }
         }

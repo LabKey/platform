@@ -60,6 +60,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         }
     }
 
+    private Saveable<GWTDomain> _owner;
     private DockPanel _panel;
     private PropertyPane<DomainType, FieldType> _propertiesPane;
     private VerticalPanel _noColumnsPanel;
@@ -74,6 +75,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     private ImageButton _importSchemaButton;
     private ImageButton _exportSchemaButton;
     private ImageButton _inferSchemaButton;
+    private boolean _enableDefaultValues = false;
 
     protected DomainType _domain;
     ArrayList<Row> _rows;
@@ -91,11 +93,13 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         boolean deleted;
     }
 
-    public PropertiesEditor(LookupServiceAsync service)
+    public PropertiesEditor(Saveable<GWTDomain> owner, LookupServiceAsync service, boolean enableDefaultValues)
     {
         _rows = new ArrayList<Row>();
+        _enableDefaultValues = enableDefaultValues;
 
         _lookupService = service;
+        _owner = owner;
 
         _panel = new DockPanel();
         _panel.setWidth("100%");
@@ -113,7 +117,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         {
             public void onClick(Widget sender)
             {
-                addField((FieldType)new GWTPropertyDescriptor());
+                GWTPropertyDescriptor prop = new GWTPropertyDescriptor();
+                prop.setDefaultValueType(_domain.getDefaultDefaultValueType());
+                addField((FieldType) prop);
             }
         };
 
@@ -212,14 +218,21 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     protected PropertyPane<DomainType, FieldType> createPropertyPane(DockPanel propertyDock)
     {
-        PropertyPane<DomainType, FieldType> propertyPane = new PropertyPane<DomainType, FieldType>(propertyDock.getElement(), this);
+        PropertyPane<DomainType, FieldType> propertyPane = new PropertyPane<DomainType, FieldType>(_domain, propertyDock.getElement(), this);
         propertyPane.addItem(new FormatItem<DomainType, FieldType>(propertyPane));
         RequiredItem<DomainType, FieldType> requiredItem = new RequiredItem<DomainType, FieldType>(propertyPane);
         propertyPane.addItem(requiredItem);
         propertyPane.addItem(new QcEnabledItem<DomainType, FieldType>(propertyPane, requiredItem));
+        if (_enableDefaultValues)
+            propertyPane.addItem(new DefaultValueItem<DomainType, FieldType>(_owner, propertyPane));
         propertyPane.addItem(new DescriptionItem<DomainType, FieldType>(propertyPane));
         propertyPane.addItem(new ValidatorItem<DomainType, FieldType>(propertyPane));
         return propertyPane;
+    }
+
+    public Saveable getOwner()
+    {
+        return _owner;
     }
 
     public DomainType getCurrentDomain()

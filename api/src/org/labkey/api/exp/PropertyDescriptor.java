@@ -23,6 +23,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.security.User;
+import org.labkey.api.gwt.client.DefaultValueType;
 
 import java.io.Serializable;
 
@@ -53,6 +54,7 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
     private String lookupSchema;
     private String lookupQuery;
     private boolean qcEnabled;
+    private DefaultValueType _defaultValueType;
 
     public String getLookupContainer()
     {
@@ -241,6 +243,29 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
         this.semanticType = semanticType;
     }
 
+    public DefaultValueType getDefaultValueTypeEnum()
+    {
+        return _defaultValueType;
+    }
+
+    public void setDefaultValueTypeEnum(DefaultValueType defaultValueType)
+    {
+        _defaultValueType = defaultValueType;
+    }
+
+    public String getDefaultValueType()
+    {
+        if (_defaultValueType != null)
+            return _defaultValueType.name();
+        else
+            return null;
+    }
+
+    public void setDefaultValueType(String defaultValueTypeName)
+    {
+        if (defaultValueTypeName != null)
+            _defaultValueType = DefaultValueType.valueOf(defaultValueTypeName);
+    }
 
     @Override
     public String toString()

@@ -22,6 +22,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.gwt.client.DefaultValueType;
 
 public interface DomainProperty
 {
@@ -51,6 +52,10 @@ public interface DomainProperty
     void setFormat(String s);
     void setRequired(boolean b);
     void setQcEnabled(boolean qc);
+
+    DefaultValueType getDefaultValueTypeEnum();
+
+    void setDefaultValueTypeEnum(DefaultValueType defaultValueType);
 
     void initColumn(User user, ColumnInfo column);
 
