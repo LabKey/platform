@@ -31,7 +31,7 @@ import org.labkey.api.gwt.client.util.PropertyUtil;
  * Date: Feb 8, 2007
  * Time: 3:35:16 PM
  */
-public class StatusBar extends HorizontalPanel implements Saveable
+public class StatusBar extends HorizontalPanel implements Saveable<Object>
 {
     private final String _doneLink;
     private final SaveButtonBar _saveButtonBar;
@@ -39,6 +39,7 @@ public class StatusBar extends HorizontalPanel implements Saveable
     private TemplateView _view;
     private Label _statusLabel;
     private Timer _clearTimer;
+    private boolean _dirty;
 
     public StatusBar(TemplateView view, final String doneLink)
     {
@@ -74,46 +75,53 @@ public class StatusBar extends HorizontalPanel implements Saveable
         WindowUtil.setLocation(loc);
     }
 
-    public void finish()
+    public void save(final SaveListener<Object> listener)
     {
-        save(new AsyncCallback()
+        _view.saveChanges(new AsyncCallback()
         {
             public void onFailure(Throwable caught)
             {
-                // do nothing -- error is already displayed
+                // do nothing
             }
 
             public void onSuccess(Object result)
             {
-                WindowUtil.setLocation(_doneLink);
+                setDirty(false);
+                if (listener != null)
+                    listener.saveSuccessful(listener);
+            }
+        });
+            
+    }
+
+    public void finish()
+    {
+        save(new SaveListener<Object>()
+        {
+            public void saveSuccessful(Object result)
+            {
+                if (_doneLink != null && _doneLink.length() > 0)
+                    WindowUtil.setLocation(_doneLink);
+                else
+                    cancel();
             }
         });
     }
 
     public void save()
     {
-        save(new AsyncCallback()
-        {
-            public void onFailure(Throwable caught)
-            {
-                // do nothing
-            }
-
-            public void onSuccess(Object result)
-            {
-                // do nothing
-            }
-        });
-    }
-
-    private void save(AsyncCallback callback)
-    {
-        _view.saveChanges(callback);
+        save(null);
     }
 
     public void setDirty(boolean dirty)
     {
+        _dirty = dirty;
         _saveButtonBar.setAllowSave(dirty);
+    }
+
+    public boolean isDirty()
+    {
+        return _dirty;
     }
 
     public void setStatus(String status)

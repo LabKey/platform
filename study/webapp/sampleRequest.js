@@ -172,16 +172,15 @@ function requestSelected(requestRecord)
         _detailsPanel.statusLabel.setText(requestData.status);
     }
 
-    var displayColumns = "Vial,Vial/ParticipantId,Vial/Visit,Vial/PrimaryType,Vial/AdditiveType,Vial/DerivativeType";
+    var displayColumns = "GlobalUniqueId,ParticipantId,Visit,PrimaryType,AdditiveType,DerivativeType";
 
     var vialStore = new LABKEY.ext.Store({
         schemaName: 'study',
-        queryName: 'VialRequest',
+        queryName: 'SpecimenDetail',
         filterArray: [
-            LABKEY.Filter.create("Request/RequestId", requestData.requestId),
-            LABKEY.Filter.create("Vial/RowId", undefined, LABKEY.Filter.Types.NONBLANK)
+            LABKEY.Filter.create("RowId", requestData.vialRowIds, LABKEY.Filter.Types.IN)
         ],
-        columns: displayColumns
+        sort: 'GlobalUniqueId'
     });
     if (!_vialGrid)
     {
@@ -324,6 +323,18 @@ var REQUEST_RECORD_CONSTRUCTOR = Ext.data.Record.create([
     {name: 'status'}
 ]);
 
+function getVialRowIds(vialArray)
+{
+    var ids = "";
+    for (var i = 0; i < vialArray.length; i ++)
+    {
+        if (i > 0)
+            ids += ";";
+        ids += vialArray[i].rowId;
+    }
+    return ids;
+}
+
 function requestToRequestRecord(request)
 {
     return new REQUEST_RECORD_CONSTRUCTOR({
@@ -332,7 +343,8 @@ function requestToRequestRecord(request)
         createdBy: request.createdBy.displayName,
         destination: request.destination.label,
         requestId: request.requestId,
-        status: request.status
+        status: request.status,
+        vialRowIds: getVialRowIds(request.vials)
     }, request.requestId);
 }
 

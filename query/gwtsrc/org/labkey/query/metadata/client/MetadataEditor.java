@@ -23,12 +23,13 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.Window;
 import org.labkey.api.gwt.client.ui.WindowUtil;
 import org.labkey.api.gwt.client.ui.ImageButton;
+import org.labkey.api.gwt.client.ui.Saveable;
 import org.labkey.api.gwt.client.util.ServiceUtil;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 
 import java.util.List;
 
-public class MetadataEditor implements EntryPoint
+public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
 {
     private MetadataServiceAsync _service;
     private static final String SCHEMA_NAME_PROPERTY = "schemaName";
@@ -60,24 +61,13 @@ public class MetadataEditor implements EntryPoint
 
     private void initEditor(RootPanel rootPanel, GWTTableInfo tableInfo)
     {
-        _editor = new TablePropertiesEditor(getService());
+        _editor = new TablePropertiesEditor(this, getService());
         VerticalPanel panel = new VerticalPanel();
         _editor.addButton(new ImageButton("Save", new ClickListener()
         {
             public void onClick(Widget sender)
             {
-                save(new AsyncCallback<GWTTableInfo>()
-                {
-                    public void onFailure(Throwable caught)
-                    {
-                        WindowUtil.reportException("Failed to save", caught);
-                    }
-
-                    public void onSuccess(GWTTableInfo newTableInfo)
-                    {
-                        _editor.init(newTableInfo);
-                    }
-                });
+                save();
             }
         }));
         _editor.addButton(new ImageButton("Reset to Default", new ClickListener()
@@ -110,17 +100,17 @@ public class MetadataEditor implements EntryPoint
                         final DialogBox confirmDialog = new DialogBox(false, true);
                         confirmDialog.setText("Save Changes?");
                         VerticalPanel panel = new VerticalPanel();
-                        panel.add(new Label("Do you want to save your changes?"));
+                        panel.add(new Label("Do you want to saveAsync your changes?"));
                         HorizontalPanel buttonPanel = new HorizontalPanel();
                         ImageButton saveButton = new ImageButton("Save", new ClickListener()
                         {
                             public void onClick(Widget sender)
                             {
-                                save(new AsyncCallback<GWTTableInfo>()
+                                saveAsync(new AsyncCallback<GWTTableInfo>()
                                 {
                                     public void onFailure(Throwable caught)
                                     {
-                                        WindowUtil.reportException("Failed to save", caught);
+                                        WindowUtil.reportException("Failed to saveAsync", caught);
                                     }
 
                                     public void onSuccess(GWTTableInfo result)
@@ -170,11 +160,59 @@ public class MetadataEditor implements EntryPoint
         _editor.init(tableInfo);
     }
 
+    public boolean isDirty()
+    {
+        return _editor.isDirty();
+    }
+
+    public void save()
+    {
+        save(null);
+    }
+
+    public void save(final SaveListener<GWTTableInfo> listener)
+    {
+        saveAsync(new AsyncCallback<GWTTableInfo>()
+        {
+            public void onFailure(Throwable caught)
+            {
+                WindowUtil.reportException("Failed to save", caught);
+            }
+
+            public void onSuccess(GWTTableInfo newTableInfo)
+            {
+                _editor.init(newTableInfo);
+                if (listener != null)
+                    listener.saveSuccessful(newTableInfo);
+            }
+        });
+    }
+
+    public static native void back() /*-{
+        $wnd.history.back();
+    }-*/;
+
+    public void cancel()
+    {
+        back();
+    }
+
+    public void finish()
+    {
+        save(new SaveListener<GWTTableInfo>()
+        {
+            public void saveSuccessful(GWTTableInfo tableInfo)
+            {
+                cancel();
+            }
+        });
+    }
+
     /**
      * Save happens asynchronously, callback gets notified
      * @return if a save was attempted or if it failed instantly.
      */
-    private boolean save(AsyncCallback<GWTTableInfo> callback)
+    private boolean saveAsync(AsyncCallback<GWTTableInfo> callback)
     {
         List<String> errors = _editor.validate();
 

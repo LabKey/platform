@@ -261,6 +261,7 @@
       <ns:column columnName="LookupSchema"/>
       <ns:column columnName="LookupQuery"/>
       <ns:column columnName="QcEnabled"/>
+      <ns:column columnName="DefaultValueType"/>
   </ns:columns>
   </ns:table>
   <ns:table tableName="DomainDescriptor" tableDbType="TABLE">

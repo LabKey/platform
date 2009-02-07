@@ -28,6 +28,7 @@ import org.labkey.api.exp.property.*;
 import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.gwt.client.DefaultValueType;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -91,7 +92,7 @@ public class DomainPropertyImpl implements DomainProperty
 
     public ActionURL detailsURL()
     {
-        ActionURL ret = getDomain().urlEditDefinition(false, false);
+        ActionURL ret = getDomain().urlEditDefinition(false, false, false);
         ret.setAction("showProperty");
         ret.replaceParameter("propertyId", Integer.toString(getPropertyId()));
         return ret;
@@ -211,6 +212,26 @@ public class DomainPropertyImpl implements DomainProperty
     public String getInputType()
     {
         return _pd.getPropertyType().getInputType();
+    }
+
+    public DefaultValueType getDefaultValueTypeEnum()
+    {
+        return _pd.getDefaultValueTypeEnum();
+    }
+
+    public void setDefaultValueTypeEnum(DefaultValueType defaultValueType)
+    {
+        _pd.setDefaultValueTypeEnum(defaultValueType);
+    }
+
+    public String getDefaultValueType()
+    {
+        return _pd.getDefaultValueType();
+    }
+
+    public void setDefaultValueType(String defaultValueTypeName)
+    {
+        _pd.setDefaultValueType(defaultValueTypeName);
     }
 
     public Lookup getLookup()

@@ -25,6 +25,7 @@ import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
@@ -41,6 +42,9 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.defaults.DefaultValueService;
+import org.labkey.api.defaults.SetDefaultValuesAction;
+import org.labkey.api.defaults.ClearDefaultValuesAction;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.Pair;
 import org.labkey.experiment.list.ListAuditViewFactory;
@@ -63,7 +67,10 @@ import java.util.*;
  */
 public class ListController extends SpringActionController
 {
-    private static DefaultActionResolver _actionResolver = new DefaultActionResolver(ListController.class);
+    private static DefaultActionResolver _actionResolver = new DefaultActionResolver(ListController.class,
+            SetDefaultValuesAction.class,
+            ClearDefaultValuesAction.class
+            );
     //private static final Object ERROR_VALUE = new Object();
 
     public ListController()
@@ -431,6 +438,19 @@ public class ListController extends SpringActionController
                 if (!PageFlowUtil.nullSafeEquals(oldKey, item.getKey()) && null != _returnURL.getParameter("pk"))
                     _returnURL.replaceParameter("pk", item.getKey().toString());
 
+                if (isInsert())
+                {
+                    DomainProperty[] properties = domain.getProperties();
+                    Map<String, Object> requestMap = tableForm.getTypedValues();
+                    Map<DomainProperty, Object> dataMap = new HashMap<DomainProperty, Object>(requestMap.size());
+                    for (DomainProperty property : properties)
+                    {
+                        ColumnInfo tempCol = new ColumnInfo(property.getName());
+                        dataMap.put(property, requestMap.get(tableForm.getFormFieldName(tempCol)));
+                    }
+                    DefaultValueService.get().setDefaultValues(getContainer(), dataMap, getUser());
+                }
+
                 return true;
             }
             catch (ValidationException ve)
@@ -481,6 +501,23 @@ public class ListController extends SpringActionController
         protected DataView getDataView(ListQueryUpdateForm tableForm, ActionURL returnURL, BindException errors)
         {
             InsertView view = new InsertView(tableForm, errors);
+            if (errors.getErrorCount() == 0)
+            {
+                Map<String, Object> defaults = new HashMap<String, Object>();
+                try
+                {
+                    Map<DomainProperty, Object> domainDefaults = DefaultValueService.get().getDefaultValues(getContainer(), tableForm.getDomain(), getUser());
+                    for (Map.Entry<DomainProperty, Object> entry : domainDefaults.entrySet())
+                    {
+                        defaults.put(ColumnInfo.propNameFromName(entry.getKey().getName()), entry.getValue());
+                    }
+                }
+                catch (ExperimentException e)
+                {
+                    errors.reject(ERROR_MSG, e.getMessage());
+                }
+                view.setInitialValues(defaults);
+            }
             view.setFocusId("firstInputField");
             getPageConfig().setFocusId(view.getFocusId());
             view.getDataRegion().setButtonBar(getButtonBar(_list.urlFor(Action.insert).addParameter("returnUrl", returnURL.getLocalURIString()), returnURL));
@@ -660,6 +697,11 @@ public class ListController extends SpringActionController
             assert 1 == pks.length;
             pks[0] = _list.getKeyType().convertKey(pks[0]);
             return pks;
+        }
+
+        public Domain getDomain()
+        {
+            return _list != null ? _list.getDomain() : null;
         }
     }
 
@@ -984,6 +1026,8 @@ public class ListController extends SpringActionController
         deleteListDefinition,
         showListDefinition,
         editListDefinition,
+        setDefaultValues,
+        clearDefaultValues,
         grid,
         details,
         insert,

@@ -41,6 +41,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.SampleSetDomainType;
@@ -56,6 +57,7 @@ import org.labkey.experiment.list.*;
 import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.DefaultRunExpansionHandler;
+import org.labkey.experiment.defaults.DefaultValueServiceImpl;
 
 import java.beans.PropertyChangeEvent;
 import java.lang.reflect.InvocationTargetException;
@@ -82,7 +84,7 @@ public class ExperimentModule extends SpringModule
 
     public double getVersion()
     {
-        return 8.36;
+        return 8.37;
     }
 
     protected void init()
@@ -94,6 +96,7 @@ public class ExperimentModule extends SpringModule
         ExperimentService.setInstance(new ExperimentServiceImpl());
         PropertyService.setInstance(new PropertyServiceImpl());
         ListService.setInstance(new ListServiceImpl());
+        DefaultValueService.setInstance(new DefaultValueServiceImpl());
 
         ExperimentProperty.register();
         SamplesSchema.register();

@@ -23,6 +23,10 @@ import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.security.ACL;
@@ -32,6 +36,7 @@ import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.study.StudySchema;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.dataset.client.DatasetImporter;
@@ -113,7 +118,28 @@ public class DatasetController extends BaseStudyController
 
             DataView view;
             if (isInsert())
+            {
                 view = new InsertView(updateForm, errors);
+                if (!reshow)
+                {
+                    Domain domain = PropertyService.get().getDomain(getContainer(), ds.getTypeURI());
+                    if (domain != null)
+                    {
+                        Map<DomainProperty, Object> defaults = DefaultValueService.get().getDefaultValues(getContainer(), domain, getUser());
+                        Map<String, String> formDefaults = new HashMap<String, String>();
+                        for (Map.Entry<DomainProperty, Object> entry : defaults.entrySet())
+                        {
+                            if (entry.getValue() != null)
+                            {
+                                String stringValue = entry.getValue().toString();
+                                ColumnInfo temp = entry.getKey().getPropertyDescriptor().createColumnInfo(datasetTable, "LSID", getUser());
+                                formDefaults.put(updateForm.getFormFieldName(temp), stringValue);
+                            }
+                        }
+                        ((InsertView) view).setInitialValues(formDefaults);
+                    }
+                }
+            }
             else
                 view = new UpdateView(updateForm, errors);
             
@@ -207,6 +233,18 @@ public class DatasetController extends BaseStudyController
             if (isInsert())
             {
                 newLsid = StudyService.get().insertDatasetRow(getUser(), getContainer(), datasetId, data, importErrors);
+
+                // save last inputs for use in default value population:
+                Domain domain = PropertyService.get().getDomain(getContainer(), ds.getTypeURI());
+                DomainProperty[] properties = domain.getProperties();
+                Map<String, Object> requestMap = updateForm.getTypedValues();
+                Map<DomainProperty, Object> dataMap = new HashMap<DomainProperty, Object>(requestMap.size());
+                for (DomainProperty property : properties)
+                {
+                    ColumnInfo temp = property.getPropertyDescriptor().createColumnInfo(datasetTable, "LSID", getUser());
+                    dataMap.put(property, requestMap.get(updateForm.getFormFieldName(temp)));
+                }
+                DefaultValueService.get().setDefaultValues(getContainer(), dataMap, getUser());
             }
             else
             {

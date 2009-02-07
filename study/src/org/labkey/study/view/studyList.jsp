@@ -29,7 +29,7 @@
     Container proj = ctx.getContainer().getProject();
 
     Study[] studies = StudyManager.getInstance().getAllStudies(proj, ctx.getUser());
-    if (studies.length == 0)
+    if (null == studies || studies.length == 0)
     {
         out.print("No Studies found in project " + proj.getName());
     }
@@ -48,9 +48,5 @@
             <br>(<%=h(study.getContainer().getPath())%>)
         <br>
 <%
-        if (studies.length > 1 && i++ == studies.length / 2)
-        { %>
-            </div><div style="vertical-align:top;display:inline-block" >
-    <%  }
     }
-%></div><br>
+%>

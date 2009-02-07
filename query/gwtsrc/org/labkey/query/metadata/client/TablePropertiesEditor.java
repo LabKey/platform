@@ -29,9 +29,9 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
 {
     private ImageButton _wrapFieldButton;
 
-    public TablePropertiesEditor(LookupServiceAsync service)
+    public TablePropertiesEditor(Saveable parent, LookupServiceAsync service)
     {
-        super(service);
+        super(parent, service, false);
     }
 
     private ImageButton getWrapFieldButton()
@@ -116,7 +116,7 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
 
     protected PropertyPane<GWTTableInfo, GWTColumnInfo> createPropertyPane(DockPanel propertyDock)
     {
-        PropertyPane<GWTTableInfo, GWTColumnInfo> propertyPane = new PropertyPane<GWTTableInfo, GWTColumnInfo>(propertyDock.getElement(), this);
+        PropertyPane<GWTTableInfo, GWTColumnInfo> propertyPane = new PropertyPane<GWTTableInfo, GWTColumnInfo>(_domain, propertyDock.getElement(), this);
         propertyPane.addItem(new FormatItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new DescriptionItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new WrappedColumnItem(propertyPane));

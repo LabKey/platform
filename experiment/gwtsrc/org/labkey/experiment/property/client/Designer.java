@@ -26,6 +26,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.PropertiesEditor;
+import org.labkey.api.gwt.client.ui.Saveable;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.ServiceUtil;
 
@@ -38,7 +39,7 @@ import java.util.List;
  * Date: May 4, 2007
  * Time: 3:21:44 PM
  */
-public class Designer implements EntryPoint
+public class Designer implements EntryPoint, Saveable<GWTDomain>
 {
     private String _returnURL;
     private boolean _allowFileLinkProperties;
@@ -59,12 +60,13 @@ public class Designer implements EntryPoint
         _returnURL = PropertyUtil.getServerProperty("returnURL");
         _allowFileLinkProperties = "true".equals(PropertyUtil.getServerProperty("allowFileLinkProperties"));
         _allowAttachmentProperties = "true".equals(PropertyUtil.getServerProperty("allowAttachmentProperties"));
+        boolean showDefaultValueSettings = "true".equals(PropertyUtil.getServerProperty("showDefaultValueSettings"));
 
         _root = RootPanel.get("org.labkey.experiment.property.Designer-Root");
 
         _loading = new Label("Loading...");
 
-        _propTable = new PropertiesEditor(getService());
+        _propTable = new PropertiesEditor(this, getService(), showDefaultValueSettings);
 
         _buttons = new HorizontalPanel();
         _buttons.add(new SubmitButton());
@@ -153,7 +155,7 @@ public class Designer implements EntryPoint
 
         public void onClick(Widget sender)
         {
-            submitForm();
+            finish();
         }
     }
 
@@ -167,12 +169,11 @@ public class Designer implements EntryPoint
 
         public void onClick(Widget sender)
         {
-            cancelForm();
+            cancel();
         }
     }
 
-
-    private void submitForm()
+    public void save(final SaveListener<GWTDomain> listener)
     {
         List errors = _propTable.validate();
         if (null != errors && !errors.isEmpty())
@@ -197,7 +198,8 @@ public class Designer implements EntryPoint
                 if (null == errors)
                 {
                     _saved = true;  // avoid popup warning
-                    cancelForm();
+                    if (listener != null)
+                        listener.saveSuccessful(_domain);
                 }
                 else
                 {
@@ -210,15 +212,30 @@ public class Designer implements EntryPoint
         });
     }
 
-
-    private void cancelForm()
+    public void save()
     {
-        if (null == _returnURL || _returnURL.length() == 0)
-            back();
-        else
-            navigate(_returnURL);
+        save(null);
     }
 
+    public void cancel()
+    {
+        back();
+    }
+
+    public void finish()
+    {
+        save(new SaveListener<GWTDomain>()
+        {
+            public void saveSuccessful(GWTDomain domain)
+            {
+                if (null == _returnURL || _returnURL.length() == 0)
+                    cancel();
+                else
+                    navigate(_returnURL);
+            }
+        });
+
+    }
 
     public static native void navigate(String url) /*-{
       $wnd.location.href = url;

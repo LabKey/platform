@@ -132,7 +132,7 @@ public class PipeRootImpl implements PipeRoot
             return null;
 
         String strFile = file.toString();
-        if (!strFile.startsWith(strRoot))
+        if (!strFile.toLowerCase().startsWith(strRoot.toLowerCase()))
             return null;
         String ret = strFile.substring(strRoot.length());
         if (ret.startsWith(File.separator))

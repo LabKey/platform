@@ -33,6 +33,7 @@ import org.labkey.api.gwt.client.assay.AssayService;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.study.PlateService;
@@ -94,6 +95,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         for (Domain domain : template.getValue())
         {
             GWTDomain<GWTPropertyDescriptor> gwtDomain = new GWTDomain<GWTPropertyDescriptor>();
+            gwtDomain.setDefaultDefaultValueType(DefaultValueType.LAST_ENTERED.name());
             Set<String> mandatoryPropertyDescriptors = new HashSet<String>();
             if (!copy)
             {
@@ -169,6 +171,8 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         GWTPropertyDescriptor gwtProp = DomainUtil.getPropertyDescriptor(prop);
         if (copy)
             gwtProp.setPropertyId(0);
+        if (prop.getDefaultValueTypeEnum() == null)
+            gwtProp.setDefaultValueType(DefaultValueType.LAST_ENTERED.name());
 
         return gwtProp;
     }

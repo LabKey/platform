@@ -25,6 +25,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.experiment.controllers.list.AttachmentDisplayColumn;
 
 import java.util.ArrayList;
@@ -83,6 +84,7 @@ public class ListTable extends FilteredTable
             column.setScale(property.getScale());
             column.setInputType(property.getInputType());
             column.setDescription(property.getDescription());
+            column.setDefaultValueType(property.getDefaultValueTypeEnum());
             safeAddColumn(column);
             property.initColumn(user, column);
             if (property.isQcEnabled())

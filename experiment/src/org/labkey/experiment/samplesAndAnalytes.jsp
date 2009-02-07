@@ -34,31 +34,39 @@
     JspView me = (JspView) HttpView.currentView();
     ViewContext ctx = me.getViewContext();
     Container proj = ctx.getContainer().getProject();
-
-    SimpleFilter filter = new SimpleFilter();
-    Object[] params = { proj.getId(), ContainerManager.getSharedContainer().getProject().getId(), ContainerManager.getSharedContainer().getId() };
-    filter.addWhereClause("(Project = ? OR Project = ? OR Container = ?)", params, "Project");
-
-    ExpSampleSet[] sampleSets = ExpSampleSetImpl.fromMaterialSources(Table.select(ExperimentServiceImpl.get().getTinfoMaterialSourceWithProject(), Table.ALL_COLUMNS, filter, null, MaterialSource.class));
-    
-    int i = 0;
-%> <div style="vertical-align:top;display:inline-block;margin-right:1em" width="<%=sampleSets.length > 1 ? "50%" : "100%"%>"><%
-    for (ExpSampleSet sampleSet : sampleSets)
+    if (proj == null || proj.isRoot())
     {
-        ActionURL url;
-        boolean isStudySample = "Study Specimens".equals(sampleSet.getName());
-        if (isStudySample)
-            url = new ActionURL("study-samples", "samples.view", sampleSet.getContainer());
-        else
-            url = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, sampleSet.getContainer()).replaceParameter("rowId", "" + sampleSet.getRowId());
-        %>
-<span class="highlightregion"></span><b><a href="<%=url%>"><%=h(isStudySample ? sampleSet.getContainer().getName() : sampleSet.getName())%></a></b>
-            <br><%=sampleSet.getDescription() != null ? h(sampleSet.getDescription()) : h(sampleSet.getContainer().getPath())%>
-        <br><span class="highlightregion">
-<%
-        if (sampleSets.length > 1 && ++i == sampleSets.length / 2)
-        { %>
-            </div><div style="vertical-align:top;display:inline-block" width="50%">
-    <%  }
+        out.write("Studies will be displayed based on the selected project.");
     }
-%></div>
+    else
+    {
+        SimpleFilter filter = new SimpleFilter();
+        Object[] params = { proj.getId(), ContainerManager.getSharedContainer().getProject().getId(), ContainerManager.getSharedContainer().getId() };
+        filter.addWhereClause("(Project = ? OR Project = ? OR Container = ?)", params, "Project");
+
+        ExpSampleSet[] sampleSets = ExpSampleSetImpl.fromMaterialSources(Table.select(ExperimentServiceImpl.get().getTinfoMaterialSourceWithProject(), Table.ALL_COLUMNS, filter, null, MaterialSource.class));
+
+        int i = 0;
+    %> <div style="vertical-align:top;display:inline-block;margin-right:1em" width="<%=sampleSets.length > 1 ? "50%" : "100%"%>"><%
+        for (ExpSampleSet sampleSet : sampleSets)
+        {
+            ActionURL url;
+            boolean isStudySample = "Study Specimens".equals(sampleSet.getName());
+            if (isStudySample)
+                url = new ActionURL("study-samples", "samples.view", sampleSet.getContainer());
+            else
+                url = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, sampleSet.getContainer()).replaceParameter("rowId", "" + sampleSet.getRowId());
+            %>
+    <span class="highlightregion"></span><b><a href="<%=url%>"><%=h(isStudySample ? sampleSet.getContainer().getName() : sampleSet.getName())%></a></b>
+                <br><%=sampleSet.getDescription() != null ? h(sampleSet.getDescription()) : h(sampleSet.getContainer().getPath())%>
+            <br><span class="highlightregion">
+    <%
+            if (sampleSets.length > 1 && ++i == sampleSets.length / 2)
+            { %>
+                </div><div style="vertical-align:top;display:inline-block" width="50%">
+        <%  }
+        }
+    %></div>
+<%
+    }
+%>

@@ -21,6 +21,8 @@
 <%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.experiment.controllers.list.ListController" %>
 <%@ page import="org.labkey.experiment.controllers.list.ListDefinitionForm" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.defaults.SetDefaultValuesAction" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib"%>
 <%
@@ -40,9 +42,14 @@
     <tr><td>Allow Import:</td><td><%=list.getAllowUpload() ? "Yes" : "No"%></td></tr>
     <tr><td>Allow Export &amp; Print:</td><td><%=list.getAllowExport() ? "Yes" : "No"%></td></tr>
 </table>
-<% if (hasPermission(ACL.PERM_ADMIN)) { %>
+<% if (hasPermission(ACL.PERM_ADMIN)) {
+    ActionURL setDefaultsURL = new ActionURL(SetDefaultValuesAction.class, getContainer());
+    setDefaultsURL.addParameter("domainId", list.getDomain().getTypeId());
+    setDefaultsURL.addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString());
+%>
     <labkey:link href="<%=list.urlEditDefinition()%>" text="edit design" />
     <labkey:link href="<%=list.urlFor(ListController.Action.deleteListDefinition)%>" text="delete list" />
+    <labkey:link href="<%= setDefaultsURL.getLocalURIString() %>" text="set default values" />
 <% } %>
     <labkey:link href="<%=list.urlShowData()%>" text="view data" />
 <% if (hasPermission(ACL.PERM_UPDATE) && list.getAllowUpload()) { %>
@@ -62,5 +69,5 @@
 <% } %>
 
 <% if (hasPermission(ACL.PERM_ADMIN)) { %>
-    <labkey:link href="<%=list.getDomain().urlEditDefinition(false, true)%>" text="edit fields"/>
+    <labkey:link href="<%=list.getDomain().urlEditDefinition(false, true, true)%>" text="edit fields"/>
 <% } %>

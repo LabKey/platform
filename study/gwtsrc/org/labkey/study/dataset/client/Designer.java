@@ -28,6 +28,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.*;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.ServiceUtil;
+import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.study.dataset.client.model.GWTDataset;
 
 import java.util.*;
@@ -38,7 +39,7 @@ import java.util.*;
  * Date: Apr 24, 2007
  * Time: 9:24:04 AM
  */
-public class Designer implements EntryPoint
+public class Designer implements EntryPoint, Saveable<GWTDataset>
 {
     private String _returnURL;
     private boolean _isDateBased;
@@ -59,6 +60,52 @@ public class Designer implements EntryPoint
 
     private SubmitButton _saveButton;
 
+    private class DomainDatasetSaveable implements Saveable<GWTDomain>
+    {
+        private Saveable<GWTDataset> _datasetSaveable;
+
+        public DomainDatasetSaveable(Saveable<GWTDataset> datasetSaveable)
+        {
+            _datasetSaveable = datasetSaveable;
+        }
+
+        public void save()
+        {
+            _datasetSaveable.save();
+        }
+
+        public void save(final SaveListener<GWTDomain> gwtDomainSaveListener)
+        {
+            // okay, this gets a bit mind bending.  When asked to save, the GWTDomain saveable delegates
+            // to the GWTDataset Saveable.  When the dataset reply comes back, the GWTDataset Saveable must
+            // make an async call to get the GWT Domain so we can forward the successful save message back
+            // to the original GWT Domain saveable.
+            _datasetSaveable.save(new SaveListener<GWTDataset>()
+            {
+                public void saveSuccessful(GWTDataset datasetResult)
+                {
+                    asyncGetDefinition(datasetResult.getTypeURI(), gwtDomainSaveListener);
+                }
+            });
+        }
+
+        public void cancel()
+        {
+            _datasetSaveable.cancel();
+        }
+
+        public void finish()
+        {
+            _datasetSaveable.finish();
+        }
+
+        public boolean isDirty()
+        {
+            return _datasetSaveable.isDirty();
+        }
+    }
+
+
     public void onModuleLoad()
     {
         int datasetId = Integer.parseInt(PropertyUtil.getServerProperty("datasetId"));
@@ -72,7 +119,7 @@ public class Designer implements EntryPoint
 
         _loading = new Label("Loading...");
 
-        _propTable = new PropertiesEditor(getService());
+        _propTable = new PropertiesEditor(new DomainDatasetSaveable(this), getService(), true);
 
         _buttons = new FlexTable();
 
@@ -164,7 +211,7 @@ public class Designer implements EntryPoint
 
         public void onClick(Widget sender)
         {
-            submitForm();
+            finish();
         }
     }
 
@@ -178,12 +225,11 @@ public class Designer implements EntryPoint
 
         public void onClick(Widget sender)
         {
-            cancelForm();
+            cancel();
         }
     }
 
-
-    private void submitForm()
+    public void save(final SaveListener<GWTDataset> listener)
     {
         // bug 6898: prevent user from double-clicking on save button, causing a race condition
         _saveButton.setEnabled(false);
@@ -215,7 +261,8 @@ public class Designer implements EntryPoint
                 if (null == errors)
                 {
                     _saved = true;  // avoid popup warning
-                    cancelForm();
+                    if (listener != null)
+                        listener.saveSuccessful(_dataset);
                 }
                 else
                 {
@@ -231,15 +278,29 @@ public class Designer implements EntryPoint
         getService().updateDatasetDefinition(_dataset, _domain, _propTable.getUpdates(), callback);
     }
 
-
-    private void cancelForm()
+    public void save()
     {
-        if (null == _returnURL || _returnURL.length() == 0)
-            back();
-        else
-            navigate(_returnURL);
+        save(null);
     }
 
+    public void cancel()
+    {
+        back();
+    }
+
+    public void finish()
+    {
+        save(new SaveListener<GWTDataset>()
+        {
+            public void saveSuccessful(GWTDataset dataset)
+            {
+                if (null == _returnURL || _returnURL.length() == 0)
+                    cancel();
+                else
+                    navigate(_returnURL);
+            }
+        });
+    }
 
     public static native void navigate(String url) /*-{
       $wnd.location.href = url;
@@ -284,8 +345,12 @@ public class Designer implements EntryPoint
         });
     }
 
-
     void asyncGetDefinition(final String domainURI)
+    {
+        asyncGetDefinition(domainURI, null);
+    }
+
+    void asyncGetDefinition(final String domainURI, final Saveable.SaveListener<GWTDomain> saveListener)
     {
         if (!domainURI.equals("testURI#TYPE"))
         {
@@ -307,6 +372,9 @@ public class Designer implements EntryPoint
                         }
 
                         setDomain(domain);
+
+                        if (saveListener != null)
+                            saveListener.saveSuccessful(domain);
                     }
             });
         }

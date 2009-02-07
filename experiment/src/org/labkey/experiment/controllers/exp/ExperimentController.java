@@ -1760,7 +1760,7 @@ public class ExperimentController extends SpringActionController
             {
                 return HttpView.throwNotFound("Could not find sample set with rowId " + form.getBean().getRowId());
             }
-            HttpView.throwRedirect(ss.getType().urlEditDefinition(false, false));
+            HttpView.throwRedirect(ss.getType().urlEditDefinition(false, false, false));
             return null;
         }
 
