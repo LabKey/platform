@@ -930,6 +930,7 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="module" module-name="InternalGWT" exported="" />
   </component>
 </module>
 
