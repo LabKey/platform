@@ -500,6 +500,8 @@ public class AssayController extends SpringActionController
             _protocol = getProtocol(form);
 
             AssayProvider ap = AssayService.get().getProvider(_protocol);
+            if (ap == null)
+                HttpView.throwNotFound("Assay not found for protocol with lsid: " + _protocol.getLSID());
             if (!(ap instanceof ModuleAssayProvider))
                 throw new RuntimeException("Assay must be a ModuleAssayProvider");
             ModuleAssayProvider provider = (ModuleAssayProvider) ap;

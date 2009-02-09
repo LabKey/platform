@@ -118,7 +118,7 @@ public class AssaySchema extends UserSchema
                     {
                         return createRunTable(alias, protocol, provider);
                     }
-                    else if (name.equalsIgnoreCase(getResultsTableName(protocol)) || name.equalsIgnoreCase(protocol.getName() + " Data"))
+                    if (name.equalsIgnoreCase(getResultsTableName(protocol)) || name.equalsIgnoreCase(protocol.getName() + " Data"))
                     {
                         return provider.createDataTable(this, alias, protocol);
                     }
@@ -157,9 +157,10 @@ public class AssaySchema extends UserSchema
         for (DomainProperty prop : provider.getBatchDomain(protocol).getProperties())
         {
             pds.add(prop.getPropertyDescriptor());
-            defaultCols.add(FieldKey.fromParts("Batch Properties", prop.getName()));
+            if (!prop.isHidden())
+                defaultCols.add(FieldKey.fromParts("Batch Properties", prop.getName()));
         }
-        
+
         result.addPropertyColumns("Batch Properties", pds.toArray(new PropertyDescriptor[pds.size()]), this);
         result.setDefaultVisibleColumns(defaultCols);
         return result;
@@ -169,8 +170,6 @@ public class AssaySchema extends UserSchema
     {
         final ExpRunTable runTable = provider.createRunTable(this, alias, protocol);
         runTable.setProtocolPatterns(protocol.getLSID());
-
-        List<FieldKey> visibleColumns = new ArrayList<FieldKey>(runTable.getDefaultVisibleColumns());
 
         List<PropertyDescriptor> runColumns = provider.getRunTableColumns(protocol);
         PropertyDescriptor[] pds = runColumns.toArray(new PropertyDescriptor[runColumns.size()]);
@@ -197,10 +196,12 @@ public class AssaySchema extends UserSchema
         });
         runTable.addColumn(batchColumn);
 
+        List<FieldKey> visibleColumns = new ArrayList<FieldKey>(runTable.getDefaultVisibleColumns());
         FieldKey runKey = FieldKey.fromString("Run Properties");
         for (PropertyDescriptor runColumn : runColumns)
         {
-            visibleColumns.add(new FieldKey(runKey, runColumn.getName()));
+            if (!runColumn.isHidden())
+                visibleColumns.add(new FieldKey(runKey, runColumn.getName()));
         }
 
         runTable.setTitleColumn("");

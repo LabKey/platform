@@ -113,6 +113,11 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.isRequired();
     }
 
+    public boolean isHidden()
+    {
+        return _pd.isHidden();
+    }
+
     public boolean isQcEnabled()
     {
         return _pd.isQcEnabled();
@@ -168,6 +173,13 @@ public class DomainPropertyImpl implements DomainProperty
         if (required == isRequired())
             return;
         edit().setRequired(required);
+    }
+
+    public void setHidden(boolean hidden)
+    {
+        if (hidden == isHidden())
+            return;
+        edit().setHidden(hidden);
     }
 
     public void setQcEnabled(boolean qc)
@@ -279,6 +291,7 @@ public class DomainPropertyImpl implements DomainProperty
     public void initColumn(User user, ColumnInfo column)
     {
         PropertyForeignKey.initColumn(user, column, _pd);
+        column.setReadOnly(false);
     }
 
     public PropertyDescriptor getPropertyDescriptor()

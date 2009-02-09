@@ -84,7 +84,7 @@ public class ExperimentModule extends SpringModule
 
     public double getVersion()
     {
-        return 8.37;
+        return 8.38;
     }
 
     protected void init()

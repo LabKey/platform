@@ -458,6 +458,7 @@ public class XarExporter
         {
             xProp.setSemanticType(prop.getSemanticType());
         }
+        xProp.setHidden(domainProp.isHidden());
         xProp.setQcEnabled(domainProp.isQcEnabled());
 
         for (IPropertyValidator validator : domainProp.getValidators())
