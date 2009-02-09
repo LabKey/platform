@@ -28,12 +28,14 @@ import java.util.ArrayList;
 public class QueryUnion
 {
     QuerySchema _schema;
+    Query _query;
     QUnion _union;
     List<QuerySelect> _selectList = new ArrayList<QuerySelect>();
     List<QueryTableInfo> _tinfos = new ArrayList<QueryTableInfo>();
 
     QueryUnion(Query query, QUnion union)
     {
+        _query = query;
         _schema = query.getSchema();
         _union = union;
         
@@ -58,6 +60,8 @@ public class QueryUnion
     public QueryTableInfo getTableInfo(String alias)
     {
         computeTableInfos();
+        if (_query.getParseErrors().size() > 0)
+            return null;
         
         String union = "";
         SQLFragment unionSql = new SQLFragment();

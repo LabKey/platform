@@ -180,6 +180,8 @@ public class Query
 
     public QueryTableInfo getTableInfo(String tableAlias)
     {
+        if (_parseErrors.size() > 0)
+            return null;
         if (_union != null)
             return _union.getTableInfo(tableAlias);
         else if (_select != null)
