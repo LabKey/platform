@@ -785,14 +785,21 @@ ESCqi
         '\"' '\"'
     ;
 
+
 WS  :   (   ' '
 		|   '\t'
-		|   '\r' '\n' { newline(); }
-		|   '\n'      { newline(); }
-		|   '\r'      { newline(); }
+		|   NL { newline(); }
 		)
 		{$setType(Token.SKIP);} //ignore this token
 	;
+
+
+NL
+    :   '\r' '\n'
+    |   '\n'
+    |   '\r'
+    ;
+
 
 //--- From the Java example grammar ---
 // a numeric literal
@@ -864,3 +871,10 @@ FLOAT_SUFFIX
 	:	'f'|'d'
 	;
 
+COMMENT
+    :   "/*" (options {greedy=false;} : . )* "*/" {$setType(Token.SKIP);}
+    ;
+    
+LINE_COMMENT
+    : "--" (options {greedy=false;} : . )* NL {$setType(Token.SKIP);}
+    ;

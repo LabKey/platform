@@ -622,6 +622,9 @@ public class SqlParser
 		"SELECT a FROM R UNION SELECT b FROM S",
         "SELECT a FROM R UNION ALL SELECT b FROM S",
 
+        // comments
+        "SELECT DISTINCT R.a, b AS B --nadlkf (*&F asdfl alsdkfj\nFROM rel R /* aldkjf (alsdf !! */ INNER JOIN S ON R.x=S.x WHERE R.y=0 AND R.a IS NULL OR R.b IS NOT NULL",
+
         "BROKEN",
 
 		// HAVING
