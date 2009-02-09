@@ -112,7 +112,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             properties = reorderDomainColumns(properties, getViewContext(), getProtocol());
             _runProperties = getPropertyMapFromRequest(Arrays.asList(properties));
         }
-        return _runProperties;
+        return Collections.unmodifiableMap(_runProperties);
     }
 
     /** @return property descriptor to value */
@@ -126,7 +126,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             properties = reorderDomainColumns(properties, getViewContext(), getProtocol());
             _uploadSetProperties = getPropertyMapFromRequest(Arrays.asList(properties));
         }
-        return _uploadSetProperties;
+        return Collections.unmodifiableMap(_uploadSetProperties);
     }
 
     protected Map<DomainProperty, String> getPropertyMapFromRequest(List<DomainProperty> columns)
