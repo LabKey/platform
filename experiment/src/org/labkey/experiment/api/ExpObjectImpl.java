@@ -52,11 +52,29 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
         return (String) getProperty(ExperimentProperty.COMMENT.getPropertyDescriptor());
     }
 
+    /**
+     * @return Map from PropertyURI to ObjectProperty.value
+     */
     public Map<String, Object> getProperties()
     {
         try
         {
             return OntologyManager.getProperties(getContainer(), getLSID());
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+    /**
+     * @return Map from PropertyURI to ObjectProperty
+     */
+    public Map<String, ObjectProperty> getObjectProperties()
+    {
+        try
+        {
+            return OntologyManager.getPropertyObjects(getContainer(), getLSID());
         }
         catch (SQLException e)
         {

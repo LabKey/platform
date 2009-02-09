@@ -270,21 +270,6 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         return findProtocolApplication(ExpProtocol.ApplicationType.ExperimentRunOutput);
     }
 
-    /**
-     * @return Map from PropertyURI to ObjectProperty
-     */
-    public Map<String, ObjectProperty> getObjectProperties()
-    {
-        try
-        {
-            return OntologyManager.getPropertyObjects(getContainer(), getLSID());
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-    }
-
     public void deleteProtocolApplications(User user)
     {
         deleteProtocolApplications(getOutputDatas(null), user);
