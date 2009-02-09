@@ -63,10 +63,5 @@ public interface ExpRun extends ExpObject
     /** Get the protocol application that marks all of the outputs to the run as a whole */
     ExpProtocolApplication getOutputProtocolApplication();
 
-    /**
-     * @return Map from PropertyURI to ObjectProperty
-     */
-    Map<String, ObjectProperty> getObjectProperties();
-
     void deleteProtocolApplications(User user);
 }

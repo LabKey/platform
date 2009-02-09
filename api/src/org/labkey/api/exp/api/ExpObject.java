@@ -22,11 +22,13 @@ import org.labkey.api.security.User;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.ValidationException;
 
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Map;
 
 public interface ExpObject extends Identifiable
 {
@@ -78,4 +80,8 @@ public interface ExpObject extends Identifiable
         }
     };
 
+    /**
+     * @return Map from PropertyURI to ObjectProperty
+     */
+    Map<String, ObjectProperty> getObjectProperties();
 }
