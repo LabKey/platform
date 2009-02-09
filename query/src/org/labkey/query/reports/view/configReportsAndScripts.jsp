@@ -95,6 +95,7 @@
                 name:'Perl Scripting Engine',
                 extensions: PERL_EXTENSIONS,
                 external: true,
+                enabled: true,
                 languageName:'Perl'});}}}
             );
 
@@ -138,32 +139,12 @@
             cls:'extContainer',
             items: [rEngineItem,
                     perlEngineItem,
-/*
-                {
-                id: 'add_rEngine',
-                text:'New R Engine',
-                listeners:{click:function(button, event) {editRecord(button, grid,{
-                    name:'R Scripting Engine',
-                    extensions:'R,r',
-                    exeCommand:'<%=RReport.DEFAULT_R_CMD%>',
-                    outputFileName: 'script.Rout',
-                    external: true,
-                    languageName:'R'});}}
-            },testItem,{
-                id: 'add_perlEngine',
-                text:'New Perl Engine',
-                listeners:{click:function(button, event) {editRecord(button, grid,{
-                    name:'Perl Scripting Engine',
-                    extensions:'pl',
-                    external: true,
-                    languageName:'Perl'});}}
-            },
-*/
                 {
                 id: 'add_externalEngine',
                 text:'New External Engine',
                 listeners:{click:function(button, event) {editRecord(button, grid, {
                     name:"External",
+                    enabled:true,
                     external: true});}}
             }] });
 
@@ -171,6 +152,7 @@
             el:'enginesGrid',
             autoScroll:false,
             autoHeight:true,
+            enableHdMenu: false,
             width:800,
             store: store,
             listeners: {
@@ -196,7 +178,8 @@
                 {text:'Delete', id: 'btn_deleteEngine', tooltip: {text:'Delete the selected script engine', title:'Delete Engine'}, listeners:{click:function(button, event) {deleteSelected(grid);}}},
                 {text:'Edit', id: 'btn_editEngine', tooltip: {text:'Edit an existing script engine', title:'Edit Engine'}, listeners:{click:function(button, event) {editSelected(button, grid);}}}
             ],
-            buttonAlign:'center'
+            buttonAlign:'center',
+            selModel: new Ext.grid.RowSelectionModel({singleSelect: true})
         });
 
         grid.render();
@@ -262,7 +245,7 @@
     function editRecord(button, grid, record)
     {
         var formPanel = new Ext.FormPanel({
-            bodyStyle:'padding:5px',
+            bodyStyle:'padding:5px 5px 0',
             defaultType: 'textfield',
             items: [{
                 fieldLabel: "Name",
@@ -302,7 +285,7 @@
                 tooltip: {text:'Specify the absolute path to the program including the program itself', title:'Program Path'},
                 listeners: {render: setFormFieldTooltip},
                 disabled:!record.external,
-                width: 250
+                width: 275
             },{
                 fieldLabel: 'Program Command',
                 name: 'exeCommand',
@@ -311,7 +294,7 @@
                 listeners: {render: setFormFieldTooltip},
                 disabled:!record.external,
                 value: record.exeCommand,
-                width: 250
+                width: 275
             },{
                 fieldLabel: 'Output File Name',
                 name: 'outputFileName',
@@ -342,11 +325,12 @@
             title: 'Edit Engine Configuration',
             layout:'form',
             border: false,
-            width: 450,
-            height: 320,
+            width: 475,
+            height: 345,
             closeAction:'close',
             modal: false,
             items: formPanel,
+            resizable: false,
             buttons: [{
                 text: 'Submit',
                 id: 'btn_submit',
@@ -355,7 +339,8 @@
                 text: 'Cancel',
                 id: 'btn_cancel',
                 handler: function(){win.close();}
-            }]
+            }],
+            bbar: new Ext.StatusBar({height: 40})
         });
 
         win.show(button);
@@ -373,6 +358,7 @@
             return false;
         }
 
+        win.getBottomToolbar().clearStatus();
         form.submit({
             url: LABKEY.ActionURL.buildURL("reports", "scriptEnginesSave"),
             waitMsg:'Submiting Form...',
@@ -381,7 +367,27 @@
                 win.close();
                 grid.store.load();
             },
-            failure: function(form, action){Ext.Msg.alert("Save Error", "An error occurred while saving the engine configuration");}
+            failure: function(form, action){handleError(win, action);}
+        });
+    }
+
+    function handleError(win, action)
+    {
+        var errorTxt = 'An error occurred saving the engine configuration.';
+
+        if (action.failureType == Ext.form.Action.SERVER_INVALID)
+        {
+            errorTxt = 'An error occurred, move your mouse over the fields highlighted<br>in red to see detailed information.';
+        }
+        else if (action.failureType == Ext.form.Action.CONNECT_FAILURE)
+        {
+            var jsonResponse = Ext.util.JSON.decode(action.response.responseText);
+            if (jsonResponse && jsonResponse.exception)
+                errorTxt = jsonResponse.exception;
+        }
+        win.getBottomToolbar().setStatus({
+            text: errorTxt,
+            iconCls:'labkey-error'
         });
     }
 
@@ -396,7 +402,7 @@
 <table>
     <tr class="labkey-wp-header"><th colspan=2>Scripting Engine Configurations</th></tr>
     <tr><td><i>A scripting engine enables the execution of scripting code in a report or a QC validation script.
-        A scripting engine can be exposed as a <a href="https://scripting.dev.java.net/" target="_blank">Java 6 script engine implementation</a>,<br/>
+        A scripting engine can be exposed as a <a href="https://scripting.dev.java.net/" target="_blank">Java 6 script engine implementation</a>,
         or as an external script engine. Java 6 script engine implementations are exposed by configuring the Java runtime the webserver is running
         against. External engine implementations are added in this view. For example scripting languages like R and Perl
         can be configured here in order to create and run scripts and reports using these languages.</i></td>
