@@ -62,7 +62,7 @@ public class RunDataTable extends FilteredTable
         FieldKey dataKeyProp = new FieldKey(null, column.getName());
         for (DomainProperty lookupCol : dps)
         {
-            if (!hiddenCols.contains(lookupCol.getName()))
+            if (!lookupCol.isHidden() && !hiddenCols.contains(lookupCol.getName()))
                 visibleColumns.add(new FieldKey(dataKeyProp, lookupCol.getName()));
         }
         column.setFk(fk);
@@ -100,7 +100,10 @@ public class RunDataTable extends FilteredTable
 
         List<PropertyDescriptor> runProperties = provider.getRunTableColumns(protocol);
         for (PropertyDescriptor prop : runProperties)
-            visibleColumns.add(FieldKey.fromParts("Run", "Run Properties", prop.getName()));
+        {
+            if (!prop.isHidden())
+                visibleColumns.add(FieldKey.fromParts("Run", "Run Properties", prop.getName()));
+        }
 
         Set<String> studyColumnNames = ((AbstractAssayProvider)provider).addCopiedToStudyColumns(this, protocol, schema.getUser(), "objectId", false);
         for (String columnName : studyColumnNames)

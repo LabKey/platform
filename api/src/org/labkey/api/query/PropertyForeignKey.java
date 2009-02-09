@@ -144,13 +144,7 @@ public class PropertyForeignKey extends AbstractForeignKey
             ExprColumn expr = new ExprColumn(parent.getParentTable(), name, getValueSql(parent, pd), pd.getPropertyType().getSqlType(), parent);
             ret = expr;
         }
-        if (pd.getLabel() != null)
-            ret.setCaption(pd.getLabel());
-        else
-            ret.setCaption(ColumnInfo.captionFromName(pd.getName()));
-        if (pd.getFormat() != null)
-            ret.setFormatString(pd.getFormat());
-        ret.setFk(new PdLookupForeignKey(_schema.getUser(), pd));
+        initColumn(_schema.getUser(), ret, pd);
         return ret;
     }
 
@@ -185,7 +179,6 @@ public class PropertyForeignKey extends AbstractForeignKey
 
     static public void initColumn(User user, ColumnInfo column, PropertyDescriptor pd)
     {
-        column.setReadOnly(false);
         if (pd.getLabel() != null)
             column.setCaption(pd.getLabel());
         else
@@ -193,6 +186,7 @@ public class PropertyForeignKey extends AbstractForeignKey
         if (pd.getFormat() != null)
             column.setFormatString(pd.getFormat());
         column.setNullable(!pd.isRequired());
+        column.setIsHidden(pd.isHidden());
         column.setFk(new PdLookupForeignKey(user, pd));
     }
 }

@@ -103,6 +103,7 @@ public class DomainUtil
         gwtProp.setPropertyURI(prop.getPropertyURI());
         gwtProp.setRangeURI(prop.getType().getTypeURI());
         gwtProp.setRequired(prop.isRequired());
+        gwtProp.setHidden(prop.isHidden());
         gwtProp.setQcEnabled(prop.isQcEnabled());
         gwtProp.setDefaultValueType(prop.getDefaultValueTypeEnum() != null ? prop.getDefaultValueTypeEnum().name() : "");
 

@@ -18,13 +18,6 @@
  * <p/>
  */
 
-LABKEY.Assay.BatchState = {
-    "new": "Batch has not been saved",
-    saved : "Batch has been created and saved, but has not been validated",
-    errors : "Batch has been saved, but has validation errors",
-    complete : "Batch has been validated and saved"
-};
-
 /**
  * @namespace Assay batch information
 */

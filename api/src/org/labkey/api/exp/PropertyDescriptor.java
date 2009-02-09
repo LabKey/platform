@@ -50,6 +50,7 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
     private Container container;
     private Container project;
     private boolean required;
+    private boolean hidden;
     private String lookupContainer;
     private String lookupSchema;
     private String lookupQuery;
@@ -96,6 +97,7 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
         this(col.getPropertyURI(), PropertyType.getFromClass(col.getJavaClass()).getTypeUri(), col.getName(), c);
         setDescription(col.getDescription());
         setRequired(!col.isNullable());
+        setHidden(col.isHidden());
         setLabel(col.getCaption());
         setFormat(col.getFormatString());
     }
@@ -315,6 +317,16 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
     public void setRequired(boolean required)
     {
         this.required = required;
+    }
+
+    public boolean isHidden()
+    {
+        return hidden;
+    }
+
+    public void setHidden(boolean hidden)
+    {
+        this.hidden = hidden;
     }
 
     public boolean isQcEnabled()

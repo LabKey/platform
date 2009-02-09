@@ -1642,9 +1642,11 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/DomainImporterService.java -
 internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/DomainImporterServiceAsync.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/ImportException.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/domain/InferencedColumn.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/property/CheckboxItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/DefaultValueItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/DescriptionItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/FormatItem.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/property/HiddenItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/PropertyPaneItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/QcEnabledItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/RangeValidatorDialog.java -text

@@ -75,6 +75,7 @@ public class ExportSchemaWizard extends DialogBox
         sb.append("RangeURI").append("\t");
         sb.append("Format").append("\t");
         sb.append("NotNull").append("\t");
+        sb.append("Hidden").append("\t");
         sb.append("AllowsQC").append("\t");
         sb.append("Description").append("\n");
 
@@ -88,6 +89,7 @@ public class ExportSchemaWizard extends DialogBox
             sb.append(getStringValue(prop.getRangeURI())).append("\t");
             sb.append(getStringValue(prop.getFormat())).append("\t");
             sb.append(getStringValue(prop.isRequired())).append("\t");
+            sb.append(getStringValue(prop.isHidden())).append("\t");
             sb.append(getStringValue(prop.isQcEnabled())).append("\t");
             sb.append(getStringValue(prop.getDescription())).append("\n");
         }

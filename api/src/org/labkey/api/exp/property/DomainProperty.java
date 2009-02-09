@@ -39,6 +39,7 @@ public interface DomainProperty
     Domain getDomain();
     IPropertyType getType();
     boolean isRequired();
+    boolean isHidden();
     boolean isQcEnabled();
 
     void delete();
@@ -51,6 +52,7 @@ public interface DomainProperty
     void setRangeURI(String uri);
     void setFormat(String s);
     void setRequired(boolean b);
+    void setHidden(boolean hidden);
     void setQcEnabled(boolean qc);
 
     DefaultValueType getDefaultValueTypeEnum();

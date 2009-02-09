@@ -1,0 +1,79 @@
+/*
+ * Copyright (c) 2008-2009 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.labkey.api.gwt.client.ui.property;
+
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.ui.PropertyPane;
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.CheckBox;
+import com.google.gwt.user.client.ui.FlexTable;
+
+/**
+ * User: kevink
+ */
+public abstract class CheckboxItem<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> extends PropertyPaneItem<DomainType, FieldType>
+{
+    protected CheckBox checkbox = new CheckBox();
+
+    public CheckboxItem(PropertyPane<DomainType, FieldType> propertyPane)
+    {
+        super(propertyPane);
+    }
+
+    public int addToTable(FlexTable flexTable, int row)
+    {
+        flexTable.setWidget(row, LABEL_COLUMN, new Label(getCheckboxLabelText()));
+        flexTable.setWidget(row, INPUT_COLUMN, checkbox);
+
+        checkbox.addClickListener(createClickListener());
+        checkbox.addKeyboardListener(createKeyboardListener());
+
+        return ++row;
+    }
+
+    protected abstract String getCheckboxLabelText();
+
+    public boolean copyValuesToPropertyDescriptor(FieldType field)
+    {
+        if (checkbox.isEnabled())
+        {
+            boolean changed = !getFieldValue(field) == checkbox.isChecked();
+            setFieldValue(field, checkbox.isChecked());
+            return changed;
+        }
+        return false;
+    }
+
+    protected abstract boolean getFieldValue(FieldType field);
+
+    protected abstract void setFieldValue(FieldType field, boolean b);
+
+    public void enabledChanged()
+    {
+        checkbox.setEnabled(isEnabled());
+    }
+
+    public void showPropertyDescriptor(DomainType domain, FieldType field)
+    {
+        checkbox.setChecked(getFieldValue(field));
+    }
+
+    public boolean isChecked()
+    {
+        return checkbox.isChecked();
+    }
+}

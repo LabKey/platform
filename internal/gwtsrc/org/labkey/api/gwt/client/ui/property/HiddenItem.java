@@ -26,25 +26,25 @@ import com.google.gwt.user.client.ui.FlexTable;
  * User: jeckels
  * Date: Nov 14, 2008
  */
-public class RequiredItem<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> extends CheckboxItem<DomainType, FieldType>
+public class HiddenItem<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> extends CheckboxItem<DomainType, FieldType>
 {
-    public RequiredItem(PropertyPane<DomainType, FieldType> propertyPane)
+    public HiddenItem(PropertyPane<DomainType, FieldType> propertyPane)
     {
         super(propertyPane);
     }
 
     protected String getCheckboxLabelText()
     {
-        return "Required";
+        return "Hidden";
     }
 
     protected boolean getFieldValue(FieldType field)
     {
-        return field.isRequired();
+        return field.isHidden();
     }
 
     protected void setFieldValue(FieldType field, boolean b)
     {
-        field.setRequired(b);
+        field.setHidden(b);
     }
 }

@@ -26,42 +26,35 @@ import com.google.gwt.user.client.ui.FlexTable;
  * User: jgarms
  * Date: Jan 7, 2009
  */
-public class QcEnabledItem<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> extends PropertyPaneItem<DomainType, FieldType>
+public class QcEnabledItem<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> extends CheckboxItem<DomainType, FieldType>
 {
-    private final CheckBox qcCheckbox = new CheckBox();
     private final RequiredItem requiredItem;
 
     public QcEnabledItem(PropertyPane<DomainType, FieldType> propertyPane, RequiredItem requiredItem)
     {
         super(propertyPane);
         this.requiredItem = requiredItem;
-        qcCheckbox.setName("allowsQc");
+        checkbox.setName("allowsQc");
     }
 
-    public int addToTable(FlexTable flexTable, int row)
+    protected String getCheckboxLabelText()
     {
-        flexTable.setWidget(row, LABEL_COLUMN, new Label("Allows QC"));
-        flexTable.setWidget(row, INPUT_COLUMN, qcCheckbox);
-
-        qcCheckbox.addClickListener(createClickListener());
-        qcCheckbox.addKeyboardListener(createKeyboardListener());
-
-        return ++row;
+        return "Allows QC";
     }
 
     public boolean copyValuesToPropertyDescriptor(FieldType field)
     {
         // Called when clicked or keyed
 
-        if (qcCheckbox.isEnabled())
+        if (checkbox.isEnabled())
         {
-            if (!field.isQcEnabled() == qcCheckbox.isChecked())
+            if (!getFieldValue(field) == checkbox.isChecked())
             {
                 if (requiredItem.isChecked())
                 {
                     // TODO: A required item can't have QC. This needs to pop a dialog or disable itself
                 }
-                field.setQcEnabled(qcCheckbox.isChecked());
+                setFieldValue(field, checkbox.isChecked());
                 return true;
             }
             // No change
@@ -70,13 +63,14 @@ public class QcEnabledItem<DomainType extends GWTDomain<FieldType>, FieldType ex
         return false;
     }
 
-    public void enabledChanged()
+    protected boolean getFieldValue(FieldType field)
     {
-        qcCheckbox.setEnabled(isEnabled());
+        return field.isQcEnabled();
     }
 
-    public void showPropertyDescriptor(DomainType domain, FieldType field)
+    protected void setFieldValue(FieldType field, boolean b)
     {
-        qcCheckbox.setChecked(field.isQcEnabled());
+        field.setQcEnabled(b);
     }
+
 }

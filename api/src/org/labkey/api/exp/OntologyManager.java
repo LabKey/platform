@@ -1970,6 +1970,7 @@ public class OntologyManager
             BooleanConverter booleanConverter = new BooleanConverter(Boolean.FALSE);
 
             boolean required = ((Boolean)booleanConverter.convert(Boolean.class, m.get("NotNull"))).booleanValue();
+            boolean hidden = ((Boolean)booleanConverter.convert(Boolean.class, m.get("Hidden"))).booleanValue();
             boolean qcEnabled = ((Boolean)booleanConverter.convert(Boolean.class, m.get("AllowsQC"))).booleanValue();
 
             String description = (String) m.get("description");
@@ -2033,6 +2034,7 @@ public class OntologyManager
             pd.setContainer(container);
             pd.setDescription(description);
             pd.setRequired(required);
+            pd.setHidden(hidden);
             pd.setFormat(format);
             pd.setQcEnabled(qcEnabled);
 

@@ -48,6 +48,7 @@ public class GWTPropertyDescriptor implements IsSerializable
     private StringProperty semanticType = new StringProperty();
     private StringProperty format = new StringProperty();
     private BooleanProperty required = new BooleanProperty(false);
+    private BooleanProperty hidden = new BooleanProperty(false);
     private StringProperty lookupContainer = new StringProperty();
     private StringProperty lookupSchema = new StringProperty();
     private StringProperty lookupQuery = new StringProperty();
@@ -74,6 +75,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         setSemanticType(s.getSemanticType());
         setFormat(s.getFormat());
         setRequired(s.isRequired());
+        setHidden(s.isHidden());
         setQcEnabled(s.isQcEnabled());
         setLookupContainer(s.getLookupContainer());
         setLookupSchema(s.getLookupSchema());
@@ -241,6 +243,16 @@ public class GWTPropertyDescriptor implements IsSerializable
         this.required.setBool(required);
     }
 
+    public boolean isHidden()
+    {
+        return hidden.getBool();
+    }
+
+    public void setHidden(boolean hidden)
+    {
+        this.hidden.setBool(hidden);
+    }
+
     public boolean isQcEnabled()
     {
         return qcEnabled.getBool();
@@ -278,6 +290,7 @@ public class GWTPropertyDescriptor implements IsSerializable
 
         if (getPropertyId() != that.getPropertyId()) return false;
         if (isRequired() != that.isRequired()) return false;
+        if (isHidden() != that.isHidden()) return false;
         if (isQcEnabled() != that.isQcEnabled()) return false;
         if (getConceptURI() != null ? !getConceptURI().equals(that.getConceptURI()) : that.getConceptURI() != null) return false;
         if (getDescription() != null ? !getDescription().equals(that.getDescription()) : that.getDescription() != null) return false;
@@ -321,6 +334,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         result = 31 * result + (semanticType.getString() != null ? semanticType.getString().hashCode() : 0);
         result = 31 * result + (format.getString() != null ? format.getString().hashCode() : 0);
         result = 31 * result + (required.getBoolean() != null ? required.getBoolean().hashCode() : 0);
+        result = 31 * result + (hidden.getBoolean() != null ? hidden.getBoolean().hashCode() : 0);
         result = 31 * result + (qcEnabled.getBoolean() != null ? qcEnabled.getBoolean().hashCode() : 0);
         result = 31 * result + (lookupContainer.getString() != null ? lookupContainer.getString().hashCode() : 0);
         result = 31 * result + (lookupSchema.getString() != null ? lookupSchema.getString().hashCode() : 0);
@@ -348,6 +362,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         if ("semanticType".equals(prop)) return semanticType;
         if ("format".equals(prop)) return format;
         if ("required".equals(prop)) return required;
+        if ("hidden".equals(prop)) return hidden;
         if ("lookupContainer".equals(prop)) return lookupContainer;
         if ("lookupSchema".equals(prop)) return lookupSchema;
         if ("lookupQuery".equals(prop)) return lookupQuery;
