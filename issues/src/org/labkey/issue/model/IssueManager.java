@@ -588,7 +588,8 @@ public class IssueManager
                 assertEquals(user.getUserId(), issue.getAssignedTo().intValue());
                 assertEquals(Issue.statusOPEN, issue.getStatus());
                 assertEquals(1, issue.getComments().size());
-                assertEquals("new issue", (issue.getComments().iterator().next()).getComment().getSource());
+				HString comment = (issue.getComments().iterator().next()).getComment();
+                assertTrue(HString.eq("new issue", comment));
             }
 
             //
