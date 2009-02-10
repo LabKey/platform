@@ -81,12 +81,6 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return name;
     }
 
-    @Override
-    public boolean canCopyToStudy()
-    {
-        return false;
-    }
-
     public void addDomain(IAssayDomainType domainType, DomainDescriptorType xDomain)
     {
         domainsDescriptors.put(domainType, xDomain);
