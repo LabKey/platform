@@ -1,6 +1,5 @@
 package org.labkey.query.sql;
 
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.QuerySchema;
@@ -29,23 +28,35 @@ public class QueryUnion
 {
     QuerySchema _schema;
     Query _query;
-    QUnion _union;
     List<QuerySelect> _selectList = new ArrayList<QuerySelect>();
+    List<QUnion> _unionList = new ArrayList<QUnion>();  // parent of corresponding select
     List<QueryTableInfo> _tinfos = new ArrayList<QueryTableInfo>();
 
     QueryUnion(Query query, QUnion union)
     {
         _query = query;
         _schema = query.getSchema();
-        _union = union;
-        
+
+        initSelectStatements(union);
+    }
+
+    // current grammar does not support real tree of union using()
+    void initSelectStatements(QUnion union)
+    {
         for (QNode n : union.children())
         {
-            QQuery qquery = (QQuery)n;
-            QuerySelect select = new QuerySelect(query, qquery);
-            _selectList.add(select);
+            assert n instanceof QQuery || n instanceof QUnion;
+            if (n instanceof QQuery)
+            {
+                QuerySelect select = new QuerySelect(_query, (QQuery)n);
+                _selectList.add(select);
+                _unionList.add(union);
+            }
+            else
+                initSelectStatements((QUnion)n);
         }
     }
+
 
     void computeTableInfos()
     {
@@ -66,12 +77,13 @@ public class QueryUnion
         String union = "";
         SQLFragment unionSql = new SQLFragment();
 
-        for (QuerySelect select : _selectList)
+        for (int i=0 ; i<_selectList.size() ; i++)
         {
+            QuerySelect select = _selectList.get(i);
             SQLFragment sql = select.getSelectSql();
-            unionSql.append(union);
+            if (i>0)
+                unionSql.append(_unionList.get(i).getTokenType() == SqlTokenTypes.UNION_ALL ? "\nUNION ALL\n" : "\nUNION\n");
             unionSql.append(sql);
-            union = _union.getTokenType() == SqlTokenTypes.UNION_ALL ? "\nUNION ALL\n" : "\nUNION\n";
         }
 
         SQLTableInfo sti = new SQLTableInfo(_schema.getDbSchema());
@@ -93,12 +105,14 @@ public class QueryUnion
         String union = "";
         StringBuilder sb = new StringBuilder();
         
-        for (QuerySelect select : _selectList)
+        for (int i=0 ; i<_selectList.size() ; i++)
         {
+            QuerySelect select = _selectList.get(i);
             String sql = select.getQueryText();
+            if (i>0)
+                sb.append(_unionList.get(i).getTokenType() == SqlTokenTypes.UNION_ALL ? "\nUNION ALL\n" : "\nUNION\n");
             sb.append(union);
             sb.append(sql);
-            union = _union.getTokenType() == SqlTokenTypes.UNION_ALL ? "\nUNION ALL\n" : "\nUNION\n";
         }
         return sb.toString();
     }

@@ -27,7 +27,7 @@ public class QUnion extends QExpr
 {
     public QUnion(Node node)
     {
-		super(QQuery.class);
+		super(QExpr.class);
         from(node);
     }
 
