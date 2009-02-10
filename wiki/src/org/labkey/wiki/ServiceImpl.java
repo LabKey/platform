@@ -26,6 +26,7 @@ import org.labkey.api.wiki.MacroProvider;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.api.util.HString;
 import org.labkey.wiki.model.RadeoxMacroProxy;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
@@ -40,6 +41,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
+import java.util.ArrayList;
 
 /**
  * User: Mark Igra
@@ -60,7 +62,7 @@ public class ServiceImpl implements WikiService
 
         try
         {
-            Wiki wiki = WikiManager.getWiki(c, name, forceRefresh);
+            Wiki wiki = WikiManager.getWiki(c, new HString(name), forceRefresh);
             if (null == wiki)
                 return null;
             WikiVersion version = WikiManager.getLatestVersion(wiki, forceRefresh);
@@ -74,9 +76,9 @@ public class ServiceImpl implements WikiService
 
     public void insertWiki(User user, Container c, String name, String body, WikiRendererType renderType, String title)
     {
-        Wiki wiki = new Wiki(c, name);
+        Wiki wiki = new Wiki(c, new HString(name));
         WikiVersion wikiversion = new WikiVersion();
-        wikiversion.setTitle(title);
+        wikiversion.setTitle(new HString(title));
 
         wikiversion.setBody(body);
 
@@ -126,7 +128,7 @@ public class ServiceImpl implements WikiService
                 String html = getHtml(c, name, refresh);
                 return null == html ? null : new HtmlView(html);
             }
-            Wiki wiki = WikiManager.getWiki(c, name, refresh);
+            Wiki wiki = WikiManager.getWiki(c, new HString(name), refresh);
             if (null == wiki)
                 return null;
             WikiVersion version = WikiManager.getLatestVersion(wiki, refresh);
@@ -160,7 +162,7 @@ public class ServiceImpl implements WikiService
     }
 
     public WikiRenderer getRenderer(WikiRendererType rendererType, String hrefPrefix,
-                                    String attachPrefix, Map<String, WikiRenderer.WikiLinkable> pages,
+                                    String attachPrefix, Map<HString, WikiRenderer.WikiLinkable> pages,
                                     Attachment[] attachments)
     {
         WikiRenderer renderer;
@@ -186,7 +188,11 @@ public class ServiceImpl implements WikiService
     {
         try
         {
-            return WikiManager.getWikiNameList(c);
+            List<HString> l = WikiManager.getWikiNameList(c);
+            ArrayList<String> ret = new ArrayList<String>();
+            for (HString h : l)
+                ret.add(h.getSource());
+            return ret;
         }
         catch (SQLException x)
         {

@@ -21,6 +21,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GroovyView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.util.HString;
 import org.labkey.wiki.BaseWikiPermissions;
 import org.labkey.wiki.WikiController;
 import org.labkey.wiki.WikiManager;
@@ -64,7 +65,7 @@ abstract class BaseWikiView extends GroovyView
 
     // Was prepareWebPart -- now moving all initialization to creation time.  e.g., Portal.populatePortalView needs to see title hrefs before prepare.
     // TODO: Refactor this into Base, WikiView, and WikiWebPart (e.g., eliminate isInWebPart)
-    protected void init(Container c, String name, boolean isInWebPart)
+    protected void init(Container c, HString name, boolean isInWebPart)
     {
         ViewContext context = getViewContext();
         User user = context.getUser();
@@ -79,20 +80,20 @@ abstract class BaseWikiView extends GroovyView
         context.put("wikiPageCount", pageCount);
 
         //set initial page title
-        String title;
+        HString title;
         if (isInWebPart)
-            title = "Wiki Web Part";
+            title = new HString("Wiki Web Part");
         else
         {
             if (pageCount == 0)
-                title = "Wiki";
+                title = new HString("Wiki");
             else
                 title = name;
         }
 
         if (name == null)
         {
-            _wiki = new Wiki(c, "default");
+            _wiki = new Wiki(c, new HString("default",false));
             addObject("hasContent", false);
         }
         else
@@ -151,7 +152,7 @@ abstract class BaseWikiView extends GroovyView
 
             //set title if page has content and user has permission to see it
             if (html != null && perms.allowRead(_wiki))
-                title = getTitle() == null ? _wikiVersion.getTitle() : getTitle();
+                title = getTitle() == null ? _wikiVersion.getTitle() : new HString(getTitle());
 
             //what does "~" represent?
             if (!_wiki.getName().startsWith("~"))
@@ -212,6 +213,6 @@ abstract class BaseWikiView extends GroovyView
                 context.put("printLink", _wiki.getPageLink() + "&_print=1");
         }
 
-        setTitle(title);
+        setTitle(title.getSource());
     }
 }

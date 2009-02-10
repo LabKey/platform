@@ -26,6 +26,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Search;
+import org.labkey.api.util.HString;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavService;
@@ -141,9 +142,9 @@ public class WikiModule extends DefaultModule
 
     private void loadWikiContent(Container c, User user, String name, String title, String resource, WikiRendererType renderAs)
     {
-        Wiki wiki = new Wiki(c, name);
+        Wiki wiki = new Wiki(c, new HString(name));
         WikiVersion wikiversion = new WikiVersion();
-        wikiversion.setTitle(title);
+        wikiversion.setTitle(new HString(title));
 
         InputStream is = getClass().getResourceAsStream(resource);
         String body = PageFlowUtil.getStreamContentsAsString(is);

@@ -20,6 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import static org.apache.commons.lang.StringUtils.trimToEmpty;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.HString;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.FormattedHtml;
 import org.w3c.dom.Document;
@@ -40,7 +41,7 @@ public class HtmlRenderer implements WikiRenderer
 {
     String _hrefPrefix;
     String _attachPrefix;
-    Map<String, WikiLinkable> _pages;
+    Map<HString, WikiLinkable> _pages;
     Map<String, Attachment> _attachments;
 
     private static Map<String, SubstitutionHandler> _substitutionHandlers = new HashMap<String, SubstitutionHandler>();
@@ -52,11 +53,11 @@ public class HtmlRenderer implements WikiRenderer
     }
 
 
-    public HtmlRenderer(String hrefPrefix, String attachPrefix, Map<String, WikiLinkable> pages, Attachment[] attachments)
+    public HtmlRenderer(String hrefPrefix, String attachPrefix, Map<HString, WikiLinkable> pages, Attachment[] attachments)
     {
         _hrefPrefix = hrefPrefix;
         _attachPrefix = attachPrefix;
-        _pages = pages == null ? new HashMap<String,WikiLinkable>() : pages;
+        _pages = pages == null ? new HashMap<HString,WikiLinkable>() : pages;
         _attachments = new HashMap<String,Attachment>();
         if (null != attachments)
             for (Attachment a : attachments)
@@ -91,7 +92,7 @@ public class HtmlRenderer implements WikiRenderer
             if (href.startsWith("#"))
                 continue;
             
-            WikiLinkable l = _pages.get(href);
+            WikiLinkable l = _pages.get(new HString(href));
             if (null != l)
             {
                 // UNDONE: why is l.getName() null???

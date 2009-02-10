@@ -23,6 +23,8 @@
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
 <%@ page import="org.labkey.wiki.model.Wiki" %>
 <%@ page import="org.labkey.wiki.model.WikiEditModel" %>
+<%@ page import="org.labkey.api.util.HString" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %> 
 <%
     JspView<WikiEditModel> me = (JspView<WikiEditModel>) HttpView.currentView();
     WikiEditModel model = me.getModelBean();
@@ -132,10 +134,10 @@
                                     {
                                     String indent = "";
                                     int depth = possibleParent.getDepth();
-                                    String parentTitle = possibleParent.latestVersion().getTitle();
+                                    HString parentTitle = possibleParent.latestVersion().getTitle();
                                     while (depth-- > 0)
                                       indent = indent + "&nbsp;&nbsp;";
-                                    %><option <%= possibleParent.getRowId() == model.getParent() ? "selected" : "" %> value="<%= possibleParent.getRowId() %>"><%= indent %><%= parentTitle %> (<%= possibleParent.getName() %>)</option><%
+                                    %><option <%= possibleParent.getRowId() == model.getParent() ? "selected" : "" %> value="<%= possibleParent.getRowId() %>"><%= indent %><%= h(parentTitle) %> (<%= possibleParent.getName() %>)</option><%
                                     }
                             %>
                         </select>

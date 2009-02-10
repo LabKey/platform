@@ -17,6 +17,7 @@
 package org.labkey.wiki;
 
 import org.labkey.api.util.Cache;
+import org.labkey.api.util.HString;
 import org.labkey.api.data.Container;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.wiki.model.Wiki;
@@ -56,7 +57,7 @@ public class WikiCache
 
     static void cache(Container c, WikiManager.WikiAndVersion wikipair)
     {
-        _cache(c, wikipair.getWiki().getName(), wikipair);
+        _cache(c, wikipair.getWiki().getName().getSource(), wikipair);
     }
 
     static void _cache(Container c, String name, Object o)
@@ -70,14 +71,14 @@ public class WikiCache
         uncacheUsingPrefix(c, "");
     }
 
-    static void cachePageMap(Container c, Map<String, Wiki> tree)
+    static void cachePageMap(Container c, Map<HString, Wiki> tree)
     {
         WikiCache.cache(c, WikiCache.PAGES_NAME, tree);
     }
 
-    static Map<String, Wiki> getCachedPageMap(Container c)
+    static Map<HString, Wiki> getCachedPageMap(Container c)
     {
-        return (Map<String, Wiki>) getCached(c, WikiCache.PAGES_NAME);
+        return (Map<HString, Wiki>) getCached(c, WikiCache.PAGES_NAME);
     }
 
     static void cacheOrderedPageList(Container c, List<Wiki> list)
@@ -90,14 +91,14 @@ public class WikiCache
         return (List<Wiki>) getCached(c, WikiCache.ORDERED_PAGE_LIST);
     }
 
-    static void cacheVersionMap(Container c, Map<String, WikiRenderer.WikiLinkable> map)
+    static void cacheVersionMap(Container c, Map<HString, WikiRenderer.WikiLinkable> map)
     {
         WikiCache.cache(c, WikiCache.VERSIONS_NAME, map);
     }
 
-    static Map<String, WikiRenderer.WikiLinkable> getCachedVersionMap(Container c)
+    static Map<HString, WikiRenderer.WikiLinkable> getCachedVersionMap(Container c)
     {
-        return (Map<String, WikiRenderer.WikiLinkable>) WikiCache.getCached(c, WikiCache.VERSIONS_NAME);
+        return (Map<HString, WikiRenderer.WikiLinkable>) WikiCache.getCached(c, WikiCache.VERSIONS_NAME);
     }
 
     // Not currently used -- only case where this would be the correct behavior is if we update the content of a wiki

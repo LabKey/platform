@@ -20,6 +20,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.util.HString;
 
 import javax.servlet.ServletException;
 import java.util.Map;
@@ -46,7 +47,7 @@ public class WikiWebPart extends BaseWikiView
         String name = props.get("name");
         name = (name != null) ? name : "default";
 
-        init(c, name, true);
+        init(c, new HString(name), true);
     }
 
 

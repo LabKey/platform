@@ -22,6 +22,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.HString;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NavTreeManager;
@@ -74,7 +75,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     MessageFormat _wikiImgFormat = new MessageFormat("<img class=\"{2}\" src=\"{0}\" title=\"{1}\">");
     MessageFormat _wikiCreateLinkFormat = new MessageFormat("<a class=\"{2}\" href=\"{0}\">Create Page: {1}</a>");
 
-    Map<String, WikiLinkable> _pages;
+    Map<HString, WikiLinkable> _pages;
     Attachment[] _attachments;
 
     public RadeoxRenderer()
@@ -85,7 +86,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
 
     // UNDONE: switch to format from prefix
     public RadeoxRenderer(String hrefPrefix, String attachPrefix,
-                          Map<String, WikiLinkable> pages, Attachment[] attachments)
+                          Map<HString, WikiLinkable> pages, Attachment[] attachments)
     {
         this();
         if (null != hrefPrefix)
@@ -296,7 +297,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
             return true;
         if (null == _pages)
             return false;
-        return _pages.containsKey(s);
+        return _pages.containsKey(new HString(s));
     }
 
 
@@ -345,9 +346,9 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
             view = name.lastIndexOf('/') >= 0 ? name.substring(name.lastIndexOf('/')) : name;
             if (null != _pages)
             {
-                WikiLinkable w = _pages.get(name);
+                WikiLinkable w = _pages.get(new HString(name));
                 if (null != w)
-                    view = w.getTitle();
+                    view = w.getTitle().getSource();
             }
         }
 

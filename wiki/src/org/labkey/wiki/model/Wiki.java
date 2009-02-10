@@ -21,6 +21,7 @@ import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.util.HString;
 import org.labkey.wiki.WikiManager;
 
 import javax.ejb.*;
@@ -53,7 +54,7 @@ public class Wiki extends AttachmentParentEntity implements Serializable
 
 
     private int rowId;
-    private String name;
+    private HString name;
 
     private Collection<Attachment> attachments = new ArrayList<Attachment>();
 
@@ -75,14 +76,14 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     }
 
 
-    public Wiki(Container c, String name)
+    public Wiki(Container c, HString name)
     {
         setContainerId(c.getId());
         this.name = name;
     }
 
 
-    public Wiki(String containerId, String entityId, int rowId, int parent, String name, Attachment[] attach)
+    public Wiki(String containerId, String entityId, int rowId, int parent, HString name, Attachment[] attach)
     {
         setContainerId(containerId);
         this.entityId = entityId;
@@ -94,7 +95,7 @@ public class Wiki extends AttachmentParentEntity implements Serializable
 
 
     @Transient
-    public synchronized ActionURL getWikiLink(String action, String name)
+    public synchronized ActionURL getWikiLink(String action, HString name)
     {
         if (null == url)
             url = new ActionURL("wiki", "page", getContainerPath());
@@ -102,7 +103,7 @@ public class Wiki extends AttachmentParentEntity implements Serializable
         if (null == name)
             url.deleteFilterParameters("name");
         else
-            url.replaceParameter("name", name);
+            url.replaceParameter("name", name.getSource());
         return url.clone();
     }
 
@@ -216,13 +217,13 @@ public class Wiki extends AttachmentParentEntity implements Serializable
 
 
     @Column(nullable = false)
-    public String getName()
+    public HString getName()
     {
         return name;
     }
 
 
-    public void setName(String name)
+    public void setName(HString name)
     {
         this.name = name;
     }

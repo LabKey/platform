@@ -31,16 +31,15 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HString;
 import org.labkey.api.webdav.*;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiService;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.settings.AppProps;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 
-import javax.naming.OperationNotSupportedException;
 import java.io.*;
 import java.sql.SQLException;
 import java.util.*;
@@ -115,7 +114,12 @@ class WikiWebdavProvider implements WebdavService.Provider
         {
             try
             {
-                return WikiManager.getWikiNameList(_c);
+                List<HString> names = WikiManager.getWikiNameList(_c);
+                ArrayList<String> strs = new ArrayList<String>();
+                if (names != null)
+                for (HString name : names)
+                    strs.add(name.getSource());
+                return strs;
             }
             catch(SQLException e)
             {
@@ -160,7 +164,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             super(folder.getPath(), name);
             _c = folder._c;
             _acl = _c.getAcl();
-            _wiki = WikiManager.getWiki(_c, name);
+            _wiki = WikiManager.getWiki(_c, new HString(name));
         }
 
         public boolean canDelete(User user)

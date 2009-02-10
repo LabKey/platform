@@ -19,6 +19,7 @@ package org.labkey.wiki.model;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.HString;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
@@ -42,32 +43,32 @@ public class WikiVersion implements WikiRenderer.WikiLinkable
     private int _rowId;
     private String _pageEntityId;
     private int _version;
-    private String _title;
+    private HString _title;
     private String _body;
     private int _createdBy;
     private Date _created;
     private WikiRendererType _rendererType;
 
     private String _html = null;
-    private String _wikiName;
+    private HString _wikiName;
 
     public WikiVersion()
     {
         assert MemTracker.put(this);
     }
 
-    public WikiVersion(String wikiname)
+    public WikiVersion(HString wikiname)
     {
         _wikiName = wikiname;
         assert MemTracker.put(this);
     }
 
-    public String getName()
+    public HString getName()
     {
         return _wikiName;
     }
 
-    public void setName(String wikiname)
+    public void setName(HString wikiname)
     {
         _wikiName = wikiname;
     }
@@ -116,15 +117,15 @@ public class WikiVersion implements WikiRenderer.WikiLinkable
         return formattedHtml.getHtml();
     }
 
-    public String getTitle()
+    public HString getTitle()
     {
         if (null == _title)
-            _title = (null == _wikiName || "default".equals(_wikiName)) ? "Wiki" : _wikiName;
+            _title = (null == _wikiName || HString.eq(_wikiName,"default")) ? new HString("Wiki",false) : _wikiName;
 
         return _title;
     }
 
-    public void setTitle(String title)
+    public void setTitle(HString title)
     {
         _title = title;
     }
@@ -181,7 +182,7 @@ public class WikiVersion implements WikiRenderer.WikiLinkable
 
     public WikiRenderer getRenderer(String hrefPrefix,
                                     String attachPrefix,
-                                    Map<String, WikiRenderer.WikiLinkable> pages,
+                                    Map<HString, WikiRenderer.WikiLinkable> pages,
                                     Attachment[] attachments)
     {
         if (_rendererType == null)

@@ -139,7 +139,7 @@ public class WikiManager
 
     // CONSIDER: move caching and wiki processing into this layer...
     //get wiki with attachments
-    private static Wiki getWikiByName(Container c, String name)
+    private static Wiki getWikiByName(Container c, HString name)
     {
         try
         {
@@ -437,9 +437,9 @@ public class WikiManager
         }
     }
 
-    private static Map<String, Wiki> generatePageMap(Container c) throws SQLException
+    private static Map<HString, Wiki> generatePageMap(Container c) throws SQLException
     {
-        Map<String, Wiki> tree = new TreeMap<String, Wiki>();
+        Map<HString, Wiki> tree = new TreeMap<HString, Wiki>();
         List<Wiki> l = getPageList(c);
         for (Wiki wiki : l)
         {
@@ -484,12 +484,12 @@ public class WikiManager
         return pageList;
     }
 
-    public static List<String> getWikiNameList(Container c) throws SQLException
+    public static List<HString> getWikiNameList(Container c) throws SQLException
     {
         List<Wiki> pageList = getPageList(c);
-        List<String> nameList = new ArrayList<String>();
+        List<HString> nameList = new ArrayList<HString>();
 
-        for(Wiki page : pageList)
+        for (Wiki page : pageList)
             nameList.add(page.getName());
 
         return nameList;
@@ -507,14 +507,14 @@ public class WikiManager
         return null;
     }
 
-    public static Wiki getWiki(Container c, String name)
+    public static Wiki getWiki(Container c, HString name)
     {
         return getWiki(c, name, false);
     }
 
 
     //get wiki with specified version, with attachments
-    public static Wiki getWiki(Container c, String name, boolean forceRefresh)
+    public static Wiki getWiki(Container c, HString name, boolean forceRefresh)
     {
         WikiAndVersion wikipair = getLatestWikiAndVersion(c, name, forceRefresh);
         if (null == wikipair)
@@ -571,7 +571,7 @@ public class WikiManager
     {
         Container c = ContainerManager.getForId(wiki.getContainerId());
 
-        WikiAndVersion wikipair = getLatestWikiAndVersion(c, wiki.getName(), forceRefresh);
+        WikiAndVersion wikipair = getLatestWikiAndVersion(c, new HString(wiki.getName(),false), forceRefresh);
         if (null == wikipair)
             return null;
         return wikipair.getWikiVersion();
@@ -581,13 +581,13 @@ public class WikiManager
     private static WikiAndVersion nullWikiAndVersion = new WikiAndVersion(null,null);
 
     // UNDONE: consider exposing this method, or exposing wiki.getLatestVersion()
-    private static WikiAndVersion getLatestWikiAndVersion(Container c, String name, boolean forceRefresh)
+    private static WikiAndVersion getLatestWikiAndVersion(Container c, HString name, boolean forceRefresh)
     {
         WikiAndVersion wikipair;
 
         if (!forceRefresh)
         {
-            wikipair = (WikiAndVersion) WikiCache.getCached(c, name);
+            wikipair = (WikiAndVersion) WikiCache.getCached(c, name.getSource());
             if (null != wikipair)
             {
                 if (wikipair == nullWikiAndVersion)
@@ -600,7 +600,7 @@ public class WikiManager
 
         if (wiki == null)
         {
-            WikiCache._cache(c, name, nullWikiAndVersion);
+            WikiCache._cache(c, name.getSource(), nullWikiAndVersion);
             return null;
         }
 
@@ -663,13 +663,13 @@ public class WikiManager
 
     public static FormattedHtml formatWiki(Container c, Wiki wiki, WikiVersion wikiversion) throws SQLException
     {
-        String hrefPrefix = wiki.getWikiLink("page", "").toString();
+        String hrefPrefix = wiki.getWikiLink("page", HString.EMPTY).toString();
 
         String attachPrefix = null;
         if (null != wiki.getEntityId())
             attachPrefix = wiki.getAttachmentLink("");
 
-        Map<String, WikiRenderer.WikiLinkable> pages = getVersionMap(c);
+        Map<HString, WikiRenderer.WikiLinkable> pages = getVersionMap(c);
 
         Attachment[] attachments = wiki.getAttachments() == null ? null : wiki.getAttachments().toArray(new Attachment[wiki.getAttachments().size()]);
 
@@ -679,9 +679,9 @@ public class WikiManager
         return w.format(wikiversion.getBody());
     }
 
-    public static Map<String, Wiki> getPageMap(Container c) throws SQLException
+    public static Map<HString, Wiki> getPageMap(Container c) throws SQLException
     {
-        Map<String, Wiki> tree = WikiCache.getCachedPageMap(c);
+        Map<HString, Wiki> tree = WikiCache.getCachedPageMap(c);
         if (null != tree)
             return tree;
         tree = generatePageMap(c);
@@ -690,12 +690,12 @@ public class WikiManager
         return tree;
     }
 
-    private static Map<String, WikiRenderer.WikiLinkable> getVersionMap(Container c) throws SQLException
+    private static Map<HString, WikiRenderer.WikiLinkable> getVersionMap(Container c) throws SQLException
     {
-        Map<String, WikiRenderer.WikiLinkable> tree = WikiCache.getCachedVersionMap(c);
+        Map<HString, WikiRenderer.WikiLinkable> tree = WikiCache.getCachedVersionMap(c);
         if (null != tree)
             return tree;
-        tree = new TreeMap<String, WikiRenderer.WikiLinkable>();
+        tree = new TreeMap<HString, WikiRenderer.WikiLinkable>();
 
         List<Wiki> list = getPageList(c);
         for (Wiki wiki : list)
@@ -704,7 +704,7 @@ public class WikiManager
         return tree;
     }
 
-    public static boolean wikiNameExists(Container c, String wikiname)
+    public static boolean wikiNameExists(Container c, HString wikiname)
     {
         return getWiki(c, wikiname) != null;
     }
@@ -777,19 +777,19 @@ public class WikiManager
             //
             // CREATE
             //
-            Wiki wikiA = new Wiki(c, "pageA");
+            Wiki wikiA = new Wiki(c, new HString("pageA",false));
             WikiVersion wikiversion = new WikiVersion();
-            wikiversion.setTitle("Topic A");
+            wikiversion.setTitle(new HString("Topic A",false));
             wikiversion.setBody("[pageA]");
 
             insertWiki(user, c, wikiA, wikiversion, null);
 
             // verify objects
-            wikiA = getWikiByName(c, "pageA");
+            wikiA = getWikiByName(c, new HString("pageA,false"));
             wikiversion = getVersion(wikiA, LATEST);
             assertEquals("Topic A", wikiversion.getTitle());
 
-            assertNull(getWikiByName(c, "pageNA"));
+            assertNull(getWikiByName(c, new HString("pageNA",false)));
 
             //
             // DELETE
@@ -797,7 +797,7 @@ public class WikiManager
             deleteWiki(user, c, wikiA);
 
             // verify
-            assertNull(getWikiByName(c, "pageA"));
+            assertNull(getWikiByName(c, new HString("pageA",false)));
 
 
             purgePages(c, true);
