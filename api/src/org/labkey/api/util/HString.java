@@ -583,7 +583,7 @@ public class HString implements java.io.Serializable, Comparable<HString>, CharS
             GuidString g = new GuidString(JunitUtil.getTestContainer().getId().toLowerCase());
             assertFalse(g.isTainted());
             GuidString G = new GuidString(JunitUtil.getTestContainer().getId().toUpperCase());
-            assertTrue(G.isTainted());
+            assertFalse(G.isTainted());
             GuidString gooey = new GuidString("flaksdjfasdf");
             assertTrue(gooey.isTainted());
         }
