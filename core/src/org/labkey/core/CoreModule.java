@@ -311,9 +311,9 @@ public class CoreModule extends SpringModule
             org.labkey.api.exp.Lsid.TestCase.class,
             MimeMap.TestCase.class,
             MemTracker.TestCase.class,
-            SqlDialect.SqlDialectTestCase.class
-        )
-        );
+            SqlDialect.SqlDialectTestCase.class,
+            HString.TestCase.class
+        ));
     }
 
 
