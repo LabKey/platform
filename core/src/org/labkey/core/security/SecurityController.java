@@ -28,6 +28,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
+import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
@@ -525,7 +526,7 @@ public class SecurityController extends SpringActionController
                 // Ignore lines of all whitespace, otherwise show an error.
                 String e = StringUtils.trimToNull(rawEmail);
                 if (null != e)
-                    messages.add("Could not add user " + e + ": Invalid email address");
+                    messages.add("Could not add user " + filter(e) + ": Invalid email address");
             }
 
             String[] removeNames = form.getDelete();
@@ -537,7 +538,7 @@ public class SecurityController extends SpringActionController
                 // Ignore lines of all whitespace, otherwise show an error.
                 String e = StringUtils.trimToNull(rawEmail);
                 if (null != e)
-                    messages.add("Could not remove user " + e + ": Invalid email address");
+                    messages.add("Could not remove user " + filter(e) + ": Invalid email address");
             }
 
             if (group != null)
