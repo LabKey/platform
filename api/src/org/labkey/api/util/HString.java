@@ -17,6 +17,7 @@ package org.labkey.api.util;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.labkey.api.data.ConvertHelper;
 
 import java.util.Locale;
 
@@ -224,8 +225,11 @@ public class HString implements java.io.Serializable, Comparable<HString>, CharS
     //  for ConvertHelper
     //
 
+
     public static class Converter implements org.apache.commons.beanutils.Converter
     {
+		private static ConvertHelper.DateFriendlyStringConverter _impl = new ConvertHelper.DateFriendlyStringConverter();
+		
         public Object convert(Class type, Object value)
         {
             if (value == null)
@@ -233,7 +237,7 @@ public class HString implements java.io.Serializable, Comparable<HString>, CharS
             if (value instanceof HString)
                 return value;
             // Converter is always strict
-            return new HString(value, true);
+            return new HString(_impl.convert(String.class, value), true);
         }
     }
 
