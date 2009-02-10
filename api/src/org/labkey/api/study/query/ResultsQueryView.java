@@ -66,7 +66,7 @@ public class ResultsQueryView extends AssayBaseQueryView
         {
             if (!AssayPublishService.get().getValidPublishTargets(getUser(), ACL.PERM_INSERT).isEmpty())
             {
-                ButtonBar bbar = view.getDataRegion().getButtonBar(DataRegion.MODE_GRID);
+                ButtonBar bbar = new ButtonBar(view.getDataRegion().getButtonBar(DataRegion.MODE_GRID));
 
                 AssayProvider provider = AssayService.get().getProvider(_protocol);
 
