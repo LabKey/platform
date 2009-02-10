@@ -785,9 +785,9 @@ public class WikiManager
             insertWiki(user, c, wikiA, wikiversion, null);
 
             // verify objects
-            wikiA = getWikiByName(c, new HString("pageA,false"));
+            wikiA = getWikiByName(c, new HString("pageA",false));
             wikiversion = getVersion(wikiA, LATEST);
-            assertEquals("Topic A", wikiversion.getTitle());
+            assertTrue(HString.eq("Topic A", wikiversion.getTitle()));
 
             assertNull(getWikiByName(c, new HString("pageNA",false)));
 
