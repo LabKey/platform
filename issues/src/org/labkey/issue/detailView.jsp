@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.issue.IssuesController"%>
 <%@ page import="org.labkey.issue.model.Issue" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.HString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
@@ -65,7 +66,7 @@
 %>
 
 <table width=640>
-    <tr><td class="labkey-wp-title" colspan="3"><%=issueId + " : " + h(issue.getTitle())%></td></tr>
+    <tr><td class="labkey-wp-title" colspan="3"><%=issueId + " : " + issue.getTitle()%></td></tr>
     <tr>
         <td valign="top" width="34%"><table>
             <tr><td class="labkey-form-label">Status</td><td><%=h(issue.getStatus())%></td></tr>
@@ -84,12 +85,12 @@
             if (bean.isEditable("resolution") || !"open".equals(issue.getStatus()) && null != issue.getDuplicate())
             {
                 %><tr><td class="labkey-form-label">Duplicate</td><td>
-                <%=bean.writeInput("duplicate", null == issue.getDuplicate() ? null : issue.getDuplicate().toString())%>
+                <%=bean.writeInput(new HString("duplicate",false), HString.valueOf(issue.getDuplicate()))%>
                 </td></tr><%
             }
 %>
-            <%=bean.writeCustomColumn(c.getId(), "int1", bean._toString(issue.getInt1()), IssuesController.ISSUE_NONE)%>
-            <%=bean.writeCustomColumn(c.getId(), "int2", bean._toString(issue.getInt2()), IssuesController.ISSUE_NONE)%>
+            <%=bean.writeCustomColumn(c, new HString("int1"), HString.valueOf(issue.getInt1()), IssuesController.ISSUE_NONE)%>
+            <%=bean.writeCustomColumn(c, new HString("int2"), HString.valueOf(issue.getInt2()), IssuesController.ISSUE_NONE)%>
         </table></td>
         <td valign="top" width="33%"><table>
             <tr><td class="labkey-form-label">Changed&nbsp;By</td><td><%=h(issue.getModifiedByName(context))%></td></tr>
@@ -102,8 +103,8 @@
                 {
                     %><tr><td class="labkey-form-label">Notify</td><td><%=bean.getNotifyList(c, issue)%></td></tr><%
             }
-            %><%=bean.writeCustomColumn(c.getId(), "string1", issue.getString1(), IssuesController.ISSUE_STRING1)%>
-            <%=bean.writeCustomColumn(c.getId(), "string2", issue.getString2(), IssuesController.ISSUE_STRING2)%>
+            %><%=bean.writeCustomColumn(c, new HString("string1",false), issue.getString1(), IssuesController.ISSUE_STRING1)%>
+            <%=bean.writeCustomColumn(c, new HString("string2",false), issue.getString2(), IssuesController.ISSUE_STRING2)%>
         </table></td>
     </tr>
 </table>
@@ -120,7 +121,7 @@
         </b></td><td align="right"><b>
         <%=h(comment.getCreatedByName(context))%>
         </b></td></tr></table>
-        <%=comment.getComment()%>
+        <%=comment.getComment().getSource()%>
         <%=bean.renderAttachments(context, comment)%><%
     }
 %>

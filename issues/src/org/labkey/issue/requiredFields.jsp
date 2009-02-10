@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="java.sql.SQLException" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.util.HString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<IssuesController.IssuesPreference> me = (JspView<IssuesController.IssuesPreference>) HttpView.currentView();
@@ -63,7 +64,7 @@
 </form>
 
 <%!
-    public boolean isRequired(String name, String requiredFields) {
+    public boolean isRequired(String name, HString requiredFields) {
         if (requiredFields != null) {
             return requiredFields.indexOf(name.toLowerCase()) != -1;
         }

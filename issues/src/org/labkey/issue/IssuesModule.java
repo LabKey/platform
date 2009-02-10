@@ -88,16 +88,9 @@ public class IssuesModule extends DefaultModule
     public Collection<String> getSummary(Container c)
     {
         Collection<String> list = new LinkedList<String>();
-        try
-        {
-            long count = IssueManager.getIssueCount(c);
-            if (count > 0)
-                list.add("" + count + " Issue" + (count > 1 ? "s" : ""));
-        }
-        catch (SQLException x)
-        {
-            list.add(x.getMessage());
-        }
+        long count = IssueManager.getIssueCount(c);
+        if (count > 0)
+            list.add("" + count + " Issue" + (count > 1 ? "s" : ""));
         return list;
     }
 

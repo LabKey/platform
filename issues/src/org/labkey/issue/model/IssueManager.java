@@ -63,11 +63,11 @@ public class IssueManager
     public static Issue getIssue(Object s, Container c, int issueId) throws SQLException
     {
         Issue[] issues = Table.selectForDisplay(
-                (TableInfo)_issuesSchema.getTableInfoIssues(),
-                (Set)Table.ALL_COLUMNS,
-                (Filter)new SimpleFilter("issueId", new Integer(issueId))
+                _issuesSchema.getTableInfoIssues(),
+                Table.ALL_COLUMNS,
+                new SimpleFilter("issueId", new Integer(issueId))
                         .addCondition("container", c.getId()),
-                (Sort)null, Issue.class);
+                null, Issue.class);
         if (null == issues || issues.length < 1)
             return null;
         Issue issue = issues[0];
@@ -84,28 +84,20 @@ public class IssueManager
 
     public static void saveIssue(Object s, User user, Container c, Issue issue) throws SQLException
     {
-
-        // HACK - gets around npe, but violates contract of Issue
         if (issue.assignedTo == null)
             issue.assignedTo = new Integer(0);
 
-        try
+        if (issue.issueId == 0)
         {
-            if (issue.issueId == 0)
-            {
-                issue.beforeInsert(user, c.getId());
-                Table.insert(user, _issuesSchema.getTableInfoIssues(), issue);
-            }
-            else
-            {
-                issue.beforeUpdate(user);
-                Table.update(user, _issuesSchema.getTableInfoIssues(), issue, new Integer(issue.getIssueId()), null);
-            }
-            saveComments(user, issue);
+            issue.beforeInsert(user, c.getId());
+            Table.insert(user, _issuesSchema.getTableInfoIssues(), issue);
         }
-        finally
+        else
         {
+            issue.beforeUpdate(user);
+            Table.update(user, _issuesSchema.getTableInfoIssues(), issue, new Integer(issue.getIssueId()), null);
         }
+        saveComments(user, issue);
     }
 
 
@@ -126,7 +118,7 @@ public class IssueManager
     }
 
 
-    public static void addKeyword(Container c, int type, String keyword)
+    public static void addKeyword(Container c, int type, HString keyword)
     {
         try
         {
@@ -145,7 +137,7 @@ public class IssueManager
 
     public static class Keyword
     {
-        String _keyword;
+        HString _keyword;
         boolean _default = false;
 
         public boolean isDefault()
@@ -158,12 +150,12 @@ public class IssueManager
             _default = def;
         }
 
-        public String getKeyword()
+        public HString getKeyword()
         {
             return _keyword;
         }
 
-        public void setKeyword(String keyword)
+        public void setKeyword(HString keyword)
         {
             _keyword = keyword;
         }
@@ -189,7 +181,7 @@ public class IssueManager
     }
 
 
-    public static Map<Integer, String> getAllDefaults(Container container) throws SQLException
+    public static Map<Integer, HString> getAllDefaults(Container container) throws SQLException
     {
         ResultSet rs = null;
 
@@ -198,10 +190,10 @@ public class IssueManager
             SimpleFilter filter = new SimpleFilter("container", container.getId()).addCondition("Default", true);
             rs = Table.select(_issuesSchema.getTableInfoIssueKeywords(), PageFlowUtil.set("Type", "Keyword", "Container", "Default"), filter, null);
 
-            Map<Integer, String> defaults = new HashMap<Integer, String>(5);
+            Map<Integer, HString> defaults = new HashMap<Integer, HString>();
 
             while (rs.next())
-                defaults.put(rs.getInt("Type"), rs.getString("Keyword"));
+                defaults.put(rs.getInt("Type"), new HString(rs.getString("Keyword")));
 
             return defaults;
         }
@@ -213,30 +205,44 @@ public class IssueManager
 
 
     // Clear old default value and set new one
-    public static void setKeywordDefault(Container c, int type, String keyword) throws SQLException
+    public static void setKeywordDefault(Container c, int type, HString keyword)
     {
         clearKeywordDefault(c, type);
 
         String selectName = _issuesSchema.getTableInfoIssueKeywords().getColumn("Default").getSelectName();
 
-        Table.execute(_issuesSchema.getSchema(),
-                "UPDATE " + _issuesSchema.getTableInfoIssueKeywords() + " SET " + selectName + "=? WHERE Container=? AND Type=? AND Keyword=?",
-                new Object[]{Boolean.TRUE, c.getId(), type, keyword});
+        try
+        {
+            Table.execute(_issuesSchema.getSchema(),
+                    "UPDATE " + _issuesSchema.getTableInfoIssueKeywords() + " SET " + selectName + "=? WHERE Container=? AND Type=? AND Keyword=?",
+                    new Object[]{Boolean.TRUE, c.getId(), type, keyword});
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
     }
 
 
     // Clear existing default value
-    public static void clearKeywordDefault(Container c, int type) throws SQLException
+    public static void clearKeywordDefault(Container c, int type)
     {
         String selectName = _issuesSchema.getTableInfoIssueKeywords().getColumn("Default").getSelectName();
 
-        Table.execute(_issuesSchema.getSchema(),
-                "UPDATE " + _issuesSchema.getTableInfoIssueKeywords() + " SET " + selectName + "=? WHERE Container=? AND Type=?",
-                new Object[]{Boolean.FALSE, c.getId(), type});
+        try
+        {
+            Table.execute(_issuesSchema.getSchema(),
+                    "UPDATE " + _issuesSchema.getTableInfoIssueKeywords() + " SET " + selectName + "=? WHERE Container=? AND Type=?",
+                    new Object[]{Boolean.FALSE, c.getId(), type});
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
     }
 
 
-    public static void deleteKeyword(Container c, int type, String keyword)
+    public static void deleteKeyword(Container c, int type, HString keyword)
     {
         try
         {
@@ -380,7 +386,7 @@ public class IssueManager
 
     public static int getUserEmailPreferences(Container c, int userId)
     {
-        Integer[] emailPreference = null;
+        Integer[] emailPreference;
 
         //if the user is inactive, don't send email
         User user = UserManager.getUser(userId);
@@ -397,7 +403,7 @@ public class IssueManager
         }
         catch (SQLException e)
         {
-            _log.error(e);
+            throw new RuntimeSQLException(e);
         }
 
         if (emailPreference.length == 0)
@@ -408,7 +414,7 @@ public class IssueManager
             }
             return DEFAULT_EMAIL_PREFS;
         }
-        return emailPreference[0];
+        return emailPreference[0].intValue();
     }
 
     public static void setUserEmailPreferences(Container c, int userId, int emailPrefs, int currentUser)
@@ -440,9 +446,16 @@ public class IssueManager
     }
 
     public static long getIssueCount(Container c)
-            throws SQLException
     {
-        return Table.executeSingleton(_issuesSchema.getSchema(), "SELECT COUNT(*) FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container = ?", new Object[]{c.getId()}, Long.class);
+        try
+        {
+            Long l = Table.executeSingleton(_issuesSchema.getSchema(), "SELECT COUNT(*) FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container = ?", new Object[]{c.getId()}, Long.class);
+            return l.longValue();
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
     }
 
     public static void uncache(Container c)
@@ -503,13 +516,13 @@ public class IssueManager
         return message;
     }
 
-    public static String getRequiredIssueFields(Container container)
+    public static HString getRequiredIssueFields(Container container)
     {
         String requiredFields = IssuesController.DEFAULT_REQUIRED_FIELDS;
         Map<String, String> map = PropertyManager.getProperties(container.getId(), ISSUES_PREF_MAP, false);
         if (map != null)
             requiredFields = map.get(ISSUES_REQUIRED_FIELDS);
-        return requiredFields;
+        return new HString(requiredFields,true);
     }
 
     public static void setRequiredIssueFields(Container container, String requiredFields) throws SQLException
@@ -556,9 +569,9 @@ public class IssueManager
                 Issue issue = new Issue();
                 issue.Open(c, user);
                 issue.setAssignedTo(new Integer(user.getUserId()));
-                issue.setTitle("This is a junit test bug");
-                issue.setTag("junit");
-                issue.addComment(user, "new issue");
+                issue.setTitle(new HString("This is a junit test bug",false));
+                issue.setTag(new HString("junit",false));
+                issue.addComment(user, new HString("new issue",false));
                 issue.setPriority(3);
 
                 IssueManager.saveIssue(null, user, c, issue);
@@ -568,14 +581,14 @@ public class IssueManager
             // verify
             {
                 Issue issue = IssueManager.getIssue(null, c, issueId);
-                assertEquals("This is a junit test bug", issue.getTitle());
+                assertEquals("This is a junit test bug", issue.getTitle().getSource());
                 assertEquals(user.getUserId(), issue.getCreatedBy());
                 assertTrue(issue.getCreated().getTime() != 0);
                 assertTrue(issue.getModified().getTime() != 0);
                 assertEquals(user.getUserId(), issue.getAssignedTo().intValue());
                 assertEquals(Issue.statusOPEN, issue.getStatus());
                 assertEquals(1, issue.getComments().size());
-                assertEquals("new issue", (issue.getComments().iterator().next()).getComment());
+                assertEquals("new issue", (issue.getComments().iterator().next()).getComment().getSource());
             }
 
             //
@@ -583,7 +596,7 @@ public class IssueManager
             //
             {
                 Issue issue = IssueManager.getIssue(null, c, issueId);
-                issue.addComment(user, "what was I thinking");
+                issue.addComment(user, new HString("what was I thinking"));
                 IssueManager.saveIssue(null, user, c, issue);
             }
 
@@ -592,8 +605,8 @@ public class IssueManager
                 Issue issue = IssueManager.getIssue(null, c, issueId);
                 assertEquals(2, issue.getComments().size());
                 Iterator it = issue.getComments().iterator();
-                assertEquals("new issue", ((Issue.Comment) it.next()).getComment());
-                assertEquals("what was I thinking", ((Issue.Comment) it.next()).getComment());
+                assertEquals("new issue", ((Issue.Comment) it.next()).getComment().getSource());
+                assertEquals("what was I thinking", ((Issue.Comment) it.next()).getComment().getSource());
             }
 
             //
@@ -605,8 +618,8 @@ public class IssueManager
                 issue.Resolve(user);
 
                 Issue copy = (Issue) JunitUtil.copyObject(issue);
-                copy.setResolution("fixed");
-                copy.addComment(user, "fixed it");
+                copy.setResolution(new HString("fixed"));
+                copy.addComment(user, new HString("fixed it"));
                 IssueManager.saveIssue(null, user, c, copy);
             }
 
@@ -626,7 +639,7 @@ public class IssueManager
                 issue.Close(user);
 
                 Issue copy = (Issue) JunitUtil.copyObject(issue);
-                copy.addComment(user, "closed");
+                copy.addComment(user, new HString("closed"));
                 IssueManager.saveIssue(null, user, c, copy);
             }
 

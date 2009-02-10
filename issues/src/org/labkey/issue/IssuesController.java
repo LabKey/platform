@@ -177,7 +177,7 @@ public class IssuesController extends SpringActionController
             if (form.getRequiredFields().length > 0)
             {
                 String sep = "";
-                for (String field : form.getRequiredFields())
+                for (HString field : form.getRequiredFields())
                 {
                     sb.append(sep);
                     sb.append(field);
@@ -331,7 +331,7 @@ public class IssuesController extends SpringActionController
             page.setUserHasUpdatePermissions(hasUpdatePermission(getUser(), _issue));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
 
-            getPageConfig().setTitle("" + _issue.getIssueId() + " : " + _issue.getTitle());
+            getPageConfig().setTitle("" + _issue.getIssueId() + " : " + _issue.getTitle().getSource());
 
             JspView v = new JspView<IssuePage>(IssuesController.class, "detailView.jsp", page);
             return v;
@@ -496,7 +496,7 @@ public class IssuesController extends SpringActionController
                 _log.debug("IssuesContoller.doInsert", x);
                 _issue.Open(c, user);
 
-                errors.addError(new ObjectError("form", null, null, error));
+                errors.addError(new LabkeyError(error));
                 return false;
             }
             finally
@@ -540,7 +540,7 @@ public class IssuesController extends SpringActionController
 
     private Issue setNewIssueDefaults(Issue issue) throws SQLException, ServletException
     {
-        Map<Integer, String> defaults = IssueManager.getAllDefaults(getContainer());
+        Map<Integer, HString> defaults = IssueManager.getAllDefaults(getContainer());
 
         issue.setArea(defaults.get(ISSUE_AREA));
         issue.setType(defaults.get(ISSUE_TYPE));
@@ -548,8 +548,8 @@ public class IssuesController extends SpringActionController
         issue.setString1(defaults.get(ISSUE_STRING1));
         issue.setString2(defaults.get(ISSUE_STRING2));
 
-        String priority = defaults.get(ISSUE_PRIORITY);
-        issue.setPriority(null != priority ? Integer.parseInt(defaults.get(ISSUE_PRIORITY)) : 3);
+        HString priority = defaults.get(ISSUE_PRIORITY);
+        issue.setPriority(null != priority ? priority.parseInt() : 3);
 
         return issue;
     }
@@ -629,10 +629,46 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
-    public class DownloadAction extends SimpleViewAction<AttachmentForm>
+
+
+    // SAME as AttachmentForm, just to demonstrate GuidString
+    public static class _AttachmentForm
     {
-        public ModelAndView getView(final AttachmentForm form, BindException errors) throws Exception
+        private GuidString _entityId = null;
+        private String _name = null;
+
+
+        public GuidString getEntityId()
+        {
+            return _entityId;
+        }
+
+
+        public void setEntityId(GuidString entityId)
+        {
+            _entityId = entityId;
+        }
+
+
+        public String getName()
+        {
+            return _name;
+        }
+
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+    }
+
+    
+
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class DownloadAction extends SimpleViewAction<_AttachmentForm>
+    {
+        public ModelAndView getView(final _AttachmentForm form, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(PageConfig.Template.None);
             final AttachmentParent parent = new IssueAttachmentParent(getContainer(), form.getEntityId());
@@ -652,14 +688,16 @@ public class IssuesController extends SpringActionController
         }
     }
 
+
     public class IssueAttachmentParent extends AttachmentParentEntity
     {
-        public IssueAttachmentParent(Container c, String entityId)
+        public IssueAttachmentParent(Container c, GuidString entityId)
         {
             setContainer(c.getId());
-            setEntityId(entityId);
+            setEntityId(entityId.toString());
         }
     }
+
 
     @RequiresPermission(ACL.PERM_UPDATEOWN)
     public class UpdateAction extends IssueUpdateAction
@@ -744,9 +782,9 @@ public class IssuesController extends SpringActionController
 
             if (null == _issue.getResolution())
             {
-                Map<Integer, String> defaults = IssueManager.getAllDefaults(getContainer());
+                Map<Integer, HString> defaults = IssueManager.getAllDefaults(getContainer());
 
-                String resolution = defaults.get(ISSUE_RESOLUTION);
+                HString resolution = defaults.get(ISSUE_RESOLUTION);
 
                 if (null != resolution)
                     _issue.setResolution(resolution);
@@ -862,15 +900,15 @@ public class IssuesController extends SpringActionController
 
     private void validateRequiredFields(IssuesForm form, Errors errors)
     {
-        String requiredFields = IssueManager.getRequiredIssueFields(getContainer());
+        HString requiredFields = IssueManager.getRequiredIssueFields(getContainer());
         final Map<String, String> newFields = form.getStrings();
-        if (StringUtils.isEmpty(requiredFields))
+        if (requiredFields.isEmpty())
             return;
 
         MapBindingResult requiredErrors = new MapBindingResult(newFields, errors.getObjectName());
         if (newFields.containsKey("title"))
             validateRequired("title", newFields.get("title"), requiredFields, requiredErrors);
-        if (newFields.containsKey("assignedTo") && !(StringUtils.equals(form.getBean().getStatus(), Issue.statusCLOSED)))
+        if (newFields.containsKey("assignedTo") && !(Issue.statusCLOSED.equals(form.getBean().getStatus())))
             validateRequired("assignedto", newFields.get("assignedTo"), requiredFields, requiredErrors);
         if (newFields.containsKey("type"))
             validateRequired("type", newFields.get("type"), requiredFields, requiredErrors);
@@ -895,7 +933,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    private void validateRequired(String columnName, String value, String requiredFields, Errors errors)
+    private void validateRequired(String columnName, String value, HString requiredFields, Errors errors)
     {
         if (requiredFields != null)
         {
@@ -942,14 +980,14 @@ public class IssuesController extends SpringActionController
 
         if (!emails.isEmpty())
         {
-            StringBuffer notify = new StringBuffer();
+            HStringBuilder notify = new HStringBuilder();
             for (int i=0; i < emails.size(); i++)
             {
                 notify.append(emails.get(i));
                 if (i < emails.size()-1)
                     notify.append(';');
             }
-            issue.setNotifyList(notify.toString());
+            issue.setNotifyList(notify.toHString());
         }
     }
 
@@ -1054,10 +1092,10 @@ public class IssuesController extends SpringActionController
         }
 
         // add any explicit notification list addresses
-        final String notify = issue.getNotifyList();
+        final HString notify = issue.getNotifyList();
         if (notify != null)
         {
-            StringTokenizer tokenizer = new StringTokenizer(notify, ";\n\r\t");
+            StringTokenizer tokenizer = new StringTokenizer(notify.getSource(), ";\n\r\t");
             while (tokenizer.hasMoreTokens())
             {
                 emailAddresses.add((String)tokenizer.nextElement());
@@ -1384,14 +1422,14 @@ public class IssuesController extends SpringActionController
     }
 
 
-    static void _appendChange(StringBuffer sb, String field, String from, String to)
+    static void _appendChange(StringBuffer sb, String field, HString from, HString to)
     {
-        from = _toString(from);
-        to = _toString(to);
+        from = from == null ? HString.EMPTY : from;
+        to = to == null ? HString.EMPTY : to;
         if (!from.equals(to))
         {
-            String encFrom = PageFlowUtil.filter(from);
-            String encTo = PageFlowUtil.filter(to);
+            HString encFrom = PageFlowUtil.filter(from);
+            HString encTo = PageFlowUtil.filter(to);
             sb.append("<tr><td>").append(field).append("</td><td>").append(encFrom).append("</td><td>&raquo;</td><td>").append(encTo).append("</td></tr>\n");
         }
     }
@@ -1426,11 +1464,11 @@ public class IssuesController extends SpringActionController
             _appendChange(sbChanges, "Notify", previous.getNotifyList(), issue.getNotifyList());
             _appendChange(sbChanges, "Type", previous.getType(), issue.getType());
             _appendChange(sbChanges, "Area", previous.getArea(), issue.getArea());
-            _appendChange(sbChanges, "Priority", _toString(previous.getPriority()), _toString(issue.getPriority()));
+            _appendChange(sbChanges, "Priority", HString.valueOf(previous.getPriority()), HString.valueOf(issue.getPriority()));
             _appendChange(sbChanges, "Milestone", previous.getMilestone(), issue.getMilestone());
 
-            _appendCustomColumnChange(sbChanges, "int1", _toString(previous.getInt1()), _toString(issue.getInt1()), customColumns);
-            _appendCustomColumnChange(sbChanges, "int2", _toString(previous.getInt2()), _toString(issue.getInt2()), customColumns);
+            _appendCustomColumnChange(sbChanges, "int1", HString.valueOf(previous.getInt1()), HString.valueOf(issue.getInt1()), customColumns);
+            _appendCustomColumnChange(sbChanges, "int2", HString.valueOf(previous.getInt2()), HString.valueOf(issue.getInt2()), customColumns);
             _appendCustomColumnChange(sbChanges, "string1", previous.getString1(), issue.getString1(), customColumns);
             _appendCustomColumnChange(sbChanges, "string2", previous.getString2(), issue.getString2(), customColumns);
 
@@ -1438,7 +1476,7 @@ public class IssuesController extends SpringActionController
         }
 
         //why we are wrapping issue comments in divs???
-        StringBuilder formattedComment = new StringBuilder();
+        HStringBuilder formattedComment = new HStringBuilder();
         formattedComment.append("<div class=\"wiki\">");
         formattedComment.append(sbChanges);
         //render issues as plain text with links
@@ -1453,10 +1491,10 @@ public class IssuesController extends SpringActionController
 
         formattedComment.append("</div>");
 
-        return issue.addComment(user, formattedComment.toString());
+        return issue.addComment(user, formattedComment.toHString());
     }
 
-    private static void _appendCustomColumnChange(StringBuffer sb, String field, String from, String to, Map<String, String> columnCaptions)
+    private static void _appendCustomColumnChange(StringBuffer sb, String field, HString from, HString to, Map<String, String> columnCaptions)
     {
         String caption = columnCaptions.get(field);
 
@@ -1624,7 +1662,7 @@ public class IssuesController extends SpringActionController
     public static class AdminForm
     {
         private int type;
-        private String keyword;
+        private HString keyword;
 
 
         public int getType()
@@ -1639,13 +1677,13 @@ public class IssuesController extends SpringActionController
         }
 
 
-        public String getKeyword()
+        public HString getKeyword()
         {
             return keyword;
         }
 
 
-        public void setKeyword(String keyword)
+        public void setKeyword(HString keyword)
         {
             this.keyword = keyword;
         }
@@ -1943,25 +1981,25 @@ public class IssuesController extends SpringActionController
     public static class IssuesPreference
     {
         private List<ColumnInfo> _columns;
-        private String _requiredFields;
+        private HString _requiredFields;
 
-        public IssuesPreference(List<ColumnInfo> columns, String requiredFields)
+        public IssuesPreference(List<ColumnInfo> columns, HString requiredFields)
         {
             _columns = columns;
             _requiredFields = requiredFields;
         }
 
         public List<ColumnInfo> getColumns(){return _columns;}
-        public String getRequiredFields(){return _requiredFields;}
+        public HString getRequiredFields(){return _requiredFields;}
     }
 
 
     public static class IssuePreferenceForm
     {
-        private String[] _requiredFields = new String[0];
+        private HString[] _requiredFields = new HString[0];
 
-        public void setRequiredFields(String[] requiredFields){_requiredFields = requiredFields;}
-        public String[] getRequiredFields(){return _requiredFields;}
+        public void setRequiredFields(HString[] requiredFields){_requiredFields = requiredFields;}
+        public HString[] getRequiredFields(){return _requiredFields;}
     }
 
 

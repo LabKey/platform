@@ -21,6 +21,7 @@ import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.HString;
 import org.labkey.api.view.ViewContext;
 
 import javax.ejb.*;
@@ -36,41 +37,41 @@ import java.util.List;
 @Table(name = "Issues")
 public class Issue extends Entity implements Serializable, Cloneable
 {
-    public static String statusOPEN = "open";
-    public static String statusRESOLVED = "resolved";
-    public static String statusCLOSED = "closed";
+    public static HString statusOPEN = new HString("open",false);
+    public static HString statusRESOLVED = new HString("resolved",false);
+    public static HString statusCLOSED = new HString("closed",false);
 
     protected byte[] _ts;
     protected int issueId;
-    protected String title;
-    protected String status;
+    protected HString title;
+    protected HString status;
     protected Integer assignedTo;
-    protected String type;
+    protected HString type;
 
-    protected String area;
+    protected HString area;
     protected Integer priority;
-    protected String milestone;
-    protected String buildFound;
+    protected HString milestone;
+    protected HString buildFound;
 
-    protected String tag;
+    protected HString tag;
 
     protected Integer resolvedBy;
     protected Date resolved;
-    protected String resolution;
+    protected HString resolution;
     protected Integer duplicate;
 
     protected Integer closedBy;
     protected Date closed;
 
-    protected String string1;
-    protected String string2;
+    protected HString string1;
+    protected HString string2;
     protected Integer int1;
     protected Integer int2;
 
     protected List<Comment> _comments = new ArrayList<Comment>();
     protected List<Comment> _added = null;
 
-    protected String _notifyList;
+    protected HString _notifyList;
 
     public Issue()
     {
@@ -161,25 +162,25 @@ public class Issue extends Entity implements Serializable, Cloneable
         this.issueId = issueId;
     }
 
-    public String getTitle()
+    public HString getTitle()
     {
         return title;
     }
 
 
-    public void setTitle(String title)
+    public void setTitle(HString title)
     {
         this.title = title;
     }
 
 
-    public String getStatus()
+    public HString getStatus()
     {
         return status;
     }
 
 
-    public void setStatus(String status)
+    public void setStatus(HString status)
     {
         this.status = status;
     }
@@ -199,31 +200,31 @@ public class Issue extends Entity implements Serializable, Cloneable
 
 
     @Transient
-    public String getAssignedToName(ViewContext context)
+    public HString getAssignedToName(ViewContext context)
     {
-        return UserManager.getDisplayName(assignedTo, context);
+        return new HString(UserManager.getDisplayName(assignedTo, context));
     }
 
 
-    public String getType()
+    public HString getType()
     {
         return type;
     }
 
 
-    public void setType(String type)
+    public void setType(HString type)
     {
         this.type = type;
     }
 
 
-    public String getArea()
+    public HString getArea()
     {
         return area;
     }
 
 
-    public void setArea(String area)
+    public void setArea(HString area)
     {
         this.area = area;
     }
@@ -242,13 +243,13 @@ public class Issue extends Entity implements Serializable, Cloneable
     }
 
 
-    public String getMilestone()
+    public HString getMilestone()
     {
         return milestone;
     }
 
 
-    public void setMilestone(String milestone)
+    public void setMilestone(HString milestone)
     {
         this.milestone = milestone;
     }
@@ -275,13 +276,13 @@ public class Issue extends Entity implements Serializable, Cloneable
     }
 
 
-    public String getTag()
+    public HString getTag()
     {
         return tag;
     }
 
 
-    public void setTag(String tag)
+    public void setTag(HString tag)
     {
         this.tag = tag;
     }
@@ -319,13 +320,13 @@ public class Issue extends Entity implements Serializable, Cloneable
     }
 
 
-    public String getResolution()
+    public HString getResolution()
     {
         return resolution;
     }
 
 
-    public void setResolution(String resolution)
+    public void setResolution(HString resolution)
     {
         this.resolution = resolution;
     }
@@ -376,22 +377,22 @@ public class Issue extends Entity implements Serializable, Cloneable
     }
 
 
-    public String getString2()
+    public HString getString2()
     {
         return string2;
     }
 
-    public void setString2(String string2)
+    public void setString2(HString string2)
     {
         this.string2 = string2;
     }
 
-    public String getString1()
+    public HString getString1()
     {
         return string1;
     }
 
-    public void setString1(String string1)
+    public void setString1(HString string1)
     {
         this.string1 = string1;
     }
@@ -458,7 +459,7 @@ public class Issue extends Entity implements Serializable, Cloneable
 
 
     // UNDONE: MAKE work in Table version
-    public Comment addComment(User user, String text)
+    public Comment addComment(User user, HString text)
     {
         Comment comment = new Comment();
         comment.beforeInsert(user, getContainerId());
@@ -472,12 +473,12 @@ public class Issue extends Entity implements Serializable, Cloneable
         return comment;
     }
 
-    public void setNotifyList(String notifyList)
+    public void setNotifyList(HString notifyList)
     {
         _notifyList = notifyList;
     }
 
-    public String getNotifyList()
+    public HString getNotifyList()
     {
         return _notifyList;
     }
@@ -490,7 +491,7 @@ public class Issue extends Entity implements Serializable, Cloneable
     {
         private Issue issue;
         private int commentId;
-        String comment;
+        HString comment;
 
         @ManyToOne
         @JoinColumn(name = "issueId")
@@ -521,12 +522,12 @@ public class Issue extends Entity implements Serializable, Cloneable
             return UserManager.getDisplayName(getCreatedBy(), context);
         }
 
-        public String getComment()
+        public HString getComment()
         {
             return comment;
         }
 
-        public void setComment(String comment)
+        public void setComment(HString comment)
         {
             this.comment = comment;
         }
