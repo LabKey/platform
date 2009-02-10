@@ -271,6 +271,7 @@ api/src/org/labkey/api/jsp/FormPage.java -text
 api/src/org/labkey/api/jsp/JspBase.java -text
 api/src/org/labkey/api/jsp/JspClassLoader.java -text
 api/src/org/labkey/api/jsp/JspLoader.java -text
+api/src/org/labkey/api/jsp/LabkeyJspFactory.java -text
 api/src/org/labkey/api/jsp/RecompilingJspClassLoader.java -text
 api/src/org/labkey/api/jsp/taglib/ButtonTag.java -text
 api/src/org/labkey/api/jsp/taglib/CheckboxTag.java -text
@@ -535,6 +536,8 @@ api/src/org/labkey/api/reports/report/view/rReportTabHandler.jsp -text
 api/src/org/labkey/api/reports/report/view/reportHeader.jsp -text
 api/src/org/labkey/api/reports/report/view/scriptReportDesigner.jsp -text
 api/src/org/labkey/api/security/ActionNames.java -text
+api/src/org/labkey/api/security/AuthenicatedResponse.java -text
+api/src/org/labkey/api/security/AuthenticatedRequest.java -text
 api/src/org/labkey/api/security/AuthenticationManager.java -text
 api/src/org/labkey/api/security/AuthenticationProvider.java -text
 api/src/org/labkey/api/security/DbLoginAuthenticationProvider.java -text
@@ -671,8 +674,12 @@ api/src/org/labkey/api/util/FolderDisplayMode.java -text
 api/src/org/labkey/api/util/Formats.java -text
 api/src/org/labkey/api/util/GUID.java -text
 api/src/org/labkey/api/util/GroovyExpression.java -text
+api/src/org/labkey/api/util/GuidString.java -text
+api/src/org/labkey/api/util/HString.java -text
+api/src/org/labkey/api/util/HStringBuilder.java -text
 api/src/org/labkey/api/util/HelpTopic.java -text
 api/src/org/labkey/api/util/HttpsUtil.java -text
+api/src/org/labkey/api/util/IdentifierString.java -text
 api/src/org/labkey/api/util/ImageUtil.java -text
 api/src/org/labkey/api/util/Job.java -text
 api/src/org/labkey/api/util/JobRunner.java -text
@@ -689,6 +696,7 @@ api/src/org/labkey/api/util/StringExpressionFactory.java -text
 api/src/org/labkey/api/util/StringSubstitution.java -text
 api/src/org/labkey/api/util/SystemMaintenance.java -text
 api/src/org/labkey/api/util/TTLCacheMap.java -text
+api/src/org/labkey/api/util/Taintable.java -text
 api/src/org/labkey/api/util/URIUtil.java -text
 api/src/org/labkey/api/util/UnexpectedException.java -text
 api/src/org/labkey/api/util/UsageReportingLevel.java -text

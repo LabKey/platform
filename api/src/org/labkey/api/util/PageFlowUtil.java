@@ -146,6 +146,25 @@ public class PageFlowUtil
         return filter(s,false,false);
     }
 
+    static public HString filter(Taintable s)
+    {
+        if (null == s)
+            return HString.EMPTY;
+        
+        if (s instanceof HString)
+        {
+            return new HString(filter(((HString)s).getSource()), false);
+        }
+        else if (s instanceof HStringBuilder)
+        {
+            return new HString(filter(((HStringBuilder)s).getSource()), false);
+        }
+        else
+        {
+            return new HString(filter(s.toString()),false);
+        }
+    }
+
     static public String filter(String s, boolean encodeSpace, boolean encodeLinks)
     {
         if (null == s || 0 == s.length())
@@ -285,10 +304,24 @@ public class PageFlowUtil
     }
 
 
-    static public String jsString(String s)
+    static public String jsString(CharSequence cs)
     {
-        if (s == null)
+        if (cs == null)
             return "''";
+
+        String s;        
+        if (cs instanceof HString)
+            s = ((HString)cs).getSource();
+        else
+            s = cs.toString();
+
+        // UNDONE: what behavior do we want for tainted strings?
+        if (cs instanceof Taintable && ((Taintable)cs).isTainted())
+        {
+            if (s.toLowerCase().contains("<script"))
+                return "''";
+        }
+
         StringBuilder js = new StringBuilder(s.length() + 10);
         js.append("'");
         int len = s.length();

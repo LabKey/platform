@@ -284,6 +284,12 @@ public class ActionURL extends URLHelper implements Cloneable
     }
 
     @Override
+    public ActionURL addParameter(String key, CharSequence value)
+    {
+        return (ActionURL) super.addParameter(key, value);
+    }
+
+    @Override
     public ActionURL addParameter(String key, String value)
     {
         return (ActionURL) super.addParameter(key, value);

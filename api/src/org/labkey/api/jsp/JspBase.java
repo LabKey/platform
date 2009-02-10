@@ -16,9 +16,7 @@
 
 package org.labkey.api.jsp;
 
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.*;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -81,6 +79,24 @@ abstract public class JspBase extends HttpServlet implements HttpJspPage, HasVie
     public String h(Object o)
     {
         return PageFlowUtil.filter(o);
+    }
+
+    /**
+     * Html escape a string.
+     * The name comes from Embedded Ruby.
+     */
+    public HString h(HString str)
+    {
+        return PageFlowUtil.filter(str);
+    }
+
+    /**
+     * Html escape a string.
+     * The name comes from Embedded Ruby.
+     */
+    public HString h(HStringBuilder str)
+    {
+        return PageFlowUtil.filter(str);
     }
 
     /**

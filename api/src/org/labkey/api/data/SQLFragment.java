@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.util.HString;
+
 import java.util.*;
 
 /**
@@ -41,16 +43,18 @@ public class SQLFragment
      * @param sql
      * @param params list may be modified so clone() before passing in if necessary
      */
-    public SQLFragment(String sql, List<Object> params)
+    public SQLFragment(CharSequence sql, List<Object> params)
     {
-        this.sql = sql;
+        guard(sql);
+        this.sql = sql.toString();
         this.params = params;
     }
 
 
-    public SQLFragment(String sql, Object... params)
+    public SQLFragment(CharSequence sql, Object... params)
     {
-        this.sql = sql;
+        guard(sql);
+        this.sql = sql.toString();
         this.params = Arrays.asList(params);
     }
 
@@ -105,6 +109,7 @@ public class SQLFragment
 
     public SQLFragment append(CharSequence s)
     {
+        guard(s);
         getStringBuilder().append(s);
         return this;
     }
@@ -112,6 +117,7 @@ public class SQLFragment
 
     public SQLFragment append(Object o)
     {
+        guard(o);
         getStringBuilder().append(o);
         return this;
     }
@@ -151,12 +157,14 @@ public class SQLFragment
 
     public SQLFragment append(char ch)
     {
-        return append(new String(new char[] { ch }));
+        getStringBuilder().append(ch);
+        return this;
     }
 
-    public SQLFragment appendStringLiteral(String s)
+    public SQLFragment appendStringLiteral(CharSequence s)
     {
-        if (s.indexOf("'") >= 0 || s.indexOf("\\") >= 0)
+        String source = HString.source(s);        
+        if (s instanceof HString || source.indexOf("'") >= 0 || source.indexOf("\\") >= 0)
         {
             append("?");
             add(s);
@@ -196,5 +204,12 @@ public class SQLFragment
             sql = sql.replaceFirst("\\?", param);
         }
         return sql.replaceAll("\"", "");
+    }
+
+
+    void guard(Object s)
+    {
+        if (s instanceof HString && ((HString)s).isTainted())
+            throw new IllegalArgumentException(((HString)s).getSource());
     }
 }

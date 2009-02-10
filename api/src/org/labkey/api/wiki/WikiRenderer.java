@@ -16,6 +16,8 @@
 
 package org.labkey.api.wiki;
 
+import org.labkey.api.util.HString;
+
 /**
  * Created by IntelliJ IDEA.
  * User: Tamra Myers
@@ -26,9 +28,9 @@ public interface WikiRenderer
 {
     public interface WikiLinkable
     {
-        String getTitle();
+        HString getTitle();
 
-        String getName();
+        HString getName();
     }
 
     public FormattedHtml format(String text);

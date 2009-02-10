@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.struts.upload.FormFile;
 import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.util.HString;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -137,7 +138,12 @@ public class Parameter
         else if (value instanceof GregorianCalendar)
             value = new java.sql.Timestamp(((java.util.GregorianCalendar) value).getTimeInMillis());
         else if (value.getClass() == java.lang.Character.class || value instanceof CharSequence)
-            value = value.toString();
+        {
+            if (value instanceof HString)
+                value = ((HString)value).getSource();
+            else
+                value = value.toString();
+        }
         else if (value.getClass() == Container.class)
             value = ((Container) value).getId();
         else if (value instanceof Enum)

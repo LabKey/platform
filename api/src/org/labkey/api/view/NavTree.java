@@ -18,6 +18,7 @@ package org.labkey.api.view;
 import org.labkey.common.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.HString;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -119,7 +120,11 @@ public class NavTree extends Pair<String, String> implements Collapsible
         return child;
     }
 
-    // return this for easy chaining
+    public NavTree addChild(HString display)
+    {
+        return addChild(display.getSource());
+    }
+
     public NavTree addChild(String display)
     {
         return addChild(new NavTree(display));
@@ -136,6 +141,12 @@ public class NavTree extends Pair<String, String> implements Collapsible
     {
         addChild(new NavTree(display, href, imageSrc));
         return this;
+    }
+
+
+    public NavTree addChild(HString display, URLHelper urlhelp)
+    {
+        return addChild(display.getSource(), urlhelp);        
     }
 
 

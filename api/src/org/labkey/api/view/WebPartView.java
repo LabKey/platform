@@ -22,6 +22,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.HString;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
 import javax.servlet.ServletException;
@@ -96,9 +97,11 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean> impleme
         return StringUtils.defaultString((String) getViewContext().get("className"), "");
     }
 
-    public void setTitle(String title)
+    public void setTitle(CharSequence title)
     {
-        addObject("title", title);
+        if (title instanceof HString)
+            title = ((HString)title).getSource();
+        addObject("title", title == null ? "" : title.toString());
     }
 
     public String getTitle()

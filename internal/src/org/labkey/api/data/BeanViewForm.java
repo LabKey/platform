@@ -62,7 +62,7 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean
                 else
                     bean = (K) BeanUtils.cloneBean(_oldValues);
 
-                BeanUtils.populate(bean, this.getTypedValues());
+                BeanUtils.populate(bean, getStrings());
                 return bean;
             }
             catch (IllegalAccessException x)
@@ -85,7 +85,7 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean
         else
         {
             ObjectFactory<K> factory = ObjectFactory.Registry.getFactory(_wrappedClass);
-            return factory.fromMap(this.getTypedValues());
+            return factory.fromMap(this.getStrings());
         }
     }
 

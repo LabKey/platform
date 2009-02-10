@@ -25,11 +25,9 @@ import org.labkey.api.util.ExceptionUtil;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URL;
-import java.security.Principal;
 
 
 public class AuthFilter implements Filter
@@ -101,25 +99,6 @@ public class AuthFilter implements Filter
         }
 
         chain.doFilter(req, resp);
-    }
-
-
-    // CONSIDER: move to org.labkey.api.security.AuthenticatedRequest
-    public static class AuthenticatedRequest extends HttpServletRequestWrapper
-    {
-        User _user;
-
-        public AuthenticatedRequest(HttpServletRequest request, User user)
-        {
-            super(request);
-            _user = null == user ? User.guest : user;
-        }
-
-
-        public Principal getUserPrincipal()
-        {
-            return _user;
-        }
     }
 
 
