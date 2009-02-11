@@ -337,7 +337,7 @@ public class UploadSamplesHelper
         if (source.getParentCol() != null)
         {
             // Map from material name to material of all materials in all sample sets visible from this location
-            Map<String, ExpMaterialImpl> potentialParents = ExperimentServiceImpl.get().getSamplesByName(_form.getContainer(), _form.getUser());
+            Map<String, List<ExpMaterialImpl>> potentialParents = ExperimentServiceImpl.get().getSamplesByName(_form.getContainer(), _form.getUser());
 
             assert rows.size() == helper._materials.size() : "Didn't find as many materials as we have rows";
             for (int i = 0; i < rows.size(); i++)
@@ -379,7 +379,7 @@ public class UploadSamplesHelper
         }
     }
 
-    private List<ExpMaterial> resolveParentMaterials(String newParent, Map<String, ? extends ExpMaterial> materials) throws ValidationException, ExperimentException
+    private List<ExpMaterial> resolveParentMaterials(String newParent, Map<String, List<ExpMaterialImpl>> materials) throws ValidationException, ExperimentException
     {
         List<ExpMaterial> parents = new ArrayList<ExpMaterial>();
 
@@ -387,22 +387,59 @@ public class UploadSamplesHelper
         for (String parentName : parentNames)
         {
             parentName = parentName.trim();
-            ExpMaterial parent = materials.get(parentName);
-            if (parent == null)
+            List<? extends ExpMaterial> potentialParents = materials.get(parentName);
+            if (potentialParents != null && potentialParents.size() == 1)
             {
-                if (materials.containsKey(parentName))
+                parents.add(potentialParents.get(0));
+            }
+            else
+            {
+                ExpMaterial parent = null;
+                // Couldn't find exactly one match, check if it might be of the form <SAMPLE_SET_NAME>.<SAMPLE_NAME>
+                int dotIndex = parentName.indexOf(".");
+                if (dotIndex != -1)
                 {
-                    // A value of null is a marker indicating that there was more than one match found
+                    String sampleSetName = parentName.substring(0, dotIndex);
+                    String sampleName = parentName.substring(dotIndex + 1);
+                    parent = findParent(sampleSetName, sampleName);
+                }
+                if (parent != null)
+                {
+                    parents.add(parent);
+                }
+                else if (potentialParents == null)
+                {
+                    throw new ExperimentException("Could not find parent material with name '" + parentName + "'.");
+                }
+                else if (potentialParents.size() > 1)
+                {
                     throw new ExperimentException("More than one match for parent material '" + parentName + "' was found.");
                 }
-                else
-                {
-                    throw new ExperimentException("Could not find parent material '" + parentName + "'.");
-                }
             }
-            parents.add(parent);
         }
         return parents;
+    }
+
+    private ExpMaterial findParent(String sampleSetName, String sampleName)
+    {
+        // Could easily do some caching here, but probably not a significant perf issue
+        ExpSampleSet[] sampleSets = ExperimentService.get().getSampleSets(getContainer(), _form.getUser(), true);
+        for (ExpSampleSet sampleSet : sampleSets)
+        {
+            // Look for a sample set with the right name
+            if (sampleSetName.equals(sampleSet.getName()))
+            {
+                for (ExpMaterial sample : sampleSet.getSamples())
+                {
+                    // Look for a sample with the right name
+                    if (sample.getName().equals(sampleName))
+                    {
+                        return sample;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     private class MaterialImportHelper implements OntologyManager.ImportHelper

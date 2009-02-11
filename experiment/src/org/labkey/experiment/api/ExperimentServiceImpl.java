@@ -286,9 +286,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new ExpDataImpl(data);
     }
 
-    public ExpMaterialImpl getExpMaterialByName(String name, Container container, User user)
+    public List<ExpMaterialImpl> getExpMaterialsByName(String name, Container container, User user)
     {
-        return getSamplesByName(container, user).get(name);
+        List<ExpMaterialImpl> result = getSamplesByName(container, user).get(name);
+        return result == null ? Collections.<ExpMaterialImpl>emptyList() : result;
     }
 
     public ExpMaterialImpl getExpMaterial(int rowid)
@@ -1482,6 +1483,15 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             {
                 if (!containingTrans)
                     getExpSchema().getScope().beginTransaction();
+
+                for (Protocol protocol : protocols)
+                {
+                    ExpProtocol protocolToDelete = new ExpProtocolImpl(protocol);
+                    for (ExpExperiment batch : protocolToDelete.getBatches())
+                    {
+                        batch.delete(user);
+                    }
+                }
 
                 if (actionIds.length > 0)
                 {
@@ -3101,23 +3111,21 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
      * @return all of the samples visible from the current container, mapped from name to sample. If more than one
      * sample has the same name, the map will contain a null entry
      */
-    public Map<String, ExpMaterialImpl> getSamplesByName(Container container, User user)
+    public Map<String, List<ExpMaterialImpl>> getSamplesByName(Container container, User user)
     {
-        Map<String, ExpMaterialImpl> potentialParents = new HashMap<String, ExpMaterialImpl>();
-        for (ExpSampleSetImpl sampleSet : ExperimentServiceImpl.get().getSampleSets(container, user, true))
+        Map<String, List<ExpMaterialImpl>> potentialParents = new HashMap<String, List<ExpMaterialImpl>>();
+        ExpSampleSetImpl[] sampleSets = ExperimentServiceImpl.get().getSampleSets(container, user, true);
+        for (ExpSampleSetImpl sampleSet : sampleSets)
         {
             for (ExpMaterialImpl expMaterial : sampleSet.getSamples())
             {
-                if (potentialParents.containsKey(expMaterial.getName()))
+                List<ExpMaterialImpl> matchingSamples = potentialParents.get(expMaterial.getName()); 
+                if (matchingSamples == null)
                 {
-                    // If there are materials in different sample sets that have the same name, don't make them
-                    // available for resolving as parents
-                    potentialParents.put(expMaterial.getName(), null);
+                    matchingSamples = new LinkedList<ExpMaterialImpl>();
+                    potentialParents.put(expMaterial.getName(), matchingSamples);
                 }
-                else
-                {
-                    potentialParents.put(expMaterial.getName(), expMaterial);
-                }
+                matchingSamples.add(expMaterial);
             }
         }
         return potentialParents;

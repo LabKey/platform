@@ -286,4 +286,10 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         }
         return ret;
     }
+
+    @Override
+    public String toString()
+    {
+        return "SampleSet " + getName() + " in " + getContainer().getPath();
+    }
 }

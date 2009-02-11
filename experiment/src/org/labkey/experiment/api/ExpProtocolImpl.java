@@ -16,10 +16,7 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.data.Table;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Container;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.ProtocolParameter;
 import org.labkey.api.exp.ExperimentException;
@@ -200,6 +197,19 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
     {
         return ExperimentServiceImpl.get().getChildProtocols(_object.getRowId());
 
+    }
+
+    public List<ExpExperimentImpl> getBatches()
+    {
+        try
+        {
+            Filter filter = new SimpleFilter("BatchProtocolId", getRowId());
+            return Arrays.asList(ExpExperimentImpl.fromExperiments(Table.select(ExperimentServiceImpl.get().getTinfoExperiment(), Table.ALL_COLUMNS, filter, null, Experiment.class)));
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public static ExpProtocolImpl[] fromProtocols(Protocol[] protocols)

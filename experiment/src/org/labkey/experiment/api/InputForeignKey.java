@@ -32,30 +32,31 @@ import java.util.*;
  */
 public class InputForeignKey extends LookupForeignKey
 {
-    ExpSchema _schema;
+    private final ExpSchema _schema;
+    private final ExpProtocol.ApplicationType _type;
     private final ContainerFilter _filter;
-    Set<String> _dataInputs;
-    Set<String> _materialInputs;
+    private Set<String> _dataInputs;
+    private Set<String> _materialInputs;
 
     public InputForeignKey(ExpSchema schema, ExpProtocol.ApplicationType type, ContainerFilter filter)
     {
         super(null);
         _schema = schema;
+        _type = type;
         _filter = filter;
-        _dataInputs = ExperimentService.get().getDataInputRoles(schema.getContainer(), type);
-        _materialInputs = ExperimentService.get().getMaterialInputRoles(schema.getContainer(), type);
     }
+
 
     public TableInfo getLookupTableInfo()
     {
         ExpProtocolApplicationTable ret = ExperimentService.get().createProtocolApplicationTable(ExpSchema.TableType.ProtocolApplications.toString(), "InputLookup", _schema);
         ret.setContainerFilter(_filter, _schema.getUser());
         SamplesSchema samplesSchema = _schema.getSamplesSchema();
-        for (String role : _dataInputs)
+        for (String role : getDataInputs())
         {
             ret.safeAddColumn(ret.createDataInputColumn(role, _schema, role));
         }
-        for (String role : _materialInputs)
+        for (String role : getMaterialInputs())
         {
             ExpSampleSet[] matchingSets = ExperimentService.get().getSampleSetsForRole(_schema.getContainer(), role);
             ExpSampleSet ss;
@@ -77,5 +78,23 @@ public class InputForeignKey extends LookupForeignKey
         assert table instanceof ExpProtocolApplicationTable;
         ExpProtocolApplicationTable appTable = (ExpProtocolApplicationTable) table;
         return appTable.createColumn("~", ExpProtocolApplicationTable.Column.RowId);
+    }
+
+    private Set<String> getDataInputs()
+    {
+        if (_dataInputs == null)
+        {
+            _dataInputs = ExperimentService.get().getDataInputRoles(_schema.getContainer(), _type);
+        }
+        return _dataInputs;
+    }
+
+    private Set<String> getMaterialInputs()
+    {
+        if (_materialInputs == null)
+        {
+            _materialInputs = ExperimentService.get().getMaterialInputRoles(_schema.getContainer(), _type);
+        }
+        return _materialInputs;
     }
 }

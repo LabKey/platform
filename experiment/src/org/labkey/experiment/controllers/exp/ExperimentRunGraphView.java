@@ -70,24 +70,28 @@ public class ExperimentRunGraphView extends WebPartView
                 out.println("[<a href=\"" + ExperimentController.ExperimentUrlsImpl.get().getRunGraphDetailURL(_run) + "\">graph detail view</a>]");
             }
             out.println("</p>");
-            out.println("<img src=\"" + ExperimentController.ExperimentUrlsImpl.get().getDownloadGraphURL(_run, _detail, _focus) + "\" usemap=\"#graphmap\" >");
-            out.println("<map name=\"graphmap\">");
 
             ExperimentRunGraph.RunGraphFiles files = ExperimentRunGraph.generateRunGraph(context, _run, _detail, _focus);
-            try
+            out.println("<img src=\"" + ExperimentController.ExperimentUrlsImpl.get().getDownloadGraphURL(_run, _detail, _focus) + "\" usemap=\"#graphmap\" >");
+            
+            if (files.getMapFile().exists())
             {
-                FileReader reader = new FileReader(files.getMapFile());
-                char charBuf[] = new char[4096];
-                int count;
-                while ((count = reader.read(charBuf)) > 0)
-                    out.write(charBuf, 0, count);
+                out.println("<map name=\"graphmap\">");
+                try
+                {
+                    FileReader reader = new FileReader(files.getMapFile());
+                    char charBuf[] = new char[4096];
+                    int count;
+                    while ((count = reader.read(charBuf)) > 0)
+                        out.write(charBuf, 0, count);
 
-                reader.close();
-                out.write("</map>");
-            }
-            finally
-            {
-                files.release();
+                    reader.close();
+                    out.write("</map>");
+                }
+                finally
+                {
+                    files.release();
+                }
             }
         }
         catch (ExperimentException e)

@@ -100,7 +100,7 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
                         final DialogBox confirmDialog = new DialogBox(false, true);
                         confirmDialog.setText("Save Changes?");
                         VerticalPanel panel = new VerticalPanel();
-                        panel.add(new Label("Do you want to saveAsync your changes?"));
+                        panel.add(new Label("Do you want to save your changes?"));
                         HorizontalPanel buttonPanel = new HorizontalPanel();
                         ImageButton saveButton = new ImageButton("Save", new ClickListener()
                         {

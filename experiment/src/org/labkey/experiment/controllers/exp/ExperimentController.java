@@ -949,7 +949,7 @@ public class ExperimentController extends SpringActionController
                 String lowerCaseFileName = realContent.getName().toLowerCase();
                 if ("jsonTSV".equalsIgnoreCase(form.getFormat()))
                 {
-                    JSONObject sheetsJson = new JSONObject();
+                    JSONArray sheetsArray = new JSONArray();
                     if (lowerCaseFileName.endsWith(".xls"))
                     {
                         FileInputStream fIn = null;
@@ -988,7 +988,10 @@ public class ExperimentController extends SpringActionController
                                     }
                                     rowsArray.put(rowArray);
                                 }
-                                sheetsJson.put(sheet.getName(), rowsArray);
+                                JSONObject sheetJSON = new JSONObject();
+                                sheetJSON.put("name", sheet.getName());
+                                sheetJSON.put("data", rowsArray);
+                                sheetsArray.put(sheetJSON);
                             }
                         }
                         finally
@@ -1017,14 +1020,19 @@ public class ExperimentController extends SpringActionController
                             rowsArray.put(rowArray);
                         }
 
-                        sheetsJson.put("flat", rowsArray);
+                        JSONObject sheetJSON = new JSONObject();
+                        sheetJSON.put("name", "flat");
+                        sheetJSON.put("data", rowsArray);
+                        sheetsArray.put(sheetJSON);
                     }
                     else
                     {
                         throw new IllegalArgumentException("Unable to convert file " + realContent + " to tsv");
                     }
                     ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse());
-                    writer.write(new ApiSimpleResponse(sheetsJson));
+                    JSONObject workbookJSON = new JSONObject();
+                    workbookJSON.put("sheets", sheetsArray);
+                    writer.write(new ApiSimpleResponse(workbookJSON));
                     return null;
                 }
 
@@ -1533,7 +1541,7 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            return new ConfirmDeleteView(allBatches ? "batch" : "run Group", "details", experiments, deleteForm, runs);
+            return new ConfirmDeleteView(allBatches ? "batch" : "run group", "details", experiments, deleteForm, runs);
         }
 
         private List<ExpExperiment> lookupExperiments(DeleteForm deleteForm)
