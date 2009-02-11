@@ -27,6 +27,8 @@ import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.study.actions.ShowSelectedRunsAction;
 
+import java.util.List;
+
 /**
  * User: jeckels
  * Date: Feb 4, 2009
@@ -56,6 +58,11 @@ public class BatchListQueryView extends QueryView
         deleteButton.setScript("return verifySelected(this.form, \"" + deleteURL.getLocalURIString() + "\", \"post\", \"batches\")");
         deleteButton.setActionType(ActionButton.Action.POST);
         bar.add(deleteButton);
+
+        boolean includeOtherContainers = _protocol.getContainer().equals(getViewContext().getContainer()) && getViewContext().getContainer().isProject();
+        List<ActionButton> buttons = AssayService.get().getImportButtons(
+                _protocol, getViewContext().getUser(), getViewContext().getContainer(), includeOtherContainers);
+        bar.addAll(buttons);
 
         ActionURL target = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(getContainer(), _protocol, ShowSelectedRunsAction.class);
         if (getTable().getContainerFilter() != null)

@@ -308,9 +308,10 @@ LABKEY.Exp.Data = function (config) {
      * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message.</li>
      * </ul>
      * @param {string} [config.format] How to format the content. Defaults to plaintext, supported for text/* MIME types,
-     * including .html, .xml, .tsv, .txt, and .csv.. Use 'jsonTSV' to get a map from sheet name to two-dimensional array
-     * of values. The names match the sheet names in Excel files, while .tsv and .csv files will have a single entry in
-     * the map called 'flat'. 
+     * including .html, .xml, .tsv, .txt, and .csv.. Use 'jsonTSV' to get a JSON version of the .xls, .tsv, .or .csv
+     * files. The resulting JSON object will have a sheets property, which is an array. Each element will have a
+     * 'name' property, and a 'data' property that is a two-dimensional array of values. The sheet names match the
+     * sheet names in Excel files, while .tsv and .csv files will have a single entry in the map called 'flat'. 
      */
     this.getContent = function(config)
     {

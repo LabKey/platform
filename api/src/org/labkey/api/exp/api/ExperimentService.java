@@ -86,7 +86,7 @@ public class ExperimentService
         /**
          * Looks in all the sample sets visible from the given container for a single match with the specified name 
          */
-        ExpMaterial getExpMaterialByName(String name, Container container, User user);
+        List<? extends ExpMaterial> getExpMaterialsByName(String name, Container container, User user);
 
         ExpSampleSet[] getSampleSetsForRole(Container container, String role);
 

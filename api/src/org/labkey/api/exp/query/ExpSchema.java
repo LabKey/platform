@@ -153,13 +153,12 @@ public class ExpSchema extends AbstractExpSchema
 
     public TableInfo createTable(String name, String alias)
     {
-        try
+        for (TableType tableType : TableType.values())
         {
-            return TableType.valueOf(name).createTable(alias, this);
-        }
-        catch (IllegalArgumentException e)
-        {
-            // ignore
+            if (tableType.name().equalsIgnoreCase(name))
+            {
+                return tableType.createTable(alias, this);
+            }
         }
 
         // TODO - find a better way to do this. We want to have different sets of views for the experiments table,

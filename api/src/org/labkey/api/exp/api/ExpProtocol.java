@@ -80,6 +80,7 @@ public interface ExpProtocol extends ExpObject
     String getContact();
 
     List<ExpProtocol> getChildProtocols();
+    List<? extends ExpExperiment> getBatches();
 
     enum ApplicationType
     {

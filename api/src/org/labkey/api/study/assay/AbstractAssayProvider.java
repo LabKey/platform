@@ -188,17 +188,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
     }
 
-    protected ExpMaterial createSampleMaterial(Container currentContainer, ExpProtocol protocol, String sampleId)
-    {
-        String materialLSID = new Lsid("AssayRunMaterial", "Folder-" + currentContainer.getRowId(), sampleId).toString();
-        ExpMaterial material = ExperimentService.get().getExpMaterial(materialLSID);
-        if (material == null)
-        {
-            material = ExperimentService.get().createExpMaterial(currentContainer, materialLSID, sampleId);
-        }
-        return material;
-    }
-
     public static String getDomainURIForPrefix(ExpProtocol protocol, String domainPrefix)
     {
         String result = null;
