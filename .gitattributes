@@ -845,6 +845,7 @@ filecontent/src/org/labkey/filecontent/FilesWebPart.java -text
 filecontent/src/org/labkey/filecontent/view/configure.jsp -text
 filecontent/src/org/labkey/filecontent/view/customizeWebPart.jsp -text
 filecontent/src/org/labkey/filecontent/view/files.jsp -text
+filecontent/src/org/labkey/filecontent/view/iframe.jsp -text
 issues/module.properties -text
 issues/src/META-INF/issues/scripts/postgresql/issues-0.00-1.00.sql -text
 issues/src/META-INF/issues/scripts/postgresql/issues-1.10-1.30.sql -text

@@ -728,11 +728,11 @@ public class FileContentController extends SpringActionController
    }
 
 
-    private static class IFrameView extends HtmlView
+    private static class IFrameView extends JspView<String>
     {
         public IFrameView(String url)
         {
-            super("\n<iframe frameborder=0 src=\"" + PageFlowUtil.filter(url) + "\" width=\"100%\">Your browser does not support inline frames, try Mozilla or Internet Explorer</iframe>");
+			super(FileContentController.class, "view/iframe.jsp", url);
         }
     }
 
