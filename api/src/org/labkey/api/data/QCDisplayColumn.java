@@ -108,4 +108,20 @@ public class QCDisplayColumn extends DataColumn
         super.addQueryColumns(columns);
         columns.add(qcValueColumn);
     }
+
+    @Override
+    public Object getValue(RenderContext ctx)
+    {
+        // For non-qc-aware clients, we need to return null
+        // if we have a qc value
+        if (getQcValue(ctx) != null)
+        {
+            return null;
+        }
+        else
+        {
+            // No QC value, so return the underlying data
+            return super.getValue(ctx);
+        }
+    }
 }
