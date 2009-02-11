@@ -40,7 +40,7 @@ import org.springframework.validation.BindException;
  * Date: Dec 12, 2008
  */
 @RequiresPermission(ACL.PERM_READ)
-public class AssayDataDetailsAction extends BaseAssayAction<DataDetailsForm>
+public class AssayResultDetailsAction extends BaseAssayAction<DataDetailsForm>
 {
     private ExpProtocol _protocol;
     private ExpData _data;
@@ -54,14 +54,14 @@ public class AssayDataDetailsAction extends BaseAssayAction<DataDetailsForm>
 
         AssayProvider provider = AssayService.get().getProvider(_protocol);
         if (!(provider instanceof AbstractAssayProvider))
-            throw new RuntimeException("Assay must be derived from AbstractAssayProvider to use the AssayDataDetailsAction");
+            throw new RuntimeException("Assay must be derived from AbstractAssayProvider to use the AssayResultDetailsAction");
 
         AbstractAssayProvider aap = (AbstractAssayProvider)provider;
         _data = aap.getDataForDataRow(_dataRowId);
         if (_data == null)
             HttpView.throwNotFound("Assay ExpData not found for dataRowId: " + _dataRowId);
 
-        return aap.createDataDetailsView(context, _protocol, _data, _dataRowId);
+        return aap.createResultDetailsView(context, _protocol, _data, _dataRowId);
     }
 
     public NavTree appendNavTrail(NavTree root)
@@ -70,12 +70,12 @@ public class AssayDataDetailsAction extends BaseAssayAction<DataDetailsForm>
         ExpRun run = _data.getRun();
         ActionURL assayListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(c);
         ActionURL runListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, _protocol);
-        ActionURL runDataURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(c, _protocol, run.getRowId());
+        ActionURL resultsURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(c, _protocol, run.getRowId());
 
         return root
             .addChild("Assay List", assayListURL)
             .addChild(_protocol.getName() + " Runs", runListURL)
-            .addChild(run.getName() + " Run", runDataURL)
+            .addChild(run.getName() + " Results", resultsURL)
             .addChild(_dataRowId + " Details");
     }
 

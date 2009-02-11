@@ -1112,7 +1112,7 @@ public class QueryView extends WebPartView<Object>
             DataRegion rgn = view.getDataRegion();
 
             //adjust the set of display columns if the user requested a specific list
-            if(null != response.getFieldKeys() && response.getFieldKeys().size() > 0)
+            if (null != response.getFieldKeys() && response.getFieldKeys().size() > 0)
             {
                 //clear the default set of columns
                 rgn.clearColumns();
@@ -1122,16 +1122,16 @@ public class QueryView extends WebPartView<Object>
 
                 //special-case: if one of the keys is *, add all columns from the
                 //TableInfo and remove the * so that Query doesn't choke on it
-                if(keys.contains(starKey))
+                if (keys.contains(starKey))
                 {
                     rgn.addColumns(table.getColumns());
                     keys.remove(starKey);
                 }
 
-                if(keys.size() > 0)
+                if (keys.size() > 0)
                 {
                     Map<FieldKey,ColumnInfo> selectedCols = QueryService.get().getColumns(table, keys);
-                    for(ColumnInfo col : selectedCols.values())
+                    for (ColumnInfo col : selectedCols.values())
                         rgn.addColumn(col);
                 }
             }
@@ -1140,7 +1140,7 @@ public class QueryView extends WebPartView<Object>
             List<ColumnInfo> pkCols = table.getPkColumns();
             if (null != pkCols)
             {
-                for(ColumnInfo pkCol : pkCols)
+                for (ColumnInfo pkCol : pkCols)
                 {
                     if (null == rgn.getDisplayColumn(pkCol.getName()))
                         rgn.addColumn(pkCol);
@@ -1168,7 +1168,7 @@ public class QueryView extends WebPartView<Object>
         {
             //table was null--try to get parse errors
             List<QueryException> errors = getParseErrors();
-            if(null != errors && errors.size() > 0)
+            if (null != errors && errors.size() > 0)
                 throw errors.get(0);
         }
 
@@ -1177,7 +1177,7 @@ public class QueryView extends WebPartView<Object>
     public void exportToExcelWebQuery(HttpServletResponse response) throws Exception
     {
         TableInfo table = getTable();
-        if(null == table)
+        if (null == table)
             return;
 
         DataView view = createDataView();

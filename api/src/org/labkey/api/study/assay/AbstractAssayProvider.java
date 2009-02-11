@@ -1015,7 +1015,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return null;
     }
 
-    public ModelAndView createDataDetailsView(ViewContext context, ExpProtocol protocol, ExpData data, Object dataRowId)
+    public ModelAndView createResultDetailsView(ViewContext context, ExpProtocol protocol, ExpData data, Object dataRowId)
     {
         QueryView queryView = createResultsQueryView(context, protocol);
 

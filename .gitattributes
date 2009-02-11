@@ -586,8 +586,8 @@ api/src/org/labkey/api/study/WellData.java -text
 api/src/org/labkey/api/study/WellGroup.java -text
 api/src/org/labkey/api/study/WellGroupTemplate.java -text
 api/src/org/labkey/api/study/actions/AssayBatchesAction.java -text
-api/src/org/labkey/api/study/actions/AssayDataDetailsAction.java -text
 api/src/org/labkey/api/study/actions/AssayHeaderView.java -text
+api/src/org/labkey/api/study/actions/AssayResultDetailsAction.java -text
 api/src/org/labkey/api/study/actions/AssayResultsAction.java -text
 api/src/org/labkey/api/study/actions/AssayRunUploadForm.java -text
 api/src/org/labkey/api/study/actions/AssayRunsAction.java -text
@@ -620,6 +620,7 @@ api/src/org/labkey/api/study/assay/AssayFileWriter.java -text
 api/src/org/labkey/api/study/assay/AssayProvider.java -text
 api/src/org/labkey/api/study/assay/AssayPublishKey.java -text
 api/src/org/labkey/api/study/assay/AssayPublishService.java -text
+api/src/org/labkey/api/study/assay/AssayResultsView.java -text
 api/src/org/labkey/api/study/assay/AssayRunType.java -text
 api/src/org/labkey/api/study/assay/AssayRunUploadContext.java -text
 api/src/org/labkey/api/study/assay/AssayRunsView.java -text
