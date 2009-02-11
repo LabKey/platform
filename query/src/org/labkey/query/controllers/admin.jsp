@@ -39,7 +39,7 @@ if (null != StringUtils.trimToNull(reloadedSchema))
     {
     %>
     <div class="labkey-error">
-        Schema <%=reloadedSchema%> was reloaded successfully.
+        Schema <%=h(reloadedSchema)%> was reloaded successfully.
     </div><br>
     <%
     }
