@@ -2828,7 +2828,7 @@ public class WikiController extends SpringActionController
             //check to ensure that there is not an existing wiki with the same name
             //but different entity id (works for both insert and update case)
             Wiki existingWiki = WikiManager.getWiki(container, name);
-            if (null != existingWiki && !(HString.eq(existingWiki.getEntityId(),form.getEntityId())))
+            if (null != existingWiki && !(HString.eq(existingWiki.getEntityId().toLowerCase(),form.getEntityId().toLowerCase())))
                 errors.rejectValue("name", ERROR_MSG, "Page '" + name + "' already exists within this folder.");
 
             //must have a body, and if HTML, must be valid according to tidy
