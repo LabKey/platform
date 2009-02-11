@@ -34,7 +34,7 @@
     QuerySnapshotForm bean = me.getModelBean();
     ViewContext context = HttpView.currentContext();
 
-    QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(context.getContainer(), bean.getSchemaName(), bean.getSnapshotName());
+    QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(context.getContainer(), bean.getSchemaName().toString(), bean.getSnapshotName());
     Pair<String, String>[] params = context.getActionURL().getParameters();
 
     boolean showHistory = BooleanUtils.toBoolean(context.getActionURL().getParameter("showHistory"));

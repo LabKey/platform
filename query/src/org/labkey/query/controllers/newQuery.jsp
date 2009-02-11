@@ -37,7 +37,7 @@
     Cannot create a new query: no tables/queries exist in the current schema to base the new query on.
 <% } else { %>
     <form action="<%=urlFor(QueryControllerSpring.NewQueryAction.class)%>" method="POST">
-        <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=form.getSchemaName()%>" />
+        <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=h(form.getSchemaName())%>" />
         <input type="hidden" name="ff_redirect" id="ff_redirect" value="sourceQuery" />
 
         <p>What do you want to call the new query?<br>
