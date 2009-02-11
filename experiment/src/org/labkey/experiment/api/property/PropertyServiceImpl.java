@@ -213,6 +213,9 @@ public class PropertyServiceImpl implements PropertyService.Interface
         if (xProp.isSetQcEnabled())
             prop.getPropertyDescriptor().setQcEnabled(xProp.getQcEnabled());
 
+        if (xProp.isSetHidden())
+            prop.getPropertyDescriptor().setHidden(xProp.getHidden());
+
         if (xProp.getPropertyValidatorArray() != null)
         {
             for (PropertyValidatorType xValidator : xProp.getPropertyValidatorArray())

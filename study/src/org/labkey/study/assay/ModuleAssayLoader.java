@@ -20,17 +20,15 @@ import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceLoadException;
 import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.exp.api.DataType;
-import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol.AssayDomainTypes;
 import org.labkey.api.exp.api.IAssayDomainType;
-import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudyModule;
 import org.labkey.study.assay.xml.DomainDocument;
-import org.apache.commons.beanutils.BeanUtils;
+import org.labkey.study.assay.xml.ProviderDocument;
+import org.labkey.study.assay.xml.ProviderType;
 import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlOptions;
+import org.apache.xmlbeans.XmlError;
 import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 
 import java.io.File;
@@ -66,11 +64,21 @@ public class ModuleAssayLoader implements ModuleResourceLoader
 
     private void loadAssayProvider(File assayProviderDir) throws IOException, ModuleResourceLoadException
     {
-        File configFile = new File(assayProviderDir, "config.xml");
-
         String assayName = assayProviderDir.getName();
 
-        ModuleAssayProvider assayProvider = new ModuleAssayProvider(assayProviderDir, assayName);
+        File configFile = new File(assayProviderDir, "config.xml");
+        ProviderType providerConfig = null;
+        if (configFile.canRead())
+            providerConfig = parseProvider(configFile);
+        if (providerConfig == null)
+            providerConfig = ProviderDocument.Factory.newInstance().addNewProvider();
+
+        if (providerConfig.isSetName())
+            assayName = providerConfig.getName();
+        else
+            providerConfig.setName(assayName);
+
+        ModuleAssayProvider assayProvider = new ModuleAssayProvider(assayName, assayProviderDir, providerConfig);
 
         File domainDir = new File(assayProviderDir, DOMAINS_DIR_NAME);
         if (domainDir.canRead())
@@ -80,29 +88,39 @@ public class ModuleAssayLoader implements ModuleResourceLoader
                 File domainFile = new File(domainDir, domainType.getName().toLowerCase() + ".xml");
                 if (!domainFile.canRead())
                     continue;
-                DomainDescriptorType xDomain = parseDomain(domainType, domainFile);
+                DomainDescriptorType xDomain = parseDomain(assayProviderDir, domainType, domainFile);
                 if (xDomain != null)
                     assayProvider.addDomain(domainType, xDomain);
-
-//                File domainFile = new File(domainDir, domainType.name().toLowerCase() + ".tsv");
-//                if (!domainFile.canRead())
-//                    continue;
-//                GWTDomain domain = DomainUtil.fromTsv(domainFile);
             }
         }
-
-        //assayProvider.validateConfiguration();
 
         AssayService.get().registerAssayProvider(assayProvider);
     }
 
-    private DomainDescriptorType parseDomain(IAssayDomainType domainType, File domainFile) throws IOException, ModuleResourceLoadException
+    private ProviderType parseProvider(File configFile) throws IOException, ModuleResourceLoadException
+    {
+        try
+        {
+            ProviderDocument doc = ProviderDocument.Factory.parse(configFile);
+            if (doc != null)
+                return doc.getProvider();
+        }
+        catch (XmlException e)
+        {
+            throw new ModuleResourceLoadException(e);
+        }
+        return null;
+    }
+
+    private DomainDescriptorType parseDomain(File assayProviderDir, IAssayDomainType domainType, File domainFile) throws IOException, ModuleResourceLoadException
     {
         try
         {
             DomainDocument doc = DomainDocument.Factory.parse(domainFile);
             DomainDescriptorType xDomain = doc.getDomain();
-            if (xDomain != null && xDomain.validate())
+            ArrayList<XmlError> errors = new ArrayList<XmlError>();
+            XmlOptions options = new XmlOptions().setErrorListener(errors);
+            if (xDomain != null && xDomain.validate(options))
             {
                 if (!xDomain.isSetName())
                     xDomain.setName(domainType.getName() + " Fields");
@@ -111,6 +129,19 @@ public class ModuleAssayLoader implements ModuleResourceLoader
                     xDomain.setDomainURI(domainType.getLsidTemplate());
 
                 return xDomain;
+            }
+
+            if (errors.size() > 0)
+            {
+                StringBuffer sb = new StringBuffer();
+                while (errors.size() > 0)
+                {
+                    XmlError error = errors.remove(0);
+                    sb.append(error.toString(assayProviderDir.toURI()));
+                    if (errors.size() > 0)
+                        sb.append("\n");
+                }
+                throw new ModuleResourceLoadException(sb.toString());
             }
         }
         catch (XmlException e)

@@ -29,17 +29,21 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.study.actions.AssayDataDetailsAction;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.RunDataTable;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.study.controllers.assay.AssayController;
+import org.labkey.study.assay.xml.ProviderType;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -60,20 +64,40 @@ public class ModuleAssayProvider extends TsvAssayProvider
     private String name;
     private Map<IAssayDomainType, DomainDescriptorType> domainsDescriptors = new HashMap<IAssayDomainType, DomainDescriptorType>();
 
+    private FieldKey participantIdKey;
+    private FieldKey visitIdKey;
+    private FieldKey dateKey;
+    private FieldKey specimenIdKey;
+
     public static final DataType RAW_DATA_TYPE = new DataType("RawAssayData");
 
-    public ModuleAssayProvider(File baseDir, String name)
+    public ModuleAssayProvider(String name, File baseDir, ProviderType providerConfig)
     {
         super(name + "Protocol", name + "Run");
+        this.name = name;
         this.baseDir = baseDir;
         this.viewsDir = new File(baseDir, "views");
-        this.name = name;
 
-        init();
+        init(providerConfig);
     }
 
-    protected void init()
+    protected void init(ProviderType providerConfig)
     {
+        if (providerConfig == null)
+            return;
+
+        ProviderType.FieldKeys fieldKeys = providerConfig.getFieldKeys();
+        if (fieldKeys != null)
+        {
+            if (fieldKeys.isSetParticipantId())
+                participantIdKey = FieldKey.fromString(fieldKeys.getParticipantId());
+            if (fieldKeys.isSetVisitId())
+                visitIdKey = FieldKey.fromString(fieldKeys.getVisitId());
+            if (fieldKeys.isSetDate())
+                dateKey = FieldKey.fromString(fieldKeys.getDate());
+            if (fieldKeys.isSetSpecimenId())
+                specimenIdKey = FieldKey.fromString(fieldKeys.getSpecimenId());
+        }
     }
 
     public String getName()
@@ -191,6 +215,38 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return maps[0];
     }
 
+    @Override
+    public FieldKey getParticipantIDFieldKey()
+    {
+        if (participantIdKey != null)
+            return participantIdKey;
+        return super.getParticipantIDFieldKey();
+    }
+
+    @Override
+    public FieldKey getVisitIDFieldKey(Container targetStudy)
+    {
+        if (AssayPublishService.get().getTimepointType(targetStudy) == TimepointType.VISIT)
+        {
+            if (visitIdKey != null)
+                return visitIdKey;
+        }
+        else
+        {
+            if (dateKey != null)
+                return dateKey;
+        }
+        return super.getVisitIDFieldKey(targetStudy);
+    }
+
+    @Override
+    public FieldKey getSpecimenIDFieldKey()
+    {
+        if (specimenIdKey != null)
+            return specimenIdKey;
+        return super.getSpecimenIDFieldKey();
+    }
+
     private File getViewFile(IAssayDomainType domainType)
     {
         return new File(viewsDir, domainType.getName().toLowerCase() + ".html");
@@ -231,9 +287,6 @@ public class ModuleAssayProvider extends TsvAssayProvider
     {
         public ExpData expData;
         public Object objectId;
-
-//        public GWTDomain dataDomain;
-//        public Map<String, Object> values;
     }
 
     @Override
@@ -247,13 +300,6 @@ public class ModuleAssayProvider extends TsvAssayProvider
         bean.expProtocol = protocol;
         bean.expData = data;
         bean.objectId = objectId;
-
-//        String domainURI = getDomainURIForPrefix(protocol, AssayDomainTypes.Data.getPrefix());
-////        bean.dataDomain = PropertyService.get().getDomain(context.getContainer(), domainURI);
-//        bean.dataDomain = DomainUtil.getDomainDescriptor(domainURI, context.getContainer());
-//        bean.values = getDataRow(context.getUser(), context.getContainer(), protocol, objectId);
-//        if (bean.values == null)
-//            HttpView.throwNotFound("Data values for '" + data.getRowId() + "' not found");
 
         JspView<DataDetailsBean> view = new JspView<DataDetailsBean>("/org/labkey/study/assay/view/dataDetails.jsp", bean);
         view.setView("nested", dataDetailsView);
