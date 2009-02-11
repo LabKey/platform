@@ -1857,6 +1857,12 @@ public class ReportsController extends BaseStudyController
         int _datasetId = 0;
         public ModelAndView getView(ChartDesignerBean form, BindException errors) throws Exception
         {
+			ViewContext context = getViewContext();
+			if (StringUtils.isEmpty(form.getSchemaName()))
+				form.setSchemaName("study");
+			if (null == DefaultSchema.get(context.getUser(), context.getContainer()).getSchema(form.getSchemaName()))
+				HttpView.throwNotFound();
+
             Map<String, String> props = new HashMap<String, String>();
             for (Pair<String, String> param : form.getParameters())
                 props.put(param.getKey(), param.getValue());
