@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.GuidString;
+import org.labkey.api.util.IdentifierString;
 import org.labkey.api.reports.report.ReportIdentifierConverter;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.common.tools.AbstractConvertHelper;
@@ -96,8 +97,10 @@ public class ConvertHelper extends AbstractConvertHelper implements PropertyEdit
         _register(new ColorConverter(), Color.class);
         _register(new StringArrayConverter(), String[].class);
         _register(new ReportIdentifierConverter(), ReportIdentifier.class);
+
         _register(new HString.Converter(), HString.class);
         _register(new GuidString.Converter(), GuidString.class);
+		_register(new IdentifierString.Converter(), IdentifierString.class);
     }
 
 

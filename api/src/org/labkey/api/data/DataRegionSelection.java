@@ -20,6 +20,7 @@ import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.IdentifierString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
@@ -199,7 +200,7 @@ public class DataRegionSelection
             throws SQLException, IOException
     {
         QueryForm form = new QueryForm();
-        form.setSchemaName(schemaName);
+        form.setSchemaName(new IdentifierString(schemaName));
         form.setQueryName(queryName);
         form.setViewName(viewName);
         ActionURL url = new ActionURL();

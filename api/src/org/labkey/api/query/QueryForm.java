@@ -22,6 +22,8 @@ import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.IdentifierString;
+import org.labkey.api.util.HString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.HttpView;
@@ -46,7 +48,7 @@ public class QueryForm implements HasViewContext, HasBindParameters
     public static final String PARAMVAL_NOFILTER = "NONE";
     private ViewContext _context;
 
-    private String _schemaName;
+    private IdentifierString _schemaName = null;
     private UserSchema _schema;
 
     private String _queryName;
@@ -72,7 +74,7 @@ public class QueryForm implements HasViewContext, HasBindParameters
 
     protected QueryForm(String schemaName, String queryName)
     {
-        _schemaName = schemaName;
+        _schemaName = new IdentifierString(schemaName);
         _queryName = queryName;
     }
 
@@ -115,11 +117,11 @@ public class QueryForm implements HasViewContext, HasBindParameters
         bindParams.removePropertyValue(QueryParam.queryName.name());
         bindParams.removePropertyValue(QueryParam.viewName.name());
         // don't override preset schemaName
-        String schemaName = _schemaName;
+        IdentifierString schemaName = _schemaName;
         
         BindException errors = BaseViewAction.springBindParameters(this, commandName, bindParams);
         
-        if (null != schemaName)
+        if (schemaName != null && !schemaName.isEmpty())
             _schemaName = schemaName;
 
         return errors;
@@ -161,10 +163,10 @@ public class QueryForm implements HasViewContext, HasBindParameters
     protected UserSchema createSchema()
     {
         UserSchema ret = null;
-        String schemaName = getSchemaName();
-        if (schemaName != null)
+        HString schemaName = getSchemaName();
+        if (!schemaName.isEmpty())
         {
-            UserSchema baseSchema = (UserSchema) DefaultSchema.get(getUser(), getContainer()).getSchema(schemaName);
+            UserSchema baseSchema = (UserSchema) DefaultSchema.get(getUser(), getContainer()).getSchema(schemaName.toString());
             if (baseSchema == null)
             {
                 return null;
@@ -221,14 +223,14 @@ public class QueryForm implements HasViewContext, HasBindParameters
     }
 
 
-    public void setSchemaName(String name)
+    public void setSchemaName(IdentifierString name)
     {
         if (_querySettings != null)
             throw new IllegalStateException();
         _schemaName = name;
     }
 
-    public String getSchemaName()
+    public IdentifierString getSchemaName()
     {
         return _schemaName;
     }
@@ -260,7 +262,7 @@ public class QueryForm implements HasViewContext, HasBindParameters
             return null;
         if (_queryDef == null)
         {
-            _queryDef = QueryService.get().getQueryDef(getContainer(), getSchemaName(), getQueryName());
+            _queryDef = QueryService.get().getQueryDef(getContainer(), getSchemaName().toString(), getQueryName());
         }
         if (_queryDef == null)
         {

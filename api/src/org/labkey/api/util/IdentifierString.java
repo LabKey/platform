@@ -18,8 +18,19 @@ public class IdentifierString extends HString
     public IdentifierString(String s)
     {
         _source = s;
-        _tainted = !idPattern.matcher(s).matches();
+        _tainted = _source.length() != 0 && !idPattern.matcher(s).matches();
     }
+
+	public IdentifierString(HString s)
+	{
+		this(s._source);
+	}
+
+	public IdentifierString(String s, boolean t)
+	{
+		_source = s;
+		_tainted = _source.length() != 0 && t;
+	}
 
     public IdentifierString(Container c)
     {
@@ -27,8 +38,7 @@ public class IdentifierString extends HString
         _tainted = false;
     }
 
-
-    public String toString()
+	public String toString()
     {
         return isTainted() ? "" : _source;
     }
@@ -57,7 +67,7 @@ public class IdentifierString extends HString
             if (value instanceof HString)
                 value = ((HString)value).getSource();
             IdentifierString g = new IdentifierString(String.valueOf(value));
-            if (!g.isEmpty() && g.isTainted())
+            if (g.isTainted())
                 throw new ConversionException("Invalid identifier");
             return g;
         }

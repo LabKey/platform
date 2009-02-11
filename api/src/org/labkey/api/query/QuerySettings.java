@@ -27,6 +27,7 @@ import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.util.HString;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -216,6 +217,11 @@ public class QuerySettings
                 setContainerFilterName(containerFilterNameParam);
         }
     }
+
+	public void setSchemaName(HString schemaName)
+	{
+		_schemaName = schemaName.toString();
+	}
 
     public void setSchemaName(String schemaName)
     {

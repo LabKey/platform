@@ -19,6 +19,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.security.User;
+import org.labkey.api.util.IdentifierString;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.ObjectUtils;
 
@@ -56,7 +57,7 @@ public class QuerySnapshotForm extends QueryForm
             if (qDef != null)
             {
                 setQueryName(qDef.getName());
-                setSchemaName(qDef.getSchemaName());
+                setSchemaName(new IdentifierString(qDef.getSchemaName()));
             }
 
             setUpdateDelay(def.getUpdateDelay());
