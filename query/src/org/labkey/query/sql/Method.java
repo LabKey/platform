@@ -43,6 +43,14 @@ public enum Method
     radians(Types.DOUBLE),
     rand(Types.DOUBLE),
     round(Types.DOUBLE),
+// BUG 7078 : ROUND function produces errors and unexpected values
+//			{
+//				@Override
+//				public MethodInfo getMethodInfo()
+//				{
+//					return new RoundInfo();
+//				}
+//			},
     sign(Types.DOUBLE),
     sin(Types.DOUBLE),
     sqrt(Types.DOUBLE),
@@ -93,12 +101,20 @@ public enum Method
     second(Types.INTEGER),
     week(Types.INTEGER),
     year(Types.INTEGER),
+	timestampadd(Types.INTEGER)
+			{
+				@Override
+				public MethodInfo getMethodInfo()
+				{
+					return new TimestampInfo();
+				}
+			},
     timestampdiff(Types.INTEGER)
             {
                 @Override
                 public MethodInfo getMethodInfo()
                 {
-                    return new TimestampDiffInfo();
+                    return new TimestampInfo();
                 }
             },
 
@@ -168,9 +184,9 @@ public enum Method
     }
 
 
-    class TimestampDiffInfo extends MethodInfoImpl
+    class TimestampInfo extends MethodInfoImpl
     {
-        public TimestampDiffInfo()
+        public TimestampInfo()
         {
             super(Types.INTEGER);
         }
@@ -315,6 +331,38 @@ public enum Method
             return ret;
         }
     }
+
+	class RoundInfo extends MethodInfoImpl
+	{
+		RoundInfo()
+		{
+			super(Types.DOUBLE);
+		}
+
+		// https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=7078
+		// "{fn round(double,int)}" seems broken on postgres, so use "round(double,int)"
+		public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+		{
+			SQLFragment ret = new SQLFragment();
+			ret.append("");
+			ret.append(_fnEscapeName);
+			ret.append("(");
+			String comma = "";
+			for (SQLFragment argument : arguments)
+			{
+				ret.append(comma);
+				comma = ",";
+				ret.append(argument);
+			}
+			if (arguments.length == 1)
+			{
+				ret.append(comma);
+				ret.append("0");
+			}
+			ret.append(")");
+			return ret;
+		}
+	}
 
 
     enum ConvertType

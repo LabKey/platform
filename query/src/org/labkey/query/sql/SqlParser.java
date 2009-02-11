@@ -339,15 +339,16 @@ public class SqlParser
                         break;
                 String name = ((QIdentifier)id).getIdentifier().toLowerCase();
 
-                if (name.equals("convert") || name.equals("cast") || name.equals("timestampdiff"))
+                if (name.equals("convert") || name.equals("cast") || name.equals("timestampadd") || name.equals("timestampdiff"))
                 {
                     if (!(exprList instanceof QExprList))
                              break;
                     LinkedList<QNode> args = new LinkedList<QNode>();
                     int i = 1;
+					int keywordPos = name.startsWith("timestamp") ? 1 : 2;
                     for (QNode n : exprList.children())
                     {
-                        if (n instanceof QIdentifier && (name.equals("timestamp") ? i==3 : i==2))
+                        if (n instanceof QIdentifier && i==keywordPos)
                             args.add(toStringNode(n));
                         else
                             args.add(n);
@@ -593,6 +594,8 @@ public class SqlParser
 
         "SELECT 'R'.a, S.b FROM R FULL JOIN S ON R.x = S.x",
 
+		"SELECT 'R'.a, S.b FROM R FULL OUTER JOIN S ON R.x = S.x",
+
         "SELECT CASE WHEN R.a=R.b THEN 'same' WHEN R.c IS NULL THEN 'different' ELSE R.c END FROM R",
 
         "SELECT R.a FROM R WHERE R.a LIKE 'a%'",
@@ -603,7 +606,8 @@ public class SqlParser
         "SELECT CONVERT(a, VARCHAR), CONVERT(a+b, SQL_INTEGER), CONVERT(c, 'SQL_TIMESTAMP'), CONVERT(d, 'TIMESTAMP') FROM R",
         "SELECT CAST(a AS VARCHAR), CAST(a+b AS INTEGER) FROM R",
         "SELECT CAST(a AS VARCHAR), CAST(a+b AS INTEGER) FROM R",
-        "SELECT TIMESTAMPDIFF(a,b,SQL_TSI_SECOND), TIMESTAMPDIFF(a,b,SECOND), TIMESTAMPDIFF(a,b,'SQL_TSI_DAY'), TIMESTAMPDIFF(a,b,'DAY') FROM R",
+        "SELECT TIMESTAMPDIFF(SQL_TSI_SECOND,a,b), TIMESTAMPDIFF(SECOND,a,b), TIMESTAMPDIFF('SQL_TSI_DAY',a,b), TIMESTAMPDIFF('DAY',a,b) FROM R",
+		"SELECT TIMESTAMPADD(SQL_TSI_SECOND,1,b), TIMESTAMPADD(SECOND,1,b), TIMESTAMPADD('SQL_TSI_DAY',1,b), TIMESTAMPADD('DAY',1,b) FROM R",
 
 		"SELECT (SELECT value FROM S WHERE S.x=R.x) AS V FROM R",
 		"SELECT R.value AS V FROM R WHERE R.y > (SELECT MAX(S.y) FROM S WHERE S.x=R.x)",
@@ -631,8 +635,6 @@ public class SqlParser
 		"SELECT \"a\",\"b\",AVG(x),COUNT(x),MIN(x),MAX(x),SUM(x),STDDEV(x) FROM R WHERE R.x='key' GROUP BY a,b HAVING SUM(x)>100 ORDER BY a ASC, b DESC, SUM(x)",
         // nested JOINS
         "SELECT R.a, \"S\".b FROM R LEFT OUTER JOIN (S RIGHT OUTER JOIN T ON S.y = T.y) ON R.x = S.x",
-        // OUTER should be optionally allowed
-        "SELECT 'R'.a, S.b FROM R FULL OUTER JOIN S ON R.x = S.x",
         // .*
         "SELECT R.* FROM R"
     };

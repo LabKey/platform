@@ -297,7 +297,7 @@ fromClause
 //##     ( ( 'left'|'right' 'outer'? ) | 'full' | 'inner' )? JOIN FETCH?;
 
 fromJoin
-	: ( ( ( LEFT | RIGHT ) (OUTER)? ) | FULL | INNER )? JOIN^ (FETCH)?
+	: ( ( (LEFT|RIGHT|FULL) (OUTER!)? )  | INNER )? JOIN^ (FETCH)?
 	(( path (asAlias)?) |
 	((OPEN! ( q:subQuery ) CLOSE!) (a:asAlias))) (onClause)?
 	;
