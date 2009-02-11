@@ -15,12 +15,8 @@
  */
 package org.labkey.study.dataset;
 
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -36,14 +32,12 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudyServiceImpl;
-import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 import org.springframework.mock.web.MockHttpServletRequest;
 
-import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
@@ -181,7 +175,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 Domain d = PropertyService.get().getDomain(form.getViewContext().getContainer(), domainURI);
                 Map<String, String> columnMap = new CaseInsensitiveHashMap<String>();
 
-                for (DisplayColumn dc : QuerySnapshotService.get(form.getSchemaName()).getDisplayColumns(form))
+                for (DisplayColumn dc : QuerySnapshotService.get(form.getSchemaName().toString()).getDisplayColumns(form))
                 {
                     ColumnInfo col = dc.getColumnInfo();
                     if (!DataSetDefinition.isDefaultFieldName(col.getName(), study))
@@ -234,7 +228,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         QueryDefinition def = snapshotDef.getQueryDefinition(context.getUser());
 
         QueryForm form = new QueryForm();
-        form.setSchemaName(def.getSchemaName());
+        form.setSchemaName(new IdentifierString(def.getSchemaName()));
         form.setQueryName(def.getName());
         form.setViewContext(context);
 
@@ -249,7 +243,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     public ActionURL updateSnapshot(QuerySnapshotForm form, List<String> errors) throws Exception
     {
-        QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(form.getViewContext().getContainer(), form.getSchemaName(), form.getSnapshotName());
+        QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(form.getViewContext().getContainer(), form.getSchemaName().toString(), form.getSnapshotName());
         if (def != null)
         {
             QueryForm sourceForm = getQueryForm(def, form.getViewContext());
@@ -356,7 +350,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     public HttpView createAuditView(QuerySnapshotForm form) throws Exception
     {
         ViewContext context = form.getViewContext();
-        QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(context.getContainer(), form.getSchemaName(), form.getSnapshotName());
+        QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(context.getContainer(), form.getSchemaName().toString(), form.getSnapshotName());
 
         if (def != null)
         {

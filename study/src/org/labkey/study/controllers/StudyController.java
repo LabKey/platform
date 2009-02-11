@@ -4507,7 +4507,7 @@ public class StudyController extends BaseStudyController
 
             if (name != null)
             {
-                QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), name);
+                QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName().toString(), name);
                 if (def != null)
                     errors.reject("snapshotQuery.error", "A Snapshot with the same name already exists");
             }
@@ -4697,7 +4697,7 @@ public class StudyController extends BaseStudyController
         {
             form.setEdit(true);
             if (!reshow)
-                form.init(QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName()), getUser());
+                form.init(QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName().toString(), form.getSnapshotName()), getUser());
 
             VBox box = new VBox();
             QuerySnapshotService.I provider = QuerySnapshotService.get(form.getSchemaName());
@@ -4764,7 +4764,7 @@ public class StudyController extends BaseStudyController
             }
             else
             {
-                QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName());
+                QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName().toString(), form.getSnapshotName());
                 if (def != null)
                 {
                     def.setUpdateDelay(form.getUpdateDelay());

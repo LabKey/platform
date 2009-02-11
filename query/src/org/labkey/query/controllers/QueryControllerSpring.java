@@ -24,6 +24,7 @@ import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
+import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
@@ -32,6 +33,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.IdentifierString;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -111,9 +113,9 @@ public class QueryControllerSpring extends SpringActionController
     protected void assertQueryExists(QueryForm form) throws ServletException
     {
         if (form.getSchema() == null)
-            HttpView.throwNotFound("Could not find schema: " + form.getSchemaName());
+            HttpView.throwNotFound("Could not find schema: " + form.getSchemaName().getSource());
         if (!queryExists(form))
-            HttpView.throwNotFound("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName() + "' doesn't exist.");
+            HttpView.throwNotFound("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName().getSource() + "' doesn't exist.");
     }
 
     @RequiresPermission(ACL.PERM_READ)
@@ -146,7 +148,7 @@ public class QueryControllerSpring extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             _form = form;
-            if (null == form.getSchemaName())
+            if (form.getSchemaName().isEmpty())
                 return HttpView.redirect(actionURL(QueryAction.begin));
 
             JspView<QueryForm> customQueriesView = new JspView<QueryForm>(QueryControllerSpring.class, "customQueriesList.jsp", form, errors);
@@ -160,7 +162,7 @@ public class QueryControllerSpring extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            String schemaName = _form.getSchemaName();
+            String schemaName = _form.getSchemaName().toString();
             (new QueryControllerSpring.BeginAction()).appendNavTrail(root)
                 .addChild(schemaName + " Schema", actionURL(QueryAction.schema, QueryParam.schemaName, schemaName));
             return root;
@@ -186,7 +188,7 @@ public class QueryControllerSpring extends SpringActionController
         public ModelAndView getView(NewQueryForm form, boolean reshow, BindException errors) throws Exception
         {
             if (form.getSchema() == null)
-                HttpView.throwNotFound("Could not find schema: " + form.getSchemaName());
+                HttpView.throwNotFound("Could not find schema: " + form.getSchemaName().getSource());
             if (!form.getSchema().canCreate())
                 HttpView.throwUnauthorized();
             getPageConfig().setFocus("forms[0].ff_newQueryName");
@@ -197,7 +199,7 @@ public class QueryControllerSpring extends SpringActionController
         public boolean handlePost(NewQueryForm form, BindException errors) throws Exception
         {
             if (form.getSchema() == null)
-                HttpView.throwNotFound("Could not find schema: " + form.getSchemaName());
+                HttpView.throwNotFound("Could not find schema: " + form.getSchemaName().getSource());
             if (!form.getSchema().canCreate())
                 HttpView.throwUnauthorized();
             try
@@ -210,7 +212,7 @@ public class QueryControllerSpring extends SpringActionController
 
                 UserSchema schema = form.getSchema();
                 String newQueryName = form.ff_newQueryName;
-                QueryDef existing = QueryManager.get().getQueryDef(getContainer(), form.getSchemaName(), newQueryName, true);
+                QueryDef existing = QueryManager.get().getQueryDef(getContainer(), form.getSchemaName().toString(), newQueryName, true);
                 if (existing != null)
                 {
                     errors.reject(ERROR_MSG, "The query '" + newQueryName + "' already exists.");
@@ -222,7 +224,7 @@ public class QueryControllerSpring extends SpringActionController
                     errors.reject(ERROR_MSG, "The query '" + newQueryName + "' already exists as a table");
                     return false;
                 }
-                QueryDefinition newDef = QueryService.get().createQueryDef(getContainer(), form.getSchemaName(), form.ff_newQueryName);
+                QueryDefinition newDef = QueryService.get().createQueryDef(getContainer(), form.getSchemaName().toString(), form.ff_newQueryName);
                 Query query = new Query(schema);
                 query.setRootTable(FieldKey.fromParts(form.ff_baseTableName));
                 newDef.setSql(query.getQueryText());
@@ -344,7 +346,7 @@ public class QueryControllerSpring extends SpringActionController
                 query.setSql(form.ff_queryText);
                 if (query.isTableQueryDefinition() && StringUtils.trimToNull(form.ff_metadataText) == null)
                 {
-                    if (QueryManager.get().getQueryDef(getContainer(), form.getSchemaName(), form.getQueryName(), false) != null)
+                    if (QueryManager.get().getQueryDef(getContainer(), form.getSchemaName().toString(), form.getQueryName(), false) != null)
                     {
                         // Remember the URL and redirect immediately because the form won't be able to create
                         // the URL again after the query definition is deleted
@@ -422,13 +424,13 @@ public class QueryControllerSpring extends SpringActionController
 
             if (form.getSchema() == null)
             {
-                HttpView.throwNotFound("Schema not found: " + form.getSchemaName());
+                HttpView.throwNotFound("Schema not found: " + form.getSchemaName().getSource());
                 return null;
             }
             QueryDefinition query = form.getQueryDef();
             if (null == query)
             {
-                HttpView.throwNotFound("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName() + "' not found");
+                HttpView.throwNotFound("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName().getSource() + "' not found");
                 return null;
             }
 
@@ -623,7 +625,7 @@ public class QueryControllerSpring extends SpringActionController
 
             if (name != null)
             {
-                QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), name);
+                QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName().toString(), name);
                 if (def != null)
                     errors.reject("snapshotQuery.error", "A Snapshot with the same name already exists");
             }
@@ -635,7 +637,7 @@ public class QueryControllerSpring extends SpringActionController
         {
             if (!reshow)
             {
-                List<DisplayColumn> columns = QuerySnapshotService.get(form.getSchemaName()).getDisplayColumns(form);
+                List<DisplayColumn> columns = QuerySnapshotService.get(form.getSchemaName().toString()).getDisplayColumns(form);
                 String[] columnNames = new String[columns.size()];
                 int i=0;
 
@@ -649,7 +651,7 @@ public class QueryControllerSpring extends SpringActionController
         public boolean handlePost(QuerySnapshotForm form, BindException errors) throws Exception
         {
             List<String> errorList = new ArrayList<String>();
-            _successURL = QuerySnapshotService.get(form.getSchemaName()).createSnapshot(form, errorList);
+            _successURL = QuerySnapshotService.get(form.getSchemaName().toString()).createSnapshot(form, errorList);
             if (!errorList.isEmpty())
             {
                 for (String error : errorList)
@@ -682,10 +684,10 @@ public class QueryControllerSpring extends SpringActionController
         public ModelAndView getView(QuerySnapshotForm form, boolean reshow, BindException errors) throws Exception
         {
             if (!reshow)
-                form.init(QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName()), getUser());
+                form.init(QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName().toString(), form.getSnapshotName()), getUser());
 
             VBox box = new VBox();
-            QuerySnapshotService.I provider = QuerySnapshotService.get(form.getSchemaName());
+            QuerySnapshotService.I provider = QuerySnapshotService.get(form.getSchemaName().toString());
 
             if (provider != null)
             {
@@ -707,14 +709,14 @@ public class QueryControllerSpring extends SpringActionController
 
         public boolean handlePost(QuerySnapshotForm form, BindException errors) throws Exception
         {
-            QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName());
+            QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName().toString(), form.getSnapshotName());
             if (def != null)
             {
                 List<String> errorList = new ArrayList<String>();
 
                 def.setColumns(form.getFieldKeyColumns());
 
-                _successURL = QuerySnapshotService.get(form.getSchemaName()).updateSnapshotDefinition(getViewContext(), def, errorList);
+                _successURL = QuerySnapshotService.get(form.getSchemaName().toString()).updateSnapshotDefinition(getViewContext(), def, errorList);
                 if (!errorList.isEmpty())
                 {
                     for (String error : errorList)
@@ -745,7 +747,7 @@ public class QueryControllerSpring extends SpringActionController
         public ModelAndView getView(QuerySnapshotForm form, BindException errors) throws Exception
         {
             List<String> errorList = new ArrayList<String>();
-            ActionURL url = QuerySnapshotService.get(form.getSchemaName()).updateSnapshot(form, errorList);
+            ActionURL url = QuerySnapshotService.get(form.getSchemaName().toString()).updateSnapshot(form, errorList);
             if (url != null)
                 return HttpView.redirect(url);
             return null;
@@ -782,7 +784,7 @@ public class QueryControllerSpring extends SpringActionController
             _form = form;
             _query = _form.getQueryDef();
             Map<String, String> props = new HashMap<String, String>();
-            props.put("schemaName", form.getSchemaName());
+            props.put("schemaName", form.getSchemaName().toString());
             props.put("queryName", form.getQueryName());
             props.put("xmlActionURL", _form.getQueryDef().urlFor(QueryAction.sourceQuery, getContainer()).toString());
 
@@ -1095,7 +1097,7 @@ public class QueryControllerSpring extends SpringActionController
 				copy.save(getUser(), copy.getContainer());
 				queryDef.delete(getUser());
 				// update form so getSuccessURL() works
-				_form = new PropertiesForm(form.getSchemaName(), form.rename);
+				_form = new PropertiesForm(form.getSchemaName().toString(), form.rename);
 				_form.setViewContext(form.getViewContext());
 				return true;
 			}
@@ -1275,7 +1277,7 @@ public class QueryControllerSpring extends SpringActionController
 
 
             return new ApiQueryResponse(view, getViewContext(), isSchemaEditable(form.getSchema()), true,
-                    form.getSchemaName(), form.getQueryName(), form.getQuerySettings().getOffset(), fieldKeys);
+                    form.getSchemaName().toString(), form.getQueryName(), form.getQuerySettings().getOffset(), fieldKeys);
         }
     }
 
@@ -1727,6 +1729,9 @@ public class QueryControllerSpring extends SpringActionController
     {
         public void validateCommand(DbUserSchemaForm form, Errors errors)
         {
+			IdentifierString i = new IdentifierString(form.getBean().getUserSchemaName());
+			if (i.isTainted())
+				errors.reject(ERROR_MSG, "Schema name should only contains Alphanumeric characters");
         }
 
         public ModelAndView getView(DbUserSchemaForm form, boolean reshow, BindException errors) throws Exception
@@ -1764,9 +1769,12 @@ public class QueryControllerSpring extends SpringActionController
     @RequiresPermission(ACL.PERM_ADMIN)
     public class AdminEditDbUserSchemaAction extends FormViewAction<DbUserSchemaForm>
     {
-        public void validateCommand(DbUserSchemaForm target, Errors errors)
-        {
-        }
+		public void validateCommand(DbUserSchemaForm form, Errors errors)
+		{
+			IdentifierString i = new IdentifierString(form.getBean().getUserSchemaName());
+			if (i.isTainted())
+				errors.reject(ERROR_MSG, "Schema name should only contains Alphanumeric characters");
+		}
 
         public ModelAndView getView(DbUserSchemaForm form, boolean reshow, BindException errors) throws Exception
         {

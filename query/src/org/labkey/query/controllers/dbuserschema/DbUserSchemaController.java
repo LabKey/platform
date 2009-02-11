@@ -79,7 +79,7 @@ public class DbUserSchemaController extends SpringActionController
                 HttpView.throwNotFound("Query not found");
                 return null;
             }
-            _schemaName = form.getSchemaName();
+            _schemaName = form.getSchemaName().toString();
             _queryName = form.getQueryName();
             QueryUpdateForm command = new QueryUpdateForm(table, getViewContext().getRequest());
             BindException errors = new BindException(new BeanUtilsPropertyBindingResult(command, "form"));
