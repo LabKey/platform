@@ -20,31 +20,22 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="org.labkey.api.study.assay.AssayProvider" %>
-<%@ page import="org.labkey.study.view.AssayDetailsWebPartFactory" %>
+<%@ page import="org.labkey.study.view.AssayRunsWebPartFactory" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
+<%@ page import="org.labkey.study.view.AssayBaseWebPartFactory" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
     Portal.WebPart bean = me.getModelBean();
     ViewContext ctx = me.getViewContext();
     ActionURL postUrl = new ActionURL("Project", "customizeWebPart.post", ctx.getContainer());
-    String viewProtocolIdStr = bean.getPropertyMap().get(AssayDetailsWebPartFactory.PREFERENCE_KEY);
-    int viewProtocolId = -1;
-    try
-    {
-        if (viewProtocolIdStr != null)
-            viewProtocolId = Integer.parseInt(viewProtocolIdStr);
-    }
-    catch (NumberFormatException e)
-    {
-        // fall through
-    }
+    Integer viewProtocolId = AssayBaseWebPartFactory.getProtocolId(bean);
 
     // show buttons should be checked by default for a new assay details webpart.  Otherwise, we preserve the persisted setting:
     boolean showButtons = true;
-    if (viewProtocolId >= 0)
+    if (viewProtocolId != null)
     {
-        showButtons = Boolean.parseBoolean(bean.getPropertyMap().get(AssayDetailsWebPartFactory.SHOW_BUTTONS_KEY));
+        showButtons = Boolean.parseBoolean(bean.getPropertyMap().get(AssayBaseWebPartFactory.SHOW_BUTTONS_KEY));
     }
 
     Map<String, Integer> nameToId = new TreeMap<String, Integer>();
@@ -63,12 +54,12 @@
         <tr>
             <td class="labkey-form-label">Assay</td>
             <td>
-                <select name="<%= AssayDetailsWebPartFactory.PREFERENCE_KEY %>">
+                <select name="<%=AssayBaseWebPartFactory.PROTOCOL_ID_KEY %>">
                     <%
                         for (Map.Entry<String, Integer> entry : nameToId.entrySet())
                         {
                     %>
-                         <option value="<%= entry.getValue() %>" <%= viewProtocolId == entry.getValue() ? "SELECTED" : ""%>>
+                         <option value="<%= entry.getValue() %>" <%=entry.getValue().equals(viewProtocolId) ? "SELECTED" : ""%>>
                             <%= h(entry.getKey()) %></option>
                     <%
                         }
@@ -78,7 +69,7 @@
         </tr>
         <tr>
             <td class="labkey-form-label">Show buttons in web part</td>
-            <td><input type="checkbox" name="<%= AssayDetailsWebPartFactory.SHOW_BUTTONS_KEY%>" value="true" <%= showButtons ? "CHECKED" : "" %>></td>
+            <td><input type="checkbox" name="<%=AssayBaseWebPartFactory.SHOW_BUTTONS_KEY%>" value="true" <%= showButtons ? "CHECKED" : "" %>></td>
         </tr>
         <tr>
             <td/>

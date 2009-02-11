@@ -31,7 +31,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
-import org.labkey.api.study.actions.AssayDataDetailsAction;
+import org.labkey.api.study.actions.AssayResultDetailsAction;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.RunDataTable;
@@ -179,13 +179,13 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
         if (hasView(AssayDomainTypes.Data))
         {
-            // XXX: consider adding a .getDataDetailsURL() to AbstractAssayProvider or TsvAssayProvider
-            ActionURL dataDetailsURL = new ActionURL(AssayDataDetailsAction.class, schema.getContainer());
-            dataDetailsURL.addParameter("rowId", protocol.getRowId());
+            // XXX: consider adding a .getResultDetailsURL() to AbstractAssayProvider or TsvAssayProvider
+            ActionURL resultDetailsURL = new ActionURL(AssayResultDetailsAction.class, schema.getContainer());
+            resultDetailsURL.addParameter("rowId", protocol.getRowId());
             Map<String, String> params = new HashMap<String, String>();
-            // map ObjectId to url parameter DataDetailsForm.dataRowId
+            // map ObjectId to url parameter ResultDetailsForm.dataRowId
             params.put("dataRowId", "ObjectId");
-            table.addDetailsURL(new DetailsURL(dataDetailsURL, params));
+            table.addDetailsURL(new DetailsURL(resultDetailsURL, params));
         }
         return table;
     }
@@ -283,25 +283,25 @@ public class ModuleAssayProvider extends TsvAssayProvider
         public ExpProtocol expProtocol;
     }
 
-    public static class DataDetailsBean extends AssayPageBean
+    public static class ResultDetailsBean extends AssayPageBean
     {
         public ExpData expData;
         public Object objectId;
     }
 
     @Override
-    public ModelAndView createDataDetailsView(ViewContext context, ExpProtocol protocol, ExpData data, Object objectId)
+    public ModelAndView createResultDetailsView(ViewContext context, ExpProtocol protocol, ExpData data, Object objectId)
     {
         ModelAndView dataDetailsView = getView(AssayDomainTypes.Data);
         if (dataDetailsView == null)
-            return super.createDataDetailsView(context, protocol, data, objectId);
+            return super.createResultDetailsView(context, protocol, data, objectId);
 
-        DataDetailsBean bean = new DataDetailsBean();
+        ResultDetailsBean bean = new ResultDetailsBean();
         bean.expProtocol = protocol;
         bean.expData = data;
         bean.objectId = objectId;
 
-        JspView<DataDetailsBean> view = new JspView<DataDetailsBean>("/org/labkey/study/assay/view/dataDetails.jsp", bean);
+        JspView<ResultDetailsBean> view = new JspView<ResultDetailsBean>("/org/labkey/study/assay/view/resultDetails.jsp", bean);
         view.setView("nested", dataDetailsView);
         return view;
     }

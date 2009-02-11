@@ -18,15 +18,15 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.study.assay.ModuleAssayProvider.DataDetailsBean" %>
+<%@ page import="org.labkey.study.assay.ModuleAssayProvider.ResultDetailsBean" %>
 <%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.exp.property.DomainUtil" %>
 <%@ page import="org.labkey.study.assay.ModuleAssayProvider" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<DataDetailsBean> me = (JspView<DataDetailsBean>) HttpView.currentView();
-    DataDetailsBean bean = me.getModelBean();
+    JspView<ModuleAssayProvider.ResultDetailsBean> me = (JspView<ModuleAssayProvider.ResultDetailsBean>) HttpView.currentView();
+    ModuleAssayProvider.ResultDetailsBean bean = me.getModelBean();
     ExpProtocol protocol = bean.expProtocol;
 %>
 <script type="text/javascript">

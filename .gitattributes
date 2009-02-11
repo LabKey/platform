@@ -1897,11 +1897,11 @@ study/src/org/labkey/study/assay/query/AssayListTable.java -text
 study/src/org/labkey/study/assay/query/AssaySchema.java -text
 study/src/org/labkey/study/assay/query/TypeDisplayColumn.java -text
 study/src/org/labkey/study/assay/view/chooseAssayType.jsp -text
-study/src/org/labkey/study/assay/view/dataDetails.jsp -text
 study/src/org/labkey/study/assay/view/dataUpload.jsp -text
 study/src/org/labkey/study/assay/view/moduleAssayUpload.jsp -text
 study/src/org/labkey/study/assay/view/newUploadSet.jsp -text
 study/src/org/labkey/study/assay/view/publishChooseStudy.jsp -text
+study/src/org/labkey/study/assay/view/resultDetails.jsp -text
 study/src/org/labkey/study/assay/view/tsvDataDescription.jsp -text
 study/src/org/labkey/study/controllers/BaseController.java -text
 study/src/org/labkey/study/controllers/BaseStudyController.java -text
@@ -2112,9 +2112,12 @@ study/src/org/labkey/study/security/datasets.jsp -text
 study/src/org/labkey/study/security/sites.jsp -text
 study/src/org/labkey/study/security/study.jsp -text
 study/src/org/labkey/study/security/studySecurity.jsp -text
-study/src/org/labkey/study/view/AssayDetailsWebPartFactory.java -text
+study/src/org/labkey/study/view/AssayBaseWebPartFactory.java -text
+study/src/org/labkey/study/view/AssayBatchesWebPartFactory.java -text
 study/src/org/labkey/study/view/AssayList2WebPartFactory.java -text
 study/src/org/labkey/study/view/AssayListWebPartFactory.java -text
+study/src/org/labkey/study/view/AssayResultsWebPartFactory.java -text
+study/src/org/labkey/study/view/AssayRunsWebPartFactory.java -text
 study/src/org/labkey/study/view/BaseStudyPage.java -text
 study/src/org/labkey/study/view/CrosstabView.java -text
 study/src/org/labkey/study/view/DataHeader.java -text
