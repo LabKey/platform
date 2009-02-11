@@ -23,7 +23,7 @@ public class IdentifierString extends HString
 
 	public IdentifierString(HString s)
 	{
-		this(s._source);
+		this(null == s ? "" : s._source);
 	}
 
 	public IdentifierString(String s, boolean t)
