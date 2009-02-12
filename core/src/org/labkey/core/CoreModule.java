@@ -310,6 +310,7 @@ public class CoreModule extends SpringModule
             WebdavResolverImpl.TestCase.class,
             org.labkey.api.exp.Lsid.TestCase.class,
             MimeMap.TestCase.class,
+            FileUtil.TestCase.class,
             MemTracker.TestCase.class,
             SqlDialect.SqlDialectTestCase.class,
             HString.TestCase.class

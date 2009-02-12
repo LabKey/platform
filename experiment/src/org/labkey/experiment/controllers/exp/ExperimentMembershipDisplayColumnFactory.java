@@ -21,7 +21,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.exp.ExperimentRunListView;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.util.Set;
 import java.util.Collections;
@@ -97,20 +97,11 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
                 ActionURL url = new ActionURL(ExperimentController.ToggleRunExperimentMembershipAction.class, ctx.getContainer());
                 out.write("<script language=\"javascript\">\n" +
                         "LABKEY.requiresYahoo('connection');\n" +
-                        "function safeSetRunExperimentMembershipFeedback(message)\n" +
+                        "function toggleRunExperimentMembership(expId, runId, included, dataRegionName)\n" +
                         "{\n" +
-                        "    var statusElement = document.getElementById('" + ExperimentRunListView.STATUS_ELEMENT_ID + "');\n" +
-                        "    if (statusElement != null)\n" +
-                        "    {\n" +
-                        "        statusElement.innerHTML = message;\n" + 
-                        "    }\n" +
-                        "};\n" +
-                        "function toggleRunExperimentMembership(expId, runId, included)\n" +
-                        "{\n" +
-                        "    safeSetRunExperimentMembershipFeedback('');\n" + 
                         "    var callback = { \n" +
-                        "        success: function(o) { safeSetRunExperimentMembershipFeedback('Run group information saved successfully.') },\n" +
-                        "        failure: function(o) { safeSetRunExperimentMembershipFeedback('Run group information save failed.') }\n" +
+                        "        success: function(o) { LABKEY.DataRegions[dataRegionName].showMessage('Run group information saved successfully.') },\n" +
+                        "        failure: function(o) { LABKEY.DataRegions[dataRegionName].showMessage('<div class=\"labkey-error\">Run group information save failed.</div>') },\n" +
                         "    }\n" +
                         "    YAHOO.util.Connect.asyncRequest('GET', '" + url + "runId=' + runId + '&experimentId=' + expId + '&included=' + included, callback, null); \n" +
                         "};\n" +
@@ -121,7 +112,7 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
             out.write("<input type=\"checkbox\" name=\"experimentMembership\" ");
             if (ctx.getViewContext().hasPermission(ACL.PERM_UPDATE))
             {
-                out.write(" onclick=\"javascript:toggleRunExperimentMembership(" + getExpId(ctx) + ", " + getRunId(ctx) + ", this.checked);\"");
+                out.write(" onclick=\"javascript:toggleRunExperimentMembership(" + getExpId(ctx) + ", " + getRunId(ctx) + ", this.checked, '" + PageFlowUtil.filter(ctx.getCurrentRegion().getName()) + "');\"");
             }
             else
             {

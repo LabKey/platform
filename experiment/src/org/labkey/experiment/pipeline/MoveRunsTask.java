@@ -25,6 +25,7 @@ import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.DataURLRelativizer;
@@ -222,14 +223,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
             {
                 dataFile = f;
             }
-            try
-            {
-                return dataFile.getCanonicalFile().toURI().toString();
-            }
-            catch (IOException e)
-            {
-                throw new XarFormatException(e);
-            }
+            return FileUtil.getAbsoluteCaseSensitiveFile(dataFile).toURI().toString();
         }
 
         public File getLogFile() throws IOException

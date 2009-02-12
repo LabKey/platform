@@ -47,7 +47,7 @@
         <tr>
             <td><a href="<%= h(def.urlFor(QueryAction.executeQuery, context.getContainer()) )%>"><%=h(name)%></a></td>
             <% if (context.hasPermission(ACL.PERM_ADMIN) && def.isMetadataEditable()) { %>
-                <td>[<a href="<%= def.urlFor(QueryAction.metadataQuery, context.getContainer()) %>">override metadata</a>]</td>
+                <td>[<a href="<%= def.urlFor(QueryAction.metadataQuery, context.getContainer()) %>">customize display</a>]</td>
             <% } %>
             <td>
                 <% if (def.getDescription() != null) { %>

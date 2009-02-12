@@ -336,18 +336,70 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new ExpSampleSetImpl(ms);
     }
 
-    public ExpSampleSet[] getSampleSetsForRole(Container container, String role)
+    public Map<String, ExpSampleSet> getSampleSetsForRoles(Container container, ExpProtocol.ApplicationType type)
     {
         try
         {
             SQLFragment sql = new SQLFragment();
-            sql.append("SELECT * FROM " + getTinfoMaterialSource() + " WHERE LSID IN (SELECT m.CpasType FROM " +
-                    getTinfoMaterial() + " m, " + getTinfoMaterialInput() + " mi, " + getTinfoProtocolApplication() + " pa, " +
-                    getTinfoExperimentRun() + " r WHERE m.RowId = mi.MaterialId AND mi.TargetApplicationId = pa.RowId AND " +
-                    "pa.RunId = r.RowId AND r.Container = ?)");
+            sql.append("SELECT mi.Role, MAX(m.CpasType) AS SampleSetLSID, COUNT (DISTINCT m.CpasType) AS SampleSetCount FROM ");
+            sql.append(getTinfoMaterial());
+            sql.append(" m, ");
+            sql.append(getTinfoMaterialInput());
+            sql.append(" mi, ");
+            sql.append(getTinfoProtocolApplication());
+            sql.append(" pa, ");
+            sql.append(getTinfoExperimentRun());
+            sql.append(" r ");
+
+            if (type != null)
+            {
+                sql.append(", ");
+                sql.append(getTinfoProtocol());
+                sql.append(" p WHERE p.lsid = pa.protocollsid AND p.applicationtype = ? AND ");
+                sql.add(type.toString());
+            }
+            else
+            {
+                sql.append(" WHERE ");
+            }
+
+            sql.append(" m.RowId = mi.MaterialId AND mi.TargetApplicationId = pa.RowId AND " +
+                    "pa.RunId = r.RowId AND r.Container = ? GROUP BY mi.Role ORDER BY mi.Role");
             sql.add(container.getId());
-            MaterialSource[] matches = Table.executeQuery(getSchema(), sql.toString(), sql.getParamsArray(), MaterialSource.class);
-            return ExpSampleSetImpl.fromMaterialSources(matches);
+
+            Map<String, Object>[] queryResults = Table.executeQuery(getSchema(), sql.toString(), sql.getParamsArray(), Map.class);
+            Map<String, ExpSampleSet> lsidToSampleSet = new HashMap<String, ExpSampleSet>();
+            ExpSampleSet defaultSampleSet = lookupActiveSampleSet(container);
+            if (defaultSampleSet != null)
+            {
+                lsidToSampleSet.put(defaultSampleSet.getLSID(), defaultSampleSet);
+            }
+
+            Map<String, ExpSampleSet> result = new LinkedHashMap<String, ExpSampleSet>();
+            for (Map<String, Object> queryResult : queryResults)
+            {
+                ExpSampleSet sampleSet = null;
+                Number sampleSetCount = (Number)queryResult.get("SampleSetCount");
+                if (sampleSetCount.intValue() == 1)
+                {
+                    String sampleSetLSID = (String)queryResult.get("SampleSetLSID");
+                    if (!lsidToSampleSet.containsKey(sampleSetLSID))
+                    {
+                        sampleSet = getSampleSet(sampleSetLSID);
+                        lsidToSampleSet.put(sampleSetLSID, sampleSet);
+                    }
+                    else
+                    {
+                        sampleSet = lsidToSampleSet.get(sampleSetLSID);
+                    }
+                }
+                if (sampleSet == null)
+                {
+                    sampleSet = defaultSampleSet;
+                }
+                result.put((String)queryResult.get("Role"), sampleSet);
+            }
+            return result;
         }
         catch (SQLException e)
         {
@@ -1285,7 +1337,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpDataImpl getExpDataByURL(File file, Container c) throws IOException
     {
-        File canonicalFile = file.getCanonicalFile();
+        File canonicalFile = FileUtil.getAbsoluteCaseSensitiveFile(file);
         String url = canonicalFile.toURI().toURL().toString();
         return getExpDataByURL(url, c);
     }

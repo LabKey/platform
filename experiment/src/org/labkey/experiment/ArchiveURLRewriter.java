@@ -60,7 +60,7 @@ public class ArchiveURLRewriter extends URLRewriter
         String name;
         try
         {
-            f = f.getCanonicalFile();
+            f = FileUtil.getAbsoluteCaseSensitiveFile(f);
             boolean inSubTree = false;
             File fileParentDir = f.getParentFile();
             while (fileParentDir != null)

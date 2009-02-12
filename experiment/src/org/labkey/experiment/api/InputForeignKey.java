@@ -36,7 +36,7 @@ public class InputForeignKey extends LookupForeignKey
     private final ExpProtocol.ApplicationType _type;
     private final ContainerFilter _filter;
     private Set<String> _dataInputs;
-    private Set<String> _materialInputs;
+    private Map<String, ExpSampleSet> _materialInputs;
 
     public InputForeignKey(ExpSchema schema, ExpProtocol.ApplicationType type, ContainerFilter filter)
     {
@@ -56,19 +56,11 @@ public class InputForeignKey extends LookupForeignKey
         {
             ret.safeAddColumn(ret.createDataInputColumn(role, _schema, role));
         }
-        for (String role : getMaterialInputs())
+        for (Map.Entry<String, ExpSampleSet> entry : getMaterialInputs().entrySet())
         {
-            ExpSampleSet[] matchingSets = ExperimentService.get().getSampleSetsForRole(_schema.getContainer(), role);
-            ExpSampleSet ss;
-            if (matchingSets.length == 1)
-            {
-                ss = matchingSets[0];
-            }
-            else
-            {
-                ss = ExperimentService.get().lookupActiveSampleSet(_schema.getContainer());
-            }
-            ret.safeAddColumn(ret.createMaterialInputColumn(role, samplesSchema, ss, role));
+            String role = entry.getKey();
+            ExpSampleSet sampleSet = entry.getValue();
+            ret.safeAddColumn(ret.createMaterialInputColumn(role, samplesSchema, sampleSet, role));
         }
         return ret;
     }
@@ -89,11 +81,11 @@ public class InputForeignKey extends LookupForeignKey
         return _dataInputs;
     }
 
-    private Set<String> getMaterialInputs()
+    private Map<String, ExpSampleSet> getMaterialInputs()
     {
         if (_materialInputs == null)
         {
-            _materialInputs = ExperimentService.get().getMaterialInputRoles(_schema.getContainer(), _type);
+            _materialInputs = ExperimentService.get().getSampleSetsForRoles(_schema.getContainer(), _type);
         }
         return _materialInputs;
     }

@@ -352,7 +352,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                 xmlColumn.unsetFk();
             }
 
-            if (xmlColumn.getDomNode().getChildNodes().getLength() == 0)
+            if (xmlColumn.getDomNode().getChildNodes().getLength() == 0 && xmlColumn.getWrappedColumnName() == null)
             {
                 // Remove columns that no longer have any metadata set on them
                 removeColumn(xmlTable, xmlColumn);

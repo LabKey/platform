@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
-UPDATE pipeline.StatusFiles SET JobParent = NULL WHERE JobParent NOT IN (SELECT Job FROM pipeline.StatusFiles)
+UPDATE pipeline.StatusFiles SET JobParent = NULL
+    WHERE JobParent NOT IN (SELECT Job FROM pipeline.StatusFiles WHERE Job IS NOT NULL)
 GO
 
+UPDATE pipeline.StatusFiles SET Job = EntityId WHERE Job IS NULL
+GO

@@ -36,6 +36,7 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
     private static final String QUERY_NAME_PROPERTY = "queryName";
     private TablePropertiesEditor _editor;
     private String _schemaName;
+    private DialogBox _confirmDialog;
 
     public void onModuleLoad()
     {
@@ -74,18 +75,27 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
         {
             public void onClick(Widget sender)
             {
-                getService().resetToDefault(_schemaName, _editor.getUpdates().getName(), new AsyncCallback<GWTTableInfo>()
+                ImageButton okButton = new ImageButton("OK", new ClickListener()
                 {
-                    public void onFailure(Throwable caught)
+                    public void onClick(Widget sender)
                     {
-                        WindowUtil.reportException("Failed to reset metadata to default", caught);
-                    }
+                        _confirmDialog.hide();
+                        getService().resetToDefault(_schemaName, _editor.getUpdates().getName(), new AsyncCallback<GWTTableInfo>()
+                        {
+                            public void onFailure(Throwable caught)
+                            {
+                                WindowUtil.reportException("Failed to reset metadata to default", caught);
+                            }
 
-                    public void onSuccess(GWTTableInfo newTableInfo)
-                    {
-                        _editor.init(newTableInfo);
+                            public void onSuccess(GWTTableInfo newTableInfo)
+                            {
+                                _editor.init(newTableInfo);
+                            }
+                        });
                     }
                 });
+                
+                showConfirmDialog("Confirm Reset", "Are you sure you want to reset? You will lose any edits you made.", okButton);
             }
         }));
         final String xmlActionURL = PropertyUtil.getServerProperty("xmlActionURL");
@@ -97,11 +107,6 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
                 {
                     if (_editor.isDirty())
                     {
-                        final DialogBox confirmDialog = new DialogBox(false, true);
-                        confirmDialog.setText("Save Changes?");
-                        VerticalPanel panel = new VerticalPanel();
-                        panel.add(new Label("Do you want to save your changes?"));
-                        HorizontalPanel buttonPanel = new HorizontalPanel();
                         ImageButton saveButton = new ImageButton("Save", new ClickListener()
                         {
                             public void onClick(Widget sender)
@@ -120,7 +125,6 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
                                 });
                             }
                         });
-                        buttonPanel.add(saveButton);
 
                         ImageButton discardButton = new ImageButton("Discard", new ClickListener()
                         {
@@ -129,21 +133,8 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
                                 Window.Location.replace(xmlActionURL);
                             }
                         });
-                        buttonPanel.add(discardButton);
 
-                        ImageButton cancelButton = new ImageButton("Cancel", new ClickListener()
-                        {
-                            public void onClick(Widget sender)
-                            {
-                                confirmDialog.hide();
-                            }
-                        });
-                        buttonPanel.add(cancelButton);
-
-                        panel.add(buttonPanel);
-                        confirmDialog.add(panel);
-                        confirmDialog.show();
-                        WindowUtil.centerDialog(confirmDialog);
+                        showConfirmDialog("Save Changes?", "Do you want to save your changes?", saveButton, discardButton);
                     }
                     else
                     {
@@ -158,6 +149,47 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
         rootPanel.add(panel);
         
         _editor.init(tableInfo);
+    }
+
+    public void hideConfirmDialog()
+    {
+        if (_confirmDialog != null)
+        {
+            _confirmDialog.hide();
+            _confirmDialog = null;
+        }
+    }
+
+    /**
+     * Shows a modal popup to ask for confirmation. Automatically adds a cancel button that just dismisses the dialog.
+     */
+    public void showConfirmDialog(String title, String message, ImageButton... buttons)
+    {
+        _confirmDialog = new DialogBox(false, true);
+        _confirmDialog.setText(title);
+        VerticalPanel panel = new VerticalPanel();
+        panel.add(new Label(message));
+        HorizontalPanel buttonPanel = new HorizontalPanel();
+
+        for (ImageButton button : buttons)
+        {
+            buttonPanel.add(button);
+        }
+        ImageButton cancelButton = new ImageButton("Cancel", new ClickListener()
+        {
+            public void onClick(Widget sender)
+            {
+                _confirmDialog.hide();
+            }
+        });
+        buttonPanel.add(cancelButton);
+        buttonPanel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
+        panel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
+
+        panel.add(buttonPanel);
+        _confirmDialog.add(panel);
+        _confirmDialog.show();
+        WindowUtil.centerDialog(_confirmDialog);
     }
 
     public boolean isDirty()
