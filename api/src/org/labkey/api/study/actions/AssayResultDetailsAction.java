@@ -61,7 +61,7 @@ public class AssayResultDetailsAction extends BaseAssayAction<DataDetailsForm>
         if (_data == null)
             HttpView.throwNotFound("Assay ExpData not found for dataRowId: " + _dataRowId);
 
-        return aap.createResultDetailsView(context, _protocol, _data, _dataRowId);
+        return provider.createResultDetailsView(context, _protocol, _data, _dataRowId);
     }
 
     public NavTree appendNavTrail(NavTree root)

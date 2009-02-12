@@ -22,10 +22,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.query.ExpRunTable;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.DataType;
-import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
@@ -126,7 +123,19 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     RunListQueryView createRunQueryView(ViewContext context, ExpProtocol protocol);
 
+    boolean hasCustomView(IAssayDomainType domainType, boolean details);
+
+    ModelAndView createBatchesView(ViewContext context, ExpProtocol protocol);
+
+    ModelAndView createBatchDetailsView(ViewContext context, ExpProtocol protocol, ExpExperiment batch);
+
+    ModelAndView createRunsView(ViewContext context, ExpProtocol protocol);
+
+    ModelAndView createRunDetailsView(ViewContext context, ExpProtocol protocol, ExpRun run);
+
     ModelAndView createResultsView(ViewContext context, ExpProtocol protocol);
+
+    public ModelAndView createResultDetailsView(ViewContext context, ExpProtocol protocol, ExpData data, Object dataRowId);
 
     void deleteProtocol(ExpProtocol protocol, User user) throws ExperimentException;
 

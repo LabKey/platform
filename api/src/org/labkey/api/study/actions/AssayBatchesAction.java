@@ -21,6 +21,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.data.DataRegionSelection;
 import org.springframework.validation.BindException;
@@ -38,9 +39,15 @@ public class AssayBatchesAction extends BaseAssayAction<AssayRunsAction.AssayRun
 
     public ModelAndView getView(AssayRunsAction.AssayRunsForm summaryForm, BindException errors) throws Exception
     {
+        ViewContext context = getViewContext();
         if (summaryForm.getClearDataRegionSelectionKey() != null)
-            DataRegionSelection.clearAll(getViewContext(), summaryForm.getClearDataRegionSelectionKey());
+            DataRegionSelection.clearAll(context, summaryForm.getClearDataRegionSelectionKey());
+
         _protocol = getProtocol(summaryForm);
+        AssayProvider provider = AssayService.get().getProvider(_protocol);
+        ModelAndView resultsView = provider.createBatchesView(context, _protocol);
+        if (resultsView != null)
+            return resultsView;
         return new AssayBatchesView(_protocol, false);
     }
 

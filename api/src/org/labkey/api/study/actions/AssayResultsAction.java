@@ -23,6 +23,7 @@ import org.labkey.api.security.ActionNames;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.assay.AssayResultsView;
 import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.VBox;
@@ -52,28 +53,7 @@ public class AssayResultsAction extends BaseAssayAction<ProtocolIdForm>
         ModelAndView resultsView = provider.createResultsView(context, _protocol);
         if (resultsView != null)
             return resultsView;
-        return getView(context, provider);
-    }
-
-    protected ModelAndView getView(ViewContext context, AssayProvider provider)
-    {
-        ResultsQueryView dataQueryView = provider.createResultsQueryView(context, _protocol);
-
-        AssayHeaderView headerView = new AssayHeaderView(
-            _protocol,
-            AssayService.get().getProvider(_protocol),
-            false,
-            dataQueryView.getTable().getContainerFilter());
-
-        VBox fullView = new VBox();
-        fullView.addView(headerView);
-
-
-        if (!provider.allowUpload(context.getUser(), context.getContainer(), _protocol))
-            fullView.addView(provider.getDisallowedUploadMessageView(context.getUser(), context.getContainer(), _protocol));
-
-        fullView.addView(dataQueryView);
-        return fullView;
+        return new AssayResultsView(provider, _protocol);
     }
 
     public NavTree appendNavTrail(NavTree root)

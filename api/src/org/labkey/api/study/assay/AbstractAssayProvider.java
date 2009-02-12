@@ -36,6 +36,8 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.actions.DesignerAction;
+import org.labkey.api.study.actions.AssayRunDetailsAction;
+import org.labkey.api.study.actions.AssayResultDetailsAction;
 import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.study.query.RunListQueryView;
 import org.labkey.api.util.*;
@@ -998,7 +1000,21 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public RunListQueryView createRunQueryView(ViewContext context, ExpProtocol protocol)
     {
-        return new RunListQueryView(protocol, context);
+        RunListQueryView queryView = new RunListQueryView(protocol, context);
+
+        if (hasCustomView(ExpProtocol.AssayDomainTypes.Run, true))
+        {
+            ActionURL runDetailsURL = new ActionURL(AssayRunDetailsAction.class, context.getContainer());
+            runDetailsURL.addParameter("rowId", protocol.getRowId());
+            Map<String, String> params = new HashMap<String, String>();
+            params.put("runId", "RowId");
+
+            AbstractTableInfo ati = (AbstractTableInfo)queryView.getTable();
+            ati.setDetailsURL(new DetailsURL(runDetailsURL, params));
+            queryView.setShowDetailsColumn(true);
+        }
+
+        return queryView;
     }
 
     public ResultsQueryView createResultsQueryView(ViewContext context, ExpProtocol protocol)
@@ -1007,7 +1023,47 @@ public abstract class AbstractAssayProvider implements AssayProvider
         QuerySettings settings = new QuerySettings(context, name);
         settings.setSchemaName(AssayService.ASSAY_SCHEMA_NAME);
         settings.setQueryName(name);
-        return new ResultsQueryView(protocol, context, settings);
+        ResultsQueryView queryView = new ResultsQueryView(protocol, context, settings);
+
+        if (hasCustomView(ExpProtocol.AssayDomainTypes.Result, true))
+        {
+            ActionURL resultDetailsURL = new ActionURL(AssayResultDetailsAction.class, context.getContainer());
+            resultDetailsURL.addParameter("rowId", protocol.getRowId());
+            Map<String, String> params = new HashMap<String, String>();
+            // map ObjectId to url parameter ResultDetailsForm.dataRowId
+            params.put("dataRowId", "ObjectId");
+
+            AbstractTableInfo ati = (AbstractTableInfo)queryView.getTable();
+            ati.addDetailsURL(new DetailsURL(resultDetailsURL, params));
+            queryView.setShowDetailsColumn(true);
+        }
+
+        return queryView;
+    }
+
+    public boolean hasCustomView(IAssayDomainType domainType, boolean details)
+    {
+        return false;
+    }
+    
+    public ModelAndView createBatchesView(ViewContext context, ExpProtocol protocol)
+    {
+        return null;
+    }
+
+    public ModelAndView createBatchDetailsView(ViewContext context, ExpProtocol protocol, ExpExperiment batch)
+    {
+        return null;
+    }
+
+    public ModelAndView createRunsView(ViewContext context, ExpProtocol protocol)
+    {
+        return null;
+    }
+
+    public ModelAndView createRunDetailsView(ViewContext context, ExpProtocol protocol, ExpRun run)
+    {
+        return null;
     }
 
     public ModelAndView createResultsView(ViewContext context, ExpProtocol protocol)

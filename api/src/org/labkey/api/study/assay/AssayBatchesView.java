@@ -18,15 +18,21 @@ package org.labkey.api.study.assay;
 
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.study.actions.AssayHeaderView;
 import org.labkey.api.study.actions.ShowSelectedRunsAction;
+import org.labkey.api.study.actions.AssayBatchDetailsAction;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.util.PageFlowUtil;
+
+import java.util.Map;
+import java.util.HashMap;
 
 public class AssayBatchesView extends VBox
 {
@@ -53,6 +59,18 @@ public class AssayBatchesView extends VBox
         ExpExperimentTable tableInfo = (ExpExperimentTable)_batchesView.getTable();
         ActionURL runsURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(context.getContainer(), protocol, tableInfo.getContainerFilter());
         tableInfo.getColumn(ExpExperimentTable.Column.Name).setURL(runsURL.toString() + "&" + batchParam);
+
+        if (provider.hasCustomView(ExpProtocol.AssayDomainTypes.Batch, true))
+        {
+            ActionURL detailsURL = new ActionURL(AssayBatchDetailsAction.class, context.getContainer());
+            detailsURL.addParameter("rowId", protocol.getRowId());
+            Map<String, String> params = new HashMap<String, String>();
+            params.put("batchId", "RowId");
+
+            _batchesView.setShowDetailsColumn(true);
+            AbstractTableInfo table = (AbstractTableInfo)_batchesView.getTable();
+            table.setDetailsURL(new DetailsURL(detailsURL, params));
+        }
 
         AssayHeaderView headerView = new AssayHeaderView(protocol, provider, minimizeLinks, _batchesView.getTable().getContainerFilter());
         if (minimizeLinks)

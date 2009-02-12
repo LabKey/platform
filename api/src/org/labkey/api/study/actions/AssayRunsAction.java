@@ -21,7 +21,10 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.assay.AssayRunsView;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.AppBar;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
@@ -53,9 +56,16 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
 
     public ModelAndView getView(AssayRunsForm summaryForm, BindException errors) throws Exception
     {
+        ViewContext context = getViewContext();
         if (summaryForm.getClearDataRegionSelectionKey() != null)
-            DataRegionSelection.clearAll(getViewContext(), summaryForm.getClearDataRegionSelectionKey());
+            DataRegionSelection.clearAll(context, summaryForm.getClearDataRegionSelectionKey());
+
         _protocol = getProtocol(summaryForm);
+        AssayProvider provider = AssayService.get().getProvider(_protocol);
+
+        ModelAndView resultsView = provider.createRunsView(context, _protocol);
+        if (resultsView != null)
+            return resultsView;
         return new AssayRunsView(_protocol, false);
     }
 

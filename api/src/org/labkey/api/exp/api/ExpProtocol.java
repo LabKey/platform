@@ -32,7 +32,7 @@ public interface ExpProtocol extends ExpObject
     public static final String ASSAY_DOMAIN_PREFIX = "AssayDomain-";
     public static final String ASSAY_DOMAIN_RUN = AssayDomainTypes.Run.getPrefix();
     public static final String ASSAY_DOMAIN_BATCH = AssayDomainTypes.Batch.getPrefix();
-    public static final String ASSAY_DOMAIN_DATA = AssayDomainTypes.Data.getPrefix();
+    public static final String ASSAY_DOMAIN_DATA = AssayDomainTypes.Result.getPrefix();
 
     /**
      * List of well-known domain types.  AssayProviders may
@@ -40,13 +40,13 @@ public interface ExpProtocol extends ExpObject
      */
     enum AssayDomainTypes implements IAssayDomainType
     {
-        Batch, Run, Data;
+        Batch("Batch"), Run("Run"), Result("Data");
 
         private String prefix;
 
-        AssayDomainTypes()
+        AssayDomainTypes(String prefixName)
         {
-            this.prefix = ASSAY_DOMAIN_PREFIX + name();
+            this.prefix = ASSAY_DOMAIN_PREFIX + prefixName;
         }
 
         public String getName()
