@@ -18,10 +18,7 @@ package org.labkey.query.sql;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import org.labkey.api.data.CachedRowSetImpl;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
@@ -402,13 +399,16 @@ public class Query
         new SqlTest("SELECT R.seven FROM R UNION SELECT R.seven FROM R UNION SELECT R.twelve FROM R", 1, 12),
         new SqlTest("(SELECT R.seven FROM R UNION SELECT R.seven FROM R) UNION ALL SELECT R.twelve FROM R", 1, 7 + Rsize),
         new SqlTest("(SELECT R.seven FROM R UNION ALL SELECT R.seven FROM R) UNION SELECT R.twelve FROM R", 1, 12),
-        new SqlTest("SELECT R.seven FROM R UNION ALL SELECT R.seven FROM R UNION ALL SELECT R.twelve FROM R", 1, 3*Rsize),
+        new SqlTest("SELECT R.seven FROM R UNION ALL SELECT R.seven FROM R UNION ALL SELECT R.twelve FROM R", 1, 3*Rsize)
+    };
+
+	static SqlTest[] postgres = new SqlTest[]
+	{
 		// ORDER BY tests
 		new SqlTest("SELECT R.day, R.month, R.date FROM R ORDER BY R.date"),
 		new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date")
-    };
-
-
+	};
+	
 	static SqlTest[] negative = new SqlTest[]
 	{
 		new SqlTest("SELECT S.d, S.seven FROM S"),
@@ -608,6 +608,13 @@ public class Query
             {
                 validate(test);
             }
+			if (DbSchema.get(s.getSchemaName()).getSqlDialect().allowSortOnSubqueryWithoutLimit())
+			{
+				for (SqlTest test : postgres)
+					{
+						validate(test);
+					}
+			}
 			for (SqlTest test : negative)
 			{
 				failidate(test);
