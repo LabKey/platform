@@ -64,7 +64,10 @@
             for(Attachment att : model.getWiki().getAttachments())
             {
                 %>
-                    <%=sep%>{name: <%=PageFlowUtil.jsString(att.getName())%>, iconUrl: <%=PageFlowUtil.jsString(me.getViewContext().getContextPath() + att.getFileIcon())%>}
+                    <%=sep%>{name: <%=PageFlowUtil.jsString(att.getName())%>,
+                             iconUrl: <%=PageFlowUtil.jsString(me.getViewContext().getContextPath() + att.getFileIcon())%>,
+                             downloadUrl: <%=PageFlowUtil.jsString(att.getDownloadUrl("wiki"))%>
+                            }
                 <%
                 sep = ",";
             }

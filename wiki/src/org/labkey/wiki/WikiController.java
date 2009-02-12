@@ -3059,6 +3059,7 @@ public class WikiController extends SpringActionController
                     Map<String,Object> attProps = new HashMap<String,Object>();
                     attProps.put("name", att.getName());
                     attProps.put("iconUrl", getViewContext().getContextPath() + att.getFileIcon());
+                    attProps.put("downloadUrl", att.getDownloadUrl("wiki"));
                     attachments.add(attProps);
                 }
             }

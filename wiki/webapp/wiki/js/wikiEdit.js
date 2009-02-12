@@ -646,8 +646,8 @@ function updateExistingAttachments(attachments)
 
             cell = row.insertCell(1);
             cell.id = "wiki-ea-name-" + idx;
-            //append name as a text node so that it gets HTML encoded
-            cell.appendChild(document.createTextNode(attachments[idx].name));
+            //create a text node for name so that it gets HTML encoded
+            cell.innerHTML = "<a target='_blank' href='" + attachments[idx].downloadUrl + "'>" + LABKEY.Utils.encodeHtml(attachments[idx].name) + "</a>";
 
             cell = row.insertCell(2);
             cell.id = "wiki-ea-del-" + idx;
