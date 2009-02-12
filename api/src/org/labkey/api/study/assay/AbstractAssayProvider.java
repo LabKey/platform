@@ -1279,11 +1279,14 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 else
                 {
                     // we may just want to log an error rather than fail the upload due to an engine config problem.
-/*
                     throw new ValidationException("A script engine implementation was not found for the specified QC script. " +
                             "Check configurations in the Admin Console.");
-*/
                 }
+            }
+            else
+            {
+                throw new ValidationException("The validation script: " + scriptFile.getAbsolutePath() + " configured for this Assay does not exist. Please check " +
+                        "the configuration for this Assay design.");
             }
         }
     }
