@@ -79,7 +79,7 @@ public class Query
 
 		try
 		{
-			QNode root = (new SqlParser()).parseUnion(queryText, _parseErrors);
+			QNode root = (new SqlParser()).parseQuery(queryText, _parseErrors);
             
 			if (root instanceof QQuery)
 			{
@@ -383,6 +383,7 @@ public class Query
 		new SqlTest("SELECT R.rowid, R.twelve, R.month FROM R WHERE R.month BETWEEN 'L' and 'O'", 3, 3*7), // March, May, Nov
         new SqlTest("SELECT R.rowid, R.twelve, (SELECT S.month FROM Folder.qtest.lists.S S WHERE S.rowid=R.rowid) as M FROM R WHERE R.day='Monday'", 3, 12),
         new SqlTest("SELECT T.R, T.T, T.M FROM (SELECT R.rowid as R, R.twelve as T, (SELECT S.month FROM Folder.qtest.lists.S S WHERE S.rowid=R.rowid) as M FROM R WHERE R.day='Monday') T", 3, 12),
+		new SqlTest("SELECT R.rowid, R.twelve FROM R WHERE R.seven in (SELECT S.seven FROM Folder.qtest.lists.S S WHERE S.seven in (1,4))", 2, Rsize*2/7),
 
 		new SqlTest("SELECT S.rowid AS Srow, T.rowid AS Trow FROM R S inner join R T on S.rowid=T.rowid"),
 		new SqlTest("SELECT S.rowid AS Srow, T.rowid AS Trow FROM R S left join R T on S.rowid=T.rowid"),
@@ -396,11 +397,15 @@ public class Query
         new SqlTest("SELECT R.seven FROM R UNION ALL SELECT S.seven FROM Folder.qtest.lists.S S", 1, Rsize*2),
         new SqlTest("SELECT 'R' as x, R.seven FROM R UNION SELECT 'S' as x, S.seven FROM Folder.qtest.lists.S S", 2, 14),
         new SqlTest("SELECT 'R' as x, R.seven FROM R UNION SELECT 'S' as x, S.seven FROM Folder.qtest.lists.S S UNION SELECT 'T' as t, R.twelve FROM R", 2, 26),
-        // mixed UNION, UNION ALL
+		new SqlTest("(SELECT 'R' as x, R.seven FROM R) UNION (SELECT 'S' as x, S.seven FROM Folder.qtest.lists.S S UNION SELECT 'T' as t, R.twelve FROM R)", 2, 26),
+		// mixed UNION, UNION ALL
         new SqlTest("SELECT R.seven FROM R UNION SELECT R.seven FROM R UNION SELECT R.twelve FROM R", 1, 12),
-        new SqlTest("SELECT R.seven FROM R UNION SELECT R.seven FROM R UNION ALL SELECT R.twelve FROM R", 1, -1),  // depends on precedence, should be different than next query
-        new SqlTest("SELECT R.seven FROM R UNION ALL SELECT R.seven FROM R UNION SELECT R.twelve FROM R", 1, -1),
+        new SqlTest("(SELECT R.seven FROM R UNION SELECT R.seven FROM R) UNION ALL SELECT R.twelve FROM R", 1, 7 + Rsize),
+        new SqlTest("(SELECT R.seven FROM R UNION ALL SELECT R.seven FROM R) UNION SELECT R.twelve FROM R", 1, 12),
         new SqlTest("SELECT R.seven FROM R UNION ALL SELECT R.seven FROM R UNION ALL SELECT R.twelve FROM R", 1, 3*Rsize),
+		// ORDER BY tests
+		new SqlTest("SELECT R.day, R.month, R.date FROM R ORDER BY R.date"),
+		new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date")
     };
 
 
@@ -410,6 +415,7 @@ public class Query
 		new SqlTest("SELECT S.d, S.seven FROM Folder.S"),
 		new SqlTest("SELECT S.d, S.seven FROM Folder.qtest.S"),
 		new SqlTest("SELECT S.d, S.seven FROM Folder.qtest.list.S")
+		//new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY R.date")
 	};
 
 	
@@ -477,7 +483,7 @@ public class Query
         }
 
 
-        @Override
+		@Override
         protected void tearDown() throws Exception
         {
 			ListService.Interface s = ListService.get();

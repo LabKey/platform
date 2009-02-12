@@ -4,9 +4,13 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParseException;
+import static org.labkey.query.sql.SqlTokenTypes.*;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 
 /*
  * Copyright (c) 2006-2009 LabKey Corporation
@@ -24,48 +28,70 @@ import java.util.ArrayList;
  * limitations under the License.
  */
 
+
 public class QueryUnion
 {
     QuerySchema _schema;
     Query _query;
-    List<QuerySelect> _selectList = new ArrayList<QuerySelect>();
-    List<QUnion> _unionList = new ArrayList<QUnion>();  // parent of corresponding select
+	QUnion _qunion;
+	QOrder _qorderBy;
+	
+    List<Object> _termList = new ArrayList<Object>();
     List<QueryTableInfo> _tinfos = new ArrayList<QueryTableInfo>();
 
-    QueryUnion(Query query, QUnion union)
+	QueryUnion(Query query, QUnion qunion)
     {
         _query = query;
+		_qunion = qunion;
         _schema = query.getSchema();
 
-        initSelectStatements(union);
+        collectUnionTerms(qunion);
+		_qorderBy = _qunion.getChildOfType(QOrder.class);
     }
 
-    // current grammar does not support real tree of union using()
-    void initSelectStatements(QUnion union)
+
+    void collectUnionTerms(QUnion qunion)
     {
-        for (QNode n : union.children())
+        for (QNode n : qunion.children())
         {
-            assert n instanceof QQuery || n instanceof QUnion;
-            if (n instanceof QQuery)
+            assert n instanceof QQuery || n instanceof QUnion || n instanceof QOrder;
+
+			if (n instanceof QOrder)
+				continue;
+            else if (n instanceof QQuery)
             {
                 QuerySelect select = new QuerySelect(_query, (QQuery)n);
-                _selectList.add(select);
-                _unionList.add(union);
+                _termList.add(select);
             }
-            else
-                initSelectStatements((QUnion)n);
+            else if (_qunion.getTokenType() == UNION || n.getTokenType() == UNION_ALL)
+			{
+                collectUnionTerms((QUnion)n);
+			}
+			else
+			{
+
+				QueryUnion union = new QueryUnion(_query, (QUnion)n);
+				_termList.add(union);
+			}
         }
     }
 
 
     void computeTableInfos()
     {
-        if (_tinfos.size() == 0)
-        {
-            for (QuerySelect s : _selectList)
-                _tinfos.add(s.getTableInfo("U"));
+        if (_tinfos.size() > 0)
+			return;
+		for (Object o : _termList)
+		{
+			if (o instanceof QuerySelect)
+				_tinfos.add(((QuerySelect)o).getTableInfo("U"));
+			else
+				_tinfos.add(((QueryUnion)o).getTableInfo("U"));
         }
     }
+
+
+	SQLFragment _unionSql = null;
 
 
     public QueryTableInfo getTableInfo(String alias)
@@ -73,18 +99,43 @@ public class QueryUnion
         computeTableInfos();
         if (_query.getParseErrors().size() > 0)
             return null;
-        
-        String union = "";
+
+		String unionOperator = "";
         SQLFragment unionSql = new SQLFragment();
 
-        for (int i=0 ; i<_selectList.size() ; i++)
-        {
-            QuerySelect select = _selectList.get(i);
-            SQLFragment sql = select.getSelectSql();
-            if (i>0)
-                unionSql.append(_unionList.get(i).getTokenType() == SqlTokenTypes.UNION_ALL ? "\nUNION ALL\n" : "\nUNION\n");
-            unionSql.append(sql);
-        }
+		for (Object term : _termList)
+		{
+			SQLFragment sql;
+			if (term instanceof QuerySelect)
+				sql = ((QuerySelect) term).getSelectSql();
+			else
+				sql = ((QueryUnion) term).getUnionSql();
+
+			unionSql.append(unionOperator);
+			unionSql.append("(");
+			unionSql.append(sql);
+			unionSql.append(")");
+			unionOperator = _qunion.getTokenType() == UNION_ALL ? "\nUNION ALL\n" : "\nUNION\n";
+		}
+
+		if (null != _qorderBy)
+		{
+			List<Map.Entry<QExpr,Boolean>> sort = _qorderBy.getSort();
+			if (sort.size() > 0)
+			{
+				unionSql.append("\n\nORDER BY ");
+				String comma = "";
+				for (Map.Entry<QExpr, Boolean> entry : _qorderBy.getSort())
+				{
+					QExpr expr = resolveFields(entry.getKey());
+					unionSql.append(comma);
+					unionSql.append(expr.getSqlFragment(_schema.getDbSchema()));
+					if (!entry.getValue().booleanValue())
+						unionSql.append(" DESC");
+					comma = ", ";
+				}
+			}
+		}
 
         SQLTableInfo sti = new SQLTableInfo(_schema.getDbSchema());
         sti.setName("UNION");
@@ -96,24 +147,65 @@ public class QueryUnion
             ColumnInfo ucol = new AliasedColumn(ret, col.getName(), col);
             ret.addColumn(ucol);
         }
+		_unionSql = unionSql;
         return ret;
+    }
+
+
+	// simplified version of resolve Field
+	private QExpr resolveFields(QExpr expr)
+	{
+		if (expr instanceof QQuery)
+		{
+			_query.getParseErrors().add(new QueryParseException("Subquery not allowed in UNION's ORDER BY", null, expr.getLine(), expr.getColumn()));
+			return expr;
+		}
+		FieldKey key = expr.getFieldKey();
+		if (key != null)
+		{
+			return new QField(null, key.getName(), expr)
+			{
+				@Override
+				public void appendSql(SqlBuilder builder)
+				{
+					builder.append(_name);
+				}
+			};
+		}
+
+		QExpr ret = (QExpr) expr.clone();
+		for (QNode child : expr.children())
+			ret.appendChild(resolveFields((QExpr)child));
+		return ret;
+	}
+
+
+	SQLFragment getUnionSql()
+    {
+        if (_unionSql == null)
+            getTableInfo("SQL");
+        return _unionSql;
     }
 
 
     public String getQueryText()
     {
-        String union = "";
-        StringBuilder sb = new StringBuilder();
-        
-        for (int i=0 ; i<_selectList.size() ; i++)
-        {
-            QuerySelect select = _selectList.get(i);
-            String sql = select.getQueryText();
-            if (i>0)
-                sb.append(_unionList.get(i).getTokenType() == SqlTokenTypes.UNION_ALL ? "\nUNION ALL\n" : "\nUNION\n");
-            sb.append(union);
-            sb.append(sql);
-        }
-        return sb.toString();
+		StringBuilder sb = new StringBuilder();
+		String unionOperator = "";
+		for (Object term : _termList)
+		{
+			String sql;
+			if (term instanceof QuerySelect)
+				sql = ((QuerySelect) term).getQueryText();
+			else
+				sql = ((QueryUnion) term).getQueryText();
+			sb.append(unionOperator);
+			sb.append("(");
+			sb.append(sql);
+			sb.append(")");
+			unionOperator = _qunion.getTokenType() == UNION_ALL ? "\nUNION ALL\n" : "\nUNION\n";
+		}
+
+		return sb.toString();
     }
 }

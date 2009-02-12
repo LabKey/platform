@@ -61,7 +61,8 @@ public class SqlParser
     {
     }
 
-	public QNode parseUnion(String str, List<? super QueryParseException> errors)
+
+	public QNode parseQuery(String str, List<? super QueryParseException> errors)
 	{
 		_parseErrors = new ArrayList<Exception>();
 		try
@@ -69,7 +70,7 @@ public class SqlParser
 			_SqlParser parser = new _SqlParser(str, _parseErrors);
 			try
 			{
-				parser.union();
+				parser.selectStatement();
 				int last = parser.LA(1);
 				if (SqlBaseTokenTypes.EOF != last)
 					//noinspection ThrowableInstanceNeverThrown
@@ -109,61 +110,7 @@ public class SqlParser
 		}
 	}
 
-    public QQuery parseStatement(String str, List<? super QueryParseException> errors)
-    {
-        _parseErrors = new ArrayList<Exception>();
-        try
-        {
-            _SqlParser parser = new _SqlParser(str, _parseErrors);
-            try
-            {
-                parser.statement();
-                int last = parser.LA(1);
-                if (SqlBaseTokenTypes.UNION == last)
-                    //noinspection ThrowableInstanceNeverThrown
-                    _parseErrors.add(new RecognitionException("UNION is not supported"));
-				else if (SqlBaseTokenTypes.EOF != last)
-					//noinspection ThrowableInstanceNeverThrown
-					_parseErrors.add(new RecognitionException("EOF expected"));
-            }
-            catch (Exception x)
-            {
-                _parseErrors.add(x);
-            }
-
-			QQuery ret = null;
-			if (_parseErrors.size() == 0)
-			{
-				Node parseRoot = (Node) parser.getAST();
-				assert parseRoot != null;
-				MemTracker.put(parseRoot);
-				if (null == parseRoot)
-					return null;
-
-				QNode qnodeRoot = convertParseTree(parseRoot);
-				assert dump(qnodeRoot);
-				assert MemTracker.put(qnodeRoot);
-
-				ret = qnodeRoot != null && qnodeRoot instanceof QQuery ? (QQuery) qnodeRoot : null;
-				if (ret == null)
-				{
-					errors.add(new QueryParseException("This does not look like a SELECT query", null, 0, 0));
-				}
-			}
-			
-            for (Throwable e : _parseErrors)
-            {
-                errors.add(wrapParseException(e));
-            }
-            return ret;
-        }
-        catch (Exception e)
-        {
-            errors.add(wrapParseException(e));
-            return null;
-        }
-    }
-
+	
     public QExpr parseExpr(String str, List<? super QueryParseException> errors)
     {
         _parseErrors = new ArrayList<Exception>();
@@ -395,7 +342,7 @@ public class SqlParser
         }
     };
 
-    private static class _SqlParser extends SqlBaseParser
+	private static class _SqlParser extends SqlBaseParser
 	{
         final ArrayList<Exception> _errors;
         
@@ -625,6 +572,7 @@ public class SqlParser
 
 		"SELECT a FROM R UNION SELECT b FROM S",
         "SELECT a FROM R UNION ALL SELECT b FROM S",
+		"(SELECT a FROM R) UNION ALL (SELECT b FROM S UNION (SELECT c FROM T)) ORDER BY a",
 
         // comments
         "SELECT DISTINCT R.a, b AS B --nadlkf (*&F asdfl alsdkfj\nFROM rel R /* aldkjf (alsdf !! */ INNER JOIN S ON R.x=S.x WHERE R.y=0 AND R.a IS NULL OR R.b IS NOT NULL",
@@ -676,7 +624,7 @@ public class SqlParser
         private void good(String sql)
         {
             List<QueryParseException> errors = new ArrayList<QueryParseException>();
-			QNode q = (new SqlParser()).parseUnion(sql,errors);
+			QNode q = (new SqlParser()).parseQuery(sql,errors);
 			if (errors.size() > 0)
 				fail(errors.get(0).getMessage() + "\n" + sql);
 			else
@@ -687,7 +635,7 @@ public class SqlParser
 		private void bad(String sql)
 		{
 			List<QueryParseException> errors = new ArrayList<QueryParseException>();
-			QNode q = (new SqlParser()).parseUnion(sql,errors);
+			QNode q = (new SqlParser()).parseQuery(sql,errors);
 			if (errors.size() == 0)
 				fail("BAD: " + sql);
 		}

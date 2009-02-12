@@ -215,14 +215,16 @@ optionalFromTokenFromClause!
 	;
 
 selectStatement
-	: queryRule
+	: q:union
+		((o:orderByClause! {#q.addChild(#o);})?)
+		((l:limitClause! {#q.addChild(#l);})?)
 	;
 
 insertStatement
 	// Would be nice if we could abstract the FromClause/FromElement logic
 	// out such that it could be reused here; something analogous to
 	// a "table" rule in sql-grammars
-	: INSERT^ intoClause selectStatement
+	: INSERT^ intoClause select
 	;
 
 intoClause
@@ -236,23 +238,25 @@ insertablePropertySpec
 	}
 	;
 
+
 union
-	: queryRule (u:UNION^ (ALL! { #u.setType(UNION_ALL); } )? queryRule)*
-	;
+  : unionTerm (u:UNION^ (ALL! { #u.setType(UNION_ALL); } )? unionTerm)*
+  ;
 
-//## query:
-//##     [selectClause] fromClause [whereClause] [groupByClause] [havingClause] [orderByClause] [limitClause];
 
-queryRule
-	: selectFrom
-		(whereClause)?
-		(groupByClause)?
-		(orderByClause)?
-		(limitClause)?  
+unionTerm
+  : select
+  | OPEN! union CLOSE!
+  ;
+
+
+select
+	: selectFrom (whereClause)? (groupByClause)?
 		{
-			#queryRule = #([QUERY,"query"], #queryRule);
+			#select = #([QUERY,"query"], #select);
 		}
-		;
+    ;
+
 
 selectFrom!
 	:  (s:selectClause)? (f:fromClause)? {
@@ -273,17 +277,12 @@ selectFrom!
 	}
 	;
 
-//## selectClause:
-//##     SELECT DISTINCT? selectedPropertiesList | ( NEW className OPEN selectedPropertiesList CLOSE );
 
 selectClause
-	: SELECT^	// NOTE: The '^' after a token causes the corresponding AST node to be the root of the sub-tree.
-		{ weakKeywords(); }	// Weak keywords can appear immediately after a SELECT token.
+	: SELECT^ { weakKeywords(); }	// Weak keywords can appear immediately after a SELECT token.
 		(DISTINCT)? ( selectedPropertiesList )
 	;
 
-//## fromClause:
-//##    FROM className AS? identifier (  ( COMMA className AS? identifier ) | ( joinType path AS? identifier ) )*;
 
 // NOTE: This *must* begin with the "FROM" token, otherwise the sub-query rule will be ambiguous
 // with the expression rule.
@@ -292,9 +291,6 @@ selectClause
 fromClause
 	: FROM^ { weakKeywords(); } fromRange ( fromJoin | COMMA! { weakKeywords(); } fromRange )*
 	;
-
-//## joinType:
-//##     ( ( 'left'|'right' 'outer'? ) | 'full' | 'inner' )? JOIN FETCH?;
 
 fromJoin
 	: ( ( (LEFT|RIGHT|FULL) (OUTER!)? )  | INNER )? JOIN^ (FETCH)?
@@ -384,22 +380,13 @@ ascendingOrDescending
 	| ( "desc" | "descending") 	{ #ascendingOrDescending.setType(DESCENDING); }
 	;
 
-//## havingClause:
-//##     HAVING logicalExpression;
-
 havingClause
 	: HAVING^ logicalExpression
 	;
 
-//## whereClause:
-//##     WHERE logicalExpression;
-
 whereClause
 	: WHERE^ logicalExpression
 	;
-
-//## selectedPropertiesList:
-//##     ( path | aggregate ) ( COMMA path | aggregate )*;
 
 selectedPropertiesList
 	: aliasedExpression ( COMMA! aliasedExpression )*
@@ -647,7 +634,7 @@ compoundExpr
 // UNDONE: nested union is not yet supported
 subQuery
 //	: union
-	: queryRule
+	: select
 	;
 
 exprList
