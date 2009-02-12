@@ -68,12 +68,12 @@ public class AssayResultDetailsAction extends BaseAssayAction<DataDetailsForm>
     {
         Container c = getContainer();
         ExpRun run = _data.getRun();
-        ActionURL assayListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(c);
+        ActionURL batchListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(c, _protocol, null);
         ActionURL runListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, _protocol);
         ActionURL resultsURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(c, _protocol, run.getRowId());
 
-        return root
-            .addChild("Assay List", assayListURL)
+        return super.appendNavTrail(root)
+            .addChild(_protocol.getName() + " Batches", batchListURL)
             .addChild(_protocol.getName() + " Runs", runListURL)
             .addChild(run.getName() + " Results", resultsURL)
             .addChild(_dataRowId + " Details");

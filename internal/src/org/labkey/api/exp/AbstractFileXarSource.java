@@ -18,6 +18,7 @@ package org.labkey.api.exp;
 
 import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -93,14 +94,7 @@ public abstract class AbstractFileXarSource extends XarSource
                 return result;
             }
         }
-        try
-        {
-            return dataFile.getCanonicalFile().toURI().toString();
-        }
-        catch (IOException e)
-        {
-            throw new XarFormatException(e);
-        }
+        return FileUtil.getAbsoluteCaseSensitiveFile(dataFile).toURI().toString();
     }
 
     public static File getLogFileFor(File f) throws IOException

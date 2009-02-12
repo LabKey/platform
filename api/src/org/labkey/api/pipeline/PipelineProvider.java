@@ -294,7 +294,10 @@ abstract public class PipelineProvider
                             {
                                 for (File sibling : siblings)
                                 {
-                                    if (!sibling.equals(f) && ft.getBaseName(sibling).equals(basename) && ft.getIndexMatch(sibling) < indexMatch)
+                                    if (!sibling.equals(f) &&
+                                        ft.getBaseName(sibling).equals(basename) &&
+                                        ft.isType(sibling.getName()) &&
+                                        ft.getIndexMatch(sibling) < indexMatch)
                                     {
                                         return false;
                                     }

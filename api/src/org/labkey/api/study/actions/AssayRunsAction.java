@@ -21,11 +21,13 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.assay.AssayRunsView;
+import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.AppBar;
+import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -71,7 +73,9 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
 
     public NavTree appendNavTrail(NavTree root)
     {
-        return root.addChild(_protocol.getName() + " Runs");
+        return super.appendNavTrail(root)
+            .addChild(_protocol.getName() + " Batches", PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(getContainer(), _protocol, null))
+            .addChild(_protocol.getName() + " Runs");
     }
 
     public AppBar getAppBar()

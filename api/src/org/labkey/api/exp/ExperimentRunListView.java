@@ -30,8 +30,6 @@ import org.labkey.api.view.*;
  */
 public class ExperimentRunListView extends QueryView
 {
-    public static final String STATUS_ELEMENT_ID = "experimentRunGroupMembershipStatus";
-
     private boolean _showDeleteButton = false;
     private boolean _showAddToExperimentButton = false;
     private boolean _showRemoveFromExperimentButton = false;
@@ -177,11 +175,6 @@ public class ExperimentRunListView extends QueryView
         }
 
         _selectedType.populateButtonBar(context, bar, view, getTable().getContainerFilter());
-
-        if (getViewContext().hasPermission(ACL.PERM_UPDATE))
-        {
-            bar.add(new SimpleTextDisplayElement("<span id=\"" + STATUS_ELEMENT_ID + "\" />", true));
-        }
     }
 
     protected DataRegion createDataRegion()

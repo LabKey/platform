@@ -88,7 +88,7 @@ public class ExperimentService
          */
         List<? extends ExpMaterial> getExpMaterialsByName(String name, Container container, User user);
 
-        ExpSampleSet[] getSampleSetsForRole(Container container, String role);
+        Map<String, ExpSampleSet> getSampleSetsForRoles(Container container, ExpProtocol.ApplicationType type);
 
         ExpSampleSet getSampleSet(int rowid);
         ExpSampleSet getSampleSet(String lsid);

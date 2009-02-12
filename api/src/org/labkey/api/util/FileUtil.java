@@ -31,6 +31,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
+import junit.framework.Test;
+import junit.framework.TestSuite;
+
 /**
  * User: jeckels
  * Date: Dec 5, 2005
@@ -591,6 +594,7 @@ quickScan:
      */
     public static File getAbsoluteCaseSensitiveFile(File file)
     {
+        file = resolveFile(file.getAbsoluteFile());
         String osName = System.getProperty("os.name").toLowerCase();
         if (osName.startsWith("windows") || osName.startsWith("mac os"))
         {
@@ -608,5 +612,94 @@ quickScan:
             }
         }
         return file.getAbsoluteFile();
+    }
+
+    /**
+     * Strips out ".." and "." from the path
+     */
+    private static File resolveFile(File file)
+    {
+        File parent = file.getParentFile();
+        if (parent == null)
+        {
+            return file;
+        }
+        if (".".equals(file.getName()))
+        {
+            return resolveFile(parent);
+        }
+        int dotDotCount = 0;
+        while ("..".equals(file.getName()) || dotDotCount > 0)
+        {
+            if ("..".equals(file.getName()))
+            {
+                dotDotCount++;
+            }
+            else if (!".".equals(file.getName()))
+            {
+                dotDotCount--;
+            }
+            if (parent.getParentFile() == null)
+            {
+                return parent;
+            }
+            file = file.getParentFile();
+            parent = file.getParentFile();
+        }
+        return new File(resolveFile(parent), file.getName());
+    }
+
+    public static class TestCase extends junit.framework.TestCase
+    {
+        private static final File ROOT;
+
+        static
+        {
+            File f = new File(".").getAbsoluteFile();
+            while (f.getParentFile() != null)
+            {
+                f = f.getParentFile();
+            }
+            ROOT = f;
+        }
+
+        public void testStandardResolve()
+        {
+            assertEquals(new File(ROOT, "test/path/sub"), resolveFile(new File(ROOT, "test/path/sub")));
+            assertEquals(new File(ROOT, "test"), resolveFile(new File(ROOT, "test")));
+            assertEquals(new File(ROOT, "test/path/file.ext"), resolveFile(new File(ROOT, "test/path/file.ext")));
+        }
+
+        public void testDotResolve()
+        {
+            assertEquals(new File(ROOT, "test/path/sub"), resolveFile(new File(ROOT, "test/path/./sub")));
+            assertEquals(new File(ROOT, "test"), resolveFile(new File(ROOT, "./test")));
+            assertEquals(new File(ROOT, "test/path/file.ext"), resolveFile(new File(ROOT, "test/path/file.ext/.")));
+        }
+
+        public void testDotDotResolve()
+        {
+            assertEquals(ROOT, resolveFile(new File(ROOT, "..")));
+            assertEquals(new File(ROOT, "test/sub"), resolveFile(new File(ROOT, "test/path/../sub")));
+            assertEquals(new File(ROOT, "test/sub2"), resolveFile(new File(ROOT, "test/path/../sub/../sub2")));
+            assertEquals(new File(ROOT, "test"), resolveFile(new File(ROOT, "test/path/sub/../..")));
+            assertEquals(new File(ROOT, "sub"), resolveFile(new File(ROOT, "test/path/../../sub")));
+            assertEquals(new File(ROOT, "sub2"), resolveFile(new File(ROOT, "test/path/../../sub/../sub2")));
+            assertEquals(new File(ROOT, "sub2"), resolveFile(new File(ROOT, "test/path/.././../sub/../sub2")));
+            assertEquals(new File(ROOT, "sub2"), resolveFile(new File(ROOT, "test/path/.././../sub/../../sub2")));
+            assertEquals(new File(ROOT, "sub2"), resolveFile(new File(ROOT, "a/test/path/.././../sub/../../sub2")));
+            assertEquals(new File(ROOT, "b/sub2"), resolveFile(new File(ROOT, "b/a/test/path/.././../sub/../../sub2")));
+            assertEquals(ROOT, resolveFile(new File(ROOT, "test/path/../../../..")));
+            assertEquals(new File(ROOT, "test/sub"), resolveFile(new File(ROOT, "../../../../test/sub")));
+            assertEquals(new File(ROOT, "test"), resolveFile(new File(ROOT, "../test")));
+            assertEquals(new File(ROOT, "test/path"), resolveFile(new File(ROOT, "test/path/file.ext/..")));
+            assertEquals(new File(ROOT, "folder"), resolveFile(new File(ROOT, ".././../folder")));
+            assertEquals(new File(ROOT, "b"), resolveFile(new File(ROOT, "folder/a/.././../b")));
+        }
+
+        public static Test suite()
+        {
+            return new TestSuite(TestCase.class);
+        }
     }
 }

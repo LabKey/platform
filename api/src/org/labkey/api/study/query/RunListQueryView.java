@@ -46,7 +46,7 @@ public class RunListQueryView extends ExperimentRunListView
         super(schema, settings, assayRunFilter);
         _protocol = protocol;
         setShowDeleteButton(true);
-        setShowAddToRunGroupButton(true);
+        setShowAddToRunGroupButton(false);
     }
 
     public RunListQueryView(ExpProtocol protocol, ViewContext context)

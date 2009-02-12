@@ -982,7 +982,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 data.setLSID(ExperimentService.get().generateGuidLSID(c, dataType));
                 if (file != null)
                 {
-                    data.setDataFileURI(file.getCanonicalFile().toURI());
+                    data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI());
                 }
             }
             return data;

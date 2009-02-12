@@ -53,7 +53,8 @@ public class AssayBatchesAction extends BaseAssayAction<AssayRunsAction.AssayRun
 
     public NavTree appendNavTrail(NavTree root)
     {
-        return root.addChild(_protocol.getName() + " Batches");
+        NavTree result = super.appendNavTrail(root);
+        return result.addChild(_protocol.getName() + " Batches");
     }
 
     public AppBar getAppBar()
