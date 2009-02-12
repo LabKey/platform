@@ -54,20 +54,22 @@ public class QueryUnion
     {
         for (QNode n : qunion.children())
         {
-            assert n instanceof QQuery || n instanceof QUnion || n instanceof QOrder;
+            assert n instanceof QQuery || n instanceof QUnion || n instanceof QOrder || n instanceof QLimit;
 
-			if (n instanceof QOrder)
-				continue;
+			if (n instanceof QLimit)
+			{
+				_query.getParseErrors().add(new QueryParseException("LIMIT not supported with UNION", null, n.getLine(), n.getColumn()));
+			}
             else if (n instanceof QQuery)
             {
                 QuerySelect select = new QuerySelect(_query, (QQuery)n);
                 _termList.add(select);
             }
-            else if (_qunion.getTokenType() == UNION || n.getTokenType() == UNION_ALL)
+            else if (n instanceof QUnion && (_qunion.getTokenType() == UNION || n.getTokenType() == UNION_ALL))
 			{
                 collectUnionTerms((QUnion)n);
 			}
-			else
+			else if (n instanceof QUnion)
 			{
 
 				QueryUnion union = new QueryUnion(_query, (QUnion)n);

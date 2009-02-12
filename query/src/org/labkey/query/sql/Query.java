@@ -399,7 +399,10 @@ public class Query
         new SqlTest("SELECT R.seven FROM R UNION SELECT R.seven FROM R UNION SELECT R.twelve FROM R", 1, 12),
         new SqlTest("(SELECT R.seven FROM R UNION SELECT R.seven FROM R) UNION ALL SELECT R.twelve FROM R", 1, 7 + Rsize),
         new SqlTest("(SELECT R.seven FROM R UNION ALL SELECT R.seven FROM R) UNION SELECT R.twelve FROM R", 1, 12),
-        new SqlTest("SELECT R.seven FROM R UNION ALL SELECT R.seven FROM R UNION ALL SELECT R.twelve FROM R", 1, 3*Rsize)
+        new SqlTest("SELECT R.seven FROM R UNION ALL SELECT R.seven FROM R UNION ALL SELECT R.twelve FROM R", 1, 3*Rsize),
+		// LIMIT
+		new SqlTest("SELECT R.day, R.month, R.date FROM R LIMIT 5", 3, 5),
+		new SqlTest("SELECT R.day, R.month, R.date FROM R ORDER BY R.date LIMIT 5", 3, 5)
     };
 
 	static SqlTest[] postgres = new SqlTest[]
@@ -414,8 +417,10 @@ public class Query
 		new SqlTest("SELECT S.d, S.seven FROM S"),
 		new SqlTest("SELECT S.d, S.seven FROM Folder.S"),
 		new SqlTest("SELECT S.d, S.seven FROM Folder.qtest.S"),
-		new SqlTest("SELECT S.d, S.seven FROM Folder.qtest.list.S")
+		new SqlTest("SELECT S.d, S.seven FROM Folder.qtest.list.S"),
 		//new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY R.date")
+		new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R LIMIT 5", 3, 5),
+		new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date LIMIT 5", 3, 5)
 	};
 
 	
