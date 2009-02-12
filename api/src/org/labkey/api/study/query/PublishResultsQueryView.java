@@ -135,6 +135,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                 it.remove();
         }
         dr.setShowRecordSelectors(true);
+        dr.setShowStatusBar(false);
         return dr;
     }
 

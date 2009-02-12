@@ -308,7 +308,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         buttons.add(publishButton);
 
         publishURL.replaceParameter("validate", "true");
-        ActionButton validateButton = new ActionButton(publishURL.getLocalURIString(), "Validate");
+        ActionButton validateButton = new ActionButton(publishURL.getLocalURIString(), "Re-Validate");
         buttons.add(validateButton);
 
 

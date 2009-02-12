@@ -31,6 +31,7 @@ LABKEY.DataRegion = function (config)
     this.selectionModified = false;
 
     this.showRecordSelectors = config.showRecordSelectors;
+    this.showStatusBar = config.showStatusBar;
     this.selectionKey = config.selectionKey;
     this.selectorCols = config.selectorCols;
 
@@ -157,6 +158,8 @@ LABKEY.DataRegion.prototype = {
     // private
     _showSelectMessage : function (msg)
     {
+        if (!this.showStatusBar)
+            return;
         if (this.showRecordSelectors)
         {
             msg += "&nbsp; Select: <span class='labkey-link' onclick='LABKEY.DataRegions[\"" + this.name + "\"].selectNone();' title='Clear selection from all rows'>None</span>";

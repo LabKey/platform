@@ -51,6 +51,7 @@ public class DataRegion extends DisplayElement
     private boolean _aggregateRowLast = true;
     private TableInfo _table = null;
     protected boolean _showRecordSelectors = false;
+    protected boolean _showStatusBar = true;
     private boolean _showUpdateButton = false;
     private boolean _showFilters = true;
     private boolean _sortable = true;
@@ -311,6 +312,15 @@ public class DataRegion extends DisplayElement
         return _showRecordSelectors;
     }
 
+    public boolean getShowStatusBar()
+    {
+        return _showStatusBar;
+    }
+
+    public void setShowStatusBar(boolean showStatusBar)
+    {
+        _showStatusBar = showStatusBar;
+    }
 
     public boolean getShowFilters()
     {
@@ -729,6 +739,7 @@ public class DataRegion extends DisplayElement
         out.write("'rowCount' : " + _rowCount + ",\n");
         out.write("'showRows' : '" + _showRows.toString().toLowerCase() + "',\n");
         out.write("'showRecordSelectors' : " + _showRecordSelectors + ",\n");
+        out.write("'showStatusBar' : " + _showStatusBar + ",\n");
         out.write("'selectionKey' : '" + PageFlowUtil.filter(_selectionKey) + "',\n");
         out.write("'selectorCols' : '" + PageFlowUtil.filter(_recordSelectorValueColumns) + "'\n");
         out.write("})});\n");
