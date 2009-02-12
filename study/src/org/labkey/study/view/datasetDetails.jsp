@@ -51,6 +51,9 @@
 </table>
 <% if (0 != (permissions & ACL.PERM_ADMIN))
 {
+    ActionURL viewDatasetURL = new ActionURL(StudyController.DatasetAction.class, context.getContainer());
+    viewDatasetURL.addParameter("datasetId", dataset.getDataSetId());
+
     ActionURL updateDatasetURL = new ActionURL(StudyController.UpdateDatasetFormAction.class, context.getContainer());
     updateDatasetURL.addParameter("datasetId", dataset.getDataSetId());
 
@@ -59,19 +62,14 @@
     ActionURL deleteDatasetURL = new ActionURL(StudyController.DeleteDatasetAction.class, context.getContainer());
     deleteDatasetURL.addParameter("id", dataset.getDataSetId());
 
-    %><br><%=PageFlowUtil.generateButton("Edit Dataset " + visitManager.getPluralLabel(), updateDatasetURL.getLocalURIString())%><%
-    %>&nbsp;<%=PageFlowUtil.generateButton("Done", manageTypesURL.getLocalURIString())%><%
+    %><br><%=PageFlowUtil.generateButton("View Dataset Data", viewDatasetURL.getLocalURIString())%><%
+    %>&nbsp;<%=PageFlowUtil.generateButton("Edit Dataset " + visitManager.getPluralLabel(), updateDatasetURL.getLocalURIString())%><%
+    %>&nbsp;<%=PageFlowUtil.generateButton("Manage Datasets", manageTypesURL.getLocalURIString())%><%
     %>&nbsp;<%=generateButton("Delete Dataset", deleteDatasetURL,
         "return confirm('Are you sure you want to delete this dataset?  All related data and visitmap entries will also be deleted.')")%><%
 }
 if (0 != (permissions & ACL.PERM_UPDATE))
 {
-    if (pipelineSet)
-    {
-        ActionURL showImportDatasetURL = new ActionURL(StudyController.ShowImportDatasetAction.class, context.getContainer());
-        showImportDatasetURL.addParameter("datasetId", dataset.getDataSetId());
-        %>&nbsp;<%=PageFlowUtil.generateButton("Import Data", showImportDatasetURL.getLocalURIString())%><%
-    }
     ActionURL showHistoryURL = new ActionURL(StudyController.ShowUploadHistoryAction.class, context.getContainer());
     showHistoryURL.addParameter("id", dataset.getDataSetId());
 

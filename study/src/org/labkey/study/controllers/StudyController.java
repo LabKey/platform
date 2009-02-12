@@ -1766,6 +1766,12 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(ImportDataSetForm form, BindException errors) throws Exception
         {
+            String tsvData = form.getTsv();
+            if (tsvData == null)
+            {
+                errors.reject("showImportDataset", "Form contains no data");
+                return false;
+            }
             String[] keys = new String[]{"ParticipantId", "SequenceNum"};
 
             if (null != PipelineService.get().findPipelineRoot(getContainer()))
@@ -1794,7 +1800,7 @@ public class StudyController extends BaseStudyController
                 List<String> errorList = new LinkedList<String>();
 
                 DataSetDefinition dsd = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
-                Pair<String[],UploadLog> result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), getStudy(), dsd, form.getTsv(), columnMap, errorList);
+                Pair<String[],UploadLog> result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), getStudy(), dsd, tsvData, columnMap, errorList);
 
                 if (result.getKey().length > 0)
                 {

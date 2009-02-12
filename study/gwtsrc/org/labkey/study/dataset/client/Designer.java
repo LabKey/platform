@@ -28,10 +28,12 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.*;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.ServiceUtil;
-import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.study.dataset.client.model.GWTDataset;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -585,8 +587,9 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
         }
     }
 
-    private class DatasetProperties extends FlexTable
+    private class DatasetProperties extends VerticalPanel
     {
+        final FlexTable _table = new FlexTable();
         RadioButton _noneButton;
 
         public DatasetProperties()
@@ -600,15 +603,25 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             boolean fromAssay = _dataset.getSourceAssayName() != null;
 
             String labelStyleName="labkey-form-label"; // Pretty yellow background for labels
-            CellFormatter cellFormatter = getCellFormatter();
+            HTMLTable.CellFormatter cellFormatter = _table.getCellFormatter();
 
             int row = 0;
 
             if (_dataset.getSourceAssayName() != null)
             {
-                String assaySourceHtml = "This dataset is linked to <a href=\"" + _dataset.getSourceAssayURL() +
+                HorizontalPanel hPanel = new HorizontalPanel();
+                hPanel.setVerticalAlignment(ALIGN_MIDDLE);
+                hPanel.setSpacing(2);
+
+                String assaySourceString = "This dataset is linked to <a href=\"" + _dataset.getSourceAssayURL() +
                 "\">" + _dataset.getSourceAssayName() + "</a>.";
-                setHTML(row, 0, assaySourceHtml);
+                HTML assaySourceHTML = new HTML(assaySourceString);
+                hPanel.add(assaySourceHTML);
+
+                Label helpPopup = new HelpPopup("Assay Link", "This dataset was created by copying assay data. Data can only be imported via that assay." + "" +
+                        "<p>If you unlink it, it becomes a standard dataset with no connection to the original assay. This cannot be undone.");
+                hPanel.add(helpPopup);
+
                 ImageButton unlinkButton = new ImageButton("Unlink", new ClickListener()
                 {
                     public void onClick(Widget sender)
@@ -616,8 +629,10 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                         navigate(_dataset.getUnlinkAssayURL());
                     }
                 });
-                setWidget(row++, 1, unlinkButton);
+                hPanel.add(unlinkButton);
+                add(hPanel);
             }
+            add(_table);
 
             BoundTextBox dsName = new BoundTextBox("dsName", _dataset.getName(), new WidgetUpdatable()
             {
@@ -632,17 +647,17 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             HorizontalPanel panel = new HorizontalPanel();
             panel.add(new Label("Dataset Name"));
             panel.add(new HelpPopup("Name", "Short unique name, e.g. 'DEM1'"));
-            setWidget(row, 0, panel);
+            _table.setWidget(row, 0, panel);
             cellFormatter.setStyleName(row, 0, labelStyleName);
-            setWidget(row, 1, dsName);
+            _table.setWidget(row, 1, dsName);
 
             TextBox dsId = new TextBox();
             dsId.setText(Integer.toString(_dataset.getDatasetId()));
             dsId.setEnabled(false);
 
-            setHTML(row, 2, "Dataset Id");
+            _table.setHTML(row, 2, "Dataset Id");
             cellFormatter.setStyleName(row, 2, labelStyleName);
-            setWidget(row++, 3, dsId);
+            _table.setWidget(row++, 3, dsId);
 
             BoundTextBox dsLabel = new BoundTextBox("dsLabel", _dataset.getLabel(), new WidgetUpdatable()
             {
@@ -655,9 +670,9 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             panel.add(new Label("Dataset Label"));
             panel.add(new HelpPopup("Label", "Descriptive label, e.g. 'Demographics form 1'"));
 
-            setWidget(row, 0, panel);
+            _table.setWidget(row, 0, panel);
             cellFormatter.setStyleName(row, 0, labelStyleName);
-            setWidget(row, 1, dsLabel);
+            _table.setWidget(row, 1, dsLabel);
 
             BoundTextBox dsCategory = new BoundTextBox("dsCategory", _dataset.getCategory(), new WidgetUpdatable()
             {
@@ -669,9 +684,9 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             panel = new HorizontalPanel();
             panel.add(new Label("Dataset Category"));
             panel.add(new HelpPopup("Dataset Category", "Datasets with the same category name are shown together in the study navigator and dataset list."));
-            setWidget(row, 2, panel);
+            _table.setWidget(row, 2, panel);
             cellFormatter.setStyleName(row, 2, labelStyleName);
-            setWidget(row++, 3, dsCategory);
+            _table.setWidget(row++, 3, dsCategory);
 
             String selection = null;
             if (_dataset.getCohortId() != null)
@@ -693,13 +708,13 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             });
             panel = new HorizontalPanel();
             panel.add(new Label("Cohort"));
-            setWidget(row, 0, panel);
+            _table.setWidget(row, 0, panel);
             cellFormatter.setStyleName(row, 0, labelStyleName);
 
             if (!_dataset.getCohortMap().isEmpty())
-                setWidget(row, 1, dsCohort);
+                _table.setWidget(row, 1, dsCohort);
             else
-                setWidget(row, 1, new HTMLPanel("<em>No cohorts defined</em>"));
+                _table.setWidget(row, 1, new HTMLPanel("<em>No cohorts defined</em>"));
 
             if (!_isDateBased)
             {
@@ -717,9 +732,9 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                 panel = new HorizontalPanel();
                 panel.add(new Label("Visit Date Column"));
                 panel.add(new HelpPopup("Visit Date Column", "If the official 'Visit Date' for a visit can come from this dataset, choose the date column to represent it. Note that since datasets can include data from many visits, each visit must also indicate the official 'VisitDate' dataset."));
-                setWidget(row, 2, panel);
+                _table.setWidget(row, 2, panel);
                 cellFormatter.setStyleName(row, 2, labelStyleName);
-                setWidget(row++, 3, dsVisitDate);
+                _table.setWidget(row++, 3, dsVisitDate);
             }
             else
                 row++;
@@ -738,10 +753,12 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                             "</ul>"));
 
             cellFormatter.setStyleName(row, 0, labelStyleName);
-            setWidget(row, 0, panel);
+            _table.setWidget(row, 0, panel);
 
             VerticalPanel vPanel = new VerticalPanel();
+            vPanel.setSpacing(1);
             panel = new HorizontalPanel();
+            panel.setSpacing(2);
 
             _noneButton = new RadioButton("additionalKey", "None");
             _noneButton.setChecked(_dataset.getKeyPropertyName() == null);
@@ -752,12 +769,11 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
 
             panel.add(_noneButton);
             vPanel.add(panel);
-
-
-
+            
             panel = new HorizontalPanel();
+            panel.setSpacing(2);
             panel.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
-            final RadioButton dataFieldButton = new RadioButton("additionalKey", "Data Field ");
+            final RadioButton dataFieldButton = new RadioButton("additionalKey", "Data Field:");
             DOM.setElementAttribute(dataFieldButton.getElement(), "id", "button_dataField");
             if (fromAssay)
                 dataFieldButton.setEnabled(false);
@@ -779,8 +795,9 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             vPanel.add(panel);
 
             panel = new HorizontalPanel();
+            panel.setSpacing(2);
             panel.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
-            final RadioButton managedButton = new RadioButton("additionalKey", "Managed Field");
+            final RadioButton managedButton = new RadioButton("additionalKey", "Managed Field:");
             DOM.setElementAttribute(managedButton.getElement(), "id", "button_managedField");
             if (fromAssay)
                 managedButton.setEnabled(false);
@@ -800,7 +817,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
 
             panel.add(managedFieldsBox);
             vPanel.add(panel);
-            setWidget(row++, 1, vPanel);
+            _table.setWidget(row++, 1, vPanel);
 
             // Listen to the list of properties
             _propTable.addChangeListener(new ChangeListener()
@@ -861,9 +878,9 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             panel = new HorizontalPanel();
             panel.add(new Label("Demographic Data"));
             panel.add(new HelpPopup("Demographic Data", "Demographic data appears only once for each participant in the study."));
-            setWidget(row, 0, panel);
+            _table.setWidget(row, 0, panel);
             cellFormatter.setStyleName(row, 0, labelStyleName);
-            setWidget(row++, 1, demographicData);
+            _table.setWidget(row++, 1, demographicData);
 
             BoundCheckBox showByDefault = new BoundCheckBox("", _dataset.getShowByDefault(), new WidgetUpdatable()
             {
@@ -875,9 +892,9 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             panel = new HorizontalPanel();
             panel.add(new Label("Show In Overview"));
             panel.add(new HelpPopup("Show In Overview", "When this item is checked, this dataset will show in the overview grid by default. It can be unhidden by clicking 'Show Hidden Data.'"));
-            setWidget(row, 0, panel);
+            _table.setWidget(row, 0, panel);
             cellFormatter.setStyleName(row, 0, labelStyleName);
-            setWidget(row++, 1, showByDefault);
+            _table.setWidget(row++, 1, showByDefault);
 
             BoundTextArea description = new BoundTextArea(_dataset.getDescription(), new WidgetUpdatable()
             {
@@ -888,12 +905,12 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             });
             panel = new HorizontalPanel();
             panel.add(new Label("Description"));
-            setWidget(row, 0, panel);
+            _table.setWidget(row, 0, panel);
             cellFormatter.setStyleName(row, 0, labelStyleName);
-            setWidget(row, 1, description);
+            _table.setWidget(row, 1, description);
 
             //noinspection UnusedAssignment
-            getFlexCellFormatter().setColSpan(row++, 1, 3);
+            _table.getFlexCellFormatter().setColSpan(row++, 1, 3);
         }
 
         private void resetKeyListBoxes(BoundListBox dataFieldsBox, BoundListBox managedFieldsBox)
