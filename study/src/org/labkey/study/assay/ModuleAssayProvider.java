@@ -19,14 +19,10 @@ package org.labkey.study.assay;
 import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
 import org.labkey.api.data.*;
-import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.IAssayDomainType;
-import org.labkey.api.exp.api.DataType;
+import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.api.ExpProtocol.AssayDomainTypes;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.FieldKey;
@@ -42,6 +38,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.assay.xml.ProviderType;
 import org.springframework.web.servlet.ModelAndView;
@@ -146,7 +143,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     @Override
     protected Domain createDataDomain(Container c, User user)
     {
-        Domain domain = createDomain(c, user, AssayDomainTypes.Data);
+        Domain domain = createDomain(c, user, AssayDomainTypes.Result);
         if (domain != null)
             return domain;
         return super.createDataDomain(c, user);
@@ -168,26 +165,6 @@ public class ModuleAssayProvider extends TsvAssayProvider
             required.put(domainType.getPrefix(), properties);
         }
         return required;
-    }
-
-    @Override
-    public TableInfo createDataTable(UserSchema schema, String alias, ExpProtocol protocol)
-    {
-        RunDataTable table = (RunDataTable)super.createDataTable(schema, alias, protocol);
-        if (table == null)
-            return null;
-
-        if (hasView(AssayDomainTypes.Data))
-        {
-            // XXX: consider adding a .getResultDetailsURL() to AbstractAssayProvider or TsvAssayProvider
-            ActionURL resultDetailsURL = new ActionURL(AssayResultDetailsAction.class, schema.getContainer());
-            resultDetailsURL.addParameter("rowId", protocol.getRowId());
-            Map<String, String> params = new HashMap<String, String>();
-            // map ObjectId to url parameter ResultDetailsForm.dataRowId
-            params.put("dataRowId", "ObjectId");
-            table.addDetailsURL(new DetailsURL(resultDetailsURL, params));
-        }
-        return table;
     }
 
     /**
@@ -247,35 +224,83 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return super.getSpecimenIDFieldKey();
     }
 
-    private File getViewFile(IAssayDomainType domainType)
+    private File getViewFile(IAssayDomainType domainType, boolean details)
     {
-        return new File(viewsDir, domainType.getName().toLowerCase() + ".html");
+        String viewName = domainType.getName().toLowerCase();
+        if (!details)
+        {
+            // pluralize
+            if (domainType.equals(AssayDomainTypes.Batch))
+                viewName += "es";
+            else
+                viewName += "s";
+        }
+        return new File(viewsDir,  viewName + ".html");
     }
 
-    // XXX: consider moving to TsvAssayProvider
-    protected boolean hasView(IAssayDomainType domainType)
+    public boolean hasCustomView(IAssayDomainType domainType, boolean details)
     {
-        File viewFile = getViewFile(domainType);
+        File viewFile = getViewFile(domainType, details);
         return viewFile.canRead();
     }
 
     // XXX: consider moving to TsvAssayProvider
-    protected ModelAndView getView(IAssayDomainType domainType)
+    protected ModelAndView getCustomView(IAssayDomainType domainType, boolean details)
     {
-        File viewFile = getViewFile(domainType);
+        File viewFile = getViewFile(domainType, details);
         if (viewFile.canRead())
-            return new HtmlView(PageFlowUtil.getFileContentsAsString(viewFile));
+            return new ModuleHtmlView(viewFile);
         return null;
+    }
+
+    @Override
+    public ModelAndView createBatchesView(ViewContext context, ExpProtocol protocol)
+    {
+        ModelAndView view = getCustomView(AssayDomainTypes.Batch, false);
+        if (view == null)
+            return null;
+
+        return view;
+    }
+
+    @Override
+    public ModelAndView createBatchDetailsView(ViewContext context, ExpProtocol protocol, ExpExperiment batch)
+    {
+        ModelAndView view = getCustomView(AssayDomainTypes.Batch, true);
+        if (view == null)
+            return null;
+
+        return view;
+    }
+
+    @Override
+    public ModelAndView createRunsView(ViewContext context, ExpProtocol protocol)
+    {
+        ModelAndView view = getCustomView(AssayDomainTypes.Run, false);
+        if (view == null)
+            return null;
+
+        return view;
+    }
+
+    @Override
+    public ModelAndView createRunDetailsView(ViewContext context, ExpProtocol protocol, ExpRun run)
+    {
+        ModelAndView view = getCustomView(AssayDomainTypes.Run, true);
+        if (view == null)
+            return null;
+
+        return view;
     }
 
     @Override
     public ModelAndView createResultsView(ViewContext context, ExpProtocol protocol)
     {
-        ModelAndView runDataView = getView(AssayDomainTypes.Run);
-        if (runDataView == null)
+        ModelAndView view = getCustomView(AssayDomainTypes.Result, false);
+        if (view == null)
             return null;
 
-        return runDataView;
+        return view;
     }
 
     public static class AssayPageBean
@@ -292,8 +317,8 @@ public class ModuleAssayProvider extends TsvAssayProvider
     @Override
     public ModelAndView createResultDetailsView(ViewContext context, ExpProtocol protocol, ExpData data, Object objectId)
     {
-        ModelAndView dataDetailsView = getView(AssayDomainTypes.Data);
-        if (dataDetailsView == null)
+        ModelAndView resultDetailsView = getCustomView(AssayDomainTypes.Result, true);
+        if (resultDetailsView == null)
             return super.createResultDetailsView(context, protocol, data, objectId);
 
         ResultDetailsBean bean = new ResultDetailsBean();
@@ -302,7 +327,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         bean.objectId = objectId;
 
         JspView<ResultDetailsBean> view = new JspView<ResultDetailsBean>("/org/labkey/study/assay/view/resultDetails.jsp", bean);
-        view.setView("nested", dataDetailsView);
+        view.setView("nested", resultDetailsView);
         return view;
     }
 
