@@ -164,7 +164,7 @@ public class QueryForm implements HasViewContext, HasBindParameters
     {
         UserSchema ret = null;
         HString schemaName = getSchemaName();
-        if (!schemaName.isEmpty())
+        if (null != schemaName && !schemaName.isEmpty())
         {
             UserSchema baseSchema = (UserSchema) DefaultSchema.get(getUser(), getContainer()).getSchema(schemaName.toString());
             if (baseSchema == null)
