@@ -30,6 +30,12 @@
 <%@ page import="org.labkey.study.reports.StudyQueryReport" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 
+<script type="text/javascript">
+    LABKEY.requiresExtJs(true);
+    LABKEY.requiresClientAPI(true);
+    LABKEY.requiresScript("reports/manageViews.js");
+</script>
+
 <%
     JspView<StudyManageReportsBean> me = (JspView<StudyManageReportsBean>) HttpView.currentView();
     StudyManageReportsBean bean = me.getModelBean();
@@ -46,8 +52,6 @@
 %>
 
 <script type="text/javascript">
-    LABKEY.requiresScript("reports/manageViews.js");
-
     var panel;
 
     function securityRenderer(value, p, record)

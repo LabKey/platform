@@ -26,6 +26,12 @@
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
+<script type="text/javascript">
+    LABKEY.requiresExtJs(true);
+    LABKEY.requiresClientAPI(true);
+    LABKEY.requiresScript("reports/manageViews.js");
+</script>
+
 <%
     JspView<ReportsController.ViewsSummaryForm> me = (JspView<ReportsController.ViewsSummaryForm>) HttpView.currentView();
     ReportsController.ViewsSummaryForm form = me.getModelBean();
@@ -40,8 +46,6 @@
 %>
 
 <script type="text/javascript">
-
-    LABKEY.requiresScript("reports/manageViews.js");
 
     Ext.onReady(function()
     {
