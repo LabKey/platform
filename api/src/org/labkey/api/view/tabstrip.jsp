@@ -67,7 +67,7 @@
     }
     else
     {
-        %>No handler for view: <%=tabId%><%
+        %>No handler for view: <%=h(tabId)%><%
     }
 %></div></td></tr></table>
 
