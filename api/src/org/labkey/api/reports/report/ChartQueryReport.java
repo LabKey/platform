@@ -124,19 +124,24 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
         JFreeChart chart = _createChart(context, errors, null);
         if (chart != null && errors.isEmpty())
         {
-            final ChartReportDescriptor descriptor = (ChartReportDescriptor)getDescriptor();
-            final BufferedImage img = chart.createBufferedImage(descriptor.getWidth(), descriptor.getHeight());
+            try {
+                final ChartReportDescriptor descriptor = (ChartReportDescriptor)getDescriptor();
+                final BufferedImage img = chart.createBufferedImage(descriptor.getWidth(), descriptor.getHeight());
+                HttpServletResponse response = context.getResponse();
 
-            HttpServletResponse response = context.getResponse();
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                ImageIO.write(img, "png", out);
 
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ImageIO.write(img, "png", out);
+                byte[] bytes = out.toByteArray();
 
-            byte[] bytes = out.toByteArray();
-
-            response.setContentType("image/png");
-            response.setContentLength(bytes.length);
-            response.getOutputStream().write(bytes);
+                response.setContentType("image/png");
+                response.setContentLength(bytes.length);
+                response.getOutputStream().write(bytes);
+            }
+            catch (Exception e)
+            {
+                ReportUtil.renderErrorImage(context.getResponse().getOutputStream(), this, e.getMessage());
+            }
         }
         else
         {

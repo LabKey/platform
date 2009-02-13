@@ -105,10 +105,17 @@ public class RunScriptReportView extends RunReportView
         BeanUtils.populate(form, bean);
     }
 
+    public static boolean isCacheValid(String key, ViewContext context) throws Exception
+    {
+        HttpSession session = context.getRequest().getSession(true);
+
+        return session.getAttribute(getReportCacheKey(key, context.getContainer())) != null;
+    }
+
     protected ScriptReportBean initReportCache(ScriptReportBean form) throws Exception
     {
         String key = getViewContext().getActionURL().getParameter(CACHE_PARAM);
-        if (!StringUtils.isEmpty(key))
+        if (!StringUtils.isEmpty(key) && isCacheValid(key, getViewContext()))
         {
             initFormFromCache(form, key, getViewContext());
         }

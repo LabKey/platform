@@ -101,7 +101,7 @@
         <pre>
         txt <- paste("&lt;i&gt;Click on the link to visit LabKey:&lt;/i&gt;
             &lt;a target='blank' href='http://www.labkey.org'&gt;LabKey&lt;/a&gt;")
-        capture.output(txt, file="<%="${htmlout:output}"%>")
+        write(txt, file="<%="${htmlout:output}"%>")
         </pre>
             </td></tr>
     </table></td></tr>

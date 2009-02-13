@@ -72,7 +72,7 @@ public class RunRReportView extends RunScriptReportView
     protected ScriptReportBean initReportCache(ScriptReportBean form) throws Exception
     {
         String key = getViewContext().getActionURL().getParameter(CACHE_PARAM);
-        if (!StringUtils.isEmpty(key))
+        if (!StringUtils.isEmpty(key) && isCacheValid(key, getViewContext()))
         {
             initFormFromCache(form, key, getViewContext());
         }

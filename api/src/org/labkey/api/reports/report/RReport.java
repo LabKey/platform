@@ -207,9 +207,7 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
     {
         if (getDescriptor().canEdit(context))
         {
-            return ReportUtil.getRunReportURL(context, this).
-                    addParameter(TabStripView.TAB_PARAM, RunRReportView.TAB_SOURCE).
-                    replaceParameter("redirectUrl", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(context.getContainer()).getLocalURIString());
+            return ReportUtil.getRunReportURL(context, this).addParameter(TabStripView.TAB_PARAM, RunRReportView.TAB_SOURCE);
         }
         return null;
     }

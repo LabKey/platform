@@ -131,7 +131,14 @@ public class ReportUtil
             if (context.getActionURL().getParameter("redirectUrl") != null)
                 url.addParameter("redirectUrl", context.getActionURL().getParameter("redirectUrl"));
             else
-                url.addParameter("redirectUrl", context.getActionURL().getLocalURIString());
+            {
+                // don't want to use the current url if it's an ajax request
+                ActionURL ajaxAction = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViewsSummary(context.getContainer());
+                if (context.getActionURL().getPageFlow().equals(ajaxAction.getPageFlow()))
+                    url.addParameter("redirectUrl", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(context.getContainer()).getLocalURIString());
+                else
+                    url.addParameter("redirectUrl", context.getActionURL().getLocalURIString());
+            }
         }
         return url;
     }
@@ -406,6 +413,13 @@ public class ReportUtil
                 User createdBy = entry.getValue().getOwner();
                 boolean shared = createdBy == null;
 
+                record.put("queryView", "true");
+
+                // create a fake report id to reference the custom views by (would be nice if this could be a rowId)
+                Map<String, String> viewId = PageFlowUtil.map(QueryParam.schemaName.name(), qd.getSchemaName(),
+                        QueryParam.queryName.name(), qd.getName(),
+                        QueryParam.viewName.name(), entry.getKey());
+                record.put("reportId", PageFlowUtil.encode(PageFlowUtil.toQueryString(viewId.entrySet())));
                 record.put("name", entry.getKey());
                 record.put("query", qd.getName());
                 record.put("schema", qd.getSchemaName());
