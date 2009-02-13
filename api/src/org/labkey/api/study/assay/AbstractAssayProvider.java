@@ -1167,7 +1167,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             usedColumnNames.add(studyColumnName);
             final String finalStudyColumnName = studyColumnName;
 
-            ExprColumn studyCopiedColumn = new ExprColumn(table,
+            final ExprColumn studyCopiedColumn = new ExprColumn(table,
                 studyColumnName,
                 new SQLFragment(studyCopiedSql),
                 Types.VARCHAR);
@@ -1176,7 +1176,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             {
                 public DisplayColumn createRenderer(ColumnInfo colInfo)
                 {
-                    return new StudyDisplayColumn(finalStudyColumnName, studyContainer, datasetColumn);
+                    return new StudyDisplayColumn(finalStudyColumnName, studyContainer, datasetColumn, studyCopiedColumn);
                 }
             });
 

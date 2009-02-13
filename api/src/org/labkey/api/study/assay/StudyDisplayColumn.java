@@ -24,6 +24,7 @@ import org.labkey.api.study.StudyService;
 
 import java.io.Writer;
 import java.io.IOException;
+import java.util.Set;
 
 /**
  * User: jgarms
@@ -33,18 +34,20 @@ class StudyDisplayColumn extends DataColumn
 {
     private final String title;
     private final Container container;
+    private final ColumnInfo datasetIdColumn;
 
-    public StudyDisplayColumn(String title, Container container, ColumnInfo datasetIdColumn)
+    public StudyDisplayColumn(String title, Container container, ColumnInfo datasetIdColumn, ColumnInfo studyCopiedColumn)
     {
-        super(datasetIdColumn);
+        super(studyCopiedColumn);
         this.title = title;
         this.container = container;
+        this.datasetIdColumn = datasetIdColumn;
     }
 
     @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        Integer datasetId = (Integer)getBoundColumn().getValue(ctx);
+        Integer datasetId = (Integer)datasetIdColumn.getValue(ctx);
         if (datasetId != null)
         {
             ActionURL url = StudyService.get().getDatasetURL(container, datasetId.intValue());
@@ -59,5 +62,12 @@ class StudyDisplayColumn extends DataColumn
     public void renderTitle(RenderContext ctx, Writer out) throws IOException
     {
         out.write(title);
+    }
+
+    @Override
+    public void addQueryColumns(Set<ColumnInfo> columns)
+    {
+        super.addQueryColumns(columns);
+        columns.add(datasetIdColumn);
     }
 }
