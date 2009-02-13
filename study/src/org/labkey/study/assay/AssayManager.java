@@ -183,16 +183,17 @@ public class AssayManager implements AssayService.Interface
             if (containers.size() == 0)
                 containers.add(protocol.getContainer());
         }
-        else
-        {
-            containers.add(currentContainer);
-        }
+        // Always add the current container
+        containers.add(currentContainer);
+
 
         // Check for write permission
         for (Iterator<Container> iter = containers.iterator(); iter.hasNext();)
         {
             Container container = iter.next();
-            if (!container.hasPermission(user, ACL.PERM_INSERT) || !provider.allowUpload(user, container, protocol))
+            boolean hasPermission = container.hasPermission(user, ACL.PERM_INSERT);
+            boolean allowsUpload = provider.allowUpload(user, container, protocol);
+            if (!hasPermission || !allowsUpload)
             {
                 iter.remove();
             }
@@ -202,18 +203,14 @@ public class AssayManager implements AssayService.Interface
 
         List<ActionButton> result = new ArrayList<ActionButton>();
 
-        if (containers.size() == 1)
+        if (containers.size() == 1 && containers.iterator().next().equals(currentContainer))
         {
-            Container c = containers.iterator().next();
-            // If it's the current container, we want a simple button
-            if (c.equals(currentContainer))
+            // Create one import button for each provider, using the current container
+            for (Map.Entry<String, Class<? extends Controller>> entry : provider.getImportActions().entrySet())
             {
-                for (Map.Entry<String, Class<? extends Controller>> entry : provider.getImportActions().entrySet())
-                {
-                    ActionButton button = new ActionButton(PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(c, protocol, entry.getValue()), entry.getKey());
-                    button.setActionType(ActionButton.Action.LINK);
-                    result.add(button);
-                }
+                ActionButton button = new ActionButton(PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(currentContainer, protocol, entry.getValue()), entry.getKey());
+                button.setActionType(ActionButton.Action.LINK);
+                result.add(button);
             }
         }
         else

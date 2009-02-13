@@ -643,7 +643,7 @@ public class StudyController extends BaseStudyController
                     isAssayDataset = false;
             }
 
-            if (!isSnapshot && canWrite &&!isAssayDataset)
+            if (!isSnapshot && canWrite && !isAssayDataset)
             {
                 // Insert single entry
                 ActionURL insertURL = new ActionURL(DatasetController.InsertAction.class, getContainer());
@@ -653,9 +653,9 @@ public class StudyController extends BaseStudyController
                 buttonBar.add(insertButton);
             }
 
-            if (!isSnapshot && (user.isAdministrator() || canWrite)) // admins always get the import and delete buttons
+            if (!isSnapshot)
             {
-                if (!isAssayDataset)
+                if (!isAssayDataset && (user.isAdministrator() || canWrite)) // admins always get the import and delete buttons
                 {
                     // bulk import
                     ActionButton uploadButton = new ActionButton("showImportDataset.view?datasetId=" + _datasetId, "Import Data", DataRegion.MODE_GRID, ActionButton.Action.LINK);
@@ -671,19 +671,22 @@ public class StudyController extends BaseStudyController
                     deleteRows.setDisplayPermission(ACL.PERM_DELETE);
                     buttonBar.add(deleteRows);
                 }
-                else
+                else if (isAssayDataset)
                 {
                     List<ActionButton> buttons = AssayService.get().getImportButtons(protocol, getUser(), getContainer(), true);
                     buttonBar.addAll(buttons);
 
-                    ActionButton deleteRows = new ActionButton("button", "Recall Selected");
-                    ActionURL deleteRowsURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
-                    deleteRowsURL.addParameter("protocolId", protocol.getRowId());
-                    
-                    deleteRows.setScript("return confirm(\"Recall selected rows of this dataset?\") && verifySelected(this.form, \"" + deleteRowsURL.getLocalURIString() + "\", \"post\", \"rows\")");
-                    deleteRows.setActionType(ActionButton.Action.GET);
-                    deleteRows.setDisplayPermission(ACL.PERM_DELETE);
-                    buttonBar.add(deleteRows);
+                    if (user.isAdministrator() || canWrite)
+                    {
+                        ActionButton deleteRows = new ActionButton("button", "Recall Selected");
+                        ActionURL deleteRowsURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
+                        deleteRowsURL.addParameter("protocolId", protocol.getRowId());
+
+                        deleteRows.setScript("return confirm(\"Recall selected rows of this dataset?\") && verifySelected(this.form, \"" + deleteRowsURL.getLocalURIString() + "\", \"post\", \"rows\")");
+                        deleteRows.setActionType(ActionButton.Action.GET);
+                        deleteRows.setDisplayPermission(ACL.PERM_DELETE);
+                        buttonBar.add(deleteRows);
+                    }
                 }
             }
 
