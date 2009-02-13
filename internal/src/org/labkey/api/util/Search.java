@@ -25,6 +25,7 @@ import org.labkey.api.view.*;
 import org.springframework.beans.PropertyValues;
 
 import java.io.PrintWriter;
+import java.sql.Types;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -213,7 +214,9 @@ public class Search
             OperationClause termClause = new OrClause();
 
             for (String searchColumnName : searchColumnNames)
-                termClause.addClause(new CompareType.ContainsClause(searchColumnName, term.getTerm()));
+            {
+                termClause.addClause(new CompareType.ContainsClause(getSafeColumnName(searchColumnName, dialect), term.getTerm()));
+            }
 
             caseSql.append(termClause.toSQLFragment(Collections.<String, ColumnInfo>emptyMap(), dialect));
             caseSql.append(") THEN 1 ELSE 0 END AS ");
@@ -221,6 +224,21 @@ public class Search
 
             i++;
         }
+    }
+
+    private static String getSafeColumnName(String originalColumnName, SqlDialect dialect)
+    {
+        // Postgres 8.3 doesn't like to treat number columns as varchars,
+        // so add a cast.
+        // Also need to escape the column name in case it's a reserved sql term, like "primary"
+        StringBuilder sb = new StringBuilder();
+        sb.append("CAST(");
+        sb.append(dialect.getColumnSelectName(originalColumnName));
+        sb.append(" AS ");
+        sb.append(dialect.sqlTypeNameFromSqlType(Types.VARCHAR));
+        sb.append(")");
+
+        return sb.toString();
     }
 
 

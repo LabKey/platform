@@ -412,6 +412,18 @@ function isTrueOrUndefined(obj)
     return obj === undefined || obj === true;
 }
 
+// IE doesn't submit forms on enter, so this method allows one to hook up input elements to submit forms
+function addInputSubmitEvent(form, input) {
+    input.onkeydown = function(e) {
+        e = e || window.event;
+        if (e.keyCode == 13) {
+            form.submit();
+            return false;
+        }
+    };
+}
+
+
 LABKEY.addMarkup(
 '<div id="helpDiv" onMouseOver="mouseEnteredHelpDiv()" onMouseOut="mouseExitedHelpDiv()"' +
 '   style="display:none;">'+

@@ -170,7 +170,6 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
         ExprColumn runIdColumn = new ExprColumn(this, RUN_ID_COLUMN_NAME, new SQLFragment(sqlRunRowId), Types.INTEGER);
         ColumnInfo addedRunIdColumn = addColumn(runIdColumn);
         addedRunIdColumn.setIsHidden(true);
-        addedRunIdColumn.setKeyField(true);
 
         Set<String> hiddenProperties = new HashSet<String>();
         hiddenProperties.add(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME);
