@@ -228,17 +228,24 @@ public class Search
 
     private static String getSafeColumnName(String originalColumnName, SqlDialect dialect)
     {
-        // Postgres 8.3 doesn't like to treat number columns as varchars,
-        // so add a cast.
-        // Also need to escape the column name in case it's a reserved sql term, like "primary"
-        StringBuilder sb = new StringBuilder();
-        sb.append("CAST(");
-        sb.append(dialect.getColumnSelectName(originalColumnName));
-        sb.append(" AS ");
-        sb.append(dialect.sqlTypeNameFromSqlType(Types.VARCHAR));
-        sb.append(")");
+        if (dialect.isPostgreSQL())
+        {
+            // Postgres 8.3 doesn't like to treat number columns as varchars,
+            // so add a cast.
+            // Also need to escape the column name in case it's a reserved sql term, like "primary"
+            StringBuilder sb = new StringBuilder();
+            sb.append("CAST(");
+            sb.append(dialect.getColumnSelectName(originalColumnName));
+            sb.append(" AS ");
+            sb.append(dialect.sqlTypeNameFromSqlType(Types.VARCHAR));
+            sb.append(")");
 
-        return sb.toString();
+            return sb.toString();
+        }
+        else
+        {
+            return dialect.getColumnSelectName(originalColumnName);
+        }
     }
 
 
