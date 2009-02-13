@@ -209,7 +209,7 @@ public class DataSetQueryView extends QueryView
                     dataURL.addParameter("sourceLsid", lsid.toString());
                     out.write("[<a href=\"");
                     out.write(dataURL.getLocalURIString());
-                    out.write("\">details</a>]");
+                    out.write("\">assay</a>]");
                     return;
                 }
             }

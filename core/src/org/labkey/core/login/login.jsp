@@ -35,6 +35,25 @@
         returnURI = form.getReturnActionURL().toString();
     boolean agreeOnly = bean.agreeOnly;
 
+    // Next bit of code makes the enter button work on IE.
+    %>
+
+<script type="text/javascript">
+    window.onload = function() {
+        var forms = document.getElementsByTagName('form');
+
+        for (var i=0;i < forms.length;i++) {
+            var inputs = forms[i].getElementsByTagName('input');
+
+            for (var j=0;j < inputs.length;j++)
+                addInputSubmitEvent(forms[i], inputs[j]);
+        }
+    };
+</script>
+
+    <%
+
+
     if (agreeOnly)
     { %>
 <form name="login" method="POST" action="agreeToTerms.post"><%
