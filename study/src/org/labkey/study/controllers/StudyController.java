@@ -2369,7 +2369,7 @@ public class StudyController extends BaseStudyController
 
                     event.setIntKey1(NumberUtils.toInt(protocolId));
                     Collection<String> lsids = entry.getValue();
-                    event.setComment(lsids.size() + " row(s) were deleted from the assay: " + assayName);
+                    event.setComment(lsids.size() + " row(s) were recalled to the assay: " + assayName);
 
                     Map<String,Object> dataMap = Collections.<String,Object>singletonMap(DataSetDefinition.DATASETKEY, form.getDatasetId());
 

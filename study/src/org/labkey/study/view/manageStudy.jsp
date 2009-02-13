@@ -92,8 +92,8 @@
     </tr>
     <tr>
         <th align="left">Reports/Views</th>
-        <td>Manage reports and views for this Study</td>
-        <td><%= PageFlowUtil.textLink("Manage Reports and Views", new ActionURL("Study-Reports", "manageReports.view", getStudy().getContainer())) %></td>
+        <td>Manage views for this Study</td>
+        <td><%= PageFlowUtil.textLink("Manage Views", new ActionURL("Study-Reports", "manageReports.view", getStudy().getContainer())) %></td>
     </tr>
     <tr>
         <th align="left">Quality Control States</th>

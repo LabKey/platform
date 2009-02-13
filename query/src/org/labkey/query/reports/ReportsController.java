@@ -45,6 +45,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.IdentifierString;
 import org.labkey.api.view.*;
 import org.labkey.common.util.Pair;
 import org.labkey.query.reports.chart.ChartServiceImpl;
@@ -133,6 +134,11 @@ public class ReportsController extends SpringActionController
         {
             return new ActionURL(DeleteReportAction.class, c);
         }
+
+        public ActionURL urlManageViewsSummary(Container c)
+        {
+            return new ActionURL(ManageViewsSummaryAction.class, c);
+        }
     }
 
     public ReportsController() throws Exception
@@ -143,7 +149,7 @@ public class ReportsController extends SpringActionController
 
     public static void registerAdminConsoleLinks()
     {
-        AdminConsole.addLink(SettingsLinkType.Configuration, "reports and scripting", new ActionURL(ConfigureReportsAndScriptsAction.class, ContainerManager.getRoot()));
+        AdminConsole.addLink(SettingsLinkType.Configuration, "views and scripting", new ActionURL(ConfigureReportsAndScriptsAction.class, ContainerManager.getRoot()));
     }
 
     @RequiresPermission(ACL.PERM_READ)
@@ -308,7 +314,7 @@ public class ReportsController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
-            return root.addChild("Reports and Scripting Configuration");
+            return root.addChild("Views and Scripting Configuration");
         }
     }
 
@@ -885,7 +891,7 @@ public class ReportsController extends SpringActionController
             {
                 // report not saved yet, get state from the cache
                 String key = getViewContext().getActionURL().getParameter(RunRReportView.CACHE_PARAM);
-                if (key != null)
+                if (key != null && RunRReportView.isCacheValid(key, context))
                     RunRReportView.initFormFromCache(form, key, context);
                 report = form.getReport();
                 job = new RReportJob(ReportsPipelineProvider.NAME, info, form);
@@ -1183,6 +1189,20 @@ public class ReportsController extends SpringActionController
                     ReportService.get().deleteReport(getViewContext(), report);
                 }
             }
+
+            for (QueryForm qf : form.getQueryForms(getViewContext()))
+            {
+                CustomView customView = qf.getCustomView();
+                if (customView != null)
+                {
+                    if (customView.getOwner() == null)
+                    {
+                        if (!getViewContext().getContainer().hasPermission(getUser(), ACL.PERM_ADMIN))
+                            HttpView.throwUnauthorized();
+                    }
+                    customView.delete(getUser(), getViewContext().getRequest());
+                }
+            }
             return new ApiSimpleResponse("success", true);
         }
     }
@@ -1283,7 +1303,8 @@ public class ReportsController extends SpringActionController
 
     static class DeleteViewsForm
     {
-        ReportIdentifier[] _reportId;
+        ReportIdentifier[] _reportId = new ReportIdentifier[0];
+        String[] _viewId = new String[0];
 
         public ReportIdentifier[] getReportId()
         {
@@ -1293,6 +1314,35 @@ public class ReportsController extends SpringActionController
         public void setReportId(ReportIdentifier[] reportId)
         {
             _reportId = reportId;
+        }
+
+        public String[] getViewId()
+        {
+            return _viewId;
+        }
+
+        public void setViewId(String[] viewId)
+        {
+            _viewId = viewId;
+        }
+
+        public List<QueryForm> getQueryForms(ViewContext context)
+        {
+            List<QueryForm> forms = new ArrayList<QueryForm>();
+
+            for (String viewId : _viewId)
+            {
+                Map<String, String> map = PageFlowUtil.mapFromQueryString(viewId);
+                QueryForm form = new QueryForm();
+
+                form.setSchemaName(new IdentifierString(map.get(QueryParam.schemaName.name())));
+                form.setQueryName(map.get(QueryParam.queryName.name()));
+                form.setViewName(map.get(QueryParam.viewName.name()));
+                form.setViewContext(context);
+
+                forms.add(form);
+            }
+            return forms;
         }
     }
 

@@ -251,17 +251,17 @@ public class StudyModule extends DefaultModule
     {
         public ReportsWebPartFactory()
         {
-            super("Reports and Views", WebPartFactory.LOCATION_RIGHT);
+            super("Views", WebPartFactory.LOCATION_RIGHT);
             addLegacyNames("Reports");
         }
 
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
         {
             if (!portalCtx.hasPermission(ACL.PERM_READ))
-                return new HtmlView("Reports and Views", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
+                return new HtmlView("Views", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
 
             if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
-                return new HtmlView("Reports and Views", "This folder does not contain a study");
+                return new HtmlView("Views", "This folder does not contain a study");
             return new ReportsController.ReportsWebPart(false);
         }
     }
@@ -270,17 +270,17 @@ public class StudyModule extends DefaultModule
     {
         public ReportsWideWebPartFactory()
         {
-            super("Reports and Views");
+            super("Views");
             addLegacyNames("Reports");
         }
 
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
         {
             if (!portalCtx.hasPermission(ACL.PERM_READ))
-                return new HtmlView("Reports and Views", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
+                return new HtmlView("Views", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
 
             if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
-                return new HtmlView("Reports and Views", "This folder does not contain a study");
+                return new HtmlView("Views", "This folder does not contain a study");
 
             return new ReportsController.ReportsWebPart(!"right".equalsIgnoreCase(webPart.getLocation()));
         }

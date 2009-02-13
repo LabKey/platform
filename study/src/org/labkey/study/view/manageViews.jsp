@@ -151,7 +151,7 @@
                 listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.ExportExcelConfigureAction.class, context.getContainer())%>';}}
             },{
                 id: 'create_staticView',
-                text:'New Static Report',
+                text:'New Static View',
                 listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.ShowUploadReportAction.class, context.getContainer())%>';}}
             }
             ]

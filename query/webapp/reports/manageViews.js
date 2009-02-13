@@ -218,6 +218,7 @@ LABKEY.ViewsPanel.prototype = {
                         {name:'runUrl', defaultValue:undefined},
                         {name:'editUrl', defaultValue:undefined},
                         {name:'reportId', defaultValue:undefined},
+                        {name:'queryView', type:'boolean', defaultValue:false},
                         {name:'type'}]),
             proxy: new Ext.data.HttpProxy(this.dataConnection),
             autoLoad: true,
@@ -370,7 +371,7 @@ LABKEY.ViewsPanel.prototype = {
             return false;
         }
 
-        if (selections[0].data.reportId == undefined)
+        if (selections[0].data.queryView)
         {
             Ext.Msg.alert("Rename Views", "Only reports can be renamed, to convert a custom query to a report expand the row and click on the [convert to report] link");
             return false;
@@ -427,7 +428,11 @@ function deleteSelections(grid)
             msg = msg.concat(selections[i].data.name);
             msg = msg.concat('<br/>');
 
-            params.push("reportId=" + selections[i].id);
+            if (selections[i].data.queryView)
+                params.push("viewId=" + selections[i].id);
+            else
+                params.push("reportId=" + selections[i].id);
+
         }
 
         Ext.Msg.show({

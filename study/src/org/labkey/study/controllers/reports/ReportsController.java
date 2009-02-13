@@ -104,9 +104,9 @@ public class ReportsController extends BaseStudyController
             if (_study == null)
                 return root.addChild("No Study In Folder");
             else if (getUser().isAdministrator())
-                return root.addChild("Manage Reports and Views", ActionURL.toPathString("Study-Reports", "manageReports.view", getContainer()));
+                return root.addChild("Manage Views", ActionURL.toPathString("Study-Reports", "manageReports.view", getContainer()));
             else
-                return root.addChild("Reports and Views");
+                return root.addChild("Views");
         }
     }
 
@@ -186,7 +186,7 @@ public class ReportsController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return _appendNavTrail(root, "Manage Reports and Views");
+            return _appendNavTrail(root, "Manage Views");
         }
     }
 
@@ -204,7 +204,7 @@ public class ReportsController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return _appendNavTrail(root, "Manage Reports and Views");
+            return _appendNavTrail(root, "Manage Views");
         }
     }
 
@@ -2112,7 +2112,7 @@ public class ReportsController extends BaseStudyController
             root.addChild(study.getLabel(), url.relativeUrl("overview", null, "Study"));
 
             if (getUser().isAdministrator())
-                root.addChild("Manage Reports and Views", ActionURL.toPathString("Study-Reports", "manageReports.view", getContainer()));
+                root.addChild("Manage Views", ActionURL.toPathString("Study-Reports", "manageReports.view", getContainer()));
         }
         catch (Exception e)
         {
@@ -2128,7 +2128,7 @@ public class ReportsController extends BaseStudyController
             ActionURL url = getViewContext().getActionURL();
             root.addChild(study.getLabel(), url.relativeUrl("overview", null, "Study"));
             if (getUser().isAdministrator())
-                root.addChild("Manage Reports and Views", ActionURL.toPathString("Study-Reports", "manageReports.view", getContainer()));
+                root.addChild("Manage Views", ActionURL.toPathString("Study-Reports", "manageReports.view", getContainer()));
             
             Visit visit = null;
             if (visitRowId > 0)
@@ -2163,7 +2163,7 @@ public class ReportsController extends BaseStudyController
         public ReportsWebPart(boolean isWide)
         {
             super("/org/labkey/study/view/manageReports.jsp");
-            setTitle("Reports and Views");
+            setTitle("Views");
 
             StudyManageReportsBean bean = new StudyManageReportsBean(getViewContext(), false, isWide);
             setModelBean(bean);
@@ -2201,15 +2201,20 @@ public class ReportsController extends BaseStudyController
             if (model instanceof RReportBean)
             {
                 RReportBean bean = (RReportBean)model;
+                boolean hasQuery = bean.getQueryName() != null || bean.getSchemaName() != null || bean.getViewName() != null;
 
-                out.print("<table><tr><td>");
-                out.print("<input type=\"checkbox\" value=\"participantId\" name=\"");
-                out.print(ReportDescriptor.Prop.filterParam);
-                out.print("\"");
-                out.print("participantId".equals(bean.getFilterParam()) ? "checked" : "");
-                out.print(" onchange=\"LABKEY.setDirty(true);return true;\">");
-                out.print("Participant chart.&nbsp;" + PageFlowUtil.helpPopup("participant chart", "A participant chart view shows measures for only one participant at a time. A participant chart view allows the user to step through charts for each participant shown in any dataset grid."));
-                out.print("</td></tr>");
+                out.print("<table>");
+                if (hasQuery)
+                {
+                    out.print("<tr><td>");
+                    out.print("<input type=\"checkbox\" value=\"participantId\" name=\"");
+                    out.print(ReportDescriptor.Prop.filterParam);
+                    out.print("\"");
+                    out.print("participantId".equals(bean.getFilterParam()) ? "checked" : "");
+                    out.print(" onchange=\"LABKEY.setDirty(true);return true;\">");
+                    out.print("Participant chart.&nbsp;" + PageFlowUtil.helpPopup("participant chart", "A participant chart view shows measures for only one participant at a time. A participant chart view allows the user to step through charts for each participant shown in any dataset grid."));
+                    out.print("</td></tr>");
+                }
                 out.print("<tr><td><input type=\"checkbox\" name=\"cached\" " + (bean.isCached() ? "checked" : "") + " onchange=\"LABKEY.setDirty(true);return true;\">Automatically cache this report for faster reloading.</td></tr>");
                 out.print("</table>");
             }
