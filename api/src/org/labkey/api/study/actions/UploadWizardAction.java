@@ -280,16 +280,16 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     {
         Set<DomainProperty> propertySet = newRunForm.getRunProperties().keySet();
         DomainProperty[] properties = propertySet.toArray(new DomainProperty[propertySet.size()]);
-        ExpRunTable table = AssayService.get().createRunTable(null, _protocol, getProvider(newRunForm), newRunForm.getUser(), newRunForm.getContainer());
-        return createInsertView(table, "lsid", properties, errorReshow, RunStepHandler.NAME, newRunForm, errors);
+        return createInsertView(ExperimentService.get().getTinfoExperimentRun(),
+                "lsid", properties, errorReshow, RunStepHandler.NAME, newRunForm, errors);
     }
 
     protected InsertView createUploadSetInsertView(FormType runForm, boolean reshow, BindException errors)
     {
         Set<DomainProperty> propertySet = runForm.getBatchProperties().keySet();
         DomainProperty[] properties = propertySet.toArray(new DomainProperty[propertySet.size()]);
-        ExpRunTable table = AssayService.get().createRunTable(null, _protocol, getProvider(runForm), runForm.getUser(), runForm.getContainer());
-        return createInsertView(table, "lsid", properties, reshow, UploadSetStepHandler.NAME, runForm, errors);
+        return createInsertView(ExperimentService.get().getTinfoExperimentRun(),
+                "lsid", properties, reshow, UploadSetStepHandler.NAME, runForm, errors);
     }
 
     private ModelAndView getRunPropertiesView(FormType newRunForm, boolean errorReshow, boolean warnings, BindException errors)
@@ -307,8 +307,9 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             }
         }
 
-        insertView.getDataRegion().addColumn(0, insertView.getDataRegion().getTable().getColumn("Name"));
-        insertView.getDataRegion().addColumn(1, insertView.getDataRegion().getTable().getColumn("Comments"));
+        ExpRunTable table = AssayService.get().createRunTable(null, _protocol, getProvider(newRunForm), newRunForm.getUser(), newRunForm.getContainer());
+        insertView.getDataRegion().addColumn(0, table.getColumn("Name"));
+        insertView.getDataRegion().addColumn(1, table.getColumn("Comments"));
 
         addSampleInputColumns(getProtocol(newRunForm), insertView);
         if (!errorReshow && !newRunForm.isResetDefaultValues())
