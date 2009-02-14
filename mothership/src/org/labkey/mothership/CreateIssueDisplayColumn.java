@@ -56,7 +56,13 @@ public class CreateIssueDisplayColumn extends DataColumn
         StringBuilder title = new StringBuilder();
         BufferedReader reader = new BufferedReader(new StringReader(stackTrace));
         // Grab the exception class
-        title.append(reader.readLine().split("\\:")[0]);
+        String className = reader.readLine().split("\\:")[0];
+        if (className.lastIndexOf('.') != -1)
+        {
+            // Strip off the package name to make the title a little shorter
+            className = className.substring(className.lastIndexOf('.') + 1);
+        }
+        title.append(className);
         String firstLocation = reader.readLine();
         String location = firstLocation;
         String separator = " in ";

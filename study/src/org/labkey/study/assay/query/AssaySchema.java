@@ -158,10 +158,10 @@ public class AssaySchema extends UserSchema
         {
             pds.add(prop.getPropertyDescriptor());
             if (!prop.isHidden())
-                defaultCols.add(FieldKey.fromParts("Batch Properties", prop.getName()));
+                defaultCols.add(FieldKey.fromParts(AssayService.BATCH_PROPERTIES_COLUMN_NAME, prop.getName()));
         }
 
-        result.addPropertyColumns("Batch Properties", pds.toArray(new PropertyDescriptor[pds.size()]), this);
+        result.addPropertyColumns(AssayService.BATCH_PROPERTIES_COLUMN_NAME, pds.toArray(new PropertyDescriptor[pds.size()]), this);
         result.setDefaultVisibleColumns(defaultCols);
         return result;
     }
@@ -174,7 +174,7 @@ public class AssaySchema extends UserSchema
         List<PropertyDescriptor> runColumns = provider.getRunTableColumns(protocol);
         PropertyDescriptor[] pds = runColumns.toArray(new PropertyDescriptor[runColumns.size()]);
 
-        ColumnInfo propsCol = runTable.addPropertyColumns("Run Properties", pds, this);
+        ColumnInfo propsCol = runTable.addPropertyColumns(AssayService.RUN_PROPERTIES_COLUMN_NAME, pds, this);
         propsCol.setFk(new AssayPropertyForeignKey(pds));
 
         SQLFragment batchSQL = new SQLFragment("(SELECT MIN(ExperimentId) FROM ");
@@ -197,7 +197,7 @@ public class AssaySchema extends UserSchema
         runTable.addColumn(batchColumn);
 
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>(runTable.getDefaultVisibleColumns());
-        FieldKey runKey = FieldKey.fromString("Run Properties");
+        FieldKey runKey = FieldKey.fromString(AssayService.RUN_PROPERTIES_COLUMN_NAME);
         for (PropertyDescriptor runColumn : runColumns)
         {
             if (!runColumn.isHidden())

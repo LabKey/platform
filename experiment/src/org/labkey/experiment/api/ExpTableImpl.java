@@ -54,6 +54,13 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
         {
             return getColumn("Folder");
         }
+        for (ColumnInfo columnInfo : getColumns())
+        {
+            if (columnInfo.getCaption().equals(name))
+            {
+                return columnInfo;
+            }
+        }
         return result;
     }
 

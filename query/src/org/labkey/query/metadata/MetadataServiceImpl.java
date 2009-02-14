@@ -38,6 +38,8 @@ import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.ColumnType;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Text;
 
 import java.util.*;
 import java.sql.SQLException;
@@ -352,10 +354,16 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                 xmlColumn.unsetFk();
             }
 
-            if (xmlColumn.getDomNode().getChildNodes().getLength() == 0 && xmlColumn.getWrappedColumnName() == null)
+            if (xmlColumn.getWrappedColumnName() == null)
             {
-                // Remove columns that no longer have any metadata set on them
-                removeColumn(xmlTable, xmlColumn);
+                NodeList childNodes = xmlColumn.getDomNode().getChildNodes();
+                // May be empty, or may have empty text between the start and end tags
+                if (childNodes.getLength() == 0 ||
+                    (childNodes.getLength() == 1 && childNodes.item(0) instanceof Text && ((Text)childNodes.item(0)).getData().trim().length() == 0))
+                {
+                    // Remove columns that no longer have any metadata set on them
+                    removeColumn(xmlTable, xmlColumn);
+                }
             }
         }
 

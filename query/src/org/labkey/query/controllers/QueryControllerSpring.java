@@ -804,7 +804,7 @@ public class QueryControllerSpring extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             (new SchemaAction(_form)).appendNavTrail(root);
-            root.addChild("Query Metadata: " + _form.getQueryName(), _query.urlFor(QueryAction.metadataQuery));
+            root.addChild("Customize Display: " + _form.getQueryName(), _query.urlFor(QueryAction.metadataQuery));
             return root;
         }
     }

@@ -110,7 +110,7 @@ public class AssayManager implements AssayService.Interface
 
     public ExpRunTable createRunTable(String alias, ExpProtocol protocol, AssayProvider provider, User user, Container container)
     {
-        return new AssaySchema(user, container).createRunTable(alias, protocol, provider);
+        return (ExpRunTable)new AssaySchema(user, container).getTable(getRunsTableName(protocol), alias);
     }
 
     public UserSchema createSchema(User user, Container container)

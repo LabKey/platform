@@ -37,6 +37,7 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
     private TablePropertiesEditor _editor;
     private String _schemaName;
     private DialogBox _confirmDialog;
+    private ImageButton _saveButton;
 
     public void onModuleLoad()
     {
@@ -64,13 +65,23 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
     {
         _editor = new TablePropertiesEditor(this, getService());
         VerticalPanel panel = new VerticalPanel();
-        _editor.addButton(new ImageButton("Save", new ClickListener()
+        _saveButton = new ImageButton("Save", new ClickListener()
         {
             public void onClick(Widget sender)
             {
                 save();
             }
-        }));
+        });
+        _editor.addButton(_saveButton);
+        _saveButton.setEnabled(false);
+        _editor.addChangeListener(new ChangeListener()
+        {
+            public void onChange(Widget sender)
+            {
+                _saveButton.setEnabled(_editor.isDirty());
+            }
+        });
+
         _editor.addButton(new ImageButton("Reset to Default", new ClickListener()
         {
             public void onClick(Widget sender)
@@ -204,6 +215,7 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
 
     public void save(final SaveListener<GWTTableInfo> listener)
     {
+        _saveButton.setEnabled(false);
         saveAsync(new AsyncCallback<GWTTableInfo>()
         {
             public void onFailure(Throwable caught)

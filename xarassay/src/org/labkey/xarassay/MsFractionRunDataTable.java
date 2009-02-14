@@ -129,12 +129,12 @@ public class MsFractionRunDataTable extends FilteredTable
         for (PropertyDescriptor prop : provider.getRunPropertyColumns(protocol))
         {
             if (!hiddenProperties.contains(prop.getName()))
-                visibleColumns.add(FieldKey.fromParts("Run", "Run Properties", prop.getName()));
+                visibleColumns.add(FieldKey.fromParts("Run", AssayService.RUN_PROPERTIES_COLUMN_NAME, prop.getName()));
         }
         for (PropertyDescriptor prop : provider.getUploadSetColumns(protocol))
         {
             if (!hiddenProperties.contains(prop.getName()))
-                visibleColumns.add(FieldKey.fromParts("Run", "Run Properties", prop.getName()));
+                visibleColumns.add(FieldKey.fromParts("Run", AssayService.RUN_PROPERTIES_COLUMN_NAME, prop.getName()));
         }
         setDefaultVisibleColumns(visibleColumns);
     }

@@ -729,15 +729,26 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(ToggleRunExperimentMembershipForm form, BindException errors) throws Exception
         {
             ExpRun run = ExperimentService.get().getExpRun(form.getRunId());
-            if (run == null || !run.getContainer().equals(getViewContext().getContainer()))
+            // Check if the user has permission to see this run
+            if (run == null || !run.getContainer().hasPermission(getUser(), ACL.PERM_READ))
             {
                 return HttpView.throwNotFound();
             }
 
             ExpExperiment exp = ExperimentService.get().getExpExperiment(form.getExperimentId());
-            if (exp == null || !exp.getContainer().equals(getViewContext().getContainer()))
+            if (exp == null)
             {
                 return HttpView.throwNotFound();
+            }
+            ExpExperiment[] experiments = ExperimentService.get().getExperiments(run.getContainer(), getUser(), true, false);
+            // Check if this
+            if (!Arrays.asList(experiments).contains(exp))
+            {
+                return HttpView.throwNotFound();
+            }
+            if (!exp.getContainer().hasPermission(getUser(), ACL.PERM_UPDATE))
+            {
+                return HttpView.throwUnauthorized();
             }
 
             if (form.isIncluded())
