@@ -883,6 +883,10 @@ public class PageFlowUtil
         {
             response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
         }
+        else
+        {
+            response.setHeader("Content-Disposition", "filename=\"" + filename + "\"");
+        }
         for (Map.Entry<String, String> entry : responseHeaders.entrySet())
             response.setHeader(entry.getKey(), entry.getValue());
     }

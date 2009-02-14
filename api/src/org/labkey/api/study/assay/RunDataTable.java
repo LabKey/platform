@@ -102,7 +102,7 @@ public class RunDataTable extends FilteredTable
         for (PropertyDescriptor prop : runProperties)
         {
             if (!prop.isHidden())
-                visibleColumns.add(FieldKey.fromParts("Run", "Run Properties", prop.getName()));
+                visibleColumns.add(FieldKey.fromParts("Run", AssayService.RUN_PROPERTIES_COLUMN_NAME, prop.getName()));
         }
 
         Set<String> studyColumnNames = ((AbstractAssayProvider)provider).addCopiedToStudyColumns(this, protocol, schema.getUser(), "objectId", false);

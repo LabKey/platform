@@ -259,6 +259,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 _rows.add(new Row(field));
             }
         }
+        fireChangeEvent();
 
         refresh();
     }

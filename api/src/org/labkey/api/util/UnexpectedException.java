@@ -43,6 +43,11 @@ public class UnexpectedException extends RuntimeException
         super(cause);
     }
 
+    public UnexpectedException(Throwable cause, String message)
+    {
+        super(message, cause);
+    }
+
     public String toString()
     {
         return super.toString() + ":" + getCause();

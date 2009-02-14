@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.CaseInsensitiveHashMap;
@@ -235,13 +236,17 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
                             value = Double.valueOf(ResultSetUtil.mapDatabaseDoubleToJavaDouble((Double) value));
                         BeanUtils.copyProperty(bean, prop, value);
                     }
+                    catch (ConversionException e)
+                    {
+                        throw new UnexpectedException(e, "Failed to copy property '" + prop + "' on class " + _class.getName());
+                    }
                     catch (IllegalAccessException x)
                     {
-                        throw new UnexpectedException(x);
+                        throw new UnexpectedException(x, "Failed to copy property '" + prop + "' on class " + _class.getName());
                     }
                     catch (InvocationTargetException x)
                     {
-                        throw new UnexpectedException(x);
+                        throw new UnexpectedException(x, "Failed to copy property '" + prop + "' on class " + _class.getName());
                     }
                 }
 

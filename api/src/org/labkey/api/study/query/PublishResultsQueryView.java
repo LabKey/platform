@@ -56,12 +56,6 @@ public class PublishResultsQueryView extends ResultsQueryView
     private Map<Object, String> _reshowPtids;
 
     public PublishResultsQueryView(ExpProtocol protocol, ViewContext context, QuerySettings settings,
-                                   List<Integer> objectIds, Container targetStudyContainer)
-    {
-        this(protocol, context, settings, objectIds, targetStudyContainer, null, null);
-    }
-
-    public PublishResultsQueryView(ExpProtocol protocol, ViewContext context, QuerySettings settings,
                                    List<Integer> objectIds, Container targetStudyContainer,
                                    Map<Object, String> reshowVisits, Map<Object, String> reshowPtids)
     {

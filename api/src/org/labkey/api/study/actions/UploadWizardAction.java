@@ -22,6 +22,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -279,16 +280,16 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     {
         Set<DomainProperty> propertySet = newRunForm.getRunProperties().keySet();
         DomainProperty[] properties = propertySet.toArray(new DomainProperty[propertySet.size()]);
-        return createInsertView(ExperimentService.get().getTinfoExperimentRun(),
-                "lsid", properties, errorReshow, RunStepHandler.NAME, newRunForm, errors);
+        ExpRunTable table = AssayService.get().createRunTable(null, _protocol, getProvider(newRunForm), newRunForm.getUser(), newRunForm.getContainer());
+        return createInsertView(table, "lsid", properties, errorReshow, RunStepHandler.NAME, newRunForm, errors);
     }
 
     protected InsertView createUploadSetInsertView(FormType runForm, boolean reshow, BindException errors)
     {
         Set<DomainProperty> propertySet = runForm.getBatchProperties().keySet();
         DomainProperty[] properties = propertySet.toArray(new DomainProperty[propertySet.size()]);
-        return createInsertView(ExperimentService.get().getTinfoExperimentRun(),
-                "lsid", properties, reshow, UploadSetStepHandler.NAME, runForm, errors);
+        ExpRunTable table = AssayService.get().createRunTable(null, _protocol, getProvider(runForm), runForm.getUser(), runForm.getContainer());
+        return createInsertView(table, "lsid", properties, reshow, UploadSetStepHandler.NAME, runForm, errors);
     }
 
     private ModelAndView getRunPropertiesView(FormType newRunForm, boolean errorReshow, boolean warnings, BindException errors)
@@ -306,13 +307,8 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             }
         }
 
-        ColumnInfo nameCol = new ColumnInfo(ExperimentService.get().getTinfoExperimentRun().getColumn("Name"));
-        nameCol.copyAttributesFrom(ExperimentService.get().getTinfoExperimentRun().getColumn("Name"));
-        nameCol.setCaption("Assay Id");
-        nameCol.setDescription("The assay/experiment ID that uniquely identifies this assay run.");
-
-        insertView.getDataRegion().addColumn(0, nameCol);
-        insertView.getDataRegion().addColumn(1, ExperimentService.get().getTinfoExperimentRun().getColumn("Comments"));
+        insertView.getDataRegion().addColumn(0, insertView.getDataRegion().getTable().getColumn("Name"));
+        insertView.getDataRegion().addColumn(1, insertView.getDataRegion().getTable().getColumn("Comments"));
 
         addSampleInputColumns(getProtocol(newRunForm), insertView);
         if (!errorReshow && !newRunForm.isResetDefaultValues())
