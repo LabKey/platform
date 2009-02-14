@@ -15,27 +15,25 @@
  * limitations under the License.
  */
 %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.study.assay.ModuleAssayProvider.ResultDetailsBean" %>
+<%@ page import="org.labkey.study.assay.ModuleAssayProvider.BatchDetailsBean" %>
 <%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.study.assay.ModuleAssayProvider" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
 <%@ page import="org.labkey.study.controllers.assay.AssayController" %>
 <%@ page import="org.labkey.api.view.*" %>
+<%@ page import="org.labkey.api.exp.api.ExpExperiment" %>
 <%@ page import="org.labkey.study.controllers.assay.actions.AbstractAssayAPIAction" %>
-<%@ page import="org.labkey.api.exp.api.ExpData" %>
-<%@ page import="org.json.JSONArray" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ModuleAssayProvider.ResultDetailsBean> me = (JspView<ModuleAssayProvider.ResultDetailsBean>) HttpView.currentView();
-    ModuleAssayProvider.ResultDetailsBean bean = me.getModelBean();
+    JspView<ModuleAssayProvider.BatchDetailsBean> me = (JspView<ModuleAssayProvider.BatchDetailsBean>) HttpView.currentView();
+    ModuleAssayProvider.BatchDetailsBean bean = me.getModelBean();
     ModuleAssayProvider provider = bean.provider;
     ExpProtocol protocol = bean.expProtocol;
-    ExpData data = bean.expData;
+    ExpExperiment batch = bean.expExperiment;
 
     Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getViewContext().getContainer());
-    JSONArray dataRows = AbstractAssayAPIAction.serializeDataRows(data, provider, protocol, new Object[] { bean.objectId });
-    JSONObject result = dataRows.length() > 0 ? (JSONObject)dataRows.get(0) : new JSONObject();
+    JSONObject batchJson = AbstractAssayAPIAction.serializeBatch(batch, provider, protocol);
 %>
 <script type="text/javascript">
     LABKEY.requiresClientAPI();
@@ -43,7 +41,9 @@
 <script type="text/javascript">
 LABKEY.page = LABKEY.page || {};
 LABKEY.page.assay = <%= new JSONObject(assay).toString(2) %>;
-LABKEY.page.result = <%= result.toString(2) %>;
+LABKEY.page.batch = new LABKEY.Exp.RunGroup(<%=batchJson.toString(2)%>);
+LABKEY.page.batch.batchProtocolId = <%= protocol.getRowId() %>;
+LABKEY.page.batch.loaded = true;
 </script>
 <p>
 <%

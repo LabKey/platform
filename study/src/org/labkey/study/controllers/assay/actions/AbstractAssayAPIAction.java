@@ -82,40 +82,65 @@ public abstract class AbstractAssayAPIAction<FORM> extends ApiAction<FORM>
 
     protected abstract ApiResponse executeAction(ExpProtocol assay, AssayProvider provider, SimpleApiJsonForm form, BindException errors) throws Exception;
 
-    protected JSONObject serializeRun(ExpRun run, AssayProvider provider, ExpProtocol protocol) throws SQLException
+    public static JSONArray serializeDataRows(ExpData data, AssayProvider provider, ExpProtocol protocol, Object[] objectIds) throws SQLException
+    {
+        JSONArray dataRows = new JSONArray();
+
+        SQLFragment sql = new SQLFragment("SELECT child.ObjectURI FROM " + OntologyManager.getTinfoObject() + " child, ");
+        sql.append(OntologyManager.getTinfoObject() + " parent WHERE parent.ObjectId = child.OwnerObjectId AND ");
+        sql.append("parent.ObjectURI = ? ");
+        sql.add(data.getLSID());
+        if (objectIds != null && objectIds.length > 0)
+        {
+            sql.append("AND child.ObjectId IN (");
+            for (int i = 0; i < objectIds.length; i++)
+            {
+                sql.append("?");
+                if (i < objectIds.length - 1)
+                    sql.append(",");
+                sql.add(objectIds[i]);
+            }
+            sql.append(") ");
+        }
+        sql.append("ORDER BY child.ObjectId");
+        String[] objectURIs = Table.executeArray(OntologyManager.getExpSchema(), sql, String.class);
+
+        Domain dataDomain = provider.getRunDataDomain(protocol);
+
+        for (String objectURI : objectURIs)
+        {
+            JSONObject dataRow = new JSONObject();
+            Map<String, Object> values = OntologyManager.getProperties(data.getContainer(), objectURI);
+            for (DomainProperty prop : dataDomain.getProperties())
+            {
+                dataRow.put(prop.getName(), values.get(prop.getPropertyURI()));
+            }
+            dataRows.put(dataRow);
+        }
+
+        return dataRows;
+    }
+
+    public static JSONObject serializeRun(ExpRun run, AssayProvider provider, ExpProtocol protocol) throws SQLException
     {
         JSONObject jsonObject = ExperimentJSONConverter.serializeRun(run, provider.getRunDomain(protocol));
 
-        JSONArray dataRows = new JSONArray();
-
+        JSONArray dataRows;
         ExpData[] datas = run.getOutputDatas(provider.getDataType());
         if (datas.length == 1)
         {
-            SQLFragment sql = new SQLFragment("SELECT child.ObjectURI FROM " + OntologyManager.getTinfoObject() + " child, ");
-            sql.append(OntologyManager.getTinfoObject() + " parent WHERE parent.ObjectId = child.OwnerObjectId AND ");
-            sql.append("parent.ObjectURI = ? ORDER BY child.ObjectId");
-            sql.add(datas[0].getLSID());
-            String[] objectURIs = Table.executeArray(OntologyManager.getExpSchema(), sql, String.class);
-
-            Domain dataDomain = provider.getRunDataDomain(protocol);
-
-            for (String objectURI : objectURIs)
-            {
-                JSONObject dataRow = new JSONObject();
-                Map<String, Object> values = OntologyManager.getProperties(run.getContainer(), objectURI);
-                for (DomainProperty prop : dataDomain.getProperties())
-                {
-                    dataRow.put(prop.getName(), values.get(prop.getPropertyURI()));
-                }
-                dataRows.put(dataRow);
-            }
+            dataRows = serializeDataRows(datas[0], provider, protocol, null);
+        }
+        else
+        {
+            dataRows = new JSONArray();
         }
         jsonObject.put(DATA_ROWS, dataRows);
 
         return jsonObject;
     }
 
-    protected JSONObject serializeBatch(ExpExperiment batch, AssayProvider provider, ExpProtocol protocol) throws SQLException
+    public static JSONObject serializeBatch(ExpExperiment batch, AssayProvider provider, ExpProtocol protocol) throws SQLException
     {
         JSONObject jsonObject = ExperimentJSONConverter.serializeRunGroup(batch, provider.getBatchDomain(protocol));
 

@@ -19,35 +19,62 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.study.actions.AssayRunUploadForm" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
+<%@ page import="org.labkey.api.exp.api.ExpExperiment" %>
+<%@ page import="org.labkey.api.exp.api.ExperimentService" %>
+<%@ page import="org.labkey.api.view.NotFoundException" %>
+<%@ page import="org.json.JSONObject" %>
+<%@ page import="org.labkey.study.controllers.assay.AssayController" %>
+<%@ page import="org.labkey.study.controllers.assay.actions.AbstractAssayAPIAction" %>
+<%@ page import="org.labkey.api.study.assay.AssayProvider" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    protected ExpExperiment lookupBatch(int batchId)
+    {
+        if (batchId == 0)
+            return null;
+        ExpExperiment batch = ExperimentService.get().getExpExperiment(batchId);
+        if (batch == null)
+        {
+            throw new NotFoundException("Could not find assay batch " + batchId);
+        }
+        if (!batch.getContainer().equals(getViewContext().getContainer()))
+        {
+            throw new NotFoundException("Could not find assay batch " + batchId + " in folder " + getViewContext().getContainer());
+        }
+        return batch;
+    }
+%>
 <%
     JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
     AssayRunUploadForm bean = me.getModelBean();
+    AssayProvider provider = bean.getProvider();
     ExpProtocol protocol = bean.getProtocol();
     int batchId = bean.getBatchId() == null ? 0 : bean.getBatchId().intValue();
+
+    Map<String, Object> assay = AssayController.serializeAssayDefinition(protocol, provider, getViewContext().getContainer());
 %>
 <script type="text/javascript">
     LABKEY.requiresClientAPI();
 </script>
 <script type="text/javascript">
-    var assay = null;
-    LABKEY.Assay.getById({
-        id: <%=protocol.getRowId()%>,
-        containerPath: LABKEY.ActionURL.getContainer(),
-        successCallback: function (assayDesigns) {
-            if (!assayDesigns || assayDesigns.length != 1)
-                Ext.Msg.alert("Expected an assay design for assay");
-            else
-                assay = assayDesigns[0];
-        },
-        failureCallback: function (response, options) {
-            Ext.Msg.alert("failed to get assay design");
-        }
-    });
-
-    var batch = new LABKEY.Assay.Batch(<%=protocol.getRowId()%>, <%=batchId%>);
+LABKEY.page = LABKEY.page || {};
+LABKEY.page.assay = <%= new JSONObject(assay).toString(2) %>;
+<%
+ if (batchId > 0)
+ {
+    ExpExperiment batch = lookupBatch(batchId);
+    JSONObject batchJson = AbstractAssayAPIAction.serializeBatch(batch, provider, protocol);
+    %>LABKEY.page.batch = new LABKEY.Exp.RunGroup(<%=batchJson.toString(2)%>);<%
+ }
+ else
+ {
+    %>LABKEY.page.batch = new LABKEY.Exp.RunGroup();<%
+ }
+%>
+LABKEY.page.batch.batchProtocolId = <%= protocol.getRowId() %>;
+LABKEY.page.batch.loaded = true;
 </script>
-
 <p>
 <%
     if (me.getView("nested") == null)

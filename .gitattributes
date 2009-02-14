@@ -1897,12 +1897,14 @@ study/src/org/labkey/study/assay/query/AssayListQueryView.java -text
 study/src/org/labkey/study/assay/query/AssayListTable.java -text
 study/src/org/labkey/study/assay/query/AssaySchema.java -text
 study/src/org/labkey/study/assay/query/TypeDisplayColumn.java -text
+study/src/org/labkey/study/assay/view/batchDetails.jsp -text
 study/src/org/labkey/study/assay/view/chooseAssayType.jsp -text
 study/src/org/labkey/study/assay/view/dataUpload.jsp -text
 study/src/org/labkey/study/assay/view/moduleAssayUpload.jsp -text
 study/src/org/labkey/study/assay/view/newUploadSet.jsp -text
 study/src/org/labkey/study/assay/view/publishChooseStudy.jsp -text
 study/src/org/labkey/study/assay/view/resultDetails.jsp -text
+study/src/org/labkey/study/assay/view/runDetails.jsp -text
 study/src/org/labkey/study/assay/view/tsvDataDescription.jsp -text
 study/src/org/labkey/study/controllers/BaseController.java -text
 study/src/org/labkey/study/controllers/BaseStudyController.java -text

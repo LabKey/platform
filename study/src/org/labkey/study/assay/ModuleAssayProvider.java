@@ -167,31 +167,6 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return required;
     }
 
-    /**
-     * Get a single row from the data table as a Map.
-     */
-    protected Map<String, Object> getDataRow(User user, Container container, ExpProtocol protocol, Object objectId)
-    {
-        UserSchema schema = AssayService.get().createSchema(user, container);
-        TableInfo table = createDataTable(schema, null, protocol);
-        List<ColumnInfo> columns = new ArrayList<ColumnInfo>(QueryService.get().getColumns(table, table.getDefaultVisibleColumns()).values());
-        SimpleFilter filter = new SimpleFilter("ObjectId", objectId);
-
-        Map<String, Object>[] maps = null;
-        try
-        {
-            maps = (Map<String, Object>[]) Table.select(table, columns, filter, null, Map.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-
-        if (maps == null || maps.length == 0)
-            return null;
-        return maps[0];
-    }
-
     @Override
     public FieldKey getParticipantIDFieldKey()
     {
@@ -249,7 +224,11 @@ public class ModuleAssayProvider extends TsvAssayProvider
     {
         File viewFile = getViewFile(domainType, details);
         if (viewFile.canRead())
-            return new ModuleHtmlView(viewFile);
+        {
+            ModuleHtmlView view = new ModuleHtmlView(viewFile);
+            view.setFrame(WebPartView.FrameType.NONE);
+            return view;
+        }
         return null;
     }
 
@@ -263,13 +242,31 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return view;
     }
 
+    public static class AssayPageBean
+    {
+        public ModuleAssayProvider provider;
+        public ExpProtocol expProtocol;
+    }
+
+    public static class BatchDetailsBean extends AssayPageBean
+    {
+        public ExpExperiment expExperiment;
+    }
+
     @Override
     public ModelAndView createBatchDetailsView(ViewContext context, ExpProtocol protocol, ExpExperiment batch)
     {
-        ModelAndView view = getCustomView(AssayDomainTypes.Batch, true);
-        if (view == null)
-            return null;
+        ModelAndView batchDetailsView = getCustomView(AssayDomainTypes.Batch, true);
+        if (batchDetailsView == null)
+            return super.createBatchDetailsView(context, protocol, batch);
 
+        BatchDetailsBean bean = new BatchDetailsBean();
+        bean.provider = this;
+        bean.expProtocol = protocol;
+        bean.expExperiment = batch;
+
+        JspView<BatchDetailsBean> view = new JspView<BatchDetailsBean>("/org/labkey/study/assay/view/batchDetails.jsp", bean);
+        view.setView("nested", batchDetailsView);
         return view;
     }
 
@@ -283,13 +280,25 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return view;
     }
 
+    public static class RunDetailsBean extends AssayPageBean
+    {
+        public ExpRun expRun;
+    }
+
     @Override
     public ModelAndView createRunDetailsView(ViewContext context, ExpProtocol protocol, ExpRun run)
     {
-        ModelAndView view = getCustomView(AssayDomainTypes.Run, true);
-        if (view == null)
-            return null;
+        ModelAndView runDetailsView = getCustomView(AssayDomainTypes.Run, true);
+        if (runDetailsView == null)
+            return super.createRunDetailsView(context, protocol, run);
 
+        RunDetailsBean bean = new RunDetailsBean();
+        bean.provider = this;
+        bean.expProtocol = protocol;
+        bean.expRun = run;
+
+        JspView<RunDetailsBean> view = new JspView<RunDetailsBean>("/org/labkey/study/assay/view/runDetails.jsp", bean);
+        view.setView("nested", runDetailsView);
         return view;
     }
 
@@ -301,11 +310,6 @@ public class ModuleAssayProvider extends TsvAssayProvider
             return null;
 
         return view;
-    }
-
-    public static class AssayPageBean
-    {
-        public ExpProtocol expProtocol;
     }
 
     public static class ResultDetailsBean extends AssayPageBean
@@ -322,6 +326,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
             return super.createResultDetailsView(context, protocol, data, objectId);
 
         ResultDetailsBean bean = new ResultDetailsBean();
+        bean.provider = this;
         bean.expProtocol = protocol;
         bean.expData = data;
         bean.objectId = objectId;
@@ -355,7 +360,11 @@ public class ModuleAssayProvider extends TsvAssayProvider
     {
         File viewFile = getUploadViewFile();
         if (viewFile.canRead())
-            return new HtmlView(PageFlowUtil.getFileContentsAsString(viewFile));
+        {
+            ModuleHtmlView view = new ModuleHtmlView(viewFile);
+            view.setFrame(WebPartView.FrameType.NONE);
+            return view;
+        }
         return null;
     }
 

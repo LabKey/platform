@@ -160,12 +160,13 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_READ)
-    public class AssayListAction extends ApiAction<AssayListForm>
+    public static class AssayListAction extends ApiAction<AssayListForm>
     {
         public ApiResponse execute(AssayListForm form, BindException errors) throws Exception
         {
+            Container c = getViewContext().getContainer();
             HashMap<ExpProtocol, AssayProvider> assayProtocols = new HashMap<ExpProtocol, AssayProvider>();
-            ExpProtocol[] protocols = ExperimentService.get().getExpProtocols(getContainer());
+            ExpProtocol[] protocols = ExperimentService.get().getExpProtocols(c);
             for (ExpProtocol protocol : protocols)
             {
                 AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -174,9 +175,9 @@ public class AssayController extends SpringActionController
                     assayProtocols.put(protocol, provider);
                 }
             }
-            if (!getContainer().isProject())
+            if (!c.isProject())
             {
-                protocols = ExperimentService.get().getExpProtocols(getContainer().getProject());
+                protocols = ExperimentService.get().getExpProtocols(c.getProject());
                 for (ExpProtocol protocol : protocols)
                 {
                     AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -187,53 +188,69 @@ public class AssayController extends SpringActionController
                 }
             }
 
-            List<Map<String, Object>> assayList = new ArrayList<Map<String, Object>>();
-            for (Map.Entry<ExpProtocol, AssayProvider> entry : assayProtocols.entrySet())
-            {
-                ExpProtocol protocol = entry.getKey();
-                AssayProvider provider = entry.getValue();
-                Map<String, Object> assayProperties = new HashMap<String, Object>();
-                assayProperties.put("type", provider.getName());
-                assayProperties.put("projectLevel", protocol.getContainer().isProject());
-                assayProperties.put("description", protocol.getDescription());
-                assayProperties.put("name", protocol.getName());
-                assayProperties.put("id", protocol.getRowId());
-                if (provider instanceof PlateBasedAssayProvider)
-                    assayProperties.put("plateTemplate", ((PlateBasedAssayProvider)provider).getPlateTemplate(getContainer(), protocol));
-
-                Map<String, List<Map<String, Object>>> domains = new HashMap<String, List<Map<String, Object>>>();
-                for (Domain domain : provider.getDomains(protocol))
-                {
-                    List<Map<String, Object>> propertyList = new ArrayList<Map<String, Object>>();
-                    for (DomainProperty property : domain.getProperties())
-                    {
-                        HashMap<String, Object> properties = new HashMap<String, Object>();
-                        properties.put("name", property.getName());
-                        properties.put("typeName", property.getType().getLabel());
-                        properties.put("typeURI", property.getType().getTypeURI());
-                        properties.put("label", property.getLabel());
-                        properties.put("description", property.getDescription());
-                        properties.put("formatString", property.getFormatString());
-                        properties.put("required", property.isRequired());
-                        if (property.getLookup() != null)
-                        {
-                            String containerPath = property.getLookup().getContainer() != null ? property.getLookup().getContainer().getPath() : null;
-                            properties.put("lookupContainer", containerPath);
-                            properties.put("lookupSchema", property.getLookup().getSchemaName());
-                            properties.put("lookupQuery", property.getLookup().getQueryName());
-                        }
-                        propertyList.add(properties);
-                    }
-
-                    domains.put(domain.getName(), propertyList);
-                }
-                assayProperties.put("domains", domains);
-                assayList.add(assayProperties);
-            }
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            response.put("definitions", assayList);
-            return response;
+            return serializeAssayDefinitions(assayProtocols, c);
         }
+
+    }
+
+    public static ApiResponse serializeAssayDefinitions(HashMap<ExpProtocol, AssayProvider> assayProtocols, Container c)
+    {
+        List<Map<String, Object>> assayList = new ArrayList<Map<String, Object>>();
+        for (Map.Entry<ExpProtocol, AssayProvider> entry : assayProtocols.entrySet())
+        {
+            ExpProtocol protocol = entry.getKey();
+            AssayProvider provider = entry.getValue();
+            Map<String, Object> assayProperties = serializeAssayDefinition(protocol, provider, c);
+            assayList.add(assayProperties);
+        }
+        ApiSimpleResponse response = new ApiSimpleResponse();
+        response.put("definitions", assayList);
+        return response;
+    }
+
+    public static Map<String, Object> serializeAssayDefinition(ExpProtocol protocol, AssayProvider provider, Container c)
+    {
+        Map<String, Object> assayProperties = new HashMap<String, Object>();
+        assayProperties.put("type", provider.getName());
+        assayProperties.put("projectLevel", protocol.getContainer().isProject());
+        assayProperties.put("description", protocol.getDescription());
+        assayProperties.put("name", protocol.getName());
+        assayProperties.put("id", protocol.getRowId());
+        if (provider instanceof PlateBasedAssayProvider)
+            assayProperties.put("plateTemplate", ((PlateBasedAssayProvider)provider).getPlateTemplate(c, protocol));
+
+        Map<String, List<Map<String, Object>>> domains = new HashMap<String, List<Map<String, Object>>>();
+        for (Domain domain : provider.getDomains(protocol))
+        {
+            domains.put(domain.getName(), serializeDomain(domain));
+        }
+        assayProperties.put("domains", domains);
+        return assayProperties;
+    }
+
+    private static List<Map<String, Object>> serializeDomain(Domain domain)
+    {
+        List<Map<String, Object>> propertyList = new ArrayList<Map<String, Object>>();
+        for (DomainProperty property : domain.getProperties())
+        {
+            HashMap<String, Object> properties = new HashMap<String, Object>();
+            properties.put("name", property.getName());
+            properties.put("typeName", property.getType().getLabel());
+            properties.put("typeURI", property.getType().getTypeURI());
+            properties.put("label", property.getLabel());
+            properties.put("description", property.getDescription());
+            properties.put("formatString", property.getFormatString());
+            properties.put("required", property.isRequired());
+            if (property.getLookup() != null)
+            {
+                String containerPath = property.getLookup().getContainer() != null ? property.getLookup().getContainer().getPath() : null;
+                properties.put("lookupContainer", containerPath);
+                properties.put("lookupSchema", property.getLookup().getSchemaName());
+                properties.put("lookupQuery", property.getLookup().getQueryName());
+            }
+            propertyList.add(properties);
+        }
+        return propertyList;
     }
 
     @RequiresPermission(ACL.PERM_READ)
@@ -514,12 +531,10 @@ public class AssayController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             Container c = getContainer();
-            ActionURL assayListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(c);
-            ActionURL runListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, _protocol);
+            ActionURL batchListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(c, _protocol, null);
 
-            return root
-                .addChild("Assay List", assayListURL)
-                .addChild(_protocol.getName() + " Runs", runListURL)
+            return super.appendNavTrail(root)
+                .addChild(_protocol.getName() + " Batches", batchListURL)
                 .addChild("Data Import");
         }
     }
