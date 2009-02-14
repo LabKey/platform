@@ -76,6 +76,7 @@ public class AssayBatchesView extends VBox
         if (minimizeLinks)
         {
             _batchesView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
+            _batchesView.setShowRecordSelectors(false);
         }
         else
         {

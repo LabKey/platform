@@ -21,8 +21,14 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.template.AppBar;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.data.Container;
+import org.labkey.api.util.PageFlowUtil;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 
@@ -60,5 +66,20 @@ public class AssayBatchDetailsAction extends BaseAssayAction<AssayBatchDetailsAc
 
         AssayProvider provider = AssayService.get().getProvider(_protocol);
         return provider.createBatchDetailsView(context, _protocol, _exp);
+    }
+
+    public NavTree appendNavTrail(NavTree root)
+    {
+        Container c = getContainer();
+        ActionURL batchListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(c, _protocol, null);
+
+        return super.appendNavTrail(root)
+            .addChild(_protocol.getName() + " Batches", batchListURL)
+            .addChild(_exp.getName() + " Details");
+    }
+
+    public AppBar getAppBar()
+    {
+        return getAppBar(_protocol);
     }
 }

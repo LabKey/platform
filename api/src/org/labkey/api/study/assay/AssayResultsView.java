@@ -57,6 +57,7 @@ public class AssayResultsView extends VBox
         if (_minimizeLinks)
         {
             _resultsView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
+            _resultsView.setShowRecordSelectors(false);
         }
         else
         {

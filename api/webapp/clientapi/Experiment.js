@@ -83,6 +83,116 @@ LABKEY.Experiment = new function()
                     'Content-Type' : 'application/json'
                 }
             });
+        },
+
+        /**
+         * Loads a batch from the server.
+         * @param config An object that contains the following configuration parameters
+         * @param {Nubmber} config.assayId The assay protocol id.
+         * @param {Number} config.batchId The batch id.
+         * @param {function} config.successCallback The function to call when the function finishes successfully.
+         * This function will be called with a the parameters:
+         * <ul>
+         * <li><b>batch</b> A new LABKEY.Exp.RunGroup object.
+         * <li><b>response</b> The original response
+         * </ul>
+         * @param {function} [config.errorCallback] The function to call if this function encounters an error.
+         * This function will be called with the following parameters:
+         * <ul>
+         * <li><b>response</b> The original response
+         * </ul>
+         */
+        loadBatch : function (config)
+        {
+            if (!config.successCallback) {
+                Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Exp.loadBatch()!");
+                return;
+            }
+
+            function successWrapper(response) {
+                var json = response.responseText;
+                try {
+                    var o = eval("(" + json + ")");
+                    if (o) {
+                        var batch = new LABKEY.Exp.RunGroup(o.batch);
+                        config.successCallback(batch, response);
+                    }
+                }
+                catch (e) {
+                    if (config.failureCallback)
+                        config.failureCallback.call(config.scope || this, response);
+                }
+            }
+
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("assay", "getAssayBatch", LABKEY.ActionURL.getContainer()),
+                method: 'POST',
+                success: successWrapper,
+                failure: config.failureCallback,
+                scope: config.scope,
+                jsonData : {
+                    assayId: config.assayId,
+                    batchId: config.batchId
+                },
+                headers : {
+                    'Content-Type' : 'application/json'
+                }
+            });
+        },
+
+        /**
+         * Saves a modified batch.
+         * @param config An object that contains the following configuration parameters
+         * @param {Nubmber} config.assayId The assay protocol id.
+         * @param {LABKEY.Exp.RunGroup} config.batch The modified batch object.
+         * @param {function} config.successCallback The function to call when the function finishes successfully.
+         * This function will be called with a the parameters:
+         * <ul>
+         * <li><b>batch</b> A new LABKEY.Exp.RunGroup object.  Some values will be filled in by the server.
+         * <li><b>response</b> The original response
+         * </ul>
+         * @param {function} [config.errorCallback] The function to call if this function encounters an error.
+         * This function will be called with the following parameters:
+         * <ul>
+         * <li><b>response</b> The original response
+         * </ul>
+         */
+        saveBatch : function (config)
+        {
+            if (!config.successCallback) {
+                Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Exp.saveBatch()!");
+                return
+            }
+
+            function successWrapper(response) {
+                var json = response.responseText;
+                try {
+                    var o = eval("(" + json + ")");
+                    if (o) {
+                        var batch = new LABKEY.Exp.RunGroup(o.batch);
+                        config.successCallback(batch, response);
+                    }
+                }
+                catch (e) {
+                    if (config.failureCallback)
+                        config.failureCallback.call(config.scope || this, response);
+                }
+            }
+
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("assay", "saveAssayBatch", LABKEY.ActionURL.getContainer()),
+                method: 'POST',
+                jsonData: {
+                    assayId: config.assayId,
+                    batch: config.batch
+                },
+                success: successWrapper,
+                failure: config.failureCallback,
+                scope: config.scope,
+                headers: {
+                    'Content-Type' : 'application/json'
+                }
+            });
         }
     };
 
@@ -91,8 +201,21 @@ LABKEY.Experiment = new function()
 Ext.namespace('LABKEY', 'LABKEY.Exp');
 
 /**
-* @namespace
-*/
+ * @class Experiment object base class.
+ * @extends Ext.util.Observable
+ * @memberOf LABKEY.Exp
+ *
+ * @property {String} lsid The LSID of the object.
+ * @property {String} name The name of the object.
+ * @property {number} id The id of this object.
+ * @property {number} rowId The id of this object.
+ * @property {String} comment
+ * @property {Date} created When the ExpObject was created.
+ * @property {String} createdBy Who created the ExpObject.
+ * @property {Date} modified When the ExpObject was last modified.
+ * @property {String} modifiedBy Who last modified the ExpObject.
+ * @property {Object} properties Map of property descriptor names to values.
+ */
 LABKEY.Exp.ExpObject = function (config) {
     config = config || {};
     this.lsid = config.lsid;
@@ -100,33 +223,23 @@ LABKEY.Exp.ExpObject = function (config) {
     this.id = config.id || config.rowId;
     this.rowId = this.id;
     this.comment = config.comment;
-
-    /**
-     * When the ExpObject was created.
-     * @type {Date}
-     */
     this.created = config.created;
-
-    /**
-     * Who created the ExpObject.
-     * @type {String}
-     */
     this.createdBy = config.createdBy;
-
     this.modified = config.modified;
     this.modifiedBy = config.modifiedBy;
-
-    /**
-     * Map of property descriptor names to values.
-     * @type {Object}
-     */
     this.properties = config.properties || {};
 };
-Ext.extend(LABKEY.Exp.ExpObject, LABKEY.Experiment);
 
 /**
-* @namespace
-*/
+ * @class Experiment Run.
+ * @extends LABKEY.Exp.ExpObject
+ * @memberOf LABKEY.Exp
+ *
+ * @property {Array} experiments List of {@link LABKEY.Exp.Experiment}s in the run.
+ * @property {String} protocol The {@link LABKEY.Exp.Protocol} for this run.
+ * @property {String} filePathRoot The file path where the run is rooted.  File paths in {@link LABKEY.Exp.Data} are relative from this root.
+ * @property {Array[LABKEY.Exp.Data]} dataInputs Array of {@link LABKEY.Exp.Data} input files.
+ */
 LABKEY.Exp.Run = function (config) {
     LABKEY.Exp.Run.superclass.constructor.call(this, config);
     config = config || {};
@@ -154,13 +267,15 @@ LABKEY.Exp.Run = function (config) {
 Ext.extend(LABKEY.Exp.Run, LABKEY.Exp.ExpObject);
 
 /**
-* @namespace
-*/
+ * @class Experiment protocol.
+ * @extends LABKEY.Exp.ExpObject
+ * @memberOf LABKEY.Exp
+ */
 LABKEY.Exp.Protocol = function (config) {
     LABKEY.Exp.Protocol.superclass.constructor.call(this, config);
     config = config || {};
 
-    this.protocolParameters = config.protocolParameters || [];
+    //this.protocolParameters = config.protocolParameters || [];
     this.instrument = config.instrument;
     this.software = config.software;
     this.contact = config.contact;
@@ -186,19 +301,26 @@ LABKEY.Exp.Protocol = function (config) {
 Ext.extend(LABKEY.Exp.Protocol, LABKEY.Exp.ExpObject);
 
 /**
-* @namespace
-*/
+ * @class Experiment Run Group.
+ * @extends LABKEY.Exp.ExpObject
+ * @memberOf LABKEY.Exp
+ *
+ * @parameter {Array[LABKEY.Exp.Run]} runs List of runs
+ * @parameter {Boolean} hidden
+ */
 LABKEY.Exp.RunGroup = function (config) {
     LABKEY.Exp.RunGroup.superclass.constructor.call(this, config);
     config = config || {};
 
+    this.batchProtocolId = config.batchProtocolId || 0;
     this.runs = [];
     if (config.runs) {
         for (var i = 0; i < config.runs.length; i++) {
             this.runs.push(new LABKEY.Exp.Run(config.runs[i]));
         }
     }
-    this.protocols = config.protocols || [];
+    //this.protocols = config.protocols || [];
+    //this.batchProtocol = config.batchProtocol;
     this.hidden = config.hidden;
 };
 Ext.extend(LABKEY.Exp.RunGroup, LABKEY.Exp.ExpObject);
@@ -222,6 +344,11 @@ LABKEY.Exp.ProtocolApplication = function (config) {
 };
 Ext.extend(LABKEY.Exp.ProtocolApplication, LABKEY.Exp.ExpObject);
 
+/**
+ * @class Experiment Sample Set
+ * @extends LABKEY.Exp.ExpObject
+ * @memberOf LABKEY.Exp
+ */
 LABKEY.Exp.SampleSet = function (config) {
     LABKEY.Exp.SampleSet.superclass.constructor.call(this, config);
     config = config || {};
@@ -236,6 +363,11 @@ LABKEY.Exp.SampleSet = function (config) {
 };
 Ext.extend(LABKEY.Exp.SampleSet, LABKEY.Exp.ExpObject);
 
+/**
+ * @class Experiment Child
+ * @extends LABKEY.Exp.ExpObject
+ * @memberOf LABKEY.Exp
+ */
 LABKEY.Exp.ChildObject = function (config) {
     LABKEY.Exp.ChildObject.superclass.constructor.call(this, config);
     config = config || {};
@@ -243,6 +375,11 @@ LABKEY.Exp.ChildObject = function (config) {
 };
 Ext.extend(LABKEY.Exp.ChildObject, LABKEY.Exp.ExpObject);
 
+/**
+ * @class Experiment Protocol Output
+ * @extends LABKEY.Exp.ExpObject
+ * @memberOf LABKEY.Exp
+ */
 LABKEY.Exp.ProtocolOutput = function (config) {
     LABKEY.Exp.ProtocolOutput.superclass.constructor.call(this, config);
     config = config || {};
@@ -256,6 +393,11 @@ LABKEY.Exp.ProtocolOutput = function (config) {
 };
 Ext.extend(LABKEY.Exp.ProtocolOutput, LABKEY.Exp.ExpObject);
 
+/**
+ * @class Experiment Material
+ * @extends LABKEY.Exp.ProtocolOutput
+ * @memberOf LABKEY.Exp
+ */
 LABKEY.Exp.Material = function (config) {
     LABKEY.Exp.Material.superclass.constructor.call(this, config);
     config = config || {};
@@ -266,8 +408,10 @@ LABKEY.Exp.Material = function (config) {
 Ext.extend(LABKEY.Exp.Material, LABKEY.Exp.ProtocolOutput);
 
 /**
-* @namespace
-*/
+ * @class Experiment Data.  A data input or output of a run.
+ * @extends LABKEY.Exp.ProtocolOutput
+ * @memberOf LABKEY.Exp
+ */
 LABKEY.Exp.Data = function (config) {
     LABKEY.Exp.Data.superclass.constructor.call(this, config);
     config = config || {};
@@ -275,7 +419,7 @@ LABKEY.Exp.Data = function (config) {
     this.dataType = config.dataType;
     this.dataFileURI = config.dataFileURI;
 
-    var jsonCallbackWrapper = function(fn, scope)
+    var jsonCallbackWrapper = function(fn, format, scope)
     {
         return function(response)
         {
@@ -292,7 +436,7 @@ LABKEY.Exp.Data = function (config) {
             }
 
             if(fn)
-                fn.call(scope || this, content, response);
+                fn.call(scope || this, content, format, response);
         };
     };
 
@@ -301,11 +445,18 @@ LABKEY.Exp.Data = function (config) {
      * Retrieves the contents of the data object from the server.
      * @param config An object that contains the following configuration parameters
      * @param {function} config.successCallback The function to call when the function finishes successfully.
-     * This function will be called with a single parameter, the type varies based on the format requested.
+     * This function will be called with a the parameters:
+     * <ul>
+     * <li><b>content</b> The type of the content varies based on the format requested.
+     * <li><b>format</b> The format used in the request
+     * <li><b>response</b> The original response
+     * </ul>
      * @param {function} [config.errorCallback] The function to call if this function encounters an error.
      * This function will be called with the following parameters:
      * <ul>
      * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message.</li>
+     * <li><b>format</b> The format used in the request
+     * <li><b>response</b> The original response
      * </ul>
      * @param {string} [config.format] How to format the content. Defaults to plaintext, supported for text/* MIME types,
      * including .html, .xml, .tsv, .txt, and .csv.. Use 'jsonTSV' to get a JSON version of the .xls, .tsv, .or .csv
