@@ -21,7 +21,7 @@
 /**
  * @namespace Assay batch information
 */
-LABKEY.Assay.Batch = function (assayId, batchId) {
+LABKEY.Assay.BatchLoader = function (assayId, batchId) {
 
     /**
      * Read-only. The assay id.  Provided by the server.
@@ -53,7 +53,7 @@ LABKEY.Assay.Batch = function (assayId, batchId) {
     );
 };
 
-Ext.extend(LABKEY.Assay.Batch, Ext.util.Observable, {
+Ext.extend(LABKEY.Assay.BatchLoader, Ext.util.Observable, {
     isLoading : function () {
         return !!this.transId;
     },
