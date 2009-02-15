@@ -151,13 +151,20 @@ public class QueryControllerSpring extends SpringActionController
             if (form.getSchemaName().isEmpty())
                 return HttpView.redirect(actionURL(QueryAction.begin));
 
-            JspView<QueryForm> customQueriesView = new JspView<QueryForm>(QueryControllerSpring.class, "customQueriesList.jsp", form, errors);
-            customQueriesView.setTitle("User-Defined Queries");
-            customQueriesView.setFrame(WebPartView.FrameType.PORTAL);
-            JspView<QueryForm> builtInTablesView = new JspView<QueryForm>(QueryControllerSpring.class, "builtInTablesList.jsp", form, errors);
-            builtInTablesView.setTitle("Built-In Tables");
-            builtInTablesView.setFrame(WebPartView.FrameType.PORTAL);
-            return new VBox(customQueriesView, builtInTablesView);
+            if (form.getSchema() == null)
+            {
+                return new HtmlView("<span class='labkey-error'>Schema '" + form.getSchemaName() + "' does not exist.</span>");
+            }
+            else
+            {
+                JspView<QueryForm> customQueriesView = new JspView<QueryForm>(QueryControllerSpring.class, "customQueriesList.jsp", form, errors);
+                customQueriesView.setTitle("User-Defined Queries");
+                customQueriesView.setFrame(WebPartView.FrameType.PORTAL);
+                JspView<QueryForm> builtInTablesView = new JspView<QueryForm>(QueryControllerSpring.class, "builtInTablesList.jsp", form, errors);
+                builtInTablesView.setTitle("Built-In Tables");
+                builtInTablesView.setFrame(WebPartView.FrameType.PORTAL);
+                return new VBox(customQueriesView, builtInTablesView);
+            }
         }
 
         public NavTree appendNavTrail(NavTree root)
