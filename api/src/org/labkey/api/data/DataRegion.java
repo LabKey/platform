@@ -762,7 +762,10 @@ public class DataRegion extends DisplayElement
         out.write("<tr><td nowrap>\n");
         if (renderButtons && _buttonBarPosition.atBottom())
         {
-            _gridButtonBar.render(ctx, out);
+            // 7024: don't render bottom buttons if the button bar already
+            // appears at the top and it's a small result set
+            if (!_buttonBarPosition.atTop() && !isSmallResultSet())
+                _gridButtonBar.render(ctx, out);
         }
         out.write("</td>");
 
@@ -776,12 +779,19 @@ public class DataRegion extends DisplayElement
             renderFormEnd(ctx, out);
     }
 
+    protected boolean isSmallResultSet()
+    {
+        if (_totalRows != null && _totalRows < 10)
+            return true;
+        if (_complete && _offset == 0 && _rowCount != null && _rowCount.intValue() < 10)
+            return true;
+        return false;
+    }
+
     protected void renderPagination(RenderContext ctx, Writer out)
             throws IOException
     {
-        if (_totalRows != null && _totalRows < 10)
-            return;
-        if (_complete && _offset == 0 && _rowCount != null && _rowCount.intValue() < 10)
+        if (isSmallResultSet())
             return;
 
         out.write("<div class=\"labkey-pagination\" style=\"visibility:hidden;\">");
@@ -1876,6 +1886,10 @@ public class DataRegion extends DisplayElement
         public boolean atBottom()
         {
             return _atBottom;
+        }
+        public boolean atBoth()
+        {
+            return _atTop && _atBottom;
         }
     }
 
