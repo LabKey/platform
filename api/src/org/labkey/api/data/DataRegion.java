@@ -764,7 +764,7 @@ public class DataRegion extends DisplayElement
         {
             // 7024: don't render bottom buttons if the button bar already
             // appears at the top and it's a small result set
-            if (!_buttonBarPosition.atTop() && !isSmallResultSet())
+            if (!_buttonBarPosition.atTop() || !isSmallResultSet())
                 _gridButtonBar.render(ctx, out);
         }
         out.write("</td>");
