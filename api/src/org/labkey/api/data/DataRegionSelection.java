@@ -50,13 +50,16 @@ public class DataRegionSelection
         {
             key = context.getContainer().getPath() + key + SELECTED_VALUES;
             HttpSession session = context.getRequest().getSession(false);
-            Set<String> result = (Set<String>)session.getAttribute(key);
-            if (result == null && create)
+            if (session != null)
             {
-                result = new LinkedHashSet<String>();
-                session.setAttribute(key, result);
+                Set<String> result = (Set<String>)session.getAttribute(key);
+                if (result == null && create)
+                {
+                    result = new LinkedHashSet<String>();
+                    session.setAttribute(key, result);
+                }
+                return result;
             }
-            return result;
         }
         return Collections.emptySet();
     }
