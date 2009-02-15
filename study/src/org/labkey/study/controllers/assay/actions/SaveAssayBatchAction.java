@@ -248,6 +248,13 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             object.setName(jsonObject.getString(ExperimentJSONConverter.NAME));
         }
 
+        if (jsonObject.has(ExperimentJSONConverter.COMMENT))
+        {
+            Object comment = jsonObject.get(ExperimentJSONConverter.COMMENT);
+            if (comment != null)
+                object.setComment(getViewContext().getUser(), comment.toString());
+        }
+
         object.save(getViewContext().getUser());
         OntologyManager.ensureObject(object.getContainer(), object.getLSID());
 

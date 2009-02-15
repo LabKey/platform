@@ -82,14 +82,14 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
         }
     }
 
-    public void setComment(User user, String comment) throws Exception
+    public void setComment(User user, String comment) throws ValidationException
     {
         comment = StringUtils.trimToNull(comment);
         try
         {
             setProperty(user, ExperimentProperty.COMMENT.getPropertyDescriptor(), comment);
         }
-        catch (Exception e)
+        catch (RuntimeException e)
         {
             // sometimes multiple threads attempt to set the same comment.
             // Don't throw an exception if the comment was actually set to the correct value.
