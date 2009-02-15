@@ -710,7 +710,7 @@ public class DataRegion extends DisplayElement
         out.write("</td>");
 
         out.write("<td align=\"right\" valign=\"bottom\" nowrap>\n");
-        if (_showPagination)
+        if (_showPagination && _buttonBarPosition.atTop())
             renderPagination(ctx, out);
         out.write("</td></tr>\n");
 
@@ -767,7 +767,7 @@ public class DataRegion extends DisplayElement
         out.write("</td>");
 
         out.write("<td align=\"right\" valign=\"top\" nowrap>\n");
-        if (_showPagination)
+        if (_showPagination && _buttonBarPosition.atBottom())
             renderPagination(ctx, out);
         out.write("</td></tr>\n");
         out.write("</table>");
