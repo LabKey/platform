@@ -37,6 +37,7 @@ public class ExperimentJSONConverter
     public static final String NAME = "name";
     public static final String LSID = "lsid";
     public static final String PROPERTIES = "properties";
+    public static final String COMMENT = "comment";
 
     // Run properties
     public static final String DATA_INPUTS = "dataInputs";
@@ -79,6 +80,9 @@ public class ExperimentJSONConverter
             jsonObject.put(MODIFIED_BY, object.getModifiedBy().getEmail());
         }
         jsonObject.put(MODIFIED, object.getModified());
+        String comment = object.getComment();
+        if (comment != null)
+            jsonObject.put(COMMENT, object.getComment());
 
         // Add the custom properties
         if (domain != null)

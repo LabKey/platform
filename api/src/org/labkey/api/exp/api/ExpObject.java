@@ -46,7 +46,7 @@ public interface ExpObject extends Identifiable
     Object getProperty(DomainProperty prop);
 
     String getComment();
-    void setComment(User user, String comment) throws Exception;
+    void setComment(User user, String comment) throws ValidationException;
     String urlFlag(boolean flagged);
 
     User getCreatedBy();
