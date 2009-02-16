@@ -27,7 +27,6 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.experiment.controllers.exp.ExperimentMembershipDisplayColumnFactory;
 import org.labkey.experiment.controllers.exp.ExperimentController;
-import org.jetbrains.annotations.NotNull;
 
 import java.sql.Types;
 import java.util.*;
@@ -167,12 +166,12 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         if (_schema.getContainer().equals(ContainerManager.getSharedContainer()))
         {
             // If we're in the /Shared project, look everywhere
-            setContainerFilter(new ContainerFilter.AllInSite(_schema.getUser()));
+            setContainerFilter(ContainerFilter.Filters.ALL_IN_SITE, _schema.getUser());
         }
         else if (getContainer().isProject())
         {
             // If we're in a project, look in subfolders
-            setContainerFilter(new ContainerFilter.CurrentAndSubfolders(_schema.getUser()));
+            setContainerFilter(ContainerFilter.Filters.CURRENT_AND_SUBFOLDERS, _schema.getUser());
         }
     }
 
@@ -562,11 +561,5 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return false;
         }
         return _experiment == null;
-    }
-
-    @Override
-    public void setContainerFilter(@NotNull ContainerFilter filter)
-    {
-        super.setContainerFilter(filter);
     }
 }

@@ -456,9 +456,9 @@ public class AssayController extends SpringActionController
         private ExpProtocol _protocol;
         public ModelAndView getView(PublishHistoryForm form, BindException errors) throws Exception
         {
-            ContainerFilter containerFilter = ContainerFilter.CURRENT;
+            ContainerFilter containerFilter = ContainerFilter.Filters.CURRENT;
             if (form.getContainerFilterName() != null)
-                containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getViewContext().getUser());
+                containerFilter = ContainerFilter.Filters.valueOf(form.getContainerFilterName());
 
             _protocol = getProtocol(form);
             VBox view = new VBox();

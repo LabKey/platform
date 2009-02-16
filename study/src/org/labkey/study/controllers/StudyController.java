@@ -729,10 +729,7 @@ public class StudyController extends BaseStudyController
                 Container c = protocol.getContainer();
                 if (c.hasPermission(getUser(), ACL.PERM_READ))
                 {
-                    ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(
-                            c,
-                            protocol, 
-                            new ContainerFilter.CurrentAndSubfolders(getUser()));
+                    ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, protocol, ContainerFilter.Filters.CURRENT_AND_SUBFOLDERS);
                     ActionButton viewAssayButton = new ActionButton("View Source Assay", url);
                     buttonBar.add(viewAssayButton);
                 }

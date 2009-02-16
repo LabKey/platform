@@ -133,7 +133,7 @@ public class AssaySchema extends UserSchema
         final ExpExperimentTable result = new ExpSchema(getUser(), getContainer()).createExperimentsTable(getBatchesTableName(protocol), alias);
         if (containerFilter != null)
         {
-            result.setContainerFilter(containerFilter);
+            result.setContainerFilter(containerFilter, getUser());
         }
         ActionURL runsURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), protocol, result.getContainerFilter());
 

@@ -16,19 +16,16 @@
 
 package org.labkey.experiment.controllers.exp;
 
-import jxl.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
-import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -41,8 +38,6 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
-import org.labkey.common.tools.ColumnDescriptor;
-import org.labkey.common.tools.TabLoader;
 import org.labkey.experiment.*;
 import org.labkey.experiment.api.*;
 import org.labkey.experiment.controllers.property.PropertyController;
@@ -50,21 +45,27 @@ import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.samples.UploadMaterialSetForm;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 import org.labkey.experiment.xar.XarExportSelection;
+import org.labkey.common.tools.TabLoader;
+import org.labkey.common.tools.ColumnDescriptor;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
-import javax.imageio.ImageIO;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 import java.io.*;
 import java.net.URI;
 import java.sql.SQLException;
 import java.util.*;
+import java.awt.image.BufferedImage;
+
+import jxl.*;
 
 /**
  * User: jeckels
@@ -563,7 +564,7 @@ public class ExperimentController extends SpringActionController
 
             ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), ExperimentRunType.ALL_RUNS_TYPE, true);
             runListView.getRunTable().setRuns(successorRuns);
-            runListView.getRunTable().setContainerFilter(new ContainerFilter.AllInSite(getUser()));
+            runListView.getRunTable().setContainerFilter(ContainerFilter.Filters.ALL_IN_SITE, getUser());
             runListView.setTitle("Runs using this material or a derived material");
             vbox.addView(runListView);
 
@@ -912,7 +913,7 @@ public class ExperimentController extends SpringActionController
 
             ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), ExperimentRunType.ALL_RUNS_TYPE, true);
             runListView.getRunTable().setInputData(_data);
-            runListView.getRunTable().setContainerFilter(new ContainerFilter.AllInSite(getUser()));
+            runListView.getRunTable().setContainerFilter(ContainerFilter.Filters.ALL_IN_SITE, getUser());
             runListView.setTitle("Runs using this data as an input");
             VBox vbox = new VBox(new StandardAndCustomPropertiesView(detailsView, cpv), runListView);
 

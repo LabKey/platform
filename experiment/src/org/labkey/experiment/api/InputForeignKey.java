@@ -50,7 +50,7 @@ public class InputForeignKey extends LookupForeignKey
     public TableInfo getLookupTableInfo()
     {
         ExpProtocolApplicationTable ret = ExperimentService.get().createProtocolApplicationTable(ExpSchema.TableType.ProtocolApplications.toString(), "InputLookup", _schema);
-        ret.setContainerFilter(_filter);
+        ret.setContainerFilter(_filter, _schema.getUser());
         SamplesSchema samplesSchema = _schema.getSamplesSchema();
         for (String role : getDataInputs())
         {
