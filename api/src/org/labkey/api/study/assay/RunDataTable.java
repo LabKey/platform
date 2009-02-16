@@ -92,7 +92,7 @@ public class RunDataTable extends FilteredTable
             public TableInfo getLookupTableInfo()
             {
                 ExpRunTable expRunTable = AssayService.get().createRunTable(null, protocol, provider, schema.getUser(), schema.getContainer());
-                expRunTable.setContainerFilter(getContainerFilter());
+                expRunTable.setContainerFilter(getContainerFilter(), schema.getUser());
                 return expRunTable;
             }
         });

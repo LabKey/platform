@@ -60,7 +60,7 @@ public class ShowSelectedDataAction extends RedirectAction<ShowSelectedDataActio
             selectedIds[i++] = Integer.parseInt(id);
         ContainerFilter containerFilter = null;
         if (form.getContainerFilterName() != null)
-            containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getViewContext().getUser());
+            containerFilter = ContainerFilter.Filters.valueOf(form.getContainerFilterName());
 
         ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getViewContext().getContainer(), form.getProtocol(), containerFilter, selectedIds);
         if (form.getContainerFilterName() != null)

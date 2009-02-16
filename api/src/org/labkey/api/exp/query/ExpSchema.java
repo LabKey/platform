@@ -97,8 +97,7 @@ public class ExpSchema extends AbstractExpSchema
     public ExpExperimentTable createExperimentsTableWithRunMemberships(String alias, ExpRun run)
     {
         ExpExperimentTable ret = createExperimentsTable(EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME, alias);
-        if (_containerFilter != null)
-            ret.setContainerFilter(_containerFilter);
+        ret.setContainerFilter(_containerFilter, _user);
         ret.getColumn(ExpExperimentTable.Column.RunCount).setIsHidden(true);
 
         ret.addExperimentMembershipColumn(run);
@@ -212,7 +211,7 @@ public class ExpSchema extends AbstractExpSchema
             public TableInfo getLookupTableInfo()
             {
                 ExpProtocolTable protocolTable = createProtocolsTable("Protocols");
-                protocolTable.setContainerFilter(ContainerFilter.EVERYTHING);
+                protocolTable.setContainerFilter(ContainerFilter.EVERYTHING, _user);
                 return protocolTable;
             }
         };

@@ -93,8 +93,7 @@ public class SamplesSchema extends AbstractExpSchema
     public ExpMaterialTable getSampleTable(String alias, ExpSampleSet ss)
     {
         ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), alias, this);
-        if (_containerFilter != null)
-            ret.setContainerFilter(_containerFilter);
+        ret.setContainerFilter(_containerFilter, _user);
         ret.populate(ss, true);
         QueryService.get().overlayMetadata(ret, ret.getPublicName(), SamplesSchema.this);
         return ret;

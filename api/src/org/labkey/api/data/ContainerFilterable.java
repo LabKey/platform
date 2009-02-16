@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.security.User;
 
 /**
  * User: jgarms
@@ -23,10 +24,8 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface ContainerFilterable extends TableInfo
 {
-    public void setContainerFilter(@NotNull ContainerFilter containerFilter);
+    public void setContainerFilter(@NotNull ContainerFilter containerFilter, User user);
 
     @NotNull
     public ContainerFilter getContainerFilter();
-
-    public boolean hasDefaultContainerFilter();
 }

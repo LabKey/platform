@@ -27,7 +27,7 @@ import org.labkey.api.data.ContainerFilter;
  */
 public abstract class AbstractExpSchema extends UserSchema
 {
-    protected ContainerFilter _containerFilter = null;
+    protected ContainerFilter _containerFilter = ContainerFilter.Filters.CURRENT;
 
     public AbstractExpSchema(String name, User user, Container container, DbSchema dbSchema)
     {
@@ -36,8 +36,7 @@ public abstract class AbstractExpSchema extends UserSchema
 
     protected <T extends ExpTable> T setupTable(T table)
     {
-        if (_containerFilter != null)
-            table.setContainerFilter(_containerFilter);
+        table.setContainerFilter(_containerFilter, _user);
         table.populate();
         return table;
     }

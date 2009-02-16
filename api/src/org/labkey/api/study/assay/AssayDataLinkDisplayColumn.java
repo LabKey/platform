@@ -66,13 +66,6 @@ public class AssayDataLinkDisplayColumn extends DataColumn
             out.write("<a href=\"" + url.getLocalURIString() + "\" title=\"View the data for just this run\">" +
                     PageFlowUtil.filter(getDisplayColumn().getValue(ctx)) + "</a>");
         }
-        else
-        {
-            out.write("<font class='labkey-error'>");
-            out.write(PageFlowUtil.filter(getDisplayColumn().getValue(ctx)));
-            out.write(": Error: no protocol or run found in result set");
-            out.write("</font>");
-        }
     }
 
     public void addQueryColumns(Set<ColumnInfo> columns)

@@ -198,7 +198,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             TableInfo table = schema.getTable(AssayService.get().getResultsTableName(_protocol), null);
             if (table instanceof ContainerFilterable && publishForm.getContainerFilterName() != null)
             {
-                ((ContainerFilterable)table).setContainerFilter(ContainerFilter.getContainerFilterByName(publishForm.getContainerFilterName(), getViewContext().getUser()));
+                ((ContainerFilterable)table).setContainerFilter(ContainerFilter.Filters.valueOf(publishForm.getContainerFilterName()), getViewContext().getUser());
             }
             ColumnInfo dataRowIdColumn = QueryService.get().getColumns(table, Collections.singleton(provider.getDataRowIdFieldKey())).get(provider.getDataRowIdFieldKey());
             assert dataRowIdColumn  != null : "Could not find dataRowId column in assay results table";
