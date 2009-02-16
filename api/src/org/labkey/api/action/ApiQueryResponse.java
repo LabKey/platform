@@ -260,18 +260,20 @@ public class ApiQueryResponse implements ApiResponse
 
     protected void putValue(Map<String,Object> row, DisplayColumn dc) throws Exception
     {
-        Object value = dc.getValue(_ctx); //FIX: 5682 -- always use getVale() so that we return raw FK value instead of display value
-
-        if(value instanceof Date)
-            row.put(dc.getColumnInfo().getName(), _dateFormat.format(value));
-        else
-            row.put(dc.getColumnInfo().getName(), value);
+        Object value = getColumnValue(dc);
+        row.put(dc.getColumnInfo().getName(), value);
 
         //if the display column has a url, include that as another row property
         //with the name "<URL_COL_PREFIX><colname>"
         String url = dc.getURL(_ctx);
         if(null != value && null != url)
             row.put(URL_COL_PREFIX + dc.getColumnInfo().getName(), url);
+    }
+
+    protected Object getColumnValue(DisplayColumn dc)
+    {
+        Object value = dc.getValue(_ctx);
+        return value instanceof Date ? _dateFormat.format(value) : value;
     }
 
     protected boolean isEditable(DisplayColumn dc)
@@ -287,6 +289,11 @@ public class ApiQueryResponse implements ApiResponse
                 && null != dc.getColumnInfo().getFkTableInfo()
                 && dc.getColumnInfo().getFkTableInfo().isPublic());
 
+    }
+
+    protected RenderContext getRenderContext()
+    {
+        return _ctx;
     }
 
 }

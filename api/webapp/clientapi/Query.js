@@ -244,6 +244,11 @@ LABKEY.Query = new function()
         *        Use this along with the maxRows config property to request pages of data.
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
         *       generating a timeout error (defaults to 30000).
+        * @param {Double} [config.apiVersion] Set to 9.1 to receive the ExtendedSelectRowsResults format
+                  instead of the SelectRowsResults format. The main difference is that in the
+                  ExtendedSelectRowsResults format each column in each row
+                  will be another object (not just a scalar value) with a "value" property as well as other
+                  related properties (url, qcValue, qcIndicator, etc.)
         * @example Example: <pre name="code" class="xml">
 &lt;script type="text/javascript"&gt;
 	LABKEY.requiresClientAPI();
@@ -271,6 +276,7 @@ LABKEY.Query = new function()
 &lt;/script&gt; </pre>
 		* @see LABKEY.Query.SelectRowsOptions
 		* @see LABKEY.Query.SelectRowsResults
+        * @see LABKEY.Query.ExtendedSelectRowsResults
 		*/
         selectRows : function(config)
         {
@@ -325,6 +331,9 @@ LABKEY.Query = new function()
 
             if(config.timeout)
                 Ext.Ajax.timeout = config.timeout;
+
+            if(config.apiVersion)
+                dataObject.apiVersion = config.apiVersion;
 
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'getQuery', config.containerPath),
@@ -673,6 +682,53 @@ LABKEY.Query = new function()
 
 /**
 * @namespace
+* @description ExtendedSelectRowsResults static class to describe the first
+            object passed to the successCallback function by
+            {@link LABKEY.Query#selectRows} if the includeExtendedColumnInfo
+            configuration property was set to true.
+* @property {Object} metaData Contains type and lookup information about the
+            columns in the resultset.
+ * @property {String} metaData.root	Name of the property containing rows
+            ("rows"). This is mainly for the Ext grid component.
+* @property {String} metaData.totalProperty	Name of the top-level property
+            containing the row count ("rowCount") in our case. This is mainly
+            for the Ext grid component.
+* @property {Object} metaData.sortInfo	Sort specification in Ext grid terms.
+            This contains two sub-properties, field and direction, which indicate
+            the sort field and direction ("ASC" or "DESC") respectively.
+* @property {String} metaData.id	Name of the primary key column.
+* @property {Object[]} metaData.fields	Array of field information.
+* @property {Object[]} metaData.fields	Array of field information.
+            Each field has the following properties:
+            <ul><li>name -- The name of the field</li>
+            <li>type -- JavaScript type name of the field</li>
+            <li>lookup -- If the field is a lookup, there will
+                be three sub-properties listed under this property:
+                schema, table, and column, which describe the schema, table, and
+                display column of the lookup table (query).</li></ul>
+* @property {String} columnModel Contains information about how one may interact
+            with the columns within a user interface. This format is generated
+            to match the requirements of the Ext grid component. See
+            <a href="http://extjs.com/deploy/dev/docs/?class=Ext.grid.ColumnModel">
+            Ext.grid.ColumnModel</a> for further information.
+* @property {Object[]} rows An array of rows, each of which is a
+            sub-element/object containing an object per column. The
+            object will always contain a property named "value" that is the
+            column's value, but it may also contain other properties about
+            that column's value. For example, if the column was setup to track
+            QC information, it will also contain a property named qcValue (which
+            is the raw value that is considered suspect), and a property named
+            qcIndicator, which will be the string QC indicator (e.g., ".Q").
+* @property {Integer} rowCount Indicates the number of total rows that could be
+            returned by the query, which may be more than the number of objects
+            in the rows array if the client supplied a value for the query.maxRows
+            or query.offset parameters. This value is useful for clients that wish
+            to display paging UI, such as the Ext grid.
+* @see LABKEY.Query#selectRows
+*/ LABKEY.Query.ExtendedSelectRowsResults = new function() {};
+
+/**
+* @namespace
 * @description SelectRowsOptions static class to describe
             the second object passed to the successCallback function by
             {@link LABKEY.Query#selectRows}.  This object's properties are useful for
@@ -714,12 +770,6 @@ LABKEY.Query = new function()
             <li>startswith = starts with</li>
             <li>doesnotstartwith = does not start with</li>
             <li>in = equals one of</li></ul>
-* @property {Bool} [lookups="true"]	If 'true' (as by default), the {@link LABKEY.Query.SelectRowsResult}
-            for {@link LABKEY.Query#selectRows} will contain the
-            foreign key value for lookup columns and include lookup information
-            (schema and table) for this column in its metaData property. If 'false,'
-            the display value will be for lookup columns instead of the
-            foreign key value, and no lookup information will be supplied to the SelectRowsResult.
 * @see LABKEY.Query#selectRows
 */ LABKEY.Query.SelectRowsOptions = new function() {};
 

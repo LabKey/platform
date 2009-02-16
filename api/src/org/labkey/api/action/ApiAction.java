@@ -43,6 +43,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     private ApiResponseWriter.Format _reqFormat = null;
     private ApiResponseWriter.Format _respFormat = ApiResponseWriter.Format.JSON;
     private String _contentTypeOverride = null;
+    private double _requestedApiVersion = 0;
 
     protected enum CommonParameters
     {
@@ -170,6 +171,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
 
     protected void checkApiVersion(double reqVersion) throws ApiVersionException
     {
+        _requestedApiVersion = reqVersion;
         double curVersion = getApiVersion();
         if(reqVersion > curVersion)
             throw new ApiVersionException(reqVersion, curVersion);
@@ -181,6 +183,11 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         //default version is 8.3, since we made several changes in core code
         //to properly support API clients
         return null != version ? version.value() : 8.3;
+    }
+
+    public double getRequestedApiVersion()
+    {
+        return _requestedApiVersion;
     }
 
     protected JSONObject getJsonObject() throws Exception
