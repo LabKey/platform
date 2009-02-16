@@ -213,6 +213,12 @@ public class ExcelColumn extends RenderColumn
         WritableCell cell = null;
         Object o = _dc.getDisplayValue(ctx);
 
+        // Handle QC values
+        if (_dc instanceof QCDisplayColumn)
+        {
+            o = _dc.getTsvFormattedValue(ctx);
+        }
+
         // For null values, leave the cell blank
         if (null == o)
             return;

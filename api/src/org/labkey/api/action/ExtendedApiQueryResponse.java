@@ -15,15 +15,16 @@
  */
 package org.labkey.api.action;
 
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.QCDisplayColumn;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.view.ViewContext;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
-import java.util.Date;
 
 /*
 * User: Dave
@@ -42,6 +43,7 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         value,
         qcValue,
         qcIndicator,
+        qcRawValue,
         url
     }
 
@@ -69,7 +71,14 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         if(null != value && null != url)
             colMap.put(ColMapEntry.url.name(), url);
 
-        //qc values...
+        //qc values
+        if (dc instanceof QCDisplayColumn)
+        {
+            QCDisplayColumn qcColumn = (QCDisplayColumn)dc;
+            RenderContext ctx = getRenderContext();
+            colMap.put(ColMapEntry.qcValue.name(), qcColumn.getQcValue(ctx));
+            colMap.put(ColMapEntry.qcRawValue.name(), qcColumn.getRawValue(ctx));
+        }
 
         //put the column map into the row map using the column name as the key
         row.put(dc.getName(), colMap);

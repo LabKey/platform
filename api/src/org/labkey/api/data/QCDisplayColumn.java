@@ -17,10 +17,12 @@
 package org.labkey.api.data;
 
 import org.labkey.api.view.HttpView;
+import org.apache.commons.beanutils.ConvertUtils;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Set;
+import java.text.Format;
 
 /**
  * User: jgarms
@@ -52,7 +54,7 @@ public class QCDisplayColumn extends DataColumn
         return super.getFormattedValue(ctx);
     }
 
-    private String getQcValue(RenderContext ctx)
+    public String getQcValue(RenderContext ctx)
     {
         Object qcValueObject = qcValueColumn.getValue(ctx);
         if (qcValueObject != null)
@@ -62,6 +64,11 @@ public class QCDisplayColumn extends DataColumn
         return null;
     }
 
+    public Object getRawValue(RenderContext ctx)
+    {
+        return super.getValue(ctx);
+    }
+
     public Object getDisplayValue(RenderContext ctx)
     {
         return getFormattedValue(ctx);
@@ -69,7 +76,22 @@ public class QCDisplayColumn extends DataColumn
 
     public String getTsvFormattedValue(RenderContext ctx)
     {
-        return getFormattedValue(ctx);
+        Format format = getTsvFormat();
+        if (format == null)
+        {
+            format = getFormat();
+        }
+
+        Object value = getValue(ctx);
+
+        if (null == value)
+            return "";
+
+        if (null != format)
+            return format.format(value);
+        else if (value instanceof String)
+            return (String)value;
+        return ConvertUtils.convert(value);
     }
 
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
