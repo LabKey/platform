@@ -79,7 +79,8 @@ public abstract class AbstractConvertHelper
         {
             if (o instanceof String)
             {
-                o = ((String) o).trim();
+                // 2956 : AbstractConvertHelper shouldn't trim Strings
+                //o = ((String) o).trim();
                 if (((String) o).length() == 0)
                     return null;
             }
