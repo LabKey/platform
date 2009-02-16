@@ -23,38 +23,37 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.data.*;
+import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.*;
-import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.*;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.IdentifierString;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.CustomViewImpl;
 import org.labkey.query.QueryDefinitionImpl;
 import org.labkey.query.TableXML;
-import org.labkey.query.metadata.MetadataServiceImpl;
-import org.labkey.query.metadata.client.MetadataEditor;
-import org.labkey.query.sql.Query;
-import org.labkey.query.sql.SqlParser;
 import org.labkey.query.data.DbUserSchemaUpdateService;
 import org.labkey.query.design.DgMessage;
 import org.labkey.query.design.ErrorsDocument;
 import org.labkey.query.design.QueryDocument;
 import org.labkey.query.design.ViewDocument;
+import org.labkey.query.metadata.MetadataServiceImpl;
+import org.labkey.query.metadata.client.MetadataEditor;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.DbUserSchemaDef;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
+import org.labkey.query.sql.Query;
+import org.labkey.query.sql.SqlParser;
 import org.labkey.query.view.DbUserSchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1635,7 +1634,6 @@ public class QueryControllerSpring extends SpringActionController
                                                             row);
             if(null != deletedRow)
                 responseRows.add(deletedRow);
-
         }
     }
 
