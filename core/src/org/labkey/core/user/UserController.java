@@ -114,7 +114,7 @@ public class UserController extends SpringActionController
         String columnNames = "Email, DisplayName, FirstName, LastName, Phone, Mobile, Pager, IM, Description";
 
         if (user != null && (user.isAdministrator() || c.hasPermission(user, ACL.PERM_ADMIN)))
-            columnNames = columnNames + ", UserId, LastLogin, Active";
+            columnNames = columnNames + ", UserId, Created, LastLogin, Active";
 
         return columnNames;
     }
