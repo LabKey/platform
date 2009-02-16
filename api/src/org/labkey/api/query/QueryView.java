@@ -801,23 +801,20 @@ public class QueryView extends WebPartView<Object>
 
             ContainerFilter selectedFilter = table.getContainerFilter();
 
-            for (ContainerFilter filter : ContainerFilter.Filters.values())
+            for (ContainerFilter filter : ContainerFilter.getPublicFilters(getSchema().getUser()))
             {
-                if (filter.isPublicFilter())
+                ActionURL url = getViewContext().getActionURL().clone();
+                String propName = getDataRegionName() + ".containerFilterName";
+                url.replaceParameter(propName, filter.name());
+                NavTree filterItem = new NavTree(filter.toString(), url);
+
+                filterItem.setId("Views:Folder Filter:" + filter.toString());
+
+                if(selectedFilter.getClass() == filter.getClass())
                 {
-                    ActionURL url = getViewContext().getActionURL().clone();
-                    String propName = getDataRegionName() + ".containerFilterName";
-                    url.replaceParameter(propName, filter.name());
-                    NavTree filterItem = new NavTree(filter.toString(), url);
-
-                    filterItem.setId("Views:Folder Filter:" + filter.toString());
-
-                    if(selectedFilter == filter)
-                    {
-                        filterItem.setSelected(true);
-                    }
-                    containerFilterItem.addChild(filterItem);
+                    filterItem.setSelected(true);
                 }
+                containerFilterItem.addChild(filterItem);
             }
         }
     }
@@ -1229,7 +1226,7 @@ public class QueryView extends WebPartView<Object>
             if (filter != null)
             {
                 ContainerFilterable fTable = (ContainerFilterable)_table;
-                fTable.setContainerFilter(filter, _schema.getUser());
+                fTable.setContainerFilter(filter);
             }
         }
         return _table;
@@ -1237,14 +1234,15 @@ public class QueryView extends WebPartView<Object>
 
     private ContainerFilter getContainerFilter()
     {
-        ContainerFilter filter = _settings.getContainerFilter();
-        if (filter == null && _customView != null)
-        {
-            String filterName = _customView.getContainerFilterName();
-            if (filterName != null)
-                filter = ContainerFilter.Filters.valueOf(filterName);
-        }
-        return filter;
+        String filterName = _settings.getContainerFilterName();
+        
+        if (filterName == null && _customView != null)
+            filterName = _customView.getContainerFilterName();
+
+        if (filterName != null)
+            return ContainerFilter.getContainerFilterByName(filterName, getUser());
+
+        return null;
     }
 
     public List<DisplayColumn> getDisplayColumns()
