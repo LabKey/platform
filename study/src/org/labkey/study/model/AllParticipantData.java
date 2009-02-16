@@ -23,6 +23,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Table;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.PropertyUtil;
 import org.labkey.api.util.ArrayListMap;
 import org.labkey.study.StudySchema;
@@ -118,21 +119,22 @@ public class AllParticipantData
                 Integer propertyId = (Integer)row.get(colPropertyId);
                 String key = (String)row.get(colKey);
 
-                String typeTag = (String)row.get("TypeTag");
+                PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propertyId);
                 Object val;
                 String defaultFormat = null;
 
-                switch (typeTag.charAt(0))
+                switch (pd.getPropertyType())
                 {
                     default:
-                    case 's':
+                    case STRING:
                         val = row.get("StringValue");
                         break;
-                    case 'f':
+                    case DOUBLE:
+                    case INTEGER:
+                    case BOOLEAN:
                         val = row.get("FloatValue");
                         defaultFormat = defaultNumberFormat;
-                        PropertyType pt = PropertyType.getFromURI(null, (String) row.get("RangeURI"));
-                        switch (pt)
+                        switch (pd.getPropertyType())
                         {
                             case INTEGER:
                                 val = ((Double) val).intValue();
@@ -144,7 +146,7 @@ public class AllParticipantData
                                 break;
                         }
                         break;
-                    case 'd':
+                    case DATE_TIME:
                         val = row.get("DateTimeValue");
                         defaultFormat = defaultDateFormat;
                         break;
@@ -175,7 +177,7 @@ public class AllParticipantData
                     else
                         keyMap.set(propMap);
                 }
-                propMap.put(propertyId, PropertyUtil.formatValue(OntologyManager.getPropertyDescriptor(propertyId), val, defaultFormat));
+                propMap.put(propertyId, PropertyUtil.formatValue(pd, val, defaultFormat));
             }
 
             return new AllParticipantData(datasetIds, visitSeqMap, allData);

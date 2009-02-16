@@ -4519,6 +4519,11 @@ public class StudyController extends BaseStudyController
                 QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName().toString(), name);
                 if (def != null)
                     errors.reject("snapshotQuery.error", "A Snapshot with the same name already exists");
+
+                // check for a dataset with the same name
+                DataSetDefinition dataset = StudyManager.getInstance().getDataSetDefinition(StudyManager.getInstance().getStudy(getContainer()), name);
+                if (dataset != null)
+                    errors.reject("snapshotQuery.error", "A Dataset with the same name already exists");
             }
             else
                 errors.reject("snapshotQuery.error", "The Query Snapshot name cannot be blank");

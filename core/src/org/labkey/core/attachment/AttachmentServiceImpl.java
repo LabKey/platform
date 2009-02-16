@@ -162,7 +162,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             }
             catch (RuntimeException e){}
         }
-        if (user != null)
+        if (user != null && parent != null)
         {
             {
             AuditLogEvent event = new AuditLogEvent();

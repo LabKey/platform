@@ -41,18 +41,13 @@ public class DomainPropertyImpl implements DomainProperty
     PropertyDescriptor _pdOld;
     PropertyDescriptor _pd;
     boolean _deleted;
-    List<PropertyValidatorImpl> _validators = new ArrayList<PropertyValidatorImpl>();
+    List<PropertyValidatorImpl> _validators;
 
 
     public DomainPropertyImpl(DomainImpl type, PropertyDescriptor pd)
     {
         _domain = type;
         _pd = pd.clone();
-
-        for (PropertyValidator validator : DomainPropertyManager.get().getValidators(this))
-        {
-            _validators.add(new PropertyValidatorImpl(validator));
-        }
     }
 
     public int getPropertyId()
@@ -319,7 +314,7 @@ public class DomainPropertyImpl implements DomainProperty
     {
         if (_pdOld != null) return true;
 
-        for (PropertyValidatorImpl v : _validators)
+        for (PropertyValidatorImpl v : _getValidators())
         {
             if (v.isDirty() || v.isNew())
                 return true;
@@ -347,7 +342,7 @@ public class DomainPropertyImpl implements DomainProperty
 
         _pdOld = null;
 
-        for (PropertyValidatorImpl validator : _validators)
+        for (PropertyValidatorImpl validator : _getValidators())
         {
             if (validator.isDeleted())
                 DomainPropertyManager.get().removePropertyValidator(user, this, validator);
@@ -358,7 +353,7 @@ public class DomainPropertyImpl implements DomainProperty
 
     public IPropertyValidator[] getValidators()
     {
-        return _validators.toArray(new PropertyValidatorImpl[0]);
+        return _getValidators().toArray(new PropertyValidatorImpl[0]);
     }
 
     public void addValidator(IPropertyValidator validator)
@@ -367,16 +362,16 @@ public class DomainPropertyImpl implements DomainProperty
         {
             PropertyValidator impl = new PropertyValidator();
             impl.copy(validator);
-            _validators.add(new PropertyValidatorImpl(impl));
+            _getValidators().add(new PropertyValidatorImpl(impl));
         }
     }
 
     public void removeValidator(IPropertyValidator validator)
     {
-        int idx = _validators.indexOf(validator);
+        int idx = _getValidators().indexOf(validator);
         if (idx != -1)
         {
-            PropertyValidatorImpl impl = _validators.get(idx);
+            PropertyValidatorImpl impl = _getValidators().get(idx);
             impl.delete();
         }
     }
@@ -385,7 +380,7 @@ public class DomainPropertyImpl implements DomainProperty
     {
         if (validatorId == 0) return;
 
-        for (PropertyValidatorImpl imp : _validators)
+        for (PropertyValidatorImpl imp : _getValidators())
         {
             if (imp.getRowId() == validatorId)
             {
@@ -393,6 +388,19 @@ public class DomainPropertyImpl implements DomainProperty
                 break;
             }
         }
+    }
+
+    private List<PropertyValidatorImpl> _getValidators()
+    {
+        if (_validators == null)
+        {
+            _validators = new ArrayList<PropertyValidatorImpl>();
+            for (PropertyValidator validator : DomainPropertyManager.get().getValidators(this))
+            {
+                _validators.add(new PropertyValidatorImpl(validator));
+            }
+        }
+        return _validators;
     }
 
     @Override

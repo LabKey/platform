@@ -563,5 +563,9 @@ public class QueryServiceImpl extends QueryService
 			}
 		}
 	}
-	
+
+    public void addQueryListener(QueryListener listener)
+    {
+        QueryManager.get().addQueryListener(listener);
+    }
 }

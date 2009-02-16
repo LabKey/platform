@@ -299,6 +299,7 @@ public class CustomViewImpl implements CustomView
             {
                 _collist = _mgr.update(user, _collist);
             }
+            _mgr.fireViewChanged(this);
             _dirty = false;
         }
         catch (SQLException e)
@@ -320,6 +321,7 @@ public class CustomViewImpl implements CustomView
                     return;
 
                 _mgr.delete(user, _collist);
+                _mgr.fireViewDeleted(this);
                 _collist = null;
             }
         }

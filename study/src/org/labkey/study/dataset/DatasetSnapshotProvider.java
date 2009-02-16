@@ -122,10 +122,15 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
         for (DisplayColumn c : view.getDisplayColumns())
         {
-            //if (!DataSetDefinition.isDefaultFieldName(c.getName(), study))
-            {
-                columns.add(c);
-            }
+            /**
+             * The ObjectId column is present in datasets that are created from assays so that they can back to the
+             * original assay and the assay can tell which studies the data has been copied to. Having more than
+             * one copy of the same object id value per study is illegal.
+             */
+            if ("objectid".equalsIgnoreCase(c.getName()))
+                continue;
+
+            columns.add(c);
         }
         return columns;
     }

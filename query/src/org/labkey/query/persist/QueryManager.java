@@ -20,10 +20,14 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.CustomView;
 import org.labkey.query.view.DbUserSchema;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 
 public class QueryManager
@@ -34,6 +38,7 @@ public class QueryManager
     final static public int FLAG_INHERITABLE = 0x01;
     final static public int FLAG_HIDDEN = 0x02;
     final static public int FLAG_SNAPSHOT = 0x04;
+    private static final List<QueryService.QueryListener> _listeners = new CopyOnWriteArrayList<QueryService.QueryListener>();
 
     synchronized static public QueryManager get()
     {
@@ -356,6 +361,23 @@ public class QueryManager
         Table.delete(getTableInfoCustomView(), filter);
         Table.delete(getTableInfoQueryDef(), filter);
         Table.delete(getTableInfoDbUserSchema(), filter);
+    }
+
+    public void addQueryListener(QueryService.QueryListener listener)
+    {
+        _listeners.add(listener);
+    }
+
+    public void fireViewChanged(CustomView view)
+    {
+        for (QueryService.QueryListener l : _listeners)
+            l.viewChanged(view);
+    }
+
+    public void fireViewDeleted(CustomView view)
+    {
+        for (QueryService.QueryListener l : _listeners)
+            l.viewDeleted(view);
     }
 
     static public final ContainerManager.ContainerListener CONTAINER_LISTENER = new ContainerManager.ContainerListener()

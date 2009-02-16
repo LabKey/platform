@@ -16,19 +16,23 @@
 
 package org.labkey.query.reports;
 
-import org.apache.log4j.Logger;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
+import org.labkey.api.module.Module;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.*;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.common.util.Pair;
 
 import java.beans.PropertyChangeEvent;
@@ -40,7 +44,7 @@ import java.util.*;
  * User: Karl Lum
  * Date: Dec 21, 2007
  */
-public class ReportServiceImpl implements ReportService.I, ContainerManager.ContainerListener
+public class ReportServiceImpl implements ReportService.I, ContainerManager.ContainerListener, QueryService.QueryListener
 {
     private static final String SCHEMA_NAME = "core";
     private static final String TABLE_NAME = "Report";
@@ -59,6 +63,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     {
         ContainerManager.addContainerListener(this);
         ConvertUtils.register(new ReportIdentifierConverter(), ReportIdentifier.class);
+        QueryService.get().addQueryListener(this);
     }
 
     private DbSchema getSchema()
@@ -464,6 +469,34 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         ReportDB report = Table.selectObject(getTable(), filter, null, ReportDB.class);
 
         return (report != null);
+    }
+
+    public void viewChanged(CustomView view)
+    {
+        _uncacheDependent(view);
+    }
+
+    public void viewDeleted(CustomView view)
+    {
+        _uncacheDependent(view);
+    }
+
+    private void _uncacheDependent(CustomView view)
+    {
+        try {
+            QueryDefinition def = view.getQueryDefinition();
+            String key = ReportUtil.getReportKey(def.getSchemaName(), def.getName());
+
+            for (Report report : getReports(null, view.getContainer(), key))
+            {
+                if (StringUtils.equals(view.getName(), report.getDescriptor().getProperty(ReportDescriptor.Prop.viewName)))
+                    report.clearCache();
+            }
+        }
+        catch (Exception e)
+        {
+            _log.error("An error occurred uncaching dependent reports", e);
+        }
     }
 
     private static class ReportComparator implements Comparator<Report>
