@@ -446,6 +446,7 @@ public class QueryControllerSpring extends SpringActionController
             {
                 queryView.setPrintView(true);
                 getPageConfig().setTemplate(PageConfig.Template.Print);
+                getPageConfig().setShowPrintDialog(true);
             }
             queryView.setShadeAlternatingRows(true);
             queryView.setShowBorders(true);
