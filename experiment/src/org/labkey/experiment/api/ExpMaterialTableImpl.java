@@ -137,7 +137,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
     {
         if (ss != null && !ss.getContainer().equals(getContainer()))
         {
-            setContainerFilter(new ContainerFilter.CurrentPlusExtras(ss.getContainer()), _schema.getUser());
+            setContainerFilter(new ContainerFilter.CurrentPlusExtras(_schema.getUser(), ss.getContainer()));
         }
 
         addColumn(ExpMaterialTable.Column.RowId).setIsHidden(true);
