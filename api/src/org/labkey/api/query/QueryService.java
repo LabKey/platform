@@ -83,4 +83,12 @@ abstract public class QueryService
 	abstract public ResultSet select(QuerySchema schema, String sql) throws SQLException;
 	abstract public ResultSet select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort) throws SQLException;
 	abstract public SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset);
+
+    public interface QueryListener
+    {
+        void viewChanged(CustomView view);
+        void viewDeleted(CustomView view);
+    }
+
+    abstract public void addQueryListener(QueryListener listener);
 }
