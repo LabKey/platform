@@ -29,7 +29,7 @@ public class CaseInsensitiveMap<V> implements Map<String, V>
     public CaseInsensitiveMap(Map<String, V> map)
     {
         _map = map;
-        _correctCaseMap = new HashMap();
+        _correctCaseMap = new HashMap<String, String>();
         for (Map.Entry<? extends String, ? extends V> entry : map.entrySet())
         {
             _correctCaseMap.put(entry.getKey().toLowerCase(), entry.getKey());

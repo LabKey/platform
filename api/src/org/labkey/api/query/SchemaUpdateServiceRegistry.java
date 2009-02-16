@@ -15,11 +15,8 @@
  */
 package org.labkey.api.query;
 
-import org.labkey.api.security.User;
-import org.labkey.api.data.Container;
-
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /*
 * User: Dave

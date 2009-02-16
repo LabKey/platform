@@ -509,7 +509,7 @@ public class QueryView extends WebPartView<Object>
         return btnPrint;
     }
 
-    protected MenuButton createExportMenuButton(boolean exportAsWebPage)
+    public MenuButton createExportMenuButton(boolean exportAsWebPage)
     {
         MenuButton exportMenuButton = new MenuButton("Export");
         exportMenuButton.addMenuItem("Export All to Excel (.xls)", urlFor(QueryAction.exportRowsExcel).getLocalURIString());
@@ -523,15 +523,19 @@ public class QueryView extends WebPartView<Object>
         {
             exportMenuButton.addMenuItem("Excel Web Query (.iqy)", urlFor(QueryAction.excelWebQueryDefinition).getLocalURIString());
             exportMenuButton.addSeparator();
-
-            for (ExportScriptFactory factory : _exportScriptFactories.values())
-            {
-                ActionURL url = urlFor(QueryAction.exportScript);
-                url.addParameter("scriptType", factory.getScriptType());
-                exportMenuButton.addMenuItem(factory.getMenuText(), url);
-            }
+            addExportScriptItems(exportMenuButton);
         }
         return exportMenuButton;
+    }
+
+    public void addExportScriptItems(MenuButton menu)
+    {
+        for (ExportScriptFactory factory : _exportScriptFactories.values())
+        {
+            ActionURL url = urlFor(QueryAction.exportScript);
+            url.addParameter("scriptType", factory.getScriptType());
+            menu.addMenuItem(factory.getMenuText(), url);
+        }
     }
 
     protected MenuButton createPageSizeMenuButton()
