@@ -76,9 +76,18 @@ public class GraphMoreGrid extends GridView
                 + runIdParam + "&detail=true&focus=" + objectType + "${rowId}");
 
         getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
-        String inClause = " RowId IN (" + url.getParameter("rowId~in") + ") ";
+        String[] inValues =  url.getParameter("rowId~in").split(",");
+        String separator = "";
+        StringBuilder inClause = new StringBuilder(" RowId IN (");
+        for (String inValue : inValues)
+        {
+            inClause.append(separator);
+            separator = ", ";
+            inClause.append(Integer.toString(Integer.parseInt(inValue)));
+        }
+        inClause.append(") ");
         SimpleFilter filter = new SimpleFilter();
-        filter.addWhereClause(inClause, new Object[]{});
+        filter.addWhereClause(inClause.toString(), new Object[]{});
         setFilter(filter);
         setTitle(title);
     }

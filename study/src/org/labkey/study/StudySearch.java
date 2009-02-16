@@ -34,6 +34,7 @@ import org.labkey.study.model.*;
 import javax.servlet.ServletException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.*;
 
 /**
@@ -220,12 +221,23 @@ def:    for (DataSetDefinition def : defs)
         if (columnsToSearch.size() == 0)
             return;
 
+        String[] searchColumnNames = new String[columnsToSearch.size()];
+        SqlDialect sqlDialect = tInfo.getSqlDialect();
+        String varchar = sqlDialect.sqlTypeNameFromSqlType(Types.VARCHAR);
+        int i=0;
+        for (String searchColumn : columnsToSearch)
+        {
+            String nameCast = "CAST(" + sqlDialect.getColumnSelectName(searchColumn) + " AS " +
+                    varchar + ")";
+            searchColumnNames[i] = nameCast;
+            i++;
+        }
+
+
         String from = tInfo.toString();
 
         // datasets don't include the container in their columns
         Set<Container> containers = Collections.emptySet();
-
-        String[] searchColumnNames = columnsToSearch.toArray(new String[columnsToSearch.size()]);
 
         SQLFragment sqlFragment = Search.getSQLFragment(
             selectColumn,
