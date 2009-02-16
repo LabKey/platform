@@ -1239,7 +1239,7 @@ public class QueryControllerSpring extends SpringActionController
 
     @ActionNames("selectRows, getQuery")
     @RequiresPermission(ACL.PERM_READ)
-    @ApiVersion(8.3)
+    @ApiVersion(9.1)
     public class GetQueryAction extends ApiAction<APIQueryForm>
     {
         public ApiResponse execute(APIQueryForm form, BindException errors) throws Exception
@@ -1283,9 +1283,13 @@ public class QueryControllerSpring extends SpringActionController
                 throw new NotFoundException("The view named '" + form.getViewName() + "' does not exist for this user!");
             }
 
-
-            return new ApiQueryResponse(view, getViewContext(), isSchemaEditable(form.getSchema()), true,
-                    form.getSchemaName().toString(), form.getQueryName(), form.getQuerySettings().getOffset(), fieldKeys);
+            //if requested version is >= 9.1, use the extended api query response
+            if(getRequestedApiVersion() >= 9.1)
+                return new ExtendedApiQueryResponse(view, getViewContext(), isSchemaEditable(form.getSchema()), true,
+                        form.getSchemaName().toString(), form.getQueryName(), form.getQuerySettings().getOffset(), fieldKeys);
+            else
+                return new ApiQueryResponse(view, getViewContext(), isSchemaEditable(form.getSchema()), true,
+                        form.getSchemaName().toString(), form.getQueryName(), form.getQuerySettings().getOffset(), fieldKeys);
         }
     }
 
