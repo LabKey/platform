@@ -537,7 +537,18 @@ public class DataRegion extends DisplayElement
 
     final public ResultSet getResultSet(RenderContext ctx) throws SQLException, IOException
     {
-        return getResultSet(ctx, false);
+        DataRegion oldRegion = ctx.getCurrentRegion();
+        if (oldRegion != this)
+            ctx.setCurrentRegion(this);
+        try
+        {
+            return getResultSet(ctx, false);
+        }
+        finally
+        {
+            if (oldRegion != this)
+                ctx.setCurrentRegion(oldRegion);
+        }
     }
 
     protected ResultSet getResultSet(RenderContext ctx, boolean async) throws SQLException, IOException
