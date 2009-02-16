@@ -56,7 +56,7 @@ public class SchemaUpdateServiceRegistry
     {
         synchronized(_registry)
         {
-            _registry.put(service.getSchemaName(), service);
+            _registry.put(service.getSchemaName().toLowerCase(), service);
         }
     }
 
@@ -71,7 +71,7 @@ public class SchemaUpdateServiceRegistry
         SchemaUpdateService ret;
         synchronized(_registry)
         {
-            ret = _registry.get(schemaName);
+            ret = _registry.get(schemaName.toLowerCase());
         }
         return ret;
     }

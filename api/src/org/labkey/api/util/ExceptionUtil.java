@@ -692,11 +692,11 @@ public class ExceptionUtil
 
         errorView = ExceptionUtil.getErrorView(responseStatus, message, ex, request, startupFailure);
 
-        if (responseStatus == HttpServletResponse.SC_NOT_FOUND || responseStatus == HttpServletResponse.SC_UNAUTHORIZED)
+        if (responseStatus == HttpServletResponse.SC_NOT_FOUND)
         {
             _log.warn(null == message ? "" : message, ex);
         }
-        else
+        else if(responseStatus != HttpServletResponse.SC_UNAUTHORIZED) //don't log unauthorized (basic-auth challenge)
         {
             _log.error("Unhandled exception: " + (null == message ? "" : message), ex);
         }
