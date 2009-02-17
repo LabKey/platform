@@ -507,7 +507,17 @@ public class StudyController extends BaseStudyController
             ViewContext context = getViewContext();
 
             String export = StringUtils.trimToNull(context.getActionURL().getParameter("export"));
-            _datasetId = NumberUtils.toInt((String)context.get(DataSetDefinition.DATASETKEY), 0);
+
+            // bug 7365
+            Object datasetKeyObject = context.get(DataSetDefinition.DATASETKEY);
+            if (datasetKeyObject instanceof List)
+            {
+                // It's been specified twice -- once in the POST, once in the GET. Just need one of them.
+                List<?> list = (List<?>)datasetKeyObject;
+                datasetKeyObject = list.get(0);
+            }
+            _datasetId = NumberUtils.toInt(datasetKeyObject.toString(), 0);
+
             String viewName = (String)context.get("Dataset.viewName");
             final DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, _datasetId);
             if (null == def)
@@ -527,6 +537,7 @@ public class StudyController extends BaseStudyController
 
             final StudyQuerySchema querySchema = new StudyQuerySchema(study, getUser(), true);
             QuerySettings qs = querySchema.getSettings(context, DataSetQueryView.DATAREGION);
+            qs.setAllowContainerFilter(false);
             qs.setSchemaName(querySchema.getSchemaName());
             qs.setQueryName(def.getLabel());
             DataSetQueryView queryView = new DataSetQueryView(_datasetId, querySchema, qs, visit, cohort, qcStateSet);
@@ -575,7 +586,7 @@ public class StudyController extends BaseStudyController
             HtmlView header = new HtmlView(sb.toString());
 
             HttpView view = new VBox(header, queryView);
-            Report report = queryView.getSettings().getReportView(getViewContext());
+            Report report = queryView.getSettings().getReportView();
             if (report != null && !ReportManager.get().canReadReport(getUser(), getContainer(), report))
             {
                 return new HtmlView("User does not have read permission on this report.");
@@ -590,7 +601,7 @@ public class StudyController extends BaseStudyController
         protected QueryView createQueryView(DatasetFilterForm datasetFilterForm, BindException errors, boolean forExport, String dataRegion) throws Exception
         {
             QuerySettings qs = new QuerySettings(getViewContext(), "Dataset");
-            Report report = qs.getReportView(getViewContext());
+            Report report = qs.getReportView();
             if (report instanceof QueryReport)
             {
                 return ((QueryReport)report).getQueryViewGenerator().generateQueryView(getViewContext(), report.getDescriptor());
@@ -605,7 +616,7 @@ public class StudyController extends BaseStudyController
                 return qs.getViewName();
             else
             {
-                Report report = qs.getReportView(getViewContext());
+                Report report = qs.getReportView();
                 if (report != null)
                     return report.getDescriptor().getReportName();
                 else

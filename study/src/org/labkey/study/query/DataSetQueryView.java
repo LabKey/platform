@@ -307,7 +307,7 @@ public class DataSetQueryView extends QueryView
 
     protected void populateReportButtonBar(ButtonBar bar)
     {
-        Report report = getSettings().getReportView(getViewContext());
+        Report report = getSettings().getReportView();
 
         // query reports will render their own button bar
         if (!(report instanceof QueryReport))

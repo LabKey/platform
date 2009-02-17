@@ -41,6 +41,7 @@ public class AssayListQueryView extends QueryView
         setShadeAlternatingRows(true);
         setShowBorders(true);
         getSettings().setAllowChooseQuery(false);
+        getSettings().setAllowContainerFilter(false);
     }
 
     protected void populateButtonBar(DataView view, ButtonBar bar)

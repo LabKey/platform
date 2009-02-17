@@ -34,16 +34,9 @@ public class AssayListTable extends FilteredTable
     protected AssaySchema _schema;
     public AssayListTable(AssaySchema schema, String alias)
     {
-        super(ExperimentService.get().getTinfoProtocol());
+        super(ExperimentService.get().getTinfoProtocol(), schema.getContainer(), new ContainerFilter.CurrentPlusProject(schema.getUser()));
         setAlias(alias);
 
-        List<String> containerIds = new ArrayList<String>(2);
-        containerIds.add(schema.getContainer().getId());
-        if (schema.getContainer().getProject() != null)
-        {
-            containerIds.add(schema.getContainer().getProject().getId());
-        }
-        addInClause(_rootTable.getColumn("container"), containerIds);
         addCondition(_rootTable.getColumn("ApplicationType"), "ExperimentRun");
 
         _schema = schema;

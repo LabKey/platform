@@ -41,6 +41,7 @@ public class ListQueryView extends QueryView
         setShowExportButtons(_list.getAllowExport());
         QuerySettings settings = getSettings();
         settings.setAllowChooseQuery(false);
+        settings.setAllowContainerFilter(false);
     }
 
     public DataView createDataView()
