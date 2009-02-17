@@ -36,13 +36,15 @@ public abstract class ContainerFilter
         return getClass().getSimpleName();
     }
 
+    /**
+     * If we can't find the name, we default to CURRENT
+     */
     public static ContainerFilter getContainerFilterByName(String name, User user)
     {
-        if (CURRENT.name().equals(name))
-            return CURRENT;
         if ("CurrentAndSubfolders".equals(name))
             return new CurrentAndSubfolders(user);
-        return null;
+
+        return CURRENT;
     }
 
     public static Collection<ContainerFilter> getPublicFilters(User user)
@@ -65,6 +67,12 @@ public abstract class ContainerFilter
         public String toString()
         {
             return "Current Folder";
+        }
+
+        @Override
+        public String name()
+        {
+            return "CURRENT";
         }
     };
 
@@ -141,6 +149,26 @@ public abstract class ContainerFilter
         }
     }
 
+    public static class CurrentPlusProject extends ContainerFilterWithUser
+    {
+        public CurrentPlusProject(User user)
+        {
+            super(user);
+        }
+
+        public Collection<String> getIds(Container currentContainer)
+        {
+            Set<Container> containers = new HashSet<Container>();
+            containers.add(currentContainer);
+            Container project = currentContainer.getProject();
+            if (project != null && project.hasPermission(_user, ACL.PERM_READ))
+            {
+                containers.add(project);
+            }
+            return toIds(containers);
+        }
+    }
+
     public static class CurrentPlusProjectAndShared extends ContainerFilterWithUser
     {
         public CurrentPlusProjectAndShared(User user)
@@ -150,7 +178,7 @@ public abstract class ContainerFilter
 
         public Collection<String> getIds(Container currentContainer)
         {
-            List<Container> containers = new ArrayList<Container>();
+            Set<Container> containers = new HashSet<Container>();
             containers.add(currentContainer);
             Container project = currentContainer.getProject();
             if (project != null && project.hasPermission(_user, ACL.PERM_READ))

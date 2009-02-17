@@ -41,6 +41,7 @@ public class QuerySettings
     private boolean _allowChooseQuery = true;
     private boolean _allowChooseView = true;
     private boolean _allowCustomizeView = true;
+    private boolean _allowContainerFilter = true;
     private boolean _ignoreUserFilter;
     private int _maxRows = 100;
     private long _offset = 0;
@@ -337,7 +338,7 @@ public class QuerySettings
         return queryDef.getCustomView(context.getUser(), context.getRequest(), getViewName());
     }
 
-    public Report getReportView(ViewContext context)
+    public Report getReportView()
     {
         try {
             if (getReportId() != null)
@@ -428,5 +429,15 @@ public class QuerySettings
     public void setContainerFilterName(String name)
     {
         _containerFilterName = name;
+    }
+
+    public boolean isAllowContainerFilter()
+    {
+        return _allowContainerFilter;
+    }
+
+    public void setAllowContainerFilter(boolean allowContainerFilter)
+    {
+        _allowContainerFilter = allowContainerFilter;
     }
 }

@@ -795,7 +795,7 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
-        if (getTable() instanceof ContainerFilterable)
+        if (getTable() instanceof ContainerFilterable && getSettings().isAllowContainerFilter())
         {
             NavTree containerFilterItem = new NavTree("Folder Filter");
             containerFilterItem.setId("Views:Folder Filter");
@@ -975,7 +975,7 @@ public class QueryView extends WebPartView<Object>
 
     protected void renderDataRegion(PrintWriter out) throws Exception
     {
-        _report = getSettings().getReportView(getViewContext());
+        _report = getSettings().getReportView();
         String viewName = getSettings().getViewName();
         if (_report != null && viewName == null)
         {
