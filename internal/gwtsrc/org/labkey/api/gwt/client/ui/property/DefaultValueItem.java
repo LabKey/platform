@@ -59,7 +59,7 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
 
                 if (_owner.isDirty())
                 {
-                    if (Window.confirm("This assay design must be saved before setting default values.  Save changes?"))
+                    if (Window.confirm("You must save your changes before setting default values.  Save changes?"))
                         _owner.save(new Saveable.SaveListener<GWTDomain>()
                         {
                             public void saveSuccessful(GWTDomain domain)

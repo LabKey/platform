@@ -247,7 +247,15 @@ public class SetDefaultValuesAction extends DefaultValuesAction
         if (failedValidation)
             return false;
 
-        DefaultValueService.get().setDefaultValues(domainIdForm.getContainer(), values);
+        try
+        {
+            DefaultValueService.get().setDefaultValues(domainIdForm.getContainer(), values);
+        }
+        catch (ExperimentException e)
+        {
+            errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+            return false;
+        }
         return true;
     }
 

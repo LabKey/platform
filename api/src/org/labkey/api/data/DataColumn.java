@@ -461,11 +461,25 @@ public class DataColumn extends DisplayColumn
                     strVal = ConvertUtils.convert(value);
             }
             out.write(value == null ? "" : PageFlowUtil.filter(strVal));
-            out.write("\">");
+            out.write("\"");
+            String autoCompletePrefix = getAutoCompleteURLPrefix();
+            if (autoCompletePrefix != null)
+            {
+                out.write(" onKeyDown=\"return ctrlKeyCheck(event);\"");
+                out.write(" onBlur=\"hideCompletionDiv();\"");
+                out.write(" autocomplete=\"off\"");
+                out.write(" onKeyUp=\"return handleChange(this, event, '" + autoCompletePrefix + "');\"");
+            }
+            out.write(">");
             // disabled inputs are not posted with the form, so we output a hidden form element:
             if (disabledInput)
                 renderHiddenFormInput(ctx, out, formFieldName, value);
         }
+    }
+
+    protected String getAutoCompleteURLPrefix()
+    {
+        return null;
     }
 
     protected void outputName(RenderContext ctx, Writer out, String formFieldName) throws IOException

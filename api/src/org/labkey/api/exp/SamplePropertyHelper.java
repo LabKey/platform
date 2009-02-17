@@ -18,11 +18,13 @@ package org.labkey.api.exp;
 
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
+import org.labkey.api.security.ACL;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.AssayRunUploadContext;
+import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.SpecimenService;
 import org.labkey.api.view.InsertView;
-import org.labkey.api.gwt.client.DefaultValueType;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
@@ -91,6 +93,7 @@ public abstract class SamplePropertyHelper<ObjectType>
             for (String name : getSampleNames())
             {
                 String inputName = UploadWizardAction.getInputName(sampleProperty, name);
+                String autoCompletePrefix = null;
                 if (defaultValueContext != null)
                 {
                     // get the map of default values that corresponds to our current sample:
@@ -102,16 +105,27 @@ public abstract class SamplePropertyHelper<ObjectType>
                         domains.put(defaultValueKey,  defaultValues);
                     }
                     view.setInitialValue(inputName, defaultValues.get(sampleProperty));
+
+                    Container targetStudy = null;
+                    if (defaultValueContext.getTargetStudy() != null)
+                        targetStudy = ContainerManager.getForId(defaultValueContext.getTargetStudy());
+                    if (targetStudy != null && targetStudy.hasPermission(defaultValueContext.getUser(), ACL.PERM_READ))
+                    {
+                        if (sampleProperty.getName().equals(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME))
+                            autoCompletePrefix = SpecimenService.get().getCompletionURLBase(targetStudy, SpecimenService.CompletionType.ParticipantId);
+                        else if (sampleProperty.getName().equals(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME))
+                            autoCompletePrefix = SpecimenService.get().getCompletionURLBase(targetStudy, SpecimenService.CompletionType.SpecimenGlobalUniqueId);
+                    }
                 }
                 ColumnInfo col = sampleProperty.getPropertyDescriptor().createColumnInfo(OntologyManager.getTinfoObject(), "ObjectURI", user);
                 col.setName(inputName);
-                cols.add(new SpecimenInputColumn(col));
+                cols.add(new SpecimenInputColumn(col, autoCompletePrefix));
             }
             DisplayColumnGroup group = new DisplayColumnGroup(cols, sampleProperty.getName(), isCopyable(sampleProperty));
             _groups.put(sampleProperty, group);
             region.addGroup(group);
         }
-        if (errorReshow)
+        if (errorReshow && defaultValueContext != null)
             view.setInitialValues(defaultValueContext.getRequest().getParameterMap());
         region.setGroupHeadings(sampleNames);
         region.setHorizontalGroups(true);
@@ -141,9 +155,12 @@ public abstract class SamplePropertyHelper<ObjectType>
 
     private class SpecimenInputColumn extends DataColumn
     {
-        public SpecimenInputColumn(ColumnInfo col)
+        private String _autoCompletePrefix;
+
+        public SpecimenInputColumn(ColumnInfo col, String autoCompletePrefix)
         {
             super(col);
+            _autoCompletePrefix = autoCompletePrefix;
         }
 
         public boolean isEditable()
@@ -155,6 +172,12 @@ public abstract class SamplePropertyHelper<ObjectType>
         {
             TableViewForm viewForm = ctx.getForm();
             return viewForm.getStrings().get(getName());
+        }
+
+        @Override
+        protected String getAutoCompleteURLPrefix()
+        {
+            return _autoCompletePrefix;
         }
     }
 }

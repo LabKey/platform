@@ -441,5 +441,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         {
             throw new UnsupportedOperationException("Not Supported");
         }
+
+        public String getTargetStudy()
+        {
+            return null;
+        }
     }
 }

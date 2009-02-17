@@ -226,16 +226,16 @@ LABKEY.Assay = new function()
         /**
         * Select NAb assay data.
         * @param {Object} config An object which contains the following configuration properties.
-         * @param {String} config.assayName  String description of the sort.  It includes the column names
+         * @param {String} config.assayName  The name of the NAb assay design for which runs are to be retrieved.
          * @param {Boolean} [config.includeStats]  Whether or not statistics (standard deviation, max, min, etc.) should
          * be returned with calculations and well data.
          * @param {Boolean} [config.includeWells]  Whether well-level data should be included in the response.
          * @param {Boolean} [config.calculateNeut]  Whether neutralization should be calculated on the server.
         * @param {Function} config.successCallback
-                Function called when the "selectRows" function executes successfully.
+                Function called when the "getNAbRuns" function executes successfully.
                 This function will be called with the following arguments:
                 <ul>
-                    <li>data: an instance of {@link LABKEY.Query.SelectRowsResults}</li>
+                    <li>runs: an array of NAb run objects</li>
                     <li>options: the options used for the AJAX request</li>
                     <li>responseObj: the XMLHttpResponseObject instance used to make the AJAX request</li>
                 </ul>
@@ -253,25 +253,30 @@ LABKEY.Assay = new function()
         *       included, separated by commas.
         * @param {String} [config.containerPath] The path to the container in which the schema and query are defined,
         *       if different than the current container. If not supplied, the current container's path will be used.
-        * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to 100).
+        * @param {Integer} [config.maxRows] The maximum number of runs to return from the server (defaults to 100).
         *        If you want to return all possible rows, set this config property to -1.
         * @param {Integer} [config.offset] The index of the first row to return from the server (defaults to 0).
         *        Use this along with the maxRows config property to request pages of data.
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
         *       generating a timeout error (defaults to 30000).
-        * @example Example: <pre name="code" class="xml">
         */
         getNAbRuns : function(config)
         {
             var dataObject = {};
 
             dataObject['assayName'] = config['assayName'];
-            dataObject['includeStats'] = config['includeStats'];
-            dataObject['includeWells'] = config['includeWells'];
-            dataObject['calculateNeut'] = config['calculateNeut'];
-            dataObject['sort'] = config['sort'];
-            dataObject['offset'] = config['offset'];
-            dataObject['dir'] = config['dir'];
+            if (config['includeStats'])
+                dataObject['includeStats'] = config['includeStats'];
+            if (config['includeWells'])
+                dataObject['includeWells'] = config['includeWells'];
+            if (config['calculateNeut'])
+                dataObject['calculateNeut'] = config['calculateNeut'];
+            if (config['sort'])
+                dataObject['sort'] = config['sort'];
+            if (config['offset'])
+                dataObject['offset'] = config['offset'];
+            if (config['dir'])
+                dataObject['dir'] = config['dir'];
             if (config.sort)
                 dataObject['query.sort'] = config.sort;
             if(config.offset)

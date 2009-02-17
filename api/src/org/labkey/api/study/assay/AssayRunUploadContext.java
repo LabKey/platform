@@ -74,4 +74,6 @@ public interface AssayRunUploadContext
 
     void clearDefaultValues(Domain domain) throws ExperimentException;
 
+    String getTargetStudy();
+
 }
