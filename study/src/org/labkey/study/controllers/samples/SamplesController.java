@@ -55,6 +55,7 @@ import java.io.*;
 import java.net.URISyntaxException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.*;
 
 
@@ -1318,15 +1319,18 @@ public class SamplesController extends BaseController
         requiresPermission(ACL.PERM_READ);
         String column;
         TableInfo tinfo;
+        boolean insensitiveCompare = false;
         if (SpecimenService.CompletionType.ParticipantId.name().equals(form.getType()))
         {
             tinfo = StudySchema.getInstance().getTableInfoParticipantVisit();
             column = "ParticipantId";
+            insensitiveCompare = true;
         }
         else if (SpecimenService.CompletionType.SpecimenGlobalUniqueId.name().equals(form.getType()))
         {
             tinfo = StudySchema.getInstance().getTableInfoSpecimen();
             column = "GlobalUniqueId";
+            insensitiveCompare = true;
         }
         else if (SpecimenService.CompletionType.VisitId.name().equals(form.getType()))
         {
@@ -1340,10 +1344,13 @@ public class SamplesController extends BaseController
         ResultSet rs = null;
         try
         {
+            String valueParam = form.getPrefix() + "%";
             String sql = "SELECT DISTINCT " + column + " FROM " +
                     tinfo.getSchema().getName() + "." + tinfo.getName() +
-                    " WHERE Container = ? AND " + column + " LIKE '" + form.getPrefix() + "%' ORDER BY " + column;
-            rs = Table.executeQuery(tinfo.getSchema(), sql, new Object[] { getContainer().getId() });
+                    " WHERE Container = ? AND CAST(" + column + " AS " + tinfo.getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR) + ") " +
+                    (insensitiveCompare ? tinfo.getSqlDialect().getCaseInsensitiveLikeOperator() : "LIKE")  +
+                    " ? ORDER BY " + column;
+            rs = Table.executeQuery(tinfo.getSchema(), sql, new Object[] { getContainer().getId(), valueParam });
             while (rs.next())
                 completions.add(new AjaxCompletion(rs.getObject(1).toString()));
         }

@@ -17,9 +17,6 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-
-import java.util.Map;
 
 /**
  * User: brittp
@@ -33,37 +30,14 @@ public class Site extends AbstractStudyEntity<Site>
     private Integer _ldmsLabCode; // INT,
     private String _labwareLabCode; // NVARCHAR(20),
     private String _labUploadCode; // NVARCHAR(2),
-    private boolean _sal; // Bit,
-    private boolean _clinic; // Bit,
-    private boolean _repository; // Bit,
-    private boolean endpoint; // Bit,
+    private Boolean _sal = Boolean.FALSE; // Bit,
+    private Boolean _clinic = Boolean.FALSE; // Bit,
+    private Boolean _repository = Boolean.FALSE; // Bit,
+    private Boolean endpoint = Boolean.FALSE; // Bit,
     private String _label;
 
     public Site()
     {
-    }
-
-    public Site(Map<String, ? extends Object> rsRowMap)
-    {
-        setContainer(ContainerManager.getForId((String) rsRowMap.get("Container")));
-        setEndpoint(safeBooleanEntryConvert(rsRowMap, "endpoint"));
-        setEntityId((String) rsRowMap.get("EntityId"));
-        setLabel((String) rsRowMap.get("Label"));
-        setLabUploadCode((String) rsRowMap.get("LabUploadCode"));
-        setLabwareLabCode((String) rsRowMap.get("LabwareLabCode"));
-        setLdmsLabCode((Integer) rsRowMap.get("LdmsLabCode"));
-        setRepository(safeBooleanEntryConvert(rsRowMap, "repository"));
-        setRowId((Integer) rsRowMap.get("RowId"));
-        setSal(safeBooleanEntryConvert(rsRowMap, "sal"));
-        setClinic(safeBooleanEntryConvert(rsRowMap, "clinic"));
-        setExternalId((Integer) rsRowMap.get("ExternalId"));
-    }
-
-    private boolean safeBooleanEntryConvert(Map<String, ? extends Object> rsRowMap, String booleanColName)
-    {
-        return rsRowMap.containsKey(booleanColName) &&
-                rsRowMap.get(booleanColName) != null &&
-                (Boolean) rsRowMap.get(booleanColName);
     }
 
     public Site(Container container, String label)
@@ -98,48 +72,48 @@ public class Site extends AbstractStudyEntity<Site>
         _rowId = rowId;
     }
 
-    public boolean isEndpoint()
+    public Boolean isEndpoint()
     {
         return endpoint;
     }
 
-    public void setEndpoint(boolean endpoint)
+    public void setEndpoint(Boolean endpoint)
     {
         verifyMutability();
-        this.endpoint = endpoint;
+        this.endpoint = endpoint != null ? endpoint : Boolean.FALSE;
     }
 
-    public boolean isRepository()
+    public Boolean isRepository()
     {
         return _repository;
     }
 
-    public void setRepository(boolean repository)
+    public void setRepository(Boolean repository)
     {
         verifyMutability();
-        _repository = repository;
+        _repository = repository != null ? repository : Boolean.FALSE;
     }
 
-    public boolean isSal()
+    public Boolean isSal()
     {
         return _sal;
     }
 
-    public void setSal(boolean sal)
+    public void setSal(Boolean sal)
     {
         verifyMutability();
-        _sal = sal;
+        _sal = sal != null ? sal : Boolean.FALSE;
     }
 
-    public boolean isClinic()
+    public Boolean isClinic()
     {
         return _clinic;
     }
 
-    public void setClinic(boolean clinic)
+    public void setClinic(Boolean clinic)
     {
         verifyMutability();
-        _clinic = clinic;
+        _clinic = clinic != null ? clinic : Boolean.FALSE;
     }
 
     public String getLabUploadCode()
@@ -211,21 +185,21 @@ public class Site extends AbstractStudyEntity<Site>
     public String getTypeString()
     {
         StringBuilder typeString = new StringBuilder();
-        if (isEndpoint())
+        if (isEndpoint().booleanValue())
             typeString.append("Endpoint Lab");
-        if (isRepository())
+        if (isRepository().booleanValue())
         {
             if (typeString.length() > 0)
                 typeString.append(", ");
             typeString.append("Repository");
         }
-        if (isSal())
+        if (isSal().booleanValue())
         {
             if (typeString.length() > 0)
                 typeString.append(", ");
             typeString.append("Site Affiliated Lab");
         }
-        if (isClinic())
+        if (isClinic().booleanValue())
         {
             if (typeString.length() > 0)
                 typeString.append(", ");

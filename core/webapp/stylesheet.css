@@ -519,9 +519,15 @@ div.labkey-completion
 {
     display:none;
     border: 1px solid #AAAAAA;
-    padding:1px;
+    padding: 2px 2em 2px 2px;
     position:absolute;
     background-color:#FFFFFF;
+    z-index:100;
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: 200px;
+    /* IE-specific hack to display srollbars on the popup properly: */
+    *height: expression( this.scrollHeight > 200 ? "200px" : "auto" );
 }
 
 .labkey-completion table

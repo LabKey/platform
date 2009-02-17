@@ -2083,6 +2083,7 @@ study/src/org/labkey/study/samples/ByteArrayAttachmentFile.java -text
 study/src/org/labkey/study/samples/SamplesGridView.java -text
 study/src/org/labkey/study/samples/SamplesGroupedGridView.java -text
 study/src/org/labkey/study/samples/SamplesWebPart.java -text
+study/src/org/labkey/study/samples/SpecimenCommentAuditViewFactory.java -text
 study/src/org/labkey/study/samples/notifications/ActorNotificationRecipientSet.java -text
 study/src/org/labkey/study/samples/notifications/DefaultRequestNotification.java -text
 study/src/org/labkey/study/samples/notifications/NotificationRecipientSet.java -text

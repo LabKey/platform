@@ -32,18 +32,22 @@ import org.labkey.api.util.*;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.query.*;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.common.util.Pair;
 import org.labkey.study.model.*;
 import org.labkey.study.requirements.RequirementProvider;
 import org.labkey.study.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.study.requirements.SpecimenRequestRequirementType;
 import org.labkey.study.samples.report.SpecimenCountSummary;
+import org.labkey.study.samples.SpecimenCommentAuditViewFactory;
 import org.labkey.study.query.StudyQuerySchema;
 import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.lang.StringUtils;
 
 import javax.mail.Address;
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
@@ -52,11 +56,6 @@ import java.lang.reflect.InvocationTargetException;
 
 public class SampleManager
 {
-    static
-    {
-        ObjectFactory.Registry.register(Site.class, new SiteFactory());
-    }
-
     private static SampleManager _instance;
 
     private final QueryHelper<SampleRequestEvent> _requestEventHelper;
@@ -145,37 +144,6 @@ public class SampleManager
         filter.addCondition("VisitValue", visit);
         filter.addCondition("Container", container.getId());
         return _specimenHelper.get(container, filter);
-    }
-
-    // Custom BeanObjectFactory for Site objects.  Needed because of a bad decision to
-    // prefix boolean columns with 'Is'.  This breaks the normal reflection-based
-    // means of populating the object.
-    private static class SiteFactory extends BeanObjectFactory<Site>
-    {
-        public SiteFactory()
-        {
-            super(Site.class);
-        }
-
-        @Override
-        public Site fromMap(Map<String, ? extends Object> map)
-        {
-            return new Site(map);
-        }
-
-        @Override
-        public Site[] handleArray(ResultSet rs) throws SQLException
-        {
-            List<Site> list = new ArrayList<Site>();
-            Map<String, Object> m = null;
-            while (rs.next())
-            {
-                m = ResultSetUtil.mapRow(rs, m);
-                list.add(fromMap(m));
-            }
-
-            return list.toArray(new Site[list.size()]);
-        }
     }
 
     public RequirementProvider<SampleRequestRequirement, SampleRequestActor> getRequirementsProvider()
@@ -2438,32 +2406,76 @@ public class SampleManager
                 commentFilter, new Sort("GlobalUniqueId"), SpecimenComment.class);
     }
 
+    private void auditSpecimenComment(User user, Specimen vial, String oldComment, String newComment)
+    {
+        String verb = "updated";
+        if (oldComment == null)
+            verb = "added";
+        else if (newComment == null)
+            verb = "deleted";
+        String message = "Comment " + verb + ".\n";
+        if (oldComment != null)
+            message += "Previous value: " + oldComment + "\n";
+        if (newComment != null)
+            message += "New value: " + newComment + "\n";
+
+        AuditLogService.get().addEvent(user, vial.getContainer(),
+                SpecimenCommentAuditViewFactory.SPECIMEN_COMMENT_EVENT, vial.getGlobalUniqueId(), message);
+    }
+
     public SpecimenComment setSpecimenComment(User user, Specimen vial, String commentText) throws SQLException
     {
+        TableInfo commentTable = StudySchema.getInstance().getTableInfoSpecimenComment();
+        DbScope scope = commentTable.getSchema().getScope();
+        boolean transactionOwner = !scope.isTransactionActive();
         SpecimenComment comment = getSpecimenCommentForVial(vial);
-        if (commentText == null)
+        try
         {
-            if (comment != null)
-                Table.delete(StudySchema.getInstance().getTableInfoSpecimenComment(), comment.getRowId(), null);
-            return null;
-        }
-        else
-        {
-            if (comment != null)
+            if (transactionOwner)
+                scope.beginTransaction();
+            if (commentText == null)
             {
-                comment.setComment(commentText);
-                comment.beforeUpdate(user);
-                return Table.update(user, StudySchema.getInstance().getTableInfoSpecimenComment(), comment, comment.getRowId(), null);
+                if (comment != null)
+                {
+                    Table.delete(commentTable, comment.getRowId(), null);
+                    auditSpecimenComment(user, vial, comment.getComment(), null);
+                }
+                if (transactionOwner)
+                    scope.commitTransaction();
+                return null;
             }
             else
             {
-                comment = new SpecimenComment();
-                comment.setGlobalUniqueId(vial.getGlobalUniqueId());
-                comment.setSpecimenHash(vial.getSpecimenHash());
-                comment.setComment(commentText);
-                comment.beforeInsert(user, vial.getContainer().getId());
-                return Table.insert(user, StudySchema.getInstance().getTableInfoSpecimenComment(), comment);
+                if (comment != null)
+                {
+                    String prevComment = comment.getComment();
+                    comment.setComment(commentText);
+                    comment.beforeUpdate(user);
+                    SpecimenComment updated = Table.update(user, commentTable, comment, comment.getRowId(), null);
+                    auditSpecimenComment(user, vial, prevComment, updated.getComment());
+                    if (transactionOwner)
+                        scope.commitTransaction();
+                    return updated;
+                }
+                else
+                {
+                    comment = new SpecimenComment();
+                    comment.setGlobalUniqueId(vial.getGlobalUniqueId());
+                    comment.setSpecimenHash(vial.getSpecimenHash());
+                    comment.setComment(commentText);
+                    comment.beforeInsert(user, vial.getContainer().getId());
+                    SpecimenComment inserted = Table.insert(user, commentTable, comment);
+                    auditSpecimenComment(user, vial, null, inserted.getComment());
+                    if (transactionOwner)
+                        scope.commitTransaction();
+                    return inserted;
+                }
             }
+        }
+        finally
+        {
+            if (transactionOwner)
+                scope.closeConnection();
         }
     }
 

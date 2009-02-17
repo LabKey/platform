@@ -69,6 +69,7 @@ import org.labkey.study.plate.query.PlateSchema;
 import org.labkey.study.query.StudySchemaProvider;
 import org.labkey.study.reports.*;
 import org.labkey.study.samples.SamplesWebPart;
+import org.labkey.study.samples.SpecimenCommentAuditViewFactory;
 import org.labkey.study.view.*;
 
 import java.lang.reflect.InvocationTargetException;
@@ -211,6 +212,7 @@ public class StudyModule extends DefaultModule
         });
         AuditLogService.get().addAuditViewFactory(AssayAuditViewFactory.getInstance());
         AuditLogService.get().addAuditViewFactory(DatasetAuditViewFactory.getInstance());
+        AuditLogService.get().addAuditViewFactory(SpecimenCommentAuditViewFactory.getInstance());
 
         ReportService.get().registerReport(new StudyController.StudyChartReport());
         ReportService.get().registerReport(new EnrollmentReport());

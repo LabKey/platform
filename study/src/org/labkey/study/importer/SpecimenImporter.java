@@ -698,7 +698,8 @@ public class SpecimenImporter
         }
         if (columnName == null)
         {
-            throw new IllegalStateException("Could not find the unique name column during import");
+            throw new IllegalStateException("Could not find a unique specimen identifier column.  Either \"" + GLOBAL_UNIQUE_ID_TSV_COL
+            + "\" or \"" + SPEC_NUMBER_TSV_COL + "\" must be present in the set of specimen columns.");
         }
 
         String insertSQL = "INSERT INTO exp.Material (LSID, Name, Container, CpasType, Created)  \n" +

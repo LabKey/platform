@@ -179,8 +179,7 @@ function requestSelected(requestRecord)
         queryName: 'SpecimenDetail',
         filterArray: [
             LABKEY.Filter.create("RowId", requestData.vialRowIds, LABKEY.Filter.Types.IN)
-        ],
-        sort: 'GlobalUniqueId'
+        ]
     });
     if (!_vialGrid)
     {
@@ -225,8 +224,11 @@ function requestSelected(requestRecord)
     }
 }
 
-function removeSelecteVialSuccessful()
+function removeSelecteVialSuccessful(updatedRequest)
 {
+    var vialRowIds = getVialRowIds(updatedRequest.vials);
+    var filter = LABKEY.Filter.create("RowId", vialRowIds, LABKEY.Filter.Types.IN);
+    _vialGrid.getStore().baseParams[filter.getURLParameterName()] = filter.getURLParameterValue();
     _vialGrid.getStore().reload();
     Ext.Msg.hide();
 }
@@ -240,7 +242,7 @@ function removeSelectedVial()
     {
         var record = selections[recordIndex];
         var recordData = record.data;
-        vialIds[vialIds.length] = recordData.Vial;
+        vialIds[vialIds.length] = recordData.GlobalUniqueId;
     }
     LABKEY.Specimen.removeVialsFromRequest(removeSelecteVialSuccessful, _requestWin.selectedRequest, vialIds, "GlobalUniqueId");
 }

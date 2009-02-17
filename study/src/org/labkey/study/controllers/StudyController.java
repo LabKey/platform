@@ -859,6 +859,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(ParticipantForm form, BindException errors) throws Exception
         {
+            Study study = getStudy();
             _bean = form;
             String previousParticipantURL = null;
             String nextParticiapantURL = null;
@@ -899,7 +900,7 @@ public class StudyController extends BaseStudyController
                 }
             }
 
-            CustomParticipantView customParticipantView = StudyManager.getInstance().getCustomParticipantView(StudyManager.getInstance().getStudy(getContainer()));
+            CustomParticipantView customParticipantView = StudyManager.getInstance().getCustomParticipantView(study);
             ModelAndView participantView;
             if (customParticipantView != null && customParticipantView.isActive())
             {

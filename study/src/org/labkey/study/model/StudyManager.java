@@ -2899,6 +2899,8 @@ public class StudyManager
 
     public CustomParticipantView getCustomParticipantView(Study study) throws SQLException
     {
+        if (study == null)
+            return null;
         SimpleFilter containerFilter = new SimpleFilter("Container", study.getContainer().getId());
         return Table.selectObject(StudySchema.getInstance().getTableInfoParticipantView(), Table.ALL_COLUMNS,
                 containerFilter, null, CustomParticipantView.class);

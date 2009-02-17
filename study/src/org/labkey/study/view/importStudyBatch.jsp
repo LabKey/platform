@@ -48,9 +48,9 @@ for (DatasetBatch.DatasetImportJob job : jobs)
         message = "<font class=labkey-error>" + PageFlowUtil.filter(message) + "</font>";
     }
     %><tr>
-    <td align=right><%=dataset.getDataSetId()%></td>
+    <td align=right><%= dataset != null ? dataset.getDataSetId() : ""%></td>
     <td><%=job.getAction()%></td>
-    <td><%=dataset.getLabel()%></td>
+    <td><%=dataset != null ? dataset.getLabel() : "Unknown"%></td>
     <td><%=message%></td>
     </tr><%
 }

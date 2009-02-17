@@ -1332,7 +1332,7 @@ public class SpringSpecimenController extends BaseStudyController
 
         public String getValue(int inputIndex) throws SQLException
         {
-            if (_inputValues != null && _inputValues[inputIndex] != null && _inputValues[inputIndex].length() > 0)
+            if (_inputValues != null && _inputValues[inputIndex] != null && inputIndex < _inputValues[inputIndex].length())
                 return _inputValues[inputIndex];
             if (_inputs[inputIndex].isRememberSiteValue() && _selectedSite > 0)
                 return _inputs[inputIndex].getDefaultSiteValues(_container).get(_selectedSite);
