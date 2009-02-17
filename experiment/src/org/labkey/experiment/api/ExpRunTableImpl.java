@@ -16,22 +16,22 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.api.*;
-import org.labkey.api.exp.query.ExpSchema;
-import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.data.*;
+import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.*;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.experiment.controllers.exp.ExperimentMembershipDisplayColumnFactory;
+import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.labkey.experiment.controllers.exp.ExperimentMembershipDisplayColumnFactory;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.sql.Types;
 import java.util.*;
-import java.io.Writer;
-import java.io.IOException;
 
 public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements ExpRunTable
 {
@@ -166,12 +166,12 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         if (_schema.getContainer().equals(ContainerManager.getSharedContainer()))
         {
             // If we're in the /Shared project, look everywhere
-            setContainerFilter(ContainerFilter.Filters.ALL_IN_SITE, _schema.getUser());
+            setContainerFilter(new ContainerFilter.AllInSite(_schema.getUser()));
         }
         else if (getContainer().isProject())
         {
             // If we're in a project, look in subfolders
-            setContainerFilter(ContainerFilter.Filters.CURRENT_AND_SUBFOLDERS, _schema.getUser());
+            setContainerFilter(new ContainerFilter.CurrentAndSubfolders(_schema.getUser()));
         }
     }
 

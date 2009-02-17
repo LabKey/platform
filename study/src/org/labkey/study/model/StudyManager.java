@@ -230,7 +230,7 @@ public class StudyManager
     @NotNull
     public Study[] getAllStudies(Container root, User user) throws SQLException
     {
-        FilteredTable t = new FilteredTable(StudySchema.getInstance().getTableInfoStudy(), root, ContainerFilter.Filters.CURRENT_AND_SUBFOLDERS, user);
+        FilteredTable t = new FilteredTable(StudySchema.getInstance().getTableInfoStudy(), root, new ContainerFilter.CurrentAndSubfolders(user));
         t.wrapAllColumns(true);
         return Table.select(t, Table.ALL_COLUMNS, null, null, Study.class);
     }

@@ -38,7 +38,7 @@
         if (protocol.getContainer().equals(proj))
         {
             url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(proj, protocol);
-            url.addParameter(protocol.getName() + " Runs.containerFilterName", ContainerFilter.Filters.ALL_IN_PROJECT.name());
+            url.addParameter(protocol.getName() + " Runs.containerFilterName", ContainerFilter.AllInProject.class.getSimpleName());
         }
         else
             url = new ActionURL(AssayController.SummaryRedirectAction.class, ctx.getContainer());

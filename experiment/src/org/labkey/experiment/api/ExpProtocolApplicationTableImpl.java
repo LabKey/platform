@@ -97,7 +97,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
             public TableInfo getLookupTableInfo()
             {
                 ExpDataTable expDataTable = schema.createDatasTable("lookup");
-                expDataTable.setContainerFilter(getContainerFilter(), schema.getUser());
+                expDataTable.setContainerFilter(getContainerFilter());
                 return expDataTable;
             }
         });
