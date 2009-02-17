@@ -29,12 +29,12 @@
 <%@ page import="org.labkey.study.reports.StudyCrosstabReport" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ReportsController.CrosstabDesignBean> me = (JspView<ReportsController.CrosstabDesignBean>) HttpView.currentView();
     ReportsController.CrosstabDesignBean bean = me.getModelBean();
 
-    ColumnInfo[] cols = bean.getColumns();
     List stats = Arrays.asList(bean.getStats());
 
 %>
@@ -45,13 +45,13 @@
     <table>
         <tr>
             <td></td>
-            <td class="labkey-bordered" style="font-weight:bold">Column Field<%=fieldDropDown("colField", cols, bean.getColField(), false, true)%></td>
+            <td class="labkey-bordered" style="font-weight:bold">Column Field<%=fieldDropDown("colField", bean.getColumns(), bean.getColField(), false, true)%></td>
 
         </tr>
     <tr>
-        <td class="labkey-bordered" style="font-weight:bold">Row<br>Field<br><%=fieldDropDown("rowField", cols, bean.getRowField(), false, true)%>
+        <td class="labkey-bordered" style="font-weight:bold">Row<br>Field<br><%=fieldDropDown("rowField", bean.getColumns(), bean.getRowField(), false, true)%>
         </td>
-        <td class="labkey-bordered" style="font-weight:bold" width="100%">Compute Statistics for Field<br><%=fieldDropDown("statField", cols, bean.getStatField(), true, false)%><br>
+        <td class="labkey-bordered" style="font-weight:bold" width="100%">Compute Statistics for Field<br><%=fieldDropDown("statField", bean.getColumns(), bean.getStatField(), true, false)%><br>
             <br>
             Compute<br>
             <table><tr><td>
@@ -88,24 +88,31 @@
 </form>
 
 <%!
-    public String fieldDropDown(String name, ColumnInfo[] cols, String selected, boolean numericOnly, boolean allowBlank)
+    public String fieldDropDown(String name, Map<String, ColumnInfo> cols, String selected, boolean numericOnly, boolean allowBlank)
     {
         StringBuilder sb = new StringBuilder();
         sb.append("<select name=\"").append(name).append("\">\n");
         if (allowBlank)
             sb.append("<option></option>");
-        sb.append("<option value=\"SequenceNum\"");
-        if ("SequenceNum".equalsIgnoreCase(selected))
-            sb.append(" selected");
-        sb.append(">Visit Id</option>");
+
+        if (cols.containsKey("SequenceNum"))
+        {
+            sb.append("<option value=\"SequenceNum\"");
+            if ("SequenceNum".equalsIgnoreCase(selected))
+                sb.append(" selected");
+            sb.append(">Visit Id</option>");
+        }
         if (!numericOnly)
         {
-            sb.append("<option value=\"ParticipantId\"");
-            if (null != selected && selected.equalsIgnoreCase("ParticipantId"))
-                sb.append(" selected");
-            sb.append(">Participant Id</option>");
+            if (cols.containsKey("ParticipantId"))
+            {
+                sb.append("<option value=\"ParticipantId\"");
+                if (null != selected && selected.equalsIgnoreCase("ParticipantId"))
+                    sb.append(" selected");
+                sb.append(">Participant Id</option>");
+            }
         }
-        for (ColumnInfo col : cols)
+        for (ColumnInfo col : cols.values())
         {
             if (numericOnly && !(Number.class.isAssignableFrom(col.getJavaClass()) || col.getJavaClass().isPrimitive()))
                 continue;

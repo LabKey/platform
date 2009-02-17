@@ -66,7 +66,7 @@
         basePage += "QCState=" + selectedQCStateSet.getFormValue() + "&";
 
 %><%= bean.canManage ? textLink("Manage Study", "manageStudy.view") : ""%>
-&nbsp;<%= textLink("Reports and Views", ActionURL.toPathString("Study-Reports", "begin", container))%>&nbsp;
+&nbsp;<%= textLink("Views", ActionURL.toPathString("Study-Reports", "begin", container))%>&nbsp;
 &nbsp;<%= textLink("Specimens", ActionURL.toPathString("Study-Samples", "begin", container))%>&nbsp;
 <%
     boolean hasHiddenData = false;

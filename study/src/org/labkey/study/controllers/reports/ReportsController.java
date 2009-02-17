@@ -31,11 +31,14 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
-import org.labkey.api.reports.report.view.*;
+import org.labkey.api.reports.report.view.ChartDesignerBean;
+import org.labkey.api.reports.report.view.RReportBean;
+import org.labkey.api.reports.report.view.ReportDesignBean;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
+import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -62,7 +65,10 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 public class ReportsController extends BaseStudyController
@@ -700,7 +706,7 @@ public class ReportsController extends BaseStudyController
 
     public static class CrosstabDesignBean extends ReportDesignBean
     {
-        private ColumnInfo[] columns;
+        private Map<String, ColumnInfo> columns;
         private int _datasetId = -1;
         private int _visitRowId = -1;
         private String _rowField;
@@ -729,12 +735,12 @@ public class ReportsController extends BaseStudyController
             _visitRowId = visitRowId;
         }
 
-        public ColumnInfo[] getColumns()
+        public Map<String, ColumnInfo> getColumns()
         {
             return columns;
         }
 
-        public void setColumns(ColumnInfo[] columns)
+        public void setColumns(Map<String, ColumnInfo> columns)
         {
             this.columns = columns;
         }
@@ -810,9 +816,7 @@ public class ReportsController extends BaseStudyController
                 if (!StringUtils.isEmpty(viewName))
                     form.setViewName(viewName);
             }
-            final List<ColumnInfo> columns = getDatasetColumns(form); //ReportManager.get().getDatasetColumns(getViewContext(), getViewContext().getActionURL(), def);
-
-            form.setColumns(columns.toArray(new ColumnInfo[0]));
+            form.setColumns(getDatasetColumns(form));
 
             JspView<CrosstabDesignBean> view = new JspView<CrosstabDesignBean>("/org/labkey/study/view/crosstabDesigner.jsp", form);
             VBox v = new VBox(view);
@@ -836,7 +840,7 @@ public class ReportsController extends BaseStudyController
             return v;
         }
 
-        private List<ColumnInfo> getDatasetColumns(CrosstabDesignBean form)
+        private Map<String, ColumnInfo> getDatasetColumns(CrosstabDesignBean form)
         {
             QuerySettings settings = new QuerySettings(getViewContext(), "Dataset");
             settings.setQueryName(form.getQueryName());
@@ -846,11 +850,13 @@ public class ReportsController extends BaseStudyController
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), "study");
             QueryView qv = new QueryView(schema, settings);
             List<DisplayColumn> cols = qv.getDisplayColumns();
-            List<ColumnInfo> colInfos = new ArrayList<ColumnInfo>(cols.size());
+            Map<String, ColumnInfo> colMap = new CaseInsensitiveHashMap<ColumnInfo>();
             for (DisplayColumn col : cols)
-                colInfos.add(col.getColumnInfo());
-
-            return colInfos;
+            {
+                ColumnInfo colInfo = col.getColumnInfo();
+                colMap.put(colInfo.getAlias(), colInfo);
+            }
+            return colMap;
         }
 
         public boolean handlePost(CrosstabDesignBean crosstabDesignBean, BindException errors) throws Exception

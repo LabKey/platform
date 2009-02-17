@@ -93,9 +93,8 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
         or.addClause(new CompareType.CompareClause("EventType", CompareType.EQUAL, DomainAuditViewFactory.DOMAIN_AUDIT_EVENT));
         filter.addClause(or);
 
-        String uriFilter = new Lsid("List", "0").toString();
-        uriFilter = uriFilter.substring(0, uriFilter.length() - 2);
-        filter.addCondition("Key1", uriFilter, CompareType.STARTS_WITH);
+        // try to filter on just list domains
+        filter.addCondition("Key1", ":List.", CompareType.CONTAINS);
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, getEventType());
         view.setSort(new Sort("-Date"));

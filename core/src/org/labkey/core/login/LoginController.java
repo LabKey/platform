@@ -990,7 +990,6 @@ public class LoginController extends SpringActionController
                     Container c = getContainer();
                     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
                     final SecurityMessage message = SecurityManager.getResetMessage(false);
-                    message.setHideContact(true);
                     ActionURL verificationURL = SecurityManager.createVerificationURL(c, _email.getEmailAddress(), verification, null);
 
                     final User system = new User(laf.getSystemEmailAddress(), 0);
@@ -1000,7 +999,6 @@ public class LoginController extends SpringActionController
                     if (!user.getEmail().equals(_email.getEmailAddress()))
                     {
                         final SecurityMessage adminMessage = SecurityManager.getResetMessage(true);
-                        message.setHideContact(true);
                         message.setTo(_email.getEmailAddress());
                         SecurityManager.sendEmail(c, user, adminMessage, user.getEmail(), verificationURL);
                     }
