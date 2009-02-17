@@ -20,14 +20,13 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.ShowRows;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.util.HString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.util.HString;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -51,7 +50,7 @@ public class QuerySettings
 
     PropertyValues _filterSort = null;
 
-    ContainerFilter _containerFilter;
+    private String _containerFilterName;
 
 
     public QuerySettings(String dataRegionName)
@@ -421,13 +420,13 @@ public class QuerySettings
         _allowCustomizeView = allowCustomizeView;
     }
 
-    ContainerFilter getContainerFilter()
+    String getContainerFilterName()
     {
-        return _containerFilter;
+        return _containerFilterName;
     }
 
     public void setContainerFilterName(String name)
     {
-        _containerFilter = ContainerFilter.Filters.valueOf(name);
+        _containerFilterName = name;
     }
 }

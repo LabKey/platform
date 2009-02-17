@@ -24,151 +24,85 @@ import java.util.*;
  * User: jeckels
  * Date: Nov 3, 2008
  */
-public interface ContainerFilter
+public abstract class ContainerFilter
 {
     /**
      * @return null if no filtering should be done, otherwise the set of valid container ids
      */
-    public Collection<String> getIds(Container currentContainer, User user);
+    public abstract Collection<String> getIds(Container currentContainer);
 
-    /**
-     * @return true if this filter should be exposed in the UI from query
-     */
-    public boolean isPublicFilter();
-    
-    public String name();
-
-    public enum Filters implements ContainerFilter
+    public String name()
     {
-        CURRENT()
+        return getClass().getSimpleName();
+    }
+
+    public static ContainerFilter getContainerFilterByName(String name, User user)
+    {
+        if (CURRENT.name().equals(name))
+            return CURRENT;
+        if ("CurrentAndSubfolders".equals(name))
+            return new CurrentAndSubfolders(user);
+        return null;
+    }
+
+    public static Collection<ContainerFilter> getPublicFilters(User user)
+    {
+        List<ContainerFilter> filters = new ArrayList<ContainerFilter>();
+        filters.add(CURRENT);
+        filters.add(new CurrentAndSubfolders(user));
+
+        return filters;
+    }
+
+    public static final ContainerFilter CURRENT = new ContainerFilter()
+    {
+        public Collection<String> getIds(Container currentContainer)
         {
-            public Collection<String> getIds(Container currentContainer, User user)
-            {
-                return Collections.singleton(currentContainer.getId());
-            }
+            return Collections.singleton(currentContainer.getId());
+        }
 
-            public String toString()
-            {
-                return "Current Folder";
-            }
-
-            public boolean isPublicFilter()
-            {
-                return true;
-            }
-        },
-
-        CURRENT_AND_SUBFOLDERS()
+        @Override
+        public String toString()
         {
-            public Collection<String> getIds(Container currentContainer, User user)
-            {
-                Set<Container> containers = new HashSet<Container>(ContainerManager.getAllChildren(currentContainer, user, ACL.PERM_READ));
-                containers.add(currentContainer);
-                return toIds(containers);
-            }
+            return "Current Folder";
+        }
+    };
 
-            public String toString()
-            {
-                return "Current Folder and Subfolders";
-            }
-
-            public boolean isPublicFilter()
-            {
-                return true;
-            }
-        },
-
-        CURRENT_PLUS_PROJECT_AND_SHARED()
+    public static final ContainerFilter EVERYTHING = new ContainerFilter()
+    {
+        public Collection<String> getIds(Container currentContainer)
         {
-            public Collection<String> getIds(Container currentContainer, User user)
-            {
-                List<Container> containers = new ArrayList<Container>();
-                containers.add(currentContainer);
-                Container project = currentContainer.getProject();
-                if (project != null && project.hasPermission(user, ACL.PERM_READ))
-                {
-                    containers.add(project);
-                }
-                Container shared = ContainerManager.getSharedContainer();
-                if (shared.hasPermission(user, ACL.PERM_READ))
-                {
-                    containers.add(shared);
-                }
-                return toIds(containers);
-            }
+            return null;
+        }
+    };
 
-            public boolean isPublicFilter()
-            {
-                return false;
-            }
-        },
+    private static abstract class ContainerFilterWithUser extends ContainerFilter
+    {
+        protected final User _user;
 
-        ALL_IN_PROJECT()
+        public ContainerFilterWithUser(User user)
         {
-            public Collection<String> getIds(Container currentContainer, User user)
-            {
-                Container project = currentContainer.isProject() ? currentContainer : currentContainer.getProject();
-                if (project == null)
-                {
-                    // Don't allow anything
-                    return Collections.emptySet();
-                }
-                Set<Container> containers = new HashSet<Container>(ContainerManager.getAllChildren(project, user, ACL.PERM_READ));
-                containers.add(project);
-                return toIds(containers);
-            }
-
-            public boolean isPublicFilter()
-            {
-                return false;
-            }
-        },
-
-        ALL_IN_SITE()
-        {
-            public Collection<String> getIds(Container currentContainer, User user)
-            {
-                if (user.isAdministrator())
-                {
-                    // Don't bother filtering, the user can see everything
-                    return null;
-                }
-                return ContainerManager.getIds(user, ACL.PERM_READ);
-            }
-
-            public boolean isPublicFilter()
-            {
-                return false;
-            }
-        };
-
-        Set<String> toIds(Collection<Container> containers)
-        {
-            Set<String> ids = new HashSet<String>();
-            for (Container container : containers)
-            {
-                ids.add(container.getId());
-            }
-            return ids;
+            _user = user;
         }
     }
 
-    public class CurrentPlusExtras implements ContainerFilter
+    public static class CurrentPlusExtras extends ContainerFilterWithUser
     {
-        private Container[] _extraContainers;
+        private final Container[] _extraContainers;
 
-        public CurrentPlusExtras(Container... extraContainers)
+        public CurrentPlusExtras(User user, Container... extraContainers)
         {
+            super(user);
             _extraContainers = extraContainers;
         }
 
-        public Collection<String> getIds(Container currentContainer, User user)
+        public Collection<String> getIds(Container currentContainer)
         {
             Set<Container> containers = new HashSet<Container>();
             containers.add(currentContainer);
             for (Container extraContainer : _extraContainers)
             {
-                if (extraContainer.hasPermission(user, ACL.PERM_READ))
+                if (extraContainer.hasPermission(_user, ACL.PERM_READ))
                 {
                     containers.add(extraContainer);
                 }
@@ -185,34 +119,102 @@ public interface ContainerFilter
             }
             return ids;
         }
+    }
 
-        public boolean isPublicFilter()
+    public static class CurrentAndSubfolders extends ContainerFilterWithUser
+    {
+        public CurrentAndSubfolders(User user)
         {
-            return false;
+            super(user);
         }
 
-        public String name()
+        public Collection<String> getIds(Container currentContainer)
         {
-            return getClass().getSimpleName();
+            Set<Container> containers = new HashSet<Container>(ContainerManager.getAllChildren(currentContainer, _user, ACL.PERM_READ));
+            containers.add(currentContainer);
+            return toIds(containers);
+        }
+
+        public String toString()
+        {
+            return "Current Folder and Subfolders";
         }
     }
 
-    public static final ContainerFilter EVERYTHING = new ContainerFilter()
+    public static class CurrentPlusProjectAndShared extends ContainerFilterWithUser
     {
-        public Collection<String> getIds(Container currentContainer, User user)
+        public CurrentPlusProjectAndShared(User user)
         {
-            return null;
+            super(user);
         }
 
-        public boolean isPublicFilter()
+        public Collection<String> getIds(Container currentContainer)
         {
-            return false;
+            List<Container> containers = new ArrayList<Container>();
+            containers.add(currentContainer);
+            Container project = currentContainer.getProject();
+            if (project != null && project.hasPermission(_user, ACL.PERM_READ))
+            {
+                containers.add(project);
+            }
+            Container shared = ContainerManager.getSharedContainer();
+            if (shared.hasPermission(_user, ACL.PERM_READ))
+            {
+                containers.add(shared);
+            }
+            return toIds(containers);
         }
 
-        public String name()
+    }
+
+    public static class AllInProject extends ContainerFilterWithUser
+    {
+        public AllInProject(User user)
         {
-            return getClass().getSimpleName();
+            super(user);
         }
-    };
+
+        public Collection<String> getIds(Container currentContainer)
+        {
+            Container project = currentContainer.isProject() ? currentContainer : currentContainer.getProject();
+            if (project == null)
+            {
+                // Don't allow anything
+                return Collections.emptySet();
+            }
+            Set<Container> containers = new HashSet<Container>(ContainerManager.getAllChildren(project, _user, ACL.PERM_READ));
+            containers.add(project);
+            return toIds(containers);
+        }
+    }
+
+    public static class AllInSite extends ContainerFilterWithUser
+    {
+        public AllInSite(User user)
+        {
+            super(user);
+        }
+
+        public Collection<String> getIds(Container currentContainer)
+        {
+            if (_user.isAdministrator())
+            {
+                // Don't bother filtering, the user can see everything
+                return null;
+            }
+            return ContainerManager.getIds(_user, ACL.PERM_READ);
+        }
+
+    }
+
+    private static Set<String> toIds(Collection<Container> containers)
+    {
+        Set<String> ids = new HashSet<String>();
+        for (Container container : containers)
+        {
+            ids.add(container.getId());
+        }
+        return ids;
+    }
 
 }

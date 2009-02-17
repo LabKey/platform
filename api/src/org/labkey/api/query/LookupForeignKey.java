@@ -16,10 +16,7 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.AbstractForeignKey;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.StringExpressionFactory;
 
@@ -93,6 +90,14 @@ abstract public class LookupForeignKey extends AbstractForeignKey
         }
         if (displayField == null)
             return null;
+        if (table instanceof ContainerFilterable && parent.getParentTable().getContainerFilter() != null)
+        {
+            ContainerFilterable newTable = (ContainerFilterable)table;
+            
+            // Only override if the new table doesn't already have some special filter
+            if (newTable.hasDefaultContainerFilter())
+                newTable.setContainerFilter(new DelegatingContainerFilter(parent.getParentTable()));
+        }
         return LookupColumn.create(parent, getPkColumn(table), table.getColumn(displayField), _prefixColumnCaption);
     }
 

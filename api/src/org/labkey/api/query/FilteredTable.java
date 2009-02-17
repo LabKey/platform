@@ -17,8 +17,8 @@
 package org.labkey.api.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
-import org.labkey.api.security.User;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -34,7 +34,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
 
     private Container _container;
 
-    @NotNull
+    @Nullable // if null, means default
     private ContainerFilter _containerFilter;
 
     public FilteredTable(TableInfo table)
@@ -45,15 +45,14 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         _name = _rootTable.getName();
         _alias = _name;
         setTitleColumn(table.getTitleColumn());
-        _containerFilter = ContainerFilter.Filters.CURRENT;
     }
 
     public FilteredTable(TableInfo table, Container container)
     {
-        this(table, container, ContainerFilter.Filters.CURRENT, null);
+        this(table, container, null);
     }
 
-    public FilteredTable(TableInfo table, Container container, ContainerFilter containerFilter, User user)
+    public FilteredTable(TableInfo table, Container container, ContainerFilter containerFilter)
     {
         this(table);
 
@@ -61,13 +60,10 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
             throw new IllegalArgumentException("container cannot be null");
         _container = container;
 
-        if (user == null && containerFilter != ContainerFilter.Filters.CURRENT) // CURRENT does not require a user
-            throw new IllegalArgumentException("user cannot be null");
-
-        if (containerFilter == null)
-            throw new IllegalArgumentException("containerFilter cannot be null");
-        setContainerFilter(containerFilter, user);
-
+        if (containerFilter != null)
+            setContainerFilter(containerFilter);
+        else
+            applyContainerFilter(ContainerFilter.CURRENT);
     }
 
     public void wrapAllColumns(boolean preserveHidden)
@@ -222,19 +218,22 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         return _filter;
     }
 
-    public void setContainerFilter(@NotNull ContainerFilter filter, User user)
+    public void setContainerFilter(@NotNull ContainerFilter filter)
     {
-        // Bit of a hack here -- this table must already have a user or we're toast
-        // In the future, we should require a user on construction, perhaps store a UserSchema object?
-        if (user == null && filter != ContainerFilter.Filters.CURRENT)
-            throw new IllegalArgumentException("Cannot add a ContainerFilter without a user");
-
+        //noinspection ConstantConditions
+        if (filter == null) // this really can happen, if other callers ignore warnings
+            throw new IllegalArgumentException("filter cannot be null");
         _containerFilter = filter;
+        applyContainerFilter(_containerFilter);
+    }
+
+    private void applyContainerFilter(ContainerFilter filter)
+    {
         ColumnInfo containerColumn = _rootTable.getColumn("container");
         if (containerColumn != null && getContainer() != null)
         {
             clearConditions(containerColumn);
-            Collection<String> ids = filter.getIds(getContainer(), user);
+            Collection<String> ids = filter.getIds(getContainer());
             if (ids != null)
             {
                 addCondition(new SimpleFilter(new SimpleFilter.InClause("Container", ids)));
@@ -245,7 +244,17 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     @NotNull
     public ContainerFilter getContainerFilter()
     {
+        if (_containerFilter == null)
+            return ContainerFilter.CURRENT;
         return _containerFilter;
+    }
+
+    /**
+     * Returns true if the container filter has never been set on this table
+     */
+    public boolean hasDefaultContainerFilter()
+    {
+        return _containerFilter == null;
     }
 
     public Container getContainer()

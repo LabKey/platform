@@ -15,33 +15,26 @@
  */
 package org.labkey.api.data;
 
-import org.labkey.api.security.User;
-
 import java.util.Collection;
 
 /**
  * User: jeckels
  * Date: Feb 4, 2009
  */
-public class DelegatingContainerFilter implements ContainerFilter
+public class DelegatingContainerFilter extends ContainerFilter
 {
-    private ContainerFilterable _source;
+    private TableInfo _source;
 
-    public DelegatingContainerFilter(ContainerFilterable source)
+    public DelegatingContainerFilter(TableInfo source)
     {
         _source = source;
     }
 
-    public Collection<String> getIds(Container currentContainer, User user)
+    public Collection<String> getIds(Container currentContainer)
     {
-        return _source.getContainerFilter().getIds(currentContainer, user);
+        return _source.getContainerFilter().getIds(currentContainer);
     }
-
-    public boolean isPublicFilter()
-    {
-        return _source.getContainerFilter().isPublicFilter();
-    }
-
+    
     public String name()
     {
         return _source.getContainerFilter().name();
