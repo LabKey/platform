@@ -87,6 +87,8 @@ public class RunListQueryView extends ExperimentRunListView
         {
             ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(getContainer(), _protocol, PublishStartAction.class);
             copyURL.addParameter("runIds", true);
+            if (getTable().getContainerFilter() != null)
+                copyURL.addParameter("containerFilterName", getTable().getContainerFilter().name());
             ActionButton copySelectedButton = new ActionButton(copyURL, "Copy Selected to Study");
             copySelectedButton.setScript("return verifySelected(this.form, \"" + copyURL.getLocalURIString() + "\", \"post\", \"runs\")");
             copySelectedButton.setActionType(ActionButton.Action.POST);
