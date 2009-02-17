@@ -2209,7 +2209,6 @@ public class SecurityManager
     public abstract static class SecurityEmailTemplate extends EmailTemplate
     {
         protected String _optionalPrefix;
-        protected boolean _hideContact;
         private String _verificationUrl = "";
         private String _emailAddress = "";
         private String _recipient = "";
@@ -2233,7 +2232,6 @@ public class SecurityManager
         }
 
         public void setOptionPrefix(String optionalPrefix){_optionalPrefix = optionalPrefix;}
-        public void setHideContact(boolean hideContact){_hideContact = hideContact;}
         public void setVerificationUrl(String verificationUrl){_verificationUrl = verificationUrl;}
         public void setEmailAddress(String emailAddress){_emailAddress = emailAddress;}
         public void setRecipient(String recipient){_recipient = recipient;}
@@ -2309,7 +2307,6 @@ public class SecurityManager
 
     public static class PasswordResetEmailTemplate extends SecurityEmailTemplate
     {
-        private static final String CONTACT_STRING = "\n\nIf you have any questions don't hesitate to contact the %siteShortName% team at %emailAddress%.";
         protected static final String DEFAULT_SUBJECT =
                 "Reset Password Notification from the %siteShortName% Web Site";
         protected static final String DEFAULT_BODY =
@@ -2329,15 +2326,6 @@ public class SecurityManager
             setBody(DEFAULT_BODY);
             setDescription("Sent to the user and administrator when the password of a user is reset.");
             setPriority(3);
-        }
-
-        public String renderBody(Container c)
-        {
-            StringBuffer sb = new StringBuffer(super.renderBody(c));
-            if (!_hideContact)
-                sb.append(render(c, CONTACT_STRING));
-
-            return sb.toString();
         }
     }
 

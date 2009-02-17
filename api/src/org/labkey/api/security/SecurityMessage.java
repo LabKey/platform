@@ -30,7 +30,6 @@ public class SecurityMessage
     private String _to;
     private String _type;
     private String _messagePrefix;
-    private boolean _hideContact;
     private SecurityManager.SecurityEmailTemplate _template;
 
     public SecurityMessage(){}
@@ -49,7 +48,6 @@ public class SecurityMessage
             _template.setVerificationUrl(getVerificationURL());
             _template.setEmailAddress(getFrom());
             _template.setRecipient(getTo());
-            _template.setHideContact(getHideContact());
             _template.setOptionPrefix(getMessagePrefix());
 
             String body = _template.renderBody(c);
@@ -99,16 +97,6 @@ public class SecurityMessage
     public void setMessagePrefix(String messagePrefix)
     {
         _messagePrefix = messagePrefix;
-    }
-
-    public boolean getHideContact()
-    {
-        return _hideContact;
-    }
-
-    public void setHideContact(boolean hideContact)
-    {
-        _hideContact = hideContact;
     }
 
     public void setTo(String to){_to = to;}
