@@ -244,7 +244,7 @@ LABKEY.Query = new function()
         *        Use this along with the maxRows config property to request pages of data.
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
         *       generating a timeout error (defaults to 30000).
-        * @param {Double} [config.apiVersion] Set to 9.1 to receive the ExtendedSelectRowsResults format
+        * @param {Double} [config.requiredVersion] Set to 9.1 to receive the ExtendedSelectRowsResults format
                   instead of the SelectRowsResults format. The main difference is that in the
                   ExtendedSelectRowsResults format each column in each row
                   will be another object (not just a scalar value) with a "value" property as well as other
@@ -332,8 +332,8 @@ LABKEY.Query = new function()
             if(config.timeout)
                 Ext.Ajax.timeout = config.timeout;
 
-            if(config.apiVersion)
-                dataObject.apiVersion = config.apiVersion;
+            if(config.requiredVersion)
+                dataObject.apiVersion = config.requiredVersion;
 
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'getQuery', config.containerPath),
