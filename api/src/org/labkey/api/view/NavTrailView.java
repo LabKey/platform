@@ -123,7 +123,8 @@ public class NavTrailView extends HttpView
             for (Module module : moduleList)
             {
                 boolean selected = (module == activeModule);
-                if (selected || containerModules.contains(module))
+                if (selected || (containerModules.contains(module)
+                        && null != module.getTabURL(container, context.getUser())))
                 {
                     Tab newTab = new Tab(context, module, selected);
                     tabs.add(newTab);
