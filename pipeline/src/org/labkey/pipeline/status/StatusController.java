@@ -940,23 +940,23 @@ public class StatusController extends SpringActionController
             bb.add(button);
         }
 
-        ActionButton retryStatus = new ActionButton("", PipelineProvider.CAPTION_RETRY_BUTTON);
-        retryStatus.setScript("return verifySelected(this.form, \"runAction.view?action=" + PipelineProvider.CAPTION_RETRY_BUTTON + "\", \"post\", \"files\")");
+        ActionButton retryStatus = new ActionButton("runAction.view?action=\" + PipelineProvider.CAPTION_RETRY_BUTTON + \"", PipelineProvider.CAPTION_RETRY_BUTTON);
+        retryStatus.setRequiresSelection(true);
         retryStatus.setActionType(ActionButton.Action.POST);
         if (!user.isAdministrator())
             retryStatus.setDisplayPermission(ACL.PERM_UPDATE);
         retryStatus.setVisible(false);
         bb.add(retryStatus);
 
-        ActionButton deleteStatus = new ActionButton("", "Delete");
-        deleteStatus.setScript("return verifySelected(this.form, \"deleteStatus.view\", \"post\", \"files\")");
+        ActionButton deleteStatus = new ActionButton("deleteStatus.view", "Delete");
+        deleteStatus.setRequiresSelection(true);
         deleteStatus.setActionType(ActionButton.Action.POST);
         if (!user.isAdministrator())
             deleteStatus.setDisplayPermission(ACL.PERM_DELETE);
         bb.add(deleteStatus);
 
-        ActionButton completeStatus = new ActionButton("", "Complete");
-        completeStatus.setScript("return verifySelected(this.form, \"completeStatus.view\", \"post\", \"files\")");
+        ActionButton completeStatus = new ActionButton("completeStatus.view", "Complete");
+        completeStatus.setRequiresSelection(true);
         completeStatus.setActionType(ActionButton.Action.POST);
         if (!user.isAdministrator())
             completeStatus.setDisplayPermission(ACL.PERM_UPDATE);

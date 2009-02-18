@@ -46,6 +46,7 @@ public class ProtocolWebPart extends WebPartView
         Container c = getViewContext().getContainer(ACL.PERM_READ);
 
         DataRegion dr = new DataRegion();
+        dr.setName("protocols");
         TableInfo ti = ExperimentServiceImpl.get().getTinfoProtocol();
         List<ColumnInfo> cols = ti.getColumns("RowId,Name,LSID");
         dr.setColumns(cols);
@@ -60,21 +61,23 @@ public class ProtocolWebPart extends WebPartView
             dr.setShowRecordSelectors(true);
 
             ActionURL deleteProtUrl = getViewContext().cloneActionURL();
-            ActionButton deleteProtocol = new ActionButton("", "Delete Selected");
+            ActionButton deleteProtocol = new ActionButton("", "Delete");
             deleteProtUrl.setAction("deleteProtocolByRowIds");
             deleteProtUrl.setPageFlow("Experiment");
-            deleteProtocol.setScript("return verifySelected(this.form, \"" + deleteProtUrl.getLocalURIString() + "\", \"post\", \"Protocol\")");
+            deleteProtocol.setURL(deleteProtUrl);
             deleteProtocol.setActionType(ActionButton.Action.POST);
             deleteProtocol.setDisplayPermission(ACL.PERM_DELETE);
+            deleteProtocol.setRequiresSelection(true);
             bb.add(deleteProtocol);
 
             ActionURL exportURL = getViewContext().cloneActionURL();
             ActionButton exportProtocols = new ActionButton("", "Export...");
             exportURL.setAction("exportProtocolsOptions");
             exportURL.setPageFlow("Experiment");
-            exportProtocols.setScript("return verifySelected(this.form, \"" + exportURL.getLocalURIString() + "\", \"post\", \"Protocol\")");
+            exportProtocols.setURL(exportURL);
             exportProtocols.setActionType(ActionButton.Action.POST);
             exportProtocols.setDisplayPermission(ACL.PERM_DELETE);
+            exportProtocols.setRequiresSelection(true);
             bb.add(exportProtocols);
 
             dr.setButtonBar(bb);

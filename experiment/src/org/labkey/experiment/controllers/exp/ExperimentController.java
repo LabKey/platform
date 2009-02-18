@@ -349,17 +349,19 @@ public class ExperimentController extends SpringActionController
 
                     ActionURL deleteMaterialUrl = new ActionURL(DeleteMaterialByRowIdAction.class, getContainer());
                     deleteMaterialUrl.addParameter("returnURL", getViewContext().getActionURL().toString());
-                    ActionButton deleteMaterial = new ActionButton("", "Delete Selected");
-                    deleteMaterial.setScript("return verifySelected(this.form, \"" + deleteMaterialUrl.getLocalURIString() + "\", \"post\", \"Samples\")");
+                    ActionButton deleteMaterial = new ActionButton("", "Delete");
+                    deleteMaterial.setURL(deleteMaterialUrl);
                     deleteMaterial.setActionType(ActionButton.Action.POST);
                     deleteMaterial.setDisplayPermission(ACL.PERM_DELETE);
+                    deleteMaterial.setRequiresSelection(true);
                     bar.add(deleteMaterial);
 
                     ActionURL urlDeriveSamples = new ActionURL(DeriveSamplesChooseTargetAction.class, getContainer());
                     ActionButton deriveButton = new ActionButton("", "Derive Samples");
-                    deriveButton.setScript("return verifySelected(this.form, \"" + urlDeriveSamples.getLocalURIString() + "\", \"post\", \"Samples\")");
+                    deriveButton.setURL(urlDeriveSamples);
                     deriveButton.setActionType(ActionButton.Action.POST);
                     deriveButton.setDisplayPermission(ACL.PERM_INSERT);
+                    deriveButton.setRequiresSelection(true);
                     bar.add(deriveButton);
                 }
             };
@@ -419,9 +421,10 @@ public class ExperimentController extends SpringActionController
 
                     ActionURL urlDeriveSamples = new ActionURL(DeriveSamplesChooseTargetAction.class, getContainer());
                     ActionButton deriveButton = new ActionButton("", "Derive Samples");
-                    deriveButton.setScript("return verifySelected(this.form, \"" + urlDeriveSamples.getLocalURIString() + "\", \"post\", \"Samples\")");
+                    deriveButton.setURL(urlDeriveSamples);
                     deriveButton.setActionType(ActionButton.Action.POST);
                     deriveButton.setDisplayPermission(ACL.PERM_INSERT);
+                    deriveButton.setRequiresSelection(true);
                     bar.add(deriveButton);
                 }
             };

@@ -93,13 +93,13 @@ public class SampleSetWebPart extends WebPartView<Object>
 
         ButtonBar bb = new ButtonBar();
 
-        ActionButton deleteButton = new ActionButton("deleteMaterialSource.view", "Delete Selected", DataRegion.MODE_GRID, ActionButton.Action.GET);
+        ActionButton deleteButton = new ActionButton("deleteMaterialSource.view", "Delete", DataRegion.MODE_GRID, ActionButton.Action.GET);
         deleteButton.setDisplayPermission(ACL.PERM_DELETE);
         ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, model.getContainer());
         deleteURL.addParameter("returnURL", model.getActionURL().toString());
-        String script = "return verifySelected(" + dr.getJavascriptFormReference(true) + ", \"" + deleteURL.getLocalURIString() + "\", \"post\", \"sample set\")";
-        deleteButton.setScript(script);
+        deleteButton.setURL(deleteURL);
         deleteButton.setActionType(ActionButton.Action.POST);
+        deleteButton.setRequiresSelection(true);
         bb.add(deleteButton);
 
         ActionButton uploadMaterialsButton = new ActionButton(ExperimentController.ShowUploadMaterialsAction.class, "Import Sample Set", DataRegion.MODE_GRID, ActionButton.Action.LINK);

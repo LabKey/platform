@@ -177,19 +177,19 @@ public class UserController extends SpringActionController
         {
             rgn.setShowRecordSelectors(true);
 
-            ActionButton delete = new ActionButton("button", "Delete");
-            delete.setScript("return verifySelected(this.form, \"deleteUsers.post\", \"post\", \"users\", \"Are you sure you want to delete these users?\")");
-            delete.setActionType(ActionButton.Action.GET);
+            ActionButton delete = new ActionButton("deleteUsers.post", "Delete");
+            delete.setRequiresSelection(true, "Are you sure you want to delete these users?");
+            delete.setActionType(ActionButton.Action.POST);
             gridButtonBar.add(delete);
 
-            ActionButton deactivate = new ActionButton("button", "Deactivate");
-            deactivate.setScript("return verifySelected(this.form, \"deactivateUsers.post\", \"post\", \"users\", null)");
-            deactivate.setActionType(ActionButton.Action.GET);
+            ActionButton deactivate = new ActionButton("deactivateUsers.post", "Deactivate");
+            deactivate.setRequiresSelection(true);
+            deactivate.setActionType(ActionButton.Action.POST);
             gridButtonBar.add(deactivate);
 
-            ActionButton activate = new ActionButton("button", "Re-Activate");
-            activate.setScript("return verifySelected(this.form, \"activateUsers.post\", \"post\", \"users\", null)");
-            activate.setActionType(ActionButton.Action.GET);
+            ActionButton activate = new ActionButton("activateUsers.post", "Re-Activate");
+            activate.setRequiresSelection(true);
+            activate.setActionType(ActionButton.Action.POST);
             gridButtonBar.add(activate);
 
             // Could allow project admins to do this... but they can already add users when adding to a group

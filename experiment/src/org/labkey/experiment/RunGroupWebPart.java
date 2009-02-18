@@ -120,11 +120,12 @@ public class RunGroupWebPart extends QueryView
         super.populateButtonBar(view, bb);
         if (!_narrow)
         {
-            ActionButton deleteExperiment = new ActionButton("", "Delete Selected");
+            ActionButton deleteExperiment = new ActionButton("", "Delete");
             ActionURL deleteExpUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteSelectedExperimentsURL(getViewContext().getContainer(), getViewContext().getActionURL());
-            deleteExperiment.setScript("return verifySelected(this.form, \"" + deleteExpUrl.getLocalURIString() + "\", \"post\", \"run group\")");
+            deleteExperiment.setURL(deleteExpUrl);
             deleteExperiment.setActionType(ActionButton.Action.POST);
             deleteExperiment.setDisplayPermission(ACL.PERM_DELETE);
+            deleteExperiment.setRequiresSelection(true);
             bb.add(deleteExperiment);
 
             ActionButton addXarFile = new ActionButton(ExperimentController.ExperimentUrlsImpl.get().getShowAddXarFileURL(getViewContext().getContainer(), null), "Upload XAR");

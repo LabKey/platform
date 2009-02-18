@@ -2459,6 +2459,7 @@ public class AnnouncementsController extends SpringActionController
         protected DataRegion getDataRegion(Permissions perm, DiscussionService.Settings settings)
         {
             DataRegion rgn = new DataRegion();
+            rgn.setName("Announcements");
             rgn.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
             rgn.setShadeAlternatingRows(true);
             return rgn;
@@ -2515,10 +2516,10 @@ public class AnnouncementsController extends SpringActionController
                 rgn.setShowRecordSelectors(true);
 
                 String conversations = settings.getConversationName().toLowerCase() + "s";
-                ActionButton delete = new ActionButton("button", "Delete");
-                delete.setScript("return verifySelected(this.form, \"deleteThreads.post\", \"post\", \"" + conversations + "\", \"Are you sure you want to delete these " + conversations + "?\")");
+                ActionButton delete = new ActionButton("deleteThreads.post", "Delete");
                 delete.setActionType(ActionButton.Action.GET);
                 delete.setDisplayPermission(ACL.PERM_DELETE);
+                delete.setRequiresSelection(true, "Are you sure you want to delete these " + conversations + "?");
                 bb.add(delete);
 
                 rgn.setButtonBar(bb);

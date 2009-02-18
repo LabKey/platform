@@ -77,8 +77,9 @@ public class IssuesQueryView extends QueryView
         {
             String viewDetailsURL = _context.cloneActionURL().setAction("detailsList.view").getEncodedLocalURIString();
             ActionButton listDetailsButton = new ActionButton("button", "View Details");
-            listDetailsButton.setScript("return verifySelected(this.form, \"" + viewDetailsURL + "\", \"post\", \"rows\")");
-            listDetailsButton.setActionType(ActionButton.Action.GET);
+            listDetailsButton.setURL(viewDetailsURL);
+            listDetailsButton.setActionType(ActionButton.Action.POST);
+            listDetailsButton.setRequiresSelection(true);
             listDetailsButton.setDisplayPermission(ACL.PERM_READ);
             bar.add(listDetailsButton);
 

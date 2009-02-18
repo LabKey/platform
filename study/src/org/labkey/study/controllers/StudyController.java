@@ -673,12 +673,11 @@ public class StudyController extends BaseStudyController
                     uploadButton.setDisplayPermission(ACL.PERM_INSERT);
                     buttonBar.add(uploadButton);
 
-                    ActionButton deleteRows = new ActionButton("button", "Delete Selected");
+                    ActionButton deleteRows = new ActionButton("button", "Delete");
                     ActionURL deleteRowsURL = new ActionURL(DeleteDatasetRowsAction.class, getContainer());
-
-
-                    deleteRows.setScript("return confirm(\"Delete selected rows of this dataset?\") && verifySelected(this.form, \"" + deleteRowsURL.getLocalURIString() + "\", \"post\", \"rows\")");
-                    deleteRows.setActionType(ActionButton.Action.GET);
+                    deleteRows.setURL(deleteRowsURL);
+                    deleteRows.setRequiresSelection(true, "Delete selected rows of this dataset?");
+                    deleteRows.setActionType(ActionButton.Action.POST);
                     deleteRows.setDisplayPermission(ACL.PERM_DELETE);
                     buttonBar.add(deleteRows);
                 }
@@ -689,12 +688,12 @@ public class StudyController extends BaseStudyController
 
                     if (user.isAdministrator() || canWrite)
                     {
-                        ActionButton deleteRows = new ActionButton("button", "Recall Selected");
+                        ActionButton deleteRows = new ActionButton("button", "Recall");
                         ActionURL deleteRowsURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
                         deleteRowsURL.addParameter("protocolId", protocol.getRowId());
-
-                        deleteRows.setScript("return confirm(\"Recall selected rows of this dataset?\") && verifySelected(this.form, \"" + deleteRowsURL.getLocalURIString() + "\", \"post\", \"rows\")");
-                        deleteRows.setActionType(ActionButton.Action.GET);
+                        deleteRows.setURL(deleteRowsURL);
+                        deleteRows.setRequiresSelection(true, "Recall selected rows of this dataset?");
+                        deleteRows.setActionType(ActionButton.Action.POST);
                         deleteRows.setDisplayPermission(ACL.PERM_DELETE);
                         buttonBar.add(deleteRows);
                     }
@@ -728,8 +727,9 @@ public class StudyController extends BaseStudyController
 
             ActionButton viewSamples = new ActionButton("button", "View Specimens");
             String viewSamplesURL = ActionURL.toPathString("Study-Samples", "selectedSamples", getContainer());
-            viewSamples.setScript("return verifySelected(this.form, \"" + viewSamplesURL + "\", \"post\", \"rows\")");
-            viewSamples.setActionType(ActionButton.Action.GET);
+            viewSamples.setURL(viewSamplesURL);
+            viewSamples.setRequiresSelection(true);
+            viewSamples.setActionType(ActionButton.Action.POST);
             viewSamples.setDisplayPermission(ACL.PERM_READ);
             buttonBar.add(viewSamples);
 
@@ -2285,14 +2285,15 @@ public class StudyController extends BaseStudyController
                 String sourceLsid = (String)getViewContext().get("sourceLsid");
                 String recordCount = (String)getViewContext().get("recordCount");
 
-                ActionButton deleteRows = new ActionButton("button", "Recall Selected Rows");
+                ActionButton deleteRows = new ActionButton("button", "Recall Rows");
                 ActionURL deleteURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
                 deleteURL.addParameter("protocolId", protocolId);
                 deleteURL.addParameter("sourceLsid", sourceLsid);
 
                 //String deleteRowsURL = ActionURL.toPathString("Study", "deletePublishedRows", getContainer()) + "?datasetId=" + datasetId;
-                deleteRows.setScript("return confirm(\"Recall selected rows of this dataset?\") && verifySelected(this.form, \"" + deleteURL.getLocalURIString() + "\", \"post\", \"rows\")");
-                deleteRows.setActionType(ActionButton.Action.GET);
+                deleteRows.setURL(deleteURL);
+                deleteRows.setRequiresSelection(true, "Recall selected rows of this dataset?");
+                deleteRows.setActionType(ActionButton.Action.POST);
                 deleteRows.setDisplayPermission(ACL.PERM_DELETE);
 
                 PublishedRecordQueryView qv = new PublishedRecordQueryView(datasetId, querySchema, qs, sourceLsid,
