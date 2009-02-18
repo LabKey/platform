@@ -16,13 +16,14 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.view.HttpView;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Set;
 import java.text.Format;
+import java.util.Set;
 
 /**
  * User: jgarms
@@ -102,14 +103,12 @@ public class QCDisplayColumn extends DataColumn
             out.write("<font class=\"labkey-qc\">");
             out.write(h(qcValue));
             out.write("</font>");
-            out.write("<img align=\"top\" src=\"");
-            out.write(HttpView.currentView().getViewContext().getContextPath());
-            out.write("/_images/qc_indicator.gif\"");
-            out.write(" class=\"labkey-qc-indicator\"");
-            out.write(" alt=\"");
-            out.write(h(QcUtil.getHoverText(qcValue)));
-            out.write("\"");
-            out.write(">");
+
+            String imgHtml = "<img align=\"top\" src=\"" +
+                    HttpView.currentContext().getContextPath() +
+                    "/_images/qc_indicator.gif\" class=\"labkey-qc-indicator\">";
+
+            out.write(PageFlowUtil.helpPopup("QC Value", h(QcUtil.getHoverText(qcValue)), false, imgHtml, 0));
             return;
         }
         // Call super, as we don't want to check twice for the qc value
@@ -145,5 +144,11 @@ public class QCDisplayColumn extends DataColumn
             // No QC value, so return the underlying data
             return super.getValue(ctx);
         }
+    }
+
+    @Override
+    protected Object getInputValue(RenderContext ctx)
+    {
+        return getFormattedValue(ctx);
     }
 }
