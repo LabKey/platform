@@ -15,14 +15,22 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.Cohort" %>
-<%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     Cohort[] cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getViewContext().getUser());
+    JspView<Map<Integer,StudyController.DatasetVisibilityData>> me = (JspView<Map<Integer,StudyController.DatasetVisibilityData>>) HttpView.currentView();
+    Map<Integer,StudyController.DatasetVisibilityData> bean = me.getModelBean();
 %>
+
+<labkey:errors/>
+
 <form action="dataSetVisibility.post" method="POST">
 
 <p>Datasets can be hidden on the study overview screen.</p>
@@ -36,16 +44,18 @@
             <th align="left">Visible</th>
         </tr>
     <%
-        for (DataSetDefinition def : getDataSets())
+        for (Map.Entry<Integer, StudyController.DatasetVisibilityData> entry : bean.entrySet())
         {
+            int id = entry.getKey().intValue();
+            StudyController.DatasetVisibilityData data = entry.getValue();
     %>
         <tr>
-            <td><%= def.getDataSetId() %></td>
+            <td><%= id %></td>
             <td>
-                <input type="text" size="20" name="label" value="<%= def.getLabel() != null ? def.getLabel() : "" %>">
+                <input type="text" size="20" name="label" value="<%= data.label != null ? data.label : "" %>">
             </td>
             <td>
-                <input type="text" size="20" name="extraData" value="<%= def.getCategory() != null ? def.getCategory() : "" %>">
+                <input type="text" size="20" name="extraData" value="<%= data.category != null ? data.category : "" %>">
             </td>
             <td>
                 <%
@@ -65,7 +75,7 @@
                         for (Cohort cohort : cohorts)
                         {
                     %>
-                        <option value="<%= cohort.getRowId()%>" <%= def.getCohortId() != null && def.getCohortId() == cohort.getRowId() ? "SELECTED" : ""%>>
+                        <option value="<%= cohort.getRowId()%>" <%= data.cohort != null && data.cohort.intValue() == cohort.getRowId() ? "SELECTED" : ""%>>
                             <%= h(cohort.getLabel())%>
                         </option>
                     <%
@@ -77,8 +87,8 @@
                 %>
             </td>
             <td align="center">
-                <input type="checkbox" name="visible" <%= def.isShowByDefault() ? "Checked" : "" %> value="<%= def.getDataSetId() %>">
-                <input type="hidden" name="ids" value="<%= def.getDataSetId() %>">
+                <input type="checkbox" name="visible" <%= data.visible ? "Checked" : "" %> value="<%= id %>">
+                <input type="hidden" name="ids" value="<%= id %>">
             </td>
         </tr>
     <%

@@ -258,9 +258,9 @@ public class ListItemImpl implements ListItem
                     {
                         continue;
                     }
-                    if (oldValue != null)
+                    if (_oldProperties.containsKey(entry.getKey())) // oldValue may be null, but it could have a record
                     {
-                        if (dp.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT)
+                        if (dp.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT && oldValue != null)
                             AttachmentService.get().deleteAttachment(parent, (String)oldValue);
                         OntologyManager.deleteProperty(obj.getObjectURI(), entry.getKey(), obj.getContainer(), obj.getContainer());
                     }

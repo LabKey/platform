@@ -507,12 +507,11 @@ public class StudyController extends BaseStudyController
             ViewContext context = getViewContext();
 
             String export = StringUtils.trimToNull(context.getActionURL().getParameter("export"));
-
-            // bug 7365
+            
             Object datasetKeyObject = context.get(DataSetDefinition.DATASETKEY);
             if (datasetKeyObject instanceof List)
             {
-                // It's been specified twice -- once in the POST, once in the GET. Just need one of them.
+                // bug 7365: It's been specified twice -- once in the POST, once in the GET. Just need one of them.
                 List<?> list = (List<?>)datasetKeyObject;
                 datasetKeyObject = list.get(0);
             }
@@ -4086,7 +4085,46 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(DatasetPropertyForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new StudyJspView<Object>(getStudy(), "dataSetVisibility.jsp", form, errors);
+            Map<Integer, DatasetVisibilityData> bean = new HashMap<Integer,DatasetVisibilityData>();
+            DataSetDefinition[] defs = getStudy().getDataSets();
+            for (DataSetDefinition def : defs)
+            {
+                DatasetVisibilityData data = new DatasetVisibilityData();
+                data.label = def.getLabel();
+                data.category = def.getCategory();
+                data.cohort = def.getCohortId();
+                data.visible = def.isShowByDefault();
+                bean.put(def.getDataSetId(), data);
+            }
+
+            // Merge with form data
+            int[] ids = form.getIds();
+            if (ids != null)
+            {
+                String[] labels = form.getLabel();
+                int[] visibleIds = form.getVisible();
+                if (visibleIds == null)
+                    visibleIds = new int[0];
+                Set<Integer> visible = new HashSet<Integer>(visibleIds.length);
+                for (int id : visibleIds)
+                    visible.add(id);
+                int[] cohorts = form.getCohort();
+                if (cohorts == null)
+                    cohorts = new int[ids.length];
+                String[] categories = form.getExtraData();
+
+                for (int i=0; i<ids.length; i++)
+                {
+                    int id = ids[i];
+                    DatasetVisibilityData data = bean.get(id);
+                    data.label = labels[i];
+                    data.category = categories[i];
+                    data.cohort = cohorts[i] == -1 ? null : cohorts[i];
+                    data.visible = visible.contains(id);
+                }
+            }
+            return new StudyJspView<Map<Integer,StudyController.DatasetVisibilityData>>(
+                    getStudy(), "dataSetVisibility.jsp", bean, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -4101,6 +4139,23 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(DatasetPropertyForm form, BindException errors) throws Exception
         {
+            // Check for bad labels
+            Set<String> labels = new HashSet<String>();
+            for (String label : form.getLabel())
+            {
+                if (label == null)
+                {
+                    errors.reject("datasetVisibility", "Label cannot be blank");
+                    return false;
+                }
+                if (labels.contains(label))
+                {
+                    errors.reject("datasetVisibility", "Labels must be unique. Found two or more labels called '" + label + "'.");
+                    return false;
+                }
+                labels.add(label);
+            }
+
             int[] allIds = form.getIds();
             if (allIds == null)
                 allIds = new int[0];
@@ -4140,6 +4195,15 @@ public class StudyController extends BaseStudyController
         {
             return new ActionURL(ManageTypesAction.class, getContainer());
         }
+    }
+
+    // Bean will be an map of these
+    public static class DatasetVisibilityData
+    {
+        public String label;
+        public String category;
+        public Integer cohort; // null for none
+        public boolean visible;
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
