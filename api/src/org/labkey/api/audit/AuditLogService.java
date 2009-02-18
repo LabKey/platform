@@ -23,6 +23,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.security.User;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;

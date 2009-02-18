@@ -61,7 +61,10 @@ public abstract class Job implements Future, Runnable
     //
     public boolean cancel(boolean mayInterruptIfRunning)
     {
-        if (_task == null) throw new IllegalStateException("job has not been submitted");
+        if (_task == null)
+        {
+            return false;
+        }
         return _task.cancel(mayInterruptIfRunning);
     }
 

@@ -622,9 +622,9 @@ function validate(value, mappedType, fieldName)
     else if (mappedType == "BOOL")
     {
         var upperVal = value.toUpperCase();
-        if (upperVal == "TRUE" || value == "1" || upperVal == "Y" || upperVal == "ON" || upperVal == "T")
+        if (upperVal == "TRUE" || value == "1" || upperVal == "Y" || upperVal == "YES" || upperVal == "ON" || upperVal == "T")
             return "1";
-        if (upperVal == "FALSE" || value == "0" || upperVal == "N" || upperVal == "OFF" || upperVal == "F")
+        if (upperVal == "FALSE" || value == "0" || upperVal == "N" || upperVal == "NO" || upperVal == "OFF" || upperVal == "F")
             return "0";
         else
         {

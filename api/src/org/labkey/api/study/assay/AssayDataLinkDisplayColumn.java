@@ -51,8 +51,9 @@ public class AssayDataLinkDisplayColumn extends DataColumn
 
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        Number runId = (Number)_runIdColumnInfo.getValue(ctx);
-        Number protocolId = (Number)_protocolColumnInfo.getValue(ctx);
+        // RunId and ProtocolId may not be available if we are in a custom query
+        Number runId = _runIdColumnInfo == null ? null : (Number)_runIdColumnInfo.getValue(ctx);
+        Number protocolId = _protocolColumnInfo == null ? null : (Number)_protocolColumnInfo.getValue(ctx);
         if (runId != null && protocolId != null)
         {
             ExpProtocol protocol = _protocols.get(protocolId);
@@ -87,10 +88,15 @@ public class AssayDataLinkDisplayColumn extends DataColumn
             Map<FieldKey,ColumnInfo> extraCols = QueryService.get().getColumns(getColumnInfo().getParentTable(), Arrays.asList(protocolIdKey, runIdKey));
             _protocolColumnInfo = extraCols.get(protocolIdKey);
             _runIdColumnInfo = extraCols.get(runIdKey);
-            assert _protocolColumnInfo != null : "Could not find protocol rowId column";
-            assert _runIdColumnInfo != null : "Could not find run rowId column";
         }
-        columns.add(_protocolColumnInfo);
-        columns.add(_runIdColumnInfo);
+        // RunId and ProtocolId may not be available if we are in a custom query
+        if (_protocolColumnInfo != null)
+        {
+            columns.add(_protocolColumnInfo);
+        }
+        if (_runIdColumnInfo != null)
+        {
+            columns.add(_runIdColumnInfo);
+        }
     }
 }

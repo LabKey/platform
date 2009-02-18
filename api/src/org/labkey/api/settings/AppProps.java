@@ -261,7 +261,13 @@ public class AppProps extends AbstractWriteableSettingsGroup
 
     public String getDefaultLsidAuthority()
     {
-        return lookupStringValue(DEFAULT_LSID_AUTHORITY_PROP, "localhost");
+        String result = lookupStringValue(DEFAULT_LSID_AUTHORITY_PROP, "localhost");
+        if (result == null || "".equals(result))
+        {
+            // We now prevent empty values but in case there's an installation that has one, convert to "localhost"
+            return "localhost";
+        }
+        return result;
     }
 
     public boolean isPerlPipelineEnabled()

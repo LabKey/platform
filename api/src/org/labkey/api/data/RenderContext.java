@@ -21,6 +21,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.NullPreventingSet;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.BoundMap;
@@ -54,7 +55,7 @@ public class RenderContext extends BoundMap // extends ViewContext
 
     public RenderContext(ViewContext context)
     {
-        this(context, (BindException) null);
+        this(context, null);
     }
 
     public RenderContext(ViewContext context, BindException errors)
@@ -165,7 +166,7 @@ public class RenderContext extends BoundMap // extends ViewContext
 
     public static List<ColumnInfo> getSelectColumns(List<DisplayColumn> displayColumns, TableInfo tinfo)
     {
-        Set<ColumnInfo> ret = new LinkedHashSet<ColumnInfo>();
+        Set<ColumnInfo> ret = new NullPreventingSet<ColumnInfo>(new HashSet<ColumnInfo>());
         if (null == displayColumns || displayColumns.size() == 0)
             ret.addAll(tinfo.getColumns());
         else
@@ -173,11 +174,6 @@ public class RenderContext extends BoundMap // extends ViewContext
             for (DisplayColumn displayColumn : displayColumns)
             {
                 displayColumn.addQueryColumns(ret);
-                if (ret.contains(null))
-                {
-                    // Catch this problem before it's too late to figure out who the culprit was
-                    throw new IllegalStateException("The display column " + displayColumn + (displayColumn.getColumnInfo() != null ? " with column name " + displayColumn.getColumnInfo().getName() : "") + " added one or more null columns to the set of query columns");
-                }
             }
 
             List<ColumnInfo> pkColumns = tinfo.getPkColumns();

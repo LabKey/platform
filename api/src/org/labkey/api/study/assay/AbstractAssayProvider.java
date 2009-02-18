@@ -176,9 +176,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         assert files.size() == 1;
 
-        File file = files.values().iterator().next();
+        Map.Entry<String, File> entry = files.entrySet().iterator().next();
 
-        ExpData data = createData(context.getContainer(), file, file.getName(), _dataType);
+        ExpData data = createData(context.getContainer(), entry.getValue(), entry.getKey(), _dataType);
         outputDatas.put(data, "Data");
     }
 
@@ -415,13 +415,16 @@ public abstract class AbstractAssayProvider implements AssayProvider
     protected ExpRun createExperimentRun(AssayRunUploadContext context) throws ExperimentException
     {
         File file = null;
+        String originalFileName = null;
         {
             try
             {
                 Map<String, File> uploadedData = context.getUploadedData();
                 if (uploadedData != null && uploadedData.size() != 0)
                 {
-                    file = uploadedData.values().iterator().next();
+                    Map.Entry<String, File> entry = uploadedData.entrySet().iterator().next();
+                    file = entry.getValue();
+                    originalFileName = entry.getKey();
                 }
             }
             catch (IOException e)
@@ -436,7 +439,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
         else if (file != null)
         {
-            name = file.getName();
+            name = originalFileName;
         }
         ExpRun run = createExperimentRun(name, context.getContainer(), context.getProtocol());
 

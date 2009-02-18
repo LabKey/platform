@@ -32,5 +32,7 @@ public interface ExpSampleSetTable extends ExpTable<ExpSampleSetTable.Column>
         Created,
         Modified,
         Folder,
+        Active,
+        SampleCount,
     }
 }

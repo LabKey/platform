@@ -34,6 +34,7 @@ public interface AssayDataCollector
 
     public String getDescription();
 
+    /** Map of original file name to file on disk */
     public Map<String, File> createData(AssayRunUploadContext context) throws IOException, ExperimentException;
 
     public boolean isVisible();

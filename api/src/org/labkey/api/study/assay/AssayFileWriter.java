@@ -159,7 +159,7 @@ public class AssayFileWriter
                     {
                         File file = findUniqueFileName(fileName, dir);
                         writeFile(multipartFile.getInputStream(), file);
-                        files.put(entry.getKey(), file);
+                        files.put(fileName, file);
                     }
                 }
             }

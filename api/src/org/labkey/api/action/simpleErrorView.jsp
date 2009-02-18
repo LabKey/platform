@@ -24,7 +24,6 @@
     Container c = getViewContext().getContainer();
 %>
 <%=PageFlowUtil.getStandardIncludes(c)%>
-<labkey:errors/>
-<%=formatMissedErrors("form")%><br><br>
+<labkey:errors/><br><br>
 <%=PageFlowUtil.generateSubmitButton("Back", "window.history.back(); return false;")%>
 <%=PageFlowUtil.generateButton("Home", AppProps.getInstance().getHomePageActionURL())%>
