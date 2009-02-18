@@ -112,9 +112,9 @@ public class ExperimentRunListView extends QueryView
             getExperiment();
             ActionURL removeRunUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getRemoveSelectedExpRunsURL(getContainer(), context.getActionURL(), getExperiment());
             ActionButton removeRunAction = new ActionButton("","Remove");
-            String script = "return verifySelected(this.form, \"" + removeRunUrl.getLocalURIString() + "\", \"post\", \"run\")";
-            removeRunAction.setScript(script);
+            removeRunAction.setURL(removeRunUrl);
             removeRunAction.setActionType(ActionButton.Action.POST);
+            removeRunAction.setRequiresSelection(true);
 
             removeRunAction.setDisplayPermission(ACL.PERM_DELETE);
             bar.add(removeRunAction);
@@ -124,8 +124,9 @@ public class ExperimentRunListView extends QueryView
         {
             ActionButton deleteButton = new ActionButton("button", "Delete");
             ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteSelectedExpRunsURL(context.getContainer(), context.getActionURL());
-            deleteButton.setScript("return verifySelected(this.form, \"" + url.getLocalURIString() + "\", \"post\", \"runs\")");
+            deleteButton.setURL(url);
             deleteButton.setActionType(ActionButton.Action.POST);
+            deleteButton.setRequiresSelection(true);
             deleteButton.setDisplayPermission(ACL.PERM_DELETE);
             bar.add(deleteButton);
         }
@@ -158,8 +159,9 @@ public class ExperimentRunListView extends QueryView
         {
             ActionButton deleteButton = new ActionButton("button", "Move");
             ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getMoveRunsLocationURL(getContainer());
-            deleteButton.setScript("return verifySelected(this.form, \"" + url.getLocalURIString() + "\", \"post\", \"runs\")");
+            deleteButton.setURL(url);
             deleteButton.setActionType(ActionButton.Action.POST);
+            deleteButton.setRequiresSelection(true);
             deleteButton.setDisplayPermission(ACL.PERM_DELETE);
             bar.add(deleteButton);
         }
@@ -169,8 +171,9 @@ public class ExperimentRunListView extends QueryView
             ActionURL exportUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getExportRunsOptionsURL(context.getContainer(), getExperiment());
 
             ActionButton exportXAR = new ActionButton("", "Export XAR");
-            exportXAR.setScript("return verifySelected(this.form, \"" + exportUrl.getLocalURIString() + "\", \"post\", \"experiment run\")");
+            exportXAR.setURL(exportUrl);
             exportXAR.setActionType(ActionButton.Action.POST);
+            exportXAR.setRequiresSelection(true);
             bar.add(exportXAR);
         }
 

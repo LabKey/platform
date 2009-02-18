@@ -15,6 +15,7 @@ LABKEY.DataRegion = function (config)
 {
     this.config = config || {};
 
+    this.id = config.name; // XXX: may not be unique on the on page with webparts
     this.name = config.name;
     this.schemaName = config.schemaName;
     this.queryName = config.queryName;
@@ -37,6 +38,13 @@ LABKEY.DataRegion = function (config)
 
     LABKEY.DataRegions[this.name] = this;
 
+    this.addEvents(
+            "selectchange"
+    );
+
+    this.rendered = true; // prevent Ext.Component.render() from doing anything
+    LABKEY.DataRegion.superclass.constructor.call(this, config);
+
     this._initElements();
     Ext.EventManager.on(window, "load", this._resizeContainer, this, {single: true});
     Ext.EventManager.on(window, "resize", this._resizeContainer, this);
@@ -57,7 +65,7 @@ LABKEY.DataRegion = function (config)
     }
 };
 
-LABKEY.DataRegion.prototype = {
+Ext.extend(LABKEY.DataRegion, Ext.Component, {
     // private
     _initElements : function ()
     {
@@ -79,12 +87,24 @@ LABKEY.DataRegion.prototype = {
             if (el) this.form = el;
         }
 
-        // set the 'select all on page' checkbox state
-        if (this.form && this.showRecordSelectors && this.isPageSelected())
+        if (this.form)
         {
-            var toggle = this.form[".toggle"];
-            if (toggle)
-                toggle.checked = true;
+            this.form.dataRegion = this;
+            if (this.showRecordSelectors)
+            {
+                if (this.isPageSelected())
+                {
+                    // set the 'select all on page' checkbox state
+                    var toggle = this.form[".toggle"];
+                    if (toggle)
+                        toggle.checked = true;
+                    this.onSelectChange(true);
+                }
+                else
+                {
+                    this.onSelectChange(this.hasSelected());
+                }
+            }
         }
 
         this._resizeContainer(true);
@@ -137,6 +157,25 @@ LABKEY.DataRegion.prototype = {
     },
 
     // private
+    _setAllCheckboxes : function (value, elementName)
+    {
+        var elems = this.form.elements;
+        var l = elems.length;
+        var ids = [];
+        for (var i = 0; i < l; i++)
+        {
+            var e = elems[i];
+            if (e.type == 'checkbox' && !e.disabled && (elementName == null || elementName == e.name))
+            {
+                e.checked = value;
+                if (e.name != ".toggle")
+                    ids.push(e.value);
+            }
+        }
+        return ids;
+    },
+
+    // private
     _setCheck : function (ids, checked, success)
     {
         if (!this.selectionKey || ids.length == 0)
@@ -173,6 +212,11 @@ LABKEY.DataRegion.prototype = {
             msg += "&nbsp; Show: " + showOpts.join(", ");
         }
         this.showMessage(msg);
+    },
+
+    onSelectChange : function (hasSelected)
+    {
+        this.fireEvent('selectchange', hasSelected);
     },
 
     setOffset : function (newoffset)
@@ -236,9 +280,19 @@ LABKEY.DataRegion.prototype = {
     selectRow : function (el)
     {
         this._setCheck([el.value], el.checked);
-        if (!el.checked)
+        var toggle = this.form[".toggle"];
+        if (el.checked)
         {
+            if (toggle && this.isPageSelected())
+                toggle.checked = true;
+            this.onSelectChange(true);
+        }
+        else
+        {
+            if (toggle)
+                toggle.checked = false;
             this.hideMessage();
+            this.onSelectChange(this.hasSelected());
         }
     },
 
@@ -247,11 +301,16 @@ LABKEY.DataRegion.prototype = {
         return getCheckedValues(this.form, '.select');
     },
 
+    /** Select all checkboxes on in the current page of the data region. */
     selectPage : function (checked)
     {
-        var ids = setAllCheckboxes(this.form, checked, '.select');
+        var ids = this._setAllCheckboxes(checked, '.select');
         if (ids.length > 0)
         {
+            var toggle = this.form[".toggle"];
+            if (toggle)
+                toggle.checked = checked;
+            this.onSelectChange(checked);
             this._setCheck(ids, checked, function (response, options) {
                 var count = 0;
                 try {
@@ -277,6 +336,25 @@ LABKEY.DataRegion.prototype = {
                 }
             });
         }
+        return ids;
+    },
+
+    /** Returns true if any row is checked on this page. */
+    hasSelected : function ()
+    {
+        if (!this.form)
+            return false;
+        var len = this.form.length;
+        for (var i = 0; i < len; i++)
+        {
+            var e = this.form[i];
+            if (e.type == 'checkbox' && e.name != ".toggle")
+            {
+                if (e.checked)
+                    return true;
+            }
+        }
+        return false;
     },
 
     /** Returns true if all rows are checked on this page and at least one row is present on the page. */
@@ -284,12 +362,11 @@ LABKEY.DataRegion.prototype = {
     {
         if (!this.form)
             return false;
-        var elems = this.form.elements;
-        var len = elems.length;
+        var len = this.form.length;
         var hasCheckbox = false;
         for (var i = 0; i < len; i++)
         {
-            var e = elems[i];
+            var e = this.form[i];
             if (e.type == 'checkbox' && e.name != ".toggle")
             {
                 hasCheckbox = true;
@@ -321,7 +398,7 @@ LABKEY.DataRegion.prototype = {
         }
         else
         {
-            setAllCheckboxes(this.form, false);
+            this._setAllCheckboxes(false);
             this.hideMessage();
         }
     },
@@ -349,4 +426,4 @@ LABKEY.DataRegion.prototype = {
         var span = this.msgbox.dom.getElementsByTagName("span")[0];
         span.innerHTML = "";
     }
-};
+});

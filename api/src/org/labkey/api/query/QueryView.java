@@ -482,8 +482,9 @@ public class QueryView extends WebPartView<Object>
                 if (urlDelete != null)
                 {
                     ActionButton btnDelete = new ActionButton("", "Delete");
-                    btnDelete.setScript("return verifySelected(this.form, \"" + urlDelete.toString() + "\", \"post\", \"checkboxes\")");
-                    btnDelete.setActionType(ActionButton.Action.GET);
+                    btnDelete.setURL(urlDelete);
+                    btnDelete.setActionType(ActionButton.Action.POST);
+                    btnDelete.setRequiresSelection(true, "Are you sure you want to delete the selected rows?");
                     bar.add(btnDelete);
                 }
             }

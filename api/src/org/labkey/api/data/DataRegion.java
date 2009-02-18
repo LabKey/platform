@@ -731,7 +731,8 @@ public class DataRegion extends DisplayElement
     protected void renderHeaderScript(RenderContext ctx, Writer out) throws IOException
     {
         out.write("<script type=\"text/javascript\">\n");
-        out.write("LABKEY.requiresScript('DataRegion.js');\n");
+        out.write("LABKEY.requiresExtJs();\n");
+        out.write("LABKEY.requiresScript('DataRegion.js', true);\n");
         out.write("LABKEY.requiresScript('clientapi/ActionURL.js');\n");
         out.write("</script>\n");
         out.write("<script type=\"text/javascript\">\n");

@@ -89,9 +89,9 @@ public class ResultsQueryView extends AssayBaseQueryView
                 if (provider.canCopyToStudy())
                 {
                     ActionButton publishButton = new ActionButton(publishURL.getLocalURIString(),
-                            "Copy Selected to Study", DataRegion.MODE_GRID, ActionButton.Action.POST);
+                            "Copy to Study", DataRegion.MODE_GRID, ActionButton.Action.POST);
                     publishButton.setDisplayPermission(ACL.PERM_INSERT);
-                    publishButton.setScript("return verifySelected(this.form, \"" + publishURL.getLocalURIString() + "\", \"post\", \"data rows\")");
+                    publishButton.setRequiresSelection(true);
                     publishButton.setActionType(ActionButton.Action.POST);
 
                     bbar.add(publishButton);

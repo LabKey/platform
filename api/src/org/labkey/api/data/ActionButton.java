@@ -21,6 +21,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.GUID;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.action.SpringActionController;
@@ -122,6 +123,10 @@ public class ActionButton extends DisplayElement implements Cloneable
     private StringExpressionFactory.StringExpression _title;
     private String _target;
     private boolean _appendScript;
+    private boolean _requiresSelection;
+    private String _confirmText;
+    private String _encodedSubmitForm;
+    private String _id;
 
 
     public ActionButton(String actionName)
@@ -180,6 +185,18 @@ public class ActionButton extends DisplayElement implements Cloneable
         _title = ab._title;
         _url = ab._url;
         _target = ab._target;
+        _requiresSelection = ab._requiresSelection;
+        _confirmText = ab._confirmText;
+    }
+
+    public String getId()
+    {
+        return _id;
+    }
+
+    public void setId(String id)
+    {
+        this._id = id;
     }
 
     public String getActionType()
@@ -294,18 +311,61 @@ public class ActionButton extends DisplayElement implements Cloneable
         return _target;
     }
 
+    public void setRequiresSelection(boolean requiresSelection)
+    {
+        setRequiresSelection(requiresSelection, null, null);
+    }
+
+    public void setRequiresSelection(boolean requiresSelection, String confirmText)
+    {
+        setRequiresSelection(requiresSelection, confirmText, null);
+    }
+
+    public void setRequiresSelection(boolean requiresSelection, String confirmText, String encodedSubmitForm)
+    {
+        checkLocked();
+        _requiresSelection = requiresSelection;
+        _confirmText = confirmText;
+        _encodedSubmitForm = encodedSubmitForm;
+    }
+
     private String renderDefaultScript(RenderContext ctx) throws IOException
     {
-        return "this.form.action=\"" +
-                getActionName(ctx) +
-                "\";this.form.method=\"" +
-                _actionType.toString() + "\";";
+        if (_requiresSelection)
+        {
+            return "return this.className.indexOf(\"labkey-disabled-button\") == -1 && " +
+                    "verifySelected(" +
+                        (_encodedSubmitForm != null ? _encodedSubmitForm : "this.form") + ", " +
+                        "\"" + (_url != null ? getURL(ctx) : getActionName(ctx)) + "\", " +
+                        "\"" + _actionType.toString() + "\", " +
+                        "\"rows\"" +
+                        (_confirmText != null ? ", \"" + PageFlowUtil.filter(_confirmText) + "\"" : "") +
+                    ")";
+        }
+        else
+        {
+            return "this.form.action=\"" +
+                    getActionName(ctx) +
+                    "\";this.form.method=\"" +
+                    _actionType.toString() + "\";";
+        }
     }
 
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         if (!shouldRender(ctx))
             return;
+
+        StringBuffer attributes = new StringBuffer();
+        if (_requiresSelection)
+        {
+            DataRegion dataRegion = ctx.getCurrentRegion();
+            assert dataRegion != null : "ActionButton.setRequiresSelection() needs to be rendered in context of a DataRegion";
+            if (getId() == null)
+                setId(GUID.makeHash());
+            attributes.append(" labkey-requires-selection=\"").append(PageFlowUtil.filter(dataRegion.getName())).append("\"");
+            attributes.append(" id=\"").append(PageFlowUtil.filter(getId())).append("\"");
+        }
 
         if (_actionType.equals(Action.POST) || _actionType.equals(Action.GET))
         {
@@ -337,19 +397,45 @@ public class ActionButton extends DisplayElement implements Cloneable
                     onClickScript.append(renderDefaultScript(ctx));
                 if (_script != null)
                     onClickScript.append(getScript(ctx));
-                out.write(PageFlowUtil.generateSubmitButton(getCaption(ctx), onClickScript.toString(), "name='" + getActionName(ctx) + "'"));
+
+                attributes.append("name='").append(getActionName(ctx)).append("'");
+                out.write(PageFlowUtil.generateSubmitButton(getCaption(ctx), onClickScript.toString(), attributes.toString()));
             }
 
         }
         else if (_actionType.equals(Action.LINK))
         {
-            out.write(PageFlowUtil.generateButton(getCaption(ctx), (_url != null ? getURL(ctx) : getActionName(ctx)), "", 
-                    (_target != null ? "target=\"" + PageFlowUtil.filter(_target) + "\"" : "")));
+            if (_target != null)
+                attributes.append(" target=\"").append(PageFlowUtil.filter(_target)).append("\"");
+            out.write(PageFlowUtil.generateButton(getCaption(ctx), (_url != null ? getURL(ctx) : getActionName(ctx)), "",
+                    attributes.toString()));
         }
         else
         {
             out.write(PageFlowUtil.generateButton(getCaption(ctx), "/",
-                    (_appendScript ? renderDefaultScript(ctx) : "") + getScript(ctx)));
+                    (_appendScript ? renderDefaultScript(ctx) : "") + getScript(ctx), attributes.toString()));
+        }
+
+        if (_requiresSelection)
+        {
+            // hook into DataRegion selection change events
+            DataRegion dataRegion = ctx.getCurrentRegion();
+            out.write("<script type=\"text/javascript\">\n");
+            //out.write("console.log(\"register for dataregion['" + PageFlowUtil.filter(dataRegion.getName()) + "'].onAvailable for '" + getCaption(ctx) + "', id='" + PageFlowUtil.filter(getId()) + "'\");\n");
+            out.write("Ext.ComponentMgr.onAvailable(\"" + PageFlowUtil.filter(dataRegion.getName()) + "\", function (dataregion) {\n");
+            //out.write("  console.log(\"received dataregion['" + PageFlowUtil.filter(dataRegion.getName()) + "'].onAvailable for '" + getCaption(ctx) + "', id='" + PageFlowUtil.filter(getId()) + "'\");\n");
+            out.write("  dataregion.on('selectchange', function (selected) {\n");
+            //out.write("    console.log(\"received dataregion['" + PageFlowUtil.filter(dataRegion.getName()) + "'].selectchange for '" + getCaption(ctx) + "', id='" + PageFlowUtil.filter(getId()) + "'\");\n");
+            out.write("    var btn = Ext.get(\"" + PageFlowUtil.filter(getId()) + "\");\n");
+            out.write("    if (selected) {\n");
+            out.write("      btn.replaceClass('labkey-disabled-button', 'labkey-button');\n");
+            out.write("    }\n");
+            out.write("    else {\n");
+            out.write("      btn.replaceClass('labkey-button', 'labkey-disabled-button');\n");
+            out.write("    }\n");
+            out.write("  });\n");
+            out.write("});\n");
+            out.write("</script>\n");
         }
     }
 

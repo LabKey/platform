@@ -6,6 +6,11 @@
 
 function setAllCheckboxes(form, value, elementName)
 {
+    if (form.dataRegion)
+    {
+        return form.dataRegion.selectPage(value);
+    }
+    
     var elems = form.elements;
     var l = elems.length;
     var ids = [];

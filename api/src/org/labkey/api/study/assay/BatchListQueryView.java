@@ -55,8 +55,9 @@ public class BatchListQueryView extends QueryView
 
         ActionURL deleteURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteExperimentsURL(getContainer(), getViewContext().getActionURL());
         ActionButton deleteButton = new ActionButton(deleteURL, "Delete");
-        deleteButton.setScript("return verifySelected(this.form, \"" + deleteURL.getLocalURIString() + "\", \"post\", \"batches\")");
+        deleteButton.setURL(deleteURL);
         deleteButton.setActionType(ActionButton.Action.POST);
+        deleteButton.setRequiresSelection(true);
         bar.add(deleteButton);
 
         boolean includeOtherContainers = _protocol.getContainer().equals(getViewContext().getContainer()) && getViewContext().getContainer().isProject();
@@ -67,9 +68,10 @@ public class BatchListQueryView extends QueryView
         ActionURL target = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(getContainer(), _protocol, ShowSelectedRunsAction.class);
         if (getTable().getContainerFilter() != null)
             target.addParameter("containerFilterName", getTable().getContainerFilter().name());
-        ActionButton viewSelectedButton = new ActionButton(target, "Show Runs For Selected");
-        viewSelectedButton.setScript("return verifySelected(this.form, \"" + target.getLocalURIString() + "\", \"post\", \"batches\")");
+        ActionButton viewSelectedButton = new ActionButton(target, "Show Runs");
+        viewSelectedButton.setURL(target);
         viewSelectedButton.setActionType(ActionButton.Action.POST);
+        viewSelectedButton.setRequiresSelection(true);
         bar.add(viewSelectedButton);
     }
 
