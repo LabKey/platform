@@ -20,6 +20,7 @@ import org.labkey.api.query.CustomView;
 import org.labkey.api.util.DOMUtil;
 import org.labkey.query.ModuleCustomView;
 import org.labkey.common.util.Pair;
+import org.labkey.data.xml.queryCustomView.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
@@ -120,27 +121,21 @@ public class ModuleCustomViewDef
     {
         try
         {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            dbf.setValidating(false);
-            DocumentBuilder db = dbf.newDocumentBuilder();
+            CustomViewDocument doc = CustomViewDocument.Factory.parse(_sourceFile);
+            CustomViewType viewElement = doc.getCustomView();
 
-            Document doc = db.parse(_sourceFile);
-            if(null == doc)
-                throw new IllegalStateException("Custom view definition file " + _sourceFile.getPath() + " contianed an empty document!");
+            _hidden = viewElement.isSetHidden() && viewElement.getHidden();
+            _customIconUrl = viewElement.getCustomIconUrl();
 
-            //load hidden attribute
-            _hidden = Boolean.parseBoolean(DOMUtil.getAttributeValue(doc.getDocumentElement(), "hidden", "false"));
-
-            _customIconUrl = DOMUtil.getAttributeValue(doc.getDocumentElement(), "customIconUrl", null);
 
             //load the columns
-            _colList = loadColumns(doc);
+            _colList = loadColumns(viewElement.getColumns());
 
             //load the filters
-            _filters = loadFilters(doc);
+            _filters = loadFilters(viewElement.getFilters());
 
             //load the sorts
-            _sorts = loadSorts(doc);
+            _sorts = loadSorts(viewElement.getSorts());
 
         }
         catch(Exception e)
@@ -150,32 +145,32 @@ public class ModuleCustomViewDef
         }
     }
 
-    protected List<Map.Entry<FieldKey,Map<CustomView.ColumnProperty,String>>> loadColumns(Document doc)
+    protected List<Map.Entry<FieldKey,Map<CustomView.ColumnProperty,String>>> loadColumns(ColumnsType columns)
     {
         List<Map.Entry<FieldKey,Map<CustomView.ColumnProperty,String>>> ret = new ArrayList<Map.Entry<FieldKey,Map<CustomView.ColumnProperty,String>>>();
 
-        //load the column elements
-        NodeList nodes = doc.getElementsByTagName("column");
-        for(int idx = 0; idx < nodes.getLength(); ++idx)
+        if(null == columns)
+            return ret;
+
+        for(ColumnType column : columns.getColumnArray())
         {
-            Node node = nodes.item(idx);
-            FieldKey fieldKey = getFieldKey(node);
+            FieldKey fieldKey = getFieldKey(column.getName());
             if(null == fieldKey)
                 continue;
 
             //load any column properties that might be there
             Map<CustomView.ColumnProperty,String> props = new HashMap<CustomView.ColumnProperty,String>();
-            Node propsNode = DOMUtil.getFirstChildNodeWithName(node, "properties");
-            if(null != propsNode)
+
+            PropertiesType propsList = column.getProperties();
+            if(null != propsList)
             {
-                List<Node> propsNodes = DOMUtil.getChildNodesWithName(propsNode, "property");
-                for(Node propNode : propsNodes)
+                for(PropertyType propDef : propsList.getPropertyArray())
                 {
-                    CustomView.ColumnProperty colProp = CustomView.ColumnProperty.valueOf(DOMUtil.getAttributeValue(propNode, "name", null));
+                    CustomView.ColumnProperty colProp = CustomView.ColumnProperty.valueOf(propDef.getName());
                     if(null == colProp)
                         continue;
 
-                    props.put(colProp, DOMUtil.getAttributeValue(propNode, "value", null));
+                    props.put(colProp, propDef.getValue());
                 }
             }
 
@@ -185,56 +180,40 @@ public class ModuleCustomViewDef
         return ret;
     }
 
-    protected List<Pair<String,String>> loadFilters(Document doc)
+    protected List<Pair<String,String>> loadFilters(FiltersType filters)
     {
-        NodeList nodes = doc.getElementsByTagName("filters");
-        if(null == nodes || nodes.getLength() == 0)
+        if(null == filters)
             return null;
 
         List<Pair<String,String>> ret = new ArrayList<Pair<String,String>>();
-        Node filtersRoot = nodes.item(0);
-        nodes = filtersRoot.getChildNodes();
-        for(int idx = 0; idx < nodes.getLength(); ++idx)
+        for(FilterType filter : filters.getFilterArray())
         {
-            Node filterNode = nodes.item(idx);
-            if(!filterNode.getNodeName().equalsIgnoreCase("filter"))
-                    continue;
-
-            String colName = DOMUtil.getAttributeValue(filterNode, "column", null);
-            if(null == colName)
+            if(null == filter.getColumn() || null == filter.getOperator())
                 continue;
 
-            String oper = DOMUtil.getAttributeValue(filterNode, "operator", "eq");
-            String value = DOMUtil.getAttributeValue(filterNode, "value", null);
-
-            ret.add(new Pair<String,String>(colName + "~" + oper, value));
+            ret.add(new Pair<String,String>(filter.getColumn() + "~" + filter.getOperator().toString(), filter.getValue()));
         }
 
         return ret;
     }
 
-    protected FieldKey getFieldKey(Node columnNode)
+    protected FieldKey getFieldKey(String name)
     {
-        String nameAttr = DOMUtil.getAttributeValue(columnNode, "name", null);
-        return null == nameAttr ? null : FieldKey.fromString(nameAttr);
+        return null == name ? null : FieldKey.fromString(name);
     }
 
-    protected List<String> loadSorts(Document doc)
+    protected List<String> loadSorts(SortsType sorts)
     {
-        List<Node> sortsNodes = DOMUtil.getChildNodesWithName(doc.getDocumentElement(), "sorts");
-        if(null == sortsNodes || sortsNodes.size() == 0)
+        if(null == sorts)
             return null;
 
-        List<Node> sortNodes = DOMUtil.getChildNodesWithName(sortsNodes.get(0), "sort");
         List<String> ret = new ArrayList<String>();
-        for(Node node : sortNodes)
+        for(SortType sort : sorts.getSortArray())
         {
-            String colName = DOMUtil.getAttributeValue(node, "column");
-            if(null == colName)
+            if(null == sort.getColumn())
                 continue;
 
-            boolean descending = Boolean.parseBoolean(DOMUtil.getAttributeValue(node, "descending", "false"));
-            ret.add(descending ? "-" + colName : colName);
+            ret.add(sort.isSetDescending() && sort.getDescending() ? "-" + sort.getColumn() : sort.getColumn());
         }
         return ret;
     }

@@ -56,6 +56,7 @@ public class QueryServiceImpl extends QueryService
     };
 
     private static Cache _moduleResourcesCache = new Cache(1024, Cache.DAY);
+    private static final String QUERYDEF_SET_CACHE_ENTRY = "QUERYDEFS:";
 
     public static Cache getModuleResourcesCache()
     {
@@ -129,9 +130,26 @@ public class QueryServiceImpl extends QueryService
         for(Module module : container.getActiveModules())
         {
             File schemaDir = new File(getModuleQueriesDir(module), schemaName);
-            if(schemaDir.exists())
+            File[] fileSet = null;
+
+            //always scan the file system in dev mode
+            if(AppProps.getInstance().isDevMode())
+                fileSet = schemaDir.listFiles(moduleQueryFileFilter);
+            else
             {
-                for(File sqlFile : schemaDir.listFiles(moduleQueryFileFilter))
+                //in production, cache the set of query defs for each module on first request
+                String fileSetCacheKey = QUERYDEF_SET_CACHE_ENTRY + module.toString();
+                fileSet = (File[])_moduleResourcesCache.get(fileSetCacheKey);
+                if(null == fileSet && schemaDir.exists())
+                {
+                    fileSet = schemaDir.listFiles(moduleQueryFileFilter);
+                    _moduleResourcesCache.put(fileSetCacheKey, fileSet);
+                }
+            }
+
+            if(null != fileSet)
+            {
+                for(File sqlFile : fileSet)
                 {
                     ModuleQueryDef moduleQueryDef = (ModuleQueryDef)_moduleResourcesCache.get(sqlFile.getAbsolutePath());
                     if(null == moduleQueryDef || moduleQueryDef.isStale())
