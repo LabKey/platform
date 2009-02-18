@@ -103,7 +103,6 @@ public class AuditLogTable extends FilteredTable
                 {
                     ColumnInfo colProperty = new ExprColumn(this, "property", new SQLFragment(sqlObjectId), Types.INTEGER);
                     Map<String, PropertyDescriptor> map = new TreeMap<String, PropertyDescriptor>();
-                    FieldKey keyProp = new FieldKey(null, "Property");
                     for(PropertyDescriptor pd : pds)
                     {
                         if (pd.getPropertyType() == PropertyType.DOUBLE)

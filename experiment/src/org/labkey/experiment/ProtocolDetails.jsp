@@ -55,6 +55,10 @@
         <td><%= h(protocol.getMaxInputDataPerInstance()) %></td>
     </tr>
     <tr>
+        <td class="labkey-form-label">Max input material per instance</td>
+        <td><%= h(protocol.getMaxInputMaterialPerInstance()) %></td>
+    </tr>
+    <tr>
         <td class="labkey-form-label">Output data per instance</td>
         <td><%= h(protocol.getOutputDataPerInstance()) %></td>
     </tr>

@@ -529,7 +529,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
         public String getLookupTableName()
         {
-            return ExpSchema.TableType.Experiments.toString();
+            return ExpSchema.TableType.RunGroups.toString();
         }
 
         public String getLookupSchemaName()

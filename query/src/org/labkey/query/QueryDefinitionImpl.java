@@ -431,7 +431,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 return ret;
             }
         }
-        ret = new ArrayList();
+        ret = new ArrayList<DisplayColumn>();
         for (ColumnInfo column : QueryService.get().getColumns(table, table.getDefaultVisibleColumns()).values())
         {
             ret.add(column.getRenderer());
@@ -445,7 +445,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         QueryDocument ret = query.getDesignDocument();
         if (ret == null)
             return null;
-        Map<String, DgColumn> columns = new HashMap();
+        Map<String, DgColumn> columns = new HashMap<String, DgColumn>();
         for (DgColumn dgColumn : ret.getQuery().getSelect().getColumnArray())
         {
             columns.put(dgColumn.getAlias(), dgColumn);

@@ -137,6 +137,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         defaultCols.add(FieldKey.fromParts(Column.Hypothesis.toString()));
         defaultCols.add(FieldKey.fromParts(Column.Comments.toString()));
         defaultCols.add(FieldKey.fromParts(Column.RunCount.toString()));
+        defaultCols.add(FieldKey.fromParts(Column.Folder.toString()));
         setDefaultVisibleColumns(defaultCols);
         addColumn(Column.LSID).setIsHidden(true);
         setTitleColumn("Name");

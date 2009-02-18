@@ -25,8 +25,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.FieldKey;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
-import java.util.List;
-import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * User: jeckels
@@ -88,25 +87,22 @@ public class RunGroupWebPart extends QueryView
         QuerySettings settings = new QuerySettings(portalCtx, dataRegionName);
         settings.setSchemaName(getSchema().getSchemaName());
         settings.setAllowChooseQuery(false);
-        settings.setQueryName(ExpSchema.EXPERIMENTS_NARROW_WEB_PART_TABLE_NAME);
+        settings.setQueryName(_narrow ? ExpSchema.RUN_GROUPS_NARROW_WEB_PART_TABLE_NAME : ExpSchema.TableType.RunGroups.toString());
         return settings;
     }
 
     protected ExpExperimentTable createTable()
     {
         ExpSchema schema = (ExpSchema) getSchema();
-        ExpExperimentTable result = schema.createExperimentsTable(ExpSchema.TableType.Experiments.toString(), "alias");
+        ExpExperimentTable result;
         if (_narrow)
         {
-            List<FieldKey> fieldKeys = new ArrayList<FieldKey>();
-            fieldKeys.add(FieldKey.fromParts(ExpExperimentTable.Column.Name.toString()));
-            result.setDefaultVisibleColumns(fieldKeys);
+            result = schema.createExperimentsTable(ExpSchema.RUN_GROUPS_NARROW_WEB_PART_TABLE_NAME, "alias");
+            result.setDefaultVisibleColumns(Collections.singletonList(FieldKey.fromParts("Name")));
         }
         else
         {
-            List<FieldKey> fieldKeys = new ArrayList<FieldKey>(result.getDefaultVisibleColumns());
-            fieldKeys.add(FieldKey.fromParts(ExpExperimentTable.Column.Folder));
-            result.setDefaultVisibleColumns(fieldKeys);
+            result = schema.createExperimentsTable(ExpSchema.TableType.RunGroups.toString(), "alias");
         }
         return result;
     }
@@ -126,7 +122,7 @@ public class RunGroupWebPart extends QueryView
         {
             ActionButton deleteExperiment = new ActionButton("", "Delete Selected");
             ActionURL deleteExpUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteSelectedExperimentsURL(getViewContext().getContainer(), getViewContext().getActionURL());
-            deleteExperiment.setScript("return verifySelected(this.form, \"" + deleteExpUrl.getLocalURIString() + "\", \"post\", \"experiment\")");
+            deleteExperiment.setScript("return verifySelected(this.form, \"" + deleteExpUrl.getLocalURIString() + "\", \"post\", \"run group\")");
             deleteExperiment.setActionType(ActionButton.Action.POST);
             deleteExperiment.setDisplayPermission(ACL.PERM_DELETE);
             bb.add(deleteExperiment);

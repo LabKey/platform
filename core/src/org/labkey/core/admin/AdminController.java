@@ -1101,6 +1101,12 @@ public class AdminController extends SpringActionController
                 }
             }
 
+            if (form.getDefaultLsidAuthority() == null || "".equals(form.getDefaultLsidAuthority().trim()))
+            {
+                errors.reject(ERROR_MSG, "Default LSID Authority may not be blank");
+                return false;
+            }
+
             WriteableAppProps props = AppProps.getWriteableInstance();
 
             props.setDefaultDomain(form.getDefaultDomain());

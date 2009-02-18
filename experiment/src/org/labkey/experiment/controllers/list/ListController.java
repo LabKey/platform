@@ -115,7 +115,7 @@ public class ListController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root);
+            return appendRootNavTrail(root).addChild("Available Lists");
         }
     }
 
@@ -172,7 +172,7 @@ public class ListController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root);
+            return appendRootNavTrail(root).addChild("Create New List");
         }
     }
 

@@ -18,11 +18,19 @@ package org.labkey.experiment.api;
 
 import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.view.ActionURL;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.sql.Types;
 
 /**
  * User: jeckels
@@ -40,7 +48,9 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
         switch (column)
         {
             case Folder:
-                return wrapColumn(alias, _rootTable.getColumn("Container"));
+                ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("Container"));
+                columnInfo.setFk(new ContainerForeignKey());
+                return columnInfo;
             case Created:
             case Modified:
             case Description:
@@ -49,6 +59,22 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
             case Name:
             case RowId:
                 return wrapColumn(alias, _rootTable.getColumn(column.toString()));
+            case Active:
+            {
+                SQLFragment sql = new SQLFragment("(" + ExprColumn.STR_TABLE_ALIAS + ".LSID IN (SELECT MaterialSourceLSID FROM " +
+                    ExperimentServiceImpl.get().getTinfoActiveMaterialSource() + " WHERE Container = ?))");
+                sql.add(_schema.getContainer());
+                ExprColumn result = new ExprColumn(this, "Active", sql, Types.BOOLEAN);
+                result.setFormatString("Yes;No");
+                return result;
+            }
+            case SampleCount:
+            {
+                SQLFragment sql = new SQLFragment("(SELECT COUNT(*) FROM " +
+                    ExperimentServiceImpl.get().getTinfoMaterial() +
+                    " m WHERE m.CpasType = " + ExprColumn.STR_TABLE_ALIAS + ".LSID)");
+                return new ExprColumn(this, "SampleCount", sql, Types.INTEGER);
+            }
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -63,10 +89,14 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
         addColumn(ExpSampleSetTable.Column.MaterialLSIDPrefix).setIsHidden(true);
         addColumn(ExpSampleSetTable.Column.Created);
         addColumn(ExpSampleSetTable.Column.Folder);
+        addColumn(ExpSampleSetTable.Column.Active);
+        addColumn(ExpSampleSetTable.Column.SampleCount);
 
         List<FieldKey> defaultVisibleColumns = new ArrayList<FieldKey>(getDefaultVisibleColumns());
         defaultVisibleColumns.remove(FieldKey.fromParts(ExpSampleSetTable.Column.Folder));
         setDefaultVisibleColumns(defaultVisibleColumns);
 
+        setDetailsURL(new DetailsURL(new ActionURL(ExperimentController.ShowMaterialSourceAction.class, _schema.getContainer()),
+                Collections.singletonMap("rowId", "RowId")));
     }
 }

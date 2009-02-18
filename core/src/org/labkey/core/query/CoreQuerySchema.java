@@ -65,6 +65,7 @@ public class CoreQuerySchema extends UserSchema
         //generate an empty set (CONSIDER: should we throw an exception here instead?)
         if(!getUser().isAdministrator())
             addNullSetFilter(users);
+        users.setName("SiteUsers");
 
         return users;
     }

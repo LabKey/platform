@@ -22,7 +22,6 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpExperimentTable;
-import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
@@ -130,7 +129,8 @@ public class AssaySchema extends UserSchema
 
     public ExpExperimentTable createBatchesTable(String alias, ExpProtocol protocol, AssayProvider provider, final ContainerFilter containerFilter)
     {
-        final ExpExperimentTable result = new ExpSchema(getUser(), getContainer()).createExperimentsTable(getBatchesTableName(protocol), alias);
+        final ExpExperimentTable result = ExperimentService.get().createExperimentTable(getBatchesTableName(protocol), alias, this);
+        result.populate();
         if (containerFilter != null)
         {
             result.setContainerFilter(containerFilter);

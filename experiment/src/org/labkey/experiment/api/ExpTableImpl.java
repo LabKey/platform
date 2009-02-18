@@ -120,7 +120,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
     public ColumnInfo createUserColumn(String name, ColumnInfo userIdColumn)
     {
         ColumnInfo ret = wrapColumn(name, userIdColumn);
-        ret.setFk(new UserIdForeignKey());
+        ret.setFk(new UserIdQueryForeignKey(_schema.getUser(), _schema.getContainer()));
         return ret;
     }
 

@@ -104,7 +104,7 @@ public class AssayController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
+            return root.addChild("Assays", new ActionURL(BeginAction.class, getContainer())).addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
         }
 
         public AppBar getAppBar()

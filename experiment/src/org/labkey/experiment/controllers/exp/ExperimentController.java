@@ -305,7 +305,7 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             SampleSetWebPart view = new SampleSetWebPart(false, getViewContext());
-            view.setTitle(null);
+            view.setFrame(WebPartView.FrameType.NONE);
             view.setSampleSetError(getViewContext().getRequest().getParameter("sampleSetError"));
 
             return view;
@@ -1157,7 +1157,7 @@ public class ExperimentController extends SpringActionController
 
 
             ExpSchema schema = new ExpSchema(getUser(), getContainer());
-            ExperimentRunListView runView = new ExperimentRunListView(schema, ExperimentRunListView.getRunListQuerySettings(schema, getViewContext(), ExpSchema.TableType.Runs.name(), false), ExperimentRunType.ALL_RUNS_TYPE)
+            ExperimentRunListView runView = new ExperimentRunListView(schema, ExperimentRunListView.getRunListQuerySettings(schema, getViewContext(), ExpSchema.TableType.Runs.name(), true), ExperimentRunType.ALL_RUNS_TYPE)
             {
                 public DataView createDataView()
                 {
