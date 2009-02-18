@@ -81,6 +81,6 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         }
 
         //put the column map into the row map using the column name as the key
-        row.put(dc.getName(), colMap);
+        row.put(dc.getColumnInfo().getName(), colMap);
     }
 }
