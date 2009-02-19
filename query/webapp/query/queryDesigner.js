@@ -1255,12 +1255,12 @@ function QueryDesigner(urlCheckSyntax, tableInfoService)
     }
     ret.rgFilterOps = function(type)
             {
-                return ['', 'eq', 'in', 'neq', 'isblank', 'isnonblank', 'gt', 'lt', 'gte', 'lte', 'startswith', 'doesnotstartwith', 'contains', 'doesnotcontain'];
+                return ['', 'eq', 'in', 'neq', 'isblank', 'isnonblank', 'gt', 'lt', 'gte', 'lte', 'startswith', 'doesnotstartwith', 'contains', 'doesnotcontain', 'dateeq', 'dateneq'];
             }
     ret.rgFilterDisplay = function(type )
             {
                 return ['Has Any Value', 'Equals', 'Equals One Of (e.g. \'a;b;c\')', 'Does Not Equal', 'Is Blank', 'Is Not Blank', 'Is Greater Than', 'Is Less Than',
-                        'Is Greater Than Or Equal To', 'Is Less Than Or Equal To', 'Starts With', 'Does Not Start With', 'Contains', 'Does Not Contain'];
+                        'Is Greater Than Or Equal To', 'Is Less Than Or Equal To', 'Starts With', 'Does Not Start With', 'Contains', 'Does Not Contain', 'Equals', 'Does Not Equal'];
             }
     ret.updateDocument = function ()
     {
@@ -1301,6 +1301,16 @@ function ViewDesigner(tableInfoService)
         return 'TEXT' == mappedType || 'LONGTEXT' == mappedType;
     }
 
+    function isDateType(oField)
+    {
+        if (!oField)
+            return false;
+        var mappedType = _typeMap[oField.datatype.toUpperCase()];
+        if (!mappedType)
+            return false;
+        return 'DATE' == mappedType;
+    }
+
     ret.fieldInfo = function(field)
     {
         return tableInfoService.getOutputColumnInfos([field])[field];
@@ -1308,13 +1318,30 @@ function ViewDesigner(tableInfoService)
 
     ret.rgFilterOps = function(field)
     {
-        var ret = ['', 'eq'];
+        var ret = ['']
         var oField = this.fieldInfo(field);
+        if (!isDateType(oField))
+        {
+            ret = ret.concat(['eq']);
+        }
+        else
+        {
+            ret = ret.concat(['dateeq']);
+        }
         if (!isBoolType(oField))
         {
             ret = ret.concat(['in']);
         }
-        ret = ret.concat(['neqornull', 'isblank', 'isnonblank']);
+        if (!isDateType(oField))
+        {
+            ret = ret.concat(['neqornull']);
+        }
+        else
+        {
+            ret = ret.concat(['dateneq']);
+        }
+
+        ret = ret.concat(['isblank', 'isnonblank']);
         if (!isBoolType(oField))
         {
             ret = ret.concat(['gt', 'lt', 'gte', 'lte']);

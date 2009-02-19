@@ -23,13 +23,11 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.view.ActionURL;
 import org.labkey.query.CustomViewImpl;
-import org.springframework.beans.PropertyValues;
 import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 public class ChooseColumnsForm extends DesignForm
 {
@@ -165,12 +163,15 @@ public class ChooseColumnsForm extends DesignForm
         return ret;
     }
 
-    public Map<FieldKey, ColumnInfo> getAvailableColumns()
+    private Map<FieldKey, ColumnInfo> getAvailableColumns()
     {
         Map<FieldKey, ColumnInfo> ret = new TreeMap<FieldKey, ColumnInfo>();
         TableInfo table = getQueryDef().getTable(null, getSchema(), null, true);
         addColumns(ret, table, null, 3);
-        return ret;
+
+        return QueryService.get().getColumns(table, ret.keySet());
+
+        //return ret;
     }
 
     protected boolean isFilterOrSort(String dataRegionName, String param)
@@ -184,6 +185,68 @@ public class ChooseColumnsForm extends DesignForm
         if (check.equals("containerFilterName"))
             return true;
         return false;
+    }
+
+    public List<String> getFilterColumnNamesFromURL()
+    {
+        ActionURL url = getSourceURL();
+        if (url == null)
+            return Collections.emptyList();
+        List<String> result = new ArrayList<String>();
+        for (String key : url.getKeysByPrefix(getDataRegionName() + "."))
+        {
+            String editedKey = key.substring(getDataRegionName().length() + 1);
+            int tildeIndex = editedKey.indexOf("~");
+            if (tildeIndex >= 0)
+            {
+                String colName = editedKey.substring(0, tildeIndex);
+                result.add(getCaption(colName));
+            }
+        }
+        return result;
+    }
+
+    private String getCaption(String colName)
+    {
+        FieldKey fKey = FieldKey.fromString(colName);
+        String caption = fKey.getCaption();
+        Map<FieldKey,ColumnInfo> columns = getAvailableColumns();
+        ColumnInfo column = columns.get(fKey);
+        if (column != null)
+            caption = column.getCaption();
+        return caption;
+    }
+
+    public List<String> getSortColumnNamesFromURL()
+    {
+        ActionURL url = getSourceURL();
+        if (url == null)
+            return Collections.emptyList();
+        List<String> result = new ArrayList<String>();
+        for (String key : url.getKeysByPrefix(getDataRegionName() + "."))
+        {
+            String editedKey = key.substring(getDataRegionName().length() + 1);
+            if ("sort".equals(editedKey))
+            {
+                String colName = url.getParameter(key);
+                result.add(getCaption(colName));
+            }
+        }
+        return result;
+    }
+
+    public String getContainerFilterName()
+    {
+        ActionURL url = getSourceURL();
+        CustomView current = getCustomView();
+        if (current != null && current.getContainerFilterName() != null)
+        {
+            if (url.getParameter(getDataRegionName() + "." + QueryParam.ignoreFilter.toString()) != null)
+                return current.getContainerFilterName();
+        }
+        if (null == url)
+            return null;
+        return url.getParameter(getDataRegionName() + ".containerFilterName");
     }
 
     public boolean hasFilterOrSort()

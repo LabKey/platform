@@ -15,14 +15,16 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.ContainerFilter" %>
 <%@ page import="org.labkey.api.query.CustomView" %>
 <%@ page import="org.labkey.api.query.QueryAction" %>
 <%@ page import="org.labkey.api.query.QueryParam" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.query.controllers.ChooseColumnsForm" %>
 <%@ page import="java.util.Collections" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <labkey:errors />
@@ -246,19 +248,62 @@
         <% } %>
     <% } else if (canEdit) { %>
         <b>View Name:</b> <input type="text" name="ff_columnListName" maxlength="50" value="<%=h(form.ff_columnListName)%>">
-        <span id="personalViewNameDescription" <%=!form.canSaveForAllUsers() || view == null || view.getOwner() != null ? "" : " style=\"display:none"%>>(Leave blank to save as your default grid view for '<%=h(form.getQueryName())%>'.)</span>
-        <span id="sharedViewNameDescription" <%=!form.canSaveForAllUsers() || view == null || view.getOwner() != null ? " style=\"display:none\"" : ""%>>(Leave blank to save as the default grid view for '<%=h(form.getQueryName())%>' for all users.)</span>
+        <span id="personalViewNameDescription" <%=!form.canSaveForAllUsers() || view == null || view.getOwner() != null ? "" : " style=\"display:none"%>>(Leave blank to save as your default grid view for '<%=h(form.getQueryName())%>')</span>
+        <span id="sharedViewNameDescription" <%=!form.canSaveForAllUsers() || view == null || view.getOwner() != null ? " style=\"display:none\"" : ""%>>(Leave blank to save as the default grid view for '<%=h(form.getQueryName())%>' for all users)</span>
         <br>
         <% if (form.canSaveForAllUsers()) { %>
             <input type="checkbox" name="ff_saveForAllUsers" value="true"<%=view != null && view.getOwner() == null ? " checked" : ""%> onclick="updateViewNameDescription(this)"> Make
-            this grid view available to all users.<br>
-            <labkey:checkbox name="ff_inheritable" value="<%=true%>" checkedSet="<%=Collections.singleton(form.ff_inheritable)%>"/> Make this grid view available in child folders.<br>
+            this grid view available to all users<br>
+            <labkey:checkbox name="ff_inheritable" value="<%=true%>" checkedSet="<%=Collections.singleton(form.ff_inheritable)%>"/> Make this grid view available in child folders<br>
         <% } %>
     <% } %>
 
     <% if (canEdit && form.hasFilterOrSort()) { %>
-        <input id="ff_saveFilterCbx" type="checkbox" name="ff_saveFilter" value="true"> Remember current filter.<br>
-    <% } else { %>
+        <input id="ff_saveFilterCbx" type="checkbox" name="ff_saveFilter" value="true"> Remember grid filters and sorts:<ul>
+    <%
+        List<String> filterColumns = form.getFilterColumnNamesFromURL();
+        if (filterColumns.size() > 0)
+        {
+            out.write("<li>Filter: ");
+            boolean needComma = false;
+            for (String filterColumn : filterColumns)
+            {
+                if (needComma)
+                    out.write(", ");
+                else
+                    needComma = true;
+                out.write(filterColumn);
+            }
+            out.write("</li>\n");
+        }
+
+        List<String> sortColumns = form.getSortColumnNamesFromURL();
+        if (sortColumns.size() > 0)
+        {
+            out.write("<li>Sort: ");
+            boolean needComma = false;
+            for (String sortColumn : sortColumns)
+            {
+                if (needComma)
+                    out.write(", ");
+                else
+                    needComma = true;
+                out.write(sortColumn);
+            }
+            out.write("</li>\n");
+        }
+
+        if (form.getContainerFilterName() != null)
+        {
+            out.write("<li>Folder Filter: ");
+            String containerFilter = ContainerFilter.Type.valueOf(form.getContainerFilterName()).toString();
+            out.write(containerFilter);
+            out.write("</li>");
+        }
+
+        %></ul><%
+
+        } else { %>
         <input type="hidden" name="ff_saveFilter" value="true">
     <% } %>
     </p>
