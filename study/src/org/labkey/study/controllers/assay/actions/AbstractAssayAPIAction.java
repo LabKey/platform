@@ -40,7 +40,7 @@ import java.sql.SQLException;
  * User: jeckels
  * Date: Jan 15, 2009
  */
-public abstract class AbstractAssayAPIAction<FORM> extends ApiAction<FORM>
+public abstract class AbstractAssayAPIAction<FORM extends SimpleApiJsonForm> extends ApiAction<FORM>
 {
     // Top level properties
     protected static final String ASSAY_ID = "assayId";
@@ -51,7 +51,7 @@ public abstract class AbstractAssayAPIAction<FORM> extends ApiAction<FORM>
     // Run properties
     protected static final String DATA_ROWS = "dataRows";
 
-    public final ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
+    public final ApiResponse execute(FORM form, BindException errors) throws Exception
     {
         if (form.getJsonObject() == null)
         {
@@ -80,7 +80,7 @@ public abstract class AbstractAssayAPIAction<FORM> extends ApiAction<FORM>
         return executeAction(protocol, provider, form, errors);
     }
 
-    protected abstract ApiResponse executeAction(ExpProtocol assay, AssayProvider provider, SimpleApiJsonForm form, BindException errors) throws Exception;
+    protected abstract ApiResponse executeAction(ExpProtocol assay, AssayProvider provider, FORM form, BindException errors) throws Exception;
 
     public static JSONArray serializeDataRows(ExpData data, AssayProvider provider, ExpProtocol protocol, Object[] objectIds) throws SQLException
     {
