@@ -321,6 +321,15 @@ public class CohortController extends BaseStudyController
                 if (isInsert())
                 {
                     cohort = new Cohort();
+
+                    // Check if there's a conflict
+                    Cohort existingCohort = StudyManager.getInstance().getCohortByLabel(getContainer(), getUser(), newLabel);
+                    if (existingCohort != null)
+                    {
+                        errors.reject("insertCohort", "A cohort with the label '" + newLabel + "' already exists");
+                        return false;
+                    }
+
                     cohort.setLabel(newLabel);
                     StudyManager.getInstance().createCohort(getStudy(), getUser(), cohort);
                 }
@@ -344,6 +353,13 @@ public class CohortController extends BaseStudyController
 
                     if (newLabel != null && !cohort.getLabel().equals(newLabel))
                     {
+                        // Check if there's a conflict
+                        Cohort existingCohort = StudyManager.getInstance().getCohortByLabel(getContainer(), getUser(), newLabel);
+                        if (existingCohort != null && existingCohort.getRowId() != cohort.getRowId())
+                        {
+                            errors.reject("insertCohort", "A cohort with the label '" + newLabel + "' already exists");
+                            return false;
+                        }
                         cohort = cohort.createMutable();
                         cohort.setLabel(newLabel);
                         StudyManager.getInstance().updateCohort(getUser(), cohort);

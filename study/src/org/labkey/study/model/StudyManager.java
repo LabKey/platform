@@ -822,21 +822,19 @@ public class StudyManager
     {
         if (user == null)
             return false;
+        if (user.isAdministrator())
+            return true;
         Study study = StudyManager.getInstance().getStudy(container);
 
         if (study.isManualCohortAssignment())
         {
             // If we're not reading from a dataset for cohort definition,
             // we use the container's permission
-            if (user.isAdministrator())
-                return true;
             return SecurityManager.getACL(container).hasPermission(user, ACL.PERM_READ);
         }
 
         // Automatic cohort assignment -- can the user read the source dataset?
         Integer cohortDatasetId = study.getParticipantCohortDataSetId();
-        if (user.isAdministrator())
-            return cohortDatasetId != null;
         if (cohortDatasetId != null)
         {
             DataSetDefinition def = getDataSetDefinition(study, cohortDatasetId.intValue());
@@ -905,6 +903,25 @@ public class StudyManager
         {
             throw new RuntimeSQLException(se);
         }
+    }
+
+    public Cohort getCohortByLabel(Container container, User user, String label)
+    {
+        assertCohortsViewable(container, user);
+        SimpleFilter filter = new SimpleFilter("Container", container.getId());
+        filter.addCondition("Label", label);
+
+        try
+        {
+            Cohort[] cohorts = _cohortHelper.get(container, filter);
+            if (cohorts != null && cohorts.length == 1)
+                return cohorts[0];
+        }
+        catch (SQLException se)
+        {
+            UnexpectedException.rethrow(se);
+        }
+        return null;
     }
 
     private boolean isCohortInUse(Cohort cohort, TableInfo table)
