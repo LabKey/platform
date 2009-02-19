@@ -61,9 +61,11 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
                 return wrapColumn(alias, _rootTable.getColumn(column.toString()));
             case Active:
             {
-                SQLFragment sql = new SQLFragment("(" + ExprColumn.STR_TABLE_ALIAS + ".LSID IN (SELECT MaterialSourceLSID FROM " +
-                    ExperimentServiceImpl.get().getTinfoActiveMaterialSource() + " WHERE Container = ?))");
+                SQLFragment sql = new SQLFragment("(CASE WHEN " + ExprColumn.STR_TABLE_ALIAS + ".LSID IN (SELECT MaterialSourceLSID FROM " +
+                    ExperimentServiceImpl.get().getTinfoActiveMaterialSource() + " WHERE Container = ?) THEN ? ELSE ? END)");
                 sql.add(_schema.getContainer());
+                sql.add(Boolean.TRUE);
+                sql.add(Boolean.FALSE);
                 ExprColumn result = new ExprColumn(this, "Active", sql, Types.BOOLEAN);
                 result.setFormatString("Yes;No");
                 return result;
