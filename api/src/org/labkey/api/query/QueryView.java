@@ -95,6 +95,7 @@ public class QueryView extends WebPartView<Object>
 
     private boolean _showExportButtons = true;
     private boolean _allowExportExternalQuery = true;
+    private List<ContainerFilter.Type> _allowableContainerFilterTypes = Arrays.asList(ContainerFilter.Type.Current, ContainerFilter.Type.CurrentAndSubfolders);
     private boolean _useQueryViewActionExportURLs = false;
     private boolean _printView = false;
     private boolean _exportView = false;
@@ -796,7 +797,7 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
-        if (getTable() instanceof ContainerFilterable && getSettings().isAllowContainerFilter())
+        if (getTable() instanceof ContainerFilterable && !getAllowableContainerFilterTypes().isEmpty())
         {
             NavTree containerFilterItem = new NavTree("Folder Filter");
             containerFilterItem.setId("Views:Folder Filter");
@@ -806,16 +807,16 @@ public class QueryView extends WebPartView<Object>
 
             ContainerFilter selectedFilter = table.getContainerFilter();
 
-            for (ContainerFilter filter : ContainerFilter.getPublicFilters(getSchema().getUser()))
+            for (ContainerFilter.Type filterType : getAllowableContainerFilterTypes())
             {
                 ActionURL url = getViewContext().getActionURL().clone();
                 String propName = getDataRegionName() + ".containerFilterName";
-                url.replaceParameter(propName, filter.name());
-                NavTree filterItem = new NavTree(filter.toString(), url);
+                url.replaceParameter(propName, filterType.name());
+                NavTree filterItem = new NavTree(filterType.toString(), url);
 
-                filterItem.setId("Views:Folder Filter:" + filter.toString());
+                filterItem.setId("Views:Folder Filter:" + filterType.toString());
 
-                if(selectedFilter.getClass() == filter.getClass())
+                if(selectedFilter.getType() == filterType)
                 {
                     filterItem.setSelected(true);
                 }
@@ -1371,6 +1372,26 @@ public class QueryView extends WebPartView<Object>
     public void setShowPaginationCount(boolean showPaginationCount)
     {
         _showPaginationCount = showPaginationCount;
+    }
+
+    public List<ContainerFilter.Type> getAllowableContainerFilterTypes()
+    {
+        return _allowableContainerFilterTypes;
+    }
+
+    public void setAllowableContainerFilterTypes(List<ContainerFilter.Type> allowableContainerFilterTypes)
+    {
+        _allowableContainerFilterTypes = allowableContainerFilterTypes;
+    }
+
+    public void setAllowableContainerFilterTypes(ContainerFilter.Type... allowableContainerFilterTypes)
+    {
+        setAllowableContainerFilterTypes(Arrays.asList(allowableContainerFilterTypes));
+    }
+
+    public void disableContainerFilterSelection()
+    {
+        _allowableContainerFilterTypes = Collections.emptyList();
     }
 
     private static class NavTreeMenuButton extends MenuButton

@@ -31,29 +31,85 @@ public abstract class ContainerFilter
      */
     public abstract Collection<String> getIds(Container currentContainer);
 
-    public String name()
-    {
-        return getClass().getSimpleName();
-    }
+    public abstract Type getType();
 
     /**
      * If we can't find the name, we default to CURRENT
      */
     public static ContainerFilter getContainerFilterByName(String name, User user)
     {
-        if ("CurrentAndSubfolders".equals(name))
-            return new CurrentAndSubfolders(user);
-
-        return CURRENT;
+        Type type = Type.Current;
+        try
+        {
+            type = Type.valueOf(name);
+        }
+        catch (IllegalArgumentException e)
+        {
+            // Revert to Current
+        }
+        return type.create(user);
     }
 
-    public static Collection<ContainerFilter> getPublicFilters(User user)
+    public enum Type
     {
-        List<ContainerFilter> filters = new ArrayList<ContainerFilter>();
-        filters.add(CURRENT);
-        filters.add(new CurrentAndSubfolders(user));
+        Current("Current folder")
+        {
+            public ContainerFilter create(User user)
+            {
+                return CURRENT;
+            }
+        },
+        CurrentAndSubfolders("Current folder and subfolders")
+        {
+            public ContainerFilter create(User user)
+            {
+                return new CurrentAndSubfolders(user);
+            }
+        },
+        CurrentPlusProject("Current folder and project")
+        {
+            public ContainerFilter create(User user)
+            {
+                return new CurrentPlusProject(user);
+            }
+        },
+        CurrentAndParents("Current folder and parent folders")
+        {
+            public ContainerFilter create(User user)
+            {
+                return new CurrentAndParents(user);
+            }
+        },
+        CurrentPlusProjectAndShared("Current folder, project, and Shared project")
+        {
+            public ContainerFilter create(User user)
+            {
+                return new CurrentPlusProjectAndShared(user);
+            }
+        },
+        AllFolders("All folders")
+        {
+            public ContainerFilter create(User user)
+            {
+                return new AllFolders(user);
+            }
+        };
 
-        return filters;
+
+        private final String _description;
+
+        private Type(String description)
+        {
+            _description = description;
+        }
+
+        @Override
+        public String toString()
+        {
+            return _description;
+        }
+
+        public abstract ContainerFilter create(User user);
     }
 
     public static final ContainerFilter CURRENT = new ContainerFilter()
@@ -69,18 +125,23 @@ public abstract class ContainerFilter
             return "Current Folder";
         }
 
-        @Override
-        public String name()
+        public Type getType()
         {
-            return "CURRENT";
+            return Type.Current;
         }
     };
 
+    /** Use this with extreme caution - it doesn't check permissions */
     public static final ContainerFilter EVERYTHING = new ContainerFilter()
     {
         public Collection<String> getIds(Container currentContainer)
         {
             return null;
+        }
+
+        public Type getType()
+        {
+            throw new UnsupportedOperationException();
         }
     };
 
@@ -127,6 +188,11 @@ public abstract class ContainerFilter
             }
             return ids;
         }
+
+        public Type getType()
+        {
+            throw new UnsupportedOperationException();
+        }
     }
 
     public static class CurrentAndSubfolders extends ContainerFilterWithUser
@@ -143,9 +209,9 @@ public abstract class ContainerFilter
             return toIds(containers);
         }
 
-        public String toString()
+        public Type getType()
         {
-            return "Current Folder and Subfolders";
+            return Type.CurrentAndSubfolders;
         }
     }
 
@@ -167,7 +233,41 @@ public abstract class ContainerFilter
             }
             return toIds(containers);
         }
+
+        public Type getType()
+        {
+            return Type.CurrentPlusProject;
+        }
     }
+
+    public static class CurrentAndParents extends ContainerFilterWithUser
+    {
+        public CurrentAndParents(User user)
+        {
+            super(user);
+        }
+
+        public Collection<String> getIds(Container currentContainer)
+        {
+            Set<Container> containers = new HashSet<Container>();
+            do
+            {
+                if (currentContainer.hasPermission(_user, ACL.PERM_READ))
+                {
+                    containers.add(currentContainer);
+                }
+                currentContainer = currentContainer.getParent();
+            }
+            while (currentContainer != null && !currentContainer.getPath().equals("/"));
+            return toIds(containers);
+        }
+
+        public Type getType()
+        {
+            return Type.CurrentAndParents;
+        }
+    }
+
 
     public static class CurrentPlusProjectAndShared extends ContainerFilterWithUser
     {
@@ -193,6 +293,10 @@ public abstract class ContainerFilter
             return toIds(containers);
         }
 
+        public Type getType()
+        {
+            return Type.CurrentPlusProjectAndShared;
+        }
     }
 
     public static class AllInProject extends ContainerFilterWithUser
@@ -214,11 +318,16 @@ public abstract class ContainerFilter
             containers.add(project);
             return toIds(containers);
         }
+
+        public Type getType()
+        {
+            throw new UnsupportedOperationException();
+        }
     }
 
-    public static class AllInSite extends ContainerFilterWithUser
+    public static class AllFolders extends ContainerFilterWithUser
     {
-        public AllInSite(User user)
+        public AllFolders(User user)
         {
             super(user);
         }
@@ -233,6 +342,10 @@ public abstract class ContainerFilter
             return ContainerManager.getIds(_user, ACL.PERM_READ);
         }
 
+        public Type getType()
+        {
+            return Type.AllFolders;
+        }
     }
 
     private static Set<String> toIds(Collection<Container> containers)
@@ -244,5 +357,4 @@ public abstract class ContainerFilter
         }
         return ids;
     }
-
 }

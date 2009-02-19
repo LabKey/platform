@@ -29,9 +29,7 @@ import java.util.*;
 
 public class ExpSchema extends AbstractExpSchema
 {
-    public static final String RUN_GROUPS_NARROW_WEB_PART_TABLE_NAME = "ExperimentsNarrowWebPart";
     public static final String EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME = "ExperimentsMembershipForRun";
-    public static final String RUN_GROUPS_TABLE_NAME = "RunGroups";
 
     public enum TableType
     {
@@ -161,10 +159,8 @@ public class ExpSchema extends AbstractExpSchema
             }
         }
 
-        // TODO - find a better way to do this. We want to have different sets of views for the experiments table,
-        // so this is a hacky way to make sure that customizing one set of views doesn't affect the other.
-        // Support "Experiments" as a legacy name for this table
-        if ("Experiments".equalsIgnoreCase(name) || RUN_GROUPS_NARROW_WEB_PART_TABLE_NAME.equalsIgnoreCase(name))
+        // Support "Experiments" as a legacy name for the RunGroups table
+        if ("Experiments".equalsIgnoreCase(name))
         {
             return createExperimentsTable(name, alias);
         }

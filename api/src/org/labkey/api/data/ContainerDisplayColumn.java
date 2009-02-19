@@ -45,7 +45,7 @@ public class ContainerDisplayColumn extends DataColumn
      */
     public ContainerDisplayColumn(ColumnInfo col, boolean showPath)
     {
-        this(col, showPath, PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(ContainerManager.getRoot()));
+        this(col, showPath, null);
     }
 
     /**
@@ -55,7 +55,14 @@ public class ContainerDisplayColumn extends DataColumn
     {
         super(col);
         _showPath = showPath;
-        _url = actionURL.clone();
+        if (actionURL == null)
+        {
+            _url = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(ContainerManager.getRoot());
+        }
+        else
+        {
+            _url = actionURL.clone();
+        }
     }
 
     public void setEntityIdColumn(ColumnInfo entityIdColumn)

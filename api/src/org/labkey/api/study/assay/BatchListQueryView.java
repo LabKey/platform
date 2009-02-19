@@ -67,7 +67,7 @@ public class BatchListQueryView extends QueryView
 
         ActionURL target = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(getContainer(), _protocol, ShowSelectedRunsAction.class);
         if (getTable().getContainerFilter() != null)
-            target.addParameter("containerFilterName", getTable().getContainerFilter().name());
+            target.addParameter("containerFilterName", getTable().getContainerFilter().getType().name());
         ActionButton viewSelectedButton = new ActionButton(target, "Show Runs");
         viewSelectedButton.setURL(target);
         viewSelectedButton.setActionType(ActionButton.Action.POST);

@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.view.ActionURL;
 
 /**
  * Created by IntelliJ IDEA.
@@ -26,14 +27,21 @@ import org.labkey.api.query.LookupForeignKey;
  */
 public class ContainerForeignKey extends LookupForeignKey
 {
+    private ActionURL _url;
+
     static public ColumnInfo initColumn(ColumnInfo column)
     {
-        column.setFk(new ContainerForeignKey());
+        return initColumn(column, null);
+    }
+
+    static public ColumnInfo initColumn(ColumnInfo column, final ActionURL url)
+    {
+        column.setFk(new ContainerForeignKey(url));
         column.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
-                ContainerDisplayColumn displayColumn = new ContainerDisplayColumn(colInfo, false);
+                ContainerDisplayColumn displayColumn = new ContainerDisplayColumn(colInfo, false, url);
                 displayColumn.setEntityIdColumn(colInfo);
                 return displayColumn;
             }
@@ -43,7 +51,13 @@ public class ContainerForeignKey extends LookupForeignKey
 
     public ContainerForeignKey()
     {
+        this(null);
+    }
+
+    public ContainerForeignKey(ActionURL url)
+    {
         super("EntityId", "Name");
+        _url = url;
         setLookupSchemaName("Core");
         setTableName("Containers");
     }
@@ -57,7 +71,7 @@ public class ContainerForeignKey extends LookupForeignKey
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
-                return new ContainerDisplayColumn(colInfo, false);
+                return new ContainerDisplayColumn(colInfo, false, _url);
             }
         });
 
@@ -66,7 +80,7 @@ public class ContainerForeignKey extends LookupForeignKey
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
-                return new ContainerDisplayColumn(colInfo, true);
+                return new ContainerDisplayColumn(colInfo, true, _url);
             }
         });
         ret.addColumn(pathColumn);

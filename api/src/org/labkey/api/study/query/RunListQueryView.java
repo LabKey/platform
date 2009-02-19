@@ -77,7 +77,7 @@ public class RunListQueryView extends ExperimentRunListView
 
         ActionURL target = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(getContainer(), _protocol, ShowSelectedDataAction.class);
         if (getTable().getContainerFilter() != null)
-            target.addParameter("containerFilterName", getTable().getContainerFilter().name());
+            target.addParameter("containerFilterName", getTable().getContainerFilter().getType().name());
         ActionButton viewSelectedButton = new ActionButton(target, "Show Results");
         viewSelectedButton.setURL(target);
         viewSelectedButton.setRequiresSelection(true);
@@ -89,7 +89,7 @@ public class RunListQueryView extends ExperimentRunListView
             ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(getContainer(), _protocol, PublishStartAction.class);
             copyURL.addParameter("runIds", true);
             if (getTable().getContainerFilter() != null)
-                copyURL.addParameter("containerFilterName", getTable().getContainerFilter().name());
+                copyURL.addParameter("containerFilterName", getTable().getContainerFilter().getType().name());
             ActionButton copySelectedButton = new ActionButton(copyURL, "Copy to Study");
             copySelectedButton.setURL(copyURL);
             copySelectedButton.setRequiresSelection(true);

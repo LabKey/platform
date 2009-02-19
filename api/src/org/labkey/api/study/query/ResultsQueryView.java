@@ -84,7 +84,7 @@ public class ResultsQueryView extends AssayBaseQueryView
                 publishURL.deleteParameters();
 
                 if (getTable().getContainerFilter() != null)
-                    publishURL.addParameter("containerFilterName", getTable().getContainerFilter().name());
+                    publishURL.addParameter("containerFilterName", getTable().getContainerFilter().getType().name());
 
                 if (provider.canCopyToStudy())
                 {

@@ -34,9 +34,9 @@ public class DelegatingContainerFilter extends ContainerFilter
     {
         return _source.getContainerFilter().getIds(currentContainer);
     }
-    
-    public String name()
+
+    public Type getType()
     {
-        return _source.getContainerFilter().name();
+        return _source.getContainerFilter().getType();
     }
 }
