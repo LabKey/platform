@@ -38,6 +38,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.model.*;
 
 import javax.servlet.ServletException;
@@ -534,9 +535,9 @@ public class AssayPublishManager implements AssayPublishService.Service
     {
         if (protocol != null)
         {
-            ActionURL url = new ActionURL("assay", "publishHistory", container).addParameter("rowId", protocol.getRowId());
+            ActionURL url = new ActionURL(AssayController.PublishHistoryAction.class, container).addParameter("rowId", protocol.getRowId());
             if (containerFilter != null)
-                url.addParameter("containerFilterName", containerFilter.name());
+                url.addParameter("containerFilterName", containerFilter.getType().name());
             return url;
         }
 

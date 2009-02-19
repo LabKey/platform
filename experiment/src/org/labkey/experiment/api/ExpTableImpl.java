@@ -64,10 +64,10 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
         return result;
     }
 
-    protected ColumnInfo addContainerColumn(C containerCol)
+    protected ColumnInfo addContainerColumn(C containerCol, ActionURL url)
     {
         ColumnInfo result = addColumn(containerCol);
-        ContainerForeignKey.initColumn(result);
+        ContainerForeignKey.initColumn(result, url);
         return result;
     }
 

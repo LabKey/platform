@@ -166,7 +166,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         if (_schema.getContainer().equals(ContainerManager.getSharedContainer()))
         {
             // If we're in the /Shared project, look everywhere
-            setContainerFilter(new ContainerFilter.AllInSite(_schema.getUser()));
+            setContainerFilter(new ContainerFilter.AllFolders(_schema.getUser()));
         }
         else if (getContainer().isProject())
         {
@@ -328,7 +328,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addColumn(Column.Comments);
         addColumn(Column.Created);
         addColumn(Column.CreatedBy);
-        addContainerColumn(Column.Folder);
+        addContainerColumn(Column.Folder, null);
         addColumn(Column.FilePathRoot).setIsHidden(true);
         addColumn(Column.LSID).setIsHidden(true);
         addColumn(Column.Protocol).setFk(schema.getProtocolForeignKey("LSID"));

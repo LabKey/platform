@@ -22,10 +22,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.FieldKey;
 import org.labkey.experiment.controllers.exp.ExperimentController;
-
-import java.util.Collections;
 
 /**
  * User: jeckels
@@ -62,6 +59,8 @@ public class RunGroupWebPart extends QueryView
             setShadeAlternatingRows(true);
         }
         setTitle("Run Groups");
+        setAllowableContainerFilterTypes(ContainerFilter.Type.Current, ContainerFilter.Type.CurrentAndSubfolders,
+                ContainerFilter.Type.CurrentAndParents, ContainerFilter.Type.CurrentPlusProjectAndShared);
     }
 
     public RunGroupWebPart(ViewContext portalCtx, boolean narrow)
@@ -87,30 +86,27 @@ public class RunGroupWebPart extends QueryView
         QuerySettings settings = new QuerySettings(portalCtx, dataRegionName);
         settings.setSchemaName(getSchema().getSchemaName());
         settings.setAllowChooseQuery(false);
-        settings.setQueryName(_narrow ? ExpSchema.RUN_GROUPS_NARROW_WEB_PART_TABLE_NAME : ExpSchema.TableType.RunGroups.toString());
+        if (_narrow)
+        {
+            settings.setViewName("NameOnly");
+        }
+        if (settings.getContainerFilterName() == null)
+        {
+            settings.setContainerFilterName(ContainerFilter.Type.CurrentAndParents.name());
+        }
+        settings.setQueryName(ExpSchema.TableType.RunGroups.toString());
         return settings;
     }
 
     protected ExpExperimentTable createTable()
     {
         ExpSchema schema = (ExpSchema) getSchema();
-        ExpExperimentTable result;
-        if (_narrow)
-        {
-            result = schema.createExperimentsTable(ExpSchema.RUN_GROUPS_NARROW_WEB_PART_TABLE_NAME, "alias");
-            result.setDefaultVisibleColumns(Collections.singletonList(FieldKey.fromParts("Name")));
-        }
-        else
-        {
-            result = schema.createExperimentsTable(ExpSchema.TableType.RunGroups.toString(), "alias");
-        }
-        return result;
+        return schema.createExperimentsTable(ExpSchema.TableType.RunGroups.toString(), "alias");
     }
 
     protected void setupDataView(DataView ret)
     {
         Sort sort = new Sort("Name");
-        sort.insertSort(new Sort("RowId"));
         ret.getRenderContext().setBaseSort(sort);
         super.setupDataView(ret);
     }

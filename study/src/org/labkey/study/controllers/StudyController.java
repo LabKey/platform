@@ -536,11 +536,11 @@ public class StudyController extends BaseStudyController
 
             final StudyQuerySchema querySchema = new StudyQuerySchema(study, getUser(), true);
             QuerySettings qs = querySchema.getSettings(context, DataSetQueryView.DATAREGION);
-            qs.setAllowContainerFilter(false);
             qs.setSchemaName(querySchema.getSchemaName());
             qs.setQueryName(def.getLabel());
             DataSetQueryView queryView = new DataSetQueryView(_datasetId, querySchema, qs, visit, cohort, qcStateSet);
             queryView.setForExport(export != null);
+            queryView.disableContainerFilterSelection();
             boolean showEditLinks = !QueryService.get().isQuerySnapshot(getContainer(), StudyManager.getSchemaName(), def.getLabel()) &&
                 def.getProtocolId() == null;
             queryView.setShowEditLinks(showEditLinks);

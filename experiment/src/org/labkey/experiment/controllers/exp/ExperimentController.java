@@ -371,7 +371,7 @@ public class ExperimentController extends SpringActionController
 
             queryView.setTitle("Sample Set Contents");
 
-            DetailsView detailsView = new DetailsView(SampleSetWebPart.getMaterialSourceRegion(getViewContext()), form);
+            DetailsView detailsView = new DetailsView(getMaterialSourceRegion(getViewContext()), form);
             detailsView.setTitle("Sample Set Properties");
             ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete", DataRegion.MODE_DETAILS, ActionButton.Action.POST);
             deleteButton.setDisplayPermission(ACL.PERM_DELETE);
@@ -566,7 +566,8 @@ public class ExperimentController extends SpringActionController
 
             ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), ExperimentRunType.ALL_RUNS_TYPE, true);
             runListView.getRunTable().setRuns(successorRuns);
-            runListView.getRunTable().setContainerFilter(new ContainerFilter.AllInSite(getUser()));
+            runListView.getRunTable().setContainerFilter(new ContainerFilter.AllFolders(getUser()));
+            runListView.setAllowableContainerFilterTypes(ContainerFilter.Type.Current, ContainerFilter.Type.CurrentAndSubfolders, ContainerFilter.Type.AllFolders);
             runListView.setTitle("Runs using this material or a derived material");
             vbox.addView(runListView);
 
@@ -915,7 +916,7 @@ public class ExperimentController extends SpringActionController
 
             ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), ExperimentRunType.ALL_RUNS_TYPE, true);
             runListView.getRunTable().setInputData(_data);
-            runListView.getRunTable().setContainerFilter(new ContainerFilter.AllInSite(getUser()));
+            runListView.getRunTable().setContainerFilter(new ContainerFilter.AllFolders(getUser()));
             runListView.setTitle("Runs using this data as an input");
             VBox vbox = new VBox(new StandardAndCustomPropertiesView(detailsView, cpv), runListView);
 
@@ -1721,7 +1722,7 @@ public class ExperimentController extends SpringActionController
             if (null == _source.getName())
                 _source = ExperimentServiceImpl.get().getMaterialSource(_source.getRowId());
 
-            return new UpdateView(SampleSetWebPart.getMaterialSourceRegion(getViewContext()), form, errors);
+            return new UpdateView(getMaterialSourceRegion(getViewContext()), form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1730,12 +1731,70 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    private DataRegion getMaterialSourceRegion(ViewContext model) throws Exception
+    {
+        TableInfo tableInfo = ExperimentServiceImpl.get().getTinfoMaterialSource();
+        DataRegion dr = new DataRegion();
+        dr.setName("MaterialsSource");
+        dr.setSelectionKey(DataRegionSelection.getSelectionKey(tableInfo.getSchema().getName(), tableInfo.getName(), "SampleSets", dr.getName()));
+        dr.addColumns(tableInfo.getUserEditableColumns());
+        dr.getDisplayColumn(0).setVisible(false);
+
+        dr.getDisplayColumn("idcol1").setVisible(false);
+        dr.getDisplayColumn("idcol2").setVisible(false);
+        dr.getDisplayColumn("idcol3").setVisible(false);
+        dr.getDisplayColumn("parentcol").setVisible(false);
+
+        ActionURL url = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, model.getContainer());
+        dr.getDisplayColumn(1).setURL(url.toString() + "rowId=${RowId}");
+        dr.setShowRecordSelectors(model.hasPermission(ACL.PERM_DELETE) || model.hasPermission(ACL.PERM_UPDATE));
+        dr.addDisplayColumn(0, new ActiveSampleSetColumn(model.getContainer()));
+
+        ButtonBar bb = new ButtonBar();
+
+        SampleSetWebPart.populateButtonBar(model, dr, bb);
+
+        dr.setButtonBar(bb);
+
+        return dr;
+
+    }
+
+    private static final class ActiveSampleSetColumn extends SimpleDisplayColumn
+    {
+        private final ExpSampleSet _activeSampleSet;
+
+        public ActiveSampleSetColumn(Container c) throws SQLException
+        {
+            _activeSampleSet = ExperimentService.get().lookupActiveSampleSet(c);
+            setCaption("Active");
+        }
+
+        public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
+        {
+            renderGridCellContents(ctx, out);
+        }
+
+        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        {
+            if (_activeSampleSet != null && _activeSampleSet.getLSID().equals(ctx.getRow().get("lsid")))
+            {
+                out.write("<b>Yes</b>");
+            }
+            else
+            {
+                out.write("No");
+            }
+        }
+    }
+
+
     @RequiresPermission(ACL.PERM_INSERT)
     public class ShowInsertMaterialSourceAction extends SimpleViewAction<MaterialSourceForm>
     {
         public ModelAndView getView(MaterialSourceForm form, BindException errors) throws Exception
         {
-            return new InsertView(SampleSetWebPart.getMaterialSourceRegion(getViewContext()), form, errors);
+            return new InsertView(getMaterialSourceRegion(getViewContext()), form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)

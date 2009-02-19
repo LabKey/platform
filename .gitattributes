@@ -476,6 +476,9 @@ experiment/gwtsrc/org/labkey/experiment/property/client/Designer.java -text
 experiment/gwtsrc/org/labkey/experiment/property/client/PropertyService.java -text
 experiment/gwtsrc/org/labkey/experiment/property/client/PropertyServiceAsync.java -text
 experiment/module.properties -text
+experiment/queries/exp/RunGroups/NameOnly.qview.xml -text
+experiment/queries/exp/RunGroups/nameOnly.qview.xml -text
+experiment/queries/exp/SampleSets/NameOnly.qview.xml -text
 experiment/src/META-INF/exp.xml -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-0.00-1.40.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-1.50-1.60.sql -text

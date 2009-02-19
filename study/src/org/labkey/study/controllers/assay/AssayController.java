@@ -697,7 +697,7 @@ public class AssayController extends SpringActionController
                         batchIdFieldKey, CompareType.EQUAL, batchIds[0]);
             }
             if (containerFilter != null)
-                result.addParameter(protocol.getName() + " Runs." + QueryParam.containerFilterName, containerFilter.name());
+                result.addParameter(protocol.getName() + " Runs." + QueryParam.containerFilterName, containerFilter.getType().name());
             return result;
         }
 
@@ -711,7 +711,7 @@ public class AssayController extends SpringActionController
             ActionURL url = getProtocolURL(container, protocol, AssayBatchesAction.class);
             if (containerFilter != null)
             {
-                url.addParameter(protocol.getName() + " Batches." + QueryParam.containerFilterName, containerFilter.name());
+                url.addParameter(protocol.getName() + " Batches." + QueryParam.containerFilterName, containerFilter.getType().name());
             }
             return url;
         }
@@ -743,7 +743,7 @@ public class AssayController extends SpringActionController
                         provider.getRunIdFieldKeyFromDataRow(), CompareType.EQUAL, runIds[0]);
             }
             if (containerFilter != null)
-                result.addParameter(protocol.getName() + " Data." + QueryParam.containerFilterName, containerFilter.name());
+                result.addParameter(protocol.getName() + " Data." + QueryParam.containerFilterName, containerFilter.getType().name());
             return result;
         }
 

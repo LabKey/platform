@@ -19,12 +19,17 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.data.*;
 
 import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.sql.SQLException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -34,7 +39,7 @@ import java.util.ArrayList;
  */
 public class CoreQuerySchema extends UserSchema
 {
-    private List<Integer> _projectUserIds;
+    private Set<Integer> _projectUserIds;
 
     public CoreQuerySchema(User user, Container c)
     {
@@ -85,7 +90,23 @@ public class CoreQuerySchema extends UserSchema
             if (_projectUserIds == null)
             {
                 Container project = getContainer().getProject();
-                _projectUserIds = org.labkey.api.security.SecurityManager.getProjectUserids(project);
+                _projectUserIds = new HashSet<Integer>(org.labkey.api.security.SecurityManager.getProjectUserids(project));
+                Group siteAdminGroup = org.labkey.api.security.SecurityManager.getGroup(Group.groupAdministrators);
+                try
+                {
+                    for (User adminUser : org.labkey.api.security.SecurityManager.getGroupMembers(siteAdminGroup))
+                    {
+                        _projectUserIds.add(adminUser.getUserId());
+                    }
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
+                catch (ValidEmail.InvalidEmailException e)
+                {
+                    throw new UnexpectedException(e);
+                }
             }
             ColumnInfo userid = users.getRealTable().getColumn("userid");
             users.addInClause(userid, _projectUserIds);

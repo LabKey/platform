@@ -18,10 +18,7 @@ package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.query.ExpExperimentTable;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.CompareType;
+import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentMembershipDisplayColumnFactory;
@@ -131,7 +128,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         addColumn(Column.ModifiedBy);
         addColumn(Column.RunCount);
         addColumn(Column.BatchProtocolId);
-        addContainerColumn(Column.Folder);
+        addContainerColumn(Column.Folder, new ActionURL(ExperimentController.ShowRunGroupsAction.class, getContainer()));
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
         defaultCols.add(FieldKey.fromParts(Column.Name.toString()));
         defaultCols.add(FieldKey.fromParts(Column.Hypothesis.toString()));

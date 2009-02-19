@@ -15,84 +15,89 @@
  */
 package org.labkey.experiment;
 
-import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
 import org.labkey.api.data.*;
-import org.labkey.api.exp.api.ExpSampleSet;
-import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.PrintWriter;
-import java.io.Writer;
-import java.io.IOException;
-import java.sql.SQLException;
 
 /**
  * User: jeckels
  * Date: Oct 20, 2005
  */
-public class SampleSetWebPart extends WebPartView<Object>
+public class SampleSetWebPart extends QueryView
 {
     private String _sampleSetError;
     private final boolean _narrow;
 
     public SampleSetWebPart(boolean narrow, ViewContext viewContext)
     {
+        super(new ExpSchema(viewContext.getUser(), viewContext.getContainer()));
         _narrow = narrow;
+        setSettings(createQuerySettings(viewContext, "SampleSet" + (_narrow ? "Narrow" : "")));
         setTitle("Sample Sets");
         setTitleHref(new ActionURL(ExperimentController.ListMaterialSourcesAction.class, viewContext.getContainer()));
-    }
+        setShowDetailsColumn(false);
 
-    public DataRegion getMaterialSourceWithProjectRegion(ViewContext model) throws Exception
-    {
-        DataRegion result = getMaterialSourceRegion(model, ExperimentServiceImpl.get().getTinfoMaterialSourceWithProject());
-        ActionURL url = new ActionURL(ExperimentController.ListMaterialSourcesAction.class, model.getContainer());
-        ColumnInfo containerColumnInfo = ExperimentServiceImpl.get().getTinfoMaterialSourceWithProject().getColumn("Container");
-        ContainerDisplayColumn displayColumn = new ContainerDisplayColumn(containerColumnInfo, true, url);
-        displayColumn.setEntityIdColumn(containerColumnInfo);
-        result.addDisplayColumn(displayColumn);
-
+        setShowRecordSelectors(!_narrow);
         if (_narrow)
         {
-            result.setButtonBar(new ButtonBar());
-            result.getDisplayColumn("container").setVisible(false);
-            result.getDisplayColumn("description").setVisible(false);
-            result.setShowRecordSelectors(false);
+            setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
         }
-        result.getDisplayColumn("lsid").setVisible(false);
-        result.getDisplayColumn("materiallsidprefix").setVisible(false);
-        return result;
+        else
+        {
+            setButtonBarPosition(DataRegion.ButtonBarPosition.BOTTOM);
+            setShowExportButtons(false);
+            setShowBorders(true);
+            setShadeAlternatingRows(true);
+        }
+        setAllowableContainerFilterTypes(ContainerFilter.Type.Current, ContainerFilter.Type.CurrentPlusProjectAndShared);
     }
 
-    public static DataRegion getMaterialSourceRegion(ViewContext model) throws Exception
+    private QuerySettings createQuerySettings(ViewContext portalCtx, String dataRegionName)
     {
-        return getMaterialSourceRegion(model, ExperimentServiceImpl.get().getTinfoMaterialSource());
+        QuerySettings settings = new QuerySettings(portalCtx, dataRegionName);
+        settings.setSchemaName(getSchema().getSchemaName());
+        settings.setAllowChooseQuery(false);
+        if (_narrow)
+        {
+            settings.setViewName("NameOnly");
+        }
+        settings.setQueryName(ExpSchema.TableType.SampleSets.toString());
+        if (settings.getContainerFilterName() == null)
+        {
+            settings.setContainerFilterName(ContainerFilter.CurrentPlusProjectAndShared.class.getSimpleName());
+        }
+        return settings;
     }
 
-    private static DataRegion getMaterialSourceRegion(ViewContext model, TableInfo tableInfo) throws Exception
+//    public DataRegion getMaterialSourceWithProjectRegion(ViewContext model) throws Exception
+//    {
+//        DataRegion result = getMaterialSourceRegion(model, ExperimentServiceImpl.get().getTinfoMaterialSourceWithProject());
+//        ActionURL url = new ActionURL(ExperimentController.ListMaterialSourcesAction.class, model.getContainer());
+//        ColumnInfo containerColumnInfo = ExperimentServiceImpl.get().getTinfoMaterialSourceWithProject().getColumn("Container");
+//        ContainerDisplayColumn displayColumn = new ContainerDisplayColumn(containerColumnInfo, true, url);
+//        displayColumn.setEntityIdColumn(containerColumnInfo);
+//        result.addDisplayColumn(displayColumn);
+//        return result;
+//    }
+//
+    @Override
+    protected void populateButtonBar(DataView view, ButtonBar bar, boolean exportAsWebPage)
     {
-        DataRegion dr = new DataRegion();
-        dr.setName("MaterialsSource");
-        dr.setSelectionKey(DataRegionSelection.getSelectionKey(tableInfo.getSchema().getName(), tableInfo.getName(), "SampleSets", dr.getName()));
-        dr.addColumns(tableInfo.getUserEditableColumns());
-        dr.getDisplayColumn(0).setVisible(false);
+        super.populateButtonBar(view, bar, exportAsWebPage);
+        populateButtonBar(view.getViewContext(), view.getDataRegion(), bar);
+    }
 
-        dr.getDisplayColumn("idcol1").setVisible(false);
-        dr.getDisplayColumn("idcol2").setVisible(false);
-        dr.getDisplayColumn("idcol3").setVisible(false);
-        dr.getDisplayColumn("parentcol").setVisible(false);
-
-        ActionURL url = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, model.getContainer());
-        dr.getDisplayColumn(1).setURL(url.toString() + "rowId=${RowId}");
-        dr.setShowRecordSelectors(model.hasPermission(ACL.PERM_DELETE) || model.hasPermission(ACL.PERM_UPDATE));
-        dr.addDisplayColumn(0, new ActiveSampleSetColumn(model.getContainer()));
-
-        ButtonBar bb = new ButtonBar();
-
+    public static void populateButtonBar(ViewContext model, DataRegion dr, ButtonBar bb)
+    {
         ActionButton deleteButton = new ActionButton("deleteMaterialSource.view", "Delete", DataRegion.MODE_GRID, ActionButton.Action.GET);
         deleteButton.setDisplayPermission(ACL.PERM_DELETE);
         ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, model.getContainer());
@@ -131,10 +136,6 @@ public class SampleSetWebPart extends WebPartView<Object>
         editTypeButton.setURL(editTypeURL);
         editTypeButton.setDisplayPermission(ACL.PERM_UPDATE);
         bb.add(editTypeButton);
-
-        dr.setButtonBar(bb);
-
-        return dr;
     }
 
 
@@ -145,43 +146,12 @@ public class SampleSetWebPart extends WebPartView<Object>
         {
             out.write("<font class=\"labkey-error\">" + PageFlowUtil.filter(_sampleSetError) + "</font><br>");
         }
-        DataRegion dr = getMaterialSourceWithProjectRegion(getViewContext());
-        dr.setShadeAlternatingRows(!_narrow);
-        dr.setShowBorders(!_narrow);
-        dr.render(new SampleSetRenderContext(getViewContext()), out);
+        super.renderView(model, out);
     }
 
     public void setSampleSetError(String sampleSetError)
     {
         _sampleSetError = sampleSetError;
-    }
-
-    private static final class ActiveSampleSetColumn extends SimpleDisplayColumn
-    {
-        private final ExpSampleSet _activeSampleSet;
-
-        public ActiveSampleSetColumn(Container c) throws SQLException
-        {
-            _activeSampleSet = ExperimentService.get().lookupActiveSampleSet(c);
-            setCaption("Active");
-        }
-        
-        public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
-        {
-            renderGridCellContents(ctx, out);
-        }
-
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-        {
-            if (_activeSampleSet != null && _activeSampleSet.getLSID().equals(ctx.getRow().get("lsid")))
-            {
-                out.write("<b>Yes</b>");
-            }
-            else
-            {
-                out.write("No");
-            }
-        }
     }
 
     public static class SampleSetRenderContext extends RenderContext
@@ -200,4 +170,12 @@ public class SampleSetWebPart extends WebPartView<Object>
             return result;
         }
     }
+
+    protected void setupDataView(DataView ret)
+    {
+        Sort sort = new Sort("Name");
+        ret.getRenderContext().setBaseSort(sort);
+        super.setupDataView(ret);
+    }
+
 }

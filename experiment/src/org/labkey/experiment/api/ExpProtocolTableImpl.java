@@ -59,7 +59,7 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
         setTitleColumn(colName.getName());
         ColumnInfo colLSID = addColumn(Column.LSID);
         colLSID.setIsHidden(true);
-        addContainerColumn(Column.Folder);
+        addContainerColumn(Column.Folder, null);
         ActionURL urlDetails = new ActionURL(ExperimentController.ProtocolDetailsAction.class, _schema.getContainer());
         setDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("rowId", "RowId")));
         addDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("LSID", "LSID")));

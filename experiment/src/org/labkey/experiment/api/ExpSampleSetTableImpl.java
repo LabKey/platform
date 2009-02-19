@@ -49,7 +49,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
         {
             case Folder:
                 ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("Container"));
-                columnInfo.setFk(new ContainerForeignKey());
+                columnInfo.setFk(new ContainerForeignKey(new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer())));
                 return columnInfo;
             case Created:
             case Modified:
@@ -88,13 +88,9 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
         addColumn(ExpSampleSetTable.Column.LSID).setIsHidden(true);
         addColumn(ExpSampleSetTable.Column.MaterialLSIDPrefix).setIsHidden(true);
         addColumn(ExpSampleSetTable.Column.Created);
-        addColumn(ExpSampleSetTable.Column.Folder);
+        addContainerColumn(ExpSampleSetTable.Column.Folder, new ActionURL(ExperimentController.ListMaterialSourcesAction.class, getContainer()));
         addColumn(ExpSampleSetTable.Column.Active);
         addColumn(ExpSampleSetTable.Column.SampleCount);
-
-        List<FieldKey> defaultVisibleColumns = new ArrayList<FieldKey>(getDefaultVisibleColumns());
-        defaultVisibleColumns.remove(FieldKey.fromParts(ExpSampleSetTable.Column.Folder));
-        setDefaultVisibleColumns(defaultVisibleColumns);
 
         setDetailsURL(new DetailsURL(new ActionURL(ExperimentController.ShowMaterialSourceAction.class, _schema.getContainer()),
                 Collections.singletonMap("rowId", "RowId")));

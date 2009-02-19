@@ -40,7 +40,7 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
     // private methods:
     var nextUpdate = function(iNext)
     {
-        if (LABKEY.DataRegions && LABKEY.DataRegions["StatusFiles"].selectionModified)
+        if (LABKEY.DataRegions && LABKEY.DataRegions["StatusFiles"] && LABKEY.DataRegions["StatusFiles"].selectionModified)
         {
             // Disable refresh if the user has toggled any checkboxes
             return;

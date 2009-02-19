@@ -59,7 +59,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         addColumn(Column.ContentLink);
         addColumn(Column.Thumbnail);
         addColumn(Column.Protocol).setIsHidden(true);
-        addContainerColumn(Column.Folder);
+        addContainerColumn(Column.Folder, null);
 
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
         defaultCols.add(FieldKey.fromParts(Column.Name));

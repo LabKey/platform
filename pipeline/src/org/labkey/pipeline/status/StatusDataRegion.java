@@ -71,6 +71,7 @@ public class StatusDataRegion extends DataRegion
         }
         
         out.write("<script type=\"text/javascript\">\n" +
+                "LABKEY.requiresExtJs();\n" +
                 "LABKEY.requiresScript('pipeline/StatusUpdate.js');\n" +
                 "</script>\n");
 
