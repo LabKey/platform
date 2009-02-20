@@ -119,9 +119,9 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     private Map<String, CustomView> getAllCustomViews(User user, HttpServletRequest request, boolean inheritable)
     {
+        Map<String, CustomView> ret = new HashMap<String, CustomView>();
         try
         {
-            Map<String, CustomView> ret = new HashMap();
             Container container = getContainer();
             if (user != null && user.isGuest())
             {
@@ -182,13 +182,12 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 }
             }
 
-            return ret;
         }
         catch (SQLException e)
         {
             log.error("Error", e);
-            return Collections.EMPTY_MAP;
         }
+        return ret;
     }
 
     protected File getQueriesDir(Module module)

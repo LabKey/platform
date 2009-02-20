@@ -99,7 +99,7 @@ public class QueryServiceImpl extends QueryService
 
     public QueryDefinition createQueryDefForTable(UserSchema schema, String tableName)
     {
-        return new TableQueryDefinition(schema, tableName, schema.getTable(tableName, "query"));
+        return new TableQueryDefinition(schema, tableName);
     }
 
     public Map<String, QueryDefinition> getQueryDefs(Container container, String schemaName)

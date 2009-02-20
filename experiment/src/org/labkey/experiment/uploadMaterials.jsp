@@ -219,16 +219,42 @@ var select1 = document.getElementById("idCol1");
 var col1 = -1;
 var col2 = -1;
 var col3 = -1;
+var col1Name;
+var col2Name;
+var col3Name;
 if (select1)
 {
     col1 = parseInt(select1.options[select1.selectedIndex].value);
+    col1Name = select1.options[select1.selectedIndex].text;
     var select2 = document.getElementById("idCol2");
     col2 = parseInt(select2.options[select2.selectedIndex].value);
+    col2Name = select2.options[select2.selectedIndex].text;
     var select3 = document.getElementById("idCol3");
     col3 = parseInt(select3.options[select3.selectedIndex].value);
+    col3Name = select3.options[select3.selectedIndex].text;
+
+    if (col2 != -1 && col1 == col2)
+    {
+        alert("You cannot use the same id column twice.");
+        return false;
+    }
+    if (col3 != -1 && (col1 == col3 || col2 == col3))
+    {
+        alert("You cannot use the same id column twice.");
+        return false;
+    }
+    // Check if they selected a column 3 but not a column 2
+    if (col3 != -1 && col2 == -1)
+    {
+        col2 = col3;
+        col3 = -1;
+    }
 }
 else
 {
+    col1Name = '<%= h(sampleSet == null || sampleSet.getIdCol1() == null ? "" : sampleSet.getIdCol1().getName())%>';
+    col2Name = '<%= h(sampleSet == null || sampleSet.getIdCol2() == null ? "" : sampleSet.getIdCol2().getName())%>';
+    col3Name = '<%= h(sampleSet == null || sampleSet.getIdCol3() == null ? "" : sampleSet.getIdCol3().getName())%>';
     for (var col = 0; col < fields[0].length; col++)
     {
         if (fields[0][col] == '<%= h(sampleSet == null || sampleSet.getIdCol1() == null ? "" : sampleSet.getIdCol1().getName())%>')
@@ -244,29 +270,63 @@ else
             col3 = col;
         }
     }
+    if (col1Name != '' && col1 == -1)
+    {
+        alert("You must include the Id column '" + col1Name + "' in your data.");
+        return false;
+    }
+    if (col2Name != '' && col2 == -1)
+    {
+        alert("You must include the Id column '" + col2Name + "' in your data.");
+        return false;
+    }
+    if (col3Name != '' && col3 == -1)
+    {
+        alert("You must include the Id column '" + col3Name + "' in your data.");
+        return false;
+    }
 }
 
 var hash = new Object();
 for (var i = 1; i < fields.length; i++)
-  {
-  var val = "" + fields[i][col1];
-  if (col2 >= 0)
-  {
-    val = val + "-" + fields[i][col2];
-  }
-  if (col3 >= 0)
-  {
-    val = val + "-" + fields[i][col3];
-  }
-  if (hash[val])
+{
+    var val1 = fields[i][col1];
+    if (!val1 || "" == val1)
     {
-    alert("The ID columns chosen do not form a unique key. The key " + val + " is used more than once.");
-    return false;
+        alert("All samples must include a value in the '" + col1Name + "' column.");
+        return false;
     }
-  hash[val]= true;
-  }
-  document.getElementById("uploading").style.display = "";
-  return true;
+
+    var val = "" + val1;
+    if (col2 >= 0)
+    {
+        var val2 = fields[i][col2];
+        if (!val2 || "" == val2)
+        {
+            alert("All samples must include a value in the '" + col2Name + "' column.");
+            return false;
+        }
+        val = val + "-" + val2;
+    }
+    if (col3 >= 0)
+    {
+        var val3 = fields[i][col3];
+        if (!val3 || "" == val3)
+        {
+            alert("All samples must include a value in the '" + col3Name + "' column.");
+            return false;
+        }
+        val = val + "-" + val3;
+    }
+    if (hash[val])
+    {
+        alert("The ID columns chosen do not form a unique key. The key " + val + " is used more than once.");
+        return false;
+    }
+    hash[val]= true;
+}
+document.getElementById("uploading").style.display = "";
+return true;
 }
 updateIds(document.getElementById("textbox"));
 </script>

@@ -121,6 +121,7 @@ public class SampleSetWebPart extends QueryView
         setAsActiveButton.setURL(setAsActiveURL);
         setAsActiveButton.setActionType(ActionButton.Action.POST);
         setAsActiveButton.setDisplayPermission(ACL.PERM_UPDATE);
+        setAsActiveButton.setRequiresSelection(true);
         bb.add(setAsActiveButton);
 
         ActionURL showAllURL = model.cloneActionURL();

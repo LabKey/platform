@@ -45,6 +45,8 @@ import java.util.*;
  */
 public class AssaySchema extends UserSchema
 {
+    private List<ExpProtocol> _protocols;
+
     static public class Provider extends DefaultSchema.SchemaProvider
     {
         public QuerySchema getSchema(DefaultSchema schema)
@@ -69,7 +71,7 @@ public class AssaySchema extends UserSchema
         });
 
         names.add("AssayList");
-        for (ExpProtocol protocol : AssayService.get().getAssayProtocols(getContainer()))
+        for (ExpProtocol protocol : getProtocols())
         {
             AssayProvider provider = AssayService.get().getProvider(protocol);
             if (provider != null)
@@ -97,6 +99,15 @@ public class AssaySchema extends UserSchema
         return protocol.getName() + " Data";
     }
 
+    private List<ExpProtocol> getProtocols()
+    {
+        if (_protocols == null)
+        {
+            _protocols = AssayService.get().getAssayProtocols(getContainer());
+        }
+        return _protocols;
+    }
+
     @Override
     public TableInfo createTable(String name, String alias)
     {
@@ -104,7 +115,7 @@ public class AssaySchema extends UserSchema
             return new AssayListTable(this, alias);
         else
         {
-            for (ExpProtocol protocol : AssayService.get().getAssayProtocols(getContainer()))
+            for (ExpProtocol protocol : getProtocols())
             {
                 AssayProvider provider = AssayService.get().getProvider(protocol);
                 if (provider != null)
@@ -214,7 +225,7 @@ public class AssaySchema extends UserSchema
     public QueryView createView(ViewContext context, QuerySettings settings) throws ServletException
     {
         String name = settings.getQueryName();
-        for (ExpProtocol protocol : AssayService.get().getAssayProtocols(context.getContainer()))
+        for (ExpProtocol protocol : getProtocols())
         {
             AssayProvider provider = AssayService.get().getProvider(protocol);
             if (provider != null)

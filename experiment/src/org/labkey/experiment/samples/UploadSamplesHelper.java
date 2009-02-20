@@ -413,7 +413,7 @@ public class UploadSamplesHelper
                 }
                 else if (potentialParents.size() > 1)
                 {
-                    throw new ExperimentException("More than one match for parent material '" + parentName + "' was found.");
+                    throw new ExperimentException("More than one match for parent material '" + parentName + "' was found. Please prefix the name with the desired sample set, in the format 'SAMPLE_SET.SAMPLE'.");
                 }
             }
         }

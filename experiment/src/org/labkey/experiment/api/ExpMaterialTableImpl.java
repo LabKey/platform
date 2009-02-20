@@ -28,6 +28,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.*;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.util.Collections;
@@ -45,6 +46,17 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         setName(ExpSchema.TableType.Materials.name());
     }
 
+    @Override
+    protected ColumnInfo resolveColumn(String name)
+    {
+        ColumnInfo result = super.resolveColumn(name);
+        if (result == null && "CpasType".equalsIgnoreCase(name))
+        {
+            return createColumn("SampleSet", Column.SampleSet);
+        }
+        return result;
+    }
+
     public ColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
@@ -55,10 +67,10 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 return wrapColumn(alias, _rootTable.getColumn("LSID"));
             case Name:
                 return wrapColumn(alias, _rootTable.getColumn("Name"));
-            case CpasType:
+            case SampleSet:
             {
                 ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("CpasType"));
-                columnInfo.setFk(new LookupForeignKey("LSID")
+                columnInfo.setFk(new LookupForeignKey((ActionURL)null, (String)null, "LSID", "Name")
                 {
                     public TableInfo getLookupTableInfo()
                     {
@@ -70,8 +82,9 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 return columnInfo;
             }
             case SourceProtocolLSID:
-                // Todo - hook up foreign key
-                return wrapColumn(alias, _rootTable.getColumn("SourceProtocolLSID"));//.setFk(new QueryForeignKey(this, PROTOCOLS_TABLE_NAME, "LSID", "Name"));
+                ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("SourceProtocolLSID"));
+                columnInfo.setFk(getExpSchema().getProtocolForeignKey("LSID"));
+                return columnInfo;
             case Run:
                 return wrapColumn(alias, _rootTable.getColumn("RunId"));
             case RowId:
@@ -141,8 +154,11 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         }
 
         addColumn(ExpMaterialTable.Column.RowId).setIsHidden(true);
+        ColumnInfo sourceProtocolCol = addColumn(Column.SourceProtocolLSID);
+        sourceProtocolCol.setIsHidden(true);
+        sourceProtocolCol.setCaption("Source Protocol");
         addColumn(ExpMaterialTable.Column.Name);
-        ColumnInfo typeColumnInfo = addColumn(Column.CpasType);
+        ColumnInfo typeColumnInfo = addColumn(Column.SampleSet);
         typeColumnInfo.setFk(new LookupForeignKey("lsid")
         {
             public TableInfo getLookupTableInfo()
@@ -158,7 +174,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
         defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Name));
         defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Run));
-        defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.CpasType));
+        defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.SampleSet));
 
         if (ss != null)
         {

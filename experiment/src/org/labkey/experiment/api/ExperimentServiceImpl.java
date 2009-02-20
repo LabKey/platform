@@ -320,7 +320,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public ExpSampleSet getSampleSet(int rowid)
+    public ExpSampleSetImpl getSampleSet(int rowid)
     {
         MaterialSource ms = getMaterialSource(rowid);
         if (ms == null)

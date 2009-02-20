@@ -314,7 +314,7 @@ public class LoginController extends SpringActionController
 
                     return true;
                 }
-                else if (null != form.getEmail() && null != form.getPassword())
+                else if (null != form.getEmail() || null != form.getPassword())
                 {
                     // Email & password were specified, but authentication failed... display either invalid email address error or generic "couldn't authenticate" message
                     new ValidEmail(form.getEmail());

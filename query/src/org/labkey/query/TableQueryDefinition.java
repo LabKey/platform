@@ -26,20 +26,17 @@ import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QueryDef;
 
 import java.util.List;
+import java.util.ArrayList;
 
 public class TableQueryDefinition extends QueryDefinitionImpl
 {
     TableInfo _table;
     private String _sql;
 
-    public TableQueryDefinition(UserSchema schema, String tableName, TableInfo table)
+    public TableQueryDefinition(UserSchema schema, String tableName)
     {
         super(getQueryDef(schema, tableName));
         _schema = schema;
-        _table = table;
-        Query query = new Query(schema);
-        query.setRootTable(FieldKey.fromParts(tableName));
-        _sql = query.getQueryText();
     }
 
     private static QueryDef getQueryDef(UserSchema schema, String tableName)
@@ -57,15 +54,25 @@ public class TableQueryDefinition extends QueryDefinitionImpl
 
     public TableInfo getTable(String name, QuerySchema schema, List<QueryException> errors, boolean includeMetadata)
     {
-        if (_table != null && schema == getSchema() && name == null)
+        if (schema == getSchema() && name == null)
         {
-            return _table;
+            _table = schema.getTable(getName(), "query");
+            if (_table != null)
+            {
+                return _table;
+            }
         }
         return super.getTable(name, schema, errors, includeMetadata);
     }
 
     public String getSql()
     {
+        if (_sql == null)
+        {
+            Query query = new Query(_schema);
+            query.setRootTable(FieldKey.fromParts(getName()));
+            _sql = query.getQueryText();
+        }
         return _sql;
     }
 
@@ -81,6 +88,6 @@ public class TableQueryDefinition extends QueryDefinitionImpl
 
     public boolean isMetadataEditable()
     {
-        return _table.isMetadataOverrideable();
+        return getTable(null, getSchema(), new ArrayList<QueryException>(), true).isMetadataOverrideable();
     }
 }

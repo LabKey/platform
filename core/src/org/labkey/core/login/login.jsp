@@ -96,7 +96,7 @@
     if (null != bean.termsOfUseHtml)
     { %>
         <tr><td colspan=2>&nbsp;</td></tr>
-        <tr><td></td><td><b>Terms of Use</b></td></tr>
+        <tr><td></td><td><strong>Terms of Use</strong></td></tr>
         <tr><td></td><td><%=h(bean.termsOfUseHtml)%></td></tr>
         <tr><td></td><td><input type=checkbox name="approvedTermsOfUse" id="approvedTermsOfUse"<%=bean.termsOfUseChecked ? " checked" : ""%>><label for="approvedTermsOfUse">I agree to these terms</label></td></tr><%
     } %>

@@ -320,13 +320,29 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(ACL.PERM_READ)
     public class ShowMaterialSourceAction extends SimpleViewAction<MaterialSourceForm>
     {
-        private ExpSampleSet _source;
+        private ExpSampleSetImpl _source;
 
         public ModelAndView getView(MaterialSourceForm form, BindException errors) throws Exception
         {
             MaterialSource source = form.getBean();
             if (source != null)
+            {
                 _source = ExperimentServiceImpl.get().getSampleSet(source.getRowId());
+                if (_source == null && source.getLSID() != null)
+                {
+                    if (source.getLSID().equalsIgnoreCase("Material") || source.getLSID().equalsIgnoreCase("Sample"))
+                    {
+                        // Not a real sample set - just show all the materials instead
+                        HttpView.throwRedirect(new ActionURL(ShowAllMaterialsAction.class, getContainer()));
+                    }
+                    // Check if the URL specifies the LSID, and stick the bean back into the form
+                    _source = ExperimentServiceImpl.get().getSampleSet(source.getLSID());
+                    if (_source != null)
+                    {
+                        form.setBean(_source.getDataObject());
+                    }
+                }
+            }
 
             if (_source == null)
             {
@@ -376,7 +392,7 @@ public class ExperimentController extends SpringActionController
             ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete", DataRegion.MODE_DETAILS, ActionButton.Action.POST);
             deleteButton.setDisplayPermission(ACL.PERM_DELETE);
             ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, getViewContext().getContainer());
-            deleteURL.addParameter("singleObjectRowId", source.getRowId());
+            deleteURL.addParameter("singleObjectRowId", _source.getRowId());
             deleteURL.addParameter("returnURL", ExperimentUrlsImpl.get().getShowSampleSetListURL(getViewContext().getContainer()).toString());
 
             deleteButton.setURL(deleteURL);
@@ -428,6 +444,8 @@ public class ExperimentController extends SpringActionController
                     bar.add(deriveButton);
                 }
             };
+            view.setShadeAlternatingRows(true);
+            view.setShowBorders(true);
             view.setShowDetailsColumn(false);
             view.setShowRecordSelectors(true);
             return view;
@@ -480,16 +498,8 @@ public class ExperimentController extends SpringActionController
             dr.addDisplayColumn(new LineageGraphDisplayColumn(_material, run));
             dr.addDisplayColumn(new SampleSetDisplayColumn(_material));
 
-            ButtonBar bb = new ButtonBar();
             //TODO: Can't yet edit materials uploaded from a material source
-            if (null != sampleSet)
-            {
-                ActionButton ab = new ActionButton("Show Grid");
-                ab.setActionType(ActionButton.Action.LINK);
-                ab.setURL(ExperimentUrlsImpl.get().getShowSampleSetURL(sampleSet));
-                bb.add(ab);
-            }
-            dr.setButtonBar(bb);
+            dr.setButtonBar(new ButtonBar());
             DetailsView detailsView = new DetailsView(dr, form);
             detailsView.setTitle("Standard Properties");
 
@@ -597,7 +607,15 @@ public class ExperimentController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Sample " + _material.getName());
+            root = appendRootNavTrail(root);
+            root.addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
+            ExpSampleSet sampleSet = _material.getSampleSet();
+            if (sampleSet != null)
+            {
+                root.addChild(sampleSet.getName(), ExperimentUrlsImpl.get().getShowSampleSetURL(sampleSet));
+            }
+            root.addChild("Sample " + _material.getName());
+            return root;
         }
     }
 
