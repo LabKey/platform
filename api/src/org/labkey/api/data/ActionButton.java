@@ -435,7 +435,7 @@ public class ActionButton extends DisplayElement implements Cloneable
             out.write("    }\n");
             out.write("  });\n");
             out.write("});\n");
-            out.write("</script>\n");
+            out.write("</script>");
         }
     }
 

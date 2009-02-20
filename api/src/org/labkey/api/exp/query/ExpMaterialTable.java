@@ -32,7 +32,7 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>
         LSID,
         Flag,
         Run,
-        CpasType,
+        SampleSet,
         SourceProtocolLSID,
         Property,
         Folder,
