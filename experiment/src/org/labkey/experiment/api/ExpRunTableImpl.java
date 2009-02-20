@@ -346,6 +346,11 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         setDefaultVisibleColumns(defaultVisibleColumns);
     }
 
+    /**
+     * This DisplayColumn renders a list of RunGroups.  The url expression
+     * set on this DisplayColumn will be evaluated with a RenderContext
+     * containing a key "experimentId" set to the value of the ExpExperiment run id. 
+     */
     public class RunGroupListDisplayColumn extends DataColumn
     {
         private Set<ColumnInfo> _runGroupColumns;
@@ -378,6 +383,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             {
                 _experiments = ExperimentService.get().getExperiments(ctx.getContainer(), ctx.getViewContext().getUser(), true, false);
             }
+            Object oldExperimentId = ctx.get("experimentId");
             for (ColumnInfo runGroupColumn : _runGroupColumns)
             {
                 FieldKey key = FieldKey.fromString(runGroupColumn.getName());
@@ -396,8 +402,13 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     if (matchingRunGroup != null && addLinks)
                     {
                         sb.append("<a href=\"");
-                        ActionURL url = ExperimentController.ExperimentUrlsImpl.get().getExperimentDetailsURL(matchingRunGroup.getContainer(), matchingRunGroup);
-                        sb.append(url.getLocalURIString());
+                        ctx.put("experimentId", matchingRunGroup.getRowId());
+                        String url = getURL(ctx);
+                        if (url == null)
+                        {
+                            url = ExperimentController.ExperimentUrlsImpl.get().getExperimentDetailsURL(matchingRunGroup.getContainer(), matchingRunGroup).getLocalURIString();
+                        }
+                        sb.append(url);
                         sb.append("\">");
                     }
                     PageFlowUtil.filter(sb.append(key.getName()));
@@ -407,6 +418,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     }
                     separator = ", ";
                 }
+                ctx.put("experimentId", oldExperimentId);
             }
             if (sb.length() == 0)
             {
