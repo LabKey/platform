@@ -113,6 +113,7 @@ Ext.extend(Ext.grid.RowExpander, Ext.util.Observable, {
         var body = Ext.DomQuery.selectNode('tr:nth(2) div.x-grid3-row-body', row);
         if(this.beforeExpand(record, body, row.rowIndex)){
             this.state[record.id] = true;
+            body.style.display = '';
             Ext.fly(row).replaceClass('x-grid3-row-collapsed', 'x-grid3-row-expanded');
             this.fireEvent('expand', this, record, body, row.rowIndex);
         }
@@ -123,10 +124,15 @@ Ext.extend(Ext.grid.RowExpander, Ext.util.Observable, {
             row = this.grid.view.getRow(row);
         }
         var record = this.grid.store.getAt(row.rowIndex);
-        var body = Ext.fly(row).child('tr:nth(1) div.x-grid3-row-body', true);
+        var body = Ext.fly(row).child('tr:nth(2) div.x-grid3-row-body', true);
         if(this.fireEvent('beforecollapse', this, record, body, row.rowIndex) !== false){
             this.state[record.id] = false;
-            Ext.fly(row).replaceClass('x-grid3-row-expanded', 'x-grid3-row-collapsed');
+            //Ext.fly(row).replaceClass('x-grid3-row-expanded', 'x-grid3-row-collapsed');
+            // hack for ie
+            Ext.fly(row).removeClass('x-grid3-row-expanded');
+            body.style.display='none';
+            Ext.fly(row).addClass('x-grid3-row-collapsed');
+
             this.fireEvent('collapse', this, record, body, row.rowIndex);
         }
     }
@@ -172,6 +178,9 @@ LABKEY.ViewsPanel.prototype = {
      */
     baseQuery : undefined,
 
+    // the id of the div to render any view filter information
+    filterDiv : undefined,
+
     dataConnection : new Ext.data.Connection({
         url: LABKEY.ActionURL.buildURL("reports", "manageViewsSummary", this.container),
         method: 'GET',
@@ -185,13 +194,14 @@ LABKEY.ViewsPanel.prototype = {
         tpl : new Ext.XTemplate(
                 '<table>',
                     '<tpl if="description != undefined"><tr><td><b>description</b></td><td>{description}</td></tr></tpl>',
+                    '<tr><td><b>container</b></td><td>{container}</td></tr>',
                     '<tr><td><b>query name</b></td><td>{query}</td></tr>',
                     '<tpl if="schema != undefined"><tr><td><b>schema name</b></td><td>{schema}</td></tr></tpl>',
                     '<tr><td><b>permissions</b></td><td>{permissions}</td>',
                     '<tpl if="runUrl != undefined || editUrl != undefined">',
-                        '<tr><td><b>links</b></td><td>',
-                            '<tpl if="runUrl != undefined">&nbsp;[<a href="{runUrl}">display</a>]</tpl>',
-                            '<tpl if="editUrl != undefined">&nbsp;[<a href="{editUrl}">edit</a>]</tpl></td></tr>',
+                        '<tr><td></td><td>',
+                            '<tpl if="runUrl != undefined">&nbsp;[<a href="{runUrl}">view</a>]</tpl>',
+                            '<tpl if="editUrl != undefined">&nbsp;[<a href="{editUrl}">source</a>]</tpl></td></tr>',
                     '</tpl>',
                 '</table>')
         }),
@@ -219,6 +229,7 @@ LABKEY.ViewsPanel.prototype = {
                         {name:'editUrl', defaultValue:undefined},
                         {name:'reportId', defaultValue:undefined},
                         {name:'queryView', type:'boolean', defaultValue:false},
+                        {name:'container'},
                         {name:'type'}]),
             proxy: new Ext.data.HttpProxy(this.dataConnection),
             autoLoad: true,
@@ -250,9 +261,14 @@ LABKEY.ViewsPanel.prototype = {
             store: this.getStore(),
             selModel: this.selModel,
             listeners: {
-                rowdblclick: function(g, rowIndex, event) {
+                rowclick: function(g, rowIndex, event) {
                     event.stopEvent();
-                    this.editSelected(event);
+                    this.expander.toggleRow(rowIndex);
+                },
+                rowcontextmenu : function(g, rowIndex, event) {
+                    event.stopEvent();
+                    var coords = event.getXY();
+                    this.getContextMenu(g, g.store.getAt(rowIndex).data).showAt([coords[0], coords[1]]);
                 },
                 scope:this
             },
@@ -285,7 +301,7 @@ LABKEY.ViewsPanel.prototype = {
             {text:'Expand All', tooltip: {text:'Expands all groups', title:'Expand All'}, listeners:{click:function(button, event) {this.grid.view.expandAllGroups();}, scope:this}},'-',
             {text:'Collapse All', tooltip: {text:'Collapses all groups', title:'Collapse All'}, listeners:{click:function(button, event) {this.grid.view.collapseAllGroups();}, scope:this}},'-',
             {text:'Delete Selected', id: 'btn_deleteView', tooltip: {text:'Delete selected view', title:'Delete Views'}, listeners:{click:function(button, event) {deleteSelections(this.grid);}, scope:this}},'-',
-            {text:'Rename', id: 'btn_editView', tooltip: {text:'Rename or edit the description of an existing view (you can also double click on the view to edit)', title:'Rename View'}, listeners:{click:function(button, event) {this.editSelected(button);}, scope:this}}
+            {text:'Rename', id: 'btn_editView', tooltip: {text:'Rename or edit the description of an existing view', title:'Rename View'}, listeners:{click:function(button, event) {this.editSelected(button);}, scope:this}}
         ];
 
         if (this.createMenu != undefined)
@@ -305,14 +321,20 @@ LABKEY.ViewsPanel.prototype = {
         if (this.baseQuery != undefined)
         {
             var queryBtn = new Ext.Button({
-                text:'Queries',
+                text:'Filter',
                 id: 'btn_selectQuery',
-                tooltip: {text: 'Show more or less queries', title: 'Queries'},
+                tooltip: {text: 'Filter the views that are displayed', title: 'Filter'},
                 menu: {
                     cls:'extContainer',
                     items: [
-                        {text:'Show views from all Queries', listeners:{click:function(button, event) {this.dataConnection.extraParams = undefined; this.grid.store.load();}, scope:this}},
-                        {text:'Show views only from the ' + this.baseQuery.queryName + ' Query', listeners:{click:function(button, event) {this.dataConnection.extraParams = this.baseQuery; this.grid.store.load();}, scope:this}}
+                        {text:'Show all views in the current container', listeners:{click:function(button, event) {
+                            this.renderFilterMsg(true);
+                            this.dataConnection.extraParams = undefined;
+                            this.grid.store.load();}, scope:this}},
+                        {text:'Show views only from the ' + this.baseQuery.queryName + ' query', listeners:{click:function(button, event) {
+                            this.renderFilterMsg(false);
+                            this.dataConnection.extraParams = this.baseQuery;
+                            this.grid.store.load();}, scope:this}}
                     ]}
             });
             buttons.splice(0,0,queryBtn,'-');
@@ -326,7 +348,7 @@ LABKEY.ViewsPanel.prototype = {
      */
     getColumns : function() {
         return [
-            this.expander,    
+            //this.expander,
             //this.selModel,
             {header:'Title', dataIndex:'name', width:200},
             {header:'Type', dataIndex:'type', renderer:typeRenderer},
@@ -346,9 +368,21 @@ LABKEY.ViewsPanel.prototype = {
      */
     show : function() {
 
+        this.renderFilterMsg(false);
         this.dataConnection.extraParams = this.baseQuery;
         this.grid = new Ext.grid.GridPanel(this.getGridConfig());
         this.grid.render();
+    },
+
+    renderFilterMsg : function(allViews) {
+
+        if (this.baseQuery && this.filterDiv)
+        {
+            if (allViews)
+                Ext.get(this.filterDiv).dom.innerHTML = 'Showing all views in this container';
+            else
+                Ext.get(this.filterDiv).dom.innerHTML = 'Showing only the views from the query: ' + this.baseQuery.queryName;
+        }
     },
 
     /**
@@ -377,16 +411,37 @@ LABKEY.ViewsPanel.prototype = {
             return false;
         }
         editRecord(button, this.grid, selections[0].data);
+    },
+
+    /**
+     * Creates the grid row context menu
+     */
+    getContextMenu : function(grid, data) {
+        if (data != undefined)
+        {
+            return new Ext.menu.Menu({
+                id: 'rowContextMenu',
+                cls: 'extContainer',
+                items: [
+                    {text: 'View', disabled : data.runUrl == undefined, handler: function(){window.location = data.runUrl;}},
+                    {text: 'Source', disabled : data.editUrl == undefined, handler: function(){window.location = data.editUrl;}},
+                        '-',
+                    {text: 'Rename', handler: function(){editRecord(null, grid, data);}},
+                    {text: 'Delete', handler: function(){deleteView(grid, data);}}
+                ]
+            });
+        }
     }
 };
 
+/**
+ * Column render templates
+ */
+var typeTemplate = new Ext.XTemplate('<tpl if="icon == undefined">{type}</tpl><tpl if="icon != undefined"><img src="{icon}" alt="{type}"></tpl>').compile();
 
 function typeRenderer(value, p, record)
 {
-    if (record.data.icon != undefined)
-        return '<img src="' + record.data.icon + '">&nbsp;' + value;
-    else
-        return value;
+    return typeTemplate.apply(record.data);
 }
 
 function renderRow(value, p, record)
@@ -416,7 +471,7 @@ function deleteSelections(grid)
     if (selections.length == 0)
     {
         Ext.Msg.alert("Delete Views", "There are no views selected");
-        return false;
+        return;
     }
     else
     {
@@ -434,27 +489,53 @@ function deleteSelections(grid)
                 params.push("reportId=" + selections[i].id);
 
         }
-
-        Ext.Msg.show({
-                title : 'Delete Views',
-                msg : msg,
-                buttons: Ext.Msg.YESNO,
-                icon: Ext.Msg.QUESTION,
-                fn: function(btn, text) {
-                    if (btn == 'yes')
-                    {
-                        Ext.Ajax.request({
-
-                            url: LABKEY.ActionURL.buildURL("reports", "manageViewsDeleteReports") + '?' + params.join('&'),
-                            method: "POST",
-                            scope: this,
-                            success: function(){grid.store.load();},
-                            failure: function(){Ext.Msg.alert("Delete Views", "Deletion Failed");}
-                        });
-                    }},
-                id: 'delete_views'
-        });
+        doDeleteViews(msg, params, grid);
     }
+}
+
+/**
+ * Delete the selected views
+ */
+function deleteView(grid, record)
+{
+    if (record != undefined)
+    {
+        var msg = "Delete View: " + record.name + "<br>";
+        var params = [];
+
+        if (record.queryView)
+            params.push("viewId=" + record.reportId);
+        else
+            params.push("reportId=" + record.reportId);
+        
+        doDeleteViews(msg, params, grid);
+    }
+}
+
+/**
+ * handles the server request to delete views
+ */
+function doDeleteViews(msg, params, grid)
+{
+    Ext.Msg.show({
+            title : 'Delete Views',
+            msg : msg,
+            buttons: Ext.Msg.YESNO,
+            icon: Ext.Msg.QUESTION,
+            fn: function(btn, text) {
+                if (btn == 'yes')
+                {
+                    Ext.Ajax.request({
+
+                        url: LABKEY.ActionURL.buildURL("reports", "manageViewsDeleteReports") + '?' + params.join('&'),
+                        method: "POST",
+                        scope: this,
+                        success: function(){grid.store.load();},
+                        failure: function(){Ext.Msg.alert("Delete Views", "Deletion Failed");}
+                    });
+                }},
+            id: 'delete_views'
+    });
 }
 
 function editRecord(button, grid, record)
@@ -618,7 +699,7 @@ function submitForm(win, panel, grid)
     if (form && !form.isValid())
     {
         Ext.Msg.alert('Edit Views', 'Not all fields have been properly completed');
-        return false;
+        return;
     }
 
     form.submit({

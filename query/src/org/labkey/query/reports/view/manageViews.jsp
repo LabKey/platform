@@ -56,6 +56,7 @@
                     schemaName: '<%=form.getSchemaName()%>',
                     queryName: '<%=form.getQueryName()%>'
                 },
+                filterDiv: 'filterMsg',
             <% } %>
             container: '<%=context.getContainer().getPath()%>',
             createMenu :[{
@@ -71,5 +72,5 @@
 
 <labkey:errors/>
 
+<i><p id="filterMsg"></p></i>
 <div id="viewsGrid" class="extContainer"></div>
-<div id="treeDiv" class="extContainer"></div>

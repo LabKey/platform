@@ -123,14 +123,15 @@
                 tpl : new Ext.XTemplate(
                         '<table>',
                             '<tpl if="description != undefined"><tr><td><b>description</b></td><td>{description}</td></tr></tpl>',
+                            '<tr><td><b>container</b></td><td>{container}</td></tr>',
                             '<tr><td><b>query name</b></td><td>{query}</td></tr>',
                             '<tpl if="schema != undefined"><tr><td><b>schema name</b></td><td>{schema}</td></tr></tpl>',
                             '<tr><td><b>permissions</b></td><td>{permissions}</td>',
-                            '<tr><td><b>links</b></td><td>',
-                                '<tpl if="runUrl != undefined">&nbsp;[<a href="{runUrl}">display</a>]</tpl>',
-                                '<tpl if="editUrl != undefined">&nbsp;[<a href="{editUrl}">edit</a>]</tpl>',
-                                '<tpl if="reportId != undefined">&nbsp;[<a href="<%=permissionURL.getLocalURIString()%>reportId={reportId}">permissions</a>]</tpl>',
-                                '<tpl if="reportId == undefined">&nbsp;[<a href=\'#\' onclick=\'panel.convertQuery("{schema}","{query}","{name}");return false;\'>convert to report</a>]</tpl></td></tr>',
+                            '<tr><td></td><td>',
+                                '<tpl if="runUrl != undefined">&nbsp;[<a href="{runUrl}">view</a>]</tpl>',
+                                '<tpl if="editUrl != undefined">&nbsp;[<a href="{editUrl}">source</a>]</tpl>',
+                                '<tpl if="!queryView">&nbsp;[<a href="<%=permissionURL.getLocalURIString()%>reportId={reportId}">permissions</a>]</tpl>',
+                                '<tpl if="queryView">&nbsp;[<a href=\'#\' onclick=\'panel.convertQuery("{schema}","{query}","{name}");return false;\'>convert to report</a>]</tpl></td></tr>',
                         '</table>')
                 }),
             createMenu :[{
@@ -153,8 +154,20 @@
                 id: 'create_staticView',
                 text:'New Static View',
                 listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.ShowUploadReportAction.class, context.getContainer())%>';}}
+            }],
+
+            /**
+             * Creates the grid row context menu
+             */
+            getContextMenu : function(grid, data) {
+                var menu = StudyViewsPanel.superclass.getContextMenu.call(this, grid, data);
+
+                if (menu != undefined)
+                {
+                    menu.add('-', {text: 'Permissions', disabled : data.queryView, handler: function(){window.location = "<%=permissionURL.getLocalURIString()%>reportId=" + data.reportId;}});
+                }
+                return menu;
             }
-            ]
         });
         panel.show();
     }
