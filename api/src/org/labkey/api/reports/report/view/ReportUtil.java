@@ -333,6 +333,7 @@ public class ReportUtil
                 record.put("editUrl", r.getEditReportURL(context) != null ? r.getEditReportURL(context).getLocalURIString() : null);
                 record.put("runUrl", r.getRunReportURL(context) != null ? r.getRunReportURL(context).getLocalURIString() : null);
                 record.put("description", descriptor.getReportDescription());
+                record.put("container", descriptor.getContainerPath());
 
                 String security;
                 if (descriptor.getOwner() != null)
@@ -430,6 +431,7 @@ public class ReportUtil
 
                 record.put("runUrl", qd.urlFor(QueryAction.executeQuery, context.getContainer()).getLocalURIString());
                 record.put("editUrl", qd.urlFor(QueryAction.designQuery, context.getContainer()).getLocalURIString());
+                record.put("container", entry.getValue().getContainer().getPath());
 
                 views.add(record);
             }

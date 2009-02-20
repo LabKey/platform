@@ -149,7 +149,7 @@ public class GWTProtocol implements IsSerializable
 
     public void setProtocolValidationScript(String protocolValidationScript)
     {
-        _protocolValidationScript = protocolValidationScript;
+        _protocolValidationScript = protocolValidationScript.trim();
     }
 
     public boolean isAllowValidationScript()
