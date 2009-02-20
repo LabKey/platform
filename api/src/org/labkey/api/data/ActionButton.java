@@ -362,10 +362,11 @@ public class ActionButton extends DisplayElement implements Cloneable
             DataRegion dataRegion = ctx.getCurrentRegion();
             assert dataRegion != null : "ActionButton.setRequiresSelection() needs to be rendered in context of a DataRegion";
             if (getId() == null)
-                setId(GUID.makeHash());
-            attributes.append(" labkey-requires-selection=\"").append(PageFlowUtil.filter(dataRegion.getName())).append("\"");
-            attributes.append(" id=\"").append(PageFlowUtil.filter(getId())).append("\"");
+                setId("labkey-gen" + GUID.makeHash());
         }
+        
+        if (getId() != null)
+            attributes.append(" id=\"").append(PageFlowUtil.filter(getId())).append("\"");
 
         if (_actionType.equals(Action.POST) || _actionType.equals(Action.GET))
         {
