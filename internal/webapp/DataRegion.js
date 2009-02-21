@@ -39,7 +39,25 @@ LABKEY.DataRegion = function (config)
     LABKEY.DataRegions[this.name] = this;
 
     this.addEvents(
-            "selectchange"
+        /**
+         * @event selectchange
+         * Fires when the selection has changed.
+         * @param {DataRegion} this DataRegion object.
+         * @param {Boolean} hasSelection true if the DataRegion has at least one selected item.
+         * @example Here's an example of subscribing to the DataRegion 'selectchange' event:
+         * Ext.ComponentMgr.onAvailable("dataRegionName", function (dataregion) {
+         *     dataregion.on('selectchange', function (dr, selected) {
+         *         var btn = Ext.get('my-button-id');
+         *         if (selected) {
+         *             btn.replaceClass('labkey-disabled-button', 'labkey-button');
+         *         }
+         *         else {
+         *             btn.replaceClass('labkey-button', 'labkey-disabled-button');
+         *         }
+         *     });
+         *  });
+         */
+         "selectchange"
     );
 
     this.rendered = true; // prevent Ext.Component.render() from doing anything
@@ -216,7 +234,22 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
 
     onSelectChange : function (hasSelected)
     {
-        this.fireEvent('selectchange', hasSelected);
+        var fn;
+        if (hasSelected) {
+            fn = function (item, index) {
+                Ext.get(item).replaceClass("labkey-disabled-button", "labkey-button");
+            };
+        }
+        else {
+            fn = function (item, index) {
+                Ext.get(item).replaceClass("labkey-button", "labkey-disabled-button");
+            };
+        }
+
+        var btns = Ext.DomQuery.select("*[labkey-requires-selection=" + this.name + "]");
+        Ext.each(btns, fn);
+
+        this.fireEvent('selectchange', this, hasSelected);
     },
 
     setOffset : function (newoffset)
