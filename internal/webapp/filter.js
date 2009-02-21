@@ -191,7 +191,7 @@ var _typeMap = {
     "FLOAT4":"DECIMAL",
     "FLOAT8":"DECIMAL",
     "SERIAL":"INT"
-}
+};
 var _mappedType = "TEXT";
 
 function fillOptions(dataType, allowsQC)
