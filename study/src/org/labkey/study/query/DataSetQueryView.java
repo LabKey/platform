@@ -34,6 +34,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.*;
 import org.labkey.study.reports.StudyRReport;
 
@@ -322,5 +323,13 @@ public class DataSetQueryView extends QueryView
     public MenuButton createPageSizeMenuButton()
     {
         return super.createPageSizeMenuButton();
+    }
+
+    @Override
+    public void addManageViewItems(MenuButton button)
+    {
+        button.addMenuItem("Manage Views", new ActionURL(ReportsController.ManageReportsAction.class, getContainer()).
+                addParameter("schemaName", getSchema().getSchemaName()).
+                addParameter("queryName", getSettings().getQueryName()));
     }
 }

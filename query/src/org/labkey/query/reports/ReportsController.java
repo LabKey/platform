@@ -1134,46 +1134,6 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_READ)
-    public class ManageViewsQuerySummaryAction extends ApiAction
-    {
-        public ApiResponse execute(Object o, BindException errors) throws Exception
-        {
-            List<Map<String, String>> queries = new ArrayList<Map<String, String>>();
-            ViewContext context = getViewContext();
-
-            DefaultSchema schema = DefaultSchema.get(context.getUser(), context.getContainer());
-
-            for (String schemaName : schema.getUserSchemaNames())
-            {
-                for (QueryDefinition qd : QueryService.get().getQueryDefs(context.getContainer(), schemaName).values())
-                {
-                    addQueryDefinition(queries, qd);
-                }
-
-                // table based queries
-                UserSchema userSchema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), schemaName);
-                for (String name : userSchema.getTableNames())
-                {
-                    QueryDefinition qd = userSchema.getQueryDefForTable(name);
-                    addQueryDefinition(queries, qd);
-                }
-            }
-            return new ApiSimpleResponse("queries", queries);
-        }
-
-        private void addQueryDefinition(List<Map<String, String>> queries, QueryDefinition def)
-        {
-            Map<String, String> record = new HashMap<String, String>();
-
-            record.put("name", def.getName());
-            record.put("schema", def.getSchemaName());
-            record.put("userDefined", String.valueOf(!def.isTableQueryDefinition()));
-
-            queries.add(record);
-        }
-    }
-
-    @RequiresPermission(ACL.PERM_READ)
     public class ManageViewsDeleteReportsAction extends ApiAction<DeleteViewsForm>
     {
         public ApiResponse execute(DeleteViewsForm form, BindException errors) throws Exception

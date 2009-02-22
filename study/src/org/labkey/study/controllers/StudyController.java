@@ -4548,7 +4548,7 @@ public class StudyController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             _appendManageStudy(root);
-            root.addChild("Manage Reports and Views", new ActionURL(ReportsController.ManageReportsAction.class, getContainer()));
+            root.addChild("Manage Views", new ActionURL(ReportsController.ManageReportsAction.class, getContainer()));
             return root.addChild("Customize Participant View");
         }
     }

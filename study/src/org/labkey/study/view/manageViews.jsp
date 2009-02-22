@@ -42,6 +42,9 @@
 
     ViewContext context = HttpView.currentContext();
 
+    String schemaName = context.getActionURL().getParameter(QueryParam.schemaName);
+    String queryName = context.getActionURL().getParameter(QueryParam.queryName);
+
     ActionURL permissionURL = new ActionURL(SecurityController.ReportPermissionsAction.class, context.getContainer());
 
     RReportBean reportBean = new RReportBean();
@@ -54,6 +57,7 @@
 <script type="text/javascript">
     var panel;
 
+/*
     function securityRenderer(value, p, record)
     {
         var href = '<%=permissionURL.getLocalURIString()%>';
@@ -64,6 +68,7 @@
         return "<a href='" + href + "'>" + value + "</a>";
     }
 
+*/
     function renderViews()
     {
         // subclass the views panel
@@ -113,11 +118,50 @@
                             }},
                         id: 'convert_queryView'
                 });
+            },
+
+            /**
+             * Edit the selected view
+             */
+            editSelected : function(button) {
+                var selections = this.grid.selModel.getSelections();
+
+                if (selections.length == 0)
+                {
+                    Ext.Msg.alert("Rename Views", "There are no views selected");
+                    return false;
+                }
+
+                if (selections.length > 1)
+                {
+                    Ext.Msg.alert("Rename Views", "Only one view can be edited at a time");
+                    return false;
+                }
+
+                if (selections[0].data.inherited)
+                {
+                    Ext.Msg.alert("Rename Views", "This view is shared from another container. A shared view can be edited only in the container that it was created in.");
+                    return;
+                }
+
+                if (selections[0].data.queryView)
+                {
+                    Ext.Msg.alert("Rename Views", "Only views can be renamed. To convert a custom query to a view, expand the row and click on the [convert to view] link");
+                    return;
+                }
+                doEditRecord(button, this.grid, selections[0]);
             }
         });
 
         panel = new StudyViewsPanel({
             renderTo: 'viewsGrid',
+            <% if (schemaName != null && queryName != null) { %>
+                baseQuery: {
+                    schemaName: '<%=schemaName%>',
+                    queryName: '<%=queryName%>'
+                },
+                filterDiv: 'filterMsg',
+            <% } %>
             container: '<%=context.getContainer().getPath()%>',
             expander : new Ext.grid.RowExpander({
                 tpl : new Ext.XTemplate(
@@ -130,8 +174,8 @@
                             '<tr><td></td><td>',
                                 '<tpl if="runUrl != undefined">&nbsp;[<a href="{runUrl}">view</a>]</tpl>',
                                 '<tpl if="editUrl != undefined">&nbsp;[<a href="{editUrl}">source</a>]</tpl>',
-                                '<tpl if="!queryView">&nbsp;[<a href="<%=permissionURL.getLocalURIString()%>reportId={reportId}">permissions</a>]</tpl>',
-                                '<tpl if="queryView">&nbsp;[<a href=\'#\' onclick=\'panel.convertQuery("{schema}","{query}","{name}");return false;\'>convert to report</a>]</tpl></td></tr>',
+                                '<tpl if="!queryView && !inherited">&nbsp;[<a href="<%=permissionURL.getLocalURIString()%>reportId={reportId}">permissions</a>]</tpl>',
+                                '<tpl if="queryView && !inherited">&nbsp;[<a href=\'#\' onclick=\'panel.convertQuery("{schema}","{query}","{name}");return false;\'>convert to view</a>]</tpl></td></tr>',
                         '</table>')
                 }),
             createMenu :[{
@@ -164,7 +208,7 @@
 
                 if (menu != undefined)
                 {
-                    menu.add('-', {text: 'Permissions', disabled : data.queryView, handler: function(){window.location = "<%=permissionURL.getLocalURIString()%>reportId=" + data.reportId;}});
+                    menu.add('-', {text: 'Permissions', disabled : (data.queryView || data.inherited), handler: function(){window.location = "<%=permissionURL.getLocalURIString()%>reportId=" + data.reportId;}});
                 }
                 return menu;
             }
@@ -175,4 +219,5 @@
     Ext.onReady(function(){renderViews();});
 </script>
 
+<i><p id="filterMsg"></p></i>
 <div id="viewsGrid" class="extContainer"></div>

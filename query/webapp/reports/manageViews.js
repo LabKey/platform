@@ -224,6 +224,7 @@ LABKEY.ViewsPanel.prototype = {
                         {name:'permissions'},
                         {name:'description', defaultValue:undefined},
                         {name:'editable', type:'boolean'},
+                        {name:'inherited', type:'boolean'},
                         {name:'icon', defaultValue:undefined},
                         {name:'runUrl', defaultValue:undefined},
                         {name:'editUrl', defaultValue:undefined},
@@ -405,14 +406,20 @@ LABKEY.ViewsPanel.prototype = {
             return false;
         }
 
+        if (selections[0].data.inherited)
+        {
+            Ext.Msg.alert("Rename Views", "This view is shared from another container. A shared view can be edited only in the container that it was created in.");
+            return;
+        }
+
         if (selections[0].data.queryView)
         {
-            Ext.Msg.alert("Rename Views", "Only reports can be renamed, to convert a custom query to a report expand the row and click on the [convert to report] link");
-            return false;
+            Ext.Msg.alert("Rename Views", "Only views can be renamed.");
+            return;
         }
-        editRecord(button, this.grid, selections[0].data);
+        doEditRecord(button, this.grid, selections[0]);
     },
-
+    
     /**
      * Creates the grid row context menu
      */
@@ -426,8 +433,8 @@ LABKEY.ViewsPanel.prototype = {
                     {text: 'View', disabled : data.runUrl == undefined, handler: function(){window.location = data.runUrl;}},
                     {text: 'Source', disabled : data.editUrl == undefined, handler: function(){window.location = data.editUrl;}},
                         '-',
-                    {text: 'Rename', handler: function(){editRecord(null, grid, data);}},
-                    {text: 'Delete', handler: function(){deleteView(grid, data);}}
+                    {text: 'Rename', disabled : (data.inherited || data.queryView), handler: function(){doEditRecord(null, grid, data);}},
+                    {text: 'Delete', disabled : data.inherited, handler: function(){deleteView(grid, data);}}
                 ]
             });
         }
@@ -480,6 +487,11 @@ function deleteSelections(grid)
 
         for (var i=0; i < selections.length; i++)
         {
+            if (selections[i].data.inherited)
+            {
+                Ext.Msg.alert("Delete Views", "You are trying to delete a view that is shared from another container. A shared view can be deleted only in the container that it was created in.");
+                return;
+            }
             msg = msg.concat(selections[i].data.name);
             msg = msg.concat('<br/>');
 
@@ -538,7 +550,25 @@ function doDeleteViews(msg, params, grid)
     });
 }
 
-function editRecord(button, grid, record)
+/*
+function editRecord(button, grid, record, o)
+{
+    if (record.inherited)
+    {
+        Ext.Msg.alert("Rename Views", "This view is shared from another container. A shared view can be edited only in the container that it was created in.");
+        return;
+    }
+
+    if (record.queryView)
+    {
+        Ext.Msg.alert("Rename Views", "Only views can be renamed. To convert a custom query to a view, expand the row (by selecting it) and click on the [convert to view] link");
+        return;
+    }
+    doEditRecord(button, grid, record);
+}
+*/
+
+function doEditRecord(button, grid, record)
 {
     var formPanel = new Ext.FormPanel({
         bodyStyle:'padding:5px',
@@ -560,18 +590,6 @@ function editRecord(button, grid, record)
             xtype: 'hidden',
             value: record.reportId
         }]
-/*
-            ,{
-            name: 'editUrl',
-            xtype: 'button',
-            text: 'Edit Source...',
-            dest: record.editUrl,
-            tooltip: {text:'Some view types support advanced editing capabilities, if they do this button will navigate you to the alternate view', title:'Edit Source'},
-            disabled: record.editUrl ? false : true,
-            handler: function(){doAdvancedEdit(this);}
-        }]
-
-*/
     });
     var win = new Ext.Window({
         title: 'Edit View',
@@ -591,90 +609,6 @@ function editRecord(button, grid, record)
             id: 'btn_cancel',
             handler: function(){win.close();}
         }]
-    });
-
-    win.show(button);
-}
-
-function filterQueries(button, grid)
-{
-    var proxy = new Ext.data.HttpProxy(new Ext.data.Connection({
-        url: LABKEY.ActionURL.buildURL("reports", "manageViewsQuerySummary", this.container),
-        method: 'GET'
-    }));
-    var selModel = new Ext.grid.CheckboxSelectionModel();
-    var store = new Ext.data.GroupingStore({
-        reader: new Ext.data.JsonReader({root:'queries'},
-                [{name:'schema'},
-                    {name:'userDefined'},
-                    {name:'name'}]),
-        proxy: proxy,
-        autoLoad: true,
-        sortInfo: {field:'schema', direction:"ASC"},
-        groupField:'schema'});
-
-    var gridPanel = new Ext.grid.GridPanel({
-        autoScroll:false,
-        autoHeight:true,
-        autoWidth:true,
-        loadMask:{msg:"Loading, please wait..."},
-        store: store,
-        selModel: selModel,
-        view: new Ext.grid.GroupingView({
-            startCollapsed:false,
-            hideGroupedColumn:true,
-            forceFit:true
-            //groupTextTpl: '{values.group}'
-        }),
-        columns: [
-            selModel,
-            {header:'query name', dataIndex:'name', width:200},
-            {header:'user defined', dataIndex:'userDefined'},
-            {header:'schema', dataIndex:'schema', hidden:true}
-        ]
-    });
-
-    // selection button
-    var selectBtn = new Ext.Button({
-        text:'Select',
-        id: 'btn_selectQuery',
-        tooltip: {text: 'Select or clear all rows', title: 'Select'},
-        menu: {
-            cls:'extContainer',
-            items: [
-                {text:'Select All', listeners:{click:function(button, event) {selModel.selectAll();}, scope:this}},
-                {text:'Clear All', listeners:{click:function(button, event) {selModel.clearSelections();}, scope:this}}
-            ]}
-    });
-
-    // expand button
-    var expandBtn = new Ext.Button({
-        text:'Expand',
-        id: 'btn_expandGroups',
-        tooltip: {text: 'Expand or Collapse all groups', title: 'Expand'},
-        menu: {
-            cls:'extContainer',
-            items: [
-                {text:'Expand All', listeners:{click:function(button, event) {gridPanel.view.expandAllGroups();}, scope:this}},
-                {text:'Collapse All', listeners:{click:function(button, event) {gridPanel.view.collapseAllGroups();}, scope:this}},
-            ]}
-    });
-
-    var win = new Ext.Window({
-        title: 'Filter Queries',
-        border: false,
-        width: 550,
-        height: 375,
-        closeAction:'close',
-        modal: false,
-        autoScroll: true,
-        items: gridPanel,
-        buttons: [
-            selectBtn,
-            expandBtn,
-            {text: 'Submit', id: 'btn_submit', handler: function(){win.close();}},
-            {text: 'Cancel', id: 'btn_cancel', handler: function(){win.close();}}
-        ]
     });
 
     win.show(button);
