@@ -657,9 +657,7 @@ public class QueryView extends WebPartView<Object>
             }
         }
         addCustomizeViewItems(button);
-        button.addMenuItem("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getViewContext().getContainer()).
-                addParameter("schemaName", getSchema().getSchemaName()).
-                addParameter("queryName", getSettings().getQueryName()));
+        addManageViewItems(button);
 
         return button;
     }
@@ -823,6 +821,13 @@ public class QueryView extends WebPartView<Object>
                 containerFilterItem.addChild(filterItem);
             }
         }
+    }
+
+    public void addManageViewItems(MenuButton button)
+    {
+        button.addMenuItem("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getViewContext().getContainer()).
+                addParameter("schemaName", getSchema().getSchemaName()).
+                addParameter("queryName", getSettings().getQueryName()));
     }
 
     public String getDataRegionName()

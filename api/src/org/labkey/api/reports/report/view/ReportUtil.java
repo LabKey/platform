@@ -319,19 +319,40 @@ public class ReportUtil
 
                 User createdBy = UserManager.getUser(descriptor.getCreatedBy());
                 User modifiedBy = UserManager.getUser(descriptor.getModifiedBy());
+                boolean inherited = descriptor.isInherited(context.getContainer());
+                String query = descriptor.getProperty(ReportDescriptor.Prop.queryName);
+                String schema = descriptor.getProperty(ReportDescriptor.Prop.schemaName);
 
                 record.put("name", descriptor.getReportName());
                 record.put("reportId", descriptor.getReportId().toString());
-                record.put("query", StringUtils.defaultIfEmpty(descriptor.getProperty(ReportDescriptor.Prop.queryName), "None"));
-                record.put("schema", descriptor.getProperty(ReportDescriptor.Prop.schemaName));
+                record.put("query", StringUtils.defaultIfEmpty(query, "None : (stand-alone views)"));
+                record.put("schema", schema);
                 record.put("createdBy", createdBy != null ? createdBy.getDisplayName(context) : String.valueOf(descriptor.getCreatedBy()));
                 record.put("created", DateUtil.formatDate(descriptor.getCreated()));
                 record.put("modifiedBy", modifiedBy != null ? modifiedBy.getDisplayName(context) : String.valueOf(descriptor.getModifiedBy()));
                 record.put("modified", DateUtil.formatDate(descriptor.getModified()));
                 record.put("type", r.getTypeDescription());
                 record.put("editable", String.valueOf(descriptor.canEdit(context)));
-                record.put("editUrl", r.getEditReportURL(context) != null ? r.getEditReportURL(context).getLocalURIString() : null);
-                record.put("runUrl", r.getRunReportURL(context) != null ? r.getRunReportURL(context).getLocalURIString() : null);
+                record.put("inherited", String.valueOf(inherited));
+
+                /**
+                 * shared reports are only available if there is a query/schema available in the container that matches
+                 * the view's descriptor. Normally, the check happens automatically when you get reports using a non-blank key, but when
+                 * you request all reports for a container you have to do an explicit check to make sure there is a valid query
+                 * available in the container. 
+                 */
+                if (!inherited || !StringUtils.isBlank(reportKey))
+                {
+                    record.put("editUrl", r.getEditReportURL(context) != null ? r.getEditReportURL(context).getLocalURIString() : null);
+                    record.put("runUrl", r.getRunReportURL(context) != null ? r.getRunReportURL(context).getLocalURIString() : null);
+                }
+                else
+                {
+                    if (queryExists(context.getUser(), context.getContainer(), schema, query))
+                        record.put("runUrl", r.getRunReportURL(context) != null ? r.getRunReportURL(context).getLocalURIString() : null);
+                    else
+                        continue;
+                }
                 record.put("description", descriptor.getReportDescription());
                 record.put("container", descriptor.getContainerPath());
 
@@ -371,6 +392,21 @@ public class ReportUtil
                 getAllCustomViews(context, views);
         }
         return views;
+    }
+
+    private static boolean queryExists(User user, Container container, String schema, String query)
+    {
+        if (schema == null && query == null) return true;
+
+        QueryDefinition def = QueryService.get().getQueryDef(container, schema, query);
+        if (def == null)
+        {
+            UserSchema userSchema = QueryService.get().getUserSchema(user, container, schema);
+            if (userSchema != null)
+                return userSchema.getTableNames().contains(query);
+            return false;
+        }
+        return true;
     }
 
     private static void getAllCustomViews(ViewContext context, List<Map<String, String>> views)
@@ -429,12 +465,32 @@ public class ReportUtil
                 record.put("createdBy", createdBy != null ? createdBy.getDisplayName(context) : null);
                 record.put("permissions", createdBy != null ? "private" : "public");
 
-                record.put("runUrl", qd.urlFor(QueryAction.executeQuery, context.getContainer()).getLocalURIString());
-                record.put("editUrl", qd.urlFor(QueryAction.designQuery, context.getContainer()).getLocalURIString());
+                boolean inherited = isInherited(entry.getValue(), context.getContainer());
+                if (!inherited)
+                {
+                    record.put("editUrl", qd.urlFor(QueryAction.chooseColumns, context.getContainer()).
+                            addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.viewName, entry.getKey()).
+                            getLocalURIString());
+                }
+                record.put("runUrl", qd.urlFor(QueryAction.executeQuery, context.getContainer()).
+                        addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.viewName, entry.getKey()).
+                        getLocalURIString());
+
                 record.put("container", entry.getValue().getContainer().getPath());
+                record.put("inherited", String.valueOf(inherited));
 
                 views.add(record);
             }
         }
+    }
+
+    public static boolean isInherited(CustomView view, Container container)
+    {
+        if (view != null && view.canInherit())
+        {
+            if (!container.getId().equals(view.getContainer().getId()))
+                return true;
+        }
+        return false;
     }
 }
