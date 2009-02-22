@@ -1030,6 +1030,7 @@ public class QueryView extends WebPartView<Object>
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
         rgn.setMaxRows(0);
+        rgn.setAllowAsync(false);
         view.getRenderContext().setCache(false);
         return rgn.getResultSet(view.getRenderContext());
     }
@@ -1154,12 +1155,8 @@ public class QueryView extends WebPartView<Object>
 
             try
             {
-                //HACK: this is a total hack--getResultSet no longer gets the aggregates, which we
-                //need to get the total rows for pagination purposes.
-                //checkResultSet will do that.
                 rgn.setAllowAsync(false);
-                rgn.checkResultSet(view.getRenderContext(), null);
-                rs = view.getRenderContext().getResultSet();
+                rs = rgn.getResultSet(view.getRenderContext());
                 response.populate(rs, table, getExportColumns(rgn.getDisplayColumns()), rgn.getTotalRows());
             }
             finally

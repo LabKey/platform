@@ -21,9 +21,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.DisplayElement;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.*;
 import org.labkey.common.util.BoundMap;
 import org.labkey.common.util.Pair;
 
@@ -535,19 +533,50 @@ public class DataRegion extends DisplayElement
         _defaultMode = defaultMode;
     }
 
+    /**
+     * Get a ResultSet from the DataRegion.
+     * Has the side-effect of setting the ResultSet and this DataRegion
+     * on the RenderContext and selecting any aggregates
+     * (including the row count aggregate, unless pagination or pagination count are false.)
+     * Callers should check for ACL.PERM_READ permission before requesting a ResultSet.
+     * @param ctx The RenderContext
+     * @return A new ResultSet or the existing ResultSet in the RenderContext or null if no READ permission.
+     * @throws SQLException SQLException
+     * @throws IOException IOException
+     */
     final public ResultSet getResultSet(RenderContext ctx) throws SQLException, IOException
     {
+        if (!ctx.getViewContext().hasPermission(ACL.PERM_READ))
+            return null;
+
         DataRegion oldRegion = ctx.getCurrentRegion();
         if (oldRegion != this)
             ctx.setCurrentRegion(this);
+
         try
         {
-            return getResultSet(ctx, false);
+            ResultSet rs = ctx.getResultSet();
+            if (null == rs)
+            {
+                TableInfo tinfoMain = getTable();
+                if (null == tinfoMain)
+                {
+                    _log.info("DataRegion.getResultSet: Could not find table to query from");
+                    throw new SQLException("No query table in DataRegion.getResultSet");
+                }
+                else
+                {
+                    rs = getResultSet(ctx, isAllowAsync());
+                    ctx.setResultSet(rs);
+                }
+            }
+
+            getAggregates(ctx);
+            return rs;
         }
         finally
         {
-            if (oldRegion != this)
-                ctx.setCurrentRegion(oldRegion);
+            ctx.setCurrentRegion(oldRegion);
         }
     }
 
@@ -618,11 +647,10 @@ public class DataRegion extends DisplayElement
             return;
         }
 
-        checkResultSet(ctx, out);
         ResultSet rs = null;
         try
         {
-            rs = ctx.getResultSet();
+            rs = getResultSet(ctx);
             writeFilterHtml(ctx, out);
             List<DisplayColumn> renderers = getDisplayColumns();
 
@@ -878,37 +906,6 @@ public class DataRegion extends DisplayElement
     protected String getNoRowsMessage()
     {
         return "No data to show.";
-    }
-
-    /**
-     * Subclasses or custom views should call before rendering the table.
-     * Gets the ResultSet from the RenderContext and sets aggregate and pagination state.
-     */
-    public void checkResultSet(RenderContext ctx, Writer out) throws SQLException, IOException
-    {
-        ResultSet rs = ctx.getResultSet();
-
-        if (null == rs)
-        {
-            TableInfo tinfoMain = getTable();
-            if (null == tinfoMain)
-            {
-                _log.info("DataRegion.renderTable: Could not find table to query from");
-                throw new SQLException("No query table in DataRegion.renderTable");
-            }
-            else
-            {
-                if (!ctx.getViewContext().hasPermission(ACL.PERM_READ))
-                {
-                    out.write("You do not have permission to read this data");
-                    return;
-                }
-                rs = getResultSet(ctx, isAllowAsync());
-                ctx.setResultSet(rs);
-            }
-        }
-
-        getAggregates(ctx);
     }
 
     /**
