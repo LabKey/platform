@@ -158,7 +158,7 @@ public class FileContentController extends SpringActionController
                {
                    String fileContents = PageFlowUtil.getFileContentsAsString(file);
                    HtmlView webPart = new HtmlView(file.getName(), fileContents);
-                   webPart.setTitle(null);
+                   webPart.setFrame(WebPartView.FrameType.DIV);
                    return webPart;
                }
                case TEXT:
