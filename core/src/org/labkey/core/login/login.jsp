@@ -39,16 +39,19 @@
     %>
 
 <script type="text/javascript">
-    window.onload = function() {
-        var forms = document.getElementsByTagName('form');
+    if (Ext.isIE)
+    {
+        window.onload = function() {
+            var forms = document.getElementsByTagName('form');
 
-        for (var i=0;i < forms.length;i++) {
-            var inputs = forms[i].getElementsByTagName('input');
+            for (var i=0;i < forms.length;i++) {
+                var inputs = forms[i].getElementsByTagName('input');
 
-            for (var j=0;j < inputs.length;j++)
-                addInputSubmitEvent(forms[i], inputs[j]);
-        }
-    };
+                for (var j=0;j < inputs.length;j++)
+                    addInputSubmitEvent(forms[i], inputs[j]);
+            }
+        };
+    }
 </script>
 
     <%

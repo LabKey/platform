@@ -1193,6 +1193,7 @@ public class QueryControllerSpring extends SpringActionController
         private Integer _limit;
         private String _sort;
         private String _dir;
+        private String _containerFilter;
 
         public Integer getStart()
         {
@@ -1233,6 +1234,16 @@ public class QueryControllerSpring extends SpringActionController
         {
             _dir = dir;
         }
+
+        public String getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(String containerFilter)
+        {
+            _containerFilter = containerFilter;
+        }
     }
 
 
@@ -1260,6 +1271,13 @@ public class QueryControllerSpring extends SpringActionController
                 boolean desc = "DESC".equals(form.getDir());
                 sortFilterURL.replaceParameter("query.sort", (desc ? "-" : "") + form.getSort());
                 form.getQuerySettings().setSortFilterURL(sortFilterURL); //this isn't working!
+            }
+            if (form.getContainerFilter() != null)
+            {
+                // If the user specified an incorrect filter, throw an IllegalArgumentException
+                ContainerFilter.Type containerFilterType =
+                    ContainerFilter.Type.valueOf(form.getContainerFilter());
+                form.getQuerySettings().setContainerFilterName(containerFilterType.name());
             }
 
             //split the column list into a list of field keys
