@@ -17,6 +17,7 @@
 package org.labkey.api.query;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
@@ -30,6 +31,7 @@ public class QueryWebPart extends WebPartView
     private UserSchema _schema;
     private QuerySettings _settings;
     private String _schemaName;
+    private DataRegion.ButtonBarPosition _buttonBarPosition = null;
 
     public QueryWebPart(ViewContext context, Portal.WebPart part)
     {
@@ -37,6 +39,11 @@ public class QueryWebPart extends WebPartView
         setFrame(FrameType.PORTAL);
         Map<String, String> properties = part.getPropertyMap();
         String title = properties.get("title");
+
+        String buttonBarPositionProp = properties.get("buttonBarPosition");
+        if(null != buttonBarPositionProp)
+            _buttonBarPosition = DataRegion.ButtonBarPosition.valueOf(buttonBarPositionProp.toUpperCase());
+
         ActionURL url = QueryService.get().urlQueryDesigner(getContainer(), null);
         _schemaName = properties.get(QueryParam.schemaName.toString());
         _schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), _schemaName);
@@ -113,6 +120,8 @@ public class QueryWebPart extends WebPartView
                 QueryView queryView = _schema.createView(getViewContext(), _settings);
                 queryView.setShadeAlternatingRows(true);
                 queryView.setShowBorders(true);
+                if(null != _buttonBarPosition)
+                    queryView.setButtonBarPosition(_buttonBarPosition);
                 view = queryView;
             }
         }
