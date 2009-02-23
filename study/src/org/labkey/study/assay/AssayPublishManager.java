@@ -166,15 +166,27 @@ public class AssayPublishManager implements AssayPublishService.Service
             if (ownsTransaction)
                 scope.beginTransaction();
             DataSetDefinition[] datasets = StudyManager.getInstance().getDataSetDefinitions(targetStudy);
-            String typeURI = getDomainURIString(targetStudy, assayName);
             DataSetDefinition dataset = null;
             for (int i = 0; i < datasets.length && dataset == null; i++)
             {
-                if (datasets[i].getTypeURI() != null && datasets[i].getTypeURI().equals(typeURI))
+                // If there's a dataset linked to our protocol, use it
+                if (protocol != null &&
+                        datasets[i].getProtocolId() != null &&
+                        datasets[i].getProtocolId().equals(protocol.getRowId()))
+                {
                     dataset = datasets[i];
+                }
+                else if (protocol == null &&
+                        datasets[i].getTypeURI() != null &&
+                        datasets[i].getTypeURI().equals(getDomainURIString(targetStudy, assayName)))
+                {
+                    // No protocol, but we've got a type uri match. This is used when creating a study
+                    // from a study design
+                    dataset = datasets[i];
+                }
             }
             if (dataset == null)
-                dataset = createAssayDataset(user, targetStudy, assayName, keyPropertyName, null, false, protocol);
+                dataset = createAssayDataset(user, targetStudy, createUniqueDatasetName(targetStudy, assayName), keyPropertyName, null, false, protocol);
             else if (protocol != null)
             {
                 Integer datasetProtocolId = dataset.getProtocolId();
@@ -361,7 +373,7 @@ public class AssayPublishManager implements AssayPublishService.Service
 
             if (null == datasetId)
                 datasetId = Table.executeSingleton(schema, "SELECT MAX(n) + 1 AS id FROM (SELECT Max(datasetid) AS n FROM study.dataset WHERE container=? UNION SELECT ? As n) x", new Object[] {study.getContainer().getId(), MIN_ASSAY_ID}, Integer.class);
-            DataSetDefinition newDataSet = new DataSetDefinition(study, datasetId, name, null, getDomainURIString(study, name));
+            DataSetDefinition newDataSet = new DataSetDefinition(study, datasetId.intValue(), name, name, null, getDomainURIString(study, name));
             newDataSet.setShowByDefault(true);
             if (keyPropertyName != null)
                 newDataSet.setKeyPropertyName(keyPropertyName);
@@ -382,6 +394,27 @@ public class AssayPublishManager implements AssayPublishService.Service
             if (ownTransaction)
                 schema.getScope().rollbackTransaction();
         }
+    }
+
+    /**
+     * Try to use the assay name for a dataset, but if it's already taken, add an integer suffix until it's unique
+     */
+    private static String createUniqueDatasetName(Study study, String assayName)
+    {
+        Set<String> inUseNames = new HashSet<String>();
+        for (DataSetDefinition def : study.getDataSets())
+            inUseNames.add(def.getName());
+
+        int suffix = 1;
+        String name = assayName;
+
+        while (inUseNames.contains(name))
+        {
+            name = assayName + Integer.toString(suffix);
+            suffix++;
+        }
+
+        return name;
     }
 
     static final String DIR_NAME = "assaydata";

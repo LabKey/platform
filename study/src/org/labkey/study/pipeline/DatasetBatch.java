@@ -126,7 +126,7 @@ public class DatasetBatch extends StudyBatch implements Serializable
         }
 
         // add fake DataSetDefinition for virtual Participant dataset
-        DataSetDefinition dsParticipant = new DataSetDefinition(study,-1,"Participant",null,"StudyParticipant");
+        DataSetDefinition dsParticipant = new DataSetDefinition(study,-1,"Participant", "Participant",null,"StudyParticipant");
         dsMap.put("participant", dsParticipant);
 
         IdentityHashMap<DataSetDefinition, DatasetImportJob> jobMap = new IdentityHashMap<DataSetDefinition, DatasetImportJob>();

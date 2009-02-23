@@ -22,8 +22,8 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -36,7 +36,6 @@ import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
-import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.study.StudySchema;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.dataset.client.DatasetImporter;
@@ -404,7 +403,7 @@ public class DatasetController extends BaseStudyController
             {
                 DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
                 if (def == null)
-                    throw new IllegalStateException("Could not find dataset for id: " + datasetId);
+                    continue; // It's already been deleted; ignore it. User likely double-clicked.
 
                 DbScope scope = StudySchema.getInstance().getSchema().getScope();
                 try

@@ -276,7 +276,8 @@ public class StudyManager
 
     public void createDataSetDefinition(User user, Container container, int dataSetId) throws SQLException
     {
-        createDataSetDefinition(user, new DataSetDefinition(getStudy(container), dataSetId, "" + dataSetId, null, null));
+        String name = Integer.toString(dataSetId);
+        createDataSetDefinition(user, new DataSetDefinition(getStudy(container), dataSetId, name, name, null, null));
     }
 
     public void createDataSetDefinition(User user, DataSetDefinition dataSetDefinition) throws SQLException

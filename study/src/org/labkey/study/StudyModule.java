@@ -106,7 +106,7 @@ public class StudyModule extends DefaultModule
 
     public double getVersion()
     {
-        return 8.37;
+        return 8.38;
     }
 
     protected void init()
@@ -394,5 +394,6 @@ public class StudyModule extends DefaultModule
 
         StudyUpgradeCode.upgradeExtensibleTables_83(moduleContext);
         StudyUpgradeCode.updateAllCalculatedSpecimenData(moduleContext);
+        StudyUpgradeCode.upgradeMissingProtocols(moduleContext);
     }
 }

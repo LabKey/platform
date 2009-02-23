@@ -116,12 +116,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         _showByDefault = true;
     }
 
-    @Deprecated
-    public DataSetDefinition(Study study, int dataSetId, String name, String category, String typeURI)
-    {
-        this(study, dataSetId, name, name, category, typeURI);
-    }
-
     public static boolean isDefaultFieldName(String fieldName, Study study)
     {
         if (study.isDateBased())
