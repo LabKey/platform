@@ -127,39 +127,42 @@ public class QueryServiceImpl extends QueryService
         Map<Map.Entry<String, String>, QueryDefinition> ret = new LinkedHashMap<Map.Entry<String, String>, QueryDefinition>();
 
         //look in all the active modules in this container to see if they contain any query definitions
-        for(Module module : container.getActiveModules())
+        if(null != schemaName)
         {
-            File schemaDir = new File(getModuleQueriesDir(module), schemaName);
-            File[] fileSet = null;
-
-            //always scan the file system in dev mode
-            if(AppProps.getInstance().isDevMode())
-                fileSet = schemaDir.listFiles(moduleQueryFileFilter);
-            else
+            for(Module module : container.getActiveModules())
             {
-                //in production, cache the set of query defs for each module on first request
-                String fileSetCacheKey = QUERYDEF_SET_CACHE_ENTRY + module.toString();
-                fileSet = (File[])_moduleResourcesCache.get(fileSetCacheKey);
-                if(null == fileSet && schemaDir.exists())
-                {
+                File schemaDir = new File(getModuleQueriesDir(module), schemaName);
+                File[] fileSet = null;
+
+                //always scan the file system in dev mode
+                if(AppProps.getInstance().isDevMode())
                     fileSet = schemaDir.listFiles(moduleQueryFileFilter);
-                    _moduleResourcesCache.put(fileSetCacheKey, fileSet);
-                }
-            }
-
-            if(null != fileSet)
-            {
-                for(File sqlFile : fileSet)
+                else
                 {
-                    ModuleQueryDef moduleQueryDef = (ModuleQueryDef)_moduleResourcesCache.get(sqlFile.getAbsolutePath());
-                    if(null == moduleQueryDef || moduleQueryDef.isStale())
+                    //in production, cache the set of query defs for each module on first request
+                    String fileSetCacheKey = QUERYDEF_SET_CACHE_ENTRY + module.toString();
+                    fileSet = (File[])_moduleResourcesCache.get(fileSetCacheKey);
+                    if(null == fileSet && schemaDir.exists())
                     {
-                        moduleQueryDef = new ModuleQueryDef(sqlFile, schemaName);
-                        _moduleResourcesCache.put(sqlFile.getAbsolutePath(), moduleQueryDef);
+                        fileSet = schemaDir.listFiles(moduleQueryFileFilter);
+                        _moduleResourcesCache.put(fileSetCacheKey, fileSet);
                     }
-                    
-                    ret.put(new Pair<String,String>(schemaName, moduleQueryDef.getName()),
-                            new ModuleCustomQueryDefinition(moduleQueryDef, container));
+                }
+
+                if(null != fileSet)
+                {
+                    for(File sqlFile : fileSet)
+                    {
+                        ModuleQueryDef moduleQueryDef = (ModuleQueryDef)_moduleResourcesCache.get(sqlFile.getAbsolutePath());
+                        if(null == moduleQueryDef || moduleQueryDef.isStale())
+                        {
+                            moduleQueryDef = new ModuleQueryDef(sqlFile, schemaName);
+                            _moduleResourcesCache.put(sqlFile.getAbsolutePath(), moduleQueryDef);
+                        }
+
+                        ret.put(new Pair<String,String>(schemaName, moduleQueryDef.getName()),
+                                new ModuleCustomQueryDefinition(moduleQueryDef, container));
+                    }
                 }
             }
         }
