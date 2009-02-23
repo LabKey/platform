@@ -686,39 +686,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return null;
     }
 
-    public Set<Container> getAllAssociatedStudyContainers(ExpProtocol protocol)
-    {
-        DomainProperty targetStudyColumn = getRunTargetStudyColumn(protocol);
-        if (targetStudyColumn == null)
-            return Collections.emptySet();
-
-        // First get all the containers which were specified when uploading
-        Set<Container> result = new HashSet<Container>();
-        for (ExpRun run : protocol.getExpRuns())
-        {
-            try
-            {
-                Map<String,Object> runProperties = getRunProperties(run);
-                String targetStudyId = (String) runProperties.get(targetStudyColumn.getPropertyURI());
-                if (targetStudyId != null)
-                {
-                    Container container = ContainerManager.getForId(targetStudyId);
-                    if (container != null)
-                        result.add(container);
-                }
-            }
-            catch (SQLException e)
-            {
-                throw UnexpectedException.wrap(e);
-            }
-        }
-
-        // Get the containers that have datasets that we copied into
-        result.addAll(StudyService.get().getStudyContainersForAssayProtocol(protocol.getRowId()));
-
-        return result;
-    }
-
     protected Map<String, Object> getRunProperties(ExpRun run) throws SQLException
     {
         return OntologyManager.getProperties(run.getContainer(), run.getLSID());
@@ -1137,14 +1104,16 @@ public abstract class AbstractAssayProvider implements AssayProvider
         Set<String> visibleColumnNames = new HashSet<String>();
         int datasetIndex = 0;
         Set<String> usedColumnNames = new HashSet<String>();
-        for (final Container studyContainer : getAllAssociatedStudyContainers(protocol))
+        for (final Container studyContainer : StudyService.get().getStudyContainersForAssayProtocol(protocol.getRowId()))
         {
             if (!studyContainer.hasPermission(user, ACL.PERM_READ))
                 continue;
 
             // We need the dataset ID as a separate column in order to display the URL
-            String datasetIdSQL = "(SELECT sd.datasetid FROM study.StudyData sd " +
+            String datasetIdSQL = "(SELECT sd.datasetid FROM study.StudyData sd, study.dataset d " +
                 "WHERE sd.container = '" + studyContainer.getId() + "' AND " +
+                "sd.container = d.container AND sd.datasetid = d.datasetid AND " +
+                "d.protocolid = " + protocol.getRowId() + " AND " +    
                 "sd._key = CAST(" + ExprColumn.STR_TABLE_ALIAS + "." + keyColumnName + " AS " +
                 table.getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR) +
                 "(200)))";
@@ -1162,24 +1131,26 @@ public abstract class AbstractAssayProvider implements AssayProvider
             String studyName = StudyService.get().getStudyName(studyContainer);
             if (studyName == null)
                 continue; // No study in that folder
-            String studyColumnName = "Copied to " + studyName;
+            String studyColumnName = "copied_to_" + studyName;
 
             // column names must be unique. Prevent collisions
             while (usedColumnNames.contains(studyColumnName))
                 studyColumnName = studyColumnName + datasetIndex;
             usedColumnNames.add(studyColumnName);
-            final String finalStudyColumnName = studyColumnName;
+            String finalStudyColumnName = studyColumnName;
 
             final ExprColumn studyCopiedColumn = new ExprColumn(table,
                 studyColumnName,
                 new SQLFragment(studyCopiedSql),
                 Types.VARCHAR);
+            final String copiedToStudyColumnCaption = "Copied to " + studyName;
+            studyCopiedColumn.setCaption(copiedToStudyColumnCaption);
 
             studyCopiedColumn.setDisplayColumnFactory(new DisplayColumnFactory()
             {
                 public DisplayColumn createRenderer(ColumnInfo colInfo)
                 {
-                    return new StudyDisplayColumn(finalStudyColumnName, studyContainer, datasetColumn, studyCopiedColumn);
+                    return new StudyDisplayColumn(copiedToStudyColumnCaption, studyContainer, datasetColumn, studyCopiedColumn);
                 }
             });
 

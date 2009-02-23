@@ -79,8 +79,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     Container getAssociatedStudyContainer(ExpProtocol protocol, Object dataId);
 
-    Set<Container> getAllAssociatedStudyContainers(ExpProtocol protocol);
-
     Map<String, Class<? extends Controller>> getImportActions();
 
     TableInfo createDataTable(UserSchema schema, String alias, ExpProtocol protocol);
