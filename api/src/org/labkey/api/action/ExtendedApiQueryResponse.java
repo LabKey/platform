@@ -41,6 +41,7 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
     public enum ColMapEntry
     {
         value,
+        displayValue,
         qcValue,
         qcIndicator,
         qcRawValue,
@@ -72,6 +73,11 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         Object value = getColumnValue(dc);
         colMap.put(ColMapEntry.value.name(), value);
 
+        //display value (if different from value)
+        Object displayValue = dc.getDisplayValue(getRenderContext());
+        if(null != displayValue && !displayValue.equals(value))
+            colMap.put(ColMapEntry.displayValue.name(), displayValue);
+
         //url
         String url = dc.getURL(getRenderContext());
         if(null != value && null != url)
@@ -88,5 +94,12 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
 
         //put the column map into the row map using the column name as the key
         row.put(dc.getColumnInfo().getName(), colMap);
+    }
+
+    @Override
+    protected Map<String, Object> getFileUrlMeta(DisplayColumn fileColumn)
+    {
+        //file urls now returned in the 'url' column map property
+        return null;
     }
 }

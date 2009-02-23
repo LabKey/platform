@@ -118,10 +118,9 @@ public class ApiQueryResponse implements ApiResponse
                 if("file".equalsIgnoreCase(dc.getColumnInfo().getInputType()))
                 {
                     fmdata.put("file", true);
-                    Map<String,Object> urlmdata = new HashMap<String,Object>();
-                    urlmdata.put("name", URL_COL_PREFIX + dc.getColumnInfo().getName());
-                    urlmdata.put("type", "string");
-                    fields.add(urlmdata);
+                    Map<String,Object> urlmdata = getFileUrlMeta(dc);
+                    if(null != urlmdata)
+                        fields.add(urlmdata);
                 }
                 fields.add(fmdata);
             }
@@ -153,6 +152,14 @@ public class ApiQueryResponse implements ApiResponse
         mdata.put("fields", fields);
 
         return mdata;
+    }
+
+    protected Map<String,Object> getFileUrlMeta(DisplayColumn fileColumn)
+    {
+        Map<String,Object> urlmdata = new HashMap<String,Object>();
+        urlmdata.put("name", URL_COL_PREFIX + fileColumn.getColumnInfo().getName());
+        urlmdata.put("type", "string");
+        return urlmdata;
     }
 
     protected DisplayColumn getDisplayCol(ColumnInfo col)
