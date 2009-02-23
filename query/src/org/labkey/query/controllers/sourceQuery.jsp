@@ -27,10 +27,10 @@
 %>
 <labkey:errors />
 <form method="POST" action="<%=form.urlFor(QueryAction.sourceQuery)%>">
-    <input type="hidden" name="ff_redirect" id="ff_redirect" value="<%=form.ff_redirect%>">
+    <input type="hidden" id="redirect" name="ff_redirect" value="<%=form.ff_redirect%>">
     <p>SQL:<br>
     <% if (editableSQL) { %>
-        <textarea style="width: 100%;" rows="20" cols="80" wrap="off" name="ff_queryText"><%=h(form.ff_queryText)%></textarea>
+        <textarea style="width: 100%;" rows="20" cols="80" wrap="off" id="queryText" name="ff_queryText"><%=h(form.ff_queryText)%></textarea>
     <% } else { %>
         <input type="hidden" name="ff_queryText" value="<%=h(form.ff_queryText)%>" />
         <pre><%=h(form.ff_queryText)%></pre>
@@ -49,7 +49,7 @@ if (!form.getQueryDef().isTableQueryDefinition())
 <% } %>
     <labkey:button text="Run Query" onclick="submit_onclick('executeQuery')" />
 <p>Metadata XML:<br>
-    <textarea style="width: 100%;" rows="20" cols="80" wrap="off" name="ff_metadataText"<%=canEdit ? "" : " READONLY"%>><%=h(form.ff_metadataText)%></textarea>
+    <textarea style="width: 100%;" rows="20" cols="80" wrap="off" id="metadataText" name="ff_metadataText"<%=canEdit ? "" : " READONLY"%>><%=h(form.ff_metadataText)%></textarea>
 </p>
 
 </form>
@@ -58,18 +58,18 @@ if (!form.getQueryDef().isTableQueryDefinition())
 <script type="text/javascript">
 function _id(s) {return document.getElementById(s);}
 
-var origQueryText = _id("ff_queryText").value;
-var origMetadataText = _id("ff_metadataText").value;
+var origQueryText = _id("queryText").value;
+var origMetadataText = _id("metadataText").value;
 
 function isDirty()
 {
-    return origQueryText != _id("ff_queryText").value || origMetadataText != _id("ff_metadataText").value;  
+    return origQueryText != _id("queryText").value || origMetadataText != _id("metadataText").value;  
 }
 window.onbeforeunload = LABKEY.beforeunload(isDirty);
 
 function submit_onclick(method)
 {
-    document.getElementById('ff_redirect').value = method;
+    _id('redirect').value = method;
     window.onbeforeunload = null;
 }
 </script>
