@@ -23,6 +23,7 @@ import org.labkey.api.query.*;
 
 import java.util.Collections;
 import java.util.Map;
+import java.sql.Types;
 
 /**
  * User: jgarms
@@ -70,7 +71,7 @@ public class QCDisplayColumnFactory implements DisplayColumnFactory
         ColumnInfo qcColumn = new ExprColumn(table,
                 property.getName() + QcColumn.QC_INDICATOR_SUFFIX,
                 PropertyForeignKey.getValueSql(colObjectId.getValueSql(ExprColumn.STR_TABLE_ALIAS), property.getQCValueSQL(), property.getPropertyId(), false),
-                property.getSqlType());
+                Types.VARCHAR);
 
         qcColumn.setNullable(true);
         qcColumn.setUserEditable(false);
@@ -81,6 +82,7 @@ public class QCDisplayColumnFactory implements DisplayColumnFactory
         AliasedColumn rawValueCol = new AliasedColumn(table, valueColumn.getName() + RAW_VALUE_SUFFIX, valueColumn);
         rawValueCol.setUserEditable(false);
         rawValueCol.setIsHidden(true);
+        rawValueCol.setQcColumnName(null); // This column itself does not allow QC
         rawValueCol.setNullable(true); // Otherwise we get complaints on import for required fields
 
         valueColumn.setDisplayColumnFactory(new QCDisplayColumnFactory());

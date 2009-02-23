@@ -164,6 +164,7 @@ public class ApiQueryResponse implements ApiResponse
         HashMap<String,Object> fmdata = new HashMap<String,Object>();
         fmdata.put("name", dc.getColumnInfo().getName());
         fmdata.put("type", dc.getJsonTypeName());
+        fmdata.put("allowsQC", dc.getColumnInfo().isQcEnabled());
 
         if(isLookup(dc))
         {
