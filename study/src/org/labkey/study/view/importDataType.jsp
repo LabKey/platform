@@ -24,6 +24,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     StudyController.ImportTypeForm form = (StudyController.ImportTypeForm)HttpView.currentModel();
+    String formDatasetId = form.getDataSetId() == null ? "" : form.getDataSetId().toString();
 %>
 
 <labkey:errors />
@@ -39,8 +40,8 @@
                 </tr>
                 <tr>
                     <td class=labkey-form-label>Dataset Id <%=PageFlowUtil.helpPopup("Dataset Id", "The dataset id is an integer number that must be unique for all datasets in a study.")%></td>
-                    <td><input id=datasetId type=text name=dataSetIdStr value="" <%=form.isAutoDatasetId() ? "disabled" : "" %> size=6>
-                        <input type=checkbox name="autoDatasetId" <%=form.isAutoDatasetId() ? "checked" : "" %>>Define Dataset Id Automatically</td>
+                    <td><input id=datasetId type=text name=dataSetId value="<%=formDatasetId%>" <%=form.isAutoDatasetId() ? "disabled" : "" %> size=6>
+                        <input type=checkbox name="autoDatasetId" onclick="toggleAutoDatasetId(this);" <%=form.isAutoDatasetId() ? "checked" : "" %>>Define Dataset Id Automatically</td>
                 </tr>
                 <tr>
                     <td class=labkey-form-label>Import from File <%=PageFlowUtil.helpPopup("Import from File", "Use this option if you have a spreadsheet that you would like uploaded as a dataset.")%></td>
@@ -54,3 +55,14 @@
         </tr>
     </table>
 </form>
+
+<script type="text/javascript">
+
+function toggleAutoDatasetId(ck)
+{
+    var datasetIdInput = document.getElementById("datasetId");
+    datasetIdInput.value = "";
+    datasetIdInput.disabled = ck.checked;
+}
+
+</script>

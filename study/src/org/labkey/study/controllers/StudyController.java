@@ -171,7 +171,7 @@ public class StudyController extends BaseStudyController
                     errors.reject("defineDatasetType", "There is already a dataset with id " + form.getDataSetId());
             }
             if (null == StringUtils.trimToNull(form.getTypeName()))
-                errors.reject("defineDatasetType", "Dataset must have type name.");
+                errors.reject("defineDatasetType", "Dataset must have a name.");
             else
             {
                 String typeURI = AssayPublishManager.getInstance().getDomainURIString(StudyManager.getInstance().getStudy(getContainer()), form.getTypeName());
