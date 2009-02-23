@@ -96,6 +96,13 @@ public class ApiQueryResponse implements ApiResponse
         else
             _props.put("rowCount", _offset + _numRespRows);
 
+        //version of format
+        _props.put("formatVersion", getFormatVersion());
+    }
+
+    protected double getFormatVersion()
+    {
+        return 8.3;
     }
 
     protected Map<String,Object> getMetaData() throws Exception

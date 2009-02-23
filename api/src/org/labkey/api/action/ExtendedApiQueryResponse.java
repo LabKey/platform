@@ -56,6 +56,12 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
     }
 
     @Override
+    protected double getFormatVersion()
+    {
+        return 9.1;
+    }
+
+    @Override
     protected void putValue(Map<String, Object> row, DisplayColumn dc) throws Exception
     {
         //in the extended response format, each column will have a map of its own
