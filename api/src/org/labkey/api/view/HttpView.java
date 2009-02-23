@@ -307,7 +307,8 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     // "current" action if, for example, the original action has forwarded somewhere else
     public static ViewContext getRootContext()
     {
-        return ((HttpView)_viewContexts.get().elementAt(0).mv).getViewContext();
+		ViewStack stack = _viewContexts.get();
+		return stack.isEmpty() ? null : ((HttpView) stack.elementAt(0).mv).getViewContext();
     }
 
 
