@@ -79,7 +79,11 @@ public class MothershipManager
 
             String url = report.getUrl();
             if (null != url && url.length() > 512)
-                report.setURL(url.substring(0,500) + "...");
+                report.setURL(url.substring(0, 506) + "...");
+
+            String referrerURL = report.getReferrerURL();
+            if (null != referrerURL && referrerURL.length() > 512)
+                report.setReferrerURL(referrerURL.substring(0, 506) + "...");
 
             String browser = report.getBrowser();
             if (null != browser && browser.length() > 100)

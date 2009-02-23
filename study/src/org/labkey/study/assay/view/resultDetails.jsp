@@ -34,7 +34,7 @@
     ExpData data = bean.expData;
 
     Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getViewContext().getContainer());
-    JSONArray dataRows = AbstractAssayAPIAction.serializeDataRows(data, provider, protocol, new Object[] { bean.objectId });
+    JSONArray dataRows = AbstractAssayAPIAction.serializeDataRows(data, provider, protocol, new Integer[] { bean.objectId });
     JSONObject result = dataRows.length() > 0 ? (JSONObject)dataRows.get(0) : new JSONObject();
 %>
 <script type="text/javascript">

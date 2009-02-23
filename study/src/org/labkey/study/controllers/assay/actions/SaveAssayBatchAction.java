@@ -108,6 +108,11 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             throw new NotFoundException("Pipeline root is not configured for folder " + getViewContext().getContainer());
         }
         run.setFilePathRoot(pipeRoot.getRootPath());
+        if (runJsonObject.has(ExperimentJSONConverter.COMMENT))
+        {
+            run.setComments(runJsonObject.getString(ExperimentJSONConverter.COMMENT));
+        }
+
         handleStandardProperties(runJsonObject, run, provider.getRunDomain(protocol).getProperties());
 
         if (runJsonObject.has(DATA_ROWS) || runJsonObject.has(ExperimentJSONConverter.DATA_INPUTS))
@@ -210,6 +215,10 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
                     batchJsonObject.has(ExperimentJSONConverter.NAME) ? batchJsonObject.getString(ExperimentJSONConverter.NAME) : null, protocol);
         }
 
+        if (batchJsonObject.has(ExperimentJSONConverter.COMMENT))
+        {
+            batch.setComments(batchJsonObject.getString(ExperimentJSONConverter.COMMENT));
+        }
         handleStandardProperties(batchJsonObject, batch, provider.getBatchDomain(protocol).getProperties());
 
         List<ExpRun> runs = new ArrayList<ExpRun>();
@@ -246,13 +255,6 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         if (jsonObject.has(ExperimentJSONConverter.NAME))
         {
             object.setName(jsonObject.getString(ExperimentJSONConverter.NAME));
-        }
-
-        if (jsonObject.has(ExperimentJSONConverter.COMMENT))
-        {
-            Object comment = jsonObject.get(ExperimentJSONConverter.COMMENT);
-            if (comment != null)
-                object.setComment(getViewContext().getUser(), comment.toString());
         }
 
         object.save(getViewContext().getUser());

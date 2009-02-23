@@ -62,7 +62,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
             String sql = "SELECT ER.* FROM " + ExperimentServiceImpl.get().getTinfoExperiment() + " E "
                     + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoRunList()  + " RL ON (E.RowId = RL.ExperimentId) "
                     + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoExperimentRun()  + " ER ON (ER.RowId = RL.ExperimentRunId) "
-                    + " WHERE E.LSID = ?" ;
+                    + " WHERE E.LSID = ? ORDER BY ER.RowId" ;
 
             return ExpRunImpl.fromRuns(Table.executeQuery(ExperimentServiceImpl.get().getExpSchema(), sql, new Object[] { getLSID() }, ExperimentRun.class));
         }
@@ -249,6 +249,16 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
     public void setContainer(Container container)
     {
         _object.setContainer(container);
+    }
+
+    public String getComments()
+    {
+        return _object.getComments();
+    }
+
+    public void setComments(String comments)
+    {
+        _object.setComments(comments);
     }
 
     public static ExpExperimentImpl[] fromExperiments(Experiment[] experiments)

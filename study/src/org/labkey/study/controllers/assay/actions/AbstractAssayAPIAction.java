@@ -82,7 +82,7 @@ public abstract class AbstractAssayAPIAction<FORM extends SimpleApiJsonForm> ext
 
     protected abstract ApiResponse executeAction(ExpProtocol assay, AssayProvider provider, FORM form, BindException errors) throws Exception;
 
-    public static JSONArray serializeDataRows(ExpData data, AssayProvider provider, ExpProtocol protocol, Object[] objectIds) throws SQLException
+    public static JSONArray serializeDataRows(ExpData data, AssayProvider provider, ExpProtocol protocol, Integer[] objectIds) throws SQLException
     {
         JSONArray dataRows = new JSONArray();
 

@@ -23,18 +23,12 @@ import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.api.ExpProtocol.AssayDomainTypes;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
-import org.labkey.api.study.actions.AssayResultDetailsAction;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.actions.UploadWizardAction;
-import org.labkey.api.study.assay.RunDataTable;
-import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.services.ServiceRegistry;
@@ -48,7 +42,6 @@ import javax.script.ScriptEngineManager;
 import java.io.File;
 import java.io.FileFilter;
 import java.util.*;
-import java.sql.SQLException;
 
 /**
  * User: kevink
@@ -315,7 +308,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     public static class ResultDetailsBean extends AssayPageBean
     {
         public ExpData expData;
-        public Object objectId;
+        public Integer objectId;
     }
 
     @Override
@@ -329,7 +322,25 @@ public class ModuleAssayProvider extends TsvAssayProvider
         bean.provider = this;
         bean.expProtocol = protocol;
         bean.expData = data;
-        bean.objectId = objectId;
+        if (objectId == null)
+        {
+            HttpView.throwNotFound();
+        }
+        if (objectId instanceof Number)
+        {
+            bean.objectId = ((Number)objectId).intValue();
+        }
+        else
+        {
+            try
+            {
+                bean.objectId = Integer.parseInt(objectId.toString());
+            }
+            catch (NumberFormatException e)
+            {
+                HttpView.throwNotFound();
+            }
+        }
 
         JspView<ResultDetailsBean> view = new JspView<ResultDetailsBean>("/org/labkey/study/assay/view/resultDetails.jsp", bean);
         view.setView("nested", resultDetailsView);

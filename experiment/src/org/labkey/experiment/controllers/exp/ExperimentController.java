@@ -1032,7 +1032,7 @@ public class ExperimentController extends SpringActionController
                                 try { fIn.close(); } catch (IOException e) { /* fall through */ }
                         }
                     }
-                    else if (lowerCaseFileName.endsWith(".tsv") || lowerCaseFileName.endsWith(".tsv") || lowerCaseFileName.endsWith(".csv"))
+                    else if (lowerCaseFileName.endsWith(".tsv") || lowerCaseFileName.endsWith(".txt") || lowerCaseFileName.endsWith(".tsv") || lowerCaseFileName.endsWith(".csv"))
                     {
                         TabLoader tabLoader = new TabLoader(realContent);
                         if (lowerCaseFileName.endsWith(".csv"))
@@ -1043,7 +1043,7 @@ public class ExperimentController extends SpringActionController
                         JSONArray rowsArray = new JSONArray();
                         for (TabLoader.TabLoaderIterator i = tabLoader.iterator(); i.hasNext(); )
                         {
-                            Map<String, Object> rowMap = (Map<String, Object>)i.next();
+                            Map<String, Object> rowMap = i.next();
                             JSONArray rowArray = new JSONArray();
                             for (ColumnDescriptor col : cols)
                             {
