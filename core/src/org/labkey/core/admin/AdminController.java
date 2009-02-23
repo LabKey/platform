@@ -524,18 +524,26 @@ public class AdminController extends SpringActionController
 
     private void validateNetworkDrive(SiteSettingsForm form, BindException errors)
     {
-        if (form.getNetworkDriveLetter() == null || form.getNetworkDriveLetter().trim().length() > 1)
+        if (form.getNetworkDriveLetter() == null)
+        {
+            errors.reject(ERROR_MSG, "You must specify a drive letter");
+        }
+        else if (form.getNetworkDriveLetter().trim().length() > 1)
         {
             errors.reject(ERROR_MSG, "Network drive letter must be a single character");
         }
-        char letter = form.getNetworkDriveLetter().trim().toLowerCase().charAt(0);
-        if (letter < 'a' || letter > 'z')
+        else
         {
-            errors.reject(ERROR_MSG, "Network drive letter must be a letter");
-        }
-        if (form.getNetworkDrivePath() == null || form.getNetworkDrivePath().trim().length() == 0)
-        {
-            errors.reject(ERROR_MSG, "If you specify a network drive letter, you must also specify a path");
+            char letter = form.getNetworkDriveLetter().trim().toLowerCase().charAt(0);
+
+            if (letter < 'a' || letter > 'z')
+            {
+                errors.reject(ERROR_MSG, "Network drive letter must be a letter");
+            }
+            else if (form.getNetworkDrivePath() == null || form.getNetworkDrivePath().trim().length() == 0)
+            {
+                errors.reject(ERROR_MSG, "If you specify a network drive letter, you must also specify a path");
+            }
         }
     }
 

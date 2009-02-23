@@ -23,6 +23,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.FolderType;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Search;
@@ -87,7 +88,7 @@ public class WikiModule extends DefaultModule
     {
         ContainerManager.addContainerListener(new WikiContainerListener());
         Search.register(new WikiSearchable());
-        ModuleLoader.getInstance().registerFolderType(new CollaborationFolderType(this));
+        ModuleLoader.getInstance().registerFolderType(new CollaborationFolderType());
         WebdavService.addProvider(new WikiWebdavProvider());
 
         // Ideally, this would be in afterUpdate(), but announcements runs the wiki sql scripts and is dependent on
@@ -100,6 +101,17 @@ public class WikiModule extends DefaultModule
     {
         Container supportContainer = ContainerManager.getDefaultSupportContainer();
         Container homeContainer = ContainerManager.getHomeContainer();
+
+        FolderType collaborationType = ModuleLoader.getInstance().getFolderType(CollaborationFolderType.TYPE_NAME);
+        try
+        {
+            supportContainer.setFolderType(collaborationType);
+            homeContainer.setFolderType(collaborationType);
+        }
+        catch (SQLException e)
+        {
+            _log.error("Error setting folder type", e);
+        }
 
         String defaultPageName = "default";
 

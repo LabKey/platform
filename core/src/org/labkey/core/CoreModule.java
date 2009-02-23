@@ -16,6 +16,7 @@
 package org.labkey.core;
 
 import junit.framework.TestCase;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
@@ -29,7 +30,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
-import org.labkey.api.view.menu.MenuView;
 import org.labkey.api.view.menu.ContainerMenu;
 import org.labkey.api.view.menu.ProjectsMenu;
 import org.labkey.api.webdav.WebdavResolverImpl;
@@ -48,7 +48,6 @@ import org.labkey.core.test.TestController;
 import org.labkey.core.user.UserController;
 import org.labkey.core.webdav.DavController;
 import org.labkey.core.webdav.FileSystemAuditViewFactory;
-import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.ServletException;
 import java.io.File;

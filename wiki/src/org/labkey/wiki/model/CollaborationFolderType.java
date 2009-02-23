@@ -16,29 +16,29 @@
 
 package org.labkey.wiki.model;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultFolderType;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.Container;
-import org.labkey.wiki.WikiModule;
-import org.labkey.wiki.WikiWebPartFactory;
 import org.labkey.wiki.WikiTOCFactory;
+import org.labkey.wiki.WikiWebPartFactory;
 
 import java.util.Arrays;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Aug 4, 2006
  * Time: 3:41:26 PM
  */
 public class CollaborationFolderType extends DefaultFolderType
 {
-    public CollaborationFolderType(WikiModule wikiModule)
+    public static final String TYPE_NAME = "Collaboration";
+
+    public CollaborationFolderType()
     {
-        super("Collaboration",
+        super(TYPE_NAME,
                 "Build a web site for publishing and exchanging information. " +
                         "Your tools include Message Boards, Issue Trackers and Wikis. Share information within your own group, across groups or with the public by configuring user permissions.",
               null,
