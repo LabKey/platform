@@ -636,15 +636,22 @@ abstract public class PipelineJob extends Job implements Serializable
                 }
                 catch (IOException e)
                 {
+                    // Don't let this cleanup error mask an original error that causes the job to fail
                     if (success)
                     {
-                        // Don't let this cleanup error mask an original error that causes the job to fail
                         // noinspection ThrowFromFinallyBlock
                         throw e;
                     }
                     else
                     {
-                        error("Failed to clean up work directory after error condition, see full error information below.", e);
+                        if (e.getMessage() != null)
+                        {
+                            error(e.getMessage());
+                        }
+                        else
+                        {
+                            error("Failed to clean up work directory after error condition, see full error information below.", e);
+                        }
                     }
                 }
             }

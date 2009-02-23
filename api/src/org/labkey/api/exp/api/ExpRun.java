@@ -40,8 +40,9 @@ public interface ExpRun extends ExpObject
     public void setProtocol(ExpProtocol protocol);
     public ExpProtocolApplication addProtocolApplication(User user, ExpProtocolAction action, ExpProtocol.ApplicationType type, String name);
 
+    /** Stored in the exp.experiment table */
     String getComments();
-
+    /** Stored in the exp.experiment table */
     void setComments(String comments);
 
     void setEntityId(String entityId);

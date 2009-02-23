@@ -42,4 +42,11 @@ public interface ExpExperiment extends ExpObject
     void removeRun(User user, ExpRun run) throws Exception;
     void addRuns(User user, ExpRun... run);
     boolean isHidden();
+
+
+    /** Stored in the exp.experimentrun table */
+    public String getComments();
+    /** Stored in the exp.experimentrun table */
+    public void setComments(String comments);
+
 }

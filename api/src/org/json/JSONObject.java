@@ -538,7 +538,7 @@ public class JSONObject extends HashMap<String, Object> {
      * @throws   JSONException if the key is not found.
      */
     public String getString(String key) throws JSONException {
-        return get(key).toString();
+        return get(key) == null ? null : get(key).toString();
     }
 
 

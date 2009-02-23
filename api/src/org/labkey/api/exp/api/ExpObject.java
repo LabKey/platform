@@ -45,8 +45,11 @@ public interface ExpObject extends Identifiable
     Object getProperty(PropertyDescriptor pd);
     Object getProperty(DomainProperty prop);
 
+    /** Stored in ontology manager */
     String getComment();
+    /** Stored in ontology manager */
     void setComment(User user, String comment) throws ValidationException;
+    
     String urlFlag(boolean flagged);
 
     User getCreatedBy();

@@ -38,19 +38,22 @@ public class ExperimentJSONConverter
     public static final String LSID = "lsid";
     public static final String PROPERTIES = "properties";
     public static final String COMMENT = "comment";
+    public static final String DATA_FILE_URL = "dataFileURL";
 
     // Run properties
     public static final String DATA_INPUTS = "dataInputs";
 
     public static JSONObject serializeRunGroup(ExpExperiment runGroup, Domain domain) throws SQLException
     {
-        return serializeStandardProperties(runGroup, domain);
+        JSONObject jsonObject = serializeStandardProperties(runGroup, domain);
+        jsonObject.put(COMMENT, runGroup.getComments());
+        return jsonObject;
     }
 
     public static JSONObject serializeRun(ExpRun run, Domain domain) throws SQLException
     {
         JSONObject jsonObject = serializeStandardProperties(run, domain);
-        jsonObject.put("comments", run.getComments());
+        jsonObject.put(COMMENT, run.getComments());
 
         JSONArray inputDataArray = new JSONArray();
         for (ExpData data : run.getDataInputs().keySet())
@@ -102,7 +105,7 @@ public class ExperimentJSONConverter
     public static JSONObject serializeData(ExpData data)
     {
         JSONObject jsonObject = serializeStandardProperties(data, null);
-        jsonObject.put("dataFileURL", data.getDataFileUrl());
+        jsonObject.put(DATA_FILE_URL, data.getDataFileUrl());
         return jsonObject;
     }
 }
