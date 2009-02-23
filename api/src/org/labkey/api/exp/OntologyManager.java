@@ -108,6 +108,8 @@ public class OntologyManager
         {
             if (null != pd.getLabel())
                 m.put(pd.getLabel(), pd);
+            else
+                m.put(ColumnInfo.captionFromName(pd.getName()), pd); // If no label, columns will create one for captions
         }
         for (PropertyDescriptor pd : descriptors)
         {

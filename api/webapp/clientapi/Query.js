@@ -223,7 +223,6 @@ LABKEY.Query = new function()
 				    <li>options: the options used for the AJAX request</li>
 				    <li>responseObj: the XMLHttpResponseObject instance used to make the AJAX request</li>
 				</ul>
-        *
         * @param {Array} [config.filterArray] Array of objects created by {@link LABKEY.Filter#create}.
         * @param {String} [config.sort]  String description of the sort.  It includes the column names
         *       listed in the URL of a sorted data region (with an optional minus prefix to indicate
@@ -238,6 +237,12 @@ LABKEY.Query = new function()
         *       base query, and 'Peptide' is the name of a column in the related table).
         * @param {String} [config.containerPath] The path to the container in which the schema and query are defined,
         *       if different than the current container. If not supplied, the current container's path will be used.
+        * @param {String} [config.containerFilter] The container filter to use for this query (defaults to null).
+        *       Supported values include:
+                <ul>
+                    <li>"Current": Include the current folder only</li>
+                    <li>"CurrentAndSubfolders": Include the current folder and all subfolders</li>
+                </ul>
         * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to 100).
         *        If you want to return all possible rows, set this config property to -1.
         * @param {Integer} [config.offset] The index of the first row to return from the server (defaults to 0).
