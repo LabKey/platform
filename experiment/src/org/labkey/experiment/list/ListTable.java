@@ -17,15 +17,14 @@
 package org.labkey.experiment.list;
 
 import org.labkey.api.data.*;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.experiment.controllers.list.AttachmentDisplayColumn;
 
 import java.util.ArrayList;
