@@ -377,7 +377,7 @@ public class ReportUtil
                 views.add(record);
             }
         }
-        if (includeQueries)
+        if (false)
         {
             for (CustomView view : QueryService.get().getCustomViews(context.getUser(), context.getContainer(), schemaName, queryName))
             {
