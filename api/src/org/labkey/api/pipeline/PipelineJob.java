@@ -811,7 +811,7 @@ abstract public class PipelineJob extends Job implements Serializable
     public boolean isAutoRetry() throws IOException, SQLException
     {
         TaskFactory factory = getActiveTaskFactory();
-        return (_activeTaskRetries < factory.getAutoRetry() && factory.isAutoRetryEnabled(this));
+        return null != factory && _activeTaskRetries < factory.getAutoRetry() && factory.isAutoRetryEnabled(this);
     }
 
     public boolean autoRetry()
