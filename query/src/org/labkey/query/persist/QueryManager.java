@@ -18,14 +18,16 @@ package org.labkey.query.persist;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.CustomView;
 import org.labkey.query.view.DbUserSchema;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -173,6 +175,34 @@ public class QueryManager
         CstmView view = Table.selectObject(getTableInfoCustomView(), id, CstmView.class);
         _log.debug(view);
         return view;
+    }
+
+    public List<CstmView> getAllColumnLists(Container container, String schemaName, String queryName, User user, boolean inheritable) throws SQLException
+    {
+        List<CstmView> views = new ArrayList<CstmView>();
+
+        views.addAll(Arrays.asList(getColumnLists(container, schemaName, queryName, null, user, false)));
+        if (user != null)
+            views.addAll(Arrays.asList(getColumnLists(container, schemaName, queryName, null, null, false)));
+
+        if (!inheritable)
+            return views;
+
+        Container containerCur = container;
+        while (!containerCur.isRoot())
+        {
+            containerCur = containerCur.getParent();
+            views.addAll(Arrays.asList(getColumnLists(container, schemaName, queryName, null, user, true)));
+            if (user != null)
+                views.addAll(Arrays.asList(getColumnLists(container, schemaName, queryName, null, null, true)));
+        }
+
+        // look in the shared project
+        views.addAll(Arrays.asList(getColumnLists(ContainerManager.getSharedContainer(), schemaName, queryName, null, user, true)));
+        if (user != null)
+            views.addAll(Arrays.asList(getColumnLists(ContainerManager.getSharedContainer(), schemaName, queryName, null, null, true)));
+
+        return views;
     }
 
     public CstmView[] getColumnLists(Container container, String schemaName, String queryName, String viewName, User user, boolean inheritableOnly) throws SQLException
