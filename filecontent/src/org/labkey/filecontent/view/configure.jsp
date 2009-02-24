@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.filecontent.FileContentController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<FileContentForm> me = (JspView<FileContentForm>) HttpView.currentView();
     FileContentForm form = me.getModelBean();
@@ -37,12 +38,12 @@
     "you must specify the file set name in the <code>fileSet</code> parameter of the request URL.<br/><br/>" +
     "For example, if a file set was configured with a name of: <code>test</code> and a path of: <code>c:/examples</code>. " +
     "The file: <code>c:/examples/index.htm</code> could be served with a request of: <code>.../labkey/files/home/index.htm? fileSet=test</code>";
-%>
-<% if (null != form.getMessage())
+
+    %><labkey:errors/><%
+    if (null != form.getMessage())
     {
-%>
-    <div class="labkey-error"><%=form.getMessage()%></div>
-<%
+        // UNDONE: do we have a message style?
+        %><div style="color:green;"><%=form.getMessage()%></div><%
     }
     if (ctx.getUser().isAdministrator())
     {

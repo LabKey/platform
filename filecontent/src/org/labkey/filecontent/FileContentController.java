@@ -436,7 +436,7 @@ public class FileContentController extends SpringActionController
        {
            if (null == form.getRootPath() && null != AttachmentService.get().getWebRoot(getContainer()))
                form.setRootPath(AttachmentService.get().getWebRoot(getContainer()).getCanonicalPath());
-           JspView adminView = new JspView<FileContentForm>("/org/labkey/filecontent/view/configure.jsp", form);
+           JspView adminView = new JspView<FileContentForm>("/org/labkey/filecontent/view/configure.jsp", form, errors);
            return adminView;
        }
 
@@ -473,23 +473,23 @@ public class FileContentController extends SpringActionController
            String name = StringUtils.trimToNull(form.getFileSetName());
            String path = StringUtils.trimToNull(form.getPath());
 
-           String message = "";
            if (null == name)
-               message = "Please enter a label for the file set. ";
+              	errors.reject(SpringActionController.ERROR_MSG, "Please enter a label for the file set. ");
            else if (name.length() > MAX_NAME_LENGTH)
-                message = "Name is too long, should be less than " + MAX_NAME_LENGTH +" characters.";
+                errors.reject(SpringActionController.ERROR_MSG, "Name is too long, should be less than " + MAX_NAME_LENGTH +" characters.");
            else
            {
                AttachmentDirectory attDir = AttachmentService.get().getRegisteredDirectory(getContainer(), name);
                if (null != attDir)
-                   message = "A file set named "  + name + " already exists.";
+                   errors.reject(SpringActionController.ERROR_MSG, "A file set named "  + name + " already exists.");
            }
            if (null == path)
-               message += "Please enter a full path to the file set.";
+               errors.reject(SpringActionController.ERROR_MSG, "Please enter a full path to the file set.");
            else if (path.length() > MAX_PATH_LENGTH)
-                message += " File path is too long, should be less than " + MAX_PATH_LENGTH + " characters.";
+                errors.reject(SpringActionController.ERROR_MSG, "File path is too long, should be less than " + MAX_PATH_LENGTH + " characters.");
 
-           if (message.length() == 0)
+		   String message = "";
+           if (errors.getErrorCount() == 0)
            {
                AttachmentService.get().registerDirectory(getContainer(), name, path, false);
                message = "Directory successfully registered.";
@@ -502,8 +502,8 @@ public class FileContentController extends SpringActionController
            File webRoot = AttachmentService.get().getWebRoot(getContainer().getProject());
            form.setRootPath(webRoot == null ? null : webRoot.getCanonicalPath());
            form.setMessage(StringUtils.trimToNull(message));
-           // we want to reshow so return false
-           return false;
+           setReshow(true);
+           return errors.getErrorCount() == 0;
        }
    }
 
@@ -515,12 +515,16 @@ public class FileContentController extends SpringActionController
        {
            String name = StringUtils.trimToNull(form.getFileSetName());
            if (null == name)
-               throw new IllegalArgumentException("No name for fileset supplied.");
-
+		   {
+               errors.reject(SpringActionController.ERROR_MSG, "No name for fileset supplied.");
+		       return false;
+		   }
            AttachmentDirectory attDir = AttachmentService.get().getRegisteredDirectory(getContainer(), name);
            if (null == attDir)
+		   {
                form.setMessage("Attachment directory named " + name + " not found");
-           else
+		   }
+		   else
            {
                AttachmentService.get().unregisterDirectory(getContainer(), form.getFileSetName());
                form.setMessage("Directory was removed from list. Files were not deleted.");
@@ -529,7 +533,8 @@ public class FileContentController extends SpringActionController
            }
            File webRoot = AttachmentService.get().getWebRoot(getContainer().getProject());
            form.setRootPath(webRoot == null ? null : webRoot.getCanonicalPath());
-           return false;
+           setReshow(true);
+		   return true;
        }
    }
 
@@ -543,19 +548,22 @@ public class FileContentController extends SpringActionController
            if (null == filePath)
            {
                AttachmentService.get().setWebRoot(getContainer(),  null);
-               return false;
+			   form.message = "Path successfully cleared.";
+			   setReshow(true);
+			   return true;
            }
            File f = new File(filePath);
            if (!f.exists() || !f.isDirectory())
            {
-               form.message = "Path " + filePath + " does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".";
+               errors.reject(SpringActionController.ERROR_MSG, "Path " + filePath + " does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".");
            }
            else
            {
                AttachmentService.get().setWebRoot(getContainer(), f);
                form.message = "Path successfully saved.";
            }
-           return false;
+		   setReshow(true);
+           return errors.getErrorCount() == 0;
        }
    }
 
