@@ -16,6 +16,8 @@
 
 package org.labkey.query.sql;
 
+import org.apache.commons.lang.StringUtils;
+
 import java.sql.Types;
 import java.math.BigInteger;
 import java.math.BigDecimal;
@@ -24,6 +26,16 @@ public class QNumber extends QExpr implements IConstant
 {
 	Number _value = null;
 	int _sqlType = Types.DOUBLE;
+	
+
+	public QNumber(String s)
+	{
+		if (StringUtils.containsOnly(s,"0123456789"))
+			setValue(convertInteger(s));
+		else
+			setValue(convertDouble(s));
+	}
+
 	
     public QNumber(Node n)
     {

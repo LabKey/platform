@@ -17,6 +17,7 @@
 package org.labkey.query.sql;
 
 import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.xmlbeans.QNameSet;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlString;
@@ -245,7 +246,7 @@ public class QWhere extends QNode
         {
             try
             {
-                value = new QNumber(Double.valueOf(literal));
+				value = new QNumber(literal);
             }
             catch (IllegalArgumentException iae)
             {
