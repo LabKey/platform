@@ -1110,7 +1110,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 continue;
 
             // We need the dataset ID as a separate column in order to display the URL
-            String datasetIdSQL = "(SELECT sd.datasetid FROM study.StudyData sd, study.dataset d " +
+            String datasetIdSQL = "(SELECT max(sd.datasetid) FROM study.StudyData sd, study.dataset d " +
                 "WHERE sd.container = '" + studyContainer.getId() + "' AND " +
                 "sd.container = d.container AND sd.datasetid = d.datasetid AND " +
                 "d.protocolid = " + protocol.getRowId() + " AND " +    

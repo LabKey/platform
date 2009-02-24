@@ -44,7 +44,8 @@ public class QCDisplayColumnFactory implements DisplayColumnFactory
         Map<FieldKey,ColumnInfo> map = QueryService.get().getColumns(colInfo.getParentTable(), Collections.singletonList(qcKey));
 
         ColumnInfo qcColumn = map.get(qcKey);
-        assert qcColumn != null : "No QC Column found";
+        if (qcColumn == null) // For a custom query, it's possible the user has excluded our QC column
+            return new DataColumn(colInfo);
 
         return new QCDisplayColumn(colInfo, qcColumn);
     }

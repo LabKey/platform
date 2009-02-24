@@ -242,6 +242,10 @@ LABKEY.Query = new function()
                 <ul>
                     <li>"Current": Include the current folder only</li>
                     <li>"CurrentAndSubfolders": Include the current folder and all subfolders</li>
+                    <li>"CurrentPlusProject": Include the current folder and the project that contains it</li>
+                    <li>"CurrentAndParents": Include the current folder and its parent folders</li>
+                    <li>"CurrentPlusProjectAndShared": Include the current folder plus its project plus any shared folders</li>
+                    <li>"AllFolders": Include all folders for which the user has read permission</li>
                 </ul>
         * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to 100).
         *        If you want to return all possible rows, set this config property to -1.

@@ -84,6 +84,8 @@ public class PublishResultsQueryView extends ResultsQueryView
                 filter = _filter;
             view.getRenderContext().setBaseFilter(filter);
         }
+        if (getSettings().getContainerFilterName() != null)
+            view.getDataRegion().addHiddenFormField("containerFilterName", getSettings().getContainerFilterName());
 
         if (_buttons != null)
         {
