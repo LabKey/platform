@@ -74,16 +74,11 @@ public class AssayManager implements AssayService.Interface
     public void registerAssayProvider(AssayProvider provider)
     {
         // Blow up if we've already added a provider with this name
-        try
+        if (getProvider(provider.getName()) != null)
         {
-            getProvider(provider.getName());
+            throw new IllegalArgumentException("A provider with the name " + provider.getName() + " has already been registered");
         }
-        catch (IllegalArgumentException e)
-        {
-            _providers.add(provider);
-            return;
-        }
-        throw new IllegalArgumentException("A provider with the name " + provider.getName() + " has already been registered");
+        _providers.add(provider);
     }
 
     public AssayProvider getProvider(String providerName)
@@ -95,7 +90,7 @@ public class AssayManager implements AssayService.Interface
                 return potential;
             }
         }
-        throw new IllegalArgumentException("Unknown provider: " + providerName);
+        return null;
     }
 
     public AssayProvider getProvider(ExpProtocol protocol)

@@ -152,10 +152,10 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             {
                 TaskId tid = job.getActiveTaskId();
 
-                beginTransaction(scope, active);
-
                 // Avoid deadlock by doing this select first.
                 int count = getIncompleteSplitCount(job.getParentGUID());
+
+                beginTransaction(scope, active);
 
                 setCompleteSplit(job);
 

@@ -433,4 +433,9 @@ public class ModuleAssayProvider extends TsvAssayProvider
         validationScripts.addAll(super.getValidationAndAnalysisScripts(protocol, scope));
         return validationScripts;
     }
+
+    public String getDescription()
+    {
+        return getName();
+    }
 }

@@ -19,20 +19,37 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.study.assay.AssayProvider" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.study.controllers.assay.AssayController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<List<org.labkey.api.study.assay.AssayProvider>> me = (JspView<List<AssayProvider>>) HttpView.currentView();
     List<AssayProvider> providers = me.getModelBean();
 %>
-<form action="designerRedirect.view">
-    <div>
-        Select the assay design type:
-        <select name="providerName">
-            <% for (AssayProvider provider : providers)
-            { %>
-                <option value="<%= h(provider.getName()) %>"><%= h(provider.getName()) %></option>
-            <% } %>
-        </select>
-    </div>
-    <div> <%= generateSubmitButton("Next" )%> <%= generateButton("Cancel", getViewContext().cloneActionURL().setAction("begin")) %></div>
+<p>
+    Each assay is a customized version of a particular assay type. 
+    The assay type defines things like how the data is parsed and what kinds of analysis are provided.
+</p>
+<p>
+    Please choose which assay type you would like to customize with your own settings and input options.
+</p>
+<labkey:errors />
+<form method="POST">
+    <table>
+        <% for (AssayProvider provider : providers) { %>
+        <tr>
+            <td><input name="providerName" type="radio" value="<%= h(provider.getName()) %>"/></td>
+            <td><strong><%= h(provider.getName())%></strong></td>
+        </tr>
+        <tr>
+            <td />
+            <td><%= provider.getDescription() %></td>
+        </tr>
+        <% } %>
+        <tr>
+            <td />
+            <td><%= generateSubmitButton("Next" )%><%= generateButton("Cancel", new ActionURL(AssayController.BeginAction.class, getViewContext().getContainer())) %></td>
+        </tr>
+    </table>
 </form>

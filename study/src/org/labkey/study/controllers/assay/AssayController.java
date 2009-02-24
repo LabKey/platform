@@ -38,6 +38,7 @@ import org.labkey.api.study.assay.*;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.study.assay.AssayManager;
@@ -47,6 +48,7 @@ import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.assay.actions.GetAssayBatchAction;
 import org.labkey.study.controllers.assay.actions.SaveAssayBatchAction;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -324,31 +326,29 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_READ)
-    public class DesignerRedirectAction extends BaseAssayAction<ProtocolIdForm>
+    public class ChooseAssayTypeAction extends FormViewAction<ProtocolIdForm>
     {
-        public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception
+        public void validateCommand(ProtocolIdForm form, Errors errors)
         {
-            ActionURL designerURL = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getContainer(), form.getProviderName());
-            HttpView.throwRedirect(designerURL);
-            return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public boolean handlePost(ProtocolIdForm form, BindException errors) throws Exception
         {
-            throw new UnsupportedOperationException("Redirects should not show nav trails");
+            if (PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getContainer(), form.getProviderName()) == null)
+            {
+                errors.addError(new LabkeyError("Please select an assay type."));
+                return false;
+            }
+
+            return true;
         }
 
-        public AppBar getAppBar()
+        public ActionURL getSuccessURL(ProtocolIdForm form)
         {
-            throw new UnsupportedOperationException("Redirects should not show nav trails");
+            return PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getContainer(), form.getProviderName());
         }
-    }
 
-
-    @RequiresPermission(ACL.PERM_READ)
-    public class ChooseAssayTypeAction extends BaseAssayAction<ProtocolIdForm>
-    {
-        public ModelAndView getView(ProtocolIdForm o, BindException errors) throws Exception
+        public ModelAndView getView(ProtocolIdForm protocolIdForm, boolean reshow, BindException errors) throws Exception
         {
             List<AssayProvider> providers = new ArrayList<AssayProvider>(AssayManager.get().getAssayProviders());
             Collections.sort(providers, new Comparator<AssayProvider>()
@@ -358,19 +358,15 @@ public class AssayController extends SpringActionController
                     return o1.getName().compareTo(o2.getName());
                 }
             });
-            return new JspView<List<AssayProvider>>("/org/labkey/study/assay/view/chooseAssayType.jsp", providers);
+            return new JspView<List<AssayProvider>>("/org/labkey/study/assay/view/chooseAssayType.jsp", providers, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            NavTree result = super.appendNavTrail(root);
-            result.addChild("New Assay Design");
-            return result;
-        }
-
-        public AppBar getAppBar()
-        {
-            return getAppBar(null);
+            root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
+            root.addChild("New Assay Design");
+            setHelpTopic(new HelpTopic("defineAssaySchema", HelpTopic.Area.DEFAULT));
+            return root;
         }
     }
 

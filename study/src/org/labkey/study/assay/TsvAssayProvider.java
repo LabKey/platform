@@ -147,6 +147,11 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return false;
     }
 
+    public String getDescription()
+    {
+        return "Imports data from simple Excel or TSV files.";
+    }
+
     @Override
     public DataExchangeHandler getDataExchangeHandler()
     {
