@@ -54,6 +54,9 @@ public class AssayPublishService
                                        Map<String, Object>[] dataMaps, List<PropertyDescriptor> propertyTypes, String keyPropertyName, List<String> errors)
                 throws SQLException, IOException, ServletException;
 
+        /**
+         * Container -> Study label
+         */
         Map<Container, String> getValidPublishTargets(User user, int permission);
 
         ActionURL getPublishHistory(Container container, ExpProtocol protocol);
