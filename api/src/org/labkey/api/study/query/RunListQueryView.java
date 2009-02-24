@@ -74,27 +74,5 @@ public class RunListQueryView extends ExperimentRunListView
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         super.populateButtonBar(view, bar);
-
-        ActionURL target = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(getContainer(), _protocol, ShowSelectedDataAction.class);
-        if (getTable().getContainerFilter() != null)
-            target.addParameter("containerFilterName", getTable().getContainerFilter().getType().name());
-        ActionButton viewSelectedButton = new ActionButton(target, "Show Results");
-        viewSelectedButton.setURL(target);
-        viewSelectedButton.setRequiresSelection(true);
-        viewSelectedButton.setActionType(ActionButton.Action.POST);
-        bar.add(viewSelectedButton);
-
-        if (AssayService.get().getProvider(_protocol).canCopyToStudy())
-        {
-            ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(getContainer(), _protocol, PublishStartAction.class);
-            copyURL.addParameter("runIds", true);
-            if (getTable().getContainerFilter() != null)
-                copyURL.addParameter("containerFilterName", getTable().getContainerFilter().getType().name());
-            ActionButton copySelectedButton = new ActionButton(copyURL, "Copy to Study");
-            copySelectedButton.setURL(copyURL);
-            copySelectedButton.setRequiresSelection(true);
-            copySelectedButton.setActionType(ActionButton.Action.POST);
-            bar.add(copySelectedButton);
-        }
     }
 }

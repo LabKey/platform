@@ -58,24 +58,31 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
         NavTree manageMenu = new NavTree("manage assay design");
         if (!minimizeLinks)
         {
-            if (_protocol.getContainer().equals(getViewContext().getContainer()))
+            if (allowUpdate(protocol))
             {
-                if (allowUpdate(protocol))
+                String editLink = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(_protocol.getContainer(), _protocol, false).toString();
+                if (!protocol.getContainer().equals(getViewContext().getContainer()))
                 {
-                    manageMenu.addChild("edit assay design", PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getViewContext().getContainer(), _protocol, false).toString());
-                    ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getChooseCopyDestinationURL(_protocol, getViewContext().getContainer());
-                    manageMenu.addChild("copy assay design", copyURL.toString());
+                    editLink = "javascript: if (window.confirm('This assay is defined in the " + _protocol.getContainer().getPath() + " folder. Would you still like to edit it?')) { window.location = '" + editLink + "' }";
                 }
-
-                if (allowDelete(protocol))
-                {
-                    ActionURL deleteURL = PageFlowUtil.urlProvider(AssayUrls.class).getDeleteDesignURL(getViewContext().getContainer(), _protocol);
-                    manageMenu.addChild("delete assay design", "javascript: if (window.confirm('Are you sure you want to delete the assay design and all of its runs?')) { window.location = '" + deleteURL + "' }");
-                }
-
-                ActionURL exportURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getExportProtocolOptionsURL(getViewContext().getContainer(), _protocol);
-                manageMenu.addChild("export assay design", exportURL.toString());
+                manageMenu.addChild("edit assay design", editLink);
+                ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getChooseCopyDestinationURL(_protocol, _protocol.getContainer());
+                manageMenu.addChild("copy assay design", copyURL.toString());
             }
+
+            if (allowDelete(protocol))
+            {
+                ActionURL deleteURL = PageFlowUtil.urlProvider(AssayUrls.class).getDeleteDesignURL(_protocol.getContainer(), _protocol);
+                String extraWarning = "";
+                if (!protocol.getContainer().equals(getViewContext().getContainer()))
+                {
+                    extraWarning = " It is defined in " + _protocol.getContainer().getPath() + " and deleting it will remove it from all subfolders.";
+                }
+                manageMenu.addChild("delete assay design", "javascript: if (window.confirm('Are you sure you want to delete this assay and all of its runs?" + extraWarning + "')) { window.location = '" + deleteURL + "' }");
+            }
+
+            ActionURL exportURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getExportProtocolOptionsURL(getViewContext().getContainer(), _protocol);
+            manageMenu.addChild("export assay design", exportURL.toString());
 
             if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), ACL.PERM_ADMIN))
             {
@@ -138,25 +145,19 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
         return _provider;
     }
 
-    public boolean showProjectAdminLink()
-    {
-        Container currentContainer = getViewContext().getContainer();
-        Container protocolContainer = _protocol.getContainer();
-        return (!currentContainer.equals(protocolContainer) &&
-                protocolContainer.hasPermission(getViewContext().getUser(), ACL.PERM_ADMIN));
-    }
-
     protected boolean allowUpdate(ExpProtocol protocol)
     {
         ViewContext ctx = getViewContext();
-        return ctx.hasPermission(ACL.PERM_UPDATE) ||
-                    (ctx.hasPermission(ACL.PERM_UPDATEOWN) && ctx.getUser().equals(protocol.getCreatedBy()));
+        Container container = protocol.getContainer();
+        return container.hasPermission(ctx.getUser(), ACL.PERM_UPDATE) ||
+                    (container.hasPermission(ctx.getUser(), ACL.PERM_UPDATEOWN) && ctx.getUser().equals(protocol.getCreatedBy()));
     }
 
     protected boolean allowDelete(ExpProtocol protocol)
     {
         ViewContext ctx = getViewContext();
-        return ctx.hasPermission(ACL.PERM_DELETE) ||
-                    (ctx.hasPermission(ACL.PERM_DELETEOWN) && ctx.getUser().equals(protocol.getCreatedBy()));
+        Container container = protocol.getContainer();
+        return container.hasPermission(ctx.getUser(), ACL.PERM_DELETE) ||
+                    (container.hasPermission(ctx.getUser(), ACL.PERM_DELETEOWN) && ctx.getUser().equals(protocol.getCreatedBy()));
     }
 }

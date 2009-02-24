@@ -16,14 +16,15 @@
 
 package org.labkey.api.study.assay;
 
-import org.labkey.api.data.ActionButton;
-import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.study.actions.ShowSelectedDataAction;
+import org.labkey.api.study.actions.PublishStartAction;
 
 import java.util.List;
 
@@ -48,6 +49,29 @@ public class AssayRunType extends ExperimentRunType
     @Override
     public void populateButtonBar(ViewContext context, ButtonBar bar, DataView view, ContainerFilter filter)
     {
+        TableInfo table = view.getDataRegion().getTable();
+        ActionURL target = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(context.getContainer(), _protocol, ShowSelectedDataAction.class);
+        if (table.getContainerFilter() != null)
+            target.addParameter("containerFilterName", table.getContainerFilter().getType().name());
+        ActionButton viewSelectedButton = new ActionButton(target, "Show Results");
+        viewSelectedButton.setURL(target);
+        viewSelectedButton.setRequiresSelection(true);
+        viewSelectedButton.setActionType(ActionButton.Action.POST);
+        bar.add(viewSelectedButton);
+
+        if (AssayService.get().getProvider(_protocol).canCopyToStudy())
+        {
+            ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(context.getContainer(), _protocol, PublishStartAction.class);
+            copyURL.addParameter("runIds", true);
+            if (table.getContainerFilter() != null)
+                copyURL.addParameter("containerFilterName", table.getContainerFilter().getType().name());
+            ActionButton copySelectedButton = new ActionButton(copyURL, "Copy to Study");
+            copySelectedButton.setURL(copyURL);
+            copySelectedButton.setRequiresSelection(true);
+            copySelectedButton.setActionType(ActionButton.Action.POST);
+            bar.add(copySelectedButton);
+        }
+
         // If we're in the project container, and so is the protocol,
         // allow choices in the import button
         boolean includeOtherContainers = _protocol.getContainer().equals(context.getContainer()) && context.getContainer().isProject();

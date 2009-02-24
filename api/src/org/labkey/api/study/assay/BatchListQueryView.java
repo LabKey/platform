@@ -60,11 +60,6 @@ public class BatchListQueryView extends QueryView
         deleteButton.setRequiresSelection(true);
         bar.add(deleteButton);
 
-        boolean includeOtherContainers = _protocol.getContainer().equals(getViewContext().getContainer()) && getViewContext().getContainer().isProject();
-        List<ActionButton> buttons = AssayService.get().getImportButtons(
-                _protocol, getViewContext().getUser(), getViewContext().getContainer(), includeOtherContainers);
-        bar.addAll(buttons);
-
         ActionURL target = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(getContainer(), _protocol, ShowSelectedRunsAction.class);
         if (getTable().getContainerFilter() != null)
             target.addParameter("containerFilterName", getTable().getContainerFilter().getType().name());
@@ -73,6 +68,11 @@ public class BatchListQueryView extends QueryView
         viewSelectedButton.setActionType(ActionButton.Action.POST);
         viewSelectedButton.setRequiresSelection(true);
         bar.add(viewSelectedButton);
+
+        boolean includeOtherContainers = _protocol.getContainer().equals(getViewContext().getContainer()) && getViewContext().getContainer().isProject();
+        List<ActionButton> buttons = AssayService.get().getImportButtons(
+                _protocol, getViewContext().getUser(), getViewContext().getContainer(), includeOtherContainers);
+        bar.addAll(buttons);
     }
 
 }

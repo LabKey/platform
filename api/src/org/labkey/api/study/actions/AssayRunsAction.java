@@ -26,6 +26,7 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.BindException;
@@ -64,6 +65,10 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
 
         _protocol = getProtocol(summaryForm);
         AssayProvider provider = AssayService.get().getProvider(_protocol);
+        if (provider == null)
+        {
+            HttpView.throwNotFound("Could not find assay provider for assay id " + _protocol.getRowId());
+        }
 
         ModelAndView resultsView = provider.createRunsView(context, _protocol);
         if (resultsView != null)

@@ -31,19 +31,6 @@
     <tr>
         <td>
             <p><%= h(bean.getProtocol().getProtocolDescription()) %></p>
-            <%
-                if (bean.showProjectAdminLink())
-                {
-                    Container assayContainer = bean.getProtocol().getContainer();
-                    ActionURL assayLink = getViewContext().cloneActionURL();
-                    assayLink.setContainer(assayContainer);
-                    assayLink.setPageFlow("assay");
-            %>
-            <p>This assay design is defined in folder <b><%= h(assayContainer.getPath())%></b>.  To manage this assay design, you must
-                <%= textLink("view assay in definition folder", assayLink)%>.</p>
-            <%
-                }
-            %>
             <p>
                 <%
                     if (bean.getManagePopupView() != null)

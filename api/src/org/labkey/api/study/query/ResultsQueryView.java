@@ -73,8 +73,6 @@ public class ResultsQueryView extends AssayBaseQueryView
 
                 AssayProvider provider = AssayService.get().getProvider(_protocol);
 
-                handleUploadButton(bbar);
-
                 ActionURL publishURL = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(getContainer(), _protocol, PublishStartAction.class);
                 for (Pair<String, String> param : publishURL.getParameters())
                 {
@@ -96,6 +94,9 @@ public class ResultsQueryView extends AssayBaseQueryView
 
                     bbar.add(publishButton);
                 }
+
+                handleUploadButton(bbar);
+
                 view.getDataRegion().setButtonBar(bbar);
             }
         }

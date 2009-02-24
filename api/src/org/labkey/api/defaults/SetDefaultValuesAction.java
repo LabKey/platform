@@ -173,6 +173,13 @@ public class SetDefaultValuesAction extends DefaultValuesAction
         else
             headerHtml.append("Defaults are currently defined for this table in this folder.");
         headerHtml.append("</span>");
+        if (!domain.getContainer().equals(getViewContext().getContainer()))
+        {
+            ActionURL url = new ActionURL(SetDefaultValuesAction.class, domain.getContainer());
+            url.addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString());
+            url.addParameter("domainId", domain.getTypeId());
+            headerHtml.append(" [<a href=\"" + url + "\">edit default values for this table in " + PageFlowUtil.filter(domain.getContainer().getPath()) + "</a>]");
+        }
         headerHtml.append("<br><br>Default values set here will be inherited by all sub-folders that use this table and do not specify their own defaults.");
 
         HtmlView headerView = new HtmlView(headerHtml.toString());
