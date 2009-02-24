@@ -430,7 +430,7 @@ loop:
         TableInfo table = getTable(new FieldKey(null, parts.get(0)));
         if (table == null)
         {
-            if (_parent != null)
+            if (_parent != null && !_inFromClause)
                 return _parent.declareField(key);
             return null;
         }
