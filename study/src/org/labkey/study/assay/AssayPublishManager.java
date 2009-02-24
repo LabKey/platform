@@ -27,9 +27,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.util.CaseInsensitiveHashMap;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.UnauthorizedException;
@@ -45,6 +43,7 @@ import javax.servlet.ServletException;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -72,11 +71,14 @@ public class AssayPublishManager implements AssayPublishService.Service
             tinfoUpdateLog = StudySchema.getInstance().getTableInfoUploadLog();
         return tinfoUpdateLog;
     }
-    
+
+    /**
+     * Container -> study label
+     */
     public Map<Container, String> getValidPublishTargets(User user, int permission)
     {
-        Set<Container> writableContainers = ContainerManager.getContainerSet(ContainerManager.getContainerTree(), user, permission);
-        Map<Container, String> studyContainers = new TreeMap<Container, String>(new Comparator<Container>()
+        final Set<Container> allowedContainers = ContainerManager.getContainerSet(ContainerManager.getContainerTree(), user, permission);
+        Map<Container, String> result = new TreeMap<Container, String>(new Comparator<Container>()
         {
             public int compare(Container c1, Container c2)
             {
@@ -84,13 +86,36 @@ public class AssayPublishManager implements AssayPublishService.Service
             }
         });
 
-        for (Container container : writableContainers)
+        TableInfo studyTable = StudySchema.getInstance().getTableInfoStudy();
+
+        List<String> ids = new ArrayList<String>(allowedContainers.size());
+        for (Container c : allowedContainers)
+            ids.add(c.getId());
+        SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause("container", ids));
+
+        ResultSet rs = null;
+        try
         {
-            Study study = StudyManager.getInstance().getStudy(container);
-            if (study != null && !"/".equals(container.getPath()))
-                studyContainers.put(container, study.getLabel());
+            rs = Table.select(studyTable, PageFlowUtil.set("container", "label"), filter, null);
+            while (rs.next())
+            {
+                String containerId = rs.getString("container");
+                String label = rs.getString("label");
+                Container container = ContainerManager.getForId(containerId);
+                if (!"/".equals(container.getPath()))
+                    result.put(container, label);
+            }
         }
-        return studyContainers;
+        catch (SQLException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+        finally
+        {
+            if (rs != null) try {rs.close();} catch (SQLException se) {}
+        }
+        
+        return result;
     }
 
     public ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, ExpProtocol protocol,

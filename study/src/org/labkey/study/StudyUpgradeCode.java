@@ -196,8 +196,8 @@ public class StudyUpgradeCode implements UpgradeCode
                             "AND sd.container = ?\n" +
                             "AND sd.sourcelsid IS NOT NULL", datasetId, container);
                     rs = Table.executeQuery(schema, protocolSql);
-                    rs.next();
-                    Integer protocolId = (Integer)rs.getObject(1);
+                    boolean foundRowId = rs.next();
+                    Integer protocolId = foundRowId ? (Integer)rs.getObject(1) : null;
                     rs.close();
                     if (protocolId == null)
                         continue;
