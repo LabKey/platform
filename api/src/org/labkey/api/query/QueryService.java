@@ -55,6 +55,7 @@ abstract public class QueryService
     abstract public ActionURL urlQueryDesigner(Container container, String schema);
     abstract public ActionURL urlFor(Container container, QueryAction action, String schema, String queryName);
     abstract public UserSchema getUserSchema(User user, Container container, String schema);
+    abstract public List<CustomView> getCustomViews(User user, Container container, String schema, String query);
 
     /**
      * Loops through the field keys and turns them into ColumnInfos based on the base table

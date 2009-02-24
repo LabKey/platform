@@ -18,19 +18,23 @@ package org.labkey.api.reports.report.view;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.data.*;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.*;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.TabStripView;
+import org.labkey.api.reports.report.ChartReportDescriptor;
+import org.labkey.api.reports.report.RReportDescriptor;
+import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.TabStripView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.Pair;
 
 import javax.imageio.ImageIO;
@@ -38,12 +42,12 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.regex.Pattern;
-import java.sql.SQLException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -375,21 +379,51 @@ public class ReportUtil
         }
         if (includeQueries)
         {
-            if (schemaName != null && queryName != null)
+            for (CustomView view : QueryService.get().getCustomViews(context.getUser(), context.getContainer(), schemaName, queryName))
             {
-                QueryDefinition qd = QueryService.get().getQueryDef(context.getContainer(), schemaName, queryName);
-                addCustomViews(qd, context, views);
+                if (view.isHidden())
+                    continue;
 
-                // table based queries
-                UserSchema userSchema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), schemaName);
-                if (userSchema != null)
+                if (view.getName() == null)
+                    continue;
+
+                Map<String, String> record = new HashMap<String, String>();
+
+                User createdBy = view.getOwner();
+                boolean shared = createdBy == null;
+                QueryDefinition qd = view.getQueryDefinition();
+
+                record.put("queryView", "true");
+
+                // create a fake report id to reference the custom views by (would be nice if this could be a rowId)
+                Map<String, String> viewId = PageFlowUtil.map(QueryParam.schemaName.name(), qd.getSchemaName(),
+                        QueryParam.queryName.name(), qd.getName(),
+                        QueryParam.viewName.name(), view.getName());
+                record.put("reportId", PageFlowUtil.encode(PageFlowUtil.toQueryString(viewId.entrySet())));
+                record.put("name", view.getName());
+                record.put("query", qd.getName());
+                record.put("schema", qd.getSchemaName());
+                record.put("type", "query view");
+                record.put("editable", "false");
+                record.put("createdBy", createdBy != null ? createdBy.getDisplayName(context) : null);
+                record.put("permissions", createdBy != null ? "private" : "public");
+
+                boolean inherited = isInherited(view, context.getContainer());
+                if (!inherited)
                 {
-                    QueryDefinition def = userSchema.getQueryDefForTable(queryName);
-                    addCustomViews(def, context, views);
+                    record.put("editUrl", qd.urlFor(QueryAction.chooseColumns, context.getContainer()).
+                            addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.viewName, view.getName()).
+                            getLocalURIString());
                 }
+                record.put("runUrl", qd.urlFor(QueryAction.executeQuery, context.getContainer()).
+                        addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.viewName, view.getName()).
+                        getLocalURIString());
+
+                record.put("container", view.getContainer().getPath());
+                record.put("inherited", String.valueOf(inherited));
+
+                views.add(record);
             }
-            else
-                getAllCustomViews(context, views);
         }
         return views;
     }
@@ -407,81 +441,6 @@ public class ReportUtil
             return false;
         }
         return true;
-    }
-
-    private static void getAllCustomViews(ViewContext context, List<Map<String, String>> views)
-    {
-        DefaultSchema schema = DefaultSchema.get(context.getUser(), context.getContainer());
-
-        for (String schemaName : schema.getUserSchemaNames())
-        {
-            for (QueryDefinition qd : QueryService.get().getQueryDefs(context.getContainer(), schemaName).values())
-            {
-                addCustomViews(qd, context, views);
-            }
-
-            // table based queries
-            UserSchema userSchema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), schemaName);
-            for (String name : userSchema.getTableNames())
-            {
-                QueryDefinition def = userSchema.getQueryDefForTable(name);
-                addCustomViews(def, context, views);
-            }
-        }
-    }
-
-    private static void addCustomViews(QueryDefinition qd, ViewContext context, List<Map<String, String>> views)
-    {
-        if (qd == null) return;
-
-        Map<String, CustomView> qviews = qd.getCustomViews(context.getUser(), context.getRequest());
-
-        // we don't display any customized default views
-        qviews.remove(null);
-        if (qviews.size() > 0)
-        {
-            for (Map.Entry<String, CustomView> entry : qviews.entrySet())
-            {
-                if (entry.getValue().isHidden())
-                    continue;
-
-                Map<String, String> record = new HashMap<String, String>();
-
-                User createdBy = entry.getValue().getOwner();
-                boolean shared = createdBy == null;
-
-                record.put("queryView", "true");
-
-                // create a fake report id to reference the custom views by (would be nice if this could be a rowId)
-                Map<String, String> viewId = PageFlowUtil.map(QueryParam.schemaName.name(), qd.getSchemaName(),
-                        QueryParam.queryName.name(), qd.getName(),
-                        QueryParam.viewName.name(), entry.getKey());
-                record.put("reportId", PageFlowUtil.encode(PageFlowUtil.toQueryString(viewId.entrySet())));
-                record.put("name", entry.getKey());
-                record.put("query", qd.getName());
-                record.put("schema", qd.getSchemaName());
-                record.put("type", "query view");
-                record.put("editable", "false");
-                record.put("createdBy", createdBy != null ? createdBy.getDisplayName(context) : null);
-                record.put("permissions", createdBy != null ? "private" : "public");
-
-                boolean inherited = isInherited(entry.getValue(), context.getContainer());
-                if (!inherited)
-                {
-                    record.put("editUrl", qd.urlFor(QueryAction.chooseColumns, context.getContainer()).
-                            addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.viewName, entry.getKey()).
-                            getLocalURIString());
-                }
-                record.put("runUrl", qd.urlFor(QueryAction.executeQuery, context.getContainer()).
-                        addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.viewName, entry.getKey()).
-                        getLocalURIString());
-
-                record.put("container", entry.getValue().getContainer().getPath());
-                record.put("inherited", String.valueOf(inherited));
-
-                views.add(record);
-            }
-        }
     }
 
     public static boolean isInherited(CustomView view, Container container)
