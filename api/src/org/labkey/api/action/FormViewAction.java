@@ -138,6 +138,8 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
      * 
      * handlePost() can call setReshow(false) to force record to be reselected
      * return a view to display or null to call getView(form, true);
+	 *
+	 * return true to indicate success, false will call getView(reshow=true)
      */
     public abstract boolean handlePost(FORM form, BindException errors) throws Exception;
 
