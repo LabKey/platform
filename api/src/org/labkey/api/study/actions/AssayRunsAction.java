@@ -65,10 +65,6 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
 
         _protocol = getProtocol(summaryForm);
         AssayProvider provider = AssayService.get().getProvider(_protocol);
-        if (provider == null)
-        {
-            HttpView.throwNotFound("Could not find assay provider for assay id " + _protocol.getRowId());
-        }
 
         ModelAndView resultsView = provider.createRunsView(context, _protocol);
         if (resultsView != null)

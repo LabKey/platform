@@ -17,10 +17,9 @@ package org.labkey.api.view;
 
 import org.apache.commons.lang.StringUtils;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 
-public class UnauthorizedException extends ServletException
+public class UnauthorizedException extends RuntimeException
 {
     public UnauthorizedException()
     {

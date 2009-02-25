@@ -27,11 +27,10 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.gwt.client.DefaultValueType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,20 +67,25 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
     public static ExpProtocol getProtocol(ProtocolIdForm form, boolean validateContainer)
     {
         if (form.getRowId() == null)
-            HttpView.throwNotFound("Assay ID not specified.");
+            throw new NotFoundException("Assay ID not specified.");
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(form.getRowId().intValue());
         if (protocol == null || (validateContainer && !protocol.getContainer().equals(form.getContainer()) &&
                 !protocol.getContainer().equals(form.getContainer().getProject())))
         {
-            HttpView.throwNotFound("Assay " + form.getRowId() + " does not exist.");
+            throw new NotFoundException("Assay " + form.getRowId() + " does not exist.");
         }
-        if (protocol != null)
+
+        // even if we don't validate that the protocol is from the current or project container,
+        // but we still make sure that the current user can read from the protocol container:
+        if (!protocol.getContainer().hasPermission(form.getViewContext().getUser(), ACL.PERM_READ))
+            throw new NotFoundException();
+
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        if (provider == null)
         {
-            // even if we don't validate that the protocol is from the current or project container,
-            // but we still make sure that the current user can read from the protocol container:
-            if (!protocol.getContainer().hasPermission(form.getViewContext().getUser(), ACL.PERM_READ))
-                HttpView.throwNotFound();
+            throw new NotFoundException("Could not find assay provider for assay id " + protocol.getRowId());
         }
+        
         return protocol;
     }
 
