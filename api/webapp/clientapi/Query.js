@@ -160,6 +160,16 @@ LABKEY.Query = new function()
          * @param {String} config.sql The LabKey SQL to execute.
          * @param {String} [config.containerPath] The path to the container in which the schema and query are defined,
          *       if different than the current container. If not supplied, the current container's path will be used.
+         * @param {String} [config.containerFilter] The container filter to use for this query (defaults to null).
+        *       Supported values include:
+                <ul>
+                    <li>"Current": Include the current folder only</li>
+                    <li>"CurrentAndSubfolders": Include the current folder and all subfolders</li>
+                    <li>"CurrentPlusProject": Include the current folder and the project that contains it</li>
+                    <li>"CurrentAndParents": Include the current folder and its parent folders</li>
+                    <li>"CurrentPlusProjectAndShared": Include the current folder plus its project plus any shared folders</li>
+                    <li>"AllFolders": Include all folders for which the user has read permission</li>
+                </ul>
          * @param {Function} config.successCallback
 				Function called when the "selectRows" function executes successfully. Will be called with arguments:
 				{@link LABKEY.Query.SelectRowsResults} and (optionally) {@link LABKEY.Query.SelectRowsOptions}
