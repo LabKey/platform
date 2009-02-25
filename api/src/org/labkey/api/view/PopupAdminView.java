@@ -26,8 +26,10 @@ import org.labkey.api.view.menu.SiteAdminMenu;
 import org.labkey.api.view.menu.MenuService;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.exp.list.ListService;
+import org.labkey.api.settings.LookAndFeelProperties;
 
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -42,14 +44,10 @@ import java.io.PrintWriter;
  */
 public class PopupAdminView extends PopupMenuView
 {
-    private ActionURL adminURL;
     private boolean canAdmin;
 
     protected void renderInternal(PopupMenu model, PrintWriter out) throws Exception
     {
-        if ("post".equals(getViewContext().getRequest().getMethod().toLowerCase()))
-            return;
-
         if (canAdmin)
             super.renderInternal(model, out);
         else
@@ -58,7 +56,6 @@ public class PopupAdminView extends PopupMenuView
 
     public PopupAdminView(final ViewContext context)
     {
-        adminURL = MenuService.get().getSwitchAdminModeURL(context);
         canAdmin = context.hasPermission(ACL.PERM_ADMIN);
         if (!canAdmin)
             return;
@@ -67,10 +64,16 @@ public class PopupAdminView extends PopupMenuView
         Container c = context.getContainer();
         User user = context.getUser();
 
-        if (context.isAdminMode())
-            navTree.addChild("Hide Admin", adminURL);
-        else //
-            navTree.addChild("Show Admin", adminURL);
+        LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
+        //Allow Admins to turn the folder bar on & off
+        if (laf.getFolderDisplayMode() != FolderDisplayMode.ALWAYS && !"post".equals(getViewContext().getRequest().getMethod().toLowerCase()))
+        {
+            ActionURL adminURL = MenuService.get().getSwitchAdminModeURL(context);
+            if (context.isAdminMode())
+                navTree.addChild("Hide Navigation Bar", adminURL);
+            else //
+                navTree.addChild("Show Navigation Bar", adminURL);
+        }
 
         if (user.isAdministrator())
         {

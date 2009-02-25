@@ -48,11 +48,8 @@ public class MenuService
             //menus.add(new HomeLinkMenu());
             menus.add(new ContainerMenu(context));
             menus.add(new ProjectsMenu(context));
-            if (context.isAdminMode())
-            {
-                menus.add(new ProjectAdminMenu(context));
-                menus.add(new SiteAdminMenu(context));
-            }
+            menus.add(new ProjectAdminMenu(context));
+            menus.add(new SiteAdminMenu(context));
             menus.add(new FooterMenu(context, page));
             return menus;
         }

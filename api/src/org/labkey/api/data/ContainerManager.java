@@ -818,25 +818,6 @@ public class ContainerManager
         return projectTree;
     }
 
-    /**
-     * We hide folders that start with _ or .
-     * unless the user is in admin mode.
-     */
-    static boolean shouldDisplayContainer(String name)
-    {
-        if(name.length() == 0)
-            return true; // Um, I guess we should display it?
-        char c = name.charAt(0);
-        if (c == '_' || c == '.')
-        {
-            return HttpView.currentContext().isAdminMode();
-        }
-        else
-        {
-            return true;
-        }
-    }
-
     public static Set<Container> containersToRoot(Container child)
     {
         Set<Container> containersOnPath = new HashSet<Container>();

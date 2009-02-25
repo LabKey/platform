@@ -23,6 +23,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ACL;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import static org.labkey.api.util.PageFlowUtil.filter;
@@ -206,7 +207,8 @@ public class NavTrailView extends HttpView
         // CRUMB TRAIL
         //
 
-        _out.print("<table >\n");
+        LookAndFeelProperties laf = LookAndFeelProperties.getInstance(context.getContainer());
+        _out.print("<table class=\"labkey-tab-strip\">\n");
         boolean hasCrumbTrail = null != _crumbTrail && _crumbTrail.size() > 1;
         _out.print("<tr><td colspan=");
         _out.print(hasCrumbTrail ? "1" : "2");
@@ -224,6 +226,8 @@ public class NavTrailView extends HttpView
             }
             _out.print(and);
             _out.print("</span></td>");
+            if (!laf.isShowMenuBar())
+                drawAdminTd(context);
         }
 
         out.print("</tr>\n<tr><td colspan=");
@@ -237,6 +241,8 @@ public class NavTrailView extends HttpView
             _out.print("<span id=\"labkey-nav-trail-current-page\" style=\"visibility:hidden\">");_out.print(filter(_title));_out.print("</span>");
         }
         _out.print("</td>");
+        if (!hasCrumbTrail && !laf.isShowMenuBar())
+            drawAdminTd(context);
         _out.print("</tr>\n</table>");
     }
 

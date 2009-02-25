@@ -486,7 +486,7 @@ public class Portal
     public static void populatePortalView(ViewContext context, String id, HttpView template)
             throws Exception
     {
-        populatePortalView(context, id, template, context.getContainer().hasPermission(context.getUser(), ACL.PERM_ADMIN) && context.isAdminMode());
+        populatePortalView(context, id, template, context.getContainer().hasPermission(context.getUser(), ACL.PERM_ADMIN));
     }
 
     public static void populatePortalView(ViewContext context, String id, HttpView template, boolean canCustomize)

@@ -192,7 +192,12 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
     {
         return lookupBooleanValue(MENU_UI_ENABLED_PROP, false);
     }
-    
+
+    public boolean isShowMenuBar()
+    {
+        return isMenuUIEnabled() || getFolderDisplayMode().isShowInMenu();    
+    }
+
     public static Container getSettingsContainer(Container c)
     {
         if (c.isRoot())

@@ -54,7 +54,7 @@ LABKEY.HoverPopup = function(config)
             }
             this.extPopup.show();
             this.extPopup.alignTo(this.extElem, "tl-bl");
-            this.extPopup.setXY([this.extPopup.getX() - Math.min(30, this.extElem.getX() - 10), this.extPopup.getY()- this.extPopup.getBorderWidth('t')]);
+            this.extPopup.setXY([this.extPopup.getX() - 20, this.extPopup.getY()- this.extPopup.getBorderWidth('t')]);
             this.extPopup.enableShadow(true);
             LABKEY.HoverPopup._visiblePopup = this;
 
@@ -72,6 +72,8 @@ LABKEY.HoverPopup = function(config)
                 this.delayHide();
             }
         }, this);
+        //Update the shadow on click, since we sometimes cause the change of the inner div
+        this.extPopup.on("click", function(e) {this.extPopup.enableShadow(true)}, this);
 };
 
 Ext.extend(LABKEY.HoverPopup,  Ext.util.Observable, {
@@ -88,7 +90,7 @@ Ext.extend(LABKEY.HoverPopup,  Ext.util.Observable, {
     delayHide: function() {
         if (this.hideTimeout)
             clearTimeout(this.hideTimeout);
-        this.hideTimeout = this.hideFn.defer(500, this);
+        this.hideTimeout = this.hideFn.defer(200, this);
     },
 
     //private

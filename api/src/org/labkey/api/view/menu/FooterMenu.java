@@ -52,9 +52,6 @@ public class FooterMenu extends NavTreeMenu
         User user = context.getUser();
         Container c = context.getContainer();
 
-        if (context.hasPermission(ACL.PERM_ADMIN) && !"post".equalsIgnoreCase(context.getRequest().getMethod()))
-            menu.add(new NavTree((context.isAdminMode() ? "Hide" : "Show") + " Admin", MenuService.get().getSwitchAdminModeURL(context)));
-
         //
         // LOGIN
         //

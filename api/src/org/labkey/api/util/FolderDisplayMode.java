@@ -26,15 +26,20 @@ import org.apache.commons.lang.StringUtils;
  */
 public enum FolderDisplayMode
 {
-    ALWAYS("Always"),
-    OPTIONAL_ON("Optionally -- Show by default"),
-    OPTIONAL_OFF("Optionally -- Hide by default"),
-    ADMIN("Only in admin mode");
+    ALWAYS("Always", false),
+    @Deprecated
+    OPTIONAL_ON("Optionally -- Show by default", true),
+    @Deprecated
+    OPTIONAL_OFF("Optionally -- Hide by default", true),
+    IN_MENU("As drop down menu", true),
+    ADMIN("Optionally for admins", false);
 
     private String displayString;
-    FolderDisplayMode(String displayString)
+    private boolean showInMenu;
+    FolderDisplayMode(String displayString, boolean showInMenu)
     {
         this.displayString = displayString;
+        this.showInMenu = showInMenu;
     }
 
     public String getDisplayString()
@@ -45,5 +50,10 @@ public enum FolderDisplayMode
     public static FolderDisplayMode fromString(String str)
     {
         return null == StringUtils.trimToNull(str) ? ALWAYS : valueOf(str);         
+    }
+
+    public boolean isShowInMenu()
+    {
+        return showInMenu;
     }
 }

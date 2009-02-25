@@ -17,20 +17,17 @@
     Container c = currentContext.getContainer();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     AppProps appProps = AppProps.getInstance();
-    NavTree homeLink;
+    NavTree homeLink = null;
 
     FolderDisplayMode folderMode = LookAndFeelProperties.getInstance(c).getFolderDisplayMode();
-    boolean folderMenu = folderMode == FolderDisplayMode.OPTIONAL_ON || folderMode == FolderDisplayMode.OPTIONAL_OFF;
-    if (menus.size() == 0 && !currentContext.hasPermission(ACL.PERM_ADMIN) && !folderMenu)
-    {
-        //out.print("<div style='width:100%;height:1' class='labkey-title-area-line'></div>");
+    if (!laf.isShowMenuBar())
         return;
-    }
-    String menuBarClass = menus.size() == 0 ? "normal" : "labkey-main-menu";
+    boolean folderMenu = folderMode.isShowInMenu();
+    String menuBarClass = "labkey-main-menu";
     if (null == c || null == c.getProject() || c.getProject().equals(ContainerManager.getHomeContainer()))
         homeLink = new NavTree(laf.getShortName() + " Home", appProps.getHomePageActionURL());
     else
-        homeLink = new NavTree(c.getProject().getName() + " Home", c.getProject().getFolderType().getStartURL(c, currentContext.getUser()));
+        homeLink = new NavTree(c.getProject().getName(), c.getProject().getFolderType().getStartURL(c, currentContext.getUser()));
 %>
 <script type="text/javascript">
     LABKEY.requiresClientAPI();
@@ -63,11 +60,14 @@
         if (folderMenu)
         {
     %>
-            <a href="#" id="MenuBarFolders"><img src="<%=currentContext.getContextPath()%>/ext-2.2/resources/images/default/tree/folder.gif" style="vertical-align:bottom" alt="Folders"></a><%
+            <a href="#" id="MenuBarFolders" class="labkey-header" style="position:relative;padding-right:1em"><span><img src="<%=currentContext.getContextPath()%>/ext-2.2/resources/images/default/tree/folder.gif" style="vertical-align:bottom" alt="Folders"></span></a><%
         }
         if (menus.size() > 0)
-        {%>
-            <a href="<%=h(homeLink.getValue())%>"><%=h(homeLink.getKey())%></a><%
+        {
+            if (!folderMenu) //Make sure you can always get back to project home
+            {%> 
+                <a href="<%=h(homeLink.getValue())%>"><%=h(homeLink.getKey())%></a><%
+            }
             for (Portal.WebPart part : menus)
             {
                 String menuCaption = part.getName();
@@ -86,7 +86,7 @@
                     //Use the part name...
                 }
                 %>
-                    <a id="<%=h(menuName)%>$Header" style="position:relative;z-index:1001;" href="#"><%=h(menuCaption)%></a><%
+                    <a id="<%=h(menuName)%>$Header" class="labkey-header" style="padding-right:1em;position:relative;z-index:1001;" href="#"><span><%=h(menuCaption)%></span></a><%
             }
             }
         else

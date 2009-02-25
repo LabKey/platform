@@ -409,6 +409,7 @@ public class ViewContext extends BoundMap implements MessageSource
                 return true;
             case OPTIONAL_OFF:
             case OPTIONAL_ON:
+            case IN_MENU:
                 return false; //The menu bar takes care of this now...
             case ADMIN:
                 return isAdminMode();

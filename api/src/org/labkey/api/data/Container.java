@@ -235,7 +235,18 @@ public class Container implements Serializable, Comparable<Container>
 
     public boolean shouldDisplay()
     {
-        return ContainerManager.shouldDisplayContainer(_name);
+        if(_name.length() == 0)
+            return true; // Um, I guess we should display it?
+        char c = _name.charAt(0);
+        if (c == '_' || c == '.')
+        {
+            User user = HttpView.currentContext().getUser();
+            return user != null && (user.isAdministrator() || this.hasPermission(user, ACL.PERM_ADMIN));
+        }
+        else
+        {
+            return true;
+        }
     }
 
 
