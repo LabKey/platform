@@ -142,7 +142,9 @@ public class CoreModule extends SpringModule
                 new AlwaysAvailableWebPartFactory("Folders", "menubar", false, false) {
                     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
                     {
-                        HBox v = new HBox(new ContainerMenu(portalCtx), new HtmlView("&nbsp;&nbsp;"), new ProjectsMenu(portalCtx));
+                        ProjectsMenu projectsMenu = new ProjectsMenu(portalCtx);
+                        projectsMenu.setCollapsed(false);
+                        HBox v = new HBox(new ContainerMenu(portalCtx), new HtmlView("&nbsp;&nbsp;"), projectsMenu);
                         v.setTitle("Folders");
                         v.setFrame(WebPartView.FrameType.PORTAL);
                         return v;

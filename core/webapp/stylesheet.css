@@ -443,12 +443,6 @@ table.labkey-tab-strip
     border-spacing: 0px; *border-collapse: collapse;*border-spacing: expression(cellSpacing=0);
 }
 
-/* Used for tabs */
-table#navBar.labkey-tab-strip
-{
-    padding-top:8px;
-    background-color:#ffffff;
-}
 
 /* Used for the "App Bar" containing the main title and the application button bar */
 /* Used for tabs */
@@ -930,6 +924,7 @@ td.labkey-main-menu a
     padding-right:1em;
     position:relative;
     z-index:1001;
+    vertical-align:baseline;
     border-bottom:1px solid transparent;
 }
 

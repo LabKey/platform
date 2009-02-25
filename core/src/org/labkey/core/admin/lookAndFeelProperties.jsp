@@ -101,14 +101,12 @@
 </tr>
 <tr>
     <td class="labkey-form-label">Show left navigation bar</td>
-    <td>
-        <%
+    <td><%
             FolderDisplayMode currentMode = laf.getFolderDisplayMode();
-            for (FolderDisplayMode mode : FolderDisplayMode.values())
-        {%>
-            <input type="radio" name="folderDisplayMode" value="<%=mode.toString()%>" <%=mode == currentMode ? "CHECKED" : "" %> >
-            <%=mode.getDisplayString()%><br>
-     <% } %>
+        %>
+        <input type="radio" name="folderDisplayMode" value="<%=FolderDisplayMode.ALWAYS.toString()%>" <%=currentMode == FolderDisplayMode.ALWAYS ? "CHECKED" : ""%>> <%=h(FolderDisplayMode.ALWAYS.getDisplayString())%><br>
+        <input type="radio" name="folderDisplayMode" value="<%=FolderDisplayMode.IN_MENU.toString()%>" <%=currentMode.isShowInMenu() ? "CHECKED" : ""%>> <%=h(FolderDisplayMode.IN_MENU.getDisplayString())%><br>
+        <input type="radio" name="folderDisplayMode" value="<%=FolderDisplayMode.ADMIN.toString()%>" <%=currentMode == FolderDisplayMode.ADMIN ? "CHECKED" : ""%>> <%=h(FolderDisplayMode.ADMIN.getDisplayString())%><br>
     </td>
 </tr>
 <tr>

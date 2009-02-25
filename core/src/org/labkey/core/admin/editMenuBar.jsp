@@ -26,7 +26,7 @@
     <br>The menu bar is a beta feature of labkey server that can be customized to provide quick access to LabKey features.<br><br>
     The menu bar is currently <%=menuEnabled ? "on" : "off"%>.<br>
     <input type="hidden" value="<%=menuEnabled ? 0 : 1%>"  name="enableMenuBar">
-    <%=generateSubmitButton(menuEnabled ? "Turn Off Menu Bar" : "Turn On Menu Bar")%>
+    <%=generateSubmitButton(menuEnabled ? "Turn Off Custom Menus" : "Turn On Custom Menus")%>
 </form>
 <br>
 The menu bar is populated by web parts. You can add and remove webparts here...<br><br>

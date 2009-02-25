@@ -20,6 +20,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentDirectory;
+import org.labkey.api.security.ACL;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -56,7 +57,7 @@ public class FilesWebPart extends JspView<AttachmentDirectory>
     {
         this(ctx.getContainer());
         setWide(null == webPartDescriptor.getLocation() || HttpView.BODY.equals(webPartDescriptor.getLocation()));
-        setShowAdmin(ctx.isAdminMode());
+        setShowAdmin(container.hasPermission(ctx.getUser(), ACL.PERM_ADMIN));
         fileSet = StringUtils.trimToNull(webPartDescriptor.getPropertyMap().get("fileSet"));
         if (null != fileSet)
         {

@@ -91,7 +91,7 @@ each folder in the project has a corresponding subdirectory in the file system.<
                 </blockquote>
             <%}
             %>
- <a href="<%=h(configureHelper)%>">Configure Project Settings</a><br><br>
+ <a href="<%=h(configureHelper)%>">Configure web root for Project.</a><br><br>
 <%      }
     } //site administrator
 %>
