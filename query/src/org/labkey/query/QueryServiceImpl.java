@@ -31,10 +31,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.settings.AppProps;
 import org.labkey.common.util.Pair;
 import org.labkey.data.xml.TablesDocument;
-import org.labkey.query.persist.DbUserSchemaDef;
-import org.labkey.query.persist.QueryDef;
-import org.labkey.query.persist.QueryManager;
-import org.labkey.query.persist.QuerySnapshotDef;
+import org.labkey.query.persist.*;
 import org.labkey.query.view.DbUserSchema;
 import org.labkey.query.sql.Query;
 
@@ -209,6 +206,33 @@ public class QueryServiceImpl extends QueryService
             ret.put(queryDef.getName(), queryDef);
         }
         return ret.get(name);
+    }
+
+    public List<CustomView> getCustomViews(User user, Container container, String schema, String query)
+    {
+        try {
+            List<CustomView> views = new ArrayList<CustomView>();
+            Map<Map.Entry<String, String>, QueryDefinition> queryDefs = getAllQueryDefs(container, schema, false, true);
+
+            for (CstmView collist : QueryManager.get().getAllColumnLists(container, schema, query, user, true))
+                addCustomView(container, user, views, collist, queryDefs);
+
+            return views;
+        }
+        catch (SQLException e)
+        {
+            return Collections.emptyList();
+        }
+    }
+
+    private void addCustomView(Container container, User user, List<CustomView> views, CstmView collist, Map<Map.Entry<String, String>, QueryDefinition> queryDefs)
+    {
+        QueryDefinition qd = queryDefs.get(new Pair(collist.getSchema(), collist.getQueryName()));
+        if (qd == null)
+            qd = QueryService.get().getUserSchema(user, container, collist.getSchema()).getQueryDefForTable(collist.getQueryName());
+
+        if (qd instanceof QueryDefinitionImpl)
+            views.add(new CustomViewImpl((QueryDefinitionImpl)qd, collist));
     }
 
     private Map<String, QuerySnapshotDefinition> getAllQuerySnapshotDefs(Container container, String schemaName)

@@ -21,8 +21,11 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.DbReportIdentifier;
+import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.query.QueryParam;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.Map;
 import java.io.PrintWriter;
@@ -52,16 +55,7 @@ public class ReportsWebPart extends WebPartView
     protected void renderView(Object model, PrintWriter out) throws Exception
     {
         Map<String, String> properties = _webPart.getPropertyMap();
-        ReportIdentifier reportId = null;
-        String reportIdString = properties.get(Report.renderParam.reportId.name());
-        if(null != reportIdString)
-        {
-            reportId = ReportService.get().getReportIdentifier(reportIdString);
-
-            //allow bare report ids for backward compatibility 
-            if(null == reportId)
-                reportId = new DbReportIdentifier(Integer.parseInt(reportIdString));
-        }
+        Report report = getReport(properties);
 
         boolean showTabs = BooleanUtils.toBoolean(properties.get(Report.renderParam.showTabs.name()));
         getViewContext().put(Report.renderParam.reportWebPart.name(), "true");
@@ -69,22 +63,50 @@ public class ReportsWebPart extends WebPartView
         if (properties.containsKey(Report.renderParam.showSection.name()))
             getViewContext().put(Report.renderParam.showSection.name(), properties.get(Report.renderParam.showSection.name()));
 
-        if (reportId != null)
+        if (report != null)
         {
-            Report report = reportId.getReport();
-
-            if (report != null)
+            HttpView view = showTabs ?
+                    report.getRunReportView(getViewContext()) :
+                    report.renderReport(getViewContext());
+            if (view != null)
             {
-                HttpView view = showTabs ?
-                        report.getRunReportView(getViewContext()) :
-                        report.renderReport(getViewContext());
-                if (view != null)
-                {
-                    include(view);
-                    return;
-                }
+                include(view);
+                return;
             }
         }
         include(new HtmlView("Unable to display the specified report."));        
+    }
+
+    private Report getReport(Map<String, String> props) throws Exception
+    {
+        String reportIdString = props.get(Report.renderParam.reportId.name());
+        if (reportIdString != null)
+        {
+            ReportIdentifier reportId = ReportService.get().getReportIdentifier(reportIdString);
+
+            //allow bare report ids for backward compatibility
+            if (reportId == null)
+                reportId = new DbReportIdentifier(Integer.parseInt(reportIdString));
+
+            if (reportId != null)
+                return reportId.getReport();
+        }
+        else
+        {
+            // try schema/query/reportName combo
+
+            String reportName = props.get(Report.renderParam.reportName.name());
+            if (!StringUtils.isEmpty(reportName))
+            {
+                String key = ReportUtil.getReportKey(props.get(QueryParam.schemaName.name()), props.get(QueryParam.queryName.name()));
+
+                for (Report rpt : ReportService.get().getReports(getViewContext().getUser(), getViewContext().getContainer(), key))
+                {
+                    if (reportName.equals(rpt.getDescriptor().getReportName()))
+                        return rpt;
+                }
+            }
+        }
+        return null;
     }
 }

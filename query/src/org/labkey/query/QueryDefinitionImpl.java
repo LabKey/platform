@@ -130,38 +130,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                     ret.put(view.getName(), new CustomViewImpl(this, view));
                 }
             }
-            else
-            {
-                addCustomViews(ret, mgr.getColumnLists(container, _queryDef.getSchema(), _queryDef.getName(), null, user, false));
-            }
-
-            if (user != null)
-            {
-                addCustomViews(ret, mgr.getColumnLists(container, _queryDef.getSchema(), _queryDef.getName(), null, null, false));
-            }
-
-            if (!inheritable)
-                return ret;
-
-            Container containerCur = container;
-            while (!containerCur.isRoot())
-            {
-                containerCur = containerCur.getParent();
-                addCustomViews(ret, mgr.getColumnLists(containerCur, _queryDef.getSchema(), _queryDef.getName(), null, user, true));
-
-                if (user != null)
-                {
-                    addCustomViews(ret, mgr.getColumnLists(containerCur, _queryDef.getSchema(), _queryDef.getName(), null, null, true));
-                }
-            }
-
-            // look in the shared project
-            addCustomViews(ret, mgr.getColumnLists(ContainerManager.getSharedContainer(), _queryDef.getSchema(), _queryDef.getName(), null, user, true));
-
-            if (user != null)
-            {
-                addCustomViews(ret, mgr.getColumnLists(ContainerManager.getSharedContainer(), _queryDef.getSchema(), _queryDef.getName(), null, null, true));
-            }
+            addCustomViews(ret, mgr.getAllColumnLists(container, _queryDef.getSchema(), _queryDef.getName(), user, inheritable));
 
             //finally, look in all the active modules for any views defined in the file system
             for(Module module : container.getActiveModules())
@@ -195,7 +164,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return new File(module.getExplodedPath(), "queries");
     }
 
-    private void addCustomViews(Map<String, CustomView> map, CstmView[] views)
+    private void addCustomViews(Map<String, CustomView> map, List<CstmView> views)
     {
         for (CstmView view : views)
         {
