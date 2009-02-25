@@ -33,6 +33,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.settings.AppProps;
 import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.assay.xml.ProviderType;
 import org.springframework.web.servlet.ModelAndView;
@@ -49,9 +50,13 @@ import java.util.*;
  */
 public class ModuleAssayProvider extends TsvAssayProvider
 {
+    private static final String UPLOAD_VIEW_FILENAME = "upload.html";
+
     private File baseDir;
     private File viewsDir;
+    private Map<String, File> viewFiles;
     private String name;
+    private String description;
     private Map<IAssayDomainType, DomainDescriptorType> domainsDescriptors = new HashMap<IAssayDomainType, DomainDescriptorType>();
 
     private FieldKey participantIdKey;
@@ -76,6 +81,8 @@ public class ModuleAssayProvider extends TsvAssayProvider
         if (providerConfig == null)
             return;
 
+        description = providerConfig.isSetDescription() ? providerConfig.getDescription() : getName();
+
         ProviderType.FieldKeys fieldKeys = providerConfig.getFieldKeys();
         if (fieldKeys != null)
         {
@@ -88,11 +95,42 @@ public class ModuleAssayProvider extends TsvAssayProvider
             if (fieldKeys.isSetSpecimenId())
                 specimenIdKey = FieldKey.fromString(fieldKeys.getSpecimenId());
         }
+
+        if (!AppProps.getInstance().isDevMode() && viewsDir.isDirectory())
+        {
+            viewFiles = new HashMap<String, File>();
+            Boolean[] trueFalse = new Boolean[] { true, false };
+            for (IAssayDomainType domainType : AssayDomainTypes.values())
+            {
+                for (Boolean detailsView : trueFalse)
+                {
+                    String fileName = getViewFileName(domainType, detailsView.booleanValue());
+                    File viewFile = new File(viewsDir, fileName);
+                    if (viewFile.canRead())
+                    {
+                        viewFiles.put(fileName, viewFile);
+                    }
+                }
+            }
+
+            File uploadViewFile = new File(viewsDir, UPLOAD_VIEW_FILENAME);
+            if (uploadViewFile.canRead())
+            {
+                viewFiles.put(UPLOAD_VIEW_FILENAME, uploadViewFile);
+            }
+        }
     }
 
+    @Override
     public String getName()
     {
         return name;
+    }
+
+    @Override
+    public String getDescription()
+    {
+        return description;
     }
 
     public void addDomain(IAssayDomainType domainType, DomainDescriptorType xDomain)
@@ -192,7 +230,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return super.getSpecimenIDFieldKey();
     }
 
-    private File getViewFile(IAssayDomainType domainType, boolean details)
+    private String getViewFileName(IAssayDomainType domainType, boolean details)
     {
         String viewName = domainType.getName().toLowerCase();
         if (!details)
@@ -203,26 +241,55 @@ public class ModuleAssayProvider extends TsvAssayProvider
             else
                 viewName += "s";
         }
-        return new File(viewsDir,  viewName + ".html");
+        return viewName + ".html";
     }
 
+    public boolean hasCustomView(String viewFileName)
+    {
+        if (AppProps.getInstance().isDevMode())
+        {
+            return new File(viewsDir, viewFileName).canRead();
+        }
+        else
+        {
+            return viewFiles != null && viewFiles.containsKey(viewFileName);
+        }
+    }
+
+    @Override
     public boolean hasCustomView(IAssayDomainType domainType, boolean details)
     {
-        File viewFile = getViewFile(domainType, details);
-        return viewFile.canRead();
+        return hasCustomView(getViewFileName(domainType, details));
+    }
+
+    protected ModelAndView getCustomView(String viewFileName)
+    {
+        ModuleHtmlView view = null;
+        if (AppProps.getInstance().isDevMode())
+        {
+            File viewFile = new File(viewsDir, viewFileName);
+            if (viewFile.canRead())
+                view = new ModuleHtmlView(viewFile);
+        }
+        else
+        {
+            if (viewFiles != null)
+            {
+                File viewFile = viewFiles.get(viewFileName);
+                if (viewFile != null)
+                    view = new ModuleHtmlView(viewFile);
+            }
+        }
+
+        if (view != null)
+            view.setFrame(WebPartView.FrameType.NONE);
+        return view;
     }
 
     // XXX: consider moving to TsvAssayProvider
     protected ModelAndView getCustomView(IAssayDomainType domainType, boolean details)
     {
-        File viewFile = getViewFile(domainType, details);
-        if (viewFile.canRead())
-        {
-            ModuleHtmlView view = new ModuleHtmlView(viewFile);
-            view.setFrame(WebPartView.FrameType.NONE);
-            return view;
-        }
-        return null;
+        return getCustomView(getViewFileName(domainType, details));
     }
 
     @Override
@@ -356,27 +423,14 @@ public class ModuleAssayProvider extends TsvAssayProvider
                 IMPORT_DATA_LINK_NAME, AssayController.ModuleAssayUploadAction.class);
     }
 
-    private File getUploadViewFile()
-    {
-        return new File(viewsDir, "upload.html");
-    }
-
     protected boolean hasUploadView()
     {
-        File viewFile = getUploadViewFile();
-        return viewFile.canRead();
+        return hasCustomView(UPLOAD_VIEW_FILENAME);
     }
 
     protected ModelAndView getUploadView()
     {
-        File viewFile = getUploadViewFile();
-        if (viewFile.canRead())
-        {
-            ModuleHtmlView view = new ModuleHtmlView(viewFile);
-            view.setFrame(WebPartView.FrameType.NONE);
-            return view;
-        }
-        return null;
+        return getCustomView(UPLOAD_VIEW_FILENAME);
     }
 
     public ModelAndView createUploadView(AssayRunUploadForm form)
@@ -434,8 +488,4 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return validationScripts;
     }
 
-    public String getDescription()
-    {
-        return getName();
-    }
 }
