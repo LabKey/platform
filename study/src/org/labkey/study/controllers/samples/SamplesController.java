@@ -1116,6 +1116,9 @@ public class SamplesController extends BaseController
         Set<Object> vialIds = new HashSet<Object>();
         Map<Object, Pair<Object,Object>> sampleIdMap = new HashMap<Object, Pair<Object, Object>>();
         String visitKey = getStudy().isDateBased() ? SimpleSpecimenImporter.DRAW_TIMESTAMP : SimpleSpecimenImporter.VISIT;
+
+        if (specimenRows.size() == 0)
+            errors.add("main", new ActionMessage("Error", "No specimen data was provided."));
         int rowNum = 1;
         for (Map<String,Object> row : specimenRows)
         {
@@ -1150,8 +1153,10 @@ public class SamplesController extends BaseController
             if (!getStudy().isDateBased())
                 requiredFields.add(SimpleSpecimenImporter.VISIT);
             for (String col : requiredFields)
+            {
                 if (null == row.get(col))
                     errors.add("main", new ActionMessage("Error", "Error, Row " + rowNum + " does not contain a value for field " + (null == labels.get(col) ? col : labels.get(col))));
+            }
 
             if (errors.size() >= 3)
                 break;
@@ -1345,12 +1350,20 @@ public class SamplesController extends BaseController
         try
         {
             String valueParam = form.getPrefix() + "%";
-            String sql = "SELECT DISTINCT " + column + " FROM " +
-                    tinfo.getSchema().getName() + "." + tinfo.getName() +
-                    " WHERE Container = ? AND CAST(" + column + " AS " + tinfo.getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR) + ") " +
-                    (insensitiveCompare ? tinfo.getSqlDialect().getCaseInsensitiveLikeOperator() : "LIKE")  +
-                    " ? ORDER BY " + column;
-            rs = Table.executeQuery(tinfo.getSchema(), sql, new Object[] { getContainer().getId(), valueParam });
+            SQLFragment sql = new SQLFragment();
+            sql.append("SELECT DISTINCT ");
+            sql.append(column);
+            sql.append(" FROM ");
+            sql.append(tinfo.getSchema().getName()).append(".").append(tinfo.getName());
+            sql.append(" WHERE Container = ? AND CAST(").append(column).append(" AS ");
+            sql.add(getContainer().getId());
+            sql.append(tinfo.getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR) + ") ");
+            sql.append(insensitiveCompare ? tinfo.getSqlDialect().getCaseInsensitiveLikeOperator() : "LIKE");
+            sql.append(" ? ");
+            sql.add(valueParam);
+            sql.append(" ORDER BY ").append(column);
+            tinfo.getSqlDialect().limitRows(sql, 50);
+            rs = Table.executeQuery(tinfo.getSchema(), sql);
             while (rs.next())
                 completions.add(new AjaxCompletion(rs.getObject(1).toString()));
         }

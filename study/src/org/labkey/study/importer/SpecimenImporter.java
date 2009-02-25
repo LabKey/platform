@@ -238,6 +238,11 @@ public class SpecimenImporter
         {
             return _aggregateEventFunction;
         }
+
+        public String getFkTableAlias()
+        {
+            return getDbColumnName() + "Lookup";
+        }
     }
 
     private static class SpecimenLoadInfo
@@ -273,7 +278,7 @@ public class SpecimenImporter
             new SpecimenColumn(EVENT_ID_COL, "ExternalId", "INT NOT NULL", TargetTable.SPECIMEN_EVENTS, true),
             new SpecimenColumn("record_source", "RecordSource", "VARCHAR(10)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn(GLOBAL_UNIQUE_ID_TSV_COL, "GlobalUniqueId", "VARCHAR(20)", TargetTable.SPECIMENS),
-            new SpecimenColumn(LAB_ID_TSV_COL, "LabId", "INT", TargetTable.IGNORED, "Site", "ExternalId"),
+            new SpecimenColumn(LAB_ID_TSV_COL, "LabId", "INT", TargetTable.SPECIMEN_EVENTS, "Site", "ExternalId", "LEFT OUTER"),
             new SpecimenColumn("originating_location", "OriginatingLocationId", "INT", TargetTable.SPECIMENS, "Site", "ExternalId", "LEFT OUTER"),
             new SpecimenColumn("unique_specimen_id", "UniqueSpecimenId", "VARCHAR(20)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("ptid", "Ptid", "VARCHAR(32)", TargetTable.SPECIMENS),
@@ -303,6 +308,7 @@ public class SpecimenImporter
             new SpecimenColumn("comments", "Comments", "VARCHAR(200)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("primary_specimen_type_id", "PrimaryTypeId", "INT", TargetTable.SPECIMENS, "SpecimenPrimaryType", "ExternalId", "LEFT OUTER"),
             new SpecimenColumn("derivative_type_id", "DerivativeTypeId", "INT", TargetTable.SPECIMENS, "SpecimenDerivative", "ExternalId", "LEFT OUTER"),
+            new SpecimenColumn("derivative_type_id_2", "DerivativeTypeId2", "INT", TargetTable.SPECIMENS, "SpecimenDerivative", "ExternalId", "LEFT OUTER"),
             new SpecimenColumn("additive_type_id", "AdditiveTypeId", "INT", TargetTable.SPECIMENS, "SpecimenAdditive", "ExternalId", "LEFT OUTER"),
             new SpecimenColumn("specimen_condition", "SpecimenCondition", "VARCHAR(3)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("sample_number", "SampleNumber", "INT", TargetTable.SPECIMEN_EVENTS),
@@ -314,7 +320,13 @@ public class SpecimenImporter
             new SpecimenColumn("fr_level1", "fr_level1", "VARCHAR(200)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("fr_level2", "fr_level2", "VARCHAR(200)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("fr_container", "fr_container", "VARCHAR(200)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("fr_position", "fr_position", "VARCHAR(200)", TargetTable.SPECIMEN_EVENTS)
+            new SpecimenColumn("fr_position", "fr_position", "VARCHAR(200)", TargetTable.SPECIMEN_EVENTS),
+            new SpecimenColumn("shipped_from_lab", "ShippedFromLab", "INT", TargetTable.SPECIMEN_EVENTS, "Site", "ExternalId", "LEFT OUTER"),
+            new SpecimenColumn("shipped_to_lab", "ShippedtoLab", "INT", TargetTable.SPECIMEN_EVENTS, "Site", "ExternalId", "LEFT OUTER"),
+            new SpecimenColumn("frozen_time", "FrozenTime", DATETIME_TYPE, TargetTable.SPECIMENS),
+            new SpecimenColumn("primary_volume", "PrimaryVolume", "FLOAT", TargetTable.SPECIMENS),
+            new SpecimenColumn("primary_volume_units", "PrimaryVolumeUnits", "VARCHAR(20)", TargetTable.SPECIMENS),
+            new SpecimenColumn("processing_time", "ProcessingTime", DATETIME_TYPE, TargetTable.SPECIMENS)
         };
 
     private final ImportableColumn[] ADDITIVE_COLUMNS = new ImportableColumn[]
@@ -866,30 +878,43 @@ public class SpecimenImporter
         EXCLUDE
     }
 
-    private String getTempTableSpecimenColumns(SpecimenLoadInfo info, AggregateMode mode)
+    private String getTempTableColumns(SpecimenLoadInfo info, TargetTable table, AggregateMode mode, boolean aliasLookups)
     {
         StringBuilder columnList = new StringBuilder();
-        columnList.append("exp.Material.RowId,\n    ").append(info.getTempTableName()).append(".Container");
+        String prefix = "";
+        if (table == TargetTable.SPECIMENS)
+        {
+            columnList.append("exp.Material.RowId,\n    ").append(info.getTempTableName()).append(".Container");
+            prefix = ", ";
+        }
         for (SpecimenColumn col : info.getAvailableColumns())
         {
-            if (col.getTargetTable() == TargetTable.SPECIMENS)
+            if (col.getTargetTable() == table)
             {
                 if (col.getFkTable() != null)
                 {
-                    columnList.append(",\n    ").append("study.").append(col.getFkTable()).append(".RowId");
+                    columnList.append(prefix);
+                    prefix = ", ";
+                    columnList.append("\n    ").append(col.getFkTableAlias()).append(".RowId");
+                    if (aliasLookups)
+                        columnList.append(" AS ").append(col.getDbColumnName());
                 }
                 else if (col.getAggregateEventFunction() != null && mode != AggregateMode.INCLUDE_NAME_ONLY)
                 {
                     if (mode == AggregateMode.INCLUDE_NAME_AND_FUNCTION)
                     {
-                        columnList.append(",\n    ").append(col.getAggregateEventFunction()).append("(");
+                        columnList.append(prefix);
+                        prefix = ", ";
+                        columnList.append("\n    ").append(col.getAggregateEventFunction()).append("(");
                         columnList.append(info.getTempTableName()).append(".");
                         columnList.append(col.getDbColumnName()).append(") AS ").append(col.getDbColumnName());
                     }
                 }
                 else
                 {
-                    columnList.append(",\n    ").append(info.getTempTableName()).append(".").append(col.getDbColumnName());
+                    columnList.append(prefix);
+                    prefix = ", ";
+                    columnList.append("\n    ").append(info.getTempTableName()).append(".").append(col.getDbColumnName());
                 }
             }
         }
@@ -904,7 +929,7 @@ public class SpecimenImporter
         SQLFragment insertSql = new SQLFragment();
         insertSql.append("INSERT INTO study.Specimen \n(RowId, Container, ");
         insertSql.append(getSpecimenCols(info.getAvailableColumns())).append(")\n");
-        insertSql.append("SELECT ").append(getTempTableSpecimenColumns(info, AggregateMode.INCLUDE_NAME_AND_FUNCTION));
+        insertSql.append("SELECT ").append(getTempTableColumns(info, TargetTable.SPECIMENS, AggregateMode.INCLUDE_NAME_AND_FUNCTION, true));
         insertSql.append("\nFROM ").append(info.getTempTableName()).append("\n    JOIN exp.Material ON (");
         insertSql.append(info.getTempTableName()).append(".LSID = exp.Material.LSID");
         insertSql.append(" AND exp.Material.Container = ?)");
@@ -917,16 +942,15 @@ public class SpecimenImporter
                 insertSql.append("\n    ");
                 if (col.getJoinType() != null)
                     insertSql.append(col.getJoinType()).append(" ");
-                insertSql.append("JOIN study.").append(col.getFkTable()).append(" ON ");
+                insertSql.append("JOIN study.").append(col.getFkTable()).append(" AS ").append(col.getFkTableAlias()).append(" ON ");
                 insertSql.append("(").append(info.getTempTableName()).append(".");
-                insertSql.append(col.getDbColumnName()).append(" = ").append(" study.");
-                insertSql.append(col.getFkTable()).append(".").append(col.getFkColumn());
-                insertSql.append(" AND study.").append(col.getFkTable()).append(".Container").append(" = ?)");
+                insertSql.append(col.getDbColumnName()).append(" = ").append(col.getFkTableAlias()).append(".").append(col.getFkColumn());
+                insertSql.append(" AND ").append(col.getFkTableAlias()).append(".Container").append(" = ?)");
                 insertSql.add(container.getId());
             }
         }
 
-        insertSql.append("\nGROUP BY ").append(getTempTableSpecimenColumns(info, AggregateMode.EXCLUDE));
+        insertSql.append("\nGROUP BY ").append(getTempTableColumns(info, TargetTable.SPECIMENS, AggregateMode.EXCLUDE, false));
 
         if (DEBUG)
             logSQLFragment(insertSql);
@@ -944,30 +968,43 @@ public class SpecimenImporter
         for (Object param : sql.getParams())
             info(param.toString());
     }
+
     private void populateSpecimenEvents(DbSchema schema, Container container, SpecimenLoadInfo info) throws SQLException
     {
-        String insertSql = "INSERT INTO study.SpecimenEvent\n" +
-                "(Container, SpecimenId, LabId, " + getSpecimenEventCols(info.getAvailableColumns()) + ")\n" +
-                "SELECT TempTable.Container, TempTable.SpecimenId, TempTable.CpasLabId As LabId, \n" +
-                getSpecimenEventCols(info.getAvailableColumns()) + " FROM (\n" +
-                "-- join the temp table to study.Site, to translate CHAVI site ids into LabKey Server site ids:\n" +
-                "SELECT " + info.getTempTableName() + ".*, study.Site.RowId AS CpasLabId, study.Specimen.RowId As SpecimenId \n" +
-                "FROM " + info.getTempTableName() + ", study.Site, study.Specimen\n" +
-                "WHERE study.Site.ExternalId = " + info.getTempTableName() + ".LabId AND study.Site.Container = ? AND\n" +
-                info.getTempTableName() + ".GlobalUniqueId = study.Specimen.GlobalUniqueId AND study.Specimen.Container = ?\n" +
-                ") TempTable;";
+        SQLFragment insertSql = new SQLFragment();
+        insertSql.append("INSERT INTO study.SpecimenEvent\n" +
+                "(Container, SpecimenId, " + getSpecimenEventCols(info.getAvailableColumns()) + ")\n" +
+                "SELECT ? AS Container, study.Specimen.RowId AS SpecimenId, \n" +
+                getTempTableColumns(info,  TargetTable.SPECIMEN_EVENTS, AggregateMode.INCLUDE_NAME_AND_FUNCTION, true) + " FROM " +
+                info.getTempTableName() + "\nJOIN study.Specimen ON " +
+                info.getTempTableName() + ".GlobalUniqueId = study.Specimen.GlobalUniqueId AND study.Specimen.Container = ?");
+        insertSql.add(container.getId());
+        insertSql.add(container.getId());
 
-        Object[] params = new Object[]{container.getId(), container.getId()};
+        for (SpecimenColumn col : info.getAvailableColumns())
+        {
+            if (col.getTargetTable() == TargetTable.SPECIMEN_EVENTS && col.getFkTable() != null)
+            {
+                insertSql.append("\n    ");
+                if (col.getJoinType() != null)
+                    insertSql.append(col.getJoinType()).append(" ");
+                insertSql.append("JOIN study.").append(col.getFkTable()).append(" AS ").append(col.getFkTableAlias()).append(" ON ");
+                insertSql.append("(").append(info.getTempTableName()).append(".");
+                insertSql.append(col.getDbColumnName()).append(" = ").append(col.getFkTableAlias()).append(".").append(col.getFkColumn());
+                insertSql.append(" AND ").append(col.getFkTableAlias()).append(".Container").append(" = ?)");
+                insertSql.add(container.getId());
+            }
+        }
         if (DEBUG)
         {
-            info(insertSql);
+            info(insertSql.getSQL());
             info("Params: ");
-            for (Object param : params)
+            for (Object param : insertSql.getParams())
                 info(param.toString());
         }
         assert cpuInsertSpecimenEvents.start();
         info("Specimen Events: Inserting new rows.");
-        Table.execute(schema, insertSql, params);
+        Table.execute(schema, insertSql);
         info("Specimen Events: Insert complete.");
         assert cpuInsertSpecimenEvents.stop();
     }
@@ -1258,7 +1295,7 @@ public class SpecimenImporter
         return value;
     }
 
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     private String createTempTable(DbSchema schema) throws SQLException
     {

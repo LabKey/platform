@@ -228,7 +228,12 @@ public class SpecimenUtils
 
         // allow notification of all site-based actors at the destination site, and all study-wide actors:
         Map<Integer, Site> relevantSites = new HashMap<Integer, Site>();
-        Site destSite = StudyManager.getInstance().getSite(sampleRequest.getContainer(), sampleRequest.getDestinationSiteId());
+        if (sampleRequest.getDestinationSiteId() == null)
+        {
+            throw new IllegalStateException("Request " + sampleRequest.getRowId() + " in folder " +
+                    sampleRequest.getContainer().getPath() + " does not have a valid destination site id.");
+        }
+        Site destSite = StudyManager.getInstance().getSite(sampleRequest.getContainer(), sampleRequest.getDestinationSiteId().intValue());
         relevantSites.put(destSite.getRowId(), destSite);
         for (Specimen specimen : sampleRequest.getSpecimens())
         {

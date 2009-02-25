@@ -129,6 +129,18 @@ public class SpecimenSummaryTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("ProtocolNumber"));
         addWrapColumn(_rootTable.getColumn("SpecimenHash")).setIsHidden(true);
 
+        addWrapColumn(_rootTable.getColumn("PrimaryVolume"));
+        addWrapColumn(_rootTable.getColumn("PrimaryVolumeUnits"));
+        ColumnInfo derivativeType2Column = new AliasedColumn(this, "DerivativeType2", _rootTable.getColumn("DerivativeTypeId2"));
+        derivativeType2Column.setFk(new LookupForeignKey("RowId")
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return new DerivativeTypeTable(_schema);
+            }
+        });
+        addColumn(derivativeType2Column);
+
         // Create an ExprColumn to get the max *possible* comments for each specimen.  It's only the possible number
         // (rather than the actual number), because a specimennumber isn't sufficient to identify a row in the specimen
         // summary table; derivative and additive types are required as well.  We use this number so we know if additional

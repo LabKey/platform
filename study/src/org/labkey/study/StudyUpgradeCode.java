@@ -36,18 +36,17 @@ import java.util.HashMap;
 public class StudyUpgradeCode implements UpgradeCode
 {
     // Invoked at version 2.11
-    public void upgradeRequirementsTables(ModuleContext moduleContext)
+    public static void upgradeRequirementsTables(ModuleContext moduleContext)
     {
-        if (!moduleContext.isNewInstall())
+        if (moduleContext.isNewInstall() || moduleContext.getInstalledVersion() >= 2.11)
+            return;
+        try
         {
-            try
-            {
-                SampleManager.getInstance().upgradeRequirementsTables();
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            SampleManager.getInstance().upgradeRequirementsTables();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
         }
     }
 

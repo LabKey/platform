@@ -68,6 +68,7 @@ CREATE VIEW study.SpecimenSummary AS
         SUM(Volume) AS TotalVolume, SUM(CASE Available WHEN True THEN Volume ELSE 0 END) AS AvailableVolume,
         VolumeUnits, PrimaryTypeId, AdditiveTypeId, DerivativeTypeId, DrawTimestamp, SalReceiptDate,
         ClassId, ProtocolNumber, SubAdditiveDerivative, OriginatingLocationId,
+        PrimaryVolume, PrimaryVolumeUnits, DerivativeTypeId2,
         COUNT(GlobalUniqueId) AS VialCount,
         SUM(CASE LockedInRequest WHEN True THEN 1 ELSE 0 END) AS LockedInRequestCount,
         SUM(CASE AtRepository WHEN True THEN 1 ELSE 0 END) AS AtRepositoryCount,
@@ -75,5 +76,6 @@ CREATE VIEW study.SpecimenSummary AS
     FROM study.SpecimenDetail
     GROUP BY Container, SpecimenHash, Ptid, VisitDescription,
         VisitValue, VolumeUnits, PrimaryTypeId, AdditiveTypeId, DerivativeTypeId,
+        PrimaryVolume, PrimaryVolumeUnits, DerivativeTypeId2,
         DrawTimestamp, SalReceiptDate, ClassId, ProtocolNumber, SubAdditiveDerivative,
         OriginatingLocationId, VisitRowId, SequenceNumMin;

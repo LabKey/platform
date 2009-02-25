@@ -107,6 +107,20 @@ public class SpecimenDetailTable extends BaseStudyTable
         });
         addColumn(derivativeTypeColumn);
 
+        ColumnInfo derivativeType2Column = new AliasedColumn(this, "DerivativeType2", _rootTable.getColumn("DerivativeTypeId2"));
+        derivativeTypeColumn.setFk(new LookupForeignKey("RowId")
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return new DerivativeTypeTable(_schema);
+            }
+        });
+        addColumn(derivativeType2Column);
+        addWrapColumn(_rootTable.getColumn("PrimaryVolume"));
+        addWrapColumn(_rootTable.getColumn("PrimaryVolumeUnits"));
+        addWrapColumn(_rootTable.getColumn("FrozenTime"));
+        addWrapColumn(_rootTable.getColumn("ProcessingTime"));
+
         addWrapColumn(_rootTable.getColumn("LockedInRequest"));
         ColumnInfo siteNameColumn = addWrapColumn(_rootTable.getColumn("SiteName"));
         siteNameColumn.setDisplayColumnFactory(new DisplayColumnFactory()

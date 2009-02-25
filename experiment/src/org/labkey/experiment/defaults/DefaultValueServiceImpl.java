@@ -131,7 +131,7 @@ public class DefaultValueServiceImpl extends DefaultValueService
         }
     }
 
-    private Map<DomainProperty, Object> getValues(Container container, Domain domain, String objectLSID) throws ExperimentException
+    private Map<DomainProperty, Object> getObjectValues(Container container, Domain domain, String objectLSID) throws ExperimentException
     {
         try
         {
@@ -160,18 +160,16 @@ public class DefaultValueServiceImpl extends DefaultValueService
         }
     }
 
-    public Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user) throws ExperimentException
+    private Map<DomainProperty, Object> getMergedValues(Container container, Domain domain, User user, String scope) throws ExperimentException
     {
-        return getDefaultValues(container, domain, user, null);
-    }
-    
-    public Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user, String scope) throws ExperimentException
-    {
-        String userDefaultLSID = getUserDefaultsLSID(container, user, domain, scope);
-        Map<DomainProperty, Object> userValues = getValues(container, domain, userDefaultLSID);
-
+        Map<DomainProperty, Object> userValues = null;
+        if (user != null)
+        {
+            String userDefaultLSID = getUserDefaultsLSID(container, user, domain, scope);
+            userValues = getObjectValues(container, domain, userDefaultLSID);
+        }
         String globalDefaultLSID = getContainerDefaultsLSID(container, domain);
-        Map<DomainProperty, Object> globalValues = getValues(container, domain, globalDefaultLSID);
+        Map<DomainProperty, Object> globalValues = getObjectValues(container, domain, globalDefaultLSID);
 
         if (userValues == null || userValues.isEmpty())
             return globalValues;
@@ -187,16 +185,25 @@ public class DefaultValueServiceImpl extends DefaultValueService
         return result;
     }
 
-    public Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain) throws ExperimentException
+    public Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user, String scope) throws ExperimentException
     {
         Map<DomainProperty, Object> values = null;
         while (!container.isRoot() && (values == null || values.isEmpty()))
         {
-            String objectLSID = getContainerDefaultsLSID(container, domain);
-            values = getValues(container, domain, objectLSID);
+            values = getMergedValues(container, domain, user, scope);
             container = container.getParent();
         }
         return values;
+    }
+
+    public Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user) throws ExperimentException
+    {
+        return getDefaultValues(container, domain, user, null);
+    }
+
+    public Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain) throws ExperimentException
+    {
+        return getDefaultValues(container, domain, null, null);
     }
 
     private void clearDefaultValues(Container container, String lsid)

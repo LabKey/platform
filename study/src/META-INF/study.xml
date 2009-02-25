@@ -325,6 +325,17 @@
       <ns:column columnName="originatinglocationid"/>
       <ns:column columnName="requestable"/>
       <ns:column columnName="CurrentLocation" />
+      <ns:column columnName="DerivativeTypeId2">
+        <ns:fk>
+          <ns:fkColumnName>RowId</ns:fkColumnName>
+          <ns:fkTable>SpecimenDerivative</ns:fkTable>
+          <ns:fkDbSchema>study</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="FrozenTime"/>
+      <ns:column columnName="ProcessingTime"/>
+      <ns:column columnName="PrimaryVolume"/>
+      <ns:column columnName="PrimaryVolumeUnits"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenSummary" tableDbType="VIEW">
@@ -378,6 +389,15 @@
         <ns:formatString>#,##0.0#</ns:formatString>
       </ns:column>
       <ns:column columnName="originatinglocationid"/>
+      <ns:column columnName="DerivativeTypeId2">
+        <ns:fk>
+          <ns:fkColumnName>RowId</ns:fkColumnName>
+          <ns:fkTable>SpecimenDerivative</ns:fkTable>
+          <ns:fkDbSchema>study</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="PrimaryVolume"/>
+      <ns:column columnName="PrimaryVolumeUnits"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenDetail" tableDbType="VIEW">
@@ -433,6 +453,17 @@
       <ns:column columnName="originatinglocationid"/>
       <ns:column columnName="requestable"/>
       <ns:column columnName="CurrentLocation" />
+      <ns:column columnName="DerivativeTypeId2">
+        <ns:fk>
+          <ns:fkColumnName>RowId</ns:fkColumnName>
+          <ns:fkTable>SpecimenDerivative</ns:fkTable>
+          <ns:fkDbSchema>study</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
+      <ns:column columnName="FrozenTime"/>
+      <ns:column columnName="ProcessingTime"/>
+      <ns:column columnName="PrimaryVolume"/>
+      <ns:column columnName="PrimaryVolumeUnits"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenAdditive" tableDbType="TABLE">
@@ -489,6 +520,8 @@
       <ns:column columnName="fr_position"/>
       <ns:column columnName="freezer"/>
       <ns:column columnName="SpecimenNumber"/>
+      <ns:column columnName="ShippedFromLab"/>
+      <ns:column columnName="ShippedToLab"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenPrimaryType" tableDbType="TABLE">
