@@ -156,7 +156,7 @@ public class AllParticipantData
                 datasetIds.add(datasetId);
 
                 // OK navigate the compound map and add value
-                ParticipantDataMapKey mapKey = new ParticipantDataMapKey(datasetId.intValue(), visitSequenceNum.intValue());
+                ParticipantDataMapKey mapKey = new ParticipantDataMapKey(datasetId.intValue(), visitSequenceNum.doubleValue());
                 RowSet keyMap = allData.get(mapKey);
                 if (null == keyMap)
                 {
