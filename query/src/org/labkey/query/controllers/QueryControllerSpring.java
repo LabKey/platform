@@ -1330,6 +1330,7 @@ public class QueryControllerSpring extends SpringActionController
         private String _sql;
         private Integer _maxRows;
         private Integer _offset;
+        private String _containerFilter;
 
         public String getSchemaName()
         {
@@ -1369,6 +1370,16 @@ public class QueryControllerSpring extends SpringActionController
         public void setOffset(Integer offset)
         {
             _offset = offset;
+        }
+
+        public String getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(String containerFilter)
+        {
+            _containerFilter = containerFilter;
         }
     }
 
@@ -1430,6 +1441,14 @@ public class QueryControllerSpring extends SpringActionController
 
             if(null != form.getOffset())
                 settings.setOffset(form.getOffset().longValue());
+
+            if (form.getContainerFilter() != null)
+            {
+                // If the user specified an incorrect filter, throw an IllegalArgumentException
+                ContainerFilter.Type containerFilterType =
+                    ContainerFilter.Type.valueOf(form.getContainerFilter());
+                settings.setContainerFilterName(containerFilterType.name());
+            }
 
             //build a query view using the schema and settings
             QueryView view = new QueryView(schema, settings);
