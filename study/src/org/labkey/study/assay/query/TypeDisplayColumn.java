@@ -62,8 +62,10 @@ public class TypeDisplayColumn extends DataColumn
             if (provider != null)
             {
                 out.write(PageFlowUtil.filter(provider.getName()));
+                return;
             }
         }
 
+        out.write(PageFlowUtil.filter("<Unknown>"));
     }
 }

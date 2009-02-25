@@ -22,11 +22,11 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
 import org.labkey.study.visitmanager.VisitManager;
 
-import javax.servlet.ServletException;
 import java.util.*;
 
 public class ParticipantVisitDataSetTable extends VirtualTable
@@ -212,7 +212,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
                     }
                     return dsTable;
                 }
-                catch (ServletException e)
+                catch (UnauthorizedException e)
                 {
                     return null;
                 }

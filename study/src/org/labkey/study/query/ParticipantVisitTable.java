@@ -22,10 +22,9 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.StudySchema;
-
-import javax.servlet.ServletException;
 
 public class ParticipantVisitTable extends FilteredTable
 {
@@ -154,7 +153,7 @@ public class ParticipantVisitTable extends FilteredTable
                 ret.hideParticipantLookups();
                 return ret;
             }
-            catch (ServletException e)
+            catch (UnauthorizedException e)
             {
                 return null;
             }

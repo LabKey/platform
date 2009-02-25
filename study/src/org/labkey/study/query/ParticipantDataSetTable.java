@@ -19,10 +19,9 @@ package org.labkey.study.query;
 import org.labkey.api.data.*;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
-
-import javax.servlet.ServletException;
 
 public class ParticipantDataSetTable extends VirtualTable
 {
@@ -87,7 +86,7 @@ public class ParticipantDataSetTable extends VirtualTable
                         dsTable.hideParticipantLookups();
                         return dsTable;
                     }
-                    catch (ServletException e)
+                    catch (UnauthorizedException e)
                     {
                         return null;
                     }

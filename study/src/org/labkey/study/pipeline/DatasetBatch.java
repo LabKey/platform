@@ -408,11 +408,6 @@ public class DatasetBatch extends StudyBatch implements Serializable
                 // rethrow and catch below for central logging
                 throw new RuntimeException(e);
             }
-            catch (ServletException e)
-            {
-                // rethrow and catch below for central logging
-                throw new RuntimeException(e);
-            }
 
             // materialize datasets only AFTER all other work has been completed; otherwise the background thread
             // materializing datasets will fight with other operations that may try to clear the materialized cache.

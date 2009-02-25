@@ -7,7 +7,6 @@ import org.labkey.study.model.QCStateSet;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
 
-import javax.servlet.ServletException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -213,25 +212,18 @@ public abstract class VisitManager
         {
             if (dataset.isDemographicData())
             {
-                try
+                TableInfo tInfo = dataset.getTableInfo(null, false, true);
+                //TODO: Use Property URI & Make sure this is set properly
+                ColumnInfo col = tInfo.getColumn("StartDate");
+                if (null != col)
                 {
-                    TableInfo tInfo = dataset.getTableInfo(null, false, true);
-                    //TODO: Use Property URI & Make sure this is set properly
-                    ColumnInfo col = tInfo.getColumn("StartDate");
-                    if (null != col)
-                    {
-                        String subselect = "(SELECT " + col.getSelectName() + " FROM " + tInfo + " WHERE ParticipantId=" + tableParticipant + ".ParticipantId)";
-                        String sql = "UPDATE " + tableParticipant + " SET StartDate= " + subselect + " WHERE " +
-                                tableParticipant + ".StartDate IS NULL OR NOT " + tableParticipant + ".StartDate=" + subselect;
-                        count = Table.execute(StudyManager.getSchema(), sql, null);
-                        break;
-                    }
+                    String subselect = "(SELECT " + col.getSelectName() + " FROM " + tInfo + " WHERE ParticipantId=" + tableParticipant + ".ParticipantId)";
+                    String sql = "UPDATE " + tableParticipant + " SET StartDate= " + subselect + " WHERE " +
+                            tableParticipant + ".StartDate IS NULL OR NOT " + tableParticipant + ".StartDate=" + subselect;
+                    count = Table.execute(StudyManager.getSchema(), sql, null);
+                    break;
+                }
 
-                }
-                catch (ServletException x)
-                {
-                    throw  new IllegalStateException(x);
-                }
             }
         }
         //No demographic data, so just set to study start date.

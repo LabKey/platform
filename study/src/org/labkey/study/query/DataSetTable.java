@@ -23,14 +23,12 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.*;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.model.QCState;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.StudySchema;
 
 import javax.servlet.ServletException;
 import java.util.*;
@@ -43,7 +41,7 @@ public class DataSetTable extends FilteredTable
     DataSetDefinition _dsd;
     TableInfo _fromTable;
 
-    public DataSetTable(StudyQuerySchema schema, DataSetDefinition dsd) throws ServletException
+    public DataSetTable(StudyQuerySchema schema, DataSetDefinition dsd)
     {
         super(dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions(), false));
         _schema = schema;
@@ -217,18 +215,11 @@ public class DataSetTable extends FilteredTable
 
     protected TableInfo getFromTable()
     {
-        try
+        if (_fromTable == null)
         {
-            if (_fromTable == null)
-            {
-                _fromTable = _dsd.getTableInfo(_schema.getUser(), _schema.getMustCheckPermissions(), true);
-            }
-            return _fromTable;
+            _fromTable = _dsd.getTableInfo(_schema.getUser(), _schema.getMustCheckPermissions(), true);
         }
-        catch (ServletException se)
-        {
-            throw UnexpectedException.wrap(se);
-        }
+        return _fromTable;
     }
 
     public DataSetDefinition getDatasetDefinition()

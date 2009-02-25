@@ -854,7 +854,7 @@ public class StudyManager
             if (study.isManualCohortAssignment())
             {
                 if (!SecurityManager.getACL(container).hasPermission(user, ACL.PERM_READ))
-                    throw new IllegalStateException("User does not have permission to view cohort information");
+                    throw new UnauthorizedException("User does not have permission to view cohort information");
             }
 
             // Automatic cohort assignment -- check the source dataset for permissions
@@ -865,7 +865,7 @@ public class StudyManager
                 if (def != null)
                 {
                     if (!def.canRead(user))
-                        throw new IllegalStateException("User does not have permissions to view cohort information.");
+                        throw new UnauthorizedException("User does not have permissions to view cohort information.");
                 }
             }
         }
@@ -2388,15 +2388,8 @@ public class StudyManager
      */
     private int getMaxKeyValue(DataSetDefinition dataset, User user) throws SQLException
     {
-        TableInfo tInfo;
-        try
-        {
-            tInfo = dataset.getTableInfo(user);
-        }
-        catch (ServletException se)
-        {
-            throw new SQLException("Could not get tableInfo: " + se.getMessage());
-        }
+        TableInfo tInfo = dataset.getTableInfo(user);
+
         String keyName = tInfo.getColumn(dataset.getKeyPropertyName()).getSelectName();
         Integer newKey = Table.executeSingleton(tInfo.getSchema(),
                 "SELECT COALESCE(MAX(" + keyName + "), 0) FROM " + tInfo,

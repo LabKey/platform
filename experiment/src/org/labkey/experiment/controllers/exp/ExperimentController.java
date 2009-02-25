@@ -17,6 +17,7 @@
 package org.labkey.experiment.controllers.exp;
 
 import jxl.*;
+import jxl.read.biff.BiffException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
@@ -990,7 +991,15 @@ public class ExperimentController extends SpringActionController
                             fIn = new FileInputStream(realContent);
                             WorkbookSettings settings = new WorkbookSettings();
                             settings.setGCDisabled(true);
-                            Workbook workbook = Workbook.getWorkbook(fIn, settings);
+                            Workbook workbook = null;
+                            try
+                            {
+                                workbook = Workbook.getWorkbook(fIn, settings);
+                            }
+                            catch (BiffException e)
+                            {
+                                throw new NotFoundException("Unable to parse file as Excel data", e);
+                            }
                             for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++)
                             {
                                 JSONArray rowsArray = new JSONArray();
@@ -1059,7 +1068,7 @@ public class ExperimentController extends SpringActionController
                     }
                     else
                     {
-                        throw new IllegalArgumentException("Unable to convert file " + realContent + " to tsv");
+                        throw new NotFoundException("Unable to convert file " + realContent + " to tsv");
                     }
                     ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse());
                     JSONObject workbookJSON = new JSONObject();

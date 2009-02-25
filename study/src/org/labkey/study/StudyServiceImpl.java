@@ -36,7 +36,6 @@ import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.model.*;
 import org.labkey.study.query.*;
 
-import javax.servlet.ServletException;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -142,10 +141,6 @@ public class StudyServiceImpl implements StudyService.Service
         {
             throw UnexpectedException.wrap(ioe);
         }
-        catch (ServletException se)
-        {
-            throw UnexpectedException.wrap(se);
-        }
         finally
         {
             if(transactionOwner)
@@ -201,43 +196,36 @@ public class StudyServiceImpl implements StudyService.Service
         SimpleFilter filter = new SimpleFilter();
         filter.addInClause("lsid", lsids);
 
-        try
+        TableInfo tInfo = def.getTableInfo(u, true, false);
+        Map<String,Object>[] datas = Table.select(tInfo, Table.ALL_COLUMNS, filter, null, Map.class);
+
+        if (datas == null || datas.length == 0)
+            return null;
+
+        Map<String,Object>[] canonicalDatas = new HashMap[datas.length];
+        List<ColumnInfo> columns = tInfo.getColumns();
+        for (int i = 0; i < datas.length; i++)
         {
-            TableInfo tInfo = def.getTableInfo(u, true, false);
-            Map<String,Object>[] datas = Table.select(tInfo, Table.ALL_COLUMNS, filter, null, Map.class);
-
-            if (datas == null || datas.length == 0)
-                return null;
-
-            Map<String,Object>[] canonicalDatas = new HashMap[datas.length];
-            List<ColumnInfo> columns = tInfo.getColumns();
-            for (int i = 0; i < datas.length; i++)
+            Map<String, Object> data = datas[i];
+            // Need to remove extraneous columns
+            data.remove("_row");
+            for (ColumnInfo col : columns)
             {
-                Map<String, Object> data = datas[i];
-                // Need to remove extraneous columns
-                data.remove("_row");
-                for (ColumnInfo col : columns)
+                // special handling for lsids and keys -- they're not user-editable,
+                // but we want to display them
+                if (col.getName().equals("lsid") ||
+                        col.getName().equals("sourcelsid") ||
+                        col.getName().equals("QCState") ||
+                        col.isKeyField())
                 {
-                    // special handling for lsids and keys -- they're not user-editable,
-                    // but we want to display them
-                    if (col.getName().equals("lsid") ||
-                            col.getName().equals("sourcelsid") ||
-                            col.getName().equals("QCState") ||
-                            col.isKeyField())
-                    {
-                        continue;
-                    }
-                    if (!col.isUserEditable())
-                        data.remove(col.getName());
+                    continue;
                 }
-                canonicalDatas[i] = canonicalizeDatasetRow(data, queryTableInfo.getColumns());
+                if (!col.isUserEditable())
+                    data.remove(col.getName());
             }
-            return canonicalDatas;
+            canonicalDatas[i] = canonicalizeDatasetRow(data, queryTableInfo.getColumns());
         }
-        catch (ServletException se)
-        {
-            throw UnexpectedException.wrap(se);
-        }
+        return canonicalDatas;
     }
 
     public String insertDatasetRow(User u, Container c, int datasetId, Map<String, Object> data, List<String> errors) throws SQLException
@@ -279,10 +267,6 @@ public class StudyServiceImpl implements StudyService.Service
         catch (IOException ioe)
         {
             throw UnexpectedException.wrap(ioe);
-        }
-        catch (ServletException se)
-        {
-            throw UnexpectedException.wrap(se);
         }
         finally
         {
@@ -329,15 +313,8 @@ public class StudyServiceImpl implements StudyService.Service
     {
         Map<String,Object> map = new HashMap<String,Object>();
 
-        TableInfo tInfo;
-        try
-        {
-            tInfo = def.getTableInfo(null, false, false);
-        }
-        catch (ServletException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
+        TableInfo tInfo = def.getTableInfo(null, false, false);
+
         for (ColumnInfo col : tInfo.getColumns())
         {
             String name = col.getName();
