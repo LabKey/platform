@@ -126,5 +126,6 @@ public interface Report
         reportId,
         showTabs,
         showSection,
+        reportName,
     }
 }
