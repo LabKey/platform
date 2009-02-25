@@ -19,7 +19,6 @@ package org.labkey.api.wiki;
 import org.labkey.api.util.HString;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Tamra Myers
  * Date: Aug 16, 2006
  * Time: 11:57:19 AM
