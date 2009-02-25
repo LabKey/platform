@@ -605,9 +605,9 @@ public class PageFlowUtil
 
 
     /**
-     * boolean controlling whether or now we compress {@link ObjectOutputStream}s when we render them in HTML forms.
+     * boolean controlling whether or not we compress {@link ObjectOutputStream}s when we render them in HTML forms.
      * 
-      */
+     */
     static private final boolean COMPRESS_OBJECT_STREAMS = true;
     static public String encodeObject(Object o) throws IOException
     {
