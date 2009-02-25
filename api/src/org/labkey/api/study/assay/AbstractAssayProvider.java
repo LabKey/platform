@@ -102,14 +102,27 @@ public abstract class AbstractAssayProvider implements AssayProvider
         registerLsidHandler();
     }
 
-    protected void addStandardRunPublishProperties(Container study, Collection<PropertyDescriptor> types, Map<String, Object> dataMap, ExpRun run)
+    private void setStandardPropertyAttributes(TableInfo runTable, String runTableColName, PropertyDescriptor studyPd)
     {
-        addProperty(study, "Run Assay Id", run.getProtocol().getRowId(), dataMap, types);
-        addProperty(study, "Run Name", run.getName(), dataMap, types);
-        addProperty(study, "Run Comments", run.getComments(), dataMap, types);
-        addProperty(study, "Run CreatedOn", run.getCreated(), dataMap, types);
+        ColumnInfo runColumn = runTable.getColumn(runTableColName);
+        studyPd.setLabel(runColumn.getCaption());
+        studyPd.setDescription(runColumn.getDescription());
+    }
+
+    protected void addStandardRunPublishProperties(User user, Container study, Collection<PropertyDescriptor> types, Map<String, Object> dataMap, ExpRun run)
+    {
+        UserSchema schema = AssayService.get().createSchema(user, run.getContainer());
+        TableInfo runTable = schema.getTable(AssayService.get().getRunsTableName(run.getProtocol()), null);
+
+        PropertyDescriptor pd = addProperty(study, "Run Name", run.getName(), dataMap, types);
+        setStandardPropertyAttributes(runTable, "Name", pd);
+        pd = addProperty(study, "Run Comments", run.getComments(), dataMap, types);
+        setStandardPropertyAttributes(runTable, "Comments", pd);
+        pd = addProperty(study, "Run CreatedOn", run.getCreated(), dataMap, types);
+        setStandardPropertyAttributes(runTable, "Created", pd);
         User createdBy = run.getCreatedBy();
-        addProperty(study, "Run CreatedBy", createdBy == null ? null : createdBy.getDisplayName(HttpView.currentContext()), dataMap, types);
+        pd = addProperty(study, "Run CreatedBy", createdBy == null ? null : createdBy.getDisplayName(HttpView.currentContext()), dataMap, types);
+        setStandardPropertyAttributes(runTable, "CreatedBy", pd);
     }
 
     protected void registerLsidHandler()
@@ -248,46 +261,47 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_RUN);
     }
 
-    protected void addProperty(Container sourceContainer, String name, Integer value, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
+    protected PropertyDescriptor addProperty(Container sourceContainer, String name, Integer value, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
     {
-        addProperty(sourceContainer, name, value, PropertyType.INTEGER, dataMap, types);
+        return addProperty(sourceContainer, name, value, PropertyType.INTEGER, dataMap, types);
     }
 
-    protected void addProperty(Container sourceContainer, String name, Double value, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
+    protected PropertyDescriptor addProperty(Container sourceContainer, String name, Double value, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
     {
-        addProperty(sourceContainer, name, value, PropertyType.DOUBLE, dataMap, types);
+        return addProperty(sourceContainer, name, value, PropertyType.DOUBLE, dataMap, types);
     }
 
-    protected void addProperty(Container sourceContainer, String name, Boolean value, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
+    protected PropertyDescriptor addProperty(Container sourceContainer, String name, Boolean value, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
     {
-        addProperty(sourceContainer, name, value, PropertyType.BOOLEAN, dataMap, types);
+        return addProperty(sourceContainer, name, value, PropertyType.BOOLEAN, dataMap, types);
     }
 
-    protected void addProperty(Container sourceContainer, String name, Date value, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
+    protected PropertyDescriptor addProperty(Container sourceContainer, String name, Date value, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
     {
-        addProperty(sourceContainer, name, value, PropertyType.DATE_TIME, dataMap, types);
+        return addProperty(sourceContainer, name, value, PropertyType.DATE_TIME, dataMap, types);
     }
 
-    protected void addProperty(Container sourceContainer, String name, String value, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
+    protected PropertyDescriptor addProperty(Container sourceContainer, String name, String value, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
     {
-        addProperty(sourceContainer, name, value, PropertyType.STRING, dataMap, types);
+        return addProperty(sourceContainer, name, value, PropertyType.STRING, dataMap, types);
     }
 
-    protected void addProperty(PropertyDescriptor pd, ObjectProperty value, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
+    protected PropertyDescriptor addProperty(PropertyDescriptor pd, ObjectProperty value, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
     {
-        addProperty(pd, value == null ? null : value.getValueQcAware(), dataMap, types);
+        return addProperty(pd, value == null ? null : value.getValueQcAware(), dataMap, types);
     }
 
-    protected void addProperty(PropertyDescriptor pd, Object value, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
+    protected PropertyDescriptor addProperty(PropertyDescriptor pd, Object value, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
     {
         dataMap.put(pd.getName(), value);
         if (types != null)
             types.add(pd);
+        return pd;
     }
 
-    protected void addProperty(Container sourceContainer, String name, Object value, PropertyType type, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
+    protected PropertyDescriptor addProperty(Container sourceContainer, String name, Object value, PropertyType type, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
     {
-        addProperty(createPublishPropertyDescriptor(sourceContainer, name, type), value, dataMap, types);
+        return addProperty(createPublishPropertyDescriptor(sourceContainer, name, type), value, dataMap, types);
     }
 
     protected PropertyDescriptor createPublishPropertyDescriptor(Container sourceContainer, String name, PropertyType type)

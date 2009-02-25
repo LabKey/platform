@@ -45,6 +45,22 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
             _defaultValueTypes.addItem(type.getLabel(), type.name());
     }
 
+    private void updateEnabledState(FieldType field)
+    {
+        _defaultValueTypes.setEnabled(!field.isFileType());
+        String desiredState = field.isFileType() ? DefaultValueType.FIXED_EDITABLE.name() : field.getDefaultValueType();
+        for (int i = 0; i < _defaultValueTypes.getItemCount(); i++)
+        {
+            String currentItemValue = _defaultValueTypes.getValue(i);
+            if (currentItemValue.equals(desiredState))
+            {
+                _defaultValueTypes.setSelectedIndex(i);
+                return;
+            }
+        }
+        _defaultValueTypes.setSelectedIndex(0);
+    }
+
     public int addToTable(FlexTable flexTable, int row)
     {
         flexTable.setWidget(row, LABEL_COLUMN, new Label("Default value"));
@@ -117,15 +133,13 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
 
     public void showPropertyDescriptor(DomainType domain, FieldType field)
     {
-        for (int i = 0; i < _defaultValueTypes.getItemCount(); i++)
-        {
-            String currentItemValue = _defaultValueTypes.getValue(i);
-            if (currentItemValue.equals(field.getDefaultValueType()))
-            {
-                _defaultValueTypes.setSelectedIndex(i);
-                return;
-            }
-        }
-        _defaultValueTypes.setSelectedIndex(0);
+        updateEnabledState(field);
     }
+
+    @Override
+    public void propertyDescriptorChanged(FieldType field)
+    {
+        updateEnabledState(field);
+    }
+
 }

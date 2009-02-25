@@ -407,6 +407,8 @@ public class DataColumn extends DisplayColumn
         {
             out.write("<input");
             outputName(ctx, out, formFieldName);
+            if (disabledInput)
+                out.write(" DISABLED");
             out.write(" type='file'>\n");
         }
         else if (_inputType.equalsIgnoreCase("checkbox"))

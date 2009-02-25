@@ -20,6 +20,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.IPropertyType;
 import org.labkey.api.exp.*;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.ACL;
@@ -36,6 +37,7 @@ import java.util.Map;
 import java.util.List;
 import java.io.Writer;
 import java.io.IOException;
+import java.io.File;
 /*
  * User: brittp
  * Date: Jan 27, 2009
@@ -75,7 +77,7 @@ public class SetDefaultValuesAction extends DefaultValuesAction
         @Override
         protected boolean isDisabledInput()
         {
-            return false;
+            return _property.getPropertyDescriptor().getPropertyType().getJavaType() == File.class;
         }
     }
 
@@ -99,12 +101,16 @@ public class SetDefaultValuesAction extends DefaultValuesAction
                 renderer.renderInputCell(ctx, out, 1);
                 out.write("<td>");
                 DomainProperty property = ((DefaultValueDisplayColumn) renderer).getProperty();
-                DefaultValueType defaultType = property.getDefaultValueTypeEnum();
-                if (defaultType == null)
-                    defaultType = DefaultValueType.FIXED_EDITABLE;
-                out.write(PageFlowUtil.filter(defaultType.getLabel()));
-                out.write(PageFlowUtil.helpPopup("Default Value Type: " + defaultType.getLabel(), defaultType.getHelpText(), true));
-
+                if (property.getPropertyDescriptor().getPropertyType().getJavaType() == File.class)
+                    out.write("Defaults cannot be set for file fields.");
+                else
+                {
+                    DefaultValueType defaultType = property.getDefaultValueTypeEnum();
+                    if (defaultType == null)
+                        defaultType = DefaultValueType.FIXED_EDITABLE;
+                    out.write(PageFlowUtil.filter(defaultType.getLabel()));
+                    out.write(PageFlowUtil.helpPopup("Default Value Type: " + defaultType.getLabel(), defaultType.getHelpText(), true));
+                }
                 out.write("</td>");
                 out.write("</tr>");
             }
@@ -118,10 +124,18 @@ public class SetDefaultValuesAction extends DefaultValuesAction
     {
         _returnUrl = domainIdForm.getReturnUrl();
         Domain domain = getDomain(domainIdForm);
+        DomainProperty[] properties = domain.getProperties();
+        if (properties.length == 0)
+        {
+            return new HtmlView("No fields are defined for this table.<br><br>" + 
+                    PageFlowUtil.generateButton("Cancel", new ActionURL(domainIdForm.getReturnUrl())));
+        }
+
+
         DataRegion rgn = new DefaultValueDataRegion();
         TableInfo baseTable = OntologyManager.getTinfoObject();
         rgn.setTable(baseTable);
-        for (DomainProperty dp : domain.getProperties())
+        for (DomainProperty dp : properties)
         {
             ColumnInfo info = dp.getPropertyDescriptor().createColumnInfo(baseTable, "objecturi", getViewContext().getUser());
             rgn.addDisplayColumn(new DefaultValueDisplayColumn(dp, info));
@@ -256,7 +270,8 @@ public class SetDefaultValuesAction extends DefaultValuesAction
 
         try
         {
-            DefaultValueService.get().setDefaultValues(domainIdForm.getContainer(), values);
+            if (values.size() > 0)
+                DefaultValueService.get().setDefaultValues(domainIdForm.getContainer(), values);
         }
         catch (ExperimentException e)
         {

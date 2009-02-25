@@ -212,7 +212,7 @@ public abstract class DataLoader
         {
             String[] headers = lineFields[_skipLines - 1];
             for (int f = 0; f < nCols; f++)
-                colDescs[f].name = (f >= headers.length || "".equals(headers[f])) ? getDefaultColumnName(f) : headers[f];
+                colDescs[f].name = (f >= headers.length || "".equals(headers[f])) ? getDefaultColumnName(f) : headers[f].trim();
         }
         else
         {

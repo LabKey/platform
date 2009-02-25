@@ -157,4 +157,9 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
             DOM.setStyleAttribute(_backgroundElement, "backgroundColor", "#ffffff");
         }
     }
+
+    public FieldType getField()
+    {
+        return _currentPD;
+    }
 }

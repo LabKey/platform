@@ -396,4 +396,10 @@ public class GWTPropertyDescriptor implements IsSerializable
     {
         return name.getString() + ": " + rangeURI.getString();
     }
+
+    public boolean isFileType()
+    {
+        return "http://cpas.fhcrc.org/exp/xml#fileLink".equals(getRangeURI()) ||
+               "http://www.labkey.org/exp/xml#attachment".equals(getRangeURI());
+    }
 }

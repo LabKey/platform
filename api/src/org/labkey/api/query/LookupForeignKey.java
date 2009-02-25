@@ -118,7 +118,7 @@ abstract public class LookupForeignKey extends AbstractForeignKey
         if (_baseURL == null)
         {
             TableInfo lookupTable = getLookupTableInfo();
-            if (lookupTable == null)
+            if (lookupTable == null || _columnName == null)
             {
                 return null;
             }

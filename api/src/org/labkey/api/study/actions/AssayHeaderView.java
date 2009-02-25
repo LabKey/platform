@@ -94,9 +94,12 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
                     baseEditUrl.addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString());
                     for (Domain domain : domains)
                     {
-                        ActionURL currentEditUrl = baseEditUrl.clone();
-                        currentEditUrl.addParameter("domainId", domain.getTypeId());
-                        setDefaultsTree.addChild(domain.getName(), currentEditUrl);
+                        if (domain.getProperties().length > 0)
+                        {
+                            ActionURL currentEditUrl = baseEditUrl.clone();
+                            currentEditUrl.addParameter("domainId", domain.getTypeId());
+                            setDefaultsTree.addChild(domain.getName(), currentEditUrl);
+                        }
                     }
                     manageMenu.addChild(setDefaultsTree);
                 }
