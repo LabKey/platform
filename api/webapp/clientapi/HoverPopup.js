@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2009 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
 /**
  * @namespace LabKey Popup Menu Web Class.
  * This class allows an element to display a popup menu based on a LabKey webpart
