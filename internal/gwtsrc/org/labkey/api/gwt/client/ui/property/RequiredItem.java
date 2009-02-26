@@ -15,12 +15,9 @@
  */
 package org.labkey.api.gwt.client.ui.property;
 
-import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.PropertyPane;
-import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.CheckBox;
-import com.google.gwt.user.client.ui.FlexTable;
 
 /**
  * User: jeckels
@@ -31,6 +28,7 @@ public class RequiredItem<DomainType extends GWTDomain<FieldType>, FieldType ext
     public RequiredItem(PropertyPane<DomainType, FieldType> propertyPane)
     {
         super(propertyPane);
+        checkbox.setName("required");
     }
 
     protected String getCheckboxLabelText()
