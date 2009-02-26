@@ -351,7 +351,9 @@ public class Query
 
     static class SqlTest
     {
+		public String name = null;
         public String sql;
+		public String metadata = null;
         public int countColumns = -1;
         public int countRows = -1;
 
@@ -366,6 +368,16 @@ public class Query
             countColumns = cols;
             countRows = rows;
         }
+
+
+		SqlTest(String name, String sql, String metadata, int cols, int rows)
+		{
+			this.name = name;
+			this.sql = sql;
+			this.metadata = metadata;
+			countColumns = cols;
+			countRows = rows;
+		}
     }
 
 
@@ -402,8 +414,23 @@ public class Query
         new SqlTest("SELECT R.seven FROM R UNION ALL SELECT R.seven FROM R UNION ALL SELECT R.twelve FROM R", 1, 3*Rsize),
 		// LIMIT
 		new SqlTest("SELECT R.day, R.month, R.date FROM R LIMIT 5", 3, 5),
-		new SqlTest("SELECT R.day, R.month, R.date FROM R ORDER BY R.date LIMIT 5", 3, 5)
+		new SqlTest("SELECT R.day, R.month, R.date FROM R ORDER BY R.date LIMIT 5", 3, 5),
+
+
+		// saved queries
+		new SqlTest("Rquery",
+				"SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid FROM R",
+				null,
+				8, Rsize),
+		new SqlTest("Squery",
+				"SELECT S.d, S.seven, S.twelve, S.day, S.month, S.date, S.duration, S.guid FROM Folder.qtest.lists.S S",
+				null,
+				8, Rsize),
+
+		new SqlTest("SELECT Rquery.d FROM Rquery", 1, Rsize)
     };
+
+
 
 	static SqlTest[] postgres = new SqlTest[]
 	{
@@ -412,16 +439,18 @@ public class Query
 		new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date")
 	};
 	
+
+
 	static SqlTest[] negative = new SqlTest[]
 	{
 		new SqlTest("SELECT S.d, S.seven FROM S"),
 		new SqlTest("SELECT S.d, S.seven FROM Folder.S"),
 		new SqlTest("SELECT S.d, S.seven FROM Folder.qtest.S"),
 		new SqlTest("SELECT S.d, S.seven FROM Folder.qtest.list.S"),
-		//new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY R.date")
 		new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R LIMIT 5", 3, 5),
 		new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date LIMIT 5", 3, 5)
 	};
+
 
 	
     public static class TestCase extends junit.framework.TestCase
@@ -545,6 +574,15 @@ public class Query
                     assertEquals(test.sql, test.countColumns, md.getColumnCount());
                 if (test.countRows >= 0)
                     assertEquals(test.sql, test.countRows, rs.getSize());
+
+				if (test.name != null)
+				{
+					QueryDefinition q = QueryService.get().createQueryDef(JunitUtil.getTestContainer(), "lists", test.name);
+					q.setSql(test.sql);
+					if (null != test.metadata)
+						q.setMetadataXml(test.metadata);
+					q.save(TestContext.get().getUser(), JunitUtil.getTestContainer());
+				}
             }
             finally
             {
@@ -624,7 +662,23 @@ public class Query
 			{
 				failidate(test);
 			}
+
+			for (SqlTest test : tests)
+			{
+				if (test.name != null)
+				{
+					QueryDefinition q = QueryService.get().getQueryDef(JunitUtil.getTestContainer(), "lists", test.name);
+					assertNotNull(q);
+					q.delete(user);
+				}
+			}
         }
+
+
+		public void testQueryService() throws Exception
+		{
+
+		}
 
 
         public static Test suite()
