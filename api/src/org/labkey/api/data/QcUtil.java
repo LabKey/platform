@@ -25,7 +25,7 @@ import java.util.Set;
  */
 public class QcUtil
 {
-    private static final String[] QC_STATES = new String[] {".Q", ".N"};
+    private static final String[] QC_STATES = new String[] {"Q", "N"};
 
     private static final String Q_TEXT = "This value has been flagged as failing QC";
     private static final String N_TEXT = "This value is missing";
@@ -53,11 +53,11 @@ public class QcUtil
         return getQcValues(c).contains(value);
     }
 
-    public static String getHoverText(String qcValue)
+    public static String getQcLabel(String qcValue)
     {
-        if (".N".equals(qcValue))
+        if ("N".equals(qcValue))
             return N_TEXT;
-        if (".Q".equals(qcValue))
+        if ("Q".equals(qcValue))
             return Q_TEXT;
         return "";
     }

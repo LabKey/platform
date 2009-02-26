@@ -229,10 +229,6 @@ public class ExcelLoader extends DataLoader
                     }
                     else if (column.isQcIndicator())
                     {
-                        if (!QcUtil.isValidQcValue(contents, column.getQcContainer()))
-                        {
-                            throw new ConversionException(contents + " is not a valid QC value");
-                        }
                         int qcColumnIndex = getQcColumnIndex(column);
                         if (qcColumnIndex != -1)
                         {
@@ -266,7 +262,7 @@ public class ExcelLoader extends DataLoader
                 }
                 catch (ConversionException ce)
                 {
-                    // Couldn't convert. Leave it as a missing value.
+                    value = column.errorValues;
                 }
                 
                 if (value != null)

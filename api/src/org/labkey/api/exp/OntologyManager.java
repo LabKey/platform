@@ -205,7 +205,7 @@ public class OntologyManager
                 if (propsToInsert.size() > MAX_PROPS_IN_BATCH)
                 {
                     assert insert.start();
-                    insertPropertiesBulk(propsToInsert);
+                    insertPropertiesBulk(c, propsToInsert);
                     assert insert.stop();
                     propsToInsert = new ArrayList<PropertyRow>(MAX_PROPS_IN_BATCH + descriptors.length);
                 }
@@ -215,7 +215,7 @@ public class OntologyManager
                 throw new ValidationException(errors);
 
             assert insert.start();
-			insertPropertiesBulk(propsToInsert);
+			insertPropertiesBulk(c, propsToInsert);
 			assert insert.stop();
 		}
 		catch (SQLException x)
@@ -1360,11 +1360,11 @@ public class OntologyManager
         }
         if (!errors.isEmpty())
             throw new ValidationException(errors);
-        insertPropertiesBulk(Arrays.asList((PropertyRow[])props));
+        insertPropertiesBulk(c, Arrays.asList((PropertyRow[])props));
 	}
 
 
-	private static void insertPropertiesBulk(List<PropertyRow> props) throws SQLException
+	private static void insertPropertiesBulk(Container container, List<PropertyRow> props) throws SQLException
 	{
 		ArrayList<Object[]> dates = new ArrayList<Object[]>();
 		ArrayList<Object[]> floats = new ArrayList<Object[]>();
@@ -1379,6 +1379,7 @@ public class OntologyManager
             int objectId = property.getObjectId();
             int propertyId = property.getPropertyId();
             String qcValue = property.getQcValue();
+            assert qcValue == null || QcUtil.isQcValue(qcValue, container) : "Attempt to insert an invalid QC Value: " + qcValue;
 
             if (null != property.getFloatValue())
                 floats.add(new Object[] {objectId, propertyId, property.getFloatValue(), qcValue});

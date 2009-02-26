@@ -31,11 +31,10 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.QcUtil;
 import org.labkey.api.exp.QcFieldWrapper;
 
+import java.beans.PropertyDescriptor;
 import java.io.*;
-import java.lang.reflect.Array;
 import java.util.*;
 import java.util.regex.Pattern;
-import java.beans.PropertyDescriptor;
 
 
 /**
@@ -634,16 +633,11 @@ public class TabLoader extends DataLoader
                                 }
                                 else
                                 {
-                                    if (QcUtil.isValidQcValue(fld, column.getQcContainer()))
-                                    {
-                                        QcFieldWrapper qcWrapper = (QcFieldWrapper)values[qcColumnIndex];
-                                        qcWrapper.setQcValue("".equals(fld) ? null : fld);
-                                    }
-                                    else
-                                    {
-                                        throw new ConversionException(fld + " is not a valid QC value");
-                                    }
+                                    QcFieldWrapper qcWrapper = (QcFieldWrapper)values[qcColumnIndex];
+                                    qcWrapper.setQcValue("".equals(fld) ? null : fld);
                                 }
+                                if (_throwOnErrors && !QcUtil.isValidQcValue(fld, column.getQcContainer()))
+                                    throw new ConversionException(fld + " is not a valid QC value");
                             }
                             else
                             {

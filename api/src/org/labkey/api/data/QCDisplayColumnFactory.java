@@ -54,9 +54,7 @@ public class QCDisplayColumnFactory implements DisplayColumnFactory
     {
         ColumnInfo qcColumn = new QcColumn(pd, table, parentLsidColumn);
 
-        AliasedColumn rawValueCol = new AliasedColumn(table, valueColumn.getName() + RAW_VALUE_SUFFIX, valueColumn);
-        rawValueCol.setIsHidden(true);
-        rawValueCol.setUserEditable(false);
+        ColumnInfo rawValueCol = createRawValueColumn(table, valueColumn);
 
         valueColumn.setDisplayColumnFactory(new QCDisplayColumnFactory());
 
@@ -65,6 +63,17 @@ public class QCDisplayColumnFactory implements DisplayColumnFactory
         result[1] = rawValueCol;
 
         return result;
+    }
+
+    private static ColumnInfo createRawValueColumn(TableInfo table, ColumnInfo valueColumn)
+    {
+        AliasedColumn rawValueCol = new AliasedColumn(table, valueColumn.getName() + RAW_VALUE_SUFFIX, valueColumn);
+        rawValueCol.setUserEditable(false);
+        rawValueCol.setIsHidden(true);
+        rawValueCol.setQcColumnName(null); // This column itself does not allow QC
+        rawValueCol.setNullable(true); // Otherwise we get complaints on import for required fields
+
+        return rawValueCol;
     }
 
     private static ColumnInfo[] createQCColumns(AbstractTableInfo table, ColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId)
@@ -80,11 +89,7 @@ public class QCDisplayColumnFactory implements DisplayColumnFactory
 
         valueColumn.setQcColumnName(qcColumn.getName());
 
-        AliasedColumn rawValueCol = new AliasedColumn(table, valueColumn.getName() + RAW_VALUE_SUFFIX, valueColumn);
-        rawValueCol.setUserEditable(false);
-        rawValueCol.setIsHidden(true);
-        rawValueCol.setQcColumnName(null); // This column itself does not allow QC
-        rawValueCol.setNullable(true); // Otherwise we get complaints on import for required fields
+        ColumnInfo rawValueCol = createRawValueColumn(table, valueColumn);
 
         valueColumn.setDisplayColumnFactory(new QCDisplayColumnFactory());
 

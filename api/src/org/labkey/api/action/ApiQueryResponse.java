@@ -84,6 +84,9 @@ public class ApiQueryResponse implements ApiResponse
         _ctx.setResultSet(_rs);
 
         _props.put("metaData", getMetaData());
+        Map<String,String> qcInfo = getQcInfo();
+        if (qcInfo != null)
+            _props.put("qcInfo", qcInfo);
         _props.put("columnModel", getColumnModel());
         _props.put("rows", getRowset());
         _props.put("schemaName", _schemaName);
@@ -103,6 +106,31 @@ public class ApiQueryResponse implements ApiResponse
     protected double getFormatVersion()
     {
         return 8.3;
+    }
+
+    /**
+     * Returns a map of QC Values to their labels.
+     * E.g.: ".Q" -> "This value has been flagged as failing QC"
+     *
+     * If no columns contained in this result allow QC,
+     * the result of this method will be null
+     */
+    protected Map<String,String> getQcInfo()
+    {
+        for (DisplayColumn dc : _displayColumns)
+        {
+            if (dc instanceof QCDisplayColumn)
+            {
+                Map<String,String> qcInfo = new HashMap<String,String>();
+                Set<String> qcValues = QcUtil.getQcValues(_viewContext.getContainer());
+                for (String qcValue :qcValues)
+                {
+                    qcInfo.put(qcValue, QcUtil.getQcLabel(qcValue));
+                }
+                return qcInfo;
+            }
+        }
+        return null;
     }
 
     protected Map<String,Object> getMetaData() throws Exception

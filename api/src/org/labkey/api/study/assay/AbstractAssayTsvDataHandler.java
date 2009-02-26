@@ -17,22 +17,19 @@
 package org.labkey.api.study.assay;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
+import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.qc.ValidationDataHandler;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.qc.ValidationDataHandler;
+import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
 import java.io.IOException;
@@ -363,7 +360,20 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
                 else if (o instanceof QcFieldWrapper)
                 {
-                    valueMissing = ((QcFieldWrapper)o).isEmpty();
+                    QcFieldWrapper qcWrapper = (QcFieldWrapper)o;
+                    if (qcWrapper.isEmpty())
+                        valueMissing = true;
+                    else
+                    {
+                        valueMissing = false;
+                        if (!QcUtil.isValidQcValue(qcWrapper.getQcValue(), dataDomain.getContainer()))
+                        {
+                            String columnName = pd.getName() + QcColumn.QC_INDICATOR_SUFFIX;
+                            wrongTypes.add(columnName);
+                            errorSB.append(columnName).append(" must be a valid QC Value.");
+                        }
+                    }
+
                 }
                 else
                 {
