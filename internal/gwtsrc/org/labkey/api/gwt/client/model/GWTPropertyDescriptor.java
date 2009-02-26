@@ -21,13 +21,11 @@ import org.labkey.api.gwt.client.util.BooleanProperty;
 import org.labkey.api.gwt.client.util.IPropertyWrapper;
 import org.labkey.api.gwt.client.util.IntegerProperty;
 import org.labkey.api.gwt.client.util.StringProperty;
-import org.labkey.api.gwt.client.DefaultValueType;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Apr 24, 2007
  * Time: 1:28:42 PM

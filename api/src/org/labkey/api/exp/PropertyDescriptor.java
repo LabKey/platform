@@ -367,6 +367,8 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
 
     public boolean equals(Object obj)
     {
+        if (obj == this)
+            return true;
         if (!(obj instanceof PropertyDescriptor))
             return false;
         // property descriptors that are not in the database are never equal:

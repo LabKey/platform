@@ -349,7 +349,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             int tableRow = index + 1;
             RadioButton radioButton = (RadioButton) _table.getWidget(tableRow, 2);
 
-            _propertiesPane.showPropertyDescriptor(pd, !locked && !readOnly, radioButton.getAbsoluteTop());
+            _propertiesPane.showPropertyDescriptor(pd, !readOnly, radioButton.getAbsoluteTop());
 
             radioButton.setChecked(true);
             Element e = _table.getRowFormatter().getElement(tableRow);
@@ -485,7 +485,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         BoundTypePicker typePicker = new BoundTypePicker(index, "ff_type" + index, _domain.isAllowFileLinkProperties(), _domain.isAllowAttachmentProperties());
         typePicker.addFocusListener(focusListener);
         typePicker.setRangeURI(pd.getRangeURI());
-        typePicker.setEnabled(isTypeEditable(pd, status));
+        typePicker.setEnabled(isTypeEditable(pd, status) && !locked);
         _table.setWidget(tableRow, col, typePicker);
         col++;
 

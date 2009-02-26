@@ -16,7 +16,14 @@
 
 package org.labkey.api.util;
 
+import org.apache.log4j.Logger;
+import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.module.ModuleLoader;
+
 import javax.servlet.ServletContextEvent;
+import java.io.*;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -25,22 +32,84 @@ import javax.servlet.ServletContextEvent;
 public class BreakpointThread extends Thread implements ShutdownListener
 {
     private boolean _shutdown = false;
-    
+
+    private static final Logger _log = Logger.getLogger(BreakpointThread.class);
+
     public BreakpointThread()
     {
         setDaemon(true);
+        setName("BreakpointThread");
         ContextListener.addShutdownListener(this);
     }
 
     public void run()
     {
+        File coreModuleDir = ModuleLoader.getInstance().getCoreModule().getExplodedPath();
+        File modulesDir = coreModuleDir.getParentFile();
+        File labkeyRoot = modulesDir.getParentFile();
+        File requestFile = new File(labkeyRoot, "threadDumpRequest");
+        if (!requestFile.exists())
+        {
+            FileOutputStream fOut = null;
+            try
+            {
+                fOut = new FileOutputStream(requestFile);
+                PrintWriter writer = new PrintWriter(fOut);
+                writer.println("Touch this file while LabKey Server is running and within 10 seconds the server will");
+                writer.println("dump all of its threads to its standard log file, including database connection SPIDs");
+                writer.flush();
+            }
+            catch (IOException e)
+            {
+                _log.error("Failed to create file " + requestFile.getAbsolutePath(), e);
+            }
+            finally
+            {
+                if (fOut != null) { try { fOut.close(); } catch (IOException e) {} }
+            }
+        }
+
+        long lastModified = requestFile.lastModified();
         while (!_shutdown)
         {
             try
             {
-                Thread.sleep(5000);
+                Thread.sleep(10000);
+                long modified = requestFile.lastModified();
+                boolean threadDumpRequested = modified != lastModified;
+                if (threadDumpRequested)
+                {
+                    dumpThreads();
+                }
+                lastModified = modified;
             }
             catch (InterruptedException e) {}
+        }
+    }
+
+    private void dumpThreads()
+    {
+        Map<Thread,StackTraceElement[]> threads = Thread.getAllStackTraces();
+        for (Map.Entry<Thread, StackTraceElement[]> threadEntry : threads.entrySet())
+        {
+            _log.debug("");
+            Thread thread = threadEntry.getKey();
+            StringBuilder threadInfo = new StringBuilder(thread.getName());
+            threadInfo.append(" (");
+            threadInfo.append(thread.getState());
+            threadInfo.append(")");
+            Set<Integer> spids = ConnectionWrapper.getSPIDsForThread(thread);
+            if (!spids.isEmpty())
+            {
+                threadInfo.append(", Database Connection SPIDs = ");
+                threadInfo.append(spids);
+            }
+
+            _log.debug(threadInfo);
+            for (StackTraceElement stackTraceElement : threadEntry.getValue())
+            {
+                _log.debug("\t" + stackTraceElement.toString());
+            }
         }
     }
 

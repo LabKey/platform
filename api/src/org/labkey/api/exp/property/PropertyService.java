@@ -21,10 +21,12 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.security.User;
+import org.labkey.common.util.Pair;
 import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.SQLException;
+import java.util.Map;
 
 public class PropertyService
 {
@@ -54,8 +56,8 @@ public class PropertyService
          * @param context context in which LSIDs are resolved; may be null
          * @param xDomain the xmlbean containing the Domain description.
          */
-        Domain createDomain(Container container, @Nullable XarContext context, DomainDescriptorType xDomain) throws XarFormatException;
-        Domain createDomain(Container container, DomainDescriptorType xDomain);
+        Pair<Domain, Map<DomainProperty, Object>> createDomain(Container container, @Nullable XarContext context, DomainDescriptorType xDomain) throws XarFormatException;
+        Pair<Domain, Map<DomainProperty, Object>> createDomain(Container container, DomainDescriptorType xDomain);
         DomainKind getDomainKind(String typeURI);
         void registerDomainKind(DomainKind type);
 

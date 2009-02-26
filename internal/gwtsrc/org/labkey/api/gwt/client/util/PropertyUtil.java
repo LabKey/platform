@@ -34,7 +34,7 @@ public class PropertyUtil
 
     public static native String getCurrentURL()
         /*-{
-            return $wnd.location;
+            return $wnd.location + '';
         }-*/;
 
     public static String getContainerPath()

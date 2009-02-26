@@ -185,11 +185,6 @@ public class ModuleLoader implements Filter
 
         _log.debug("ModuleLoader init");
 
-        // Start up a thread that lets us hit a breakpoint in the debugger, even if
-        // all the real working threads are hung. This lets us invoke methods in the debugger,
-        // gain easier access to statics, etc.
-        new BreakpointThread().start();
-
         verifyJavaVersion();
 
         // Register BeanUtils converters
@@ -238,6 +233,11 @@ public class ModuleLoader implements Filter
                 _moduleFailures.put(module.getName(), t);
             }
         }
+
+        // Start up a thread that lets us hit a breakpoint in the debugger, even if
+        // all the real working threads are hung. This lets us invoke methods in the debugger,
+        // gain easier access to statics, etc.
+        new BreakpointThread().start();
 
         ensureDataBases();
 
