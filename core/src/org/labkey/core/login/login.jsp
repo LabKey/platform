@@ -39,6 +39,7 @@
     %>
 
 <script type="text/javascript">
+    LABKEY.requiresClientAPI();
     if (Ext.isIE)
     {
         window.onload = function() {

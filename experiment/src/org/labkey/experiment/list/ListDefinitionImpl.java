@@ -426,7 +426,19 @@ public class ListDefinitionImpl implements ListDefinition
                 }
                 else if (o instanceof QcFieldWrapper)
                 {
-                    valueMissing = ((QcFieldWrapper)o).isEmpty();
+                    QcFieldWrapper qcWrapper = (QcFieldWrapper)o;
+                    if (qcWrapper.isEmpty())
+                        valueMissing = true;
+                    else
+                    {
+                        valueMissing = false;
+                        if (!QcUtil.isValidQcValue(qcWrapper.getQcValue(), getContainer()))
+                        {
+                            String columnName = domainProperty.getName() + QcColumn.QC_INDICATOR_SUFFIX;
+                            wrongTypes.add(columnName);
+                            errors.add(columnName + " must be a valid QC Value.");
+                        }
+                    }
                 }
                 else
                 {

@@ -20,10 +20,12 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.collections15.MultiMap;
+import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
@@ -43,8 +45,8 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.WebPartView;
 import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.common.tools.DataLoader;
 import org.labkey.common.tools.TabLoader;
@@ -2143,16 +2145,21 @@ public class StudyManager
         // Try not to be too repetitive, stop each loop after one error
         //
 
+        // In certain cases (e.g. QC Columns), we have multiple columns with the same
+        // property URI. We don't want to complain about conversion errors multiple
+        // times, so we keep a set around in case we run into one and only report it once.
+        MultiMap<Integer,String> rowToConversionErrorURIs = new MultiHashMap<Integer,String>();
         for (ColumnInfo col : tinfo.getColumns())
         {
             // lsid is generated
             if (col.getName().equalsIgnoreCase("lsid"))
                 continue;
-            
+
             for (int i = 0; i < dataMaps.size(); i++)
             {
                 Map<String,Object> dataMap = dataMaps.get(i);
                 Object val = dataMap.get(col.getPropertyURI());
+
                 boolean valueMissing;
                 if (val == null)
                 {
@@ -2160,7 +2167,19 @@ public class StudyManager
                 }
                 else if (val instanceof QcFieldWrapper)
                 {
-                    valueMissing = ((QcFieldWrapper)val).isEmpty();
+                    QcFieldWrapper qcWrapper = (QcFieldWrapper)val;
+                    if (qcWrapper.isEmpty())
+                        valueMissing = true;
+                    else
+                    {
+                        valueMissing = false;
+                        if (col.isQcEnabled() && !QcUtil.isValidQcValue(qcWrapper.getQcValue(), def.getContainer()))
+                        {
+                            String columnName = col.getName() + QcColumn.QC_INDICATOR_SUFFIX;
+                            errors.add(columnName + " must be a valid QC Value.");
+                            break;
+                        }
+                    }
                 }
                 else
                 {
@@ -2204,7 +2223,12 @@ public class StudyManager
                 }
                 else if (val == CONVERSION_ERROR)
                 {
-                    errors.add("Row " + (i+1) + " data type error for field " + col.getName() + "."); // + " '" + String.valueOf(val) + "'.");
+                    if (!rowToConversionErrorURIs.containsValue(i, col.getPropertyURI()))
+                    {
+                        // Only emit the error once for a given property uri and row
+                        errors.add("Row " + (i+1) + " data type error for field " + col.getName() + "."); // + " '" + String.valueOf(val) + "'.");
+                        rowToConversionErrorURIs.put(i, col.getPropertyURI());
+                    }
                     break;
                 }
             }
@@ -2280,6 +2304,7 @@ public class StudyManager
             if (!def.isKeyPropertyManaged())
                 lock = new Object();
 
+            //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (lock)
             {
                 if (!scope.isTransactionActive())
@@ -2464,12 +2489,12 @@ public class StudyManager
 
     public String getDefaultDateFormatString(Container c)
     {
-        return (String)getFormatStrings(c).get(DATE_FORMAT_STRING);
+        return getFormatStrings(c).get(DATE_FORMAT_STRING);
     }
 
     public String getDefaultNumberFormatString(Container c)
     {
-        return (String)getFormatStrings(c).get(NUMBER_FORMAT_STRING);
+        return getFormatStrings(c).get(NUMBER_FORMAT_STRING);
     }
 
     private  Map<String, String> getFormatStrings(Container c)
@@ -2523,7 +2548,6 @@ public class StudyManager
         }
     }
 
-    private static final long MILLIS_PER_DAY = 1000 * 60 * 60 * 24;
     //Create a fixed point number encoding the date.
     public static double sequenceNumFromDate(Date d)
     {
