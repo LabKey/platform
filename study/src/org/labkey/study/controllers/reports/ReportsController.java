@@ -801,6 +801,29 @@ public class ReportsController extends BaseStudyController
         }
     }
 
+    public class CrosstabExportAction extends SimpleViewAction<ReportDesignBean>
+    {
+        public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
+        {
+            ReportIdentifier reportId = form.getReportId();
+            if (reportId != null)
+            {
+                Report report = reportId.getReport();
+                if (report instanceof StudyCrosstabReport)
+                {
+                    ExcelWriter writer = ((StudyCrosstabReport)report).getExcelWriter(getViewContext());
+                    writer.write(getViewContext().getResponse());
+                }
+            }
+            return null; 
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
     @RequiresPermission(ACL.PERM_READ)
     public class ParticipantCrosstabAction extends FormViewAction<CrosstabDesignBean>
     {
@@ -965,7 +988,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermission(ACL.PERM_ADMIN)
     public class ShowUploadReportAction extends FormViewAction<UploadForm>
     {
         public ModelAndView getView(UploadForm form, boolean reshow, BindException errors) throws Exception

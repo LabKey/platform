@@ -33,6 +33,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.Cache;
 import org.labkey.api.view.*;
 import org.labkey.study.StudySchema;
+import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
@@ -66,6 +67,24 @@ public class EnrollmentReport extends ChartReport
     public String getType()
     {
         return TYPE;
+    }
+
+    public void setDescriptor(ReportDescriptor descriptor)
+    {
+        super.setDescriptor(descriptor);
+        getDescriptor().setProperty(ReportDescriptor.Prop.reportName, "Enrollment");
+    }
+
+    @Override
+    public String getTypeDescription()
+    {
+        return "enrollment view";
+    }
+
+    @Override
+    public ActionURL getRunReportURL(ViewContext context)
+    {
+        return new ActionURL(ReportsController.EnrollmentReportAction.class, context.getContainer());
     }
 
     public HttpView renderReport(ViewContext viewContext) throws Exception

@@ -28,6 +28,9 @@
 <%@ page import="org.labkey.api.query.QueryParam" %>
 <%@ page import="org.labkey.study.query.DataSetQueryView" %>
 <%@ page import="org.labkey.study.reports.StudyQueryReport" %>
+<%@ page import="org.labkey.study.reports.EnrollmentReport" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.security.ACL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 
 <script type="text/javascript">
@@ -52,6 +55,8 @@
     reportBean.setRedirectUrl(context.getActionURL().getLocalURIString());
 
     ActionURL newRView = ReportUtil.getRReportDesignerURL(context, reportBean);
+
+    boolean hasEnrollmentReport = EnrollmentReport.getEnrollmentReport(context.getUser(), StudyManager.getInstance().getStudy(context.getContainer()), false) != null;
 %>
 
 <script type="text/javascript">
@@ -78,8 +83,11 @@
              */
             getButtons : function() {
                 var buttons = StudyViewsPanel.superclass.getButtons.call(this);
-                buttons.push('-', {text:'Customize Participant View', listeners:{click:function(button, event) {window.location = '<%=bean.getCustomizeParticipantViewURL()%>';}}}, '-');
-
+                buttons.push('-', {
+                    text:'Customize Participant View',
+                    disabled: <%=!context.hasPermission(ACL.PERM_ADMIN)%>,
+                    listeners:{click:function(button, event) {window.location = '<%=bean.getCustomizeParticipantViewURL()%>';}}
+                }, '-');
                 return buttons;
             },
 
@@ -181,14 +189,17 @@
             createMenu :[{
                 id: 'create_rView',
                 text:'New R View',
+                disabled: <%=!context.getUser().isDeveloper()%>,
                 listeners:{click:function(button, event) {window.location = '<%=newRView.getLocalURIString()%>';}}
             },{
                 id: 'create_gridView',
                 text:'New Grid View',
+                disabled: <%=!context.hasPermission(ACL.PERM_ADMIN)%>,
                 listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.CreateQueryReportAction.class, context.getContainer())%>';}}
             },{
                 id: 'create_crosstabView',
                 text:'New Crosstab View',
+                disabled: <%=!context.hasPermission(ACL.PERM_ADMIN)%>,
                 listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.CreateCrosstabReportAction.class, context.getContainer())%>';}}
             },{
                 id: 'create_exportXlsView',
@@ -197,7 +208,13 @@
             },{
                 id: 'create_staticView',
                 text:'New Static View',
+                disabled: <%=!context.hasPermission(ACL.PERM_ADMIN)%>,
                 listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.ShowUploadReportAction.class, context.getContainer())%>';}}
+            },{
+                id: 'create_enrollmentView',
+                text:'<%=hasEnrollmentReport ? "Configure Enrollment View" : "New Enrollment View"%>',
+                disabled: <%=!context.hasPermission(ACL.PERM_ADMIN)%>,
+                listeners:{click:function(button, event) {window.location = '<%=new ActionURL(ReportsController.EnrollmentReportAction.class, context.getContainer())%>';}}
             }],
 
             /**

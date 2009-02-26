@@ -62,6 +62,7 @@
             createMenu :[{
                 id: 'create_rView',
                 text:'New R View',
+                disabled: <%=!context.getUser().isDeveloper()%>,
                 listeners:{click:function(button, event) {window.location = '<%=newRView.getLocalURIString()%>';}}}]
         };
         var panel = new LABKEY.ViewsPanel(gridConfig);

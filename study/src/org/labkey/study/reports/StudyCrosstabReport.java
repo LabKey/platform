@@ -19,28 +19,28 @@ package org.labkey.study.reports;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.data.Crosstab;
+import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.QueryParam;
-import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.VBox;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.*;
+import org.labkey.study.controllers.StudyController;
+import org.labkey.study.controllers.reports.ReportsController;
+import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.Visit;
-import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.view.CrosstabView;
-import org.labkey.study.controllers.reports.ReportsController;
-import org.labkey.study.controllers.StudyController;
 
 import javax.servlet.http.HttpServletResponse;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -101,11 +101,16 @@ public class StudyCrosstabReport extends AbstractReport
         {
             CrosstabReportDescriptor descriptor = (CrosstabReportDescriptor)reportDescriptor;
             try {
-                ReportQueryView qv = createQueryView(context, descriptor);
-                if (qv != null)
+                Crosstab crosstab = createCrosstab(context);
+                if (crosstab != null)
                 {
-                    rs = qv.getResultSet(0);
-                    return new CrosstabView(rs, qv.getColumnMap(), descriptor);
+                    ActionURL exportAction = null;
+
+                    if (descriptor.getReportId() != null)
+                    {
+                        exportAction = new ActionURL(ReportsController.CrosstabExportAction.class, context.getContainer()).addParameter(ReportDescriptor.Prop.reportId, descriptor.getReportId().toString());
+                    }
+                    return new CrosstabView(crosstab, exportAction);
                 }
             }
             catch (Exception e)
@@ -142,5 +147,52 @@ public class StudyCrosstabReport extends AbstractReport
                         addParameter("Dataset.reportId", getDescriptor().getReportId().toString());
         }
         return super.getRunReportURL(context);
+    }
+
+    protected Crosstab createCrosstab(ViewContext context) throws Exception
+    {
+        CrosstabReportDescriptor descriptor = (CrosstabReportDescriptor)getDescriptor();
+        ReportQueryView qv = createQueryView(context, getDescriptor());
+        if (qv != null)
+        {
+            String rowField = descriptor.getProperty("rowField");
+            String colField = descriptor.getProperty("colField");
+            String statField = descriptor.getProperty("statField");
+
+            Set<Stats.StatDefinition> statSet = new LinkedHashSet<Stats.StatDefinition>();
+            for (String stat : descriptor.getStats())
+            {
+                if ("Count".equals(stat))
+                    statSet.add(Stats.COUNT);
+                else if ("Sum".equals(stat))
+                    statSet.add(Stats.SUM);
+                else if ("Sum".equals(stat))
+                    statSet.add(Stats.SUM);
+                else if ("Mean".equals(stat))
+                    statSet.add(Stats.MEAN);
+                else if ("Min".equals(stat))
+                    statSet.add(Stats.MIN);
+                else if ("Max".equals(stat))
+                    statSet.add(Stats.MAX);
+                else if ("StdDev".equals(stat))
+                    statSet.add(Stats.STDDEV);
+                else if ("Var".equals(stat))
+                    statSet.add(Stats.VAR);
+                else if ("Median".equals(stat))
+                    statSet.add(Stats.MEDIAN);
+            }
+            return new Crosstab(qv.getResultSet(0), qv.getColumnMap(), rowField, colField, statField, statSet);
+        }
+        return null;
+    }
+
+    public ExcelWriter getExcelWriter(ViewContext context) throws Exception
+    {
+        Crosstab crosstab = createCrosstab(context);
+        if (crosstab != null)
+        {
+            return crosstab.getExcelWriter();
+        }
+        return null;
     }
 }

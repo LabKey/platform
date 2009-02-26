@@ -20,13 +20,11 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Crosstab;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.Stats;
 import org.labkey.api.view.WebPartView;
-import org.labkey.study.reports.CrosstabReportDescriptor;
 
 import java.io.PrintWriter;
-import java.sql.ResultSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,18 +36,15 @@ import java.util.Set;
  */
 public class CrosstabView extends WebPartView
 {
-    String rowField;
-    String colField;
-    String statField;
-    Set<Stats.StatDefinition> statSet;
-    ResultSet resultSet;
     Map<String, ColumnInfo> colMap;
+    ActionURL _exportAction;
+    Crosstab _crosstab;
 
     @Override
     protected void renderView(Object model, PrintWriter pw) throws Exception
     {
         StringBuilder errStr = new StringBuilder();
-        if (null == StringUtils.trimToNull(statField))
+        if (null == StringUtils.trimToNull(_crosstab.getStatField()))
             errStr.append("Stat field is not defined.<br>");
 
         if (errStr.length() > 0)
@@ -59,8 +54,11 @@ public class CrosstabView extends WebPartView
             return;
         }
 
-        Crosstab crossTab = new Crosstab(resultSet, rowField, colField, statField, statSet);
-        List<Object> colHeaders = crossTab.getColHeaders();
+        if (_exportAction != null)
+            pw.write(PageFlowUtil.generateButton("Export to Excel (.xls)", _exportAction.getLocalURIString()));
+
+        List<Object> colHeaders = _crosstab.getColHeaders();
+        Set<Stats.StatDefinition> statSet = _crosstab.getStatSet();
 
         pw.write("<table id=\"report\" class=\"labkey-data-region labkey-show-borders labkey-has-row-totals labkey-has-col-totals\">\n<colgroup>");
         if (statSet.size() > 1)
@@ -71,20 +69,20 @@ public class CrosstabView extends WebPartView
         }
 
         pw.write("</colgroup>\n<tr>\n");
-        if (null != colField)
+        if (null != _crosstab.getColField())
         {
             pw.write("\t<th class=\"labkey-data-region-title\">&nbsp;</th>\n");
             if (statSet.size() > 1)
                 pw.write("\t<th class=\"labkey-data-region-title\">&nbsp;</th>\n");
 
-            pw.printf("\t<th class=\"labkey-data-region-title\" colspan=\"%d\">%s</th>\n", colHeaders.size(), str(getFieldLabel(colField)));
+            pw.printf("\t<th class=\"labkey-data-region-title\" colspan=\"%d\">%s</th>\n", colHeaders.size(), str(getFieldLabel(_crosstab.getColField())));
             pw.write("\t<th class=\"labkey-data-region-title\" style=\"border-right:hidden\">&nbsp;</th>\n</tr>\n");
         }
-        pw.printf("\t<th class=\"labkey-data-region-title\">%s</th>\n", str(getFieldLabel(rowField)));
+        pw.printf("\t<th class=\"labkey-data-region-title\">%s</th>\n", str(getFieldLabel(_crosstab.getRowField())));
         if (statSet.size() > 1)
             pw.write("\t<td class=\"labkey-col-header\">&nbsp;</td>\n");
 
-        if (null != colField)
+        if (null != _crosstab.getColField())
             for (Object colVal : colHeaders)
                 pw.printf("\t<td class=\"labkey-col-header\">%s</td>\n", str(colVal));
 
@@ -93,7 +91,7 @@ public class CrosstabView extends WebPartView
         if (statSet.size() == 1)
             stat = statSet.toArray(new Stats.StatDefinition[1])[0];
 
-        if (null == colField && null != stat)
+        if (null == _crosstab.getColField() && null != stat)
             pw.write(stat.getName());
         else
             pw.write("Total");
@@ -102,14 +100,14 @@ public class CrosstabView extends WebPartView
 
         pw.write("</tr>");
 
-        if (null != rowField)
+        if (null != _crosstab.getRowField())
         {
-            for (Object rowVal : crossTab.getRowHeaders())
+            for (Object rowVal : _crosstab.getRowHeaders())
             {
                 pw.printf("<tr>\n\t<td class=\"labkey-row-header\" rowspan=\"%d\">%s</td>\n", statSet.size(), rowVal);
 
                 int statRow = 0;
-                for (Stats.StatDefinition rowStat : statSet.toArray(new Stats.StatDefinition[0]))
+                for (Stats.StatDefinition rowStat : statSet)
                 {
                     if (statSet.size() > 1)
                     {
@@ -120,10 +118,10 @@ public class CrosstabView extends WebPartView
 
                     for (Object colVal : colHeaders)
                     {
-                        pw.printf("\t<td>%s</td>\n", crossTab.getStats(rowVal, colVal).getFormattedStat(rowStat));
+                        pw.printf("\t<td>%s</td>\n", _crosstab.getStats(rowVal, colVal).getFormattedStat(rowStat));
                     }
 
-                    pw.printf("\t<td class=\"labkey-row-total\">%s</td>\n", crossTab.getStats(rowVal, Crosstab.TOTAL_COLUMN).getFormattedStat(rowStat));
+                    pw.printf("\t<td class=\"labkey-row-total\">%s</td>\n", _crosstab.getStats(rowVal, Crosstab.TOTAL_COLUMN).getFormattedStat(rowStat));
 
                     statRow++;
                     if (statSet.size() > 1 && statRow < statSet.size())
@@ -151,13 +149,13 @@ public class CrosstabView extends WebPartView
             }
 
 
-            if (null != colField)
+            if (null != _crosstab.getColField())
                 for (Object colVal : colHeaders)
                 {
-                    pw.printf("\t<td class=\"labkey-col-total\">%s</td>\n", crossTab.getStats(Crosstab.TOTAL_ROW, colVal).getFormattedStat(rowStat));
+                    pw.printf("\t<td class=\"labkey-col-total\">%s</td>\n", _crosstab.getStats(Crosstab.TOTAL_ROW, colVal).getFormattedStat(rowStat));
                 }
             pw.write("<td class=\"labkey-col-total\">");
-            Stats stats = crossTab.getStats(Crosstab.TOTAL_ROW, Crosstab.TOTAL_COLUMN);
+            Stats stats = _crosstab.getStats(Crosstab.TOTAL_ROW, Crosstab.TOTAL_COLUMN);
             pw.write(stats.getFormattedStat(rowStat));
             pw.write("</td>");
 
@@ -169,63 +167,27 @@ public class CrosstabView extends WebPartView
         pw.write("</table>");
     }
 
-    public CrosstabView(ResultSet rs, Map<String, ColumnInfo> cols, CrosstabReportDescriptor descriptor)
+    public CrosstabView(Crosstab crosstab, ActionURL exportAction)
     {
-        resultSet = rs;
-        colMap = cols;
+        colMap = crosstab.getColumnMap();
+        _crosstab = crosstab;
+        _exportAction = exportAction;
 
-        rowField = descriptor.getProperty("rowField");
-        colField = descriptor.getProperty("colField");
-        statField = descriptor.getProperty("statField");
-
-        statSet = new LinkedHashSet<Stats.StatDefinition>();
-        for (String stat : descriptor.getStats())
-        {
-            if ("Count".equals(stat))
-                statSet.add(Stats.COUNT);
-            else if ("Sum".equals(stat))
-                statSet.add(Stats.SUM);
-            else if ("Sum".equals(stat))
-                statSet.add(Stats.SUM);
-            else if ("Mean".equals(stat))
-                statSet.add(Stats.MEAN);
-            else if ("Min".equals(stat))
-                statSet.add(Stats.MIN);
-            else if ("Max".equals(stat))
-                statSet.add(Stats.MAX);
-            else if ("StdDev".equals(stat))
-                statSet.add(Stats.STDDEV);
-            else if ("Var".equals(stat))
-                statSet.add(Stats.VAR);
-            else if ("Median".equals(stat))
-                statSet.add(Stats.MEDIAN);
-        }
-        setTitle(getDescription());
-    }
-
-    public CrosstabView(ResultSet rs, Map<String,ColumnInfo> cols, String rowField, String colField, String statField, Set<Stats.StatDefinition> statSet)
-    {
-        this.resultSet = rs;
-        this.colMap = cols;
-        this.rowField = rowField;
-        this.colField = colField;
-        this.statField = statField;
-        this.statSet = statSet;
         setTitle(getDescription());
     }
 
     public String getDescription()
     {
         Stats.StatDefinition stat = null;
-        if (statSet.size() == 1)
-            stat = statSet.toArray(new Stats.StatDefinition[1])[0];
+        if (_crosstab.getStatSet().size() == 1)
+            stat = _crosstab.getStatSet().toArray(new Stats.StatDefinition[1])[0];
 
-        String statFieldLabel = getFieldLabel(statField);
-        String rowFieldLabel = getFieldLabel(rowField);
-        String colFieldLabel = getFieldLabel(colField);
+        String statFieldLabel = getFieldLabel(_crosstab.getStatField());
+        String rowFieldLabel = getFieldLabel(_crosstab.getRowField());
+        String colFieldLabel = getFieldLabel(_crosstab.getColField());
 
         String title = (null != stat ? stat.getName() + " " : "") + statFieldLabel + " by " + rowFieldLabel;
-        if (null != colField)
+        if (null != _crosstab.getColField())
             title += ", " + colFieldLabel;
 
         return title;
