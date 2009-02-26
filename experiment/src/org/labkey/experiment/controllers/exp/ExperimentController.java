@@ -1050,6 +1050,12 @@ public class ExperimentController extends SpringActionController
                         }
                         ColumnDescriptor[] cols = tabLoader.getColumns();
                         JSONArray rowsArray = new JSONArray();
+                        JSONArray headerArray = new JSONArray();
+                        for (ColumnDescriptor col : cols)
+                        {
+                            headerArray.put(col.name);
+                        }
+                        rowsArray.put(headerArray);
                         for (TabLoader.TabLoaderIterator i = tabLoader.iterator(); i.hasNext(); )
                         {
                             Map<String, Object> rowMap = i.next();

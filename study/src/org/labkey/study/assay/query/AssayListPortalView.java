@@ -19,13 +19,13 @@ package org.labkey.study.assay.query;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.SimpleTextDisplayElement;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.data.*;
 import org.labkey.study.controllers.assay.AssayController;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.io.PrintWriter;
 
 /**
  * User: ulberge
@@ -62,13 +62,15 @@ public class AssayListPortalView extends AssayListQueryView
     }
 
     @Override
-    protected void renderView(Object model, PrintWriter out) throws Exception
+    public DataView createDataView()
     {
-        super.renderView(model, out);
-        out.write(textLink("Manage Assays", new ActionURL(AssayController.BeginAction.class, getContainer())));
+        DataView result = super.createDataView();
+        result.getDataRegion().setButtonBarPosition(DataRegion.ButtonBarPosition.BOTTOM);
+        return result;
     }
 
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
+        bar.add(new SimpleTextDisplayElement(textLink("Manage Assays", new ActionURL(AssayController.BeginAction.class, getContainer())), true));
     }
 }

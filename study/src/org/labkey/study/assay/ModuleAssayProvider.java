@@ -148,7 +148,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         DomainDescriptorType xDomain = domainsDescriptors.get(domainType);
         if (xDomain != null)
         {
-            return PropertyService.get().createDomain(c, xDomain);
+            return PropertyService.get().createDomain(c, xDomain).getKey();
         }
         return null;
     }

@@ -73,6 +73,12 @@ public class DefaultValueServiceImpl extends DefaultValueService
     {
         if (values.isEmpty())
             return;
+
+        // DomainProperty has a hashCode() based on its propertyId. If they were added to the map before they were
+        // saved to the database, they'll be in the bucket for values with hashCode() 0 (their uninserted propertyId)
+        // so we won't look them up correctly. Recreate the map to rebucket them appropriately.
+        values = new HashMap<DomainProperty, Object>(values);
+
         assert getDomainCount(values) == 1 : "Default values must be saved one domain at a time.";
         Domain domain = values.keySet().iterator().next().getDomain();
 
@@ -93,6 +99,14 @@ public class DefaultValueServiceImpl extends DefaultValueService
 
     public void setDefaultValues(Container container, Map<DomainProperty, Object> values) throws ExperimentException
     {
+        if (values.isEmpty())
+            return;
+
+        // DomainProperty has a hashCode() based on its propertyId. If they were added to the map before they were
+        // saved to the database, they'll be in the bucket for values with hashCode() 0 (their uninserted propertyId)
+        // so we won't look them up correctly. Recreate the map to rebucket them appropriately.
+        values = new HashMap<DomainProperty, Object>(values);
+
         assert getDomainCount(values) == 1 : "Default values must be saved one domain at a time.";
         Domain domain = values.keySet().iterator().next().getDomain();
         // first, we validate the post:

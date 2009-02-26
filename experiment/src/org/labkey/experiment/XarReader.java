@@ -32,11 +32,13 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.experiment.api.*;
 import org.labkey.experiment.api.property.DomainImpl;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExpander;
 import org.labkey.experiment.xar.AbstractXarImporter;
+import org.labkey.common.util.Pair;
 
 import javax.xml.namespace.QName;
 import java.io.File;
@@ -358,9 +360,11 @@ public class XarReader extends AbstractXarImporter
         return materialSource;
     }
 
-    private Domain loadDomain(DomainDescriptorType xDomain) throws SQLException, XarFormatException
+    private Domain loadDomain(DomainDescriptorType xDomain) throws SQLException, ExperimentException
     {
-        Domain domain = PropertyService.get().createDomain(getContainer(), getRootContext(), xDomain);
+        Pair<Domain, Map<DomainProperty, Object>> loaded = PropertyService.get().createDomain(getContainer(), getRootContext(), xDomain);
+        Domain domain = loaded.getKey();
+        Map<DomainProperty, Object> newDefaultValues = loaded.getValue();
         String lsid = domain.getTypeURI();
 
         DomainDescriptor existingDomainDescriptor = OntologyManager.getDomainDescriptor(lsid, getContainer());
@@ -381,6 +385,7 @@ public class XarReader extends AbstractXarImporter
                 oldProps.put(oldProp.getPropertyURI(), oldProp);
             }
 
+            Map<DomainProperty, Object> existingDefaultValues = DefaultValueService.get().getDefaultValues(existingDomain.getContainer(), existingDomain);
             if (!IdentifiableEntity.diff(oldProps.keySet(), newProps.keySet(), "Domain Properties", diffs))
             {
                 for (String key : oldProps.keySet())
@@ -398,6 +403,8 @@ public class XarReader extends AbstractXarImporter
                     IdentifiableEntity.diff(oldProp.getPropertyDescriptor().getRangeURI(), newProp.getPropertyDescriptor().getRangeURI(), key + " range URI", diffs);
                     IdentifiableEntity.diff(oldProp.getPropertyDescriptor().getConceptURI(), newProp.getPropertyDescriptor().getConceptURI(), key + " concept URI", diffs);
                     IdentifiableEntity.diff(oldProp.isQcEnabled(), newProp.isQcEnabled(), key + " qc enabled", diffs);
+                    IdentifiableEntity.diff(oldProp.getDefaultValueTypeEnum(), newProp.getDefaultValueTypeEnum(), key + " default value type", diffs);
+                    IdentifiableEntity.diff(existingDefaultValues.get(oldProp), newDefaultValues.get(newProp), key + " default value", diffs);
                 }
             }
 
@@ -417,6 +424,7 @@ public class XarReader extends AbstractXarImporter
         try
         {
             domain.save(getUser());
+            DefaultValueService.get().setDefaultValues(domain.getContainer(), newDefaultValues);
         }
         catch (ChangePropertyDescriptorException e)
         {

@@ -20,11 +20,14 @@ import org.labkey.api.exp.property.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.util.ExceptionUtil;
-import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
-import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
-import org.fhcrc.cpas.exp.xml.PropertyValidatorType;
-import org.fhcrc.cpas.exp.xml.PropertyValidatorPropertyType;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.common.util.Pair;
+import org.fhcrc.cpas.exp.xml.*;
+import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.beanutils.ConversionException;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -144,41 +147,40 @@ public class PropertyServiceImpl implements PropertyService.Interface
         DomainPropertyManager.get().deleteAllValidators(c);
     }
 
-    public Domain createDomain(Container c, DomainDescriptorType xDomain)
+    public Pair<Domain, Map<DomainProperty, Object>> createDomain(Container c, DomainDescriptorType xDomain)
     {
-        Domain domain = null;
         try
         {
-            domain = createDomain(c, null, xDomain);
+            return createDomain(c, null, xDomain);
         }
         catch (XarFormatException e)
         {
             // shouldn't happen: XarFormatExceptions only thrown when resolving lsids with non-null XarContext
-            ExceptionUtil.logExceptionToMothership(null, e);
+            throw new UnexpectedException(e);
         }
-        return domain;
     }
 
-    public Domain createDomain(Container c, XarContext context, DomainDescriptorType xDomain) throws XarFormatException
+    public Pair<Domain, Map<DomainProperty, Object>> createDomain(Container c, XarContext context, DomainDescriptorType xDomain) throws XarFormatException
     {
         String lsid = xDomain.getDomainURI();
         if (context != null)
             lsid = LsidUtils.resolveLsidFromTemplate(lsid, context, "Domain");
         Domain domain = createDomain(c, lsid, xDomain.getName());
         domain.setDescription(xDomain.getDescription());
+        Map<DomainProperty, Object> defaultValues = new HashMap<DomainProperty, Object>();
 
         if (xDomain.getPropertyDescriptorArray() != null)
         {
             for (PropertyDescriptorType xProp : xDomain.getPropertyDescriptorArray())
             {
-                loadPropertyDescriptor(domain, context, xProp);
+                loadPropertyDescriptor(domain, context, xProp, defaultValues);
             }
         }
 
-        return domain;
+        return new Pair<Domain, Map<DomainProperty, Object>>(domain, defaultValues);
     }
 
-    private static DomainProperty loadPropertyDescriptor(Domain domain, XarContext context, PropertyDescriptorType xProp)
+    private static DomainProperty loadPropertyDescriptor(Domain domain, XarContext context, PropertyDescriptorType xProp, Map<DomainProperty, Object> defaultValues)
         throws XarFormatException
     {
         DomainProperty prop = domain.addProperty();
@@ -215,6 +217,48 @@ public class PropertyServiceImpl implements PropertyService.Interface
 
         if (xProp.isSetHidden())
             prop.getPropertyDescriptor().setHidden(xProp.getHidden());
+
+        if (xProp.isSetDefaultType())
+        {
+            DefaultType.Enum xDefaultType = xProp.getDefaultType();
+            DefaultValueType defaultType;
+            if (DefaultType.EDITABLE_DEFAULT.equals(xDefaultType))
+            {
+                defaultType = DefaultValueType.FIXED_EDITABLE;
+            }
+            else if (DefaultType.FIXED_VALUE.equals(xDefaultType))
+            {
+                defaultType = DefaultValueType.FIXED_NON_EDITABLE;
+            }
+            else if (DefaultType.LAST_ENTERED.equals(xDefaultType))
+            {
+                defaultType = DefaultValueType.LAST_ENTERED;
+            }
+            else
+            {
+                throw new XarFormatException("Unsupported default type: " + xDefaultType);
+            }
+            prop.getPropertyDescriptor().setDefaultValueTypeEnum(defaultType);
+        }
+
+        if (xProp.isSetDefaultValue())
+        {
+            String defaultValue = xProp.getDefaultValue();
+            PropertyType type = prop.getPropertyDescriptor().getPropertyType();
+            if (defaultValue != null && defaultValue.length() > 0)
+            {
+                try
+                {
+                    Object converted = ConvertUtils.convert(defaultValue, type.getJavaType());
+                    defaultValues.put(prop, converted);
+                }
+                catch (ConversionException e)
+                {
+                    throw new XarFormatException("Could not convert default value '" + defaultValue + "' for property "
+                            + prop.getName() + " to " + ColumnInfo.getFriendlyTypeName(type.getJavaType()) + ".");
+                }
+            }
+        }
 
         if (xProp.getPropertyValidatorArray() != null)
         {

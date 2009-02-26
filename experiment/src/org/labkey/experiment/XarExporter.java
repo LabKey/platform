@@ -26,11 +26,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.IPropertyValidator;
-import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.*;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.experiment.api.*;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExportSelection;
@@ -359,7 +357,7 @@ public class XarExporter
         }
     }
 
-    private void addSampleSet(String cpasType)
+    private void addSampleSet(String cpasType) throws ExperimentException
     {
         if (_sampleSetLSIDs.contains(cpasType))
         {
@@ -388,7 +386,7 @@ public class XarExporter
         addDomain(domain);
     }
 
-    private void addDomain(Domain domain)
+    private void addDomain(Domain domain) throws ExperimentException
     {
         if (_domainLSIDs.contains(domain.getTypeURI()))
         {
@@ -408,15 +406,14 @@ public class XarExporter
             xDomain.setDescription(domain.getDescription());
         }
         xDomain.setDomainURI(_relativizedLSIDs.relativize(domain.getTypeURI()));
+        Map<DomainProperty, Object> defaults = DefaultValueService.get().getDefaultValues(domain.getContainer(), domain);
         for (DomainProperty domainProp : domain.getProperties())
         {
-            PropertyDescriptor prop = domainProp.getPropertyDescriptor();
-
-            addPropertyDescriptor(xDomain, domainProp, prop);
+            addPropertyDescriptor(xDomain, domainProp, defaults.get(domainProp));
         }
     }
 
-    private void addPropertyDescriptor(DomainDescriptorType xDomain, DomainProperty domainProp, PropertyDescriptor prop)
+    private void addPropertyDescriptor(DomainDescriptorType xDomain, DomainProperty domainProp, Object defaultValue) throws ExperimentException
     {
         PropertyDescriptorType xProp = xDomain.addNewPropertyDescriptor();
         if (domainProp.getDescription() != null)
@@ -425,6 +422,7 @@ public class XarExporter
         }
         xProp.setName(domainProp.getName());
         xProp.setPropertyURI(_relativizedLSIDs.relativize(domainProp.getPropertyURI()));
+        PropertyDescriptor prop = domainProp.getPropertyDescriptor();
         if (prop.getConceptURI() != null)
         {
             xProp.setConceptURI(prop.getConceptURI());
@@ -458,6 +456,37 @@ public class XarExporter
         {
             xProp.setSemanticType(prop.getSemanticType());
         }
+
+        if (domainProp.getDefaultValueTypeEnum() != null)
+        {
+            switch (domainProp.getDefaultValueTypeEnum())
+            {
+                case FIXED_EDITABLE:
+                    xProp.setDefaultType(DefaultType.EDITABLE_DEFAULT);
+                    break;
+                case FIXED_NON_EDITABLE:
+                    xProp.setDefaultType(DefaultType.FIXED_VALUE);
+                    break;
+                case LAST_ENTERED:
+                    xProp.setDefaultType(DefaultType.LAST_ENTERED);
+                    break;
+                default:
+                    throw new ExperimentException("Unsupported default value type: " + domainProp.getDefaultValueTypeEnum());
+            }
+        }
+
+        if (defaultValue != null)
+        {
+            if (defaultValue instanceof Date)
+            {
+                xProp.setDefaultValue(DateUtil.formatDateTime((Date)defaultValue, AbstractParameter.SIMPLE_FORMAT_PATTERN));
+            }
+            else
+            {
+                xProp.setDefaultValue(defaultValue.toString());
+            }
+        }
+
         xProp.setHidden(domainProp.isHidden());
         xProp.setQcEnabled(domainProp.isQcEnabled());
 
