@@ -27,16 +27,15 @@ import java.io.Writer;
 import java.util.Locale;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Feb 5, 2009
  * Time: 9:34:32 AM
   */
-public class AuthenicatedResponse extends HttpServletResponseWrapper
+public class AuthenticatedResponse extends HttpServletResponseWrapper
 {
     PrintWriter _safeWriter = null;
 
-    public AuthenicatedResponse(HttpServletResponse response)
+    public AuthenticatedResponse(HttpServletResponse response)
     {
         super(response);
     }
