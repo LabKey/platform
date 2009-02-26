@@ -222,7 +222,8 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         propertyPane.addItem(new FormatItem<DomainType, FieldType>(propertyPane));
         RequiredItem<DomainType, FieldType> requiredItem = new RequiredItem<DomainType, FieldType>(propertyPane);
         propertyPane.addItem(requiredItem);
-        propertyPane.addItem(new HiddenItem<DomainType, FieldType>(propertyPane));
+        // 7441 : de-clutter PropertyDescriptor editor, remove Hidden checkbox
+        //propertyPane.addItem(new HiddenItem<DomainType, FieldType>(propertyPane));
         propertyPane.addItem(new QcEnabledItem<DomainType, FieldType>(propertyPane, requiredItem));
         if (_enableDefaultValues)
             propertyPane.addItem(new DefaultValueItem<DomainType, FieldType>(_owner, propertyPane));
