@@ -15,6 +15,12 @@
  */
 package org.labkey.api.data;
 
+import jxl.write.WritableSheet;
+import jxl.write.WriteException;
+import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang.StringUtils;
+import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Stats;
 import org.labkey.common.tools.DoubleArray;
 
@@ -32,6 +38,10 @@ public class Crosstab
     public static final String TOTAL_COLUMN = "CROSSTAB_TOTAL_COLUMN";
     public static final String TOTAL_ROW = "CROSSTAB_TOTAL_ROW";
     private Set<Stats.StatDefinition> statSet;
+    private String _rowField;
+    private String _colField;
+    private String _statField;
+    private Map<String, ColumnInfo> _columnMap;
 
     List colHeaders = new  ArrayList<Object>();
 
@@ -43,14 +53,18 @@ public class Crosstab
     Map<Object, DoubleArray> colDatasets = new HashMap<Object, DoubleArray>();
     DoubleArray grandTotalDataset = new DoubleArray();
 
-    public Crosstab(ResultSet rs, String rowField, String colField, String statField, Stats.StatDefinition stat) throws SQLException
+    public Crosstab(ResultSet rs, Map<String, ColumnInfo> columnMap, String rowField, String colField, String statField, Stats.StatDefinition stat) throws SQLException
     {
-        this(rs, rowField, colField, statField, Stats.statSet(stat));
+        this(rs, columnMap, rowField, colField, statField, Stats.statSet(stat));
     }
     
-    public Crosstab(ResultSet rs, String rowField, String colField, String statField, Set<Stats.StatDefinition> statSet) throws SQLException
+    public Crosstab(ResultSet rs, Map<String, ColumnInfo> columnMap, String rowField, String colField, String statField, Set<Stats.StatDefinition> statSet) throws SQLException
     {
         this.statSet = statSet;
+        _columnMap = columnMap;
+        _rowField = rowField;
+        _colField = colField;
+        _statField = statField;
         String statCol = null;
 
         try {
@@ -130,7 +144,6 @@ public class Crosstab
 
     public List<Object> getColHeaders()
     {
-
         return colHeaders;
     }
 
@@ -176,6 +189,138 @@ public class Crosstab
                 return new Stats.DoubleStats(data.toArray(null), statSet);
             else
                 return new Stats.DoubleStats(new double[0], statSet);
+        }
+    }
+
+    public Set<Stats.StatDefinition> getStatSet()
+    {
+        return statSet;
+    }
+
+    public String getRowField()
+    {
+        return _rowField;
+    }
+
+    public String getColField()
+    {
+        return _colField;
+    }
+
+    public String getStatField()
+    {
+        return _statField;
+    }
+
+    public Map<String, ColumnInfo> getColumnMap()
+    {
+        return _columnMap;
+    }
+
+    public ExcelWriter getExcelWriter()
+    {
+        return new CrosstabExcelWriter(this);
+    }
+
+    public static class CrosstabExcelWriter extends ExcelWriter
+    {
+        private Crosstab _crosstab;
+
+        public CrosstabExcelWriter(Crosstab crosstab)
+        {
+            _crosstab = crosstab;
+
+            List<DisplayColumn> columns = new ArrayList<DisplayColumn>();
+
+            columns.add(new CrosstabDisplayColumn(getFieldLabel(crosstab.getRowField())));
+
+            for (Object col : _crosstab.getColHeaders())
+                columns.add(new CrosstabDisplayColumn(col));
+
+            columns.add(new CrosstabDisplayColumn("Total", Double.class));
+
+            setDisplayColumns(columns);
+        }
+
+        @Override
+        public void renderGrid(WritableSheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, WriteException, MaxRowsExceededException
+        {
+            Map<String, Object> rowMap = new CaseInsensitiveHashMap<Object>();
+            RenderContext ctx = new RenderContext(HttpView.currentContext());
+
+            for (Object rowValue : _crosstab.getRowHeaders())
+            {
+                for (Stats.StatDefinition rowStat : _crosstab.getStatSet())
+                {
+                    rowMap.put(getFieldLabel(_crosstab.getRowField()), String.format("%s (%s)", rowValue, rowStat.getName()));
+
+                    ctx.setRow(mapRow(rowValue, rowStat, rowMap));
+                    renderGridRow(sheet, ctx, visibleColumns);
+                }
+            }
+
+            // stat totals
+            for (Stats.StatDefinition rowStat : _crosstab.getStatSet())
+            {
+                rowMap.put(getFieldLabel(_crosstab.getRowField()), String.format("Total (%s)", rowStat.getName()));
+
+                ctx.setRow(mapRow(Crosstab.TOTAL_ROW, rowStat, rowMap));
+                renderGridRow(sheet, ctx, visibleColumns);
+            }
+        }
+
+        private Map<String, Object> mapRow(Object rowValue, Stats.StatDefinition rowStat, Map<String, Object> rowMap)
+        {
+            for (Object colVal : _crosstab.getColHeaders())
+            {
+                rowMap.put(StringUtils.trimToEmpty(ConvertUtils.convert(colVal)), _crosstab.getStats(rowValue, colVal).getStat(rowStat));
+            }
+            rowMap.put("total", _crosstab.getStats(rowValue, Crosstab.TOTAL_COLUMN).getStat(rowStat));
+            return rowMap;
+        }
+
+        private String getFieldLabel(String fieldName)
+        {
+            if (null == fieldName)
+                return "";
+
+            ColumnInfo col = _crosstab.getColumnMap().get(fieldName);
+            if (null != col)
+                return col.getCaption();
+
+            return fieldName;
+        }
+    }
+
+    public static class CrosstabDisplayColumn extends SimpleDisplayColumn
+    {
+        Class _valueClass = String.class;
+
+        public CrosstabDisplayColumn(String caption, Class valueClass)
+        {
+            setCaption(caption);
+            if (valueClass != null)
+                _valueClass = valueClass;
+        }
+        public CrosstabDisplayColumn(Object info)
+        {
+            if (info != null)
+            {
+                _valueClass = info.getClass();
+            }
+            setCaption(StringUtils.trimToEmpty(ConvertUtils.convert(info)));
+        }
+
+        @Override
+        public Object getValue(RenderContext ctx)
+        {
+            return ctx.get(getCaption());
+        }
+
+        @Override
+        public Class getDisplayValueClass()
+        {
+            return _valueClass;
         }
     }
 }
