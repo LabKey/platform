@@ -42,6 +42,9 @@ public class AttachmentDisplayColumn extends DataColumn
 
     public String getURL(RenderContext ctx)
     {
+        if (null == _colEntityId)
+            return null;
+
         String filename = (String)getValue(ctx);
         String entityId = (String)_colEntityId.getValue(ctx);
         return ListController.getDownloadURL(ctx.getContainer(), entityId, filename).getLocalURIString();
@@ -98,16 +101,23 @@ public class AttachmentDisplayColumn extends DataColumn
     {
         if (null != filename)
         {
+            String url = null;
+
             if (link)
             {
-                out.write("<a href=\"");
-                out.write(PageFlowUtil.filter(getURL(ctx)));
-                out.write("\">");
+                url = getURL(ctx);
+
+                if (null != url)
+                {
+                    out.write("<a href=\"");
+                    out.write(PageFlowUtil.filter(getURL(ctx)));
+                    out.write("\">");
+                }
             }
 
             out.write("<img src=\"" + ctx.getRequest().getContextPath() + Attachment.getFileIcon(filename) + "\" alt=\"icon\"/>&nbsp;" + filename);
 
-            if (link)
+            if (link && null != url)
             {
                 out.write("</a>");
             }
@@ -128,6 +138,8 @@ public class AttachmentDisplayColumn extends DataColumn
         FieldKey entityKey = new FieldKey(parentKey, "EntityId");
 
         _colEntityId = QueryService.get().getColumns(table, Collections.singleton(entityKey)).get(entityKey);
-        columns.add(_colEntityId);
+
+        if (null != _colEntityId)
+            columns.add(_colEntityId);
     }
 }

@@ -17,9 +17,9 @@
 package org.labkey.experiment.list;
 
 import org.labkey.api.data.*;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
@@ -103,18 +103,9 @@ public class ListTable extends FilteredTable
                     }
                 });
             }
-        }
-
-        setDefaultVisibleColumns(defaultVisible);
-
-        // Do separate pass for safety -- we must wait until column initialization is complete (FKs are set, etc.) to
-        // check getInputType(), otherwise it may stash an incorrect, intermediate result.
-        for (ColumnInfo col : getColumns())
-        {
-//          if ("file".equals(col.getInputType()))
-			if ("image".equalsIgnoreCase(col.getSqlDataTypeName()))
-			{
-                col.setDisplayColumnFactory(new DisplayColumnFactory() {
+            else if (property.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT)
+            {
+                column.setDisplayColumnFactory(new DisplayColumnFactory() {
                     public DisplayColumn createRenderer(final ColumnInfo colInfo)
                     {
                         return new AttachmentDisplayColumn(colInfo);
@@ -122,6 +113,8 @@ public class ListTable extends FilteredTable
                 });
             }
         }
+
+        setDefaultVisibleColumns(defaultVisible);
 
         setTitleColumn(findTitleColumn(listDef, colKey));
 
