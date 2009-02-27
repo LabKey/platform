@@ -1453,6 +1453,8 @@ public class SecurityController extends SpringActionController
                 groupPerms.put("id", group.getUserId());
                 groupPerms.put("name", SecurityManager.getDisambiguatedGroupName(group));
                 groupPerms.put("type", group.getType());
+                groupPerms.put("isSystemGroup", group.isSystemGroup());
+                groupPerms.put("isProjectGroup", group.isProjectGroup());
 
                 int perms = acl.getPermissions(group);
                 groupPerms.put("permissions", perms);
