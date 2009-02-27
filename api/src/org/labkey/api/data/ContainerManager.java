@@ -727,16 +727,6 @@ public class ContainerManager
 
     public static NavTree getFolderListForUser(Container project, ViewContext viewContext)
     {
-        // the following is a backup permissions check: in case an action forgets to check,
-        // we ensure read permissions here.  The only exception is in the case of ProjectController's
-        // 'start' action, which we leave open because the user may be accessing a project via the
-        // projects menu for which they have access to a child folder but not to the project folder
-        // itself.  See ProjectController.start for more information.  (brittp, 5.4.2007)
-        ActionURL currentURL = viewContext.getActionURL();
-        boolean isProjectStartAction = "project".equalsIgnoreCase(currentURL.getPageFlow()) && "start".equals(currentURL.getAction());
-        if (!isProjectStartAction && !viewContext.hasPermission(ACL.PERM_READ))
-            throw new IllegalStateException("Access Denied.");
-
         Container c = viewContext.getContainer();
 
         NavTree tree = (NavTree) NavTreeManager.getFromCache(project.getId(), viewContext);
