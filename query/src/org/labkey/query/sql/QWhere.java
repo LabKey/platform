@@ -43,6 +43,9 @@ public class QWhere extends QNode
         builder.pushPrefix("\nWHERE ");
         for (QNode n : children())
         {
+            assert null != n;
+            if (null == n)
+                continue;
 			QExpr child = (QExpr)n;
             boolean fParen = Operator.and.needsParentheses(child, child == getFirstChild());
             if (fParen)
