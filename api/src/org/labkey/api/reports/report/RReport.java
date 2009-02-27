@@ -57,6 +57,7 @@ import java.util.regex.Pattern;
 public class RReport extends ExternalScriptEngineReport implements AttachmentParent
 {
     public static final String TYPE = "ReportService.rReport";
+    private static String DEFAULT_APP_PATH;
 
     public static final String DEFAULT_R_CMD = "CMD BATCH --slave";
 
@@ -81,12 +82,55 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
         return mgr.getEngineByExtension("r") != null;
     }
 
+    public static boolean canCreateScript(ViewContext context)
+    {
+        return UserManager.mayWriteScript(context.getUser());
+    }
+
     public ScriptEngine getScriptEngine()
     {
         ScriptEngineManager mgr = ServiceRegistry.get().getService(ScriptEngineManager.class);
 
         // bypass the normal discovery mechanism
         return mgr.getEngineByExtension("r");
+    }
+
+    public static synchronized String getDefaultAppPath()
+    {
+        if (DEFAULT_APP_PATH == null)
+        {
+            DEFAULT_APP_PATH = "";
+            String path = System.getenv("PATH");
+
+            for (String dir : path.split(File.pathSeparator))
+            {
+                File part = new File(dir);
+                if (part.isDirectory())
+                {
+                    File[] files = part.listFiles(new FilenameFilter()
+                    {
+                        public boolean accept(File dir, String name)
+                        {
+                            if ("r.exe".equalsIgnoreCase(name) || "r".equalsIgnoreCase(name))
+                                return true;
+                            return false;
+                        }
+                    });
+
+                    if (files.length > 0)
+                    {
+                        DEFAULT_APP_PATH = files[0].getAbsolutePath().replaceAll("\\\\", "/");
+                        break;
+                    }
+                }
+                else if ("r.exe".equalsIgnoreCase(part.getName()) || "r".equalsIgnoreCase(part.getName()))
+                {
+                    DEFAULT_APP_PATH = part.getAbsolutePath().replaceAll("\\\\", "/");
+                    break;
+                }
+            }
+        }
+        return DEFAULT_APP_PATH;
     }
 
     protected String getScriptProlog(ViewContext context, File inputFile)

@@ -428,7 +428,7 @@ public class ReportUtil
         return views;
     }
 
-    private static boolean queryExists(User user, Container container, String schema, String query)
+    public static boolean queryExists(User user, Container container, String schema, String query)
     {
         if (schema == null && query == null) return true;
 

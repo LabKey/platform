@@ -18,6 +18,7 @@ package org.labkey.api.reports.report.view;
 
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.reports.Report;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.security.User;
@@ -70,6 +71,15 @@ public class ManageReportsBean
             beforeGetViews(_views);
             for (Report r : ReportUtil.getReports(_context, null, true))
             {
+                // don't include inherited views unless the query exists in this container
+                if (r.getDescriptor().isInherited(_context.getContainer()) &&
+                        !ReportUtil.queryExists(_context.getUser(), _context.getContainer(),
+                                r.getDescriptor().getProperty(ReportDescriptor.Prop.schemaName),
+                                r.getDescriptor().getProperty(ReportDescriptor.Prop.queryName)))
+                {
+                    continue;
+                }
+
                 if (!StringUtils.isEmpty(r.getDescriptor().getReportName()))
                     createReportRecord(r, _views);
             }

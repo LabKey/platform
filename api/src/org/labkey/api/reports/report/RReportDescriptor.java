@@ -68,7 +68,7 @@ public class RReportDescriptor extends ReportDescriptor
 
     public boolean canEdit(ViewContext context)
     {
-        if (context.getUser().isDeveloper())
+        if (RReport.canCreateScript(context))
         {
             return super.canEdit(context);
         }
