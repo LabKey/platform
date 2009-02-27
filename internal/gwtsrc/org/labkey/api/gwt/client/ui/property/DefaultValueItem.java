@@ -34,25 +34,48 @@ import com.google.gwt.http.client.URL;
 public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> extends PropertyPaneItem<DomainType, FieldType>
 {
     private ListBox _defaultValueTypes = new ListBox();
+    private Label _currentDefault = new Label();
     private Saveable<GWTDomain> _owner;
     private HelpPopup _helpPopup = new HelpPopup("Default Value Types", "");
+    private GWTDomain _domain;
+    private HTML _setDefaultValueLink;
+    private static final String SET_DEFAULT_DISABLED = "<i>Not supported for file/attachment fields.</i>";
+    private static final String SET_DEFAULT_ENABLED = "[<a href=\"#\">set&nbsp;value</a>]";
+    private FlexTable _defaultTypeTable;
+    private FlexTable _defaultValueTable;
 
     public DefaultValueItem(Saveable<GWTDomain> owner, PropertyPane<DomainType, FieldType> propertyPane)
     {
         super(propertyPane);
         _owner = owner;
-        for (DefaultValueType type : DefaultValueType.values())
-            _defaultValueTypes.addItem(type.getLabel(), type.name());
     }
 
     private void updateEnabledState(FieldType field)
     {
-        _defaultValueTypes.setEnabled(!field.isFileType());
-        String desiredState = field.isFileType() ? DefaultValueType.FIXED_EDITABLE.name() : field.getDefaultValueType();
+        if (_defaultValueTypes.getItemCount() == 0)
+        {
+            for (DefaultValueType type : _domain.getDefaultValueOptions())
+                _defaultValueTypes.addItem(type.getLabel(), type.name());
+        }
+        if (field.isFileType())
+        {
+            _defaultValueTypes.setEnabled(false);
+            _setDefaultValueLink.setHTML(SET_DEFAULT_DISABLED);
+        }
+        else
+        {
+            _defaultValueTypes.setEnabled(true);
+            _setDefaultValueLink.setHTML(SET_DEFAULT_ENABLED);
+        }
+        DefaultValueType defaultType = field.getDefaultValueType();
+        if (defaultType == null)
+            defaultType = _domain.getDefaultDefaultValueType();
+        if (field.isFileType())
+            defaultType = DefaultValueType.FIXED_EDITABLE;
         for (int i = 0; i < _defaultValueTypes.getItemCount(); i++)
         {
             String currentItemValue = _defaultValueTypes.getValue(i);
-            if (currentItemValue.equals(desiredState))
+            if (currentItemValue.equals(defaultType.name()))
             {
                 _defaultValueTypes.setSelectedIndex(i);
                 return;
@@ -63,26 +86,29 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
 
     public int addToTable(FlexTable flexTable, int row)
     {
-        flexTable.setWidget(row, LABEL_COLUMN, new Label("Default value"));
+        flexTable.setWidget(row, LABEL_COLUMN, new HTML("Default&nbsp;Type"));
 
-        HTML valueLink = new HTML("[<a href=\"#\">set&nbsp;value</a>]");
-        valueLink.addClickListener(new ClickListener()
+        _setDefaultValueLink = new HTML(SET_DEFAULT_ENABLED);
+        _setDefaultValueLink.addClickListener(new ClickListener()
         {
             public void onClick(Widget sender)
             {
-                final String baseURL = PropertyUtil.getRelativeURL("setDefaultValues", "list") +
-                        "?returnUrl=" + URL.encodeComponent(PropertyUtil.getCurrentURL()) + "&domainId=";
+                if (!_defaultValueTypes.isEnabled())
+                    return;
+                String actionURL = PropertyUtil.getRelativeURL("setDefaultValues", "list");
+                String currentURL = PropertyUtil.getCurrentURL();
+                String queryString = "returnUrl=" + URL.encodeComponent(currentURL) + "&domainId=";
+                final String baseURL = actionURL + "?" + queryString;
 
-                if (_owner.isDirty())
+                if (_owner.isDirty() && Window.confirm("You must save your changes before setting default values.  Save changes?"))
                 {
-                    if (Window.confirm("You must save your changes before setting default values.  Save changes?"))
-                        _owner.save(new Saveable.SaveListener<GWTDomain>()
+                    _owner.save(new Saveable.SaveListener<GWTDomain>()
+                    {
+                        public void saveSuccessful(GWTDomain domain)
                         {
-                            public void saveSuccessful(GWTDomain domain)
-                            {
-                                WindowUtil.setLocation(baseURL + domain.getDomainId());
-                            }
-                        });
+                            WindowUtil.setLocation(baseURL + domain.getDomainId());
+                        }
+                    });
                 }
                 else
                 {
@@ -91,27 +117,23 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
             }
         });
 
-        StringBuilder helpString = new StringBuilder();
-        DefaultValueType[] defaultTypes = DefaultValueType.values();
-        for (int i = 0; i < defaultTypes.length; i++)
-        {
-            DefaultValueType type = defaultTypes[i];
-            helpString.append("<b>").append(type.getLabel()).append("</b>: ").append(type.getHelpText());
-            if (i < defaultTypes.length - 1)
-                helpString.append("<br><br>");
-        }
-        _helpPopup.setBody(helpString.toString());
-
-        FlexTable subTable = new FlexTable();
-        subTable.setWidget(0, 0, _defaultValueTypes);
-        subTable.setWidget(0, 1, _helpPopup);
-        subTable.setWidget(0, 2, valueLink);
-        flexTable.setWidget(row, INPUT_COLUMN, subTable);
+        _defaultTypeTable = new FlexTable();
+        _defaultTypeTable.setWidget(0, 0, _defaultValueTypes);
+        _defaultTypeTable.setWidget(0, 1, _helpPopup);
+        flexTable.setWidget(row, INPUT_COLUMN, _defaultTypeTable);
 
         _defaultValueTypes.addClickListener(createClickListener());
         _defaultValueTypes.addKeyboardListener(createKeyboardListener());
+        _defaultTypeTable.setWidget(0, 2, _setDefaultValueLink);
 
-        return ++row;
+        _defaultValueTable = new FlexTable();
+        _defaultValueTable.setWidget(0, 0, _currentDefault);
+        _defaultValueTable.setWidget(0, 1, _setDefaultValueLink);
+
+        flexTable.setWidget(row + 1, LABEL_COLUMN, new HTML("Default&nbsp;Value"));
+        flexTable.setWidget(row + 1, INPUT_COLUMN, _defaultValueTable);
+
+        return row + 2;
     }
 
     public boolean copyValuesToPropertyDescriptor(FieldType field)
@@ -119,8 +141,9 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
         if (_defaultValueTypes.isEnabled())
         {
             String name = _defaultValueTypes.getValue(_defaultValueTypes.getSelectedIndex());
-            boolean changed = name.equals(field.getDefaultValueType());
-            field.setDefaultValueType(name);
+            DefaultValueType newType = DefaultValueType.valueOf(name);
+            boolean changed = (newType == field.getDefaultValueType());
+            field.setDefaultValueType(DefaultValueType.valueOf(name));
             return changed;
         }
         return false;
@@ -133,6 +156,18 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
 
     public void showPropertyDescriptor(DomainType domain, FieldType field)
     {
+        _domain = domain;
+        StringBuilder helpString = new StringBuilder();
+        DefaultValueType[] defaultTypes = _domain.getDefaultValueOptions();
+        for (int i = 0; i < defaultTypes.length; i++)
+        {
+            DefaultValueType type = defaultTypes[i];
+            helpString.append("<b>").append(type.getLabel()).append("</b>: ").append(type.getHelpText());
+            if (i < defaultTypes.length - 1)
+                helpString.append("<br><br>");
+        }
+        _currentDefault.setText(field.getDefaultValue());
+        _helpPopup.setBody(helpString.toString());
         updateEnabledState(field);
     }
 

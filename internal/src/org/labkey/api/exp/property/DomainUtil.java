@@ -17,22 +17,28 @@ package org.labkey.api.exp.property;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.defaults.DefaultValueService;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 
 import java.lang.reflect.InvocationTargetException;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.sql.SQLException;
+import java.sql.ResultSet;
 
 /**
  * User: jgarms
@@ -45,8 +51,68 @@ public class DomainUtil
     {
     }
 
+    public static String getFormattedDefaultValue(User user, DomainProperty property, Object defaultValue)
+    {
+        if (defaultValue == null)
+            return "[none]";
+        if (defaultValue instanceof Date)
+        {
+            Date defaultDate = (Date) defaultValue;
+            if (property.getFormatString() != null)
+                return DateUtil.formatDateTime(defaultDate, property.getFormatString());
+            else
+                return DateUtil.formatDate(defaultDate);
+        }
+        else if (property.getLookup() != null)
+        {
+            Container lookupContainer = property.getLookup().getContainer();
+            if (lookupContainer == null)
+                lookupContainer = property.getContainer();
+            UserSchema schema = QueryService.get().getUserSchema(user, lookupContainer, property.getLookup().getSchemaName());
+            if (schema != null)
+            {
+                TableInfo table = schema.getTable(property.getLookup().getQueryName(), null);
+                if (table != null)
+                {
+                    List<String> pks = table.getPkColumnNames();
+                    String pkCol = pks.get(0);
+                    if ((pkCol.equalsIgnoreCase("container") || pkCol.equalsIgnoreCase("containerid")) && pks.size() == 2)
+                        pkCol = pks.get(1);
+                    if (pkCol != null)
+                    {
+                        ColumnInfo pkColumnInfo = table.getColumn(pkCol);
+                        if (!pkColumnInfo.getClass().equals(defaultValue.getClass()))
+                            defaultValue = ConvertUtils.convert(defaultValue.toString(), pkColumnInfo.getJavaClass());
+                        SimpleFilter filter = new SimpleFilter(pkCol, defaultValue);
+                        ResultSet rs = null;
+                        try
+                        {
+                            rs = Table.select(table, Table.ALL_COLUMNS, filter, null);
+                            if (rs.next())
+                            {
+                                Object value = rs.getObject(table.getTitleColumn());
+                                if (value != null)
+                                    return value.toString();
+                            }
+                        }
+                        catch (SQLException e)
+                        {
+                            throw new RuntimeSQLException(e);
+                        }
+                        finally
+                        {
+                            if (rs != null)
+                                try { rs.close(); } catch (SQLException e) { }
+                        }
+                    }
+                }
+            }
+        }
+        return defaultValue.toString();
+    }
+
     @Nullable
-    public static GWTDomain getDomainDescriptor(String typeURI, Container domainContainer)
+    public static GWTDomain getDomainDescriptor(User user, String typeURI, Container domainContainer)
     {
         try
         {
@@ -59,9 +125,22 @@ public class DomainUtil
 
             ArrayList<GWTPropertyDescriptor> list = new ArrayList<GWTPropertyDescriptor>();
 
-            for (DomainProperty prop : domain.getProperties())
+            DomainProperty[] properties = domain.getProperties();
+            Map<DomainProperty, Object> defaultValues = null;
+            try
+            {
+                defaultValues = DefaultValueService.get().getDefaultValues(domainContainer, domain);
+            }
+            catch (ExperimentException e)
+            {
+                throw new RuntimeException(e);
+            }
+
+            for (DomainProperty prop : properties)
             {
                 GWTPropertyDescriptor p = getPropertyDescriptor(prop);
+                String formattedDefaultValue = getFormattedDefaultValue(user, prop, defaultValues.get(prop));
+                p.setDefaultValue(formattedDefaultValue);
                 list.add(p);
             }
 
@@ -105,7 +184,7 @@ public class DomainUtil
         gwtProp.setRequired(prop.isRequired());
         gwtProp.setHidden(prop.isHidden());
         gwtProp.setQcEnabled(prop.isQcEnabled());
-        gwtProp.setDefaultValueType(prop.getDefaultValueTypeEnum() != null ? prop.getDefaultValueTypeEnum().name() : "");
+        gwtProp.setDefaultValueType(prop.getDefaultValueTypeEnum());
 
         List<GWTPropertyValidator> validators = new ArrayList<GWTPropertyValidator>();
         for (IPropertyValidator pv : prop.getValidators())

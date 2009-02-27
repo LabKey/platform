@@ -153,13 +153,13 @@ public class DomainEditorServiceBase extends BaseRemoteService
 
     public GWTDomain getDomainDescriptor(String typeURI)
     {
-        return DomainUtil.getDomainDescriptor(typeURI, getContainer());
+        return DomainUtil.getDomainDescriptor(getUser(), typeURI, getContainer());
     }
 
     public GWTDomain getDomainDescriptor(String typeURI, String domainContainerId)
     {
         Container domainContainer = ContainerManager.getForId(domainContainerId);
-        return DomainUtil.getDomainDescriptor(typeURI, domainContainer);
+        return DomainUtil.getDomainDescriptor(getUser(), typeURI, domainContainer);
     }
 
     public List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain update) throws ChangePropertyDescriptorException
@@ -169,7 +169,7 @@ public class DomainEditorServiceBase extends BaseRemoteService
 
     protected GWTDomain getDomainDescriptor(String typeURI, Container domainContainer)
     {
-        return DomainUtil.getDomainDescriptor(typeURI, domainContainer);
+        return DomainUtil.getDomainDescriptor(getUser(), typeURI, domainContainer);
     }
 
 }

@@ -267,6 +267,8 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
     {
         if (defaultValueTypeName != null)
             _defaultValueType = DefaultValueType.valueOf(defaultValueTypeName);
+        else
+            _defaultValueType = null;
     }
 
     @Override

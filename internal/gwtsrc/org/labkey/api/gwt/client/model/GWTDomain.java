@@ -37,7 +37,8 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     private String description;
     private boolean allowFileLinkProperties;
     private boolean allowAttachmentProperties;
-    private StringProperty defaultDefaultValueType = new StringProperty(DefaultValueType.FIXED_EDITABLE.name());
+    private DefaultValueType defaultDefaultValueType = null;
+    private DefaultValueType[] defaultValueOptions = new DefaultValueType[0];
     private List<FieldType> fields = new ArrayList<FieldType>();
 
     private Set<String> mandatoryPropertyDescriptorNames = new HashSet<String>();
@@ -57,6 +58,8 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.description = src.description;
         this.allowFileLinkProperties = src.allowFileLinkProperties;
         this.allowAttachmentProperties = src.allowAttachmentProperties;
+        this.defaultDefaultValueType = src.defaultDefaultValueType;
+        this.defaultValueOptions = src.defaultValueOptions;
         if (src.getFields() == null)
             return;
         for (int i=0 ; i<src.getFields().size() ; i++)
@@ -183,13 +186,19 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.reservedFieldNames = reservedFieldNames;
     }
 
-    public String getDefaultDefaultValueType()
+    public DefaultValueType getDefaultDefaultValueType()
     {
-        return defaultDefaultValueType.getString();
+        return defaultDefaultValueType;
     }
 
-    public void setDefaultDefaultValueType(String defaultDefaultValueType)
+    public DefaultValueType[] getDefaultValueOptions()
     {
-        this.defaultDefaultValueType.set(defaultDefaultValueType);
+        return defaultValueOptions;
+    }
+
+    public void setDefaultValueOptions(DefaultValueType[] defaultOptions, DefaultValueType defaultDefault)
+    {
+        this.defaultDefaultValueType = defaultDefault;
+        this.defaultValueOptions = defaultOptions;
     }
 }

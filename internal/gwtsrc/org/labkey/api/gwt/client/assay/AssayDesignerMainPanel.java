@@ -239,7 +239,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
 
     protected PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor> createPropertiesEditor(GWTDomain domain)
     {
-        return new PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor>(new DomainProtocolSaveable(this, domain), getService(), true);
+        return new PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor>(new DomainProtocolSaveable(this, domain), getService());
     }
 
     protected FlexTable createAssayInfoTable(final GWTProtocol assay)

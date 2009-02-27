@@ -43,7 +43,7 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
 
     private List<PropertyPaneItem<DomainType, FieldType>> _items = new ArrayList<PropertyPaneItem<DomainType, FieldType>>();
 
-    public PropertyPane(GWTDomain domain, Element backgroundElement, PropertiesEditor<DomainType, FieldType> propertiesEditor)
+    public PropertyPane(Element backgroundElement, PropertiesEditor<DomainType, FieldType> propertiesEditor)
     {
         _backgroundElement = backgroundElement;
         _propertiesEditor = propertiesEditor;

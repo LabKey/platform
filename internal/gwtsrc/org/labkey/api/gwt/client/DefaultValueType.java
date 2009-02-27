@@ -23,9 +23,9 @@ package org.labkey.api.gwt.client;
 
 public enum DefaultValueType
 {
-    FIXED_EDITABLE("Fixed default (editable)", "An editable default value will be entered for the user.  The default value will be the same for every upload."),
-    FIXED_NON_EDITABLE("Fixed value (non-editable)", "Fixed values cannot be edited by the user.  This option is used to save fixed data with each inserted data row."),
-    LAST_ENTERED("Last entered", "A editable default value will be entered for the user's first use of the form.  During subsequent uploads, the user will see their last entered value.");
+    FIXED_EDITABLE("Editable default", "An editable default value will be entered for the user.  The default value will be the same for every user for every upload."),
+    FIXED_NON_EDITABLE("Fixed value", "Fixed values cannot be edited by the user.  This option is used to save fixed data with each inserted data row."),
+    LAST_ENTERED("Last entered", "An editable default value will be entered for the user's first use of the form.  During subsequent uploads, the user will see their last entered value.");
 
     private String _label;
     private String _helpText;

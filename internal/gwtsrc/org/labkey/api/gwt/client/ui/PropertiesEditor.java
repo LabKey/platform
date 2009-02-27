@@ -75,7 +75,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     private ImageButton _importSchemaButton;
     private ImageButton _exportSchemaButton;
     private ImageButton _inferSchemaButton;
-    private boolean _enableDefaultValues = false;
+    private DefaultValueItem<DomainType, FieldType> _defaultValueSelector;
 
     protected DomainType _domain;
     ArrayList<Row> _rows;
@@ -93,10 +93,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         boolean deleted;
     }
 
-    public PropertiesEditor(Saveable<GWTDomain> owner, LookupServiceAsync service, boolean enableDefaultValues)
+    public PropertiesEditor(Saveable<GWTDomain> owner, LookupServiceAsync service)
     {
         _rows = new ArrayList<Row>();
-        _enableDefaultValues = enableDefaultValues;
 
         _lookupService = service;
         _owner = owner;
@@ -218,15 +217,15 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     protected PropertyPane<DomainType, FieldType> createPropertyPane(DockPanel propertyDock)
     {
-        PropertyPane<DomainType, FieldType> propertyPane = new PropertyPane<DomainType, FieldType>(_domain, propertyDock.getElement(), this);
+        PropertyPane<DomainType, FieldType> propertyPane = new PropertyPane<DomainType, FieldType>(propertyDock.getElement(), this);
         propertyPane.addItem(new FormatItem<DomainType, FieldType>(propertyPane));
         RequiredItem<DomainType, FieldType> requiredItem = new RequiredItem<DomainType, FieldType>(propertyPane);
         propertyPane.addItem(requiredItem);
         // 7441 : de-clutter PropertyDescriptor editor, remove Hidden checkbox
         //propertyPane.addItem(new HiddenItem<DomainType, FieldType>(propertyPane));
         propertyPane.addItem(new QcEnabledItem<DomainType, FieldType>(propertyPane, requiredItem));
-        if (_enableDefaultValues)
-            propertyPane.addItem(new DefaultValueItem<DomainType, FieldType>(_owner, propertyPane));
+        _defaultValueSelector = new DefaultValueItem<DomainType, FieldType>(_owner, propertyPane);
+        propertyPane.addItem(_defaultValueSelector);
         propertyPane.addItem(new DescriptionItem<DomainType, FieldType>(propertyPane));
         propertyPane.addItem(new ValidatorItem<DomainType, FieldType>(propertyPane));
         return propertyPane;
@@ -350,6 +349,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             RadioButton radioButton = (RadioButton) _table.getWidget(tableRow, 2);
 
             _propertiesPane.showPropertyDescriptor(pd, !readOnly, radioButton.getAbsoluteTop());
+            _defaultValueSelector.setEnabled(_domain.getDefaultValueOptions().length > 0);
 
             radioButton.setChecked(true);
             Element e = _table.getRowFormatter().getElement(tableRow);

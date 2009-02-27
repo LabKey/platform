@@ -40,7 +40,7 @@ public interface Domain extends IPropertyType
     DomainProperty[] getProperties();
     DomainProperty getProperty(int id);
     DomainProperty getPropertyByName(String name);
-    ActionURL urlEditDefinition(boolean allowFileLinkProperties, boolean allowAttachmentProperties, boolean showDefaultValueSettings);
+    ActionURL urlEditDefinition(boolean allowFileLinkProperties, boolean allowAttachmentProperties);
     ActionURL urlShowData();
 
     DomainProperty addProperty();

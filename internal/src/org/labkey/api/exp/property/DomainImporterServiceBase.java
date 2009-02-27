@@ -165,7 +165,7 @@ public abstract class DomainImporterServiceBase extends BaseRemoteService implem
 
     public GWTDomain getDomainDescriptor(String typeURI)
     {
-        return DomainUtil.getDomainDescriptor(typeURI, getContainer());
+        return DomainUtil.getDomainDescriptor(getUser(), typeURI, getContainer());
     }
 
     public abstract List<String> importData(GWTDomain domain, Map<String, String> mappedColumnNames) throws ImportException;
