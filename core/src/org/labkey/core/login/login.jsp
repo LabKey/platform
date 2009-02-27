@@ -37,9 +37,10 @@
 
     // Next bit of code makes the enter button work on IE.
     %>
-
 <script type="text/javascript">
     LABKEY.requiresClientAPI();
+</script>
+<script type="text/javascript">
     if (Ext.isIE)
     {
         window.onload = function() {
