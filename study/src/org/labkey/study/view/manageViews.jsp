@@ -189,7 +189,8 @@
             createMenu :[{
                 id: 'create_rView',
                 text:'New R View',
-                disabled: <%=!context.getUser().isDeveloper()%>,
+                hidden: <%=!RReport.isEnabled()%>,
+                disabled: <%=!RReport.canCreateScript(context)%>,
                 listeners:{click:function(button, event) {window.location = '<%=newRView.getLocalURIString()%>';}}
             },{
                 id: 'create_gridView',

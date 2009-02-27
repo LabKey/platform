@@ -18,6 +18,8 @@
 <%@ page import="org.labkey.api.reports.report.RReport"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.ViewContext"%>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -83,6 +85,9 @@
                 exeCommand:'<%=RReport.DEFAULT_R_CMD%>',
                 outputFileName: 'script.Rout',
                 external: true,
+                <% if (!StringUtils.isEmpty(RReport.getDefaultAppPath())) { %>
+                    exePath: '<%=RReport.getDefaultAppPath()%>',
+                <% } %>
                 enabled: true,
                 languageName:'R'});}}}
 

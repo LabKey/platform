@@ -73,7 +73,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         designers.add(new DesignerInfoImpl(StudyChartQueryReport.TYPE, "Chart View", url));
 
         // r report
-        if (RReport.isEnabled())
+        if (RReport.canCreateScript(context) && RReport.isEnabled())
         {
             RReportBean rBean = new RReportBean(settings);
             rBean.setReportType(StudyRReport.TYPE);

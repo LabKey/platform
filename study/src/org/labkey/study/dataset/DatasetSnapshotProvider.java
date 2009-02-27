@@ -383,7 +383,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         if (d != null)
         {
             try {
-                List<QuerySnapshotDefinition> snapshots = QueryService.get().getQuerySnapshotDefs(dsDef.getContainer(), StudyManager.getSchemaName());
+                List<QuerySnapshotDefinition> snapshots = QueryService.get().getQuerySnapshotDefs(null, StudyManager.getSchemaName());
                 for (DomainProperty prop : d.getProperties())
                 {
                     for (QuerySnapshotDefinition snapshot : snapshots)

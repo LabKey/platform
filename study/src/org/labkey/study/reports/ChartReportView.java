@@ -81,7 +81,25 @@ public class ChartReportView extends AbstractReportView
         if (descriptor instanceof ChartReportViewDescriptor)
             ((ChartReportViewDescriptor)descriptor).setParent(this);
 
-        super.setDescriptor(descriptor);    //To change body of overridden methods use File | Settings | File Templates.
+        super.setDescriptor(descriptor);
+
+        // to help grouping in manage views
+        if (StringUtils.isBlank(descriptor.getProperty(ReportDescriptor.Prop.schemaName)))
+        {
+            int datasetId = NumberUtils.toInt(descriptor.getProperty("datasetId"), -1);
+            if (datasetId != -1)
+            {
+                descriptor.setProperty(ReportDescriptor.Prop.schemaName, StudyManager.getSchemaName());
+
+                Study study = StudyManager.getInstance().getStudy(HttpView.currentContext().getContainer());
+                if (study != null)
+                {
+                    DataSetDefinition ds = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+                    if (ds != null)
+                        descriptor.setProperty(ReportDescriptor.Prop.queryName, ds.getLabel());
+                }
+            }
+        }
     }
 
     public void init(ViewContext context)

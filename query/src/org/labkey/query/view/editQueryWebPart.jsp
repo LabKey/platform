@@ -70,6 +70,7 @@
     }
 
     boolean querySelected = pm.get("queryName") != null && !"".equals(pm.get("queryName").trim());
+    
 %>
 <script type="text/javascript">
 var schemaInfos = <%= new JSONObject(schemaTableNames).toString() %>;
@@ -79,9 +80,16 @@ function updateQueries(schemaName)
     var querySelect = document.getElementById('queryName');
 
     querySelect.options.length = 0;
+
+    var names = [];
     for (var opt in tableNames)
     {
-        querySelect.options[querySelect.options.length] = new Option(opt, opt);
+        names.push(opt);
+    }
+    names.sort();
+    for (var i = 0; i <names.length; i++)
+    {
+        querySelect.options[querySelect.options.length] = new Option(names[i], names[i]);
     }
 
     updateViews(querySelect.value);

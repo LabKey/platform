@@ -58,12 +58,14 @@
                 },
                 filterDiv: 'filterMsg',
             <% } %>
-            container: '<%=context.getContainer().getPath()%>',
-            createMenu :[{
+            container: '<%=context.getContainer().getPath()%>'
+            <% if (RReport.isEnabled()) { %>
+            ,createMenu :[{
                 id: 'create_rView',
                 text:'New R View',
-                disabled: <%=!context.getUser().isDeveloper()%>,
+                disabled: <%=!RReport.canCreateScript(context)%>,
                 listeners:{click:function(button, event) {window.location = '<%=newRView.getLocalURIString()%>';}}}]
+            <% } %>
         };
         var panel = new LABKEY.ViewsPanel(gridConfig);
         panel.show();

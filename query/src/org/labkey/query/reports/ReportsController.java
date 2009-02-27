@@ -767,8 +767,8 @@ public class ReportsController extends SpringActionController
 */
     protected void validatePermissions() throws Exception
     {
-        if (!getViewContext().getUser().isDeveloper())
-            HttpView.throwUnauthorized("Only members of the Site Developers group are allowed to create and edit R views.");
+        if (!RReport.canCreateScript(getViewContext()))
+            HttpView.throwUnauthorized("Only members of the Site Admin and Site Developers groups are allowed to create and edit R views.");
     }
 
     @RequiresPermission(ACL.PERM_NONE)

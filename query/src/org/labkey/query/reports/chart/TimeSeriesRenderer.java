@@ -145,7 +145,6 @@ public class TimeSeriesRenderer extends AbstractChartRenderer implements ChartRe
                         plot.getRenderer().setToolTipGenerator(new XYReportToolTipGenerator());
 
                         plot.mapDatasetToRangeAxis(idx, idx);
-                        idx++;
                     }
                 }
                 else
