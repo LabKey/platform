@@ -20,7 +20,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Tamra Myers
  * Date: Feb 15, 2007
  * Time: 1:10:09 PM
