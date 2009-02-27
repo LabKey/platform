@@ -690,6 +690,7 @@ api/src/org/labkey/api/util/JobRunner.java -text
 api/src/org/labkey/api/util/LimitedCacheMap.java -text
 api/src/org/labkey/api/util/MemTracker.java -text
 api/src/org/labkey/api/util/MothershipReport.java -text
+api/src/org/labkey/api/util/NameString.java -text
 api/src/org/labkey/api/util/NullPreventingSet.java -text
 api/src/org/labkey/api/util/SafeFileAppender.java -text
 api/src/org/labkey/api/util/SearchHit.java -text
