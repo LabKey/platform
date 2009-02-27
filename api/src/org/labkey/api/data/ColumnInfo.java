@@ -19,12 +19,11 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpressionFactory.StringExpression;
-import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.data.xml.ColumnType;
 
 import java.beans.Introspector;
