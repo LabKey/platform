@@ -35,7 +35,6 @@ public class DomainForm extends ViewFormData
     protected Domain _domain;
     private boolean _allowFileLinkProperties = false;
     private boolean _allowAttachmentProperties = false;
-    private boolean _showDefaultValueSettings = false;
 
     public void reset(ActionMapping actionMapping, HttpServletRequest request)
     {
@@ -176,15 +175,5 @@ public class DomainForm extends ViewFormData
     public void setAllowAttachmentProperties(boolean allowAttachmentProperties)
     {
         _allowAttachmentProperties = allowAttachmentProperties;
-    }
-
-    public boolean isShowDefaultValueSettings()
-    {
-        return _showDefaultValueSettings;
-    }
-
-    public void setShowDefaultValueSettings(boolean showDefaultValueSettings)
-    {
-        _showDefaultValueSettings = showDefaultValueSettings;
     }
 }

@@ -31,6 +31,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.security.ACL;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.UnexpectedException;
@@ -291,5 +292,23 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
         {
             throw UnexpectedException.wrap(e);
         }
+    }
+
+    @Override
+    public GWTDomain getDomainDescriptor(String typeURI, String domainContainerId)
+    {
+        GWTDomain domain = super.getDomainDescriptor(typeURI, domainContainerId);
+        domain.setDefaultValueOptions(new DefaultValueType[]
+                { DefaultValueType.FIXED_EDITABLE, DefaultValueType.LAST_ENTERED }, DefaultValueType.FIXED_EDITABLE);
+        return domain;
+    }
+
+    @Override
+    public GWTDomain getDomainDescriptor(String typeURI)
+    {
+        GWTDomain domain = super.getDomainDescriptor(typeURI);
+        domain.setDefaultValueOptions(new DefaultValueType[]
+                { DefaultValueType.FIXED_EDITABLE, DefaultValueType.LAST_ENTERED }, DefaultValueType.FIXED_EDITABLE);
+        return domain;
     }
 }

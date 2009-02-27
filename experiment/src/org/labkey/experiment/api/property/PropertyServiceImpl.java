@@ -21,7 +21,6 @@ import org.labkey.api.exp.*;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.common.util.Pair;

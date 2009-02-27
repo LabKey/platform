@@ -69,5 +69,5 @@
 <% } %>
 
 <% if (hasPermission(ACL.PERM_ADMIN)) { %>
-    <labkey:link href="<%=list.getDomain().urlEditDefinition(false, true, true)%>" text="edit fields"/>
+    <labkey:link href="<%=list.getDomain().urlEditDefinition(false, true)%>" text="edit fields"/>
 <% } %>

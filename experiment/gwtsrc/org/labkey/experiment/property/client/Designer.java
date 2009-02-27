@@ -60,13 +60,12 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
         _returnURL = PropertyUtil.getServerProperty("returnURL");
         _allowFileLinkProperties = "true".equals(PropertyUtil.getServerProperty("allowFileLinkProperties"));
         _allowAttachmentProperties = "true".equals(PropertyUtil.getServerProperty("allowAttachmentProperties"));
-        boolean showDefaultValueSettings = "true".equals(PropertyUtil.getServerProperty("showDefaultValueSettings"));
 
         _root = RootPanel.get("org.labkey.experiment.property.Designer-Root");
 
         _loading = new Label("Loading...");
 
-        _propTable = new PropertiesEditor(this, getService(), showDefaultValueSettings);
+        _propTable = new PropertiesEditor(this, getService());
 
         _buttons = new HorizontalPanel();
         _buttons.add(new SubmitButton());

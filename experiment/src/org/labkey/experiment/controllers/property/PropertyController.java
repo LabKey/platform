@@ -28,6 +28,7 @@ import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.SchemaUpdateService;
 import org.labkey.api.query.SchemaUpdateServiceRegistry;
@@ -84,7 +85,6 @@ public class PropertyController extends SpringActionController
             props.put("returnURL", returnURL.toString());
             props.put("allowFileLinkProperties", String.valueOf(form.getAllowFileLinkProperties()));
             props.put("allowAttachmentProperties", String.valueOf(form.getAllowAttachmentProperties()));
-            props.put("showDefaultValueSettings", String.valueOf(form.isShowDefaultValueSettings()));
 
             return new GWTView("org.labkey.experiment.property.Designer", props);
         }
@@ -366,7 +366,7 @@ public class PropertyController extends SpringActionController
         if (domainURI == null)
             throw new UnsupportedOperationException(query + " in " + schema + " does not support reading domain information");
 
-        GWTDomain domain = DomainUtil.getDomainDescriptor(domainURI, container);
+        GWTDomain domain = DomainUtil.getDomainDescriptor(user, domainURI, container);
 
         if (domain == null)
             throw new RuntimeException("Could not find domain for " + domainURI);
@@ -403,6 +403,15 @@ public class PropertyController extends SpringActionController
             {
                 throw UnexpectedException.wrap(e);
             }
+        }
+
+        @Override
+        public GWTDomain getDomainDescriptor(String typeURI)
+        {
+            GWTDomain domain = super.getDomainDescriptor(typeURI);
+            domain.setDefaultValueOptions(new DefaultValueType[]
+                    { DefaultValueType.FIXED_EDITABLE, DefaultValueType.LAST_ENTERED }, DefaultValueType.FIXED_EDITABLE);
+            return domain;
         }
     }
 

@@ -43,6 +43,7 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.PlateBasedAssayProvider;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.common.util.Pair;
 import org.labkey.study.StudySchema;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
@@ -95,7 +96,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         for (Domain domain : template.getValue())
         {
             GWTDomain<GWTPropertyDescriptor> gwtDomain = new GWTDomain<GWTPropertyDescriptor>();
-            gwtDomain.setDefaultDefaultValueType(DefaultValueType.LAST_ENTERED.name());
+            gwtDomain.setDefaultValueOptions(DefaultValueType.values(), DefaultValueType.LAST_ENTERED);
             Set<String> mandatoryPropertyDescriptors = new HashSet<String>();
             if (!copy)
             {
@@ -107,11 +108,23 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             gwtDomain.setAllowFileLinkProperties(provider.isFileLinkPropertyAllowed(template.getKey(), domain));
             gwtDomains.add(gwtDomain);
             List<GWTPropertyDescriptor> gwtProps = new ArrayList<GWTPropertyDescriptor>();
-            for (DomainProperty prop : domain.getProperties())
+
+            DomainProperty[] properties = domain.getProperties();
+            Map<DomainProperty, Object> defaultValues = null;
+            try
+            {
+                defaultValues = DefaultValueService.get().getDefaultValues(domain.getContainer(), domain);
+            }
+            catch (ExperimentException e)
+            {
+                throw new RuntimeException(e);
+            }
+
+            for (DomainProperty prop : properties)
             {
                 GWTPropertyDescriptor gwtProp = getPropertyDescriptor(prop, copy);
-
                 gwtProps.add(gwtProp);
+                gwtProp.setDefaultValue(DomainUtil.getFormattedDefaultValue(getUser(), prop, defaultValues.get(prop)));
                 if (provider.isMandatoryDomainProperty(domain, prop.getName()))
                     mandatoryPropertyDescriptors.add(prop.getName());
             }
@@ -171,8 +184,6 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         GWTPropertyDescriptor gwtProp = DomainUtil.getPropertyDescriptor(prop);
         if (copy)
             gwtProp.setPropertyId(0);
-        if (prop.getDefaultValueTypeEnum() == null)
-            gwtProp.setDefaultValueType(DefaultValueType.LAST_ENTERED.name());
 
         return gwtProp;
     }

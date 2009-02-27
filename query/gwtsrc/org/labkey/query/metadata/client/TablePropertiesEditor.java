@@ -19,6 +19,7 @@ import org.labkey.api.gwt.client.ui.*;
 import org.labkey.api.gwt.client.ui.property.FormatItem;
 import org.labkey.api.gwt.client.ui.property.DescriptionItem;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import com.google.gwt.user.client.ui.*;
 
 /**
@@ -31,7 +32,7 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
 
     public TablePropertiesEditor(Saveable parent, LookupServiceAsync service)
     {
-        super(parent, service, false);
+        super(parent, service);
     }
 
     private ImageButton getWrapFieldButton()
@@ -116,7 +117,7 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
 
     protected PropertyPane<GWTTableInfo, GWTColumnInfo> createPropertyPane(DockPanel propertyDock)
     {
-        PropertyPane<GWTTableInfo, GWTColumnInfo> propertyPane = new PropertyPane<GWTTableInfo, GWTColumnInfo>(_domain, propertyDock.getElement(), this);
+        PropertyPane<GWTTableInfo, GWTColumnInfo> propertyPane = new PropertyPane<GWTTableInfo, GWTColumnInfo>(propertyDock.getElement(), this);
         propertyPane.addItem(new FormatItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new DescriptionItem<GWTTableInfo, GWTColumnInfo>(propertyPane));
         propertyPane.addItem(new WrappedColumnItem(propertyPane));

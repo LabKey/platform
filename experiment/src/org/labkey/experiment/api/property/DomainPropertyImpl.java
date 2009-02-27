@@ -87,7 +87,7 @@ public class DomainPropertyImpl implements DomainProperty
 
     public ActionURL detailsURL()
     {
-        ActionURL ret = getDomain().urlEditDefinition(false, false, false);
+        ActionURL ret = getDomain().urlEditDefinition(false, false);
         ret.setAction("showProperty");
         ret.replaceParameter("propertyId", Integer.toString(getPropertyId()));
         return ret;
