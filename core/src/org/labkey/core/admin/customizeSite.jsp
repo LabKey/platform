@@ -373,7 +373,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2>Configure caBIG&trade; (<%=bean.helpLink%>)</td>
+    <td colspan=2>Configure caBIG&trade; (<%=bean.caBigHelpLink%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
 <tr>

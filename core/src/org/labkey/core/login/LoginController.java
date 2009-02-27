@@ -32,6 +32,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.*;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRenderer;
@@ -1341,6 +1342,7 @@ public class LoginController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic(new HelpTopic("authenticationModule", HelpTopic.Area.SERVER));
             return getUrls().appendAuthenticationNavTrail(root);
         }
     }

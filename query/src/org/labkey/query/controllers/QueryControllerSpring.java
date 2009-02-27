@@ -30,10 +30,7 @@ import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.*;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.IdentifierString;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.data.xml.TableType;
@@ -162,6 +159,7 @@ public class QueryControllerSpring extends SpringActionController
                 JspView<QueryForm> builtInTablesView = new JspView<QueryForm>(QueryControllerSpring.class, "builtInTablesList.jsp", form, errors);
                 builtInTablesView.setTitle("Built-In Tables");
                 builtInTablesView.setFrame(WebPartView.FrameType.PORTAL);
+                setHelpTopic(new HelpTopic("customSQL", HelpTopic.Area.SERVER));
                 return new VBox(customQueriesView, builtInTablesView);
             }
         }
@@ -199,6 +197,7 @@ public class QueryControllerSpring extends SpringActionController
                 HttpView.throwUnauthorized();
             getPageConfig().setFocus("forms[0].ff_newQueryName");
             _form = form;
+            setHelpTopic(new HelpTopic("customSQL", HelpTopic.Area.SERVER));            
             return new JspView<NewQueryForm>(QueryControllerSpring.class, "newQuery.jsp", form, errors);
         }
 
@@ -336,6 +335,8 @@ public class QueryControllerSpring extends SpringActionController
                 Logger.getLogger(QueryControllerSpring.class).error("Error", e);
             }
 
+            setHelpTopic(new HelpTopic("customSQL", HelpTopic.Area.SERVER));
+            
             return new JspView<SourceForm>(QueryControllerSpring.class, "sourceQuery.jsp", form, errors);
         }
 
@@ -449,6 +450,7 @@ public class QueryControllerSpring extends SpringActionController
             }
             queryView.setShadeAlternatingRows(true);
             queryView.setShowBorders(true);
+            setHelpTopic(new HelpTopic("customSQL", HelpTopic.Area.SERVER));            
             return queryView;
         }
 
@@ -851,6 +853,7 @@ public class QueryControllerSpring extends SpringActionController
                     return HttpView.redirect(_queryDef.urlFor(QueryAction.sourceQuery));
                 form.ff_designXML = queryDoc.toString();
             }
+            setHelpTopic(new HelpTopic("customSQL", HelpTopic.Area.SERVER));            
             return new JspView<DesignForm>(QueryControllerSpring.class, "designQuery.jsp", form, errors);
         }
 
@@ -1077,6 +1080,8 @@ public class QueryControllerSpring extends SpringActionController
             _form.setDescription(queryDef.getDescription());
             _form.setInheritable(queryDef.canInherit());
             _form.setHidden(queryDef.isHidden());
+            setHelpTopic(new HelpTopic("customSQL", HelpTopic.Area.SERVER));
+            
             return new JspView<PropertiesForm>(QueryControllerSpring.class, "propertiesQuery.jsp", form, errors);
         }
 
@@ -1759,6 +1764,7 @@ public class QueryControllerSpring extends SpringActionController
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
+           setHelpTopic(new HelpTopic("externalSchemas", HelpTopic.Area.SERVER));
            return new JspView<QueryForm>(getClass(), "admin.jsp", form, errors);
         }
 
@@ -1835,6 +1841,7 @@ public class QueryControllerSpring extends SpringActionController
             bb.add(new ActionButton("Delete", urlDelete));
             view.getDataRegion().setButtonBar(bb);
             view.getDataRegion().removeColumns("DbContainer", "DbUserSchemaId");
+            setHelpTopic(new HelpTopic("externalSchemas", HelpTopic.Area.SERVER));
 
             HtmlView help = new HtmlView("Only tables with primary keys defined are editable.  The 'editable' option above may be used to disable editing for all tables in this schema.");
 

@@ -30,6 +30,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.core.query.GroupAuditViewFactory;
@@ -467,9 +468,15 @@ public class UserController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             if (getContainer().isRoot())
+            {
+                setHelpTopic(new HelpTopic("manageUsers", HelpTopic.Area.SERVER));
                 return root.addChild("Site Users");
+            }
             else
+            {
+                setHelpTopic(new HelpTopic("manageProjectMembers", HelpTopic.Area.SERVER));
                 return root.addChild("Project Members");
+            }
         }
     }
 

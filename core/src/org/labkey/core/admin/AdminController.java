@@ -788,6 +788,8 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic(new HelpTopic("customizeLook", HelpTopic.Area.SERVER));
+            
             Container c = getViewContext().getContainer();
 
             if (c.isRoot())
@@ -1225,6 +1227,7 @@ public class AdminController extends SpringActionController
     {
         public String helpLink = "<a href=\"" + (new HelpTopic("configAdmin", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">more info...</a>";
         public String ftpHelpLink = "<a href=\"" + (new HelpTopic("configureFtp", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">help configuring ftp...</a>";
+        public String caBigHelpLink = "<a href=\"" + (new HelpTopic("cabig", HelpTopic.Area.SERVER)).getHelpTopicLink() + "\" target=\"labkey\">more info...</a>";
         public boolean upgradeInProgress;
         public boolean testInPage;
 
@@ -3288,6 +3291,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic(new HelpTopic("customEmail", HelpTopic.Area.SERVER));
             return appendAdminNavTrail(root, "Customize Email", this.getClass());
         }
     }
