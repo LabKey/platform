@@ -526,7 +526,7 @@ public class SecurityController extends SpringActionController
                 // Ignore lines of all whitespace, otherwise show an error.
                 String e = StringUtils.trimToNull(rawEmail);
                 if (null != e)
-                    messages.add("Could not add user " + filter(e) + ": Invalid email address");
+                    errors.reject(ERROR_MSG, "Could not add user " + filter(e) + ": Invalid email address");
             }
 
             String[] removeNames = form.getDelete();
@@ -538,7 +538,7 @@ public class SecurityController extends SpringActionController
                 // Ignore lines of all whitespace, otherwise show an error.
                 String e = StringUtils.trimToNull(rawEmail);
                 if (null != e)
-                    messages.add("Could not remove user " + filter(e) + ": Invalid email address");
+                    errors.reject(ERROR_MSG, "Could not remove user " + filter(e) + ": Invalid email address");
             }
 
             if (group != null)
@@ -589,7 +589,7 @@ public class SecurityController extends SpringActionController
                         //get the user and ensure that the user is still active
                         User user = UserManager.getUser(email);
                         if(!user.isActive())
-                            messages.add("You may not add the user '" + PageFlowUtil.filter(email)
+                            errors.reject(ERROR_MSG, "You may not add the user '" + PageFlowUtil.filter(email)
                                     + "' to this group because that user account is currently deactivated." +
                                     " To re-activate this account, contact your system administrator.");
                     }
