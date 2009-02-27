@@ -28,6 +28,7 @@ import org.labkey.api.util.Cache;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.settings.AppProps;
 import org.labkey.common.util.Pair;
 import org.labkey.data.xml.TablesDocument;
@@ -121,12 +122,19 @@ public class QueryServiceImpl extends QueryService
 
     private Map<Map.Entry<String, String>, QueryDefinition> getAllQueryDefs(Container container, String schemaName, boolean inheritable, boolean includeSnapshots)
     {
+        return getAllQueryDefs(container, schemaName, inheritable, includeSnapshots, false);
+    }
+
+    private Map<Map.Entry<String, String>, QueryDefinition> getAllQueryDefs(Container container, String schemaName,
+                                                                            boolean inheritable, boolean includeSnapshots, boolean allModules)
+    {
         Map<Map.Entry<String, String>, QueryDefinition> ret = new LinkedHashMap<Map.Entry<String, String>, QueryDefinition>();
 
         //look in all the active modules in this container to see if they contain any query definitions
         if(null != schemaName)
         {
-            for(Module module : container.getActiveModules())
+            Collection<Module> modules = allModules ? ModuleLoader.getInstance().getModules() : container.getActiveModules();
+            for(Module module : modules)
             {
                 File schemaDir = new File(getModuleQueriesDir(module), schemaName);
                 File[] fileSet = null;
@@ -201,7 +209,7 @@ public class QueryServiceImpl extends QueryService
     public QueryDefinition getQueryDef(Container container, String schema, String name)
     {
         Map<String, QueryDefinition> ret = new LinkedHashMap<String,QueryDefinition>();
-        for (QueryDefinition queryDef : getAllQueryDefs(container, schema, true, true).values())
+        for (QueryDefinition queryDef : getAllQueryDefs(container, schema, true, true, true).values())
         {
             ret.put(queryDef.getName(), queryDef);
         }

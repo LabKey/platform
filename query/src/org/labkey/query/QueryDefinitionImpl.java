@@ -27,6 +27,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
@@ -104,7 +105,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public CustomView getCustomView(User user, HttpServletRequest request, String name)
     {
-        return getCustomViews(user, request).get(name);
+        return getAllCustomViews(user, request, true, true).get(name);
     }
 
     public CustomView createCustomView(User user, String name)
@@ -118,6 +119,11 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     }
 
     private Map<String, CustomView> getAllCustomViews(User user, HttpServletRequest request, boolean inheritable)
+    {
+        return getAllCustomViews(user, request, inheritable, false);
+    }
+
+    private Map<String, CustomView> getAllCustomViews(User user, HttpServletRequest request, boolean inheritable, boolean allModules)
     {
         Map<String, CustomView> ret = new HashMap<String, CustomView>();
         try
@@ -133,7 +139,8 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             addCustomViews(ret, mgr.getAllColumnLists(container, _queryDef.getSchema(), _queryDef.getName(), user, inheritable));
 
             //finally, look in all the active modules for any views defined in the file system
-            for(Module module : container.getActiveModules())
+            Collection<Module> modules = allModules ? ModuleLoader.getInstance().getModules() : container.getActiveModules();
+            for(Module module : modules)
             {
                 File queryDir = new File(getQueriesDir(module), getSchemaName() + "/" + getName());
                 if(queryDir.exists())
