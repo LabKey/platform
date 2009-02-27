@@ -354,7 +354,7 @@ function onAttachmentSuccess(response)
     if(respJson.attachments)
     {
         _attachments = respJson.attachments;
-        updateExistingAttachments(_attachments);
+        updateExistingAttachments(_attachments, false);
         clearNewAttachments();
     }
 
@@ -612,10 +612,12 @@ function setTabStripVisible(isVisible)
         Ext.get("wiki-tab-content").removeClass("labkey-wiki-tab-content");
 }
 
-function updateExistingAttachments(attachments)
+function updateExistingAttachments(attachments, encodeNames)
 {
     if(!attachments)
         return;
+    if(undefined === encodeNames)
+        encodeNames = true;
 
     var table = document.getElementById("wiki-existing-attachments");
     if(!table)
@@ -646,8 +648,8 @@ function updateExistingAttachments(attachments)
 
             cell = row.insertCell(1);
             cell.id = "wiki-ea-name-" + idx;
-            //create a text node for name so that it gets HTML encoded
-            cell.innerHTML = "<a target='_blank' href='" + attachments[idx].downloadUrl + "'>" + LABKEY.Utils.encodeHtml(attachments[idx].name) + "</a>";
+            cell.innerHTML = "<a target='_blank' href='" + attachments[idx].downloadUrl + "'>"
+                    + (encodeNames ? LABKEY.Utils.encodeHtml(attachments[idx].name) : attachments[idx].name) + "</a>";
 
             cell = row.insertCell(2);
             cell.id = "wiki-ea-del-" + idx;
