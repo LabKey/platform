@@ -257,6 +257,12 @@ public class DataColumn extends DisplayColumn
                 ".clearFilter('" + h(_filterColumn.getName()) + "')";
     }
 
+    @Override
+    public String getClearSortScript(RenderContext ctx)
+    {
+        return "clearSort('" + h(ctx.getCurrentRegion().getName()) + "', '" + h(_sortColumn.getName()) + "');";
+    }
+
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         Object o = getValue(ctx);

@@ -478,6 +478,12 @@ public abstract class DisplayColumn extends RenderColumn
                 desc.setSelected(selected);
                 desc.setDisabled(primarySort && selected);
                 navtree.addChild(desc);
+
+                NavTree clearSort = new NavTree("Clear Sort");
+                clearSort.setDisabled(null == sortField);
+                if(null != sortField)
+                    clearSort.setScript(getClearSortScript(ctx));
+                navtree.addChild(clearSort);
             }
 
             if (addFilterItems)
@@ -485,17 +491,17 @@ public abstract class DisplayColumn extends RenderColumn
                 if (navtree.hasChildren())
                     navtree.addSeparator();
 
-                NavTree clearFilterItem = new NavTree("Clear Filter");
-                clearFilterItem.setId(PageFlowUtil.filter(baseId + ":clear-filter"));
-                clearFilterItem.setDisabled(!filtered);
-                clearFilterItem.setScript(getClearFilter(ctx));
-                navtree.addChild(clearFilterItem);
-
                 NavTree filterItem = new NavTree("Filter...");
                 filterItem.setId(PageFlowUtil.filter(baseId + ":filter"));
                 filterItem.setScript(getFilterOnClick(ctx));
                 //filterItem.setImageSrc(ctx.getRequest().getContextPath() + "/_images/filter" + (filtered ? "_on" : "") + ".png");
                 navtree.addChild(filterItem);
+                
+                NavTree clearFilterItem = new NavTree("Clear Filter");
+                clearFilterItem.setId(PageFlowUtil.filter(baseId + ":clear-filter"));
+                clearFilterItem.setDisabled(!filtered);
+                clearFilterItem.setScript(getClearFilter(ctx));
+                navtree.addChild(clearFilterItem);
             }
 
         }
@@ -690,6 +696,11 @@ public abstract class DisplayColumn extends RenderColumn
     }
 
     public String getClearFilter(RenderContext ctx)
+    {
+        return "";
+    }
+
+    public String getClearSortScript(RenderContext ctx)
     {
         return "";
     }

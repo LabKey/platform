@@ -675,6 +675,28 @@ function doSort(tableName, columnName, sortDirection)
     setSearchString(tableName, buildQueryString(paramValPairs));
 }
 
+function clearSort(tableName, columnName)
+{
+    if(!tableName || !columnName)
+        return;
+
+    var sortString =  getParameter(tableName + ".sort");
+    var sortArray = sortString.split(",");
+    var newSortArray = [];
+
+    for(var idx = 0; idx < sortArray.length; ++idx)
+    {
+        if(sortArray[idx] != columnName && sortArray[idx] != "-" + columnName)
+            newSortArray.push(sortArray[idx]);
+    }
+
+    var paramValPairs = getParamValPairs([tableName + ".sort", tableName + ".offset"]);
+    if(newSortArray.length > 0)
+        paramValPairs.push([tableName + ".sort", newSortArray.join(",")]);
+
+    setSearchString(tableName, buildQueryString(paramValPairs));
+}
+
 // If at least one checkbox on the form is selected then GET/POST url.  Otherwise, display an error.
 function verifySelected(form, url, method, pluralNoun, confirmText)
 {
