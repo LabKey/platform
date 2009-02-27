@@ -15,12 +15,10 @@
  */
 package org.labkey.api.gwt.client.ui.property;
 
-import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.PropertyPane;
-import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.CheckBox;
-import com.google.gwt.user.client.ui.FlexTable;
+import org.labkey.api.gwt.client.ui.TypePicker;
 
 /**
  * User: jgarms
@@ -28,12 +26,11 @@ import com.google.gwt.user.client.ui.FlexTable;
  */
 public class QcEnabledItem<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> extends CheckboxItem<DomainType, FieldType>
 {
-    private final RequiredItem requiredItem;
+    private boolean allowsAllowsQc;
 
-    public QcEnabledItem(PropertyPane<DomainType, FieldType> propertyPane, RequiredItem requiredItem)
+    public QcEnabledItem(PropertyPane<DomainType, FieldType> propertyPane)
     {
         super(propertyPane);
-        this.requiredItem = requiredItem;
         checkbox.setName("allowsQc");
     }
 
@@ -45,21 +42,14 @@ public class QcEnabledItem<DomainType extends GWTDomain<FieldType>, FieldType ex
     public boolean copyValuesToPropertyDescriptor(FieldType field)
     {
         // Called when clicked or keyed
-
-        if (checkbox.isEnabled())
+        // Note that we store our value whether or not we're read-only,
+        // since if our type has changed we have to 
+        if (!getFieldValue(field) == checkbox.isChecked())
         {
-            if (!getFieldValue(field) == checkbox.isChecked())
-            {
-                if (requiredItem.isChecked())
-                {
-                    // TODO: A required item can't have QC. This needs to pop a dialog or disable itself
-                }
-                setFieldValue(field, checkbox.isChecked());
-                return true;
-            }
-            // No change
-            return false;
+            setFieldValue(field, checkbox.isChecked());
+            return true;
         }
+        // No change
         return false;
     }
 
@@ -73,4 +63,41 @@ public class QcEnabledItem<DomainType extends GWTDomain<FieldType>, FieldType ex
         field.setQcEnabled(b);
     }
 
+    private static boolean allowsAllowsQc(String rangeURI)
+    {
+        return !TypePicker.xsdAttachment.equals(rangeURI) &&
+                !TypePicker.xsdFileLink.equals(rangeURI) &&
+                !TypePicker.xsdMultiLine.equals(rangeURI);
+    }
+
+    private void updateEnabledState(FieldType field)
+    {
+        checkbox.setEnabled(allowsAllowsQc(field.getRangeURI()));
+    }
+
+    @Override
+    public void propertyDescriptorChanged(FieldType field)
+    {
+        showPropertyDescriptor(null, field);
+    }
+
+    @Override
+    public void enabledChanged()
+    {
+        checkbox.setEnabled(isEnabled());
+    }
+
+    @Override
+    public boolean isEnabled()
+    {
+        return super.isEnabled() && allowsAllowsQc;
+    }
+
+    @Override
+    public void showPropertyDescriptor(DomainType domain, FieldType field)
+    {
+        allowsAllowsQc = allowsAllowsQc(field.getRangeURI());
+        checkbox.setChecked(field.isQcEnabled() && allowsAllowsQc);
+        updateEnabledState(field);
+    }
 }
