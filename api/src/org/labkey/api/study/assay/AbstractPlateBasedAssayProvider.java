@@ -37,6 +37,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.query.ValidationException;
+import org.labkey.common.util.Pair;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -84,17 +85,17 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
         return true;
     }
 
-    protected Domain createSampleWellGroupDomain(Container c, User user)
+    protected Pair<Domain, Map<DomainProperty, Object>> createSampleWellGroupDomain(Container c, User user)
     {
         String domainLsid = getPresubstitutionLsid(ASSAY_DOMAIN_SAMPLE_WELLGROUP);
         Domain sampleWellGroupDomain = PropertyService.get().createDomain(c, domainLsid, "Sample Fields");
         sampleWellGroupDomain.setDescription("The user will be prompted to enter these properties for each of the sample well groups in their chosen plate template.");
-        return sampleWellGroupDomain;
+        return new Pair<Domain, Map<DomainProperty, Object>>(sampleWellGroupDomain, Collections.<DomainProperty, Object>emptyMap());
     }
 
-    public List<Domain> createDefaultDomains(Container c, User user)
+    public List<Pair<Domain, Map<DomainProperty, Object>>> createDefaultDomains(Container c, User user)
     {
-        List<Domain> result = super.createDefaultDomains(c, user);
+        List<Pair<Domain, Map<DomainProperty, Object>>> result = super.createDefaultDomains(c, user);
         result.add(createSampleWellGroupDomain(c, user));
         return result;
     }

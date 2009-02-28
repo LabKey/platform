@@ -348,6 +348,14 @@ public abstract class SqlDialect
         throw new SqlDialectNotSupportedException("Product name and version: " + dataBaseProductName + " " + majorVersion + "." + minorVersion);
     }
 
+    /**
+     * @return any additional information that should be sent to the mothership in the case of a SQLException
+     */
+    public String getExtraInfo(SQLException e)
+    {
+        return null;
+    }
+
     public static boolean isConstraintException(SQLException x)
     {
         String sqlState = x.getSQLState();

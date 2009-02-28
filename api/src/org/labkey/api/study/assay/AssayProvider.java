@@ -24,6 +24,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -73,7 +74,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     ExpProtocol createAssayDefinition(User user, Container container, String name, String description) throws ExperimentException;
 
-    List<Domain> createDefaultDomains(Container c, User user);
+    List<Pair<Domain, Map<DomainProperty, Object>>> createDefaultDomains(Container c, User user);
 
     HttpView getDataDescriptionView(AssayRunUploadForm form);
 
@@ -101,13 +102,13 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     List<ParticipantVisitResolverType> getParticipantVisitResolverTypes();
 
-    List<Domain> getDomains(ExpProtocol protocol);
+    List<Pair<Domain, Map<DomainProperty, Object>>> getDomains(ExpProtocol protocol);
 
     Set<String> getReservedPropertyNames(ExpProtocol protocol, Domain domain);
 
-    Pair<ExpProtocol, List<Domain>> getAssayTemplate(User user, Container targetContainer);
+    Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> getAssayTemplate(User user, Container targetContainer);
 
-    Pair<ExpProtocol, List<Domain>> getAssayTemplate(User user, Container targetContainer, ExpProtocol toCopy);
+    Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> getAssayTemplate(User user, Container targetContainer, ExpProtocol toCopy);
 
     boolean isFileLinkPropertyAllowed(ExpProtocol protocol, Domain domain);
 

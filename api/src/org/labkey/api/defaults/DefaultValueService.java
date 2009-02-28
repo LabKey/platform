@@ -44,17 +44,17 @@ public abstract class DefaultValueService
         _instance = impl;
     }
 
-    public abstract boolean hasDefaultValues(Container container, Domain domain, boolean inherit) throws ExperimentException;
+    public abstract boolean hasDefaultValues(Container container, Domain domain, boolean inherit);
 
-    public abstract boolean hasDefaultValues(Container container, Domain domain, User user, boolean inherit) throws ExperimentException;
+    public abstract boolean hasDefaultValues(Container container, Domain domain, User user, boolean inherit);
 
-    public abstract boolean hasDefaultValues(Container container, Domain domain, User user, String scope, boolean inherit) throws ExperimentException;
+    public abstract boolean hasDefaultValues(Container container, Domain domain, User user, String scope, boolean inherit);
 
-    public abstract Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain) throws ExperimentException;
+    public abstract Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain);
 
-    public abstract Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user) throws ExperimentException;
+    public abstract Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user);
 
-    public abstract Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user, String scope) throws ExperimentException;
+    public abstract Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user, String scope);
 
     public abstract void setDefaultValues(Container container, Map<DomainProperty, Object> values) throws ExperimentException;
 
@@ -62,11 +62,11 @@ public abstract class DefaultValueService
 
     public abstract void setDefaultValues(Container container, Map<DomainProperty, Object> values, User user, String scope) throws ExperimentException;
 
-    public abstract void clearDefaultValues(Container container, Domain domain) throws ExperimentException;
+    public abstract void clearDefaultValues(Container container, Domain domain);
 
-    public abstract void clearDefaultValues(Container container, Domain domain, User user) throws ExperimentException;
+    public abstract void clearDefaultValues(Container container, Domain domain, User user);
 
-    public abstract void clearDefaultValues(Container container, Domain domain, User user, String scope) throws ExperimentException;
+    public abstract void clearDefaultValues(Container container, Domain domain, User user, String scope);
 
     public abstract List<Container> getDefaultValueOverriders(Container currentContainer, Domain domain);
 

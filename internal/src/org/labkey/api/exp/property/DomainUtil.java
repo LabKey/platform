@@ -126,21 +126,15 @@ public class DomainUtil
             ArrayList<GWTPropertyDescriptor> list = new ArrayList<GWTPropertyDescriptor>();
 
             DomainProperty[] properties = domain.getProperties();
-            Map<DomainProperty, Object> defaultValues = null;
-            try
-            {
-                defaultValues = DefaultValueService.get().getDefaultValues(domainContainer, domain);
-            }
-            catch (ExperimentException e)
-            {
-                throw new RuntimeException(e);
-            }
+            Map<DomainProperty, Object> defaultValues = DefaultValueService.get().getDefaultValues(domainContainer, domain);
 
             for (DomainProperty prop : properties)
             {
                 GWTPropertyDescriptor p = getPropertyDescriptor(prop);
-                String formattedDefaultValue = getFormattedDefaultValue(user, prop, defaultValues.get(prop));
-                p.setDefaultValue(formattedDefaultValue);
+                Object defaultValue = defaultValues.get(prop);
+                String formattedDefaultValue = getFormattedDefaultValue(user, prop, defaultValue);
+                p.setDefaultDisplayValue(formattedDefaultValue);
+                p.setDefaultValue(ConvertUtils.convert(defaultValue));
                 list.add(p);
             }
 
@@ -225,6 +219,7 @@ public class DomainUtil
             errors.add("Domain not found: " + update.getDomainURI());
             return errors;
         }
+        Map<DomainProperty, Object> defaultValues = new HashMap<DomainProperty, Object>();
 
         if (!d.getDomainKind().canEditDefinition(user, d))
         {
@@ -297,6 +292,7 @@ public class DomainUtil
             }
             // UNDONE: DomainProperty does not support all PropertyDescriptor fields
             DomainProperty p = d.getProperty(pd.getPropertyId());
+            defaultValues.put(p, pd.getDefaultValue());
 
             if (old == null)
                 continue;
@@ -329,6 +325,7 @@ public class DomainUtil
 
             // UNDONE: DomainProperty does not support all PropertyDescriptor fields
             DomainProperty p = d.addProperty();
+            defaultValues.put(p, pd.getDefaultValue());
             try
             {
                 _copyProperties(p, pd, errors);
@@ -349,6 +346,16 @@ public class DomainUtil
             if (errors.size() == 0)
             {
                 d.save(user);
+                // Rebucket the hash map with the real property ids
+                defaultValues = new HashMap<DomainProperty, Object>(defaultValues);
+                try
+                {
+                    DefaultValueService.get().setDefaultValues(d.getContainer(), defaultValues);
+                }
+                catch (ExperimentException e)
+                {
+                    errors.add(e.getMessage());
+                }
             }
         }
         catch (IllegalStateException x)

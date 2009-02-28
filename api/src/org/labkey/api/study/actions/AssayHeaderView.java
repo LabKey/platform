@@ -22,6 +22,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.ACL;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
@@ -29,6 +30,7 @@ import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.defaults.SetDefaultValuesAction;
+import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.util.LinkedHashMap;
@@ -86,14 +88,15 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
 
             if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), ACL.PERM_ADMIN))
             {
-                List<Domain> domains = _provider.getDomains(_protocol);
-                if (!domains.isEmpty())
+                List<Pair<Domain, Map<DomainProperty, Object>>> domainInfos = _provider.getDomains(_protocol);
+                if (!domainInfos.isEmpty())
                 {
                     NavTree setDefaultsTree = new NavTree("set default values");
                     ActionURL baseEditUrl = new ActionURL(SetDefaultValuesAction.class, getViewContext().getContainer());
                     baseEditUrl.addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString());
-                    for (Domain domain : domains)
+                    for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : domainInfos)
                     {
+                        Domain domain = domainInfo.getKey();
                         if (domain.getProperties().length > 0)
                         {
                             ActionURL currentEditUrl = baseEditUrl.clone();

@@ -45,6 +45,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.qc.DataExchangeHandler;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -354,14 +355,14 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return "urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":" + ASSAY_NAME_SUBSTITUTION;
     }
 
-    protected Domain createRunDomain(Container c, User user)
+    protected Pair<Domain, Map<DomainProperty, Object>> createRunDomain(Container c, User user)
     {
         Domain domain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_RUN), "Run Fields");
         domain.setDescription("The user is prompted to enter run level properties for each file they import.  This is the second step of the import process.");
-        return domain;
+        return new Pair<Domain, Map<DomainProperty, Object>>(domain, Collections.<DomainProperty, Object>emptyMap());
     }
 
-    protected Domain createBatchDomain(Container c, User user)
+    protected Pair<Domain, Map<DomainProperty, Object>> createBatchDomain(Container c, User user)
     {
         Domain domain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_BATCH), "Batch Fields");
         List<ParticipantVisitResolverType> resolverTypes = getParticipantVisitResolverTypes();
@@ -374,12 +375,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
         domain.setDescription("The user is prompted for batch properties once for each set of runs they import. The run " +
                 "set is a convenience to let users set properties that seldom change in one place and import many runs " +
                 "using them. This is the first step of the import process.");
-        return domain;
+        return new Pair<Domain, Map<DomainProperty, Object>>(domain, Collections.<DomainProperty, Object>emptyMap());
     }
 
-    public List<Domain> createDefaultDomains(Container c, User user)
+    public List<Pair<Domain, Map<DomainProperty, Object>>> createDefaultDomains(Container c, User user)
     {
-        List<Domain> result = new ArrayList<Domain>();
+        List<Pair<Domain, Map<DomainProperty, Object>>> result = new ArrayList<Pair<Domain, Map<DomainProperty, Object>>>();
         boolean transaction = false;
         try
         {
@@ -389,11 +390,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 transaction = true;
             }
 
-            Domain batchDomain = createBatchDomain(c, user);
-            result.add(batchDomain);
-
-            Domain runDomain = createRunDomain(c, user);
-            result.add(runDomain);
+            result.add(createBatchDomain(c, user));
+            result.add(createRunDomain(c, user));
 
             if (transaction)
             {
@@ -755,13 +753,14 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return result;
     }
 
-    public List<Domain> getDomains(ExpProtocol protocol)
+    public List<Pair<Domain, Map<DomainProperty, Object>>> getDomains(ExpProtocol protocol)
     {
-        List<Domain> domains = new ArrayList<Domain>();
+        List<Pair<Domain, Map<DomainProperty, Object>>> domains = new ArrayList<Pair<Domain, Map<DomainProperty, Object>>>();
         for (String uri : getPropertyDomains(protocol))
         {
             Domain domain = PropertyService.get().getDomain(protocol.getContainer(), uri);
-            domains.add(domain);
+            Map<DomainProperty, Object> values = DefaultValueService.get().getDefaultValues(domain.getContainer(), domain);
+            domains.add(new Pair<Domain, Map<DomainProperty, Object>>(domain, values));
         }
         sortDomainList(domains);
         return domains;
@@ -788,36 +787,40 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return reservedNames;
     }
 
-    public Pair<ExpProtocol, List<Domain>> getAssayTemplate(User user, Container targetContainer)
+    public Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> getAssayTemplate(User user, Container targetContainer)
     {
         ExpProtocol copy = ExperimentService.get().createExpProtocol(targetContainer, ExpProtocol.ApplicationType.ExperimentRun, "Unknown");
         copy.setName(null);
-        return new Pair<ExpProtocol, List<Domain>>(copy, createDefaultDomains(targetContainer, user));
+        return new Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>>(copy, createDefaultDomains(targetContainer, user));
     }
 
-    protected void sortDomainList(List<Domain> domains)
+    protected void sortDomainList(List<Pair<Domain, Map<DomainProperty, Object>>> domains)
     {
         // Rely on the assay provider to return a list of default domains in the right order (Collections.sort() is
         // stable so that domains that haven't been inserted and have id 0 stay in the same order), and rely on the fact
         // that they get inserted in the same order, so they will have ascending ids.
-        Collections.sort(domains, new Comparator<Domain>(){
+        Collections.sort(domains, new Comparator<Pair<Domain, Map<DomainProperty, Object>>>(){
 
-            public int compare(Domain dom1, Domain dom2)
+            public int compare(Pair<Domain, Map<DomainProperty, Object>> dom1, Pair<Domain, Map<DomainProperty, Object>> dom2)
             {
-                return new Integer(dom1.getTypeId()).compareTo(new Integer(dom2.getTypeId()));
+                return new Integer(dom1.getKey().getTypeId()).compareTo(new Integer(dom2.getKey().getTypeId()));
             }
         });
     }
 
-    public Pair<ExpProtocol, List<Domain>> getAssayTemplate(User user, Container targetContainer, ExpProtocol toCopy)
+    public Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> getAssayTemplate(User user, Container targetContainer, ExpProtocol toCopy)
     {
         ExpProtocol copy = ExperimentService.get().createExpProtocol(targetContainer, toCopy.getApplicationType(), toCopy.getName());
         copy.setDescription(toCopy.getDescription());
 
-        List<Domain> originalDomains = getDomains(toCopy);
-        List<Domain> copiedDomains = new ArrayList<Domain>(originalDomains.size());
-        for (Domain domain : originalDomains)
+        List<Pair<Domain, Map<DomainProperty, Object>>> originalDomains = getDomains(toCopy);
+        List<Pair<Domain, Map<DomainProperty, Object>>> copiedDomains = new ArrayList<Pair<Domain, Map<DomainProperty, Object>>>(originalDomains.size());
+        for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : originalDomains)
         {
+            Domain domain = domainInfo.getKey();
+            Map<DomainProperty, Object> originalDefaults = domainInfo.getValue();
+            Map<DomainProperty, Object> copiedDefaults = new HashMap<DomainProperty, Object>();
+
             String uri = domain.getTypeURI();
             Lsid domainLsid = new Lsid(uri);
             String name = domain.getName();
@@ -828,6 +831,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             for (DomainProperty propSrc : domain.getProperties())
             {
                 DomainProperty propCopy = domainCopy.addProperty();
+                copiedDefaults.put(propCopy, originalDefaults.get(propSrc));
                 propCopy.setDescription(propSrc.getDescription());
                 propCopy.setFormat(propSrc.getFormatString());
                 propCopy.setLabel(propSrc.getLabel());
@@ -849,9 +853,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 }
                 propCopy.setLookup(lookup);
             }
-            copiedDomains.add(domainCopy);
+            copiedDomains.add(new Pair<Domain, Map<DomainProperty, Object>>(domainCopy, copiedDefaults));
         }
-        return new Pair<ExpProtocol, List<Domain>>(copy, copiedDomains);
+        return new Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>>(copy, copiedDomains);
     }
 
     public boolean isFileLinkPropertyAllowed(ExpProtocol protocol, Domain domain)
@@ -1086,8 +1090,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public void deleteProtocol(ExpProtocol protocol, User user) throws ExperimentException
     {
-        for (Domain domain : getDomains(protocol))
+        for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : getDomains(protocol))
         {
+            Domain domain = domainInfo.getKey();
             for (DomainProperty prop : domain.getProperties())
             {
                 prop.delete();

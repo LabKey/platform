@@ -94,4 +94,9 @@ public class RuntimeSQLException extends RuntimeException
     {
         sqlx.setStackTrace(stackTrace);
     }
+
+    public SQLException getSQLException()
+    {
+        return sqlx;
+    }
 }

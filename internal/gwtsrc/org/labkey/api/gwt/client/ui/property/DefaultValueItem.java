@@ -166,7 +166,7 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
             if (i < defaultTypes.length - 1)
                 helpString.append("<br><br>");
         }
-        _currentDefault.setText(field.getDefaultValue());
+        _currentDefault.setText(field.getDefaultDisplayValue());
         _helpPopup.setBody(helpString.toString());
         updateEnabledState(field);
     }

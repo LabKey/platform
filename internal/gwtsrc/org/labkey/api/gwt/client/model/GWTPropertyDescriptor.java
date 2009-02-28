@@ -53,6 +53,7 @@ public class GWTPropertyDescriptor implements IsSerializable
     private StringProperty lookupQuery = new StringProperty();
     private DefaultValueType defaultValueType = null;
     private StringProperty defaultValue = new StringProperty();
+    private StringProperty defaultDisplayValue = new StringProperty("[none]");
     private BooleanProperty qcEnabled = new BooleanProperty(false);
 
     private List<GWTPropertyValidator> validators = new ArrayList<GWTPropertyValidator>();
@@ -82,6 +83,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         setLookupQuery(s.getLookupQuery());
         setDefaultValueType(s.getDefaultValueType());
         setDefaultValue(s.getDefaultValue());
+        setDefaultDisplayValue(s.getDefaultDisplayValue());
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
@@ -284,6 +286,16 @@ public class GWTPropertyDescriptor implements IsSerializable
         this.defaultValue.set(defaultValue);
     }
 
+    public String getDefaultDisplayValue()
+    {
+        return defaultDisplayValue.toString();
+    }
+
+    public void setDefaultDisplayValue(String  defaultDisplayValue)
+    {
+        this.defaultDisplayValue.set(defaultDisplayValue);
+    }
+
     public String debugString()
     {
         return getName() + " " + getLabel() + " " + getRangeURI() + " " + isRequired() + " " + getDescription();
@@ -319,6 +331,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (getSemanticType() != null ? !getSemanticType().equals(that.getSemanticType()) : that.getSemanticType() != null) return false;
         if (getDefaultValueType() != null ? !getDefaultValueType().equals(that.getDefaultValueType()) : that.getDefaultValueType() != null) return false;
         if (getDefaultValue() != null ? !getDefaultValue().equals(that.getDefaultValue()) : that.getDefaultValue() != null) return false;
+        if (getDefaultDisplayValue() != null ? !getDefaultDisplayValue().equals(that.getDefaultDisplayValue()) : that.getDefaultDisplayValue() != null) return false;
 
         if (getPropertyValidators().size() != that.getPropertyValidators().size()) return false;
         GWTPropertyValidator[] cur = getPropertyValidators().toArray(new GWTPropertyValidator[getPropertyValidators().size()]);
@@ -353,6 +366,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         result = 31 * result + (lookupQuery.getString() != null ? lookupQuery.getString().hashCode() : 0);
         result = 31 * result + (defaultValueType != null ? defaultValueType.hashCode() : 0);
         result = 31 * result + (defaultValue != null ? defaultValue.hashCode() : 0);
+        result = 31 * result + (defaultDisplayValue != null ? defaultDisplayValue.hashCode() : 0);
 
         for (GWTPropertyValidator gwtPropertyValidator : getPropertyValidators())
         {
@@ -382,6 +396,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         if ("qcEnabled".equals(prop)) return qcEnabled;
         if ("defaultValueType".equals(prop)) throw new IllegalStateException("defaultValueType cannot be bound.");
         if ("defaultValue".equals(prop)) throw new IllegalStateException("defaultValue cannot be bound.");
+        if ("defaultDisplayValue".equals(prop)) throw new IllegalStateException("defaultDisplayValue cannot be bound.");
         return null;
     }
 

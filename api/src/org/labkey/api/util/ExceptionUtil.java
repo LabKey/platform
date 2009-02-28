@@ -176,22 +176,38 @@ public class ExceptionUtil
                     printWriter.println("Nested ServletException cause is:");
                     ((ServletException)ex).getRootCause().printStackTrace(printWriter);
                 }
-                report.addParam("stackTrace", stringWriter.getBuffer().toString());
                 report.addParam("browser", request == null ? null : request.getHeader("User-Agent"));
 
+                String stackTrace = stringWriter.getBuffer().toString();
                 for (Throwable t = ex ; t != null ; t = t.getCause())
                 {
+                    String sqlState = null;
+
                     if (t instanceof RuntimeSQLException)
                     {
-                        report.addParam("sqlState", ((RuntimeSQLException)t).getSQLState());
-                        break;
+                        // Unwrap RuntimeSQLExceptions
+                        t = ((RuntimeSQLException)t).getSQLException();
                     }
+
                     if (t instanceof SQLException)
                     {
-                        report.addParam("sqlState", ((SQLException)t).getSQLState());
+                        SQLException sqlException = (SQLException) t;
+                        sqlState = sqlException.getSQLState();
+                        String extraInfo = CoreSchema.getInstance().getSqlDialect().getExtraInfo(sqlException);
+                        if (extraInfo != null)
+                        {
+                            stackTrace = stackTrace + "\n" + extraInfo;
+                        }
+                    }
+
+                    if (sqlState != null)
+                    {
+                        report.addParam("sqlState", sqlState);
                         break;
                     }
                 }
+
+                report.addParam("stackTrace", stackTrace);
 
                 report.addServerSessionParams();
                 if (originalURL != null)
