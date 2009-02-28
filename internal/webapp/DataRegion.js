@@ -416,6 +416,7 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
 
     selectNone : function ()
     {
+        this.onSelectChange(false);
         var url = LABKEY.ActionURL.buildURL("query", "selectNone.api", LABKEY.ActionURL.getContainer(),
             { 'key' : this.selectionKey });
         Ext.Ajax.request({ url: url });
