@@ -30,7 +30,15 @@ import java.util.regex.Pattern;
  * A Name string can contain alpha numeric characters, spaces, and limited punctuation.
  * Names might be used for table names (quoted sql identifiers), datasets names, samplesets,
  * path parts or other uses where arbitrary text is not required.
+ *
+ * In particular don't allow single quote, double quote, forward slash, backward slash, less than,
+ * greater than.
+ *
+ * We don't want delimiter like chars (quotes) for SQL identifiers.  We don't want path
+ * separator like chars for paths.  Also < is a dangerous char for <script> injection.  Start
+ * with strict rules and loosen up as necessary.
  */
+
 
 public class NameString extends HString
 {
