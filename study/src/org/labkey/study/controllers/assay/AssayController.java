@@ -47,6 +47,7 @@ import org.labkey.study.assay.ModuleAssayProvider;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.assay.actions.GetAssayBatchAction;
 import org.labkey.study.controllers.assay.actions.SaveAssayBatchAction;
+import org.labkey.common.util.Pair;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -222,9 +223,9 @@ public class AssayController extends SpringActionController
             assayProperties.put("plateTemplate", ((PlateBasedAssayProvider)provider).getPlateTemplate(c, protocol));
 
         Map<String, List<Map<String, Object>>> domains = new HashMap<String, List<Map<String, Object>>>();
-        for (Domain domain : provider.getDomains(protocol))
+        for (Pair<Domain, Map<DomainProperty, Object>> domain : provider.getDomains(protocol))
         {
-            domains.put(domain.getName(), serializeDomain(domain));
+            domains.put(domain.getKey().getName(), serializeDomain(domain.getKey()));
         }
         assayProperties.put("domains", domains);
         return assayProperties;

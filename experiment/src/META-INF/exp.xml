@@ -157,7 +157,9 @@
       <ns:column columnName="RowId"/>
       <ns:column columnName="LSID"/>
       <ns:column columnName="Name"/>
-      <ns:column columnName="CpasType"/>
+      <ns:column columnName="CpasType">
+          <ns:columnTitle>Sample Set</ns:columnTitle>
+      </ns:column>
       <ns:column columnName="SourceApplicationId"/>
       <ns:column columnName="SourceProtocolLSID"/>
       <ns:column columnName="RunId"/>

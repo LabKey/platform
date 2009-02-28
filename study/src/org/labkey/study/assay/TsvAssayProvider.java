@@ -18,12 +18,10 @@ package org.labkey.study.assay;
 
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
-import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.query.FieldKey;
@@ -32,14 +30,11 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.assay.*;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.common.util.Pair;
 
-import javax.servlet.ServletException;
 import java.io.File;
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -71,17 +66,17 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return "General";
     }
 
-    public List<Domain> createDefaultDomains(Container c, User user)
+    public List<Pair<Domain, Map<DomainProperty, Object>>> createDefaultDomains(Container c, User user)
     {
-        List<Domain> result = super.createDefaultDomains(c, user);
+        List<Pair<Domain, Map<DomainProperty, Object>>> result = super.createDefaultDomains(c, user);
 
-        Domain dataDomain = createDataDomain(c, user);
-        if (dataDomain != null)
-            result.add(dataDomain);
+        Pair<Domain, Map<DomainProperty, Object>> resultDomain = createResultDomain(c, user);
+        if (resultDomain != null)
+            result.add(resultDomain);
         return result;
     }
 
-    protected Domain createDataDomain(Container c, User user)
+    protected Pair<Domain,Map<DomainProperty,Object>> createResultDomain(Container c, User user)
     {
         Domain dataDomain = PropertyService.get().createDomain(c, "urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + ExpProtocol.ASSAY_DOMAIN_DATA + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":" + ASSAY_NAME_SUBSTITUTION, "Data Fields");
         dataDomain.setDescription("The user is prompted to enter data values for row of data associated with a run, typically done as uploading a file.  This is part of the second step of the upload process.");
@@ -89,7 +84,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         addProperty(dataDomain, PARTICIPANTID_PROPERTY_NAME, PARTICIPANTID_PROPERTY_CAPTION, PropertyType.STRING, "Used with either " + VISITID_PROPERTY_NAME + " or " + DATE_PROPERTY_NAME + " to identify subject and timepoint for assay.");
         addProperty(dataDomain, VISITID_PROPERTY_NAME,  VISITID_PROPERTY_CAPTION, PropertyType.DOUBLE, "Used with " + PARTICIPANTID_PROPERTY_NAME + " to identify subject and timepoint for assay.");
         addProperty(dataDomain, DATE_PROPERTY_NAME,  DATE_PROPERTY_CAPTION, PropertyType.DATE_TIME, "Used with " + PARTICIPANTID_PROPERTY_NAME + " to identify subject and timepoint for assay.");
-        return dataDomain;
+        return new Pair<Domain, Map<DomainProperty, Object>>(dataDomain, Collections.<DomainProperty, Object>emptyMap());
     }
 
     public HttpView getDataDescriptionView(AssayRunUploadForm form)

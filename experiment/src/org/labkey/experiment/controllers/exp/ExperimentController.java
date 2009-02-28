@@ -222,7 +222,7 @@ public class ExperimentController extends SpringActionController
 
             DetailsView detailsView = new DetailsView(new DataRegion(), form);
             detailsView.getDataRegion().setTable(ExperimentServiceImpl.get().getTinfoExperiment());
-            detailsView.getDataRegion().addColumns(ExperimentServiceImpl.get().getTinfoExperiment(), "RowId,Name,LSID,ContactId,ExperimentDescriptionURL,Hypothesis,Comments");
+            detailsView.getDataRegion().addColumns(ExperimentServiceImpl.get().getTinfoExperiment(), "RowId,Name,ContactId,ExperimentDescriptionURL,Hypothesis,Comments");
             detailsView.getDataRegion().getDisplayColumn(0).setVisible(false);
             detailsView.getDataRegion().getDisplayColumn(2).setWidth("60%");
 
@@ -389,6 +389,8 @@ public class ExperimentController extends SpringActionController
             queryView.setTitle("Sample Set Contents");
 
             DetailsView detailsView = new DetailsView(getMaterialSourceRegion(getViewContext()), form);
+            detailsView.getDataRegion().getDisplayColumn("LSID").setVisible(false);
+            detailsView.getDataRegion().getDisplayColumn("MaterialLSIDPrefix").setVisible(false);
             detailsView.setTitle("Sample Set Properties");
             ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete", DataRegion.MODE_DETAILS, ActionButton.Action.POST);
             deleteButton.setDisplayPermission(ACL.PERM_DELETE);
@@ -487,11 +489,10 @@ public class ExperimentController extends SpringActionController
             ExpProtocol sourceProtocol = _material.getSourceProtocol();
             ExpProtocolApplication sourceProtocolApplication = _material.getSourceApplication();
 
-            ExpSampleSet sampleSet = _material.getSampleSet();
-
             DataRegion dr = new DataRegion();
             dr.addColumns(ExperimentServiceImpl.get().getTinfoMaterial().getUserEditableColumns());
-            dr.removeColumns("RowId", "RunId", "SourceProtocolLSID", "SourceApplicationId");
+            dr.removeColumns("RowId", "RunId", "LSID", "SourceProtocolLSID", "SourceApplicationId", "CpasType");
+
             //dr.addColumns(extraProps);
             dr.addDisplayColumn(new ExperimentRunDisplayColumn(run, "Source Experiment Run"));
             dr.addDisplayColumn(new ProtocolDisplayColumn(sourceProtocol, "Source Protocol"));
@@ -900,7 +901,7 @@ public class ExperimentController extends SpringActionController
 
             DataRegion dr = new DataRegion();
             dr.addColumns(ExperimentServiceImpl.get().getTinfoData().getUserEditableColumns());
-            dr.removeColumns("DataFileUrl", "RowId", "RunId", "SourceProtocolLSID", "SourceApplicationId");
+            dr.removeColumns("DataFileUrl", "RowId", "RunId", "LSID", "CpasType", "SourceProtocolLSID", "SourceApplicationId");
             dr.addDisplayColumn(new DataFileURLDisplayColumn(_data));
             dr.addDisplayColumn(new ExperimentRunDisplayColumn(run, "Source Experiment Run"));
             dr.addDisplayColumn(new ProtocolDisplayColumn(sourceProtocol, "Source Protocol"));
@@ -1020,7 +1021,8 @@ public class ExperimentController extends SpringActionController
                                         }
                                         else if (cell instanceof DateCell)
                                         {
-                                            rowArray.put(((DateCell)cell).getDate());
+                                            DateCell dateCell = (DateCell)cell;
+                                            rowArray.put(dateCell.getDateFormat().format(dateCell.getDate()));
                                         }
                                         else
                                         {
@@ -1120,7 +1122,7 @@ public class ExperimentController extends SpringActionController
             DataRegion dr = new DataRegion();
             dr.addColumns(ExperimentServiceImpl.get().getTinfoProtocolApplication().getUserEditableColumns());
             DetailsView detailsView = new DetailsView(dr, form);
-            dr.removeColumns("RunId", "ProtocolLSID", "RowId");
+            dr.removeColumns("RunId", "ProtocolLSID", "RowId", "LSID");
             dr.addDisplayColumn(new ExperimentRunDisplayColumn(_run));
             dr.addDisplayColumn(new ProtocolDisplayColumn(protocol));
             dr.addDisplayColumn(new LineageGraphDisplayColumn(_app, _run));

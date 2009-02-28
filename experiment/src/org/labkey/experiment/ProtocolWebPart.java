@@ -48,10 +48,10 @@ public class ProtocolWebPart extends WebPartView
         DataRegion dr = new DataRegion();
         dr.setName("protocols");
         TableInfo ti = ExperimentServiceImpl.get().getTinfoProtocol();
-        List<ColumnInfo> cols = ti.getColumns("RowId,Name,LSID");
+        List<ColumnInfo> cols = ti.getColumns("RowId,Name,Created");
         dr.setColumns(cols);
         dr.getDisplayColumn(0).setVisible(false);
-        dr.getDisplayColumn(1).setURL(ActionURL.toPathString("Experiment", "protocolDetails", c) + "?rowId=${RowId}");
+        dr.getDisplayColumn(1).setURL(new ActionURL(ExperimentController.ProtocolDetailsAction.class, c) + "?rowId=${RowId}");
         dr.getDisplayColumn(2).setTextAlign("left");
 
         if (!_narrow)
@@ -62,8 +62,7 @@ public class ProtocolWebPart extends WebPartView
 
             ActionURL deleteProtUrl = getViewContext().cloneActionURL();
             ActionButton deleteProtocol = new ActionButton("", "Delete");
-            deleteProtUrl.setAction("deleteProtocolByRowIds");
-            deleteProtUrl.setPageFlow("Experiment");
+            deleteProtUrl.setAction(ExperimentController.DeleteProtocolByRowIdsAction.class);
             deleteProtocol.setURL(deleteProtUrl);
             deleteProtocol.setActionType(ActionButton.Action.POST);
             deleteProtocol.setDisplayPermission(ACL.PERM_DELETE);
@@ -72,8 +71,7 @@ public class ProtocolWebPart extends WebPartView
 
             ActionURL exportURL = getViewContext().cloneActionURL();
             ActionButton exportProtocols = new ActionButton("", "Export...");
-            exportURL.setAction("exportProtocolsOptions");
-            exportURL.setPageFlow("Experiment");
+            exportURL.setAction(ExperimentController.ExportProtocolsOptionsAction.class);
             exportProtocols.setURL(exportURL);
             exportProtocols.setActionType(ActionButton.Action.POST);
             exportProtocols.setDisplayPermission(ACL.PERM_DELETE);
@@ -81,11 +79,13 @@ public class ProtocolWebPart extends WebPartView
             bb.add(exportProtocols);
 
             dr.setButtonBar(bb);
+            dr.setShadeAlternatingRows(true);
+            dr.setShowBorders(true);
         }
         else
         {
             dr.setButtonBar(new ButtonBar());
-            dr.getDisplayColumn("LSID").setVisible(false);
+            dr.getDisplayColumn("Created").setVisible(false);
         }
 
         GridView gridView = new GridView(dr);

@@ -35,11 +35,13 @@ public class ProtocolListView extends GridView
     {
         super(new DataRegion());
         TableInfo ti = ExperimentServiceImpl.get().getTinfoProtocolActionDetails();
-        List<ColumnInfo> cols = ti.getColumns("RowId,Name,LSID,ActionSequence,ProtocolDescription");
+        List<ColumnInfo> cols = ti.getColumns("RowId,Name,ActionSequence,ProtocolDescription");
         getDataRegion().setColumns(cols);
         getDataRegion().getDisplayColumn(0).setVisible(false);
         getDataRegion().getDisplayColumn(1).setURL(ActionURL.toPathString("Experiment", "protocolPredecessors", c) + "?ParentLSID=" + PageFlowUtil.encode(protocol.getLSID()) + "&Sequence=${ActionSequence}");
         getDataRegion().getDisplayColumn(2).setTextAlign("left");
+        getDataRegion().setShadeAlternatingRows(true);
+        getDataRegion().setShowBorders(true);
 
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition("ParentProtocolLSID", protocol.getLSID(), CompareType.EQUAL);

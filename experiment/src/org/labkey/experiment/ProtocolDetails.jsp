@@ -31,10 +31,6 @@
         <td><%= h(protocol.getName()) %></td>
     </tr>
     <tr>
-        <td class="labkey-form-label">LSID</td>
-        <td><%= h(protocol.getLSID()) %></td>
-    </tr>
-    <tr>
         <td class="labkey-form-label">Contact</td>
         <td><%= h(protocol.getContact()) %></td>
     </tr>

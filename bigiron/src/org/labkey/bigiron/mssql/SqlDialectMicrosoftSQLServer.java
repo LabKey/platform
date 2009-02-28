@@ -23,9 +23,7 @@ import org.labkey.api.data.*;
 
 import javax.servlet.ServletException;
 import java.sql.*;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import junit.framework.TestCase;
@@ -577,6 +575,47 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return new PkMetaDataReader(rs, "COLUMN_NAME", "KEY_SEQ");
     }
 
+    /**
+     * @return any additional information that should be sent to the mothership in the case of a SQLException
+     */
+    public String getExtraInfo(SQLException e)
+    {
+        // Deadlock between two different DB connections
+        if ("40001".equals(e.getSQLState()))
+        {
+            StringBuilder sb = new StringBuilder();
+            for (Map.Entry<Thread, StackTraceElement[]> entry : Thread.getAllStackTraces().entrySet())
+            {
+                Thread thread = entry.getKey();
+                // Dump out any thread that was talking to the database
+                Set<Integer> spids = ConnectionWrapper.getSPIDsForThread(thread);
+                if (!spids.isEmpty())
+                {
+                    if (sb.length() == 0)
+                    {
+                        sb.append("Other threads with active database connections:\n");
+                    }
+                    else
+                    {
+                        sb.append("\n");
+                    }
+                    sb.append(thread.getName());
+                    sb.append(", SPIDs = ");
+                    sb.append(spids);
+                    sb.append("\n");
+                    for (StackTraceElement stackTraceElement : entry.getValue())
+                    {
+                        sb.append("\t");
+                        sb.append(stackTraceElement);
+                        sb.append("\n");
+                    }
+                }
+            }
+            return sb.length() > 0 ? sb.toString() : null;
+        }
+        return null;
+    }
+
 
     public TestSuite getTestSuite()
     {
@@ -585,6 +624,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         suite.addTest(new JdbcHelperTestCase());
         return suite;
     }
+
 
 
     public class JavaUpgradeCodeTestCase extends TestCase

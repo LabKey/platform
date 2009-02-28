@@ -504,17 +504,10 @@ public class ListController extends SpringActionController
             if (errors.getErrorCount() == 0)
             {
                 Map<String, Object> defaults = new HashMap<String, Object>();
-                try
+                Map<DomainProperty, Object> domainDefaults = DefaultValueService.get().getDefaultValues(getContainer(), tableForm.getDomain(), getUser());
+                for (Map.Entry<DomainProperty, Object> entry : domainDefaults.entrySet())
                 {
-                    Map<DomainProperty, Object> domainDefaults = DefaultValueService.get().getDefaultValues(getContainer(), tableForm.getDomain(), getUser());
-                    for (Map.Entry<DomainProperty, Object> entry : domainDefaults.entrySet())
-                    {
-                        defaults.put(ColumnInfo.propNameFromName(entry.getKey().getName()), entry.getValue());
-                    }
-                }
-                catch (ExperimentException e)
-                {
-                    errors.reject(ERROR_MSG, e.getMessage());
+                    defaults.put(ColumnInfo.propNameFromName(entry.getKey().getName()), entry.getValue());
                 }
                 view.setInitialValues(defaults);
             }

@@ -43,11 +43,11 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.PlateBasedAssayProvider;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.common.util.Pair;
 import org.labkey.study.StudySchema;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.beanutils.ConvertUtils;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -72,12 +72,12 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             return null;
         else
         {
-            Pair<ExpProtocol, List<Domain>> assayInfo;
+            Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> assayInfo;
             AssayProvider provider = org.labkey.api.study.assay.AssayService.get().getProvider(protocol);
             if (copy)
                 assayInfo = provider.getAssayTemplate(getUser(), getContainer(), protocol);
             else
-                assayInfo = new Pair<ExpProtocol, List<Domain>>(protocol, provider.getDomains(protocol));
+                assayInfo = new Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>>(protocol, provider.getDomains(protocol));
             return getAssayTemplate(provider, assayInfo, copy);
         }
     }
@@ -85,16 +85,17 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
     public GWTProtocol getAssayTemplate(String providerName) throws SerializableException
     {
         AssayProvider provider = org.labkey.api.study.assay.AssayService.get().getProvider(providerName);
-        Pair<ExpProtocol, List<Domain>> template = provider.getAssayTemplate(getUser(), getContainer());
+        Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> template = provider.getAssayTemplate(getUser(), getContainer());
         return getAssayTemplate(provider, template, false);
     }
 
-    public GWTProtocol getAssayTemplate(AssayProvider provider, Pair<ExpProtocol, List<Domain>> template, boolean copy) throws SerializableException
+    public GWTProtocol getAssayTemplate(AssayProvider provider, Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> template, boolean copy) throws SerializableException
     {
         ExpProtocol protocol = template.getKey();
         List<GWTDomain> gwtDomains = new ArrayList<GWTDomain>();
-        for (Domain domain : template.getValue())
+        for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : template.getValue())
         {
+            Domain domain = domainInfo.getKey();
             GWTDomain<GWTPropertyDescriptor> gwtDomain = new GWTDomain<GWTPropertyDescriptor>();
             gwtDomain.setDefaultValueOptions(DefaultValueType.values(), DefaultValueType.LAST_ENTERED);
             Set<String> mandatoryPropertyDescriptors = new HashSet<String>();
@@ -110,21 +111,19 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             List<GWTPropertyDescriptor> gwtProps = new ArrayList<GWTPropertyDescriptor>();
 
             DomainProperty[] properties = domain.getProperties();
-            Map<DomainProperty, Object> defaultValues = null;
-            try
-            {
-                defaultValues = DefaultValueService.get().getDefaultValues(domain.getContainer(), domain);
-            }
-            catch (ExperimentException e)
-            {
-                throw new RuntimeException(e);
-            }
+            Map<DomainProperty, Object> defaultValues = domainInfo.getValue();
 
             for (DomainProperty prop : properties)
             {
                 GWTPropertyDescriptor gwtProp = getPropertyDescriptor(prop, copy);
+                if (gwtProp.getDefaultValueType() == null)
+                {
+                    gwtProp.setDefaultValueType(gwtDomain.getDefaultDefaultValueType());
+                }
                 gwtProps.add(gwtProp);
-                gwtProp.setDefaultValue(DomainUtil.getFormattedDefaultValue(getUser(), prop, defaultValues.get(prop)));
+                Object defaultValue = defaultValues.get(prop);
+                gwtProp.setDefaultDisplayValue(DomainUtil.getFormattedDefaultValue(getUser(), prop, defaultValue));
+                gwtProp.setDefaultValue(ConvertUtils.convert(defaultValue));
                 if (provider.isMandatoryDomainProperty(domain, prop.getName()))
                     mandatoryPropertyDescriptors.add(prop.getName());
             }

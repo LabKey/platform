@@ -25,6 +25,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
@@ -32,6 +33,7 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.common.util.Pair;
 
 import java.util.Collections;
 import java.util.List;
@@ -85,9 +87,9 @@ public class AssayDomainKind extends DomainKind
             AssayProvider provider = AssayService.get().getProvider(protocol);
             if (provider != null)
             {
-                for (Domain protocolDomain : provider.getDomains(protocol))
+                for (Pair<Domain, Map<DomainProperty, Object>> protocolDomain : provider.getDomains(protocol))
                 {
-                    if (protocolDomain.getTypeURI().equals(domain.getTypeURI()))
+                    if (protocolDomain.getKey().getTypeURI().equals(domain.getTypeURI()))
                     {
                         return protocol;
                     }

@@ -145,7 +145,7 @@ public class DefaultValueServiceImpl extends DefaultValueService
         }
     }
 
-    private Map<DomainProperty, Object> getObjectValues(Container container, Domain domain, String objectLSID) throws ExperimentException
+    private Map<DomainProperty, Object> getObjectValues(Container container, Domain domain, String objectLSID)
     {
         try
         {
@@ -174,7 +174,7 @@ public class DefaultValueServiceImpl extends DefaultValueService
         }
     }
 
-    private Map<DomainProperty, Object> getMergedValues(Container container, Domain domain, User user, String scope) throws ExperimentException
+    private Map<DomainProperty, Object> getMergedValues(Container container, Domain domain, User user, String scope)
     {
         Map<DomainProperty, Object> userValues = null;
         if (user != null)
@@ -199,7 +199,7 @@ public class DefaultValueServiceImpl extends DefaultValueService
         return result;
     }
 
-    public Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user, String scope) throws ExperimentException
+    public Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user, String scope)
     {
         Map<DomainProperty, Object> values = null;
         while (!container.isRoot() && (values == null || values.isEmpty()))
@@ -210,12 +210,12 @@ public class DefaultValueServiceImpl extends DefaultValueService
         return values;
     }
 
-    public Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user) throws ExperimentException
+    public Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user)
     {
         return getDefaultValues(container, domain, user, null);
     }
 
-    public Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain) throws ExperimentException
+    public Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain)
     {
         return getDefaultValues(container, domain, null, null);
     }
@@ -232,17 +232,17 @@ public class DefaultValueServiceImpl extends DefaultValueService
         }
     }
 
-    public void clearDefaultValues(Container container, Domain domain) throws ExperimentException
+    public void clearDefaultValues(Container container, Domain domain)
     {
         clearDefaultValues(container, getContainerDefaultsLSID(container, domain));
     }
 
-    public void clearDefaultValues(Container container, Domain domain, User user) throws ExperimentException
+    public void clearDefaultValues(Container container, Domain domain, User user)
     {
         clearDefaultValues(container, getUserDefaultsParentLSID(container, user, domain));
     }
 
-    public void clearDefaultValues(Container container, Domain domain, User user, String scope) throws ExperimentException
+    public void clearDefaultValues(Container container, Domain domain, User user, String scope)
     {
         clearDefaultValues(container, getUserDefaultsLSID(container, user, domain, scope));
     }
@@ -290,7 +290,7 @@ public class DefaultValueServiceImpl extends DefaultValueService
         return overridees;
     }
 
-    public boolean hasDefaultValues(Container container, Domain domain, boolean inherit) throws ExperimentException
+    public boolean hasDefaultValues(Container container, Domain domain, boolean inherit)
     {
         Container current = container;
         while ((current == container || inherit) && !current.isRoot())
@@ -303,12 +303,12 @@ public class DefaultValueServiceImpl extends DefaultValueService
         return false;
     }
 
-    public boolean hasDefaultValues(Container container, Domain domain, User user, boolean inherit) throws ExperimentException
+    public boolean hasDefaultValues(Container container, Domain domain, User user, boolean inherit)
     {
         return hasDefaultValues(container, domain, user, null, inherit);
     }
 
-    public boolean hasDefaultValues(Container container, Domain domain, User user, String scope, boolean inherit) throws ExperimentException
+    public boolean hasDefaultValues(Container container, Domain domain, User user, String scope, boolean inherit)
     {
         Container current = container;
         while ((current == container || inherit) && !current.isRoot())

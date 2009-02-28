@@ -23,6 +23,7 @@ import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.api.ExpProtocol.AssayDomainTypes;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.study.actions.AssayRunUploadForm;
@@ -36,6 +37,7 @@ import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.settings.AppProps;
 import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.assay.xml.ProviderType;
+import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -143,41 +145,42 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return domainsDescriptors.containsKey(domainType);
     }
 
-    protected Domain createDomain(Container c, User user, IAssayDomainType domainType)
+    /** @return a domain and its default values */
+    protected Pair<Domain, Map<DomainProperty, Object>> createDomain(Container c, User user, IAssayDomainType domainType)
     {
         DomainDescriptorType xDomain = domainsDescriptors.get(domainType);
         if (xDomain != null)
         {
-            return PropertyService.get().createDomain(c, xDomain).getKey();
+            return PropertyService.get().createDomain(c, xDomain);
         }
         return null;
     }
 
     @Override
-    protected Domain createBatchDomain(Container c, User user)
+    protected Pair<Domain, Map<DomainProperty, Object>> createBatchDomain(Container c, User user)
     {
-        Domain domain = createDomain(c, user, AssayDomainTypes.Batch);
-        if (domain != null)
-            return domain;
+        Pair<Domain, Map<DomainProperty, Object>> result = createDomain(c, user, AssayDomainTypes.Batch);
+        if (result != null)
+            return result;
         return super.createBatchDomain(c, user);
     }
 
     @Override
-    protected Domain createRunDomain(Container c, User user)
+    protected Pair<Domain, Map<DomainProperty, Object>> createRunDomain(Container c, User user)
     {
-        Domain domain = createDomain(c, user, AssayDomainTypes.Run);
-        if (domain != null)
-            return domain;
+        Pair<Domain, Map<DomainProperty, Object>> result = createDomain(c, user, AssayDomainTypes.Run);
+        if (result != null)
+            return result;
         return super.createRunDomain(c, user);
     }
 
     @Override
-    protected Domain createDataDomain(Container c, User user)
+    protected Pair<Domain, Map<DomainProperty, Object>> createResultDomain(Container c, User user)
     {
-        Domain domain = createDomain(c, user, AssayDomainTypes.Result);
-        if (domain != null)
-            return domain;
-        return super.createDataDomain(c, user);
+        Pair<Domain, Map<DomainProperty, Object>> result = createDomain(c, user, AssayDomainTypes.Result);
+        if (result != null)
+            return result;
+        return super.createResultDomain(c, user);
     }
 
     @Override
