@@ -60,7 +60,7 @@ abstract public class PipelineService
     abstract public PipeRoot[] getAllPipelineRoots();
 
     @Nullable
-    abstract public PipeRoot getPipelineRootSetting(Container container) throws SQLException;
+    abstract public PipeRoot getPipelineRootSetting(Container container);
 
     @Nullable
     abstract public URI getPipelineRootSetting(Container container, String type) throws SQLException;
