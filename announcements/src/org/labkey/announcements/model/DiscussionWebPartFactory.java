@@ -36,6 +36,12 @@ public class DiscussionWebPartFactory extends BaseWebPartFactory
         super("Discussion", null, true, false);
     }
 
+    @Override
+    public boolean isAvailable(Container c, String location)
+    {
+        return false;     // This webpart is used via JavaScript, but from the portal page.  See #7431
+    }
+
     public HttpView getEditView(Portal.WebPart webPart)
     {
         return new JspView<Portal.WebPart>("/org/labkey/announcements/customizeDiscussionWebPart.jsp", webPart);
@@ -47,7 +53,7 @@ public class DiscussionWebPartFactory extends BaseWebPartFactory
         User user = portalCtx.getUser();
         Map<String, String> props = webPart.getPropertyMap();
 
-        // Next two props are required.  TODO: throw if null
+        // Next two props are required.  TODO: throw if null -- see #7101
         String entityId = webPart.getPropertyMap().get("entityId");
 
         String pageUrlString = props.get("pageURL");
