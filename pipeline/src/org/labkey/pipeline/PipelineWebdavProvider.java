@@ -59,7 +59,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
             return null;
         WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) parent;
         Container c = folder.getContainer();
-        PipeRoot root = PipelineService.get().findPipelineRoot(c);
+        PipeRoot root = PipelineService.get().getPipelineRootSetting(c);
         if (null == root)
             return null;
         return new PipelineFolderResource(c, root);

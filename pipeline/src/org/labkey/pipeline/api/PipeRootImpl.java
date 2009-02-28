@@ -215,11 +215,13 @@ public class PipeRootImpl implements PipeRoot
         return URIUtil.isDescendent(_uri, uri);
     }
 
+    // UNDONE: need wrappers for file download/upload permissions
     public boolean hasPermission(Container container, User user, int perm)
     {
         return _container.hasPermission(user, perm) && container.hasPermission(user, perm);
     }
 
+    // UNDONE: need wrappers for file download/upload permissions
     public void requiresPermission(Container container, User user, int perm) throws ServletException
     {
         if (!hasPermission(container, user, perm))

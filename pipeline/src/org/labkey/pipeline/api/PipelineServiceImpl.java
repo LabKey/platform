@@ -133,7 +133,7 @@ public class PipelineServiceImpl extends PipelineService
     }
 
 
-    public PipeRoot getPipelineRootSetting(Container container) throws SQLException
+    public PipeRoot getPipelineRootSetting(Container container)
     {
         try
         {
