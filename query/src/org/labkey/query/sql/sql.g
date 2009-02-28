@@ -863,5 +863,5 @@ COMMENT
     ;
     
 LINE_COMMENT
-    : "--" (options {greedy=false;} : . )* NL {$setType(Token.SKIP);}
+    : "--" (~('\r'|'\n'))* (NL)? {$setType(Token.SKIP);}
     ;
