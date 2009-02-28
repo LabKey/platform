@@ -126,7 +126,8 @@ public class DefaultValueServiceImpl extends DefaultValueService
             {
                 Object value = values.get(property);
                 boolean qcValue = property.isQcEnabled() && value instanceof String && QcUtil.isQcValue((String) value, container);
-                if (!qcValue)
+                // Leave it out if it's null, which will prevent it from failing validators
+                if (!qcValue && value != null)
                 {
                     ObjectProperty prop = new ObjectProperty(objectLSID, container, property.getPropertyURI(), value,
                             property.getPropertyDescriptor().getPropertyType(), property.getName());
