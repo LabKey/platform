@@ -29,6 +29,7 @@ import org.labkey.api.gwt.client.ui.PropertiesEditor;
 import org.labkey.api.gwt.client.ui.Saveable;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.ServiceUtil;
+import org.labkey.api.gwt.client.DefaultValueType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +45,7 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
     private String _returnURL;
     private boolean _allowFileLinkProperties;
     private boolean _allowAttachmentProperties;
+    private boolean _showDefaultValueSettings;
 
     private GWTDomain _domain;
 
@@ -60,6 +62,7 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
         _returnURL = PropertyUtil.getServerProperty("returnURL");
         _allowFileLinkProperties = "true".equals(PropertyUtil.getServerProperty("allowFileLinkProperties"));
         _allowAttachmentProperties = "true".equals(PropertyUtil.getServerProperty("allowAttachmentProperties"));
+        _showDefaultValueSettings = "true".equals(PropertyUtil.getServerProperty("showDefaultValueSettings"));
 
         _root = RootPanel.get("org.labkey.experiment.property.Designer-Root");
 
@@ -198,7 +201,9 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
                 {
                     _saved = true;  // avoid popup warning
                     if (listener != null)
-                        listener.saveSuccessful(_domain);
+                    {
+                        listener.saveSuccessful(_domain, PropertyUtil.getCurrentURL());
+                    }
                 }
                 else
                 {
@@ -225,7 +230,7 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
     {
         save(new SaveListener<GWTDomain>()
         {
-            public void saveSuccessful(GWTDomain domain)
+            public void saveSuccessful(GWTDomain domain, String designerUrl)
             {
                 if (null == _returnURL || _returnURL.length() == 0)
                     cancel();
@@ -287,6 +292,8 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
 
                         domain.setAllowFileLinkProperties(_allowFileLinkProperties);
                         domain.setAllowAttachmentProperties(_allowAttachmentProperties);
+                        if (!_showDefaultValueSettings)
+                            domain.setDefaultValueOptions(new DefaultValueType[0], null);
                         setDomain(domain);
                     }
             });

@@ -84,7 +84,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             // to the original GWT Domain saveable.
             _datasetSaveable.save(new SaveListener<GWTDataset>()
             {
-                public void saveSuccessful(GWTDataset datasetResult)
+                public void saveSuccessful(GWTDataset datasetResult, String designerUrl)
                 {
                     asyncGetDefinition(datasetResult.getTypeURI(), gwtDomainSaveListener);
                 }
@@ -264,7 +264,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                 {
                     _saved = true;  // avoid popup warning
                     if (listener != null)
-                        listener.saveSuccessful(_dataset);
+                        listener.saveSuccessful(_dataset, PropertyUtil.getCurrentURL());
                 }
                 else
                 {
@@ -294,7 +294,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
     {
         save(new SaveListener<GWTDataset>()
         {
-            public void saveSuccessful(GWTDataset dataset)
+            public void saveSuccessful(GWTDataset dataset, String designerUrl)
             {
                 if (null == _returnURL || _returnURL.length() == 0)
                     cancel();
@@ -376,7 +376,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
                         setDomain(domain);
 
                         if (saveListener != null)
-                            saveListener.saveSuccessful(domain);
+                            saveListener.saveSuccessful(domain, PropertyUtil.getCurrentURL());
                     }
             });
         }

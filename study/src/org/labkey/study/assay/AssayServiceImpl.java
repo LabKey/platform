@@ -43,6 +43,7 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.PlateBasedAssayProvider;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.common.util.Pair;
 import org.labkey.study.StudySchema;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
@@ -97,7 +98,8 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         {
             Domain domain = domainInfo.getKey();
             GWTDomain<GWTPropertyDescriptor> gwtDomain = new GWTDomain<GWTPropertyDescriptor>();
-            gwtDomain.setDefaultValueOptions(DefaultValueType.values(), DefaultValueType.LAST_ENTERED);
+            if (!provider.allowDefaultValues(domain))
+                gwtDomain.setDefaultValueOptions(DefaultValueType.values(), DefaultValueType.LAST_ENTERED);
             Set<String> mandatoryPropertyDescriptors = new HashSet<String>();
             if (!copy)
             {

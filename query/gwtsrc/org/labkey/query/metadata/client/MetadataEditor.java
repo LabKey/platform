@@ -227,7 +227,7 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
             {
                 _editor.init(newTableInfo);
                 if (listener != null)
-                    listener.saveSuccessful(newTableInfo);
+                    listener.saveSuccessful(newTableInfo, PropertyUtil.getCurrentURL());
             }
         });
     }
@@ -245,7 +245,7 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
     {
         save(new SaveListener<GWTTableInfo>()
         {
-            public void saveSuccessful(GWTTableInfo tableInfo)
+            public void saveSuccessful(GWTTableInfo tableInfo, String designerUrl)
             {
                 cancel();
             }

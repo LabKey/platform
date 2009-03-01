@@ -170,7 +170,7 @@ public class DomainImpl implements Domain
         return _properties.toArray(new DomainPropertyImpl[0]);
     }
 
-    public ActionURL urlEditDefinition(boolean allowFileLinkProperties, boolean allowAttachmentProperties)
+    public ActionURL urlEditDefinition(boolean allowFileLinkProperties, boolean allowAttachmentProperties, boolean showDefaultValueSettings)
     {
         ActionURL ret = new ActionURL(PropertyController.EditDomainAction.class, getContainer());
         ret.addParameter("domainId", Integer.toString(getTypeId()));
@@ -178,6 +178,8 @@ public class DomainImpl implements Domain
             ret.addParameter("allowAttachmentProperties", "1");
         if (allowFileLinkProperties)
             ret.addParameter("allowFileLinkProperties", "1");
+        if (showDefaultValueSettings)
+            ret.addParameter("showDefaultValueSettings", "1");
         return ret;
     }
 

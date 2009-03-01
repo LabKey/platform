@@ -88,7 +88,7 @@ public class StatusBar extends HorizontalPanel implements Saveable<Object>
             {
                 setDirty(false);
                 if (listener != null)
-                    listener.saveSuccessful(listener);
+                    listener.saveSuccessful(listener, PropertyUtil.getCurrentURL());
             }
         });
             
@@ -98,7 +98,7 @@ public class StatusBar extends HorizontalPanel implements Saveable<Object>
     {
         save(new SaveListener<Object>()
         {
-            public void saveSuccessful(Object result)
+            public void saveSuccessful(Object result, String designerUrl)
             {
                 if (_doneLink != null && _doneLink.length() > 0)
                     WindowUtil.setLocation(_doneLink);
