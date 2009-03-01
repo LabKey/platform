@@ -20,7 +20,6 @@ import org.labkey.api.view.*;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.IPropertyType;
 import org.labkey.api.exp.*;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.ACL;
@@ -192,7 +191,8 @@ public class SetDefaultValuesAction extends DefaultValuesAction
             ActionURL url = new ActionURL(SetDefaultValuesAction.class, domain.getContainer());
             url.addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString());
             url.addParameter("domainId", domain.getTypeId());
-            headerHtml.append(" [<a href=\"" + url + "\">edit default values for this table in " + PageFlowUtil.filter(domain.getContainer().getPath()) + "</a>]");
+            headerHtml.append(" [<a href=\"").append(url).append("\">edit default values for this table in ");
+            headerHtml.append(PageFlowUtil.filter(domain.getContainer().getPath())).append("</a>]");
         }
         headerHtml.append("<br><br>Default values set here will be inherited by all sub-folders that use this table and do not specify their own defaults.");
 

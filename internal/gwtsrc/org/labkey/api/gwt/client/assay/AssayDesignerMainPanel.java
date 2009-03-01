@@ -21,6 +21,7 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.WindowCloseListener;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.http.client.URL;
 import org.labkey.api.gwt.client.util.ServiceUtil;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.ui.*;
@@ -192,7 +193,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         {
             _protocolSavable.save(new SaveListener<GWTProtocol>()
             {
-                public void saveSuccessful(GWTProtocol result)
+                public void saveSuccessful(GWTProtocol result, String designerURL)
                 {
                     GWTDomain match = null;
                     if (_domain.getDomainId() == 0)
@@ -215,7 +216,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                                 match = domain;
                         }
                     }
-                    gwtDomainSaveListener.saveSuccessful(match);
+                    gwtDomainSaveListener.saveSuccessful(match, designerURL);
                 }
             });
         }
@@ -454,7 +455,12 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                 _copy = false;
                 show(_assay);
                 if (listener != null)
-                    listener.saveSuccessful(result);
+                {
+                    String designerURL = PropertyUtil.getRelativeURL("designer", "assay");
+                    designerURL += "?providerName=" + URL.encodeComponent(_providerName);
+                    designerURL += "&rowId=" + result.getProtocolId();
+                    listener.saveSuccessful(result, designerURL);
+                }
             }
         });
         setAllowSave(false);

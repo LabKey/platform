@@ -22,6 +22,7 @@ import org.labkey.api.gwt.client.ui.Saveable;
 import org.labkey.api.gwt.client.ui.WindowUtil;
 import org.labkey.api.gwt.client.ui.HelpPopup;
 import org.labkey.api.gwt.client.util.PropertyUtil;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.gwt.client.DefaultValueType;
 import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.Window;
@@ -50,8 +51,16 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
         _owner = owner;
     }
 
+    private boolean supportsDefaultValues()
+    {
+        return (_domain.getDefaultValueOptions() != null &&
+                _domain.getDefaultValueOptions().length > 0);
+    }
+
     private void updateEnabledState(FieldType field)
     {
+        if (!supportsDefaultValues())
+            return;
         if (_defaultValueTypes.getItemCount() == 0)
         {
             for (DefaultValueType type : _domain.getDefaultValueOptions())
@@ -95,23 +104,26 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
             {
                 if (!_defaultValueTypes.isEnabled())
                     return;
-                String actionURL = PropertyUtil.getRelativeURL("setDefaultValues", "list");
-                String currentURL = PropertyUtil.getCurrentURL();
-                String queryString = "returnUrl=" + URL.encodeComponent(currentURL) + "&domainId=";
-                final String baseURL = actionURL + "?" + queryString;
 
                 if (_owner.isDirty() && Window.confirm("You must save your changes before setting default values.  Save changes?"))
                 {
                     _owner.save(new Saveable.SaveListener<GWTDomain>()
                     {
-                        public void saveSuccessful(GWTDomain domain)
+                        public void saveSuccessful(GWTDomain domain, String designerUrl)
                         {
-                            WindowUtil.setLocation(baseURL + domain.getDomainId());
+                            String actionURL = PropertyUtil.getRelativeURL("setDefaultValues", "list");
+                            String queryString = "returnUrl=" + URL.encodeComponent(designerUrl) + "&domainId=" + domain.getDomainId();
+                            final String url = actionURL + "?" + queryString;
+                            WindowUtil.setLocation(url);
                         }
                     });
                 }
                 else
                 {
+                    String actionURL = PropertyUtil.getRelativeURL("setDefaultValues", "list");
+                    String currentURL = PropertyUtil.getCurrentURL();
+                    String queryString = "returnUrl=" + URL.encodeComponent(currentURL) + "&domainId=";
+                    final String baseURL = actionURL + "?" + queryString;
                     WindowUtil.setLocation(baseURL + _propertyPane.getDomainId());
                 }
             }
@@ -158,17 +170,28 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
     {
         _domain = domain;
         StringBuilder helpString = new StringBuilder();
-        DefaultValueType[] defaultTypes = _domain.getDefaultValueOptions();
-        for (int i = 0; i < defaultTypes.length; i++)
+        if (supportsDefaultValues())
         {
-            DefaultValueType type = defaultTypes[i];
-            helpString.append("<b>").append(type.getLabel()).append("</b>: ").append(type.getHelpText());
-            if (i < defaultTypes.length - 1)
-                helpString.append("<br><br>");
+            DefaultValueType[] defaultTypes = _domain.getDefaultValueOptions();
+            for (int i = 0; i < defaultTypes.length; i++)
+            {
+                DefaultValueType type = defaultTypes[i];
+                helpString.append("<b>").append(type.getLabel()).append("</b>: ").append(type.getHelpText());
+                if (i < defaultTypes.length - 1)
+                    helpString.append("<br><br>");
+            }
+            _currentDefault.setText(field.getDefaultValue());
+            _helpPopup.setBody(helpString.toString());
+            updateEnabledState(field);
         }
-        _currentDefault.setText(field.getDefaultDisplayValue());
-        _helpPopup.setBody(helpString.toString());
-        updateEnabledState(field);
+        else
+        {
+            _defaultTypeTable.clear();
+            _defaultTypeTable.setWidget(0, 0, new HTML("<i>Not supported for " +
+                    StringUtils.filter(domain.getName()) + "</i>"));
+            _defaultValueTable.clear();
+            _defaultValueTable.setWidget(0, 0, new HTML("<i>None</i>"));
+        }
     }
 
     @Override

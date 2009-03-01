@@ -26,7 +26,7 @@ public interface Saveable<ObjectType>
 {
     public interface SaveListener<ObjectType>
     {
-        void saveSuccessful(ObjectType result);
+        void saveSuccessful(ObjectType result, String designerUrl);
     }
 
     /**

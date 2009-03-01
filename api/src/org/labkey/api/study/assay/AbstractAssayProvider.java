@@ -45,6 +45,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.qc.DataExchangeHandler;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.ModelAndView;
@@ -333,6 +334,18 @@ public abstract class AbstractAssayProvider implements AssayProvider
         prop.setName(name);
         prop.setType(PropertyService.get().getType(domain.getContainer(), type.getXmlName()));
         prop.setDescription(description);
+
+        if (AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME.equals(prop.getName()) ||
+            AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equals(prop.getName()) ||
+            AbstractAssayProvider.VISITID_PROPERTY_NAME.equals(prop.getName()) ||
+            AbstractAssayProvider.DATE_PROPERTY_NAME.equals(prop.getName()))
+        {
+            prop.setDefaultValueTypeEnum(DefaultValueType.FIXED_EDITABLE);
+        }
+        else
+        {
+            prop.setDefaultValueTypeEnum(DefaultValueType.LAST_ENTERED);
+        }
         return prop;
     }
 
@@ -841,6 +854,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 propCopy.setRequired(propSrc.isRequired());
                 propCopy.setHidden(propSrc.isHidden());
                 propCopy.setQcEnabled(propSrc.isQcEnabled());
+                propCopy.setDefaultValueTypeEnum(propSrc.getDefaultValueTypeEnum());
                 // check to see if we're moving a lookup column to another container:
                 Lookup lookup = propSrc.getLookup();
                 if (lookup != null && !toCopy.getContainer().equals(targetContainer))
@@ -919,6 +933,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public boolean allowUpload(User user, Container container, ExpProtocol protocol)
     {
         return isPipelineSetup(container);
+    }
+
+    public boolean allowDefaultValues(Domain domain)
+    {
+        Lsid domainLsid = new Lsid(domain.getTypeURI());
+        return ExpProtocol.ASSAY_DOMAIN_DATA.equals(domainLsid.getNamespacePrefix());
     }
 
     protected boolean isPipelineSetup(Container container)
