@@ -1392,7 +1392,7 @@ public class QueryControllerSpring extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_READ)
-    @ApiVersion(8.3)
+    @ApiVersion(9.1)
     public class ExecuteSqlAction extends ApiAction<ExecuteSqlForm>
     {
         protected class TempQuerySettings extends QuerySettings
@@ -1464,8 +1464,12 @@ public class QueryControllerSpring extends SpringActionController
             view.setShowExportButtons(false);
             view.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
 
-            return new ApiQueryResponse(view, getViewContext(), isSchemaEditable(schema),
-                    false, schemaName, "sql", 0, null);
+            if(getRequestedApiVersion() >= 9.1)
+                return new ExtendedApiQueryResponse(view, getViewContext(), isSchemaEditable(schema),
+                        false, schemaName, "sql", 0, null);
+            else
+                return new ApiQueryResponse(view, getViewContext(), isSchemaEditable(schema),
+                        false, schemaName, "sql", 0, null);
         }
     }
 
