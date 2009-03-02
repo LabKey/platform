@@ -398,7 +398,7 @@ regions on mouseover */
 }
 
 /* This lightens the text to make it look "grayed out", but still readable, unlike labkey-disabled, above. */
-font.labkey-qc
+.labkey-qc
 {
     color: #606060;
 }
