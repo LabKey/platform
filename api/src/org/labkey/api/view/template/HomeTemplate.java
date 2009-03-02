@@ -250,11 +250,15 @@ public class HomeTemplate extends PrintTemplate
                     //Stash away the current URL & trailExtras so that if we use nested module we can
                     //know what parent trail should be. Use the page title as the last link with special
                     //handling if non-link is in the navTrail (should get rid of these)
-                    List<NavTree> saveChildren = new ArrayList<NavTree>(extraChildren);
-                    NavTree lastChild = extraChildren.get(extraChildren.size() - 1);
-                    if (null == lastChild.second)
-                        saveChildren.set(saveChildren.size() - 1, new NavTree(lastChild.getKey(), url));
-                    context.getRequest().getSession().setAttribute(PARENT_TRAIL_INFO, new ParentTrailInfo(url, saveChildren));
+                    //But don't ever store post urls cause they won't work...
+                    if (!"POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
+                    {
+                        List<NavTree> saveChildren = new ArrayList<NavTree>(extraChildren);
+                        NavTree lastChild = extraChildren.get(extraChildren.size() - 1);
+                        if (null == lastChild.second)
+                            saveChildren.set(saveChildren.size() - 1, new NavTree(lastChild.getKey(), url));
+                        context.getRequest().getSession().setAttribute(PARENT_TRAIL_INFO, new ParentTrailInfo(url, saveChildren));
+                    }
                 }
                 else //In a "service's" module. Add its links below the dashboard.
                 {
