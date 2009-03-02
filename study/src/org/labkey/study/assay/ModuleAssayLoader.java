@@ -41,8 +41,9 @@ import java.util.*;
  */
 public class ModuleAssayLoader implements ModuleResourceLoader
 {
-    private static final String ASSAY_DIR_NAME = "assay";
-    private static final String DOMAINS_DIR_NAME = "domains";
+    /*package*/ static final String ASSAY_DIR_NAME = "assay";
+    /*package*/ static final String DOMAINS_DIR_NAME = "domains";
+    /*package*/ static final String VIEWS_DIR_NAME = "views";
 
     public Set<String> getModuleDependencies(Module module, File explodedModuleDir)
     {
@@ -80,20 +81,6 @@ public class ModuleAssayLoader implements ModuleResourceLoader
 
         ModuleAssayProvider assayProvider = new ModuleAssayProvider(assayName, assayProviderDir, providerConfig);
 
-        File domainDir = new File(assayProviderDir, DOMAINS_DIR_NAME);
-        if (domainDir.canRead())
-        {
-            for (IAssayDomainType domainType : AssayDomainTypes.values())
-            {
-                File domainFile = new File(domainDir, domainType.getName().toLowerCase() + ".xml");
-                if (!domainFile.canRead())
-                    continue;
-                DomainDescriptorType xDomain = parseDomain(assayProviderDir, domainType, domainFile);
-                if (xDomain != null)
-                    assayProvider.addDomain(domainType, xDomain);
-            }
-        }
-
         AssayService.get().registerAssayProvider(assayProvider);
     }
 
@@ -109,46 +96,6 @@ public class ModuleAssayLoader implements ModuleResourceLoader
         {
             throw new ModuleResourceLoadException(e);
         }
-        return null;
-    }
-
-    private DomainDescriptorType parseDomain(File assayProviderDir, IAssayDomainType domainType, File domainFile) throws IOException, ModuleResourceLoadException
-    {
-        try
-        {
-            DomainDocument doc = DomainDocument.Factory.parse(domainFile);
-            DomainDescriptorType xDomain = doc.getDomain();
-            ArrayList<XmlError> errors = new ArrayList<XmlError>();
-            XmlOptions options = new XmlOptions().setErrorListener(errors);
-            if (xDomain != null && xDomain.validate(options))
-            {
-                if (!xDomain.isSetName())
-                    xDomain.setName(domainType.getName() + " Fields");
-
-                if (!xDomain.isSetDomainURI())
-                    xDomain.setDomainURI(domainType.getLsidTemplate());
-
-                return xDomain;
-            }
-
-            if (errors.size() > 0)
-            {
-                StringBuffer sb = new StringBuffer();
-                while (errors.size() > 0)
-                {
-                    XmlError error = errors.remove(0);
-                    sb.append(error.toString(assayProviderDir.toURI()));
-                    if (errors.size() > 0)
-                        sb.append("\n");
-                }
-                throw new ModuleResourceLoadException(sb.toString());
-            }
-        }
-        catch (XmlException e)
-        {
-            throw new ModuleResourceLoadException(e);
-        }
-
         return null;
     }
 

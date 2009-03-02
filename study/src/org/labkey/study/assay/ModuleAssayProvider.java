@@ -295,20 +295,31 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return getCustomView(getViewFileName(domainType, details));
     }
 
-    @Override
-    public ModelAndView createBatchesView(ViewContext context, ExpProtocol protocol)
-    {
-        ModelAndView view = getCustomView(AssayDomainTypes.Batch, false);
-        if (view == null)
-            return null;
-
-        return view;
-    }
-
     public static class AssayPageBean
     {
         public ModuleAssayProvider provider;
         public ExpProtocol expProtocol;
+    }
+
+    protected ModelAndView createListView(IAssayDomainType domainType, ExpProtocol protocol)
+    {
+        ModelAndView nestedView = getCustomView(domainType, false);
+        if (nestedView == null)
+            return null;
+
+        AssayPageBean bean = new AssayPageBean();
+        bean.provider = this;
+        bean.expProtocol = protocol;
+
+        JspView<AssayPageBean> view = new JspView<AssayPageBean>("/org/labkey/study/assay/view/moduleAssayListView.jsp", bean);
+        view.setView("nested", nestedView);
+        return view;
+    }
+
+    @Override
+    public ModelAndView createBatchesView(ViewContext context, ExpProtocol protocol)
+    {
+        return createListView(AssayDomainTypes.Batch, protocol);
     }
 
     public static class BatchDetailsBean extends AssayPageBean
@@ -336,11 +347,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     @Override
     public ModelAndView createRunsView(ViewContext context, ExpProtocol protocol)
     {
-        ModelAndView view = getCustomView(AssayDomainTypes.Run, false);
-        if (view == null)
-            return null;
-
-        return view;
+        return createListView(AssayDomainTypes.Run, protocol);
     }
 
     public static class RunDetailsBean extends AssayPageBean
@@ -368,11 +375,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     @Override
     public ModelAndView createResultsView(ViewContext context, ExpProtocol protocol)
     {
-        ModelAndView view = getCustomView(AssayDomainTypes.Result, false);
-        if (view == null)
-            return null;
-
-        return view;
+        return createListView(AssayDomainTypes.Result, protocol);
     }
 
     public static class ResultDetailsBean extends AssayPageBean
