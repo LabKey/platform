@@ -149,6 +149,21 @@ public class QCDisplayColumn extends DataColumn
     @Override
     protected Object getInputValue(RenderContext ctx)
     {
-        return getFormattedValue(ctx);
+        // bug 7479: QC fields don't preserve value on reshow
+        // If we have a form, we need to output what the user entered
+        ColumnInfo col = getColumnInfo();
+        Object val = null;
+        TableViewForm viewForm = ctx.getForm();
+
+        if (col != null)
+        {
+            String formFieldName = ctx.getForm().getFormFieldName(col);
+            if (null != viewForm && viewForm.getStrings().containsKey(formFieldName))
+                val = viewForm.get(formFieldName);
+            else if (ctx.getRow() != null)
+                val = getFormattedValue(ctx); // Use QC value if we've got it
+        }
+
+        return val;
     }
 }
