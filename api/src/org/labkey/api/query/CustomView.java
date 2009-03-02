@@ -34,6 +34,8 @@ public interface CustomView
     QueryDefinition getQueryDefinition();
     String getName();
     User getOwner();
+    User getCreatedBy();
+
     Container getContainer();
     boolean canInherit();
     void setCanInherit(boolean f);

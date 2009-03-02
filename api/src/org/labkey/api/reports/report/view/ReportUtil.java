@@ -389,8 +389,7 @@ public class ReportUtil
 
                 Map<String, String> record = new HashMap<String, String>();
 
-                User createdBy = view.getOwner();
-                boolean shared = createdBy == null;
+                User createdBy = view.getCreatedBy();
                 QueryDefinition qd = view.getQueryDefinition();
 
                 record.put("queryView", "true");
@@ -406,13 +405,14 @@ public class ReportUtil
                 record.put("type", "query view");
                 record.put("editable", "false");
                 record.put("createdBy", createdBy != null ? createdBy.getDisplayName(context) : null);
-                record.put("permissions", createdBy != null ? "private" : "public");
+                record.put("permissions", view.getOwner() != null ? "private" : "public");
 
                 boolean inherited = isInherited(view, context.getContainer());
                 if (!inherited)
                 {
                     record.put("editUrl", qd.urlFor(QueryAction.chooseColumns, context.getContainer()).
-                            addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.viewName, view.getName()).
+                            addParameter(QueryParam.queryName, qd.getName()).
+                            addParameter(QueryParam.viewName, view.getName()).
                             getLocalURIString());
                 }
                 record.put("runUrl", qd.urlFor(QueryAction.executeQuery, context.getContainer()).
