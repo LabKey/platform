@@ -23,19 +23,21 @@
 <%@ page import="org.labkey.study.view.AssayRunsWebPartFactory" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
 <%@ page import="org.labkey.study.view.AssayBaseWebPartFactory" %>
+<%@ page import="org.labkey.study.view.AssayBaseWebPartFactory.EditViewBean" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
-    Portal.WebPart bean = me.getModelBean();
+    JspView<AssayBaseWebPartFactory.EditViewBean> me = (JspView<EditViewBean>) HttpView.currentView();
+    EditViewBean bean = me.getModelBean();
+    Portal.WebPart webPart = bean.webPart;
     ViewContext ctx = me.getViewContext();
     ActionURL postUrl = new ActionURL("Project", "customizeWebPart.post", ctx.getContainer());
-    Integer viewProtocolId = AssayBaseWebPartFactory.getProtocolId(bean);
+    Integer viewProtocolId = AssayBaseWebPartFactory.getProtocolId(webPart);
 
     // show buttons should be checked by default for a new assay details webpart.  Otherwise, we preserve the persisted setting:
     boolean showButtons = true;
     if (viewProtocolId != null)
     {
-        showButtons = Boolean.parseBoolean(bean.getPropertyMap().get(AssayBaseWebPartFactory.SHOW_BUTTONS_KEY));
+        showButtons = Boolean.parseBoolean(webPart.getPropertyMap().get(AssayBaseWebPartFactory.SHOW_BUTTONS_KEY));
     }
 
     Map<String, Integer> nameToId = new TreeMap<String, Integer>();
@@ -45,11 +47,11 @@
         nameToId.put(provider.getName() + ": " + protocol.getName(), protocol.getRowId());
     }
 %>
-<p>This web part displays a list of runs for a specific assay.</p>
+<p><%=bean.description%></p>
 
 <form action="<%=postUrl%>" method="post">
-    <input type="hidden" name="pageId" value="<%=bean.getPageId()%>">
-    <input type="hidden" name="index" value="<%=bean.getIndex()%>">
+    <input type="hidden" name="pageId" value="<%=webPart.getPageId()%>">
+    <input type="hidden" name="index" value="<%=webPart.getIndex()%>">
     <table>
         <tr>
             <td class="labkey-form-label">Assay</td>

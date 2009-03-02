@@ -37,6 +37,11 @@ public class AssayBatchesWebPartFactory extends AssayBaseWebPartFactory
         super("Assay Batches");
     }
 
+    public String getDescription()
+    {
+        return "This web part displays a list of batches for a specific assay.";
+    }
+
     @Override
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart, ExpProtocol protocol, boolean showButtons)
     {

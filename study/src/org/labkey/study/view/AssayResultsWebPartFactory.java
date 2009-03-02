@@ -33,12 +33,17 @@ public class AssayResultsWebPartFactory extends AssayBaseWebPartFactory
         super("Assay Results");
     }
 
+    public String getDescription()
+    {
+        return "This web part displays a list of results for a specific assay.";
+    }
+
     @Override
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart, ExpProtocol protocol, boolean showButtons)
     {
-        Integer batchId = getBatchId(webPart);
-        Integer runId = getRunId(webPart);
         // XXX: filtering by batch and run not yet implemented
+        //Integer batchId = getBatchId(webPart);
+        //Integer runId = getRunId(webPart);
 
         AssayResultsView resultsView = new AssayResultsView(protocol, !showButtons);
         resultsView.setTitleHref(PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(portalCtx.getContainer(), protocol));

@@ -23,8 +23,6 @@ public abstract class AssayBaseWebPartFactory extends BaseWebPartFactory
 {
     public static final String SHOW_BUTTONS_KEY = "showButtons";
     public static final String PROTOCOL_ID_KEY = "viewProtocolId";
-    public static final String BATCH_ID_KEY = "viewBatchesId";
-    public static final String RUN_ID_KEY = "viewRunId";
 
     public AssayBaseWebPartFactory(String name)
     {
@@ -52,15 +50,15 @@ public abstract class AssayBaseWebPartFactory extends BaseWebPartFactory
         return getIntPropertry(webPart, PROTOCOL_ID_KEY);
     }
 
-    public static Integer getBatchId(Portal.WebPart webPart)
-    {
-        return getIntPropertry(webPart, BATCH_ID_KEY);
-    }
-
-    public static Integer getRunId(Portal.WebPart webPart)
-    {
-        return getIntPropertry(webPart, RUN_ID_KEY);
-    }
+//    public static Integer getBatchId(Portal.WebPart webPart)
+//    {
+//        return getIntPropertry(webPart, BATCH_ID_KEY);
+//    }
+//
+//    public static Integer getRunId(Portal.WebPart webPart)
+//    {
+//        return getIntPropertry(webPart, RUN_ID_KEY);
+//    }
 
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
     {
@@ -85,9 +83,20 @@ public abstract class AssayBaseWebPartFactory extends BaseWebPartFactory
 
     public abstract WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart, ExpProtocol protocol, boolean showButtons);
 
+    public abstract String getDescription();
+
+    public static class EditViewBean
+    {
+        public String description;
+        public Portal.WebPart webPart;
+    }
+
     @Override
     public HttpView getEditView(Portal.WebPart webPart)
     {
-        return new JspView<Portal.WebPart>("/org/labkey/study/view/customizeAssayDetailsWebPart.jsp", webPart);
+        EditViewBean bean = new EditViewBean();
+        bean.description = getDescription();
+        bean.webPart = webPart;
+        return new JspView<EditViewBean>("/org/labkey/study/view/customizeAssayDetailsWebPart.jsp", bean);
     }
 }
