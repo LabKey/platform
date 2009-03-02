@@ -164,7 +164,7 @@ public class PropertyManager
         }
     }
 
-    static final PropertyMap NULL_MAP = new PropertyMap(0,0,"NULL_MAP",PropertyManager.class.getName())
+    static final PropertyMap NULL_MAP = new PropertyMap(0, 0, "NULL_MAP", PropertyManager.class.getName())
     {
         @Override
         public String put(String key, String value)
@@ -175,19 +175,19 @@ public class PropertyManager
         @Override
         public void clear()
         {
-            throw new UnsupportedOperationException("Cannot to modify NULL_MAP");
+            throw new UnsupportedOperationException("Cannot modify NULL_MAP");
         }
 
         @Override
         public String remove(Object key)
         {
-            throw new UnsupportedOperationException("Cannot to modify NULL_MAP");
+            throw new UnsupportedOperationException("Cannot modify NULL_MAP");
         }
 
         @Override
         public void putAll(Map<? extends String, ? extends String> m)
         {
-            throw new UnsupportedOperationException("Cannot to modify NULL_MAP");
+            throw new UnsupportedOperationException("Cannot modify NULL_MAP");
         }
     };
 
