@@ -23,7 +23,7 @@
  */
 LABKEY.Experiment = new function()
 {
-    function getCallbackWrapper(fn, scope)
+    function getCallbackWrapper(createExpFn, fn, scope)
     {
         return function(response, options)
         {
@@ -34,7 +34,7 @@ LABKEY.Experiment = new function()
                     && response.getResponseHeader['Content-Type'].indexOf('application/json') >= 0)
             {
                 json = Ext.util.JSON.decode(response.responseText);
-                experiment = new LABKEY.Exp.RunGroup(json);
+                experiment = createExpFn(json);
             }
 
             if(fn)
@@ -71,13 +71,18 @@ LABKEY.Experiment = new function()
             if(!config.successCallback)
                 Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Exp.createHiddenRunGroup()!");
 
+            function createExp(json)
+            {
+                return new LABKEY.Exp.RunGroup(json);
+            }
+
             Ext.Ajax.request(
             {
                 url : LABKEY.ActionURL.buildURL("experiment", "createHiddenRunGroup", config.containerPath),
                 method : 'POST',
                 jsonData : { runIds : config.runIds },
-                success: getCallbackWrapper(config.successCallback, config.scope),
-                failure: getCallbackWrapper(config.failureCallback, config.scope),
+                success: getCallbackWrapper(createExp, config.successCallback, config.scope),
+                failure: getCallbackWrapper(createExp, config.failureCallback, config.scope),
                 headers :
                 {
                     'Content-Type' : 'application/json'
@@ -109,25 +114,15 @@ LABKEY.Experiment = new function()
                 return;
             }
 
-            function successWrapper(response) {
-                var json = response.responseText;
-                try {
-                    var o = eval("(" + json + ")");
-                    if (o) {
-                        var batch = new LABKEY.Exp.RunGroup(o.batch);
-                        config.successCallback(batch, response);
-                    }
-                }
-                catch (e) {
-                    if (config.failureCallback)
-                        config.failureCallback.call(config.scope || this, response);
-                }
+            function createExp(json)
+            {
+                return new LABKEY.Exp.RunGroup(json.batch);
             }
 
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("assay", "getAssayBatch", LABKEY.ActionURL.getContainer()),
                 method: 'POST',
-                success: successWrapper,
+                success: getCallbackWrapper(createExp, config.successCallback, config.scope),
                 failure: config.failureCallback,
                 scope: config.scope,
                 jsonData : {
@@ -164,19 +159,9 @@ LABKEY.Experiment = new function()
                 return
             }
 
-            function successWrapper(response) {
-                var json = response.responseText;
-                try {
-                    var o = eval("(" + json + ")");
-                    if (o) {
-                        var batch = new LABKEY.Exp.RunGroup(o.batch);
-                        config.successCallback(batch, response);
-                    }
-                }
-                catch (e) {
-                    if (config.failureCallback)
-                        config.failureCallback.call(config.scope || this, response);
-                }
+            function createExp(json)
+            {
+                return new LABKEY.Exp.RunGroup(json.batch);
             }
 
             Ext.Ajax.request({
@@ -186,7 +171,7 @@ LABKEY.Experiment = new function()
                     assayId: config.assayId,
                     batch: config.batch
                 },
-                success: successWrapper,
+                success: getCallbackWrapper(createExp, config.successCallback, config.scope),
                 failure: config.failureCallback,
                 scope: config.scope,
                 headers: {
