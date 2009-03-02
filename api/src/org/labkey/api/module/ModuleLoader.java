@@ -241,23 +241,6 @@ public class ModuleLoader implements Filter
 
         ensureDataBases();
 
-        //call the module resource loaders for each module
-        for(Module module : _modules)
-        {
-            for(ModuleResourceLoader resLoader : _resourceLoaders)
-            {
-                try
-                {
-                    resLoader.loadResources(module, module.getExplodedPath());
-                }
-                catch(Throwable t)
-                {
-                    _log.error("Unable to load resources from module " + module.getName() + " using the resource loader " + resLoader.getClass().getName(), t);
-                    _moduleFailures.put(module.getName(), t);
-                }
-            }
-        }
-
         if (getTableInfoModules().getTableType() == TableInfo.TABLE_TYPE_NOT_IN_DB)
             _newInstall = true;
 
@@ -740,6 +723,19 @@ public class ModuleLoader implements Filter
                 {
                     setStartupFailure(x);
                     _log.error("Failure starting module: " + m.getName(), x);
+                }
+
+                //call the module resource loaders
+                for(ModuleResourceLoader resLoader : _resourceLoaders)
+                {
+                    try
+                    {
+                        resLoader.loadResources(m, m.getExplodedPath());
+                    }
+                    catch(Throwable t)
+                    {
+                        _log.error("Unable to load resources from module " + m.getName() + " using the resource loader " + resLoader.getClass().getName(), t);
+                    }
                 }
             }
 
