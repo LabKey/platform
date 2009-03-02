@@ -384,6 +384,20 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
 
         return function(data, cellMetaData, record, rowIndex, colIndex, store)
         {
+            if(record.json && record.json[meta.name] && record.json[meta.name].qcValue)
+            {
+                var qcValue = record.json[meta.name].qcValue;
+                //get corresponding message from qcInfo section of JSON and set up a qtip
+                if(store.reader.jsonData.qcInfo && store.reader.jsonData.qcInfo[qcValue])
+                {
+                    cellMetaData.attr = "ext:qtip=\"" + Ext.util.Format.htmlEncode(store.reader.jsonData.qcInfo[qcValue]) + "\"";
+                    cellMetaData.css = "labkey-qc";
+                }
+            }
+
+            if(record.json && record.json[meta.name] && record.json[meta.name].displayValue)
+                return record.json[meta.name].displayValue;
+            
             if(null == data || undefined == data || data.toString().length == 0)
                 return data;
 
@@ -414,26 +428,36 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                 cellMetaData.attr = "style=\"padding: 1px 1px 1px 1px\"";
             }
 
-            //wrap in <a> if url is present in the record
-            if(record.get("_labkeyurl_" + col.dataIndex))
-                return "<a href=\"" + record.get("_labkeyurl_" + col.dataIndex) + "\">" + displayValue + "</a>";
+            //wrap in <a> if url is present in the record's original JSON
+            if(record.json && record.json[meta.name] && record.json[meta.name].url)
+                return "<a href=\"" + record.json[meta.name].url + "\">" + displayValue + "</a>";
             else
                 return displayValue;
         };
     },
 
     getLookupRenderer : function(col, meta) {
-        var store = this.store.getLookupStore(meta.name, !col.required);
-        store.on("load", this.onLookupStoreLoad, this);
-        store.on("loadexception", this.onLookupStoreError, this);
-        return function(data)
-        {
-            if(store.loadError)
-                return "ERROR: " + store.loadError.message;
+        var lookupStore = this.store.getLookupStore(meta.name, !col.required);
+        lookupStore.on("loadexception", this.onLookupStoreError, this);
+        lookupStore.on("load", this.onLookupStoreLoad, this);
 
-            var record = store.getById(data);
-            if (record)
-                return record.data[meta.lookup.displayColumn];
+        return function(data, cellMetaData, record, rowIndex, colIndex, store)
+        {
+            if(record.json && record.json[meta.name] && record.json[meta.name].displayValue)
+                return record.json[meta.name].displayValue;
+            
+            if(lookupStore.loadError)
+                return "ERROR: " + lookupStore.loadError.message;
+
+            if(0 === lookupStore.getCount() && !lookupStore.isLoading)
+            {
+                lookupStore.load();
+                return "loading...";
+            }
+
+            var lookupRecord = lookupStore.getById(data);
+            if (lookupRecord)
+                return lookupRecord.data[meta.lookup.displayColumn];
             else if (data)
                 return "[" + data + "]";
             else
@@ -442,7 +466,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
     },
 
     onLookupStoreLoad : function(store, records, options) {
-        if(this.view)
+        if(this.view && !this.activeEditor)
             this.view.refresh();
     },
 
@@ -524,7 +548,6 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             allowBlank: !col.required,
             typeAhead: false,
             triggerAction: 'all',
-            mode: 'local', //use local mode since the lookup store will already be loaded
             editable: false,
             displayField: meta.lookup.displayColumn,
             valueField: meta.lookup.keyColumn,
@@ -604,6 +627,17 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
 
         if(!this.getSelectionModel().isSelected(evt.row))
             this.getSelectionModel().selectRow(evt.row);
+
+        var editor = this.getColumnModel().getCellEditor(evt.column, evt.row);
+        var displayValue = (evt.record.json && evt.record.json[evt.field]) ? evt.record.json[evt.field].displayValue : undefined;
+
+        //set the value not found text to be the display value if there is one
+        if(editor && editor.field && editor.displayField && displayValue)
+            editor.field.valueNotFoundText = displayValue;
+
+        //reset combo mode to local if the lookup store is already populated
+        if(editor && editor.field && editor.displayField && editor.field.store && editor.field.store.getCount() > 0)
+            editor.field.mode = "local";
     },
 
     onEnter : function() {

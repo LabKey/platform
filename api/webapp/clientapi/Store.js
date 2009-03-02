@@ -89,16 +89,22 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         if(config.columns)
             baseParams['query.columns'] = config.columns;
 
+        baseParams.apiVersion = 9.1;
+
+        this.isLoading = false;
+
         LABKEY.ext.Store.superclass.constructor.call(this, {
-            reader: new Ext.data.JsonReader(),
+            reader: new LABKEY.ext.ExtendedJsonReader(),
             proxy : new Ext.data.HttpProxy(new Ext.data.Connection({
                 method: 'GET',
                 url: LABKEY.ActionURL.buildURL("query", "selectRows", config.containerPath)
             })),
             baseParams: baseParams,
             listeners: {
+                'beforeload': {fn: this.onBeforeLoad, scope: this},
                 'load': {fn: this.onLoad, scope: this},
-                'loadexception' : {fn: this.onLoadException, scope: this}
+                'loadexception' : {fn: this.onLoadException, scope: this},
+                'update' : {fn: this.onUpdate, scope: this}
             }
         });
 
@@ -303,7 +309,6 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
 
             store = new LABKEY.ext.Store(config);
             this.lookupStores[columnName] = store;
-            store.load();
         }
         return store;
     },
@@ -336,6 +341,10 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                 //ensure that a value was actually returned for that column before trying to set it
                 if(undefined !== row.values[col])
                     record.set(col, row.values[col]);
+
+                //clear any displayValue there might be in the extended info
+                if(record.json && record.json[col])
+                    delete record.json[col].displayValue;
             }
 
             //if the id changed, fixup the keys and map of the store's base collection
@@ -351,7 +360,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                 this.data.map[row.values[idCol]] = record;
             }
 
-            //remote transitory flags and commit the record to let
+            //reset transitory flags and commit the record to let
             //bound controls know that it's now clean
             delete record.saveOperationInProgress;
             delete record.isNew;
@@ -413,7 +422,12 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         //delete options.sort;
     },
 
+    onBeforeLoad : function() {
+        this.isLoading = true;
+    },
+
     onLoad : function(store, records, options) {
+        this.isLoading = false;
 
         //remeber the name of the id column
         this.idName = this.reader.meta.id;
@@ -434,6 +448,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
 
     onLoadException : function(proxy, options, response, error)
     {
+        this.isLoading = false;
         var loadError = {message: error};
 
         if(response && response.getResponseHeader
@@ -445,6 +460,15 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         }
 
         this.loadError = loadError;
+    },
+
+    onUpdate : function(store, record, operation)
+    {
+        for(var field  in record.getChanges())
+        {
+            if(record.json && record.json[field])
+                delete record.json[field].displayValue;
+        }
     },
 
     getDeleteSuccessHandler : function() {
