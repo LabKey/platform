@@ -340,7 +340,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
                 //since the sent record might contain columns form a related table,
                 //ensure that a value was actually returned for that column before trying to set it
                 if(undefined !== row.values[col])
-                    record.set(col, row.values[col]);
+                    record.set(col, record.fields.get(col).convert(row.values[col], row.values));
 
                 //clear any displayValue there might be in the extended info
                 if(record.json && record.json[col])
