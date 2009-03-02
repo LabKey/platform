@@ -92,6 +92,11 @@ public class CustomViewImpl implements CustomView
         return UserManager.getUser(userId.intValue());
     }
 
+    public User getCreatedBy()
+    {
+        return UserManager.getUser(_collist.getCreatedBy());
+    }
+
     public Container getContainer()
     {
         return ContainerManager.getForId(_collist.getContainerId());

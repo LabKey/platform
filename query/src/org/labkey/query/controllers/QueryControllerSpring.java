@@ -993,10 +993,12 @@ public class QueryControllerSpring extends SpringActionController
             String name = StringUtils.trimToNull(form.ff_columnListName);
 
             boolean canEdit = canEdit(form, errors);
+            boolean isHidden = false;
             if (canEdit)
             {
                 CustomView view = form.getQueryDef().getCustomView(owner, getViewContext().getRequest(), name);
-                if (view == null || owner != null && view.getOwner() == null)
+                // check whether a new view is being created or the default view is being customized
+                if (view == null || (name == null && owner != null && view.getOwner() == null))
                 {
                     view = form.getQueryDef().createCustomView(owner, name);
                 }
@@ -1006,6 +1008,7 @@ public class QueryControllerSpring extends SpringActionController
                 {
                     view.setCanInherit(form.ff_inheritable);
                 }
+                isHidden = view.isHidden();
                 view.save(getUser(), getViewContext().getRequest());
                 if (owner == null)
                 {
@@ -1025,7 +1028,7 @@ public class QueryControllerSpring extends SpringActionController
                 {
                     _returnURL.deleteParameter(regionName + "." + QueryParam.viewName);
                 }
-                else
+                else if (!isHidden)
                 {
                     _returnURL.replaceParameter(regionName + "." + QueryParam.viewName, name);
                 }

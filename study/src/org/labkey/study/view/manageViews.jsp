@@ -175,7 +175,7 @@
                 tpl : new Ext.XTemplate(
                         '<table>',
                             '<tpl if="description != undefined"><tr><td><b>description</b></td><td>{description}</td></tr></tpl>',
-                            '<tr><td><b>container</b></td><td>{container}</td></tr>',
+                            '<tr><td><b>folder</b></td><td>{container}</td></tr>',
                             '<tr><td><b>query name</b></td><td>{query}</td></tr>',
                             '<tpl if="schema != undefined"><tr><td><b>schema name</b></td><td>{schema}</td></tr></tpl>',
                             '<tr><td><b>permissions</b></td><td>{permissions}</td>',

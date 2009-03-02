@@ -61,6 +61,11 @@ public class ModuleCustomView implements CustomView
         return null;
     }
 
+    public User getCreatedBy()
+    {
+        return null;
+    }
+
     public Container getContainer()
     {
         //module-based reports have no explicit container

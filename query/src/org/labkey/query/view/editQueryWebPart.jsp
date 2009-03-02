@@ -26,7 +26,12 @@
 <%@ page extends="org.labkey.query.view.EditQueryPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    Map<String, String> schemaOptions = new TreeMap<String, String>();
+    Map<String, String> schemaOptions = new TreeMap<String, String>(new Comparator<String>(){
+        public int compare(String o1, String o2)
+        {
+            return o1.compareToIgnoreCase(o2);
+        }
+    });
 
     Map<String, Map<String, List<String>>> schemaTableNames = new CaseInsensitiveHashMap<Map<String, List<String>>>();
     DefaultSchema defSchema = DefaultSchema.get(getUser(), getContainer());
@@ -37,7 +42,7 @@
         Map<String, List<String>> tableNames = new CaseInsensitiveHashMap<List<String>>();
         for (String tableName : new TreeSet<String>(schema.getTableAndQueryNames(true)))
         {
-            List<String> viewNames = new LinkedList<String>();
+            List<String> viewNames = new ArrayList<String>();
             viewNames.add(""); // default view
 
             QueryDefinition queryDef = schema.getQueryDefForTable(tableName);
@@ -49,7 +54,12 @@
                         viewNames.add(viewName);
                 }
             }
-
+            Collections.sort(viewNames, new Comparator<String>(){
+                public int compare(String o1, String o2)
+                {
+                    return o1.compareToIgnoreCase(o2);
+                }
+            });
             tableNames.put(tableName, viewNames);
         }
         schemaTableNames.put(name, tableNames);
@@ -86,7 +96,15 @@ function updateQueries(schemaName)
     {
         names.push(opt);
     }
-    names.sort();
+    names.sort(function(a,b){
+      var a = String(a).toLowerCase();
+      var b = String(b).toLowerCase(); 
+      if (a > b)
+         return 1
+      if (a < b)
+         return -1
+      return 0;
+    });
     for (var i = 0; i <names.length; i++)
     {
         querySelect.options[querySelect.options.length] = new Option(names[i], names[i]);
