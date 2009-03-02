@@ -819,7 +819,8 @@ public class AdminController extends SpringActionController
 
             tabs.add(new TabInfo("Properties", "properties", url));
             tabs.add(new TabInfo("Resources", "resources", url));
-            tabs.add(new TabInfo("Menu Bar", "menubar", url));
+            if (!ContainerManager.getRoot().equals(getViewContext().getContainer()))
+                tabs.add(new TabInfo("Menu Bar", "menubar", url));
 
             return tabs;
         }
@@ -840,13 +841,17 @@ public class AdminController extends SpringActionController
                     LookAndFeelPropertiesBean bean = new LookAndFeelPropertiesBean(c, _form.getThemeName());
                     return new JspView<LookAndFeelPropertiesBean>("/org/labkey/core/admin/lookAndFeelProperties.jsp", bean, _errors);
                 }
-                else
+                else if ("menubar".equals(tabId))
                 {
+                    if (c.isRoot())
+                        throw new NotFoundException("Menu bar must be configured for each project separately.");
                     WebPartView v = new JspView<Object>(AdminController.class, "editMenuBar.jsp", null);
                     v.setView("menubar", new VBox());
                     Portal.populatePortalView(getViewContext(), c.getId(), v, true);
                     return v;
                 }
+                else
+                    throw new NotFoundException("Unknown tab id");
             }
             else
             {

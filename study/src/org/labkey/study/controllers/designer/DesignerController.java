@@ -187,6 +187,7 @@ public class DesignerController extends SpringActionController
             if (null != info && !info.getContainer().equals(getContainer()))
             {
                 ActionURL url = new ActionURL(DesignerAction.class, info.getContainer());
+                url.addParameter("studyId", form.getStudyId());
                 HttpView.throwRedirect(url);
             }
 

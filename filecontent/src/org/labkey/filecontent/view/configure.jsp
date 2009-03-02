@@ -148,14 +148,9 @@ If, for example, you set the content root for the Home project to<br>
 </pre>
 <br>and that directory contained test.html, the link<br>
 <pre>
-    http://<%=request.getServerName()%><%=request.getContextPath()%>/FileContent/home/sendFile.view?fileName=test.html
-    </pre>
-    will return the file. This is useful, but of limited utility if the file contains relative links and img tags.<br>
-    However, if you configure the FileServlet as outlined below, standard urls like this<br>
-    <pre>
-    http://<%=request.getServerName()%><%=request.getContextPath()%>/files/home/test.html
+http://<%=request.getServerName()%><%=request.getContextPath()%>/files/home/test.html
 </pre>
-would return the file, after first checking security on the home project.<br>You could also use links like this
+    will return the file. You could also use links like this
 <pre>
     http://<%=request.getServerName()%><%=request.getContextPath()%>/files/home/subdir/other.html
 </pre>
@@ -163,8 +158,8 @@ to serve the file<br>
 <pre>
     C:\content\homeProject\subdir\other.html
 </pre>
-Files returned this way will be returned to the browser
-as is with no frame. To render content within the standard LabKey user interface you can set the renderAs parameter on your URL to one of two values.
+assuming that subdir is the name of a folder on your LabKey server.<br><br>
+Files returned this way will be returned to the browser inside the standard LabKey template. To render content as a bare file or within an IFRAME can set the renderAs parameter on your URL to one of several values.
 <ul>
     <li><b>?renderAs=FRAME</b> will cause the file to be rendered within an IFRAME. This is useful for returning standard HTML files</li>
     <li><b>?renderAs=INLINE</b> will render the content of the file directly into a page. This is only useful if you have files containing fragments of HTML,  and those
