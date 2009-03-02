@@ -39,7 +39,7 @@ public class DiscussionWebPartFactory extends BaseWebPartFactory
     @Override
     public boolean isAvailable(Container c, String location)
     {
-        return false;     // This webpart is used via JavaScript, but from the portal page.  See #7431
+        return false;     // This webpart is used via JavaScript, not from the portal page.  See #7431
     }
 
     public HttpView getEditView(Portal.WebPart webPart)
