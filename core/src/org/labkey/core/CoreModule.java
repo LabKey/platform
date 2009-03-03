@@ -70,7 +70,7 @@ public class CoreModule extends SpringModule
 
     public double getVersion()
     {
-        return 8.31;
+        return 8.32;
     }
 
     @Override
@@ -228,7 +228,8 @@ public class CoreModule extends SpringModule
     {
         initWebApplicationContext();
 
-        ContainerManager.addContainerListener(new CoreContainerListener());
+        // This listener deletes all properties; make sure it executes after most of the other listeners
+        ContainerManager.addContainerListener(new CoreContainerListener(), ContainerManager.ContainerListener.Order.Last);
         org.labkey.api.security.SecurityManager.init();
         ModuleLoader.getInstance().registerFolderType(FolderType.NONE);
         AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();

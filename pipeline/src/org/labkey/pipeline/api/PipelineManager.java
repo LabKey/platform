@@ -202,7 +202,6 @@ public class PipelineManager
         try
         {
             ContainerUtil.purgeTable(pipeline.getTableInfoStatusFiles(), container, "Container");
-            PipelineEmailPreferences.get().deleteAll(container);
         }
         catch (SQLException e)
         {
