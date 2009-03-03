@@ -51,7 +51,7 @@ public class ProtocolWebPart extends WebPartView
         List<ColumnInfo> cols = ti.getColumns("RowId,Name,Created");
         dr.setColumns(cols);
         dr.getDisplayColumn(0).setVisible(false);
-        dr.getDisplayColumn(1).setURL(new ActionURL(ExperimentController.ProtocolDetailsAction.class, c) + "?rowId=${RowId}");
+        dr.getDisplayColumn(1).setURL(new ActionURL(ExperimentController.ProtocolDetailsAction.class, c) + "rowId=${RowId}");
         dr.getDisplayColumn(2).setTextAlign("left");
 
         if (!_narrow)
