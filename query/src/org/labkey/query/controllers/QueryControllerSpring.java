@@ -223,6 +223,12 @@ public class QueryControllerSpring extends SpringActionController
                     errors.reject(ERROR_MSG, "The query '" + newQueryName + "' already exists.");
                     return false;
                 }
+                TableInfo existingTable = form.getSchema().getTable(newQueryName, null);
+                if (existingTable != null)
+                {
+                    errors.reject(ERROR_MSG, "A table with the name '" + newQueryName + "' already exists.");
+                    return false;
+                }
                 // bug 6095 -- conflicting query and dataset names
                 if (form.getSchema().getTableNames().contains(newQueryName))
                 {
