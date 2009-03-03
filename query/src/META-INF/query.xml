@@ -62,18 +62,22 @@
             <ns:column columnName="ModifiedBy" />
             <ns:column columnName="Container" />
             <ns:column columnName="UserSchemaName">
-                <ns:description>The name of the schema to be exposed within LabKey Server</ns:description>
+                <ns:columnTitle>Schema Name</ns:columnTitle>
+                <ns:description>Name of the schema as referred to from within LabKey Server.</ns:description>
             </ns:column>
-            <ns:column columnName="DbSchemaName" >
+            <ns:column columnName="DbSchemaName">
                 <ns:nullable>false</ns:nullable>
-                <ns:description>The name of the physical schema in the underlying database</ns:description>
+                <ns:columnTitle>Database Schema Name</ns:columnTitle>
+                <ns:description>The name of the physical schema in the underlying database.</ns:description>
             </ns:column>
-            <ns:column columnName="DbContainer" />
+            <ns:column columnName="DbContainer">
+                <ns:description>If specified and if tables have a container column, the table contents will be filtered automatically to show only the data in this container. If you leave this field blank, you see all the data in all containers.</ns:description> 
+            </ns:column>
             <ns:column columnName="Editable">
-                <ns:description>Whether the underlying data should be editable through LabKey Server. Only tables with primary keys defined are updatable.</ns:description>
+                <ns:description>Allows insert/update/delete. Caveat: This setting only works if you have a single primary key in your table.</ns:description>
             </ns:column>
             <ns:column columnName="MetaData">
-                <ns:description>XML metadata that defines things like format strings, column descriptions, and more</ns:description>
+                <ns:description>You can use a specialized XML format to specify which columns are look-ups, formats, captions, etc.</ns:description>
             </ns:column>
         </ns:columns>
     </ns:table>
