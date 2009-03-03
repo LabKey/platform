@@ -34,16 +34,20 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.module.ModuleHtmlView;
-import org.labkey.api.settings.AppProps;
 import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.assay.xml.ProviderType;
+import org.labkey.study.assay.xml.DomainDocument;
 import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
+import org.apache.xmlbeans.XmlError;
+import org.apache.xmlbeans.XmlOptions;
+import org.apache.xmlbeans.XmlException;
 
 import javax.script.ScriptEngineManager;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -52,14 +56,25 @@ import java.util.*;
  */
 public class ModuleAssayProvider extends TsvAssayProvider
 {
+    public static class ModuleAssayException extends RuntimeException
+    {
+        public ModuleAssayException(String message)
+        {
+            super(message);
+        }
+
+        public ModuleAssayException(String message, Throwable cause)
+        {
+            super(message, cause);
+        }
+    }
+
     private static final String UPLOAD_VIEW_FILENAME = "upload.html";
 
     private File baseDir;
     private File viewsDir;
-    private Map<String, File> viewFiles;
     private String name;
     private String description;
-    private Map<IAssayDomainType, DomainDescriptorType> domainsDescriptors = new HashMap<IAssayDomainType, DomainDescriptorType>();
 
     private FieldKey participantIdKey;
     private FieldKey visitIdKey;
@@ -98,29 +113,6 @@ public class ModuleAssayProvider extends TsvAssayProvider
                 specimenIdKey = FieldKey.fromString(fieldKeys.getSpecimenId());
         }
 
-        if (!AppProps.getInstance().isDevMode() && viewsDir.isDirectory())
-        {
-            viewFiles = new HashMap<String, File>();
-            Boolean[] trueFalse = new Boolean[] { true, false };
-            for (IAssayDomainType domainType : AssayDomainTypes.values())
-            {
-                for (Boolean detailsView : trueFalse)
-                {
-                    String fileName = getViewFileName(domainType, detailsView.booleanValue());
-                    File viewFile = new File(viewsDir, fileName);
-                    if (viewFile.canRead())
-                    {
-                        viewFiles.put(fileName, viewFile);
-                    }
-                }
-            }
-
-            File uploadViewFile = new File(viewsDir, UPLOAD_VIEW_FILENAME);
-            if (uploadViewFile.canRead())
-            {
-                viewFiles.put(UPLOAD_VIEW_FILENAME, uploadViewFile);
-            }
-        }
     }
 
     @Override
@@ -135,20 +127,57 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return description;
     }
 
-    public void addDomain(IAssayDomainType domainType, DomainDescriptorType xDomain)
+    protected DomainDescriptorType parseDomain(IAssayDomainType domainType) throws IOException, XmlException
     {
-        domainsDescriptors.put(domainType, xDomain);
-    }
+        File domainDir = new File(baseDir, ModuleAssayLoader.DOMAINS_DIR_NAME);
+        File domainFile = new File(domainDir, domainType.getName().toLowerCase() + ".xml");
+        if (!domainFile.canRead())
+            return null;
 
-    protected boolean hasDomain(IAssayDomainType domainType)
-    {
-        return domainsDescriptors.containsKey(domainType);
+        DomainDocument doc = DomainDocument.Factory.parse(domainFile);
+        DomainDescriptorType xDomain = doc.getDomain();
+        ArrayList<XmlError> errors = new ArrayList<XmlError>();
+        XmlOptions options = new XmlOptions().setErrorListener(errors);
+        if (xDomain != null && xDomain.validate(options))
+        {
+            if (!xDomain.isSetName())
+                xDomain.setName(domainType.getName() + " Fields");
+
+            if (!xDomain.isSetDomainURI())
+                xDomain.setDomainURI(domainType.getLsidTemplate());
+
+            return xDomain;
+        }
+
+        if (errors.size() > 0)
+        {
+            StringBuffer sb = new StringBuffer();
+            while (errors.size() > 0)
+            {
+                XmlError error = errors.remove(0);
+                sb.append(error.toString(baseDir.toURI()));
+                if (errors.size() > 0)
+                    sb.append("\n");
+            }
+            throw new XmlException(sb.toString());
+        }
+
+        return null;
     }
 
     /** @return a domain and its default values */
     protected Pair<Domain, Map<DomainProperty, Object>> createDomain(Container c, User user, IAssayDomainType domainType)
     {
-        DomainDescriptorType xDomain = domainsDescriptors.get(domainType);
+        DomainDescriptorType xDomain = null;
+        try
+        {
+            xDomain = parseDomain(domainType);
+        }
+        catch (Exception e)
+        {
+            throw new ModuleAssayException("Failed to load '" + domainType.getName().toLowerCase() + "' domain xml file:\n" + e.getMessage(), e);
+        }
+
         if (xDomain != null)
         {
             return PropertyService.get().createDomain(c, xDomain);
@@ -186,6 +215,21 @@ public class ModuleAssayProvider extends TsvAssayProvider
     @Override
     protected Map<String, Set<String>> getRequiredDomainProperties()
     {
+        Map<IAssayDomainType, DomainDescriptorType> domainsDescriptors = new LinkedHashMap<IAssayDomainType, DomainDescriptorType>(AssayDomainTypes.values().length);
+        for (IAssayDomainType domainType : AssayDomainTypes.values())
+        {
+            try
+            {
+                DomainDescriptorType xDomain = parseDomain(domainType);
+                if (xDomain != null)
+                    domainsDescriptors.put(domainType, xDomain);
+            }
+            catch (Exception e)
+            {
+                throw new ModuleAssayException("Failed to load '" + domainType.getName().toLowerCase() + "' domain xml file:\n" + e.getMessage(), e);
+            }
+        }
+
         Map<String, Set<String>> required = new HashMap<String, Set<String>>();
         for (Map.Entry<IAssayDomainType, DomainDescriptorType> domainDescriptor : domainsDescriptors.entrySet())
         {
@@ -233,7 +277,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return super.getSpecimenIDFieldKey();
     }
 
-    private String getViewFileName(IAssayDomainType domainType, boolean details)
+    protected String getViewFileName(IAssayDomainType domainType, boolean details)
     {
         String viewName = domainType.getName().toLowerCase();
         if (!details)
@@ -247,16 +291,9 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return viewName + ".html";
     }
 
-    public boolean hasCustomView(String viewFileName)
+    protected boolean hasCustomView(String viewFileName)
     {
-        if (AppProps.getInstance().isDevMode())
-        {
-            return new File(viewsDir, viewFileName).canRead();
-        }
-        else
-        {
-            return viewFiles != null && viewFiles.containsKey(viewFileName);
-        }
+        return new File(viewsDir, viewFileName).canRead();
     }
 
     @Override
@@ -267,26 +304,14 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     protected ModelAndView getCustomView(String viewFileName)
     {
-        ModuleHtmlView view = null;
-        if (AppProps.getInstance().isDevMode())
+        File viewFile = new File(viewsDir, viewFileName);
+        if (viewFile.canRead())
         {
-            File viewFile = new File(viewsDir, viewFileName);
-            if (viewFile.canRead())
-                view = new ModuleHtmlView(viewFile);
-        }
-        else
-        {
-            if (viewFiles != null)
-            {
-                File viewFile = viewFiles.get(viewFileName);
-                if (viewFile != null)
-                    view = new ModuleHtmlView(viewFile);
-            }
-        }
-
-        if (view != null)
+            ModuleHtmlView view = new ModuleHtmlView(viewFile);
             view.setFrame(WebPartView.FrameType.NONE);
-        return view;
+            return view;
+        }
+        return null;
     }
 
     // XXX: consider moving to TsvAssayProvider
