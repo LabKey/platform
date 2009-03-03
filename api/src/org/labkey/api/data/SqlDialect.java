@@ -467,6 +467,10 @@ public abstract class SqlDialect
 
     public abstract String getRoundFunction(String valueToRound);
 
+
+    // does provider support ROUND(double,x) where x != 0
+    public abstract boolean supportsRoundDouble();
+
     // Do nothing by default
     public void prepareNewDatabase(DbSchema schema) throws ServletException
     {
