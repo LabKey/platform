@@ -25,4 +25,12 @@
     PublishConfirmAction.PublishConfirmBean bean = me.getModelBean();
 %>
 <labkey:errors/>
+
+<script type="text/javascript">
+    function isTrue()
+    {
+        return true;
+    }
+    window.onbeforeunload = LABKEY.beforeunload(isTrue);
+</script>
 Note: Participant and <%= bean.isDateBased() ? "Date" : "Visit ID" %> are required for all rows.

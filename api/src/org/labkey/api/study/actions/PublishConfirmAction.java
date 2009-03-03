@@ -18,7 +18,10 @@ package org.labkey.api.study.actions;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
@@ -27,9 +30,9 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.study.query.PublishResultsQueryView;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
-import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -300,20 +303,24 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         {
             returnURL = getSummaryLink(_protocol).addParameter("clearDataRegionSelectionKey", publishConfirmForm.getDataRegionSelectionKey()).toString();
         }
+        String script = "window.onbeforeunload = null;"; // Need to prevent a warning if the user clicks on these buttons
 
         ActionURL publishURL = getPublishHandlerURL(_protocol);
         
         publishURL.replaceParameter("validate", "false");
         ActionButton publishButton = new ActionButton(publishURL.getLocalURIString(), "Copy to Study");
+        publishButton.setScript(script, true);
         buttons.add(publishButton);
 
         publishURL.replaceParameter("validate", "true");
         ActionButton validateButton = new ActionButton(publishURL.getLocalURIString(), "Re-Validate");
+        validateButton.setScript(script, true);
         buttons.add(validateButton);
 
 
         ActionButton cancelButton = new ActionButton("Cancel");
         cancelButton.setURL(returnURL);
+        cancelButton.setScript(script, true);
         buttons.add(cancelButton);
 
         queryView.setButtons(buttons);
