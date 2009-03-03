@@ -308,6 +308,11 @@ public class QueryControllerSpring extends SpringActionController
         public ModelAndView getView(SourceForm form, boolean reshow, BindException errors) throws Exception
         {
             _form = form;
+            if (form.getQueryDef() == null)
+	    	{
+	    		HttpView.throwNotFound();
+	    		return null;
+	    	}
             if (form.ff_queryText == null)
             {
                 form.ff_queryText = form.getQueryDef().getSql();
