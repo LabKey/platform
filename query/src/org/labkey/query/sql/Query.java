@@ -577,6 +577,9 @@ public class Query
 
 				if (test.name != null)
 				{
+                    QueryDefinition existing = QueryService.get().getQueryDef(JunitUtil.getTestContainer(), "lists", test.name);
+                    if (null != existing)
+                        existing.delete(TestContext.get().getUser());
 					QueryDefinition q = QueryService.get().createQueryDef(JunitUtil.getTestContainer(), "lists", test.name);
 					q.setSql(test.sql);
 					if (null != test.metadata)
@@ -651,7 +654,7 @@ public class Query
             {
                 validate(test);
             }
-			if (DbSchema.get(s.getSchemaName()).getSqlDialect().allowSortOnSubqueryWithoutLimit())
+			if (DefaultSchema.get(user, JunitUtil.getTestContainer()).getSchema(s.getSchemaName()).getDbSchema().getSqlDialect().allowSortOnSubqueryWithoutLimit())
 			{
 				for (SqlTest test : postgres)
 					{
