@@ -47,6 +47,11 @@ import java.util.*;
  */
 abstract public class JspBase extends HttpServlet implements HttpJspPage, HasViewContext
 {
+    protected JspBase()
+    {
+        assert MemTracker.put(this);
+    }
+
     public void jspInit()
     {
     }
