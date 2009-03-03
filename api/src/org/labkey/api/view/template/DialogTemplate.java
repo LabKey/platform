@@ -29,7 +29,7 @@ public class DialogTemplate extends JspView<PageConfig>
     {
         super("/org/labkey/api/view/template/dialogTemplate.jsp", page);
 
-        if (page.shouldIncludeHeader())
+        if (page.showHeader() == PageConfig.TrueFalse.True)
             setView("header", new TemplateHeaderView(page));
 
         setBody(body);

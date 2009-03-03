@@ -85,7 +85,7 @@ if (null != gwtModules && gwtModules.size() > 0)
 %>
     <table class="labkey-main"><%
 
-if (bean.showHeader())
+if (bean.showHeader() != PageConfig.TrueFalse.False)
 {
 %>
         <tr id="headerpanel" class="labkey-header-panel">
@@ -163,7 +163,7 @@ if (null != me.getView("moduleNav"))
             <!-- /RIGHT -->
 <%				} %>
         </tr><%
-    if (bean.showHeader())
+    if (bean.showHeader() != PageConfig.TrueFalse.False)
     {  %>
                 </table>
                 <!--/content area-->

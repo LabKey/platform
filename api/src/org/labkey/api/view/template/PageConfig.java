@@ -43,6 +43,11 @@ public class PageConfig
         Custom  // must be handled by module
     }
 
+	public enum TrueFalse
+	{
+		Default, True, False
+	}
+
     private Template _template = Template.Home;
     private String _title;
     private HelpTopic _helpTopic;
@@ -55,13 +60,12 @@ public class PageConfig
     private String _anchor;
     private ActionURL _rssUrl = null;
     private String _rssTitle = null;
-    private boolean _includeHeader = true;
     private boolean _includeLoginLink = true;
     private int _minimumWidth = 400;
     private String _styleSheet;
     private String _styles;
     private String _script;
-    private boolean _showHeader = false;
+    private TrueFalse _showHeader = TrueFalse.Default;
     private List<NavTree> _navTrail;
     private AppBar _appBar;
 
@@ -203,16 +207,6 @@ public class PageConfig
         _rssTitle = rssTitle;
     }
 
-    public boolean shouldIncludeHeader()
-    {
-        return _includeHeader;
-    }
-
-    public void setIncludeHeader(boolean includeHeader)
-    {
-        _includeHeader = includeHeader;
-    }
-
     public boolean shouldIncludeLoginLink()
     {
         return _includeLoginLink;
@@ -265,10 +259,10 @@ public class PageConfig
 
     public void setShowHeader(boolean show)
     {
-        _showHeader = show;
+        _showHeader = show ? TrueFalse.True : TrueFalse.False;
     }
 
-    public boolean showHeader()
+    public TrueFalse showHeader()
     {
         return _showHeader;
     }
