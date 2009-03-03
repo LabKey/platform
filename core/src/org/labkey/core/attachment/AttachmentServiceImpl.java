@@ -99,7 +99,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         HttpView v = new RefreshParentView(message);
 
         DialogTemplate template = new DialogTemplate(v);
-        template.getModelBean().setIncludeHeader(false);
+        template.getModelBean().setShowHeader(false);
 
         return template;
     }
@@ -215,7 +215,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         HttpView view = new AddAttachmentView(parent, errors);
         DialogTemplate template = new DialogTemplate(view);
         template.getModelBean().setTitle("Add Attachment");
-        template.getModelBean().setIncludeHeader(false);
+        template.getModelBean().setShowHeader(false);
         return template;
     }
 
@@ -224,7 +224,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         HttpView view = new ConfirmDeleteView(currentURL, container, parent, filename);
         DialogTemplate template = new DialogTemplate(view);
         template.getModelBean().setTitle("Delete Attachment?");
-        template.getModelBean().setIncludeHeader(false);
+        template.getModelBean().setShowHeader(false);
         return template;
     }
 
@@ -1476,6 +1476,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
             AttachmentService.Service service = AttachmentService.get();
             AttachmentParent root = ContainerManager.RootContainer.get();
+			service.deleteAttachment(root, file1.getName());
+            service.deleteAttachment(root, file2.getName());
 
             Attachment[] attachments = service.getAttachments(root);
             int originalCount = attachments.length;

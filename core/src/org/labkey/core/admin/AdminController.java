@@ -4148,7 +4148,7 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getConfirmView(Object o, BindException errors) throws Exception
         {
-            getPageConfig().setIncludeHeader(false);
+            getPageConfig().setShowHeader(false);
             getPageConfig().setTitle("Recreate Views?");
             return new HtmlView("Are you sure you want to drop and recreate all module views?");
         }

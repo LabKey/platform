@@ -138,10 +138,8 @@ public class StudyController extends BaseStudyController
             _study = getStudy(true);
 
             WebPartView overview = StudyModule.manageStudyPartFactory.getWebPartView(getViewContext(), null);
-            PrintTemplate template = new PrintTemplate(overview);
-            template.setView("right", StudyModule.reportsPartFactory.getWebPartView(getViewContext(), null));
-
-            return template;
+            WebPartView right = StudyModule.reportsPartFactory.getWebPartView(getViewContext(), null);
+			return new SimpleTemplate(overview,right);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -149,6 +147,27 @@ public class StudyController extends BaseStudyController
             return root.addChild(_study == null ? "No Study In Folder" : _study.getLabel());
         }
     }
+
+
+	class SimpleTemplate extends HttpView
+	{
+		SimpleTemplate(HttpView body, HttpView right)
+		{
+			setBody(body);
+			setView("right",right);
+		}
+		
+		@Override
+		protected void renderInternal(Object model, PrintWriter out) throws Exception
+		{
+			out.print("<table width=100%><tr><td align=left valign=top class=labkey-body-panel><img height=1 width=400 src=\""+getViewContext().getContextPath()+"\"/_.gif\"><br>");
+			include(getBody());
+			out.print("</td><td align=left valign=top class=labkey-side-panel><img height=1 width=240 src=\""+getViewContext().getContextPath()+"/_.gif\"><br>");
+			include(getView("right"));
+			out.print("</td></tr></table>");
+		}
+	}
+	
 
     @RequiresPermission(ACL.PERM_ADMIN)
     public class DefineDatasetTypeAction extends FormViewAction<ImportTypeForm>

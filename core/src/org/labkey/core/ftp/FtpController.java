@@ -201,7 +201,7 @@ public class FtpController extends SpringActionController
         public ModelAndView getView(FtpPage form, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
-            getPageConfig().setIncludeHeader(false);
+            getPageConfig().setShowHeader(false);
             return new JspView<FtpPage>(FtpController.class, "drop.jsp", form);
             //return new GroovyView<FtpPage>("/org/labkey/core/ftp/drop.gm", form);
         }
