@@ -15,8 +15,8 @@
  */
 
 -- Delete properties assigned to orphaned property sets
-DELETE FROM prop.Properties p WHERE p.Set IN
-  (SELECT ps.Set FROM prop.PropertySets ps WHERE ObjectId NOT IN (SELECT EntityId FROM core.containers));
+DELETE FROM prop.Properties WHERE Set IN
+  (SELECT Set FROM prop.PropertySets WHERE ObjectId NOT IN (SELECT EntityId FROM core.containers));
 
 -- Delete orphaned property sets
-DELETE FROM prop.PropertySets ps WHERE ObjectId NOT IN (SELECT EntityId FROM core.containers);
+DELETE FROM prop.PropertySets WHERE ObjectId NOT IN (SELECT EntityId FROM core.containers);
