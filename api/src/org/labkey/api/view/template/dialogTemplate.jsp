@@ -41,7 +41,7 @@
 <body <%= null != pageConfig.getFocus() ? " onload=\"document." + pageConfig.getFocus() + ".focus();\"" : "" %>>
     <table class="labkey-main"><%
 
-    if (pageConfig.showHeader() == PageConfig.TrueFalse.True)
+    if (pageConfig.showHeader() != PageConfig.TrueFalse.False)
     { %>
     <tr id="headerpanel" class="labkey-header-panel" height="56px">
         <td><% me.include(me.getView("header"), out); %></td>
