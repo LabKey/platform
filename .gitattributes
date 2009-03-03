@@ -245,7 +245,6 @@ core/src/META-INF/core/scripts/postgresql/core-8.20-8.21.sql -text
 core/src/META-INF/core/scripts/postgresql/core-8.20-8.30.sql -text
 core/src/META-INF/core/scripts/postgresql/core-8.21-8.22.sql -text
 core/src/META-INF/core/scripts/postgresql/core-8.30-8.31.sql -text
-core/src/META-INF/core/scripts/postgresql/core-8.31-8.32.sql -text
 core/src/META-INF/core/scripts/postgresql/core-create.sql -text
 core/src/META-INF/core/scripts/postgresql/core-drop.sql -text
 core/src/META-INF/core/scripts/postgresql/obsolete/bootstrap.sql -text
@@ -290,6 +289,7 @@ core/src/META-INF/core/scripts/postgresql/portal-8.22-8.23.sql -text
 core/src/META-INF/core/scripts/postgresql/portal-8.22-8.30.sql -text
 core/src/META-INF/core/scripts/postgresql/prop-0.00-1.00.sql -text
 core/src/META-INF/core/scripts/postgresql/prop-2.00-2.10.sql -text
+core/src/META-INF/core/scripts/postgresql/prop-8.31-8.32.sql -text
 core/src/META-INF/core/scripts/postgresql/prop-create.sql -text
 core/src/META-INF/core/scripts/postgresql/prop-drop.sql -text
 core/src/META-INF/core/scripts/postgresql/test-0.00-1.00.sql -text
@@ -307,7 +307,6 @@ core/src/META-INF/core/scripts/sql[!!-~]server/core-8.20-8.21.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-8.20-8.30.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-8.21-8.22.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-8.30-8.31.sql -text
-core/src/META-INF/core/scripts/sql[!!-~]server/core-8.31-8.32.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-create.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-drop.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/obsolete/bootstrap.sql -text
@@ -357,6 +356,7 @@ core/src/META-INF/core/scripts/sql[!!-~]server/portal-8.22-8.23.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/portal-8.22-8.30.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/prop-0.00-1.00.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/prop-2.00-2.10.sql -text
+core/src/META-INF/core/scripts/sql[!!-~]server/prop-8.31-8.32.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/prop-create.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/prop-drop.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/test-0.00-1.00.sql -text
