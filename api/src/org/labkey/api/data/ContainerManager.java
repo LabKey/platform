@@ -1267,6 +1267,8 @@ public class ContainerManager
 
     public interface ContainerListener extends PropertyChangeListener
     {
+        enum Order {First, Last}
+
         void containerCreated(Container c);
 
         void containerDeleted(Container c, User user);
@@ -1288,9 +1290,20 @@ public class ContainerManager
     // Thread-safe list implementation that allows iteration and modifications without external synchronization
     private static final List<ContainerListener> _listeners = new CopyOnWriteArrayList<ContainerListener>();
 
+    // These listeners are executed in the order they are registered
     public static void addContainerListener(ContainerListener listener)
     {
-        _listeners.add(listener);
+        addContainerListener(listener, ContainerListener.Order.First);
+    }
+
+
+    // Explicitly request "Last" ordering via this method.  "Last" listeners execute after all "First" listeners.
+    public static void addContainerListener(ContainerListener listener, ContainerListener.Order order)
+    {
+        if (ContainerListener.Order.First == order)
+            _listeners.add(0, listener);
+        else
+            _listeners.add(listener);
     }
 
 

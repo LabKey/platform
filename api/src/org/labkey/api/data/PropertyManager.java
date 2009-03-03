@@ -540,6 +540,23 @@ public class PropertyManager
         }
 
 
+        public void testOrphanedPropertySets()
+        {
+            try
+            {
+                String sql = "SELECT COUNT(*) FROM " +  prop.getTableInfoPropertySets() + " WHERE ObjectId NOT IN (SELECT EntityId FROM " + CoreSchema.getInstance().getTableInfoContainers() + ")";
+
+                Long count = Table.executeSingleton(getSchema(), sql, new Object[]{}, Long.class);
+
+                assertEquals(0, count.intValue());
+            }
+            catch (SQLException x)
+            {
+                assertTrue(x.getMessage(), false);
+            }
+        }
+
+
         public static Test suite()
         {
             return new TestSuite(TestCase.class);
