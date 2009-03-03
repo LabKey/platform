@@ -1059,6 +1059,7 @@ public class WikiController extends SpringActionController
             bean.cancelURL = getBeginURL(getSourceContainer(form.getSourceContainer()));
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            getPageConfig().setShowHeader(true);
 
             return new JspView<CopyBean>("/org/labkey/wiki/view/wikiCopy.jsp", bean);
         }
