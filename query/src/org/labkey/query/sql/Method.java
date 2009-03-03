@@ -42,15 +42,14 @@ public enum Method
     power(Types.DOUBLE),
     radians(Types.DOUBLE),
     rand(Types.DOUBLE),
-    round(Types.DOUBLE),
-// BUG 7078 : ROUND function produces errors and unexpected values
-//			{
-//				@Override
-//				public MethodInfo getMethodInfo()
-//				{
-//					return new RoundInfo();
-//				}
-//			},
+    round(Types.DOUBLE)
+			{
+				@Override
+				public MethodInfo getMethodInfo()
+				{
+					return new RoundInfo();
+				}
+			},
     sign(Types.DOUBLE),
     sin(Types.DOUBLE),
     sqrt(Types.DOUBLE),
@@ -340,27 +339,37 @@ public enum Method
 		}
 
 		// https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=7078
-		// "{fn round(double,int)}" seems broken on postgres, so use "round(double,int)"
 		public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
 		{
-			SQLFragment ret = new SQLFragment();
-			ret.append("");
-			ret.append(_fnEscapeName);
-			ret.append("(");
-			String comma = "";
-			for (SQLFragment argument : arguments)
-			{
-				ret.append(comma);
-				comma = ",";
-				ret.append(argument);
-			}
-			if (arguments.length == 1)
-			{
-				ret.append(comma);
-				ret.append("0");
-			}
-			ret.append(")");
-			return ret;
+            boolean unitRound = arguments.length == 1 || (arguments.length==2 && arguments[1].getSQL().equals("0"));
+            if (unitRound)
+            {
+                return super.getSQL(schema, new SQLFragment[] {arguments[0]});
+            }
+
+            int i = Integer.MIN_VALUE;
+            try
+            {
+                i = Integer.parseInt(arguments[1].getSQL());
+            }
+            catch (NumberFormatException x)
+            {
+            }
+
+            if (schema.getSqlDialect().supportsRoundDouble() || i == Integer.MIN_VALUE)
+            {
+                return super.getSQL(schema, arguments);
+            }
+
+            // fall back, only supports simple integer
+            SQLFragment scaled = new SQLFragment();
+            scaled.append("(");
+            scaled.append(arguments[0]);
+            scaled.append(")*").append(Math.pow(10,i));
+            SQLFragment ret = super.getSQL(schema, new SQLFragment[] {scaled});
+            ret.append("/");
+            ret.append(Math.pow(10,i));
+            return ret;
 		}
 	}
 
