@@ -342,6 +342,10 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
         return "ROUND(" + valueToRound + ", 0)";
     }
 
+    public boolean supportsRoundDouble()
+    {
+        return true;
+    }
 
     protected String getSystemTableNames()
     {

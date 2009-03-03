@@ -228,6 +228,11 @@ public class SqlDialectSas extends SqlDialect
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public boolean supportsRoundDouble()
+    {
+        return false;
+    }
+
     public void overrideAutoIncrement(StringBuilder statements, TableInfo tinfo)
     {
         //To change body of implemented methods use File | Settings | File Templates.

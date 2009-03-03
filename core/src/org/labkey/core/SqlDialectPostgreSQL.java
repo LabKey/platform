@@ -355,6 +355,10 @@ class SqlDialectPostgreSQL extends SqlDialect
         return "ROUND(" + valueToRound + "::double precision)";
     }
 
+    public boolean supportsRoundDouble()
+    {
+        return false;
+    }
 
     public void handleCreateDatabaseException(SQLException e) throws ServletException
     {
