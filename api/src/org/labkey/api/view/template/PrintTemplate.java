@@ -25,11 +25,13 @@ public class PrintTemplate extends JspView<PageConfig>
     protected PrintTemplate(String template, PageConfig page)
     {
         super(template, page);
+        getModelBean().setShowHeader(false);
     }
 
     public PrintTemplate(ModelAndView body, PageConfig page)
     {
         super("/org/labkey/api/view/template/CommonTemplate.jsp", page);
+        getModelBean().setShowHeader(false);
         setFrame(FrameType.NONE);
         setBody(body);
     }
