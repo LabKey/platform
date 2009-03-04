@@ -93,7 +93,7 @@ public class QueryModule extends DefaultModule
         ReportService.get().registerReport(new InternalScriptEngineReport());
 
         QueryView.register(new RExportScriptFactory());
-		WebdavService.addProvider(new QueryWebdavprovider());
+//		WebdavService.addProvider(new QueryWebdavprovider());
     }
 
     protected Collection<? extends WebPartFactory> createWebPartFactories()
