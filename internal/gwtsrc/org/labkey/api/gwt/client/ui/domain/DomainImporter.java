@@ -359,7 +359,7 @@ public class DomainImporter
                     InferencedColumn column = columns.get(inferencedIndex);
                     String name = column.getPropertyDescriptor().getName();
                     selector.addItem(name);
-                    if (name.equalsIgnoreCase(destinationColumn))
+                    if (areColumnNamesEquivalent(name,destinationColumn))
                         rowToSelect = inferencedIndex;
                 }
                 selector.setItemSelected(rowToSelect, true); // Cascade down the columns
@@ -398,6 +398,25 @@ public class DomainImporter
             }
             return result;
         }
+    }
+
+    /**
+     * Try to find a reasonable match in column names, like "Visit Date" and "Date",
+     * or "ParticipantID" and "participant id".
+     */
+    private static boolean areColumnNamesEquivalent(String col1, String col2)
+    {
+        col1 = col1.toLowerCase();
+        col2 = col2.toLowerCase();
+        col1 = col1.replaceAll(" ","");
+        col2 = col2.replaceAll(" ","");
+        if (col1.equals(col2))
+            return true;
+        if (col1.indexOf(col2) >= 0)
+            return true;
+        if (col2.indexOf(col1) >= 0)
+            return true;
+        return false;
     }
 
 }

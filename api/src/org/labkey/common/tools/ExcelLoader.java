@@ -110,7 +110,7 @@ public class ExcelLoader extends DataLoader
         return cells.toArray(new String[cells.size()][]);
     }
 
-    protected Iterator iterator() throws IOException
+    protected Iterator<Map<String,Object>> iterator() throws IOException
     {
         return new ExcelIterator();
     }
@@ -126,7 +126,7 @@ public class ExcelLoader extends DataLoader
         workbook.close();
     }
 
-    private class ExcelIterator implements Iterator
+    private class ExcelIterator implements Iterator<Map<String,Object>>
     {
         private int rowIndex;
         private Sheet sheet;
