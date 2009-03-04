@@ -172,7 +172,10 @@ public class AssaySchema extends UserSchema
                 defaultCols.add(FieldKey.fromParts(AssayService.BATCH_PROPERTIES_COLUMN_NAME, prop.getName()));
         }
 
-        result.addPropertyColumns(AssayService.BATCH_PROPERTIES_COLUMN_NAME, pds.toArray(new PropertyDescriptor[pds.size()]), this);
+        PropertyDescriptor[] pdsArray = pds.toArray(new PropertyDescriptor[pds.size()]);
+        ColumnInfo propsCol = result.addPropertyColumns(AssayService.BATCH_PROPERTIES_COLUMN_NAME, pdsArray, this);
+        propsCol.setFk(new AssayPropertyForeignKey(pdsArray));
+
         result.setDefaultVisibleColumns(defaultCols);
         return result;
     }
@@ -208,12 +211,20 @@ public class AssaySchema extends UserSchema
         runTable.addColumn(batchColumn);
 
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>(runTable.getDefaultVisibleColumns());
+        visibleColumns.add(FieldKey.fromParts(batchColumn.getName()));
         FieldKey runKey = FieldKey.fromString(AssayService.RUN_PROPERTIES_COLUMN_NAME);
         for (PropertyDescriptor runColumn : runColumns)
         {
             if (!runColumn.isHidden())
                 visibleColumns.add(new FieldKey(runKey, runColumn.getName()));
         }
+        FieldKey batchPropsKey = FieldKey.fromParts(batchColumn.getName(), AssayService.BATCH_PROPERTIES_COLUMN_NAME);
+        for (DomainProperty col : provider.getBatchDomain(protocol).getProperties())
+        {
+            if (!col.isHidden())
+                visibleColumns.add(new FieldKey(batchPropsKey, col.getName()));
+        }
+
 
         runTable.setTitleColumn("");
         runTable.setDefaultVisibleColumns(visibleColumns);

@@ -249,4 +249,18 @@ public class AssayManager implements AssayService.Interface
         while(ExperimentService.get().getExpExperiment(batch.getLSID()) != null);
         return batch;
     }
+
+    public ExpExperiment findBatch(ExpRun run)
+    {
+        int protocolId = run.getProtocol().getRowId();
+        for (ExpExperiment potentialBatch : run.getExperiments())
+        {
+            ExpProtocol batchProtocol = potentialBatch.getBatchProtocol();
+            if (batchProtocol != null && batchProtocol.getRowId() == protocolId)
+            {
+                return potentialBatch;
+            }
+        }
+        return null;
+    }
 }

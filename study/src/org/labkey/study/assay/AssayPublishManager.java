@@ -350,6 +350,37 @@ public class AssayPublishManager implements AssayPublishService.Service
                                                           Map<String, Object>[] dataMaps, List<PropertyDescriptor> types) throws SQLException, UnauthorizedException
     {
         PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(dataset.getTypeURI(), container);
+        // Strip out any spaces from existing PropertyDescriptors in the dataset
+        for (PropertyDescriptor pd : pds)
+        {
+            if (pd.getName().indexOf(" ") != -1)
+            {
+                pd.setName(pd.getName().replace(" ", ""));
+                pd.setPropertyURI(pd.getPropertyURI().replace(" ", ""));
+                OntologyManager.updatePropertyDescriptor(pd);
+            }
+        }
+
+        // Strip out spaces from any proposed PropertyDescriptor names
+        for (PropertyDescriptor newPD : types)
+        {
+            if (newPD.getName().indexOf(" ") != -1)
+            {
+                String newName = newPD.getName().replace(" ", "");
+                for (Map<String, Object> dataMap : dataMaps)
+                {
+                    Object value = dataMap.get(newPD.getName());
+                    dataMap.remove(newPD.getName());
+                    dataMap.put(newName, value);
+                }
+                newPD.setName(newName);
+                if (newPD.getPropertyURI() != null)
+                {
+                    newPD.setPropertyURI(newPD.getPropertyURI().replace(" ", ""));
+                }
+            }
+        }
+
         // we'll return a mapping from column name to column uri
         Map<String, String> propertyNamesToUris = new CaseInsensitiveHashMap<String>();
 
@@ -376,14 +407,48 @@ public class AssayPublishManager implements AssayPublishService.Service
         {
             if (!propertyNamesToUris.containsKey(newPdName))
             {
-                PropertyDescriptor pd = typeMap.get(newPdName);
-                OntologyManager.insertOrUpdatePropertyDescriptor(pd, domainDescriptor);
-                propertyNamesToUris.put(newPdName, pd.getPropertyURI());
+                // We used to copy batch properties with the "Run" prefix - see if we need to rename the target column
+                if (!renameRunPropertyToBatch(pds, propertyNamesToUris, newPdNames, domainDescriptor, newPdName))
+                {
+                    PropertyDescriptor pd = typeMap.get(newPdName);
+                    OntologyManager.insertOrUpdatePropertyDescriptor(pd, domainDescriptor);
+                    propertyNamesToUris.put(newPdName, pd.getPropertyURI());
+                }
             }
         }
         return propertyNamesToUris;
     }
-    
+
+    private boolean renameRunPropertyToBatch(PropertyDescriptor[] pds, Map<String, String> propertyNamesToUris, Set<String> newPdNames, DomainDescriptor domainDescriptor, String newPdName)
+            throws SQLException
+    {
+        if (newPdName.startsWith("Batch"))
+        {
+            String oldName = "Run" + newPdName.substring("Batch".length());
+            // Check if we don't have a different run-prefixed property to copy and and we do have a run-prefixed property in the target domain
+            if (!newPdNames.contains(oldName) && propertyNamesToUris.containsKey(oldName))
+            {
+                String originalURI = propertyNamesToUris.get(oldName);
+
+                for (PropertyDescriptor pd : pds)
+                {
+                    if (pd.getPropertyURI().equals(originalURI))
+                    {
+                        // Rename the property, including its URI
+                        pd.setName(newPdName);
+                        pd.setLabel(null);
+                        pd.setPropertyURI(pd.getPropertyURI().replace("#Run", "#Batch"));
+                        OntologyManager.updatePropertyDescriptor(pd);
+                        propertyNamesToUris.remove(oldName);
+                        propertyNamesToUris.put(newPdName, pd.getPropertyURI());
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     public DataSetDefinition createAssayDataset(User user, Study study, String name, String keyPropertyName, Integer datasetId, boolean isDemographicData, ExpProtocol protocol) throws SQLException
     {
         boolean ownTransaction = false;
