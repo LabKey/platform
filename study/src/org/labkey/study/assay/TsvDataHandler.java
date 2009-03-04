@@ -37,6 +37,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.List;
 
+import jxl.WorkbookSettings;
+
 /**
  * User: brittp
  * Date: Jul 11, 2007
@@ -93,7 +95,10 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler
 
             if (inputFile.getName().toLowerCase().endsWith(".xls"))
             {
-                loader = new ExcelLoader(inputFile, true);
+                WorkbookSettings settings = new WorkbookSettings();
+                settings.setGCDisabled(true);
+
+                loader = new ExcelLoader(inputFile, settings, true);
             }
             else
             {
