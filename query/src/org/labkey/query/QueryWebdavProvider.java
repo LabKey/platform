@@ -39,7 +39,7 @@ import java.sql.SQLException;
  * Date: Feb 4, 2009
  * Time: 11:17:57 AM
  */
-public class QueryWebdavprovider implements WebdavService.Provider
+public class QueryWebdavProvider implements WebdavService.Provider
 {
 	final String QUERY_NAME = "@query";
 
