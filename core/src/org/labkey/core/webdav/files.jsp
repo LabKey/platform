@@ -80,7 +80,7 @@ Ext.onReady(function()
 LABKEY.writeApplet(
 {
     id:"dropApplet",
-    archive:"<%=request.getContextPath()%>/_applets/applets-8.3.jar?guid=<%=GUID.makeHash()%><%=AppProps.getInstance().getServerSessionGUID()%>",
+    archive:"<%=request.getContextPath()%>/_applets/applets-9.1.jar?guid=<%=GUID.makeHash()%><%=AppProps.getInstance().getServerSessionGUID()%>",
     code:"org.labkey.applets.drop.DropApplet",
     width:200,
     height:200,
