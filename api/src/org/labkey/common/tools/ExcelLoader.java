@@ -25,6 +25,7 @@ import jxl.read.biff.BiffException;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.data.QcUtil;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.QcFieldWrapper;
 import org.labkey.api.settings.AppProps;
 
@@ -174,11 +175,11 @@ public class ExcelLoader extends DataLoader
             for (int columnIndex = 0; columnIndex < _columns.length; columnIndex++)
             {
                 ColumnDescriptor column = _columns[columnIndex];
-                String contents;
+                Object contents;
                 if (columnIndex < numCols) // We can get asked for more data than we contain, as extra columns can exist
                 {
                     Cell cell = sheet.getCell(columnIndex, rowIndex);
-                    contents = cell.getContents();
+                    contents = PropertyType.getFromExcelCell(cell);
                 }
                 else
                 {
@@ -210,11 +211,11 @@ public class ExcelLoader extends DataLoader
                             else
                             {
                                 // No such column. Is this a valid qc indicator or a valid value?
-                                if (QcUtil.isValidQcValue(contents, column.getQcContainer()))
+                                if (QcUtil.isValidQcValue(contents.toString(), column.getQcContainer()))
                                 {
                                     // set the qc value
                                     qcWrapper = new QcFieldWrapper();
-                                    qcWrapper.setQcValue("".equals(contents) ? null : contents);
+                                    qcWrapper.setQcValue("".equals(contents) ? null : contents.toString());
                                     value = qcWrapper;
                                 }
                                 else
@@ -238,20 +239,20 @@ public class ExcelLoader extends DataLoader
                             if (qcWrapper == null)
                             {
                                 qcWrapper = new QcFieldWrapper();
-                                qcWrapper.setQcValue("".equals(contents) ? null : contents);
+                                qcWrapper.setQcValue("".equals(contents) ? null : contents.toString());
                                 value = qcWrapper;
                                 row.put(qcColumName, value); // store it for the qc column's use
                             }
                             else
                             {
-                                qcWrapper.setQcValue("".equals(contents) ? null : contents);
+                                qcWrapper.setQcValue("".equals(contents) ? null : contents.toString());
                                 value = qcWrapper;
                             }
                         }
                         else
                         {
                             QcFieldWrapper qcWrapper = new QcFieldWrapper();
-                            qcWrapper.setQcValue("".equals(contents) ? null : contents);
+                            qcWrapper.setQcValue("".equals(contents) ? null : contents.toString());
                             value = qcWrapper;
                         }
                     }

@@ -56,6 +56,7 @@ public class ContainerManager
     private static CoreSchema core = CoreSchema.getInstance();
 
     private static final String _containerPrefix = ContainerManager.class.getName() + "/";
+    private static final String _containerChildrenPrefix = ContainerManager.class.getName() + "/children/";
     private static final String PROJECT_LIST_ID = "Projects";
     public static final String HOME_PROJECT_PATH = "/home";
     public static final String CONTAINER_AUDIT_EVENT = "ContainerAuditEvent";
@@ -75,7 +76,6 @@ public class ContainerManager
     private static Cache getCache()
     {
         return Cache.getShared();
-        //return DbCache.getCache(core.getTableInfoContainers());
     }
 
 
@@ -1020,6 +1020,16 @@ public class ContainerManager
         list.add(c);
     }
 
+    private static Container[] _getChildredFromCache(Container c)
+    {
+        return (Container[]) getCache().get(_containerChildrenPrefix + c.getId());
+    }
+
+    private static synchronized void _addChildrenToCache(Container c, Container[] children)
+    {
+        getCache().put(_containerChildrenPrefix + c.getId(), children);
+    }
+
 
     private static Container _getFromCacheId(String id)
     {
@@ -1048,6 +1058,7 @@ public class ContainerManager
             getCache().removeUsingPrefix(_containerPrefix + p.getId());
         getCache().remove( _containerPrefix + c.getPath().toLowerCase());
         getCache().remove(_containerPrefix + c.getId());
+        getCache().removeUsingPrefix(_containerChildrenPrefix); // Need to clear all, as parent or child may have changed
         NavTreeManager.uncacheTree(PROJECT_LIST_ID);
         if (p != null)
             NavTreeManager.uncacheTree(p.getId());
@@ -1093,6 +1104,9 @@ public class ContainerManager
 
     public static Container[] getAllChildren(Container root)
     {
+        Container[] allChildren = _getChildredFromCache(root);
+        if (allChildren != null)
+            return allChildren.clone(); // don't let callers modify the array in the cache
         ResultSet rs = null;
         try
         {
@@ -1125,7 +1139,9 @@ public class ContainerManager
                 if (null != c)
                     containerList.add(c);
             }
-            return containerList.toArray(new Container[containerList.size()]);
+            allChildren = containerList.toArray(new Container[containerList.size()]);
+            _addChildrenToCache(root, allChildren);
+            return allChildren.clone(); // don't let callers modify the array in the cache
         }
         catch (SQLException x)
         {

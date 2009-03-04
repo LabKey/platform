@@ -17,19 +17,17 @@
 package org.labkey.api.exp;
 
 import jxl.*;
+import org.apache.commons.beanutils.ConversionException;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Date;
-import java.util.TimeZone;
 import java.io.File;
 import java.sql.Types;
 import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.text.ParseException;
-
-import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TimeZone;
 
 /**
  * User: migra
@@ -283,12 +281,13 @@ public enum PropertyType
 
     protected abstract Object convertExcelValue(Cell cell) throws ConversionException;
 
-    public Object getExcelValue(Cell cell) throws ConversionException
+    public static Object getFromExcelCell(Cell cell) throws ConversionException
     {
-        if (excelCellType.equals(cell.getType()))
+        for (PropertyType t : values())
         {
-            return convertExcelValue(cell);
+            if (t.excelCellType.equals(cell.getType()))
+                return t.convertExcelValue(cell);
         }
-        return ConvertUtils.convert(cell.getContents(), getJavaType());
+        return cell.getContents();
     }
 }
