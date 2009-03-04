@@ -681,6 +681,9 @@ function clearSort(tableName, columnName)
         return;
 
     var sortString =  getParameter(tableName + ".sort");
+    if(!sortString)
+        return;
+
     var sortArray = sortString.split(",");
     var newSortArray = [];
 

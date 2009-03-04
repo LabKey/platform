@@ -457,10 +457,12 @@ public abstract class DisplayColumn extends RenderColumn
             {
                 Sort.SortField sortField = null;
                 boolean primarySort = false;
+                boolean isRemoveableSort = false;
                 if (sort != null)
                 {
                     sortField = sort.getSortColumn(getColumnInfo().getName());
                     primarySort = sort.indexOf(getColumnInfo().getName()) == 0;
+                    isRemoveableSort = isUserSort(ctx, getColumnInfo().getName());
                 }
 
                 boolean selected = sortField != null && sortField.getSortDirection() == Sort.SortDirection.ASC;
@@ -480,7 +482,7 @@ public abstract class DisplayColumn extends RenderColumn
                 navtree.addChild(desc);
 
                 NavTree clearSort = new NavTree("Clear Sort");
-                clearSort.setDisabled(null == sortField);
+                clearSort.setDisabled(null == sortField || !isRemoveableSort);
                 if(null != sortField)
                     clearSort.setScript(getClearSortScript(ctx));
                 navtree.addChild(clearSort);
@@ -506,6 +508,12 @@ public abstract class DisplayColumn extends RenderColumn
 
         }
         return navtree;
+    }
+
+    public boolean isUserSort(RenderContext ctx, String columnName)
+    {
+        Sort userSort = new Sort(ctx.getViewContext().getActionURL(), ctx.getCurrentRegion().getName());
+        return null != userSort.getSortColumn(columnName);
     }
 
     public String getGridDataCell(RenderContext ctx)
