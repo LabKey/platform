@@ -84,18 +84,11 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
             Map<String, Object>[] dataMaps = new Map[dataRows.length];
 
             Map<Integer, ExpRun> runCache = new HashMap<Integer, ExpRun>();
-            Map<Integer, Map<String, Object>> runPropertyCache = new HashMap<Integer, Map<String, Object>>();
+            CopyToStudyContext context = new CopyToStudyContext(protocol);
 
             Set<PropertyDescriptor> typeList = new LinkedHashSet<PropertyDescriptor>();
             typeList.add(createPublishPropertyDescriptor(study, getDataRowIdFieldKey().toString(), PropertyType.INTEGER));
             typeList.add(createPublishPropertyDescriptor(study, "SourceLSID", PropertyType.INTEGER));
-
-            PropertyDescriptor[] runPDs = getPropertyDescriptors(getRunDomain(protocol));
-            PropertyDescriptor[] uploadSetPDs = getPropertyDescriptors(getBatchDomain(protocol));
-
-            List<PropertyDescriptor> pds = new ArrayList<PropertyDescriptor>();
-            pds.addAll(Arrays.asList(runPDs));
-            pds.addAll(Arrays.asList(uploadSetPDs));
 
             Container sourceContainer = null;
 
@@ -135,23 +128,6 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
                     runCache.put(row.getOwnerObjectId(), run);
                 }
 
-                Map<String, Object> runProperties = runPropertyCache.get(run.getRowId());
-                if (runProperties == null)
-                {
-                    runProperties = OntologyManager.getProperties(run.getContainer(), run.getLSID());
-                    runPropertyCache.put(run.getRowId(), runProperties);
-                }
-
-                for (PropertyDescriptor pd : pds)
-                {
-                    if (!TARGET_STUDY_PROPERTY_NAME.equals(pd.getName()) && !PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equals(pd.getName()))
-                    {
-                        PropertyDescriptor publishPd = pd.clone();
-                        publishPd.setName("Run" + pd.getName());
-                        addProperty(publishPd, runProperties.get(pd.getPropertyURI()), dataMap, tempTypes);
-                    }
-                }
-
                 AssayPublishKey publishKey = dataKeys.get(row.getObjectId());
                 dataMap.put("ParticipantID", publishKey.getParticipantId());
                 dataMap.put("SequenceNum", publishKey.getVisitId());
@@ -162,7 +138,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
                 dataMap.put("SourceLSID", run.getLSID());
                 dataMap.put(getDataRowIdFieldKey().toString(), publishKey.getDataId());
 
-                addStandardRunPublishProperties(user, study, tempTypes, dataMap, run);
+                addStandardRunPublishProperties(user, study, tempTypes, dataMap, run, context);
 
                 dataMaps[rowIndex++] = dataMap;
                 tempTypes = null;

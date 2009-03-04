@@ -223,6 +223,15 @@ public abstract class DataLoader
             }
         }
 
+        Set<String> columnNames = new HashSet<String>();
+        for (ColumnDescriptor colDesc : colDescs)
+        {
+            if (!columnNames.add(colDesc.name))
+            {
+                throw new IOException("All columns must have unique names, but the column name '" + colDesc.name + "' appeared more than once.");
+            }
+        }
+
         _columns = colDescs;
     }
 

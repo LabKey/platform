@@ -21,6 +21,7 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -80,5 +81,11 @@ public class AssayService
          * @param protocol
          */
         public ExpExperiment createStandardBatch(Container container, String name, ExpProtocol protocol);
+
+        /**
+         * @return the batch object for the assay run, if it has one.
+         */
+        @Nullable
+        public ExpExperiment findBatch(ExpRun run);
     }
 }

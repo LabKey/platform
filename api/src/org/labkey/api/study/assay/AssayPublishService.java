@@ -40,6 +40,10 @@ public class AssayPublishService
 {
     private static AssayPublishService.Service _serviceImpl;
 
+    public static final String PARTICIPANTID_PROPERTY_NAME = "ParticipantID";
+    public static final String SEQUENCENUM_PROPERTY_NAME = "SequenceNum";
+    public static final String DATE_PROPERTY_NAME = "Date";
+
     public interface Service
     {
         ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, ExpProtocol protocol,

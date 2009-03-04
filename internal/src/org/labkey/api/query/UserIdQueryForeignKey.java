@@ -32,6 +32,7 @@ public class UserIdQueryForeignKey extends LookupForeignKey
 {
     private User _user;
     private Container _container;
+    private UserSchema _coreSchema;
 
     public UserIdQueryForeignKey(User user, Container container)
     {
@@ -42,8 +43,11 @@ public class UserIdQueryForeignKey extends LookupForeignKey
 
     public TableInfo getLookupTableInfo()
     {
-        UserSchema coreSchema = QueryService.get().getUserSchema(_user, _container, "core");
-        return coreSchema.getTable("users", null);
+        if (_coreSchema == null)
+        {
+            _coreSchema = QueryService.get().getUserSchema(_user, _container, "core");
+        }
+        return _coreSchema.getTable("users", null);
     }
 
 }

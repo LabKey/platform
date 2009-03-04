@@ -105,6 +105,12 @@ public class RunDataTable extends FilteredTable
                 visibleColumns.add(FieldKey.fromParts("Run", AssayService.RUN_PROPERTIES_COLUMN_NAME, prop.getName()));
         }
 
+        for (DomainProperty prop : provider.getBatchDomain(protocol).getProperties())
+        {
+            if (!prop.isHidden())
+                visibleColumns.add(FieldKey.fromParts("Run", "Batch", AssayService.BATCH_PROPERTIES_COLUMN_NAME, prop.getName()));
+        }
+
         Set<String> studyColumnNames = ((AbstractAssayProvider)provider).addCopiedToStudyColumns(this, protocol, schema.getUser(), "objectId", false);
         for (String columnName : studyColumnNames)
         {

@@ -290,7 +290,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     {
         if (step == null)
         {
-            _uploadStep = UploadWizardAction.UploadSetStepHandler.NAME;
+            _uploadStep = UploadWizardAction.BatchStepHandler.NAME;
         }
         else
         {
@@ -318,7 +318,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         _ignoreWarnings = ignoreWarnings;
     }
 
-    public String getUploadSetPropertyValue(PropertyDescriptor key, String value)
+    public String getBatchPropertyValue(PropertyDescriptor key, String value)
     {
         if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(key.getName()))
         {

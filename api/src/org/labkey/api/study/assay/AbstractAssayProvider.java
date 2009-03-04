@@ -111,20 +111,114 @@ public abstract class AbstractAssayProvider implements AssayProvider
         studyPd.setDescription(runColumn.getDescription());
     }
 
-    protected void addStandardRunPublishProperties(User user, Container study, Collection<PropertyDescriptor> types, Map<String, Object> dataMap, ExpRun run)
+    protected void addStandardRunPublishProperties(User user, Container study, Collection<PropertyDescriptor> types, Map<String, Object> dataMap, ExpRun run,
+                                                   CopyToStudyContext context) throws SQLException
     {
         UserSchema schema = AssayService.get().createSchema(user, run.getContainer());
         TableInfo runTable = schema.getTable(AssayService.get().getRunsTableName(run.getProtocol()), null);
 
-        PropertyDescriptor pd = addProperty(study, "Run Name", run.getName(), dataMap, types);
+        PropertyDescriptor pd = addProperty(study, "RunName", run.getName(), dataMap, types);
         setStandardPropertyAttributes(runTable, "Name", pd);
-        pd = addProperty(study, "Run Comments", run.getComments(), dataMap, types);
+        pd = addProperty(study, "RunComments", run.getComments(), dataMap, types);
         setStandardPropertyAttributes(runTable, "Comments", pd);
-        pd = addProperty(study, "Run CreatedOn", run.getCreated(), dataMap, types);
+        pd = addProperty(study, "RunCreatedOn", run.getCreated(), dataMap, types);
         setStandardPropertyAttributes(runTable, "Created", pd);
         User createdBy = run.getCreatedBy();
-        pd = addProperty(study, "Run CreatedBy", createdBy == null ? null : createdBy.getDisplayName(HttpView.currentContext()), dataMap, types);
+        pd = addProperty(study, "RunCreatedBy", createdBy == null ? null : createdBy.getDisplayName(HttpView.currentContext()), dataMap, types);
         setStandardPropertyAttributes(runTable, "CreatedBy", pd);
+
+        Map<String, Object> runProperties = context.getProperties(run);
+        for (PropertyDescriptor runPD : context.getRunPDs())
+        {
+            if (!TARGET_STUDY_PROPERTY_NAME.equals(runPD.getName()) &&
+                    !PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equals(runPD.getName()))
+            {
+                PropertyDescriptor publishPd = runPD.clone();
+                publishPd.setName("Run" + runPD.getName());
+                addProperty(publishPd, runProperties.get(runPD.getPropertyURI()), dataMap, types);
+            }
+        }
+
+        Map<String, Object> batchProperties = context.getProperties(context.getBatch(run));
+        for (PropertyDescriptor batchPD : context.getBatchPDs())
+        {
+            if (!TARGET_STUDY_PROPERTY_NAME.equals(batchPD.getName()) &&
+                    !PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equals(batchPD.getName()))
+            {
+                PropertyDescriptor publishPd = batchPD.clone();
+                publishPd.setName("Batch" + batchPD.getName());
+                addProperty(publishPd, batchProperties.get(batchPD.getPropertyURI()), dataMap, types);
+            }
+        }
+
+
+        
+    }
+
+    protected class CopyToStudyContext
+    {
+        private Map<ExpRun, ExpExperiment> _batches = new HashMap<ExpRun, ExpExperiment>();
+        private Map<ExpRun, Map<String, Object>> _runPropertyCache = new HashMap<ExpRun, Map<String, Object>>();
+        private Map<ExpExperiment, Map<String, Object>> _batchPropertyCache = new HashMap<ExpExperiment, Map<String, Object>>();
+        private List<PropertyDescriptor> _runPDs;
+        private List<PropertyDescriptor> _batchPDs;
+
+        public CopyToStudyContext(ExpProtocol protocol, PropertyDescriptor... extraRunPDs)
+        {
+            _runPDs = new ArrayList<PropertyDescriptor>(Arrays.asList(getPropertyDescriptors(getRunDomain(protocol))));
+            _runPDs.addAll(Arrays.asList(extraRunPDs));
+            _batchPDs = new ArrayList<PropertyDescriptor>(Arrays.asList(getPropertyDescriptors(getBatchDomain(protocol))));
+        }
+
+        public List<PropertyDescriptor> getRunPDs()
+        {
+            return _runPDs;
+        }
+
+        public List<PropertyDescriptor> getBatchPDs()
+        {
+            return _batchPDs;
+        }
+
+        public ExpExperiment getBatch(ExpRun run)
+        {
+            ExpExperiment result = null;
+            if (!_batches.containsKey(run))
+            {
+                result = AssayService.get().findBatch(run);
+                _batches.put(run, result);
+            }
+            else
+            {
+                result = _batches.get(run);
+            }
+            return result;
+        }
+
+        private <Type extends ExpObject> Map<String, Object> getProperties(Type object, Map<Type, Map<String, Object>> cache) throws SQLException
+        {
+            if (object == null)
+            {
+                return Collections.emptyMap();
+            }
+            Map<String, Object> result = cache.get(object);
+            if (result == null)
+            {
+                result = OntologyManager.getProperties(object.getContainer(), object.getLSID());
+                cache.put(object, result);
+            }
+            return result;
+        }
+
+        public Map<String, Object> getProperties(ExpExperiment batch) throws SQLException
+        {
+            return getProperties(batch, _batchPropertyCache);
+        }
+
+        public Map<String, Object> getProperties(ExpRun run) throws SQLException
+        {
+            return getProperties(run, _runPropertyCache);
+        }
     }
 
     protected void registerLsidHandler()
@@ -247,9 +341,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
         Domain runDomain = getRunDomain(protocol);
         if (runDomain != null)
             Collections.addAll(cols, getPropertyDescriptors(runDomain));
-        Domain batchDomain = getBatchDomain(protocol);
-        if (batchDomain != null)
-            Collections.addAll(cols, getPropertyDescriptors(batchDomain));
         return cols;
     }
 
@@ -570,8 +661,19 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 scope.beginTransaction();
 
             savePropertyObject(run.getLSID(), runProperties, context.getContainer());
-            savePropertyObject(run.getLSID(), batchProperties, context.getContainer());
 
+            // Save the batch first
+            if (batch == null)
+            {
+                // Make sure that we have a batch to associate with this run
+                batch = AssayService.get().createStandardBatch(run.getContainer(), null, context.getProtocol());
+                batch.save(context.getUser());
+                savePropertyObject(batch.getLSID(), batchProperties, context.getContainer());
+            }
+            run.save(context.getUser());
+            // Add the run to the batch so that we can find it when we're loading the data files
+            batch.addRuns(context.getUser(), run);
+            
             run = ExperimentService.get().insertSimpleExperimentRun(run,
                 inputMaterials,
                 inputDatas,
@@ -580,14 +682,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 new ViewBackgroundInfo(context.getContainer(),
                         context.getUser(), context.getActionURL()), LOG, true);
 
-            if (batch == null)
-            {
-                // Make sure that we have a batch to associate with this run
-                batch = AssayService.get().createStandardBatch(run.getContainer(), null, context.getProtocol());
-                batch.save(context.getUser());
-                savePropertyObject(batch.getLSID(), batchProperties, context.getContainer());
-            }
-            batch.addRuns(context.getUser(), run);
             validate(context, run);
 
             if (transactionOwner)
@@ -666,28 +760,36 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return ExperimentService.get().insertSimpleProtocol(protocol, user);
     }
 
-    protected DomainProperty getRunTargetStudyColumn(ExpProtocol protocol)
+    public Container getAssociatedStudyContainer(ExpProtocol protocol, Object dataId)
     {
-        Domain batchDomain = getBatchDomain(protocol);
-        DomainProperty[] domainColumns = batchDomain.getProperties();
-        for (DomainProperty pd : domainColumns)
-        {
-            if (TARGET_STUDY_PROPERTY_NAME.equals(pd.getName()))
-                return pd;
-        }
+        boolean onRunObject = false;
+        DomainProperty targetStudyColumn = null;
         Domain runDomain = getRunDomain(protocol);
         DomainProperty[] runColumns = runDomain.getProperties();
         for (DomainProperty pd : runColumns)
         {
             if (TARGET_STUDY_PROPERTY_NAME.equals(pd.getName()))
-                return pd;
+            {
+                targetStudyColumn = pd;
+                onRunObject = true;
+                break;
+            }
         }
-        return null;
-    }
 
-    public Container getAssociatedStudyContainer(ExpProtocol protocol, Object dataId)
-    {
-        DomainProperty targetStudyColumn = getRunTargetStudyColumn(protocol);
+        if (targetStudyColumn == null)
+        {
+            Domain batchDomain = getBatchDomain(protocol);
+            DomainProperty[] domainColumns = batchDomain.getProperties();
+            for (DomainProperty pd : domainColumns)
+            {
+                if (TARGET_STUDY_PROPERTY_NAME.equals(pd.getName()))
+                {
+                    targetStudyColumn = pd;
+                    break;
+                }
+            }
+        }
+
         if (targetStudyColumn == null)
             return null;
         ExpData data = getDataForDataRow(dataId);
@@ -696,24 +798,39 @@ public abstract class AbstractAssayProvider implements AssayProvider
         ExpRun run = data.getRun();
         if (run == null)
             return null;
-        Map<String, Object> runProperties;
-        try
+
+        ExpObject source = null;
+        if (onRunObject)
         {
-            runProperties = getRunProperties(run);
+            source = run;
         }
-        catch (SQLException e)
+        else
         {
-            throw new RuntimeSQLException(e);
+            source = AssayService.get().findBatch(run);
         }
-        String targetStudyId = (String) runProperties.get(targetStudyColumn.getPropertyURI());
-        if (targetStudyId != null)
-            return ContainerManager.getForId(targetStudyId);
+
+        if (source != null)
+        {
+            Map<String, Object> properties;
+            try
+            {
+                properties = getProperties(source);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+            String targetStudyId = (String) properties.get(targetStudyColumn.getPropertyURI());
+
+            if (targetStudyId != null)
+                return ContainerManager.getForId(targetStudyId);
+        }
         return null;
     }
 
-    protected Map<String, Object> getRunProperties(ExpRun run) throws SQLException
+    protected Map<String, Object> getProperties(ExpObject object) throws SQLException
     {
-        return OntologyManager.getProperties(run.getContainer(), run.getLSID());
+        return OntologyManager.getProperties(object.getContainer(), object.getLSID());
     }
 
     public abstract ExpData getDataForDataRow(Object dataRowId);
