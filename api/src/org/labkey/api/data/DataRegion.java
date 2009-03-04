@@ -96,6 +96,9 @@ public class DataRegion extends DisplayElement
 
     public void addDisplayColumn(DisplayColumn col)
     {
+        assert  null != col;
+        if (null == col)
+            return;
         _displayColumns.add(col);
         if (null != _inputPrefix)
             col.setInputPrefix(_inputPrefix);
@@ -103,6 +106,9 @@ public class DataRegion extends DisplayElement
 
     public void addDisplayColumn(int index, DisplayColumn col)
     {
+        assert  null != col;
+        if (null == col)
+            return;
         _displayColumns.add(index, col);
         if (null != _inputPrefix)
             col.setInputPrefix(_inputPrefix);

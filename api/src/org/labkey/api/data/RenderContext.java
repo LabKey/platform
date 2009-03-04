@@ -173,6 +173,9 @@ public class RenderContext extends BoundMap // extends ViewContext
         {
             for (DisplayColumn displayColumn : displayColumns)
             {
+                assert null != displayColumn;
+                if (null == displayColumn)
+                    continue;
                 displayColumn.addQueryColumns(ret);
             }
 
