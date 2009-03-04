@@ -269,8 +269,11 @@ public class LoginController extends SpringActionController
 
                 if (form.isRemember())
                 {
-                    // Write cookies to save email
-                    Cookie emailCookie = new Cookie("email", form.getEmail());
+                    // Write cookies to save email.
+                    // Starting in LabKey 9.1, the cookie value is URL encoded to allow for special characters like @.  See #6736.
+                    String unencodedValue = form.getEmail();
+                    String encodedValue = PageFlowUtil.encode(unencodedValue);
+                    Cookie emailCookie = new Cookie("email", encodedValue);
                     emailCookie.setMaxAge(secondsPerYear);
                     emailCookie.setPath(path);
                     response.addCookie(emailCookie);
@@ -377,14 +380,8 @@ public class LoginController extends SpringActionController
 
         if (null == email)
         {
-            Cookie[] cookies = request.getCookies();
-
-            if (null != cookies)
-            {
-                email = PageFlowUtil.getCookieValue(cookies, "email", null);
-                if (null != email)
-                    form.setEmail(email);
-            }
+            email = getEmailFromCookie(request);
+            form.setEmail(email);
         }
 
         if (null != email)
@@ -413,6 +410,25 @@ public class LoginController extends SpringActionController
         page.setTitle("Sign In");
 
         return view;
+    }
+
+
+    @Nullable
+    private String getEmailFromCookie(HttpServletRequest request)
+    {
+        String email = null;
+        Cookie[] cookies = request.getCookies();
+
+        if (null != cookies)
+        {
+            // Starting in LabKey 9.1, the cookie value is URL encoded to allow for special characters like @.  See #6736.
+            String encodedEmail = PageFlowUtil.getCookieValue(cookies, "email", null);
+
+            if (null != encodedEmail)
+                email = PageFlowUtil.decode(encodedEmail);
+        }
+
+        return email;
     }
 
 
@@ -959,12 +975,9 @@ public class LoginController extends SpringActionController
 
             JspView view = new JspView<LoginForm>("/org/labkey/core/login/resetPassword.jsp", form, errors);
 
-            if (form.getEmail() == null)
+            if (null == form.getEmail())
             {
-                Cookie[] cookies = getViewContext().getRequest().getCookies();
-
-                if (null != cookies)
-                    form.setEmail(PageFlowUtil.getCookieValue(cookies, "email", ""));
+                form.setEmail(getEmailFromCookie(getViewContext().getRequest()));
             }
 
             return view;

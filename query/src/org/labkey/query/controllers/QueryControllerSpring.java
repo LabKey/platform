@@ -346,8 +346,6 @@ public class QueryControllerSpring extends SpringActionController
                 Logger.getLogger(QueryControllerSpring.class).error("Error", e);
             }
 
-            setHelpTopic(new HelpTopic("customSQL", HelpTopic.Area.SERVER));
-            
             return new JspView<SourceForm>(QueryControllerSpring.class, "sourceQuery.jsp", form, errors);
         }
 
@@ -395,6 +393,8 @@ public class QueryControllerSpring extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic(new HelpTopic("customSQL", HelpTopic.Area.SERVER));
+
             (new QueryControllerSpring.SchemaAction(_form)).appendNavTrail(root)
                     .addChild("Edit " + _form.getQueryName(), _form.urlFor(QueryAction.sourceQuery));
             return root;
