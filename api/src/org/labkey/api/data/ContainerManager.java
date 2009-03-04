@@ -1291,7 +1291,7 @@ public class ContainerManager
     private static final List<ContainerListener> _listeners = new CopyOnWriteArrayList<ContainerListener>();
     private static final List<ContainerListener> _laterListeners = new CopyOnWriteArrayList<ContainerListener>();
 
-    // These listeners are executed in the order they are registered
+    // These listeners are executed in the order they are registered, before the "Last" listeners
     public static void addContainerListener(ContainerListener listener)
     {
         addContainerListener(listener, ContainerListener.Order.First);

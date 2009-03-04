@@ -188,7 +188,7 @@ LABKEY.requiresClientAPI = function(immediate)
         LABKEY.requiresScript("clientapi/GridView.js");
         LABKEY.requiresScript("clientapi/NavTrail.js");
         LABKEY.requiresScript("clientapi/Query.js");
-        LABKEY.requiresScript("clientapi/ExtendedJsonReader.js")
+        LABKEY.requiresScript("clientapi/ExtendedJsonReader.js");
         LABKEY.requiresScript("clientapi/Store.js");
         LABKEY.requiresScript("clientapi/Utils.js");
         LABKEY.requiresScript("clientapi/WebPart.js");
