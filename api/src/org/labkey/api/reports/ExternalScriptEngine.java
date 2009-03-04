@@ -16,6 +16,8 @@
 package org.labkey.api.reports;
 
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.reports.report.r.ParamReplacementSvc;
 
 import javax.script.*;
 import java.io.*;
@@ -37,6 +39,9 @@ public class ExternalScriptEngine extends AbstractScriptEngine
      * the working directory is the folder where files used to run a single instance of a script will appear.
      */
     public static final String WORKING_DIRECTORY = "external.script.engine.workingDirectory";
+    public static final String PARAM_REPLACEMENT_MAP = "external.script.engine.replacementMap";
+    public static final String PARAM_SCRIPT = "scriptFile";
+    public static final String SCRIPT_PATH = "scriptPath";
 
     public static final String DEFAULT_WORKING_DIRECTORY = "ExternalScript";
     private static final Pattern scriptCmdPattern = Pattern.compile("'([^']+)'|\\\"([^\\\"]+)\\\"|(^[^\\s]+)|(\\s[^\\s^'^\\\"]+)");
@@ -55,6 +60,17 @@ public class ExternalScriptEngine extends AbstractScriptEngine
         return new ExternalScriptEngineFactory(_def);
     }
 
+    private boolean isBinary(File file)
+    {
+        String ext = FileUtil.getExtension(file);
+
+        if ("jar".equalsIgnoreCase(ext)) return true;
+        if ("class".equalsIgnoreCase(ext)) return true;
+        if ("exe".equalsIgnoreCase(ext)) return true;
+
+        return false;
+    }
+
     public Object eval(String script, ScriptContext context) throws ScriptException
     {
         Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
@@ -63,20 +79,46 @@ public class ExternalScriptEngine extends AbstractScriptEngine
         if (!extensions.isEmpty())
         {
             // write out the script file to disk using the first extension as the default
-            File scriptFile = new File(getWorkingDir(context), "script." + extensions.get(0));
+            File scriptFile;
+            boolean isBinaryScript = false;
 
-            try
+            if (bindings.containsKey(ExternalScriptEngine.SCRIPT_PATH))
             {
-                PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(scriptFile)));
-                pw.write(script);
-                pw.close();
+                File path = new File((String)bindings.get(ExternalScriptEngine.SCRIPT_PATH));
+                isBinaryScript = isBinary(path);
+
+                // if the script is a binary file, no parameter replacement can be performed on the script, so we
+                // just execute it in place instead of moving to the temp folder
+                if (isBinaryScript)
+                    scriptFile = path;
+                else
+                    scriptFile = new File(getWorkingDir(context), path.getName());
             }
-            catch(IOException e)
+            else
+                scriptFile = new File(getWorkingDir(context), "script." + extensions.get(0));
+
+            try {
+                if (!isBinaryScript)
+                {
+                    // process any replacements specified in the script context
+                    if (bindings.containsKey(PARAM_REPLACEMENT_MAP))
+                    {
+                        for (Map.Entry<String, String> param : ((Map<String, String>)bindings.get(PARAM_REPLACEMENT_MAP)).entrySet())
+                        {
+                            script = ParamReplacementSvc.get().processInputReplacement(script, param.getKey(), param.getValue());
+                        }
+                    }
+                    PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(scriptFile)));
+                    pw.write(script);
+                    pw.close();
+                }
+            }
+            catch(Exception e)
             {
                 ExceptionUtil.logExceptionToMothership(null, e);
             }
 
-            String[] params = formatCommand(scriptFile);
+            String[] params = formatCommand(scriptFile, context);
             ProcessBuilder pb = new ProcessBuilder(params);
             pb = pb.directory(getWorkingDir(context));
 
@@ -152,7 +194,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine
      * @param scriptFile
      * @return an array of command parameters
      */
-    protected String[] formatCommand(File scriptFile)
+    protected String[] formatCommand(File scriptFile, ScriptContext context) throws ScriptException
     {
         List<String> params = new ArrayList<String>();
         String exe = _def.getExePath();
@@ -162,33 +204,60 @@ public class ExternalScriptEngine extends AbstractScriptEngine
 
         String scriptFilePath = scriptFile.getAbsolutePath();
 
-        // see if the command contains parameter substitutions
-        if (cmd != null)
-        {
-            int idx = cmd.indexOf('%');
-            if (idx != -1)
-                cmd = String.format(cmd, scriptFilePath);
-
-            Matcher m = scriptCmdPattern.matcher(cmd);
-            while (m.find())
+        try {
+            // see if the command contains parameter substitutions
+            if (cmd != null)
             {
-                String value = m.group().trim();
-                if (value.startsWith("'"))
-                    value = m.group(1).trim();
-                else if (value.startsWith("\""))
-                    value = m.group(2).trim();
+                int idx = cmd.indexOf('%');
+                if (idx != -1)
+                    cmd = String.format(cmd, scriptFilePath);
 
-                params.add(value);
+                // process any replacements specified in the script context
+                Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
+                if (bindings.containsKey(PARAM_REPLACEMENT_MAP))
+                {
+                    for (Map.Entry<String, String> param : ((Map<String, String>)bindings.get(PARAM_REPLACEMENT_MAP)).entrySet())
+                    {
+                        cmd = ParamReplacementSvc.get().processInputReplacement(cmd, param.getKey(), param.getValue());
+                    }
+                }
+
+                // process the script file replacement
+                boolean specifiedScript = false;
+                if (cmd.indexOf(PARAM_SCRIPT) != -1)
+                {
+                    specifiedScript = true;
+                    cmd = ParamReplacementSvc.get().processInputReplacement(cmd, PARAM_SCRIPT, scriptFilePath.replaceAll("\\\\", "/"));
+                }
+
+                // finally clean up the script
+                cmd = ParamReplacementSvc.get().clearUnusedReplacements(cmd);
+
+                Matcher m = scriptCmdPattern.matcher(cmd);
+                while (m.find())
+                {
+                    String value = m.group().trim();
+                    if (value.startsWith("'"))
+                        value = m.group(1).trim();
+                    else if (value.startsWith("\""))
+                        value = m.group(2).trim();
+
+                    params.add(value);
+                }
+
+                // append the script file, if it wasn't part of the command
+                if (!specifiedScript)
+                    params.add(scriptFilePath);
             }
-
-            // append the script file, if it wasn't part of the command
-            if (idx == -1)
+            else
                 params.add(scriptFilePath);
-        }
-        else
-            params.add(scriptFilePath);
 
-        return params.toArray(new String[params.size()]);
+            return params.toArray(new String[params.size()]);
+        }
+        catch (Exception e)
+        {
+            throw new ScriptException(e);
+        }
     }
 
     /**

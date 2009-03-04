@@ -39,7 +39,8 @@ public class ParamReplacementSvc
     private static Map<String, String> _outputSubstitutions = new HashMap<String, String>();
 
     // the default param replacement pattern : ${}
-    public static Pattern defaultScriptPattern = Pattern.compile("\\$\\{(.*?)\\}");
+    public static final String REPLACEMENT_PARAM = "\\$\\{(.*?)\\}";
+    public static Pattern defaultScriptPattern = Pattern.compile(REPLACEMENT_PARAM);
 
     private ParamReplacementSvc(){}
 
@@ -147,9 +148,9 @@ public class ParamReplacementSvc
     /**
      * Replaces an input replacement symbol with the full path name of the specified input file.
      */
-    public String processInputReplacement(String script, String replacementParam, File inputFile) throws Exception
+    public String processInputReplacement(String script, String replacementParam, String value) throws Exception
     {
-        return processInputReplacement(script, replacementParam, inputFile, defaultScriptPattern);
+        return processInputReplacement(script, replacementParam, value, defaultScriptPattern);
     }
 
     /**
@@ -157,25 +158,32 @@ public class ParamReplacementSvc
      *
      * @param pattern - the regular expression pattern for the replacements
      */
-    public String processInputReplacement(String script, String replacementParam, File inputFile, Pattern pattern) throws Exception
+    public String processInputReplacement(String script, String replacementParam, String replacementValue, Pattern pattern) throws Exception
     {
         Matcher m = pattern.matcher(script);
-        String inputFileName = inputFile.getAbsolutePath();
-        inputFileName = inputFileName.replaceAll("\\\\", "/");
+        StringBuffer sb = new StringBuffer();
 
         while (m.find())
         {
             String value = m.group(1);
-
             if (replacementParam.equals(value))
             {
-                script = m.replaceFirst(inputFileName);
-                m = pattern.matcher(script);
+                m.appendReplacement(sb, replacementValue);
             }
         }
-        return script;
+        m.appendTail(sb);
+        return sb.toString();
     }
 
+    /**
+     * Removes any replacement param sequences '${}' from the specified String, this is useful when a replacement
+     * parameter is conditional and you need to remove any unprocessed sequences before the command is executed
+     */
+    public String clearUnusedReplacements(String script) throws Exception
+    {
+        return script.replaceAll(REPLACEMENT_PARAM, "");
+    }
+            
     /**
      * Finds and processes all replacement parameters for a given script block. The
      * returned string will have all valid replacement references converted.

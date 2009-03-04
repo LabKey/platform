@@ -32,7 +32,9 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 /*
  * User: Karl Lum
  * Date: Jul 8, 2008
@@ -41,6 +43,18 @@ import java.util.List;
 
 public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
 {
+    private static final Map<String, Class> propertyClassMap = new HashMap<String, Class>();
+
+    static {
+
+        propertyClassMap.put(boolean.class.getName(), Boolean.class);
+        propertyClassMap.put(int.class.getName(), Integer.class);
+        propertyClassMap.put(short.class.getName(), Integer.class);
+        propertyClassMap.put(long.class.getName(), Double.class);
+        propertyClassMap.put(double.class.getName(), Double.class);
+        propertyClassMap.put(float.class.getName(), Float.class);
+    }
+
     public String getDescription()
     {
         return null;
@@ -120,7 +134,12 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
         prop.setLabel(column.getCaption());
         prop.setName(column.getName());
 
-        PropertyType type = PropertyType.getFromClass(column.getJavaClass());
+        Class clz = column.getJavaClass();
+        // need to map primitives to object class equivalents
+        if (propertyClassMap.containsKey(clz.getName()))
+            clz = propertyClassMap.get(clz.getName());
+
+        PropertyType type = PropertyType.getFromClass(clz);
         prop.setType(PropertyService.get().getType(domain.getContainer(), type.getXmlName()));
         prop.setDescription(column.getDescription());
         prop.setFormat(column.getFormatString());

@@ -21,6 +21,7 @@ import junit.framework.TestSuite;
 import jxl.Cell;
 import jxl.Sheet;
 import jxl.Workbook;
+import jxl.WorkbookSettings;
 import jxl.read.biff.BiffException;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
@@ -52,10 +53,18 @@ public class ExcelLoader extends DataLoader
 
     public ExcelLoader(File file, boolean hasColumnHeaders) throws IOException
     {
+        this(file, null, hasColumnHeaders);
+    }
+
+    public ExcelLoader(File file, WorkbookSettings ws, boolean hasColumnHeaders) throws IOException
+    {
         setSource(file);
         try
         {
-            workbook = Workbook.getWorkbook(file);
+            if (ws != null)
+                workbook = Workbook.getWorkbook(file, ws);
+            else
+                workbook = Workbook.getWorkbook(file);
         }
         catch (BiffException e)
         {

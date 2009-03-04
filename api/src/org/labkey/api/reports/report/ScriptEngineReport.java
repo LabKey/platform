@@ -375,7 +375,7 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
 
     protected String processInputReplacement(String script, File inputFile) throws Exception
     {
-        return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, inputFile);
+        return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, inputFile.getAbsolutePath().replaceAll("\\\\", "/"));
     }
 
     protected String processOutputReplacements(String script, List<ParamReplacement> replacements) throws Exception

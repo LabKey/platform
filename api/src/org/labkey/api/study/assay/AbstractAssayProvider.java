@@ -1437,10 +1437,15 @@ public abstract class AbstractAssayProvider implements AssayProvider
                         {
                             Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
                             String script = sb.toString();
+                            File runInfo = dataHandler.createValidationRunInfo(context, run, scriptDir);
 
                             bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, scriptDir.getAbsolutePath());
-                            File runInfo = dataHandler.createValidationRunInfo(context, run, scriptDir);
-                            script = ParamReplacementSvc.get().processInputReplacement(script, "runInfo", runInfo);
+                            bindings.put(ExternalScriptEngine.SCRIPT_PATH, scriptFile.getAbsolutePath());
+
+                            Map<String, String> paramMap = new HashMap<String, String>();
+
+                            paramMap.put("runInfo", runInfo.getAbsolutePath().replaceAll("\\\\", "/"));
+                            bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
 
                             Object output = engine.eval(script);
 
