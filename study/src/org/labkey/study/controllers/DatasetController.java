@@ -443,8 +443,9 @@ public class DatasetController extends BaseStudyController
             Boolean isDateBased = getStudy().isDateBased();
             props.put("dateBased", isDateBased.toString());
 
+            // Cancel should delete the dataset
             ActionURL cancelURL = new ActionURL(
-                StudyController.DatasetDetailsAction.class, getContainer()).addParameter("id", form.getDatasetId());
+                StudyController.DeleteDatasetAction.class, getContainer()).addParameter("id", form.getDatasetId());
             props.put("cancelURL", cancelURL.getLocalURIString());
 
             ActionURL successURL = new ActionURL(

@@ -662,14 +662,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             visitRowId.setUserEditable(false);
             columns.add(visitRowId);
 
-            // If we have an extra key, and it's server-managed, hide it
+            // If we have an extra key, and it's server-managed, make it non-editable
             if (def.isKeyPropertyManaged())
             {
                 for (ColumnInfo col : columns)
                 {
                     if (col.getName().equals(def.getKeyPropertyName()))
                     {
-                        col.setIsHidden(true);
                         col.setUserEditable(false);
                     }
                 }
