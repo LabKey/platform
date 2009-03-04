@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.core.webdav.DavController" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 //FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz", TimeZone.getTimeZone("GMT"), Locale.US);
@@ -181,7 +182,54 @@ if (supportsWebdavScheme) {%><%=PageFlowUtil.generateButton("webdav", href.repla
         }
         %> files in this directory.<%
     }
-%>
-<!--<%=request.getHeader("user-agent")%>-->
+if (resource.canCreate(user))
+{
+    ActionURL dropUrl = (new ActionURL("ftp","drop","/")).addParameter("path",resource.getPath());
+    %>
+    <script type="text/javascript">
+    function form_onSubmit()
+    {
+        try
+        {
+            var el = document.getElementById("folder");
+            if (!el || !el.value)
+                return false;
+            var client = new XMLHttpRequest();
+            client.onreadystatechange = function()
+                {
+                    if (client.readyState == 4)
+                    {
+                        if (200 == client.status || 201 == client.status)   // OK, CREATED
+                            window.location.reload();
+                        else if (405 == client.status) // METHOD_NOT_ALLOWED
+                            window.alert("Cannot create folder: " + el.value);
+                        else
+                            window.alert(client.statusText);
+                    }
+                };
+            var resourcePath = window.location.pathname + el.value;
+            client.open("POST", resourcePath);
+            client.setRequestHeader("method", "MKCOL");
+            client.send(null);
+        }
+        catch (x)
+        {
+            window.alert(x);
+        }
+        return false;
+    }
+    </script>
+    <p /><%
+    // undone: need resource.canCreateFolder
+    boolean canCreateFolder = resource.canCreate(user) && !resource.getPath().contains("/@wiki") && !resource.getPath().contains("/@query");
+    if (canCreateFolder)
+    {%>
+        <form action="" onsubmit="return form_onSubmit();">
+            <input id="folder" name="folder"><input type="submit" value="Create Folder">
+        </form>
+    <%}
+    %><input type="button" onclick="window.open(<%=PageFlowUtil.jsString(dropUrl.getLocalURIString())%>, '_blank', 'height=600,width=1000,resizable=yes');" value="Upload Files"><%
+}
+%><!--<%=request.getHeader("user-agent")%>-->
 </body>
 </html>

@@ -1964,32 +1964,44 @@ public class DavController extends SpringActionController
                 }
             }
 
-            File tmp = null;
-            try
-            {
-                if (dest.getFile().exists())
-                {
-                    tmp = new File(dest.parent().getFile(), "~rename" + GUID.makeHash() + "~" + dest.getName());
-                    markTempFile(tmp);
-                    if (!dest.getFile().renameTo(tmp))
-                        throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR, "Could not remove destination: " + dest.getPath());
-                }
 
-                if (!src.getFile().renameTo(dest.getFile()))
+            // UNDONE: move into Resource method e.g. Resource.rename() and Resource.move()
+            // FILE BASED
+            if (src.getFile() != null || dest.getFile() != null)
+            {
+                File tmp = null;
+                try
+                {
+                    if (dest.getFile().exists())
+                    {
+                        tmp = new File(dest.parent().getFile(), "~rename" + GUID.makeHash() + "~" + dest.getName());
+                        markTempFile(tmp);
+                        if (!dest.getFile().renameTo(tmp))
+                            throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR, "Could not remove destination: " + dest.getPath());
+                    }
+
+                    if (!src.getFile().renameTo(dest.getFile()))
+                    {
+                        if (null != tmp)
+                            tmp.renameTo(dest.getFile());
+                        throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR, "Could not move source:" + src.getPath());
+                    }
+                }
+                finally
                 {
                     if (null != tmp)
-                        tmp.renameTo(dest.getFile());
-                    throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR, "Could not move source:" + src.getPath());
+                    {
+                        tmp.delete();
+                        rmTempFile(tmp);
+                    }
                 }
             }
-            finally
+            // Stream based
+            else
             {
-                if (null != tmp)
-                {
-                    tmp.delete();
-                    rmTempFile(tmp);
-                }
+                dest.copyFrom(getUser(),src);
             }
+
 
             if (rmTempFile(src))
             {
@@ -3751,18 +3763,18 @@ public class DavController extends SpringActionController
         markTempFile(r.getFile());
     }
 
-    private void markTempFile(File f)
+    public static void markTempFile(File f)
     {
         if (null != f)
             _tempFiles.add(f.getPath());
     }
     
-    private boolean rmTempFile(WebdavResolver.Resource r)
+    public static boolean rmTempFile(WebdavResolver.Resource r)
     {
         return rmTempFile(r.getFile());
     }
 
-    private boolean rmTempFile(File f)
+    public static boolean rmTempFile(File f)
     {
         if (null != f)
             return _tempFiles.remove(f.getPath());

@@ -19,9 +19,7 @@ package org.labkey.wiki;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.attachments.Attachment;
-import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.ContainerManager;
@@ -187,8 +185,14 @@ class WikiWebdavProvider implements WebdavService.Provider
         {
             if (!exists())
                 return Collections.emptyList();
-            return Arrays.asList(getDocumentName(_wiki));
+            Set<String> set = new TreeSet<String>();
+            Collection<Attachment> atts = _wiki.getAttachments();
+            if (null != atts) for (Attachment att : atts)
+                set.add(att.getName());
+            set.add(getDocumentName(_wiki));
+            return new ArrayList<String>(set);
         }
+
 
         public WebdavResolver.Resource find(String name)
         {
@@ -197,8 +201,12 @@ class WikiWebdavProvider implements WebdavService.Provider
             {
                 return new WikiPageResource(this, _wiki, docName);
             }
-            return null;
+            else
+            {
+                return new AttachmentResource(this, _wiki, name);
+            }
         }
+
 
         public long getCreation()
         {
@@ -413,6 +421,20 @@ class WikiWebdavProvider implements WebdavService.Provider
                 return AppProps.getInstance().getContextPath() + "/_icons/wiki.png";
             return super.getIconHref();
         }
+
+        @Override
+        public int getPermissions(User user)
+        {
+            // READ-WRITE for now
+            return super.getPermissions(user) & (ACL.PERM_READ|ACL.PERM_UPDATE);
+        }
+
+        @Override
+        public File getFile()
+        {
+            return null;
+        }
+
     }
 
 
@@ -447,14 +469,26 @@ class WikiWebdavProvider implements WebdavService.Provider
             return true;
         }
 
-        public boolean canRename()
+        @Override
+        public boolean canRename(User user)
         {
-            return false; // NYI
+            return false;
         }
 
-        public boolean canDelete()
+        @Override
+        public boolean delete(User user) throws IOException
         {
-            return true;
+            try
+            {
+                AttachmentService.get().delete(user, _parent, _name);
+                return true;
+            }
+            catch (SQLException x)
+            {
+                IOException io = new IOException();
+                io.initCause(x);
+                throw io;
+            }
         }
 
         public InputStream getInputStream(User user) throws IOException
@@ -462,12 +496,46 @@ class WikiWebdavProvider implements WebdavService.Provider
             return AttachmentService.get().getInputStream(_parent, _name);
         }
 
-        //        OutputStream getOutputStream(User user) throws IOException;
+
         public long copyFrom(User user, InputStream in) throws IOException
         {
-            throw new UnsupportedOperationException();
-        }
+            // stream to temp file
+            long length = 0;
+            File tmp = File.createTempFile("attachment",".tmp");
+            tmp.deleteOnExit();
+            try
+            {
+                tmp.createNewFile();
+                FileOutputStream fos = new FileOutputStream(tmp);
+                length = FileUtil.copyData(in, fos);
+                fos.close();
 
+                ArrayList list = new ArrayList();
+                list.add(new FileAttachmentFile(tmp));
+
+                if (exists())
+                    AttachmentService.get().deleteAttachment(_parent, _name);
+                AttachmentService.get().addAttachments(user, _parent, list);
+            }
+            catch (AttachmentService.DuplicateFilenameException x)
+            {
+                IOException io = new IOException();
+                io.initCause(x);
+                throw io;
+            }
+            catch (SQLException x)
+            {
+                IOException io = new IOException();
+                io.initCause(x);
+                throw io;
+            }
+            finally
+            {
+                tmp.delete();
+            }
+            return length;
+        }
+        
         public WebdavResolver.Resource parent()
         {
             return _folder;
@@ -511,13 +579,13 @@ class WikiWebdavProvider implements WebdavService.Provider
 		@Override
         public int getPermissions(User user)
         {
+            // READ-ONLY for now
             return super.getPermissions(user) & ACL.PERM_READ;
         }
 
 		@Override
         public File getFile()
         {
-            assert false;
             return null;
         }
 

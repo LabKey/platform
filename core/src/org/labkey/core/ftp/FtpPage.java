@@ -36,13 +36,21 @@ import org.apache.commons.lang.StringUtils;
 public class FtpPage implements HasViewContext
 {
     ViewContext context = null;
+    boolean useFTP = false;
+
+    // set ONE of these
+    public String path = null;
     public String pipeline = null;
     public String fileSetName = null;
-    boolean useFTP = false;
 
     public FtpPage()
     {
 //        useFTP = null != StringUtils.trimToNull(AppProps.getInstance().getPipelineFTPHost());
+    }
+
+    public void setPath(String path)
+    {
+        this.path = path;
     }
 
     public void setFileSetName(String fileSetName)
@@ -102,6 +110,10 @@ public class FtpPage implements HasViewContext
 
     public String getPath()
     {
+        if (path != null)
+            return path;
+
+        // compute path from current container and pipeline relative path or filesetName
         Container c = getViewContext().getContainer();
         StringBuilder path = new StringBuilder(100);
         path.append(c.getEncodedPath());
@@ -129,7 +141,7 @@ public class FtpPage implements HasViewContext
 
     private String _getHostPath()
     {
-        StringBuilder path = new StringBuilder(100);
+        StringBuilder path = new StringBuilder(200);
         path.append(getHost());
         if (getPort().length() != 0)
             path.append(":").append(getPort());

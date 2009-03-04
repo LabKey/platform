@@ -64,11 +64,7 @@ LABKEY.writeApplet({
     params:{
         <%-- TODO switch applet to use URL which encodes more info --%>
         url:<%=PageFlowUtil.jsString(dropPage.getURL())%>,                                     
-          scheme:<%=PageFlowUtil.jsString(dropPage.getScheme())%>,
-          host:<%=PageFlowUtil.jsString(dropPage.getHost())%>,
-          port:<%=PageFlowUtil.jsString(dropPage.getPort())%>,
-          path:<%=PageFlowUtil.jsString(dropPage.getPath())%>,
-          webdavPrefix:<%=PageFlowUtil.jsString(contextPath + "/" + WebdavService.getServletPath())%>,
+        webdavPrefix:<%=PageFlowUtil.jsString(contextPath + "/" + WebdavService.getServletPath())%>,
         user:<%=PageFlowUtil.jsString(context.getUser().getEmail())%>,
         password:<%=PageFlowUtil.jsString(sessionId)%>,
         updateEvent:"dropApplet_Update",
