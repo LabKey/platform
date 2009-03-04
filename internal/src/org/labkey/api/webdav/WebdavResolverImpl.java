@@ -93,10 +93,12 @@ public class WebdavResolverImpl implements WebdavResolver
     }
 
 
-    Resource _root = new WebFolderResource(ContainerManager.getRoot(), null);
+    WebFolderResource _root = null;
 
-    Resource getRoot()
+    synchronized Resource getRoot()
     {
+        if (null == _root)
+            _root = new WebFolderResource(ContainerManager.getRoot(), null);
         return _root;
     }
 
@@ -188,6 +190,13 @@ public class WebdavResolverImpl implements WebdavResolver
             remove(path);
             if (recursive)
                 removeUsingPrefix(c(path,""));
+            if (path.equals("/"))
+            {
+                synchronized (WebdavResolverImpl.this)
+                {
+                    _root = null;
+                }
+            }
         }
     }
 

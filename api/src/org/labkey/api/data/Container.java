@@ -24,6 +24,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.*;
 
 import java.io.Serializable;
@@ -140,8 +141,9 @@ public class Container implements Serializable, Comparable<Container>
      */
     public String getEncodedPath()
     {
-        String path = _path.startsWith("/") ? _path.substring(1) : _path;
-        String[] parts = path.split("/");
+        if (_path.equals("/"))
+            return "/";
+        ArrayList<String> parts = FileUtil.normalizeSplit(_path);
         StringBuffer encoded = new StringBuffer(_path.length() + 10);
         encoded.append("/");
         for (String part : parts)
