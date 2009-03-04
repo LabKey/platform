@@ -38,7 +38,7 @@
     </script>
 </head>
 
-<body <%= null != pageConfig.getFocus() ? " onload=\"document." + pageConfig.getFocus() + ".focus();\"" : "" %>>
+<body<%= null != pageConfig.getFocus() ? " onload=\"document." + pageConfig.getFocus() + ".focus();\"" : "" %>>
     <table class="labkey-main"><%
 
     if (pageConfig.showHeader() != PageConfig.TrueFalse.False)
