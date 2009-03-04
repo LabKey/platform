@@ -53,18 +53,12 @@ public class ExcelLoader extends DataLoader
 
     public ExcelLoader(File file, boolean hasColumnHeaders) throws IOException
     {
-        this(file, null, hasColumnHeaders);
-    }
-
-    public ExcelLoader(File file, WorkbookSettings ws, boolean hasColumnHeaders) throws IOException
-    {
         setSource(file);
         try
         {
-            if (ws != null)
-                workbook = Workbook.getWorkbook(file, ws);
-            else
-                workbook = Workbook.getWorkbook(file);
+            WorkbookSettings ws = new WorkbookSettings();
+            ws.setGCDisabled(true);
+            workbook = Workbook.getWorkbook(file, ws);
         }
         catch (BiffException e)
         {
