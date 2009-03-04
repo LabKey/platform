@@ -27,6 +27,9 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.*" %>
 <%@ page import="org.labkey.api.view.PopupAdminView" %>
+<%@ page import="org.labkey.api.data.CoreSchema" %>
+<%@ page import="org.labkey.api.data.DbScope" %>
+<%@ page import="org.labkey.api.util.VersionNumber" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     TemplateHeaderView.TemplateHeaderBean bean = ((TemplateHeaderView) HttpView.currentView()).getModelBean();
@@ -95,6 +98,23 @@
         [<a target="_blank" href="https://www.labkey.org/wiki/home/Documentation/page.view?name=firebug">instructions</a>]
         </td>
     </tr>
+<%
+    //FIX: 7502
+    //show a warning for postgres versions < 8.3 that we no longer support this
+    DbScope coreScope = CoreSchema.getInstance().getSchema().getScope();
+    if(getViewContext().getUser().isAdministrator() && "PostgreSQL".equalsIgnoreCase(coreScope.getDatabaseProductName()))
+    {
+        VersionNumber dbVersion = new VersionNumber(coreScope.getDatabaseProductVersion());
+        if(dbVersion.getMajor() <= 8 && dbVersion.getMinor() < 3)
+        {
+            %>
+                <tr><td>&nbsp;</td>
+                    <td class="labkey-error" style="padding: 2px">Support for PostgreSQL Version 8.2 and earlier has been deprecated. Please upgrade to version 8.3 or later.</td>
+                </tr>
+            <%
+        }
+    }
+%>
 </table>
 <script type="text/javascript">
     if(window.console && window.console.firebug)
