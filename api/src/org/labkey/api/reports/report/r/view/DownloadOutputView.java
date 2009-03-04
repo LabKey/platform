@@ -16,7 +16,6 @@
 
 package org.labkey.api.reports.report.r.view;
 
-import org.apache.struts.upload.FormFile;
 import org.labkey.api.attachments.*;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.r.ParamReplacement;
@@ -24,7 +23,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 
-import java.io.*;
+import java.io.PrintWriter;
 import java.util.Collections;
 
 /**
