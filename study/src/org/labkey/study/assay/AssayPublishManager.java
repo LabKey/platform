@@ -225,6 +225,14 @@ public class AssayPublishManager implements AssayPublishService.Service
                     errors.add("The destination dataset belongs to a different assay protocol");
                     return null;
                 }
+
+                // Make sure the key property matches,
+                // or the dataset data row won't have a link back to the assay data row
+                if (!keyPropertyName.equals(dataset.getKeyPropertyName()))
+                {
+                    dataset.setKeyPropertyName(keyPropertyName);
+                    StudyManager.getInstance().updateDataSetDefinition(user, dataset);
+                }
             }
 
             List<PropertyDescriptor> types = createTargetPropertyDescriptors(dataset, columns, errors);

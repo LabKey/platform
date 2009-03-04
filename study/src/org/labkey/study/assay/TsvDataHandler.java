@@ -33,11 +33,9 @@ import org.labkey.common.tools.TabLoader;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.List;
-
-import jxl.WorkbookSettings;
 
 /**
  * User: brittp
@@ -95,10 +93,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler
 
             if (inputFile.getName().toLowerCase().endsWith(".xls"))
             {
-                WorkbookSettings settings = new WorkbookSettings();
-                settings.setGCDisabled(true);
-
-                loader = new ExcelLoader(inputFile, settings, true);
+                loader = new ExcelLoader(inputFile, true);
             }
             else
             {

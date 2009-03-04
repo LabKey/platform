@@ -43,7 +43,7 @@
 <script type="text/javascript">
     if (Ext.isIE)
     {
-        window.onload = function() {
+        Ext.onReady(function() {
             var forms = document.getElementsByTagName('form');
 
             for (var i=0;i < forms.length;i++) {
@@ -52,7 +52,7 @@
                 for (var j=0;j < inputs.length;j++)
                     addInputSubmitEvent(forms[i], inputs[j]);
             }
-        };
+        });
     }
 </script>
 
