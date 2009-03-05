@@ -169,8 +169,8 @@ public class ExperimentService
         TableInfo getTinfoRunList();
         TableInfo getTinfoData();
         TableInfo getTinfoPropertyDescriptor();
-        ExpSampleSet ensureDefaultSampleSet() throws SQLException;
-        ExpSampleSet ensureActiveSampleSet(Container container) throws SQLException;
+        ExpSampleSet ensureDefaultSampleSet();
+        ExpSampleSet ensureActiveSampleSet(Container container);
         public String getDefaultSampleSetLsid();
 
         ExpRun[] getRunsUsingMaterials(int... materialIds) throws SQLException;
