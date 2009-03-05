@@ -16,13 +16,11 @@
 
 package org.labkey.api.data;
 
-import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.text.Format;
 import java.util.Set;
 
 /**
@@ -37,22 +35,6 @@ public class QCDisplayColumn extends DataColumn
     {
         super(dataColumn);
         this.qcValueColumn = qcValueColumn;
-    }
-
-
-    public Class getDisplayValueClass()
-    {
-        return String.class;
-    }
-
-    public String getFormattedValue(RenderContext ctx)
-    {
-        String qcValue = getQcValue(ctx);
-        if (qcValue != null)
-        {
-            return qcValue;
-        }
-        return super.getFormattedValue(ctx);
     }
 
     public String getQcValue(RenderContext ctx)
@@ -70,31 +52,7 @@ public class QCDisplayColumn extends DataColumn
         return super.getValue(ctx);
     }
 
-    public Object getDisplayValue(RenderContext ctx)
-    {
-        return getFormattedValue(ctx);
-    }
-
-    public String getTsvFormattedValue(RenderContext ctx)
-    {
-        Format format = getTsvFormat();
-        if (format == null)
-        {
-            format = getFormat();
-        }
-
-        Object value = getValue(ctx);
-
-        if (null == value)
-            return "";
-
-        if (null != format)
-            return format.format(value);
-        else if (value instanceof String)
-            return (String)value;
-        return ConvertUtils.convert(value);
-    }
-
+    @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         String qcValue = getQcValue(ctx);
@@ -120,10 +78,11 @@ public class QCDisplayColumn extends DataColumn
         }
         else
         {
-            out.write(h(value));
+            out.write(value);
         }
     }
 
+    @Override
     public void addQueryColumns(Set<ColumnInfo> columns)
     {
         super.addQueryColumns(columns);
@@ -147,6 +106,20 @@ public class QCDisplayColumn extends DataColumn
     }
 
     @Override
+    public Object getDisplayValue(RenderContext ctx)
+    {
+        return getValue(ctx);
+    }
+
+    @Override
+    public String getFormattedValue(RenderContext ctx)
+    {
+        if (getQcValue(ctx) != null)
+            return "";
+        return super.getFormattedValue(ctx);
+    }
+
+    @Override
     protected Object getInputValue(RenderContext ctx)
     {
         // bug 7479: QC fields don't preserve value on reshow
@@ -161,7 +134,13 @@ public class QCDisplayColumn extends DataColumn
             if (null != viewForm && viewForm.getStrings().containsKey(formFieldName))
                 val = viewForm.get(formFieldName);
             else if (ctx.getRow() != null)
-                val = getFormattedValue(ctx); // Use QC value if we've got it
+            {
+                String qcValue = getQcValue(ctx);
+                if (qcValue != null)
+                    val = qcValue; // use qc value if we've got it
+                else
+                    val = getRawValue(ctx);
+            }
         }
 
         return val;
