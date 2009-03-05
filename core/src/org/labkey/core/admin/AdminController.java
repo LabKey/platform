@@ -2536,9 +2536,7 @@ public class AdminController extends SpringActionController
     {
         public ActionURL getRedirectURL(UserPrefsForm form) throws Exception
         {
-            PreferenceService.get().setProperty("adminMode", form.isAdminMode() ? Boolean.TRUE.toString() : null, getUser());
-            // Admin mode affects how the nav tree is rendered, but is keyed on projects, not users.
-            // So we have to blow the whole thing away
+            getViewContext().getSession().setAttribute("adminMode", form.isAdminMode());
             NavTreeManager.uncacheAll();
             return new ActionURL(form.getRedir());
         }
