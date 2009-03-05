@@ -384,14 +384,14 @@ public class ViewContext extends BoundMap implements MessageSource
     }
 
     public String getMessage(MessageSourceResolvable resolvable) throws NoSuchMessageException
-    {
+    {                    
         return getMessageSource().getMessage(resolvable, Locale.getDefault());
     }
 
     public boolean isAdminMode()
     {
-        String adminStr = PreferenceService.get().getProperty("adminMode", getUser());
-        return null == adminStr ? false : Boolean.parseBoolean(adminStr);
+        Boolean mode = (Boolean) getSession().getAttribute("adminMode");
+        return null == mode ? false : mode.booleanValue();
     }
 
     public boolean isShowFolders()
