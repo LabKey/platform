@@ -289,15 +289,15 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         if (assay.isAllowValidationScript())
         {
             // validation scripts defined at the type or global level are read only
-            for(String path : assay.getValidationScripts())
+            for (String path : assay.getValidationScripts())
             {
                 TextBox text = new TextBox();
                 text.setText(path);
                 text.setReadOnly(true);
                 text.setVisibleLength(79);
 
-                HorizontalPanel namePanel = new HorizontalPanel();
-                namePanel.add(new HTML("QC Script"));
+                FlowPanel namePanel = new FlowPanel();
+                namePanel.add(new InlineLabel("QC Script"));
                 namePanel.add(new HelpPopup("QC Script", "Validation scripts can be assigned by default by the assay type. Default scripts cannot be " +
                         "removed from this view."));
 
@@ -318,8 +318,8 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             }, this);
             scriptFile.getBox().setVisibleLength(79);
 
-            HorizontalPanel namePanel = new HorizontalPanel();
-            namePanel.add(new HTML("QC Script"));
+            FlowPanel namePanel = new FlowPanel();
+            namePanel.add(new InlineHTML("QC Script"));
             namePanel.add(new HelpPopup("QC Script", "The full path to the validation script file. The extension of the script file " +
                     "identifies the script engine that will be used to run the validation script. For example: a script named test.pl will " +
                     "be run with the Perl scripting engine. The scripting engine must be configured from the Admin panel."));

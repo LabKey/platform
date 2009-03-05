@@ -1349,7 +1349,10 @@ public class PageFlowUtil
         else
         {
             StringBuilder link = new StringBuilder();
-            link.append("<a href=\"#\" tabindex=\"-1\" onClick=\""+ linkOnClick + "\" onMouseOut=\"return hideHelpDivDelay();\" onMouseOver=\"return showHelpDiv(this, ");
+            link.append("<a href=\"#\" tabindex=\"-1\" " +
+                    "onClick=\""+ linkOnClick + "\" " +
+                    "onMouseOut=\"return hideHelpDivDelay();\" " +
+                    "onMouseOver=\"return showHelpDivDelay(this, ");
             link.append(filter(jsString(filter(title)), true)).append(", ");
 
             // The value of the javascript string literal is used to set the innerHTML of an element.  For this reason, if

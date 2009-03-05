@@ -20,10 +20,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.ui.HelpPopup;
 import org.labkey.api.gwt.client.ui.TypePicker;
 import org.labkey.api.gwt.client.ui.PropertyPane;
-import com.google.gwt.user.client.ui.TextBox;
-import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.HorizontalPanel;
-import com.google.gwt.user.client.ui.FlexTable;
+import com.google.gwt.user.client.ui.*;
 import com.google.gwt.user.client.DOM;
 
 /**
@@ -74,12 +71,13 @@ public class FormatItem<DomainType extends GWTDomain<FieldType>, FieldType exten
         _formatTextBox.addChangeListener(createChangeListener());
         _formatTextBox.addKeyboardListener(createKeyboardListener());
 
-        flexTable.setWidget(row, LABEL_COLUMN, new Label("Format"));
+        FlowPanel labelPanel = new FlowPanel();
+        labelPanel.add(new InlineLabel("Format"));
+        labelPanel.add(_formatHelpPopup);
+        flexTable.setWidget(row, LABEL_COLUMN, labelPanel);
+
         DOM.setElementProperty(_formatTextBox.getElement(), "id", "propertyFormat");
-        HorizontalPanel formatPanel = new HorizontalPanel();
-        formatPanel.add(_formatTextBox);
-        formatPanel.add(_formatHelpPopup);
-        flexTable.setWidget(row, INPUT_COLUMN, formatPanel);
+        flexTable.setWidget(row, INPUT_COLUMN, _formatTextBox);
 
         return ++row;
     }
@@ -120,13 +118,12 @@ public class FormatItem<DomainType extends GWTDomain<FieldType>, FieldType exten
         _canFormat = canFormat(field.getRangeURI());
         if (_canFormat)
         {
-            _formatHelpPopup.setVisible(true);
             _formatHelpPopup.setBody(field.getRangeURI().equals(TypePicker.xsdDateTime) ? FORMAT_HELP_DATE : FORMAT_HELP_NUMBER);
         }
         else
         {
             _formatTextBox.setText("<no format set>");
-            _formatHelpPopup.setVisible(false);
+            _formatHelpPopup.setBody("Format can only be set for Integer, Number, and Date types.");
         }
         enabledChanged();
     }

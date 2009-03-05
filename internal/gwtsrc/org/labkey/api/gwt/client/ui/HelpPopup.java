@@ -21,6 +21,7 @@ import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.MouseListenerAdapter;
 import com.google.gwt.user.client.ui.Widget;
+import com.google.gwt.user.client.ui.InlineLabel;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 
 /**
@@ -28,7 +29,7 @@ import org.labkey.api.gwt.client.util.PropertyUtil;
  * User: Karl Lum
  * Date: Aug 22, 2007
  */
-public class HelpPopup extends Label
+public class HelpPopup extends InlineLabel
 {
     private Element _element;
     private String _title;
@@ -41,9 +42,9 @@ public class HelpPopup extends Label
         _body = body;
 
         final String headerSize = PropertyUtil.getServerProperty("header1Size");
-        String text = "<a href=\"javascript:void(0);\"><span style=\"font-weight:bold;font-size:" +
+        String text = "<a tabindex=\"-1\" href=\"javascript:void(0);\"><span class=\"labkey-help-pop-up\" style=\"font-size:" +
                 (headerSize == null ? "10pt" : headerSize) +
-                ";text-decoration:none;padding:0;\"><sup>?</sup></span></a>";
+                ";\"><sup>?</sup></span></a>";
         DOM.setInnerHTML(_element, text);
 
         addMouseListener(new MouseListenerAdapter()
@@ -73,6 +74,6 @@ public class HelpPopup extends Label
     }-*/;
 
     public static native void showHelpDiv(Element element, String title, String body) /*-{
-        $wnd.showHelpDiv(element, title, body);
+        $wnd.showHelpDivDelay(element, title, body);
     }-*/;
 }

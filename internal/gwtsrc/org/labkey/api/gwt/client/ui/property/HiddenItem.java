@@ -33,16 +33,25 @@ public class HiddenItem<DomainType extends GWTDomain<FieldType>, FieldType exten
         super(propertyPane);
     }
 
+    @Override
     protected String getCheckboxLabelText()
     {
         return "Hidden";
     }
 
+    @Override
+    protected String getHelpBody()
+    {
+        return "When 'Hidden,' the field is not displayed in grid views without being customized.";
+    }
+
+    @Override
     protected boolean getFieldValue(FieldType field)
     {
         return field.isHidden();
     }
 
+    @Override
     protected void setFieldValue(FieldType field, boolean b)
     {
         field.setHidden(b);

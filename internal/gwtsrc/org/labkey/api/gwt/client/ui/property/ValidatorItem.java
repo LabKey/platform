@@ -22,6 +22,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.PropertyPane;
 import org.labkey.api.gwt.client.ui.TypePicker;
+import org.labkey.api.gwt.client.ui.HelpPopup;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.StringUtils;
 
@@ -51,7 +52,13 @@ public class ValidatorItem<DomainType extends GWTDomain<FieldType>, FieldType ex
     {
         flexTable.getFlexCellFormatter().setHorizontalAlignment(row, 0, HasHorizontalAlignment.ALIGN_CENTER);
         flexTable.getFlexCellFormatter().setColSpan(row, 0, 2);
-        flexTable.setWidget(row, LABEL_COLUMN, new HTML("<b>Field Validators</b>"));
+
+        FlowPanel label = new FlowPanel();
+        label.add(new InlineHTML("<b>Field Validators</b>"));
+        label.add(new HelpPopup("Field Validators",
+                        "Field validators ensure that all values entered for a field " +
+                        "obey a regular expression and/or fall within a specified range."));
+        flexTable.setWidget(row, LABEL_COLUMN, label);
 
         row++;
 

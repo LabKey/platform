@@ -125,6 +125,5 @@ public abstract class PropertyPaneItem<DomainType extends GWTDomain<FieldType>, 
 
     public void propertyDescriptorChanged(FieldType field)
     {
-
     }
 }

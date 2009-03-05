@@ -31,16 +31,25 @@ public class RequiredItem<DomainType extends GWTDomain<FieldType>, FieldType ext
         checkbox.setName("required");
     }
 
+    @Override
     protected String getCheckboxLabelText()
     {
         return "Required";
     }
 
+    @Override
+    protected String getHelpBody()
+    {
+        return "When 'Required,' a field cannot be empty.";
+    }
+
+    @Override
     protected boolean getFieldValue(FieldType field)
     {
         return field.isRequired();
     }
 
+    @Override
     protected void setFieldValue(FieldType field, boolean b)
     {
         field.setRequired(b);

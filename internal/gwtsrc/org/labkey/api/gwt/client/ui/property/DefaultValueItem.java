@@ -95,7 +95,10 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
 
     public int addToTable(FlexTable flexTable, int row)
     {
-        flexTable.setWidget(row, LABEL_COLUMN, new HTML("Default&nbsp;Type"));
+        FlowPanel labelPanel = new FlowPanel();
+        labelPanel.add(new InlineHTML("Default&nbsp;Type"));
+        labelPanel.add(_helpPopup);
+        flexTable.setWidget(row, LABEL_COLUMN, labelPanel);
 
         _setDefaultValueLink = new HTML(SET_DEFAULT_ENABLED);
         _setDefaultValueLink.addClickListener(new ClickListener()
@@ -131,12 +134,11 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
 
         _defaultTypeTable = new FlexTable();
         _defaultTypeTable.setWidget(0, 0, _defaultValueTypes);
-        _defaultTypeTable.setWidget(0, 1, _helpPopup);
         flexTable.setWidget(row, INPUT_COLUMN, _defaultTypeTable);
 
         _defaultValueTypes.addClickListener(createClickListener());
         _defaultValueTypes.addKeyboardListener(createKeyboardListener());
-        _defaultTypeTable.setWidget(0, 2, _setDefaultValueLink);
+        _defaultTypeTable.setWidget(0, 1, _setDefaultValueLink);
 
         _defaultValueTable = new FlexTable();
         _defaultValueTable.setWidget(0, 0, _currentDefault);
@@ -186,11 +188,13 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
         }
         else
         {
+            String msg = "<i>Not supported for " +
+                    StringUtils.filter(domain.getName()) + "</i>";
             _defaultTypeTable.clear();
-            _defaultTypeTable.setWidget(0, 0, new HTML("<i>Not supported for " +
-                    StringUtils.filter(domain.getName()) + "</i>"));
+            _defaultTypeTable.setWidget(0, 0, new HTML(msg));
             _defaultValueTable.clear();
             _defaultValueTable.setWidget(0, 0, new HTML("<i>None</i>"));
+            _helpPopup.setBody(msg);
         }
     }
 

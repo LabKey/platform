@@ -245,22 +245,23 @@ function XMLRequest(url, callback)
     this.post = function(postdata)
     {
         this.send("POST", postdata);
-    }
+    };
 
     this.get = function()
     {
         this.send("GET", null);
-    }
+    };
 
     this.send = function(method, postdata)
     {
         req.open(method, url, true);
         req.send(postdata);
-    }
+    };
 }
 
 var _helpDiv = null;
 var _mouseInHelpDiv = false;
+var _showTimer;
 var _hideTimer;
 
 function getHelpDiv()
@@ -275,10 +276,20 @@ LABKEY.requiresYahoo('dom', false);
 LABKEY.requiresYahoo('event', false);
 LABKEY.requiresYahoo('dragdrop', false);
 
+function showHelpDivDelay(elem, titleText, bodyText, width)
+{
+    // IE support
+    function go()
+    {
+        showHelpDiv(elem, titleText, bodyText, width);
+    }
+    _showTimer = setTimeout(go, 400);
+}
+
 function showHelpDiv(elem, titleText, bodyText, width)
 {
-    var posLeft = 0;
-    var posTop = 0;
+    var posLeft = 12;
+    var posTop = 8;
     var offsetElem = elem;
     if (_hideTimer)
         clearTimeout(_hideTimer);
@@ -332,6 +343,8 @@ function hideHelpDiv(force)
 
 function hideHelpDivDelay()
 {
+    if (_showTimer)
+        clearTimeout(_showTimer);
     _hideTimer = setTimeout("hideHelpDiv(false);", 500);
 }
 

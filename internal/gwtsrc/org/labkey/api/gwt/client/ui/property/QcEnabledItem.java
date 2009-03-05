@@ -39,6 +39,12 @@ public class QcEnabledItem<DomainType extends GWTDomain<FieldType>, FieldType ex
         return "Allows QC";
     }
 
+    @Override
+    protected String getHelpBody()
+    {
+        return "When 'Allows QC,' ...some awesome help text goes here...";
+    }
+
     public boolean copyValuesToPropertyDescriptor(FieldType field)
     {
         // Called when clicked or keyed

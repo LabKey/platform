@@ -18,9 +18,8 @@ package org.labkey.api.gwt.client.ui.property;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.ui.PropertyPane;
-import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.CheckBox;
-import com.google.gwt.user.client.ui.FlexTable;
+import org.labkey.api.gwt.client.ui.HelpPopup;
+import com.google.gwt.user.client.ui.*;
 
 /**
  * User: kevink
@@ -28,6 +27,7 @@ import com.google.gwt.user.client.ui.FlexTable;
 public abstract class CheckboxItem<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> extends PropertyPaneItem<DomainType, FieldType>
 {
     protected CheckBox checkbox = new CheckBox();
+    protected HelpPopup helpPopup;
 
     public CheckboxItem(PropertyPane<DomainType, FieldType> propertyPane)
     {
@@ -36,7 +36,15 @@ public abstract class CheckboxItem<DomainType extends GWTDomain<FieldType>, Fiel
 
     public int addToTable(FlexTable flexTable, int row)
     {
-        flexTable.setWidget(row, LABEL_COLUMN, new Label(getCheckboxLabelText()));
+        FlowPanel labelPanel = new FlowPanel();
+        labelPanel.add(new InlineLabel(getCheckboxLabelText()));
+        if (getHelpBody() != null)
+        {
+            helpPopup = new HelpPopup(getCheckboxLabelText(), getHelpBody());
+            labelPanel.add(helpPopup);
+        }
+
+        flexTable.setWidget(row, LABEL_COLUMN, labelPanel);
         flexTable.setWidget(row, INPUT_COLUMN, checkbox);
 
         checkbox.addClickListener(createClickListener());
@@ -46,6 +54,11 @@ public abstract class CheckboxItem<DomainType extends GWTDomain<FieldType>, Fiel
     }
 
     protected abstract String getCheckboxLabelText();
+
+    protected String getHelpBody()
+    {
+        return null;
+    }
 
     public boolean copyValuesToPropertyDescriptor(FieldType field)
     {
