@@ -389,18 +389,33 @@ public class ExperimentController extends SpringActionController
             queryView.setTitle("Sample Set Contents");
 
             DetailsView detailsView = new DetailsView(getMaterialSourceRegion(getViewContext()), form);
+            detailsView.getDataRegion().getDisplayColumn("Name").setURL(null);
             detailsView.getDataRegion().getDisplayColumn("LSID").setVisible(false);
             detailsView.getDataRegion().getDisplayColumn("MaterialLSIDPrefix").setVisible(false);
             detailsView.setTitle("Sample Set Properties");
-            ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete", DataRegion.MODE_DETAILS, ActionButton.Action.POST);
-            deleteButton.setDisplayPermission(ACL.PERM_DELETE);
-            ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, getViewContext().getContainer());
-            deleteURL.addParameter("singleObjectRowId", _source.getRowId());
-            deleteURL.addParameter("returnURL", ExperimentUrlsImpl.get().getShowSampleSetListURL(getViewContext().getContainer()).toString());
 
-            deleteButton.setURL(deleteURL);
-            deleteButton.setActionType(ActionButton.Action.LINK);
-            detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(deleteButton);
+            if (!ExperimentService.get().ensureDefaultSampleSet().equals(_source))
+            {
+                detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(new ActionButton(ExperimentController.ShowUpdateMaterialSourceAction.class, "Update", DataRegion.MODE_DETAILS, ActionButton.Action.GET));
+
+                ActionURL editTypeURL = getViewContext().cloneActionURL();
+                editTypeURL.setAction(ExperimentController.EditSampleSetTypeAction.class);
+                ActionButton editTypeButton = new ActionButton(editTypeURL.toString(), "Edit Property List", DataRegion.MODE_DETAILS);
+                editTypeButton.setURL(editTypeURL);
+                editTypeButton.setDisplayPermission(ACL.PERM_UPDATE);
+                detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(editTypeButton);
+
+                ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete", DataRegion.MODE_DETAILS, ActionButton.Action.POST);
+                deleteButton.setDisplayPermission(ACL.PERM_DELETE);
+                ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, getViewContext().getContainer());
+                deleteURL.addParameter("singleObjectRowId", _source.getRowId());
+                deleteURL.addParameter("returnURL", ExperimentUrlsImpl.get().getShowSampleSetListURL(getViewContext().getContainer()).toString());
+
+                deleteButton.setURL(deleteURL);
+                deleteButton.setActionType(ActionButton.Action.LINK);
+                detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(deleteButton);
+
+            }
 
             if (_source.canImportMoreSamples())
             {
@@ -1639,10 +1654,16 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors) throws Exception
         {
             List<ExpSampleSet> sampleSets = getSampleSets(deleteForm);
+            ExpSampleSet defaultSampleSet = ExperimentService.get().ensureDefaultSampleSet();
+            if (sampleSets.contains(defaultSampleSet))
+            {
+                HttpView.throwRedirect(ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer(), "You cannot delete the default sample set."));
+            }
+
 
             if (!ensureCorrectContainer(sampleSets))
             {
-                HttpView.throwRedirect(ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer(), "To delete a material source, you must be in its folder or project."));
+                HttpView.throwRedirect(ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer(), "To delete a sample set, you must be in its folder or project."));
             }
 
             return new ConfirmDeleteView("Sample Set", "showMaterialSource", sampleSets, deleteForm, getRuns(sampleSets));
@@ -1756,6 +1777,12 @@ public class ExperimentController extends SpringActionController
             _source = form.getBean();
             if (null == _source.getName())
                 _source = ExperimentServiceImpl.get().getMaterialSource(_source.getRowId());
+
+            ExpSampleSet sampleSet = new ExpSampleSetImpl(_source);
+            if (sampleSet.equals(ExperimentService.get().ensureDefaultSampleSet()))
+            {
+                HttpView.throwUnauthorized("Cannot edit default sample set");
+            }
 
             return new UpdateView(getMaterialSourceRegion(getViewContext()), form, errors);
         }
@@ -1871,6 +1898,10 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(MaterialSourceForm form, BindException errors) throws Exception
         {
             ExpSampleSet ss = ExperimentService.get().getSampleSet(form.getBean().getRowId());
+            if (ExperimentService.get().ensureDefaultSampleSet().equals(ss))
+            {
+                HttpView.throwUnauthorized("Cannot edit default sample set");
+            }
             if (ss == null)
             {
                 return HttpView.throwNotFound("Could not find sample set with rowId " + form.getBean().getRowId());

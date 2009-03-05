@@ -36,7 +36,7 @@
 <% if (bean.getObjects().isEmpty())
 { %>
     <p>There are no selected objects to delete.</p>
-<%= generateButton("OK", "begin.view")%>
+<%= generateButton("OK", bean.getReturnURL() == null ? "begin.view" : bean.getReturnURL())%>
 
 <% }
 else

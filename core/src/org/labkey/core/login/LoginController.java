@@ -732,6 +732,7 @@ public class LoginController extends SpringActionController
         String _error = null;
         ValidEmail _email = null;
         boolean _unrecoverableError = false;
+        private User _user;
 
         public void validateCommand(VerifyForm form, Errors errors)
         {
@@ -858,11 +859,24 @@ public class LoginController extends SpringActionController
                 return false;
             }
 
+            _user = AuthenticationManager.authenticate(request, getViewContext().getResponse(), _email.getEmailAddress(), password);
+            if (null != _user)
+            {
+                // Log the user into the system
+                SecurityManager.setAuthenticatedUser(request, _user, null, null, null);
+            }
+
             return true;
         }
 
         public ActionURL getSuccessURL(VerifyForm form)
         {
+            if (_user != null)
+            {
+                ViewContext viewContext = getViewContext();
+                viewContext.setUser(_user);
+                return form.getReturnActionURL(ContainerManager.getHomeContainer().getStartURL(viewContext));
+            }
             return getUrls().getLoginURL(getContainer(), _email.getEmailAddress(), form.getSkipProfile(), form.getReturnUrl());
         }
 

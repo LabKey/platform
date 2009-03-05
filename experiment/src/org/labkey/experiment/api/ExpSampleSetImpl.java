@@ -173,14 +173,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     public void insert(User user)
     {
-        try
-        {
-            ExperimentServiceImpl.get().insertMaterialSource(user, _object, null);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        ExperimentServiceImpl.get().insertMaterialSource(user, _object, null);
     }
 
     public ExpMaterialImpl[] getSamples()

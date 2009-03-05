@@ -112,7 +112,7 @@ public class SampleSetWebPart extends QueryView
         uploadMaterialsButton.setURL(uploadURL);
         uploadMaterialsButton.setDisplayPermission(ACL.PERM_UPDATE);
         bb.add(uploadMaterialsButton);
-        bb.add(new ActionButton(ExperimentController.ShowUpdateMaterialSourceAction.class, "Update", DataRegion.MODE_DETAILS, ActionButton.Action.GET));
+
         bb.add(new ActionButton(ExperimentController.UpdateMaterialSourceAction.class, "Submit", DataRegion.MODE_UPDATE));
 
         ActionURL setAsActiveURL = model.cloneActionURL();
@@ -130,13 +130,6 @@ public class SampleSetWebPart extends QueryView
         showAllButton.setURL(showAllURL);
         showAllButton.setDisplayPermission(ACL.PERM_READ);
         bb.add(showAllButton);
-
-        ActionURL editTypeURL = model.cloneActionURL();
-        editTypeURL.setAction(ExperimentController.EditSampleSetTypeAction.class);
-        ActionButton editTypeButton = new ActionButton(editTypeURL.toString(), "Edit Property List", DataRegion.MODE_DETAILS);
-        editTypeButton.setURL(editTypeURL);
-        editTypeButton.setDisplayPermission(ACL.PERM_UPDATE);
-        bb.add(editTypeButton);
     }
 
 

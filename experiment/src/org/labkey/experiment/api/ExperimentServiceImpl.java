@@ -1267,7 +1267,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public ExpSampleSet ensureActiveSampleSet(Container c) throws SQLException
+    public ExpSampleSet ensureActiveSampleSet(Container c)
     {
         MaterialSource result = lookupActiveMaterialSource(c);
         if (result == null)
@@ -1277,7 +1277,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new ExpSampleSetImpl(result);
     }
 
-    public ExpSampleSet ensureDefaultSampleSet() throws SQLException
+    public ExpSampleSet ensureDefaultSampleSet()
     {
         MaterialSource matSource = getMaterialSource(ExperimentService.get().getDefaultSampleSetLsid());
 
@@ -1287,7 +1287,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             return new ExpSampleSetImpl(matSource);
     }
 
-    private synchronized MaterialSource createDefaultMaterialSource() throws SQLException
+    private synchronized MaterialSource createDefaultMaterialSource()
     {
         //might have been created on another thread, so check within synch block
         MaterialSource matSource = getMaterialSource(ExperimentService.get().getDefaultSampleSetLsid());
@@ -1914,34 +1914,41 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     }
 
 
-    public MaterialSource insertMaterialSource(User user, MaterialSource source, DomainDescriptor dd) throws SQLException
+    public MaterialSource insertMaterialSource(User user, MaterialSource source, DomainDescriptor dd)
     {
-        assert 0 == source.getRowId();
-        source = Table.insert(user, getTinfoMaterialSource(), source);
-        if (dd == null)
+        try
         {
-            Domain domain = PropertyService.get().getDomain(source.getContainer(), source.getLSID());
-            if (domain == null)
+            assert 0 == source.getRowId();
+            source = Table.insert(user, getTinfoMaterialSource(), source);
+            if (dd == null)
             {
-                domain = PropertyService.get().createDomain(source.getContainer(), source.getLSID(), source.getName());
-                try
+                Domain domain = PropertyService.get().getDomain(source.getContainer(), source.getLSID());
+                if (domain == null)
                 {
-                    domain.save(user);
-                }
-                catch (ChangePropertyDescriptorException e)
-                {
-                    throw (SQLException)new SQLException().initCause(e);
+                    domain = PropertyService.get().createDomain(source.getContainer(), source.getLSID(), source.getName());
+                    try
+                    {
+                        domain.save(user);
+                    }
+                    catch (ChangePropertyDescriptorException e)
+                    {
+                        throw new UnexpectedException(e);
+                    }
                 }
             }
-        }
 
-        getMaterialSourceCache().put(String.valueOf(source.getRowId()), source);
-        ExpSampleSet activeSampleSet = lookupActiveSampleSet(source.getContainer());
-        if (activeSampleSet == null)
-        {
-            setActiveSampleSet(source.getContainer(), new ExpSampleSetImpl(source));
+            getMaterialSourceCache().put(String.valueOf(source.getRowId()), source);
+            ExpSampleSet activeSampleSet = lookupActiveSampleSet(source.getContainer());
+            if (activeSampleSet == null)
+            {
+                setActiveSampleSet(source.getContainer(), new ExpSampleSetImpl(source));
+            }
+            return source;
         }
-        return source;
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public MaterialSource updateMaterialSource(User user, MaterialSource source) throws SQLException
