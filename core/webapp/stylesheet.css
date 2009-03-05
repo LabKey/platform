@@ -566,9 +566,11 @@ table.labkey-completion-text
 /* Used to style the question mark that provides help tips */
 span.labkey-help-pop-up
 {
+    cursor: help;
     font-weight: bold;
     font-size: 10pt;
     text-decoration: none;
+    padding-left: 2pt;
 }
 
 /* Used for full screen pages such as for login or upgrade */
