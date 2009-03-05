@@ -23,46 +23,18 @@ LABKEY.HoverPopup = function(config)
     this.extElem = Ext.get(config.hoverElem);
     var dh = Ext.DomHelper;
     var popup = dh.insertAfter("menubar",
-            {id:config.hoverElem + "$Menu", tag:"div", cls:"labkey-webpart-menu",
+            {id:config.hoverElem + "_menu", tag:"div", cls:"labkey-webpart-menu",
                 children:[{tag:"div", cls:"loading-indicator", style:"width:100;height:100"}]});
-    this.extPopup = new Ext.Layer({shadow:true,shadowOffset:8},popup);
+    this.extPopup = new Ext.Layer({shadow:true,shadowOffset:8,zindex:1000},popup);
     this.webPartName = config.webPartName;
     this.partConfig = config.partConfig || {};
 
     this.extElem.hover(function(e) {
             this.cancelHide();
-            if (LABKEY.HoverPopup._visiblePopup)
-            {
-                if (LABKEY.HoverPopup._visiblePopup == this)
-                    return;
-                else
-                {
-                    LABKEY.HoverPopup._visiblePopup.hideFn();
-                }
-            }
-            this.extElem.addClass("selected");
-            console.log(this.extElem.id  + " extPopup.y: " + this.extPopup.getY());
-            if (!this.rendered) {
-                var p = new LABKEY.WebPart({
-                partName: this.webPartName,
-                renderTo: this.extPopup.id,
-                frame: 'none',
-                partConfig: this.partConfig,
-                errorCallback:function(err) {if (window.console && window.console.log) { window.console.log(err);}},
-                successCallback:function() {
-                            var x = function() {this.extPopup.enableShadow(true);};
-                            x.defer(100, this);},
-                scope:this
-                });
-                p.render();
-                this.rendered = true;
-            }
-            this.extPopup.show();
-            this.extPopup.alignTo(this.extElem, "tl-bl");
-            this.extPopup.setXY([this.extPopup.getX() - 20, this.extPopup.getY()- this.extPopup.getBorderWidth('t')]);
-            this.extPopup.enableShadow(true);
-            LABKEY.HoverPopup._visiblePopup = this;
-
+            if (LABKEY.HoverPopup._visiblePopup) //show immediately if we already have a menu up
+                this.showFn();
+            else //Otherwise make sure that someone hovers for a while
+                this.delayShow();
         }, function (e) {
             if (!this.extElem.getRegion().contains(e.getPoint()) && !this.extPopup.getRegion().contains(e.getPoint()))
             {
@@ -95,7 +67,53 @@ Ext.extend(LABKEY.HoverPopup,  Ext.util.Observable, {
     delayHide: function() {
         if (this.hideTimeout)
             clearTimeout(this.hideTimeout);
+        if (this.showTimeout)
+        {
+            clearTimeout(this.showTimeout);
+            delete this.showTimeout;
+        }
         this.hideTimeout = this.hideFn.defer(200, this);
+    },
+
+    //private
+    delayShow: function() {
+        if (!this.showTimeout)
+            this.showTimeout = this.showFn.defer(400, this);
+    },
+
+    //private
+    showFn: function() {
+        if (LABKEY.HoverPopup._visiblePopup)
+        {
+            if (LABKEY.HoverPopup._visiblePopup == this)
+                return;
+            else
+            {
+                LABKEY.HoverPopup._visiblePopup.hideFn();
+            }
+        }
+        this.extElem.addClass("selected");
+        console.log(this.extElem.id  + " extPopup.y: " + this.extPopup.getY());
+        if (!this.rendered) {
+            var p = new LABKEY.WebPart({
+            partName: this.webPartName,
+            renderTo: this.extPopup.id,
+            frame: 'none',
+            partConfig: this.partConfig,
+            errorCallback:function(err) {if (window.console && window.console.log) { window.console.log(err);}},
+            successCallback:function() {
+                        var x = function() {this.extPopup.enableShadow(true);};
+                        x.defer(100, this);},
+            scope:this
+            });
+            p.render();
+            this.rendered = true;
+        }
+        this.extPopup.show();
+        this.extPopup.alignTo(this.extElem, "tl-bl");
+        this.extPopup.setXY([this.extPopup.getX() - 20, this.extPopup.getY()- this.extPopup.getBorderWidth('t')]);
+        this.extPopup.enableShadow(true);
+        LABKEY.HoverPopup._visiblePopup = this;        
     },
 
     //private

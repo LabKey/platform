@@ -68,7 +68,7 @@
         }
         if (folderMenu)
         {%>
-        new LABKEY.HoverPopup({hoverElem:"MenuBarFolders", webPartName:"Folders"});<%
+        new LABKEY.HoverPopup({hoverElem:"menuBarFolder", webPartName:"Folders"});<%
         }%>
     });
 </script>
@@ -77,7 +77,7 @@
         if (folderMenu)
         {
     %>
-            <a href="#" id="MenuBarFolders" class="labkey-header" style="position:relative;padding-right:1em"><span><img src="<%=currentContext.getContextPath()%>/ext-2.2/resources/images/default/tree/folder.gif" style="vertical-align:bottom" alt="Folders"></span></a><%
+            <a href="#" id="menuBarFolder" class="labkey-header" style="position:relative;padding-right:1em"><span><img src="<%=currentContext.getContextPath()%>/ext-2.2/resources/images/default/tree/folder.gif" style="vertical-align:bottom" alt="Folders"></span></a><%
         }
         if (menus.size() > 0)
         {
@@ -103,7 +103,7 @@
                     //Use the part name...
                 }
                 %>
-                    <a id="<%=h(menuName)%>$Header" class="labkey-header" style="padding-right:1em;position:relative;z-index:1001;" href="#"><span><%=h(menuCaption)%></span></a><%
+                    <a id="<%=h(menuName)%>$Header" class="labkey-header" style="vertical-align:bottom;padding-right:1em;position:relative;z-index:1001;" href="#"><span><%=h(menuCaption)%></span></a><%
             }
             }
         else
