@@ -84,7 +84,7 @@ if (hasContent && includeLinks)
     </td></tr></table><%
 }
 
-%><table width="100%"><tr><td><%
+
 
 //if page has no content, write out message and add content command
 if (!hasContent)
@@ -152,7 +152,7 @@ else
         %><a href="<%=filter(a.getDownloadUrl("Wiki"))%>"><img src="<%=request.getContextPath()%><%=filter(a.getFileIcon())%>">&nbsp;<%=filter(a.name)%></a><br><%
     }
 }
-%></td></tr></table>
+%>
 <br>
 <%
 if (hasContent && null != me.getView("discussion"))

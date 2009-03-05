@@ -36,7 +36,7 @@
     Container proj = ctx.getContainer().getProject();
     if (proj == null || proj.isRoot())
     {
-        out.write("Studies will be displayed based on the selected project.");
+        out.write("No current project.");
     }
     else
     {
@@ -47,7 +47,7 @@
         ExpSampleSet[] sampleSets = ExpSampleSetImpl.fromMaterialSources(Table.select(ExperimentServiceImpl.get().getTinfoMaterialSourceWithProject(), Table.ALL_COLUMNS, filter, null, MaterialSource.class));
 
         int i = 0;
-    %> <div style="vertical-align:top;display:inline-block;margin-right:1em" width="<%=sampleSets.length > 1 ? "50%" : "100%"%>"><%
+    %> <table style="width:50px;margin-right:1em" ><tr><td style="vertical-align:top;white-space:nowrap;margin:1em"> <%
         for (ExpSampleSet sampleSet : sampleSets)
         {
             ActionURL url;
@@ -57,16 +57,16 @@
             else
                 url = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, sampleSet.getContainer()).replaceParameter("rowId", "" + sampleSet.getRowId());
             %>
-    <span class="highlightregion"></span><b><a href="<%=url%>"><%=h(isStudySample ? sampleSet.getContainer().getName() : sampleSet.getName())%></a></b>
+    <a style="font-weight:bold" href="<%=url%>"><%=h(isStudySample ? sampleSet.getContainer().getName() : sampleSet.getName())%></a>
                 <br><%=sampleSet.getDescription() != null ? h(sampleSet.getDescription()) : h(sampleSet.getContainer().getPath())%>
-            <br><span class="highlightregion">
+            <br>
     <%
             if (sampleSets.length > 1 && ++i == sampleSets.length / 2)
             { %>
-                </div><div style="vertical-align:top;display:inline-block" width="50%">
+                </td><td style="vertical-align:top;white-space:nowrap;margin:1em">
         <%  }
         }
-    %></div>
+    %></td></tr></table>
 <%
     }
 %>

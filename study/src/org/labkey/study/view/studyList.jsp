@@ -35,7 +35,7 @@
     }
     int i = 0;
     FolderType studyFolderType = ModuleLoader.getInstance().getFolderType("Study");
-%> <div style="vertical-align:top;display:inline-block;margin-right:1em" ><%
+%> <div style="position:absolute;vertical-align:top;display:inline-block;margin-right:1em" ><%
     for (Study study: studies)
     {
         ActionURL url;

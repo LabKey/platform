@@ -1004,6 +1004,17 @@ table.labkey-expandable-nav
     width: 146px;
 }
 
+#menuBarFolder_menu .labkey-expandable-nav
+{
+    border-left: 1px solid #89A1B4;
+}
+
+#menuBarFolder_menu .labkey-expandable-nav-body
+{
+    padding-left: 4px;
+}
+
+
 .labkey-expandable-nav tr
 {
     width: 100%;

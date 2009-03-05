@@ -52,6 +52,7 @@ import org.labkey.core.webdav.FileSystemAuditViewFactory;
 import javax.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.*;
@@ -140,12 +141,21 @@ public class CoreModule extends SpringModule
                 }
             },
                 new AlwaysAvailableWebPartFactory("Folders", "menubar", false, false) {
-                    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+                    public WebPartView getWebPartView(final ViewContext portalCtx, Portal.WebPart webPart) throws Exception
                     {
-                        ProjectsMenu projectsMenu = new ProjectsMenu(portalCtx);
+                        final ProjectsMenu projectsMenu = new ProjectsMenu(portalCtx);
                         projectsMenu.setCollapsed(false);
-                        HBox v = new HBox(new ContainerMenu(portalCtx), new HtmlView("&nbsp;&nbsp;"), projectsMenu);
-                        v.setTitle("Folders");
+                        WebPartView v = new WebPartView("Folders") {
+                            @Override
+                            protected void renderView(Object model, PrintWriter out) throws Exception
+                            {
+                                out.write("<table style='width:50'><tr><td style='vertical-align:top;padding:4px'>");
+                                include(new ContainerMenu(portalCtx));
+                                out.write("</td><td style='vertical-align:top;padding:4px'>");
+                                include(projectsMenu);
+                                out.write("</td></tr></table>");
+                            }
+                        };
                         v.setFrame(WebPartView.FrameType.PORTAL);
                         return v;
                     }
