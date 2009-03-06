@@ -55,6 +55,7 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
     private Label _loading = null;
     private PropertiesEditor _propTable = null;
     boolean _saved = false;
+    SubmitButton _submitButton = new SubmitButton();
 
     public void onModuleLoad()
     {
@@ -71,7 +72,7 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
         _propTable = new PropertiesEditor(this, getService());
 
         _buttons = new HorizontalPanel();
-        _buttons.add(new SubmitButton());
+        _buttons.add(_submitButton);
         _buttons.add(new HTML("&nbsp;"));
         _buttons.add(new CancelButton());
 
@@ -185,6 +186,7 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
             for (Object error : errors)
                 s += error + "\n";
             Window.alert(s);
+            _submitButton.setEnabled(true);
             return;
         }
 
@@ -194,6 +196,7 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
             public void onFailure(Throwable caught)
             {
                 Window.alert(caught.getMessage());
+                _submitButton.setEnabled(true);
             }
 
             public void onSuccess(List<String> errors)
@@ -212,6 +215,7 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
                     for (String error : errors)
                         s += error + "\n";
                     Window.alert(s);
+                    _submitButton.setEnabled(true);
                 }
             }
         });
