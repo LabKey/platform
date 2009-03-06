@@ -1168,10 +1168,14 @@ public class SecurityManager
         return groupList;
     }
 
-    // Returns common separated list of group names this user belongs to in this container
+    // Returns comma-separated list of group names this user belongs to in this container
     public static String getGroupList(Container c, User u)
     {
         Container proj = c.getProject();
+
+        if (null == proj)
+            return "";
+
         int[] groupIds = u.getGroups();
 
         StringBuilder groupList = new StringBuilder();
@@ -1183,6 +1187,9 @@ public class SecurityManager
             if (groupId > 0 && groupId != u.getUserId())
             {
                 Group g = SecurityManager.getGroup(groupId);
+
+                if (null == g)
+                    continue;
 
                 // Only groups in this project
                 if (g.getContainer().equals(proj.getId()))

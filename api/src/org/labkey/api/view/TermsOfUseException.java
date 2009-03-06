@@ -16,8 +16,6 @@
 
 package org.labkey.api.view;
 
-import org.labkey.api.data.Container;
-
 /**
  * User: Mark Igra
  * Date: Jun 30, 2006

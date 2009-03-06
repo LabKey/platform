@@ -460,16 +460,15 @@ public class ExceptionUtil
         @Override
         public void renderInternal(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
         {
-            ViewContext context = getViewContext();
             PrintWriter out = response.getWriter();
 
-            doStartTag(context, out);
+            doStartTag(out);
             _renderer.renderContent(out, request);
             doEndTag(out);
         }
 
 
-        public void doStartTag(Map context, PrintWriter out)
+        public void doStartTag(PrintWriter out)
         {
             Container c = null;
 

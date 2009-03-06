@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2008 LabKey Corporation
+ * Copyright (c) 2007-2009 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,12 @@ package org.labkey.api.gwt.client.ui;
 
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Element;
-import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.InlineLabel;
 import com.google.gwt.user.client.ui.MouseListenerAdapter;
 import com.google.gwt.user.client.ui.Widget;
-import com.google.gwt.user.client.ui.InlineLabel;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Aug 22, 2007
  */

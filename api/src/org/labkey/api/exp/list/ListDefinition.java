@@ -18,18 +18,17 @@ package org.labkey.api.exp.list;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.DomainNotFoundException;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.common.tools.DataLoader;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.sql.SQLException;
 
 public interface ListDefinition
 {
