@@ -27,7 +27,7 @@
     AdminController.LookAndFeelResourcesBean bean = ((JspView<AdminController.LookAndFeelResourcesBean>)HttpView.currentView()).getModelBean();
     Container c = getViewContext().getContainer();
 %>
-<form name="preferences" enctype="multipart/form-data" method="post">
+<form name="preferences" enctype="multipart/form-data" method="post" id="form-preferences">
 
 <table cellpadding=0>
 <tr>
@@ -88,7 +88,7 @@
     </td>
 </tr>
 <tr>
-    <td><%=PageFlowUtil.generateSubmitButton("Save Resources")%></td>
+    <td><%=PageFlowUtil.generateSubmitButton("Save Resources", "_form.setClean();")%></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -96,3 +96,11 @@
 
 </table>
 </form>
+<script type="text/javascript">
+    LABKEY.requiresClientAPI();
+</script>
+<script type="text/javascript">
+    var _form = new LABKEY.Form({
+        formElement: 'form-preferences'
+    });
+</script>

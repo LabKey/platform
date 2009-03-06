@@ -34,7 +34,7 @@
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
 %>
 
-<form name="preferences" enctype="multipart/form-data" method="post">
+<form name="preferences" enctype="multipart/form-data" method="post" id="form-preferences">
 
 <table width="100%" cellpadding=0>
 <tr>
@@ -155,7 +155,7 @@ if (AppProps.getInstance().isDevMode())
 </tr>
 
 <tr>
-    <td><%=PageFlowUtil.generateSubmitButton("Save Properties")%>&nbsp;<%=PageFlowUtil.generateButton("Reset All Properties", new AdminController.AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c), "return confirm('Are you sure you want to clear all look &amp; feel properties?');")%></td>
+    <td><%=PageFlowUtil.generateSubmitButton("Save Properties", "_form.setClean()")%>&nbsp;<%=PageFlowUtil.generateButton("Reset All Properties", new AdminController.AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c), "return confirmReset();")%></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -163,3 +163,23 @@ if (AppProps.getInstance().isDevMode())
 
 </table>
 </form>
+
+<script type="text/javascript">
+    LABKEY.requiresClientAPI();
+</script>
+<script type="text/javascript">
+    var _form = new LABKEY.Form({
+        formElement: 'form-preferences'
+    });
+
+    function confirmReset()
+    {
+        if(confirm('Are you sure you want to clear all look & feel properties?'))
+        {
+            _form.setClean();
+            return true;
+        }
+        else
+            return false;
+    }
+</script>
