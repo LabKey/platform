@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2008 LabKey Corporation
+ * Copyright (c) 2008-2009 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
  */
 %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.core.ftp.FtpPage" %>
-<%@ page import="org.labkey.core.webdav.DavController" %>
-<%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.webdav.WebdavService" %>
+<%@ page import="org.labkey.core.ftp.FtpPage" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView me = HttpView.currentView();

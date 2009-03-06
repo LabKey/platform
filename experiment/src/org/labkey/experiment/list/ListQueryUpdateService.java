@@ -15,21 +15,19 @@
  */
 package org.labkey.experiment.list;
 
+import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.beanutils.Converter;
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.beanutils.Converter;
-import org.apache.commons.beanutils.ConversionException;
 
 import java.io.IOException;
 import java.sql.SQLException;

@@ -69,7 +69,6 @@ public class QueryControllerSpring extends SpringActionController
 
     public QueryControllerSpring() throws Exception
     {
-        super();
         setActionResolver(_actionResolver);
     }
 
@@ -2183,7 +2182,7 @@ public class QueryControllerSpring extends SpringActionController
                     HttpView.throwUnauthorized();
             }
             CstmView[] existing = QueryManager.get().getColumnLists(getContainer(), form.ff_schemaName, form.ff_queryName, form.ff_viewName, form.ff_share ? null : getUser(), false);
-            CstmView view = null;
+            CstmView view;
             if (existing.length != 0)
             {
                 view = existing[0];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 LabKey Corporation
+ * Copyright (c) 2008-2009 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,14 @@
 
 package org.labkey.core.ftp;
 
+import org.apache.commons.lang.StringUtils;
+import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.ftp.FtpConnector;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.action.HasViewContext;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.core.webdav.DavController;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * Created by IntelliJ IDEA.
