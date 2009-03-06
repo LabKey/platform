@@ -157,6 +157,7 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
 
         public void onClick(Widget sender)
         {
+            setEnabled(false);
             finish();
         }
     }
