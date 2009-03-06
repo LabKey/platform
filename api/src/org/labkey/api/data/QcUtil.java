@@ -27,8 +27,8 @@ public class QcUtil
 {
     private static final String[] QC_STATES = new String[] {"Q", "N"};
 
-    private static final String Q_TEXT = "This value has been flagged as failing QC";
-    private static final String N_TEXT = "This value is missing";
+    private static final String Q_TEXT = "Data currently under quality control review";
+    private static final String N_TEXT = "Required field marked by site as 'data not available'";
 
     private QcUtil() {}
 

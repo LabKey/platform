@@ -42,7 +42,8 @@ public class QcEnabledItem<DomainType extends GWTDomain<FieldType>, FieldType ex
     @Override
     protected String getHelpBody()
     {
-        return "When 'Allows QC,' ...some awesome help text goes here...";
+        return "A field marked with 'Allows QC' set can hold special values to indicate data " +
+                "that has failed QC review.";
     }
 
     public boolean copyValuesToPropertyDescriptor(FieldType field)

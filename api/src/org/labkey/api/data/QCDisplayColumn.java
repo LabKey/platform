@@ -66,7 +66,7 @@ public class QCDisplayColumn extends DataColumn
                     HttpView.currentContext().getContextPath() +
                     "/_images/qc_indicator.gif\" class=\"labkey-qc-indicator\">";
 
-            out.write(PageFlowUtil.helpPopup("QC Value", h(QcUtil.getQcLabel(qcValue)), false, imgHtml, 0));
+            out.write(PageFlowUtil.helpPopup("QC Value: " + qcValue,QcUtil.getQcLabel(qcValue), false, imgHtml, 0));
             return;
         }
         // Call super, as we don't want to check twice for the qc value
