@@ -143,11 +143,18 @@ public class QueryUnion
         sti.setName("UNION");
         sti.setAlias(alias);
         sti.setFromSQL(unionSql);
-        QueryTableInfo ret = new QueryTableInfo(sti, "UNION", alias);
-        for (ColumnInfo col : _tinfos.get(0).getColumns())
+        UnionTableInfoImpl ret = new UnionTableInfoImpl(sti, "UNION", alias);
+
+        for (int i=0; i < _tinfos.size(); i++)
         {
-            ColumnInfo ucol = new AliasedColumn(ret, col.getName(), col);
-            ret.addColumn(ucol);
+            QueryTableInfo info = _tinfos.get(i);
+            for (ColumnInfo col : info.getColumns())
+            {
+                ColumnInfo ucol = new AliasedColumn(ret, col.getName(), col);
+                if (i == 0)
+                    ret.addColumn(ucol);
+                ret.addUnionColumn(ucol);
+            }
         }
 		_unionSql = unionSql;
         return ret;

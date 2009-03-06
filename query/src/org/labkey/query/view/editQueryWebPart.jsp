@@ -97,11 +97,12 @@ function updateQueries(schemaName)
         names.push(opt);
     }
     names.sort(function(a,b){
-      var a = String(a).toLowerCase();
-      var b = String(b).toLowerCase(); 
-      if (a > b)
+      var a1 = a.toString().toLowerCase();
+      var b1 = b.toString().toLowerCase();
+
+      if (a1 > b1)
          return 1
-      if (a < b)
+      if (a1 < b1)
          return -1
       return 0;
     });
@@ -119,6 +120,10 @@ function updateViews(queryName)
     var viewSelect = document.getElementById('viewName');
 
     viewSelect.options.length = 0;
+
+    if (viewNames == undefined)
+        return;
+    
     for (var i = 0; i < viewNames.length; i++)
     {
         var opt = viewNames[i];

@@ -421,12 +421,23 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 QueryView view = QueryView.create(sourceForm);
                 view.setCustomView(sourceForm.getCustomView());
 
-                for (DisplayColumn dc : view.getDisplayColumns())
+                TableInfo tinfo = view.getTable();
+                if (tinfo instanceof UnionTableInfo)
                 {
-                    ColumnInfo info = dc.getColumnInfo();
-                    if (info != null)
+                    for (ColumnInfo info : ((UnionTableInfo)tinfo).getUnionColumns())
                     {
                         propertyMap.put(info.getPropertyURI(), info.getPropertyURI());
+                    }
+                }
+                else
+                {
+                    for (DisplayColumn dc : view.getDisplayColumns())
+                    {
+                        ColumnInfo info = dc.getColumnInfo();
+                        if (info != null)
+                        {
+                            propertyMap.put(info.getPropertyURI(), info.getPropertyURI());
+                        }
                     }
                 }
             }

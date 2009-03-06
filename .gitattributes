@@ -1575,6 +1575,7 @@ query/src/org/labkey/query/sql/SourceBuilder.java -text
 query/src/org/labkey/query/sql/SqlBuilder.java -text
 query/src/org/labkey/query/sql/SqlParser.java -text
 query/src/org/labkey/query/sql/SqlTokenTypes.java -text
+query/src/org/labkey/query/sql/UnionTableInfoImpl.java -text
 query/src/org/labkey/query/sql/sql.g -text
 query/src/org/labkey/query/view/CustomViewSetKey.java -text
 query/src/org/labkey/query/view/DbUserSchema.java -text
