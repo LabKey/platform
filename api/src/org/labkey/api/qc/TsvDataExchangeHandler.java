@@ -66,6 +66,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         protocolDescription,
 
         runDataFile,
+        runDataUploadedFile,
         errorsFile,
     }
     public static final String VALIDATION_RUN_INFO_FILE = "runProperties.tsv";
@@ -97,6 +98,11 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     pw.append(Props.runDataFile.name());
                     pw.append('\t');
                     pw.println(runData.getAbsolutePath());
+
+                    // the original path as well
+                    pw.append(Props.runDataUploadedFile.name());
+                    pw.append('\t');
+                    pw.println(expData.getDataFile().getAbsolutePath());
                 }
             }
             // errors file location

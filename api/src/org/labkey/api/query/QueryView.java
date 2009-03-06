@@ -672,8 +672,21 @@ public class QueryView extends WebPartView<Object>
         item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
         menu.addMenuItem(item);
 
-        Map<String, CustomView> customViews = getQueryDef().getCustomViews(getViewContext().getUser(), getViewContext().getRequest());
-        for (CustomView view : customViews.values())
+        // sort the grid view alphabetically, with private views over public ones
+        List<CustomView> views = new ArrayList<CustomView>(getQueryDef().getCustomViews(getViewContext().getUser(), getViewContext().getRequest()).values());
+        Collections.sort(views, new Comparator<CustomView>() {
+            public int compare(CustomView o1, CustomView o2)
+            {
+                if (o1.getOwner() != null && o2.getOwner() == null) return -1;
+                if (o1.getOwner() == null && o2.getOwner() != null) return 1;
+                if (o1.getName() == null) return -1;
+                if (o2.getName() == null) return 1;
+
+                return o1.getName().compareToIgnoreCase(o2.getName());
+            }
+        });
+
+        for (CustomView view : views)
         {
             if (view.isHidden())
                 continue;

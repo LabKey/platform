@@ -168,6 +168,7 @@ api/src/org/labkey/api/data/TableInfoGetter.java -text
 api/src/org/labkey/api/data/TableXmlUtils.java -text
 api/src/org/labkey/api/data/TempTableTracker.java -text
 api/src/org/labkey/api/data/TestSchema.java -text
+api/src/org/labkey/api/data/UnionTableInfo.java -text
 api/src/org/labkey/api/data/UpgradeCode.java -text
 api/src/org/labkey/api/data/UrlColumn.java -text
 api/src/org/labkey/api/data/VirtualTable.java -text
