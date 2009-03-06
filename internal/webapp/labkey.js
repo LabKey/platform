@@ -197,6 +197,7 @@ LABKEY.requiresClientAPI = function(immediate)
         LABKEY.requiresScript("clientapi/MultiRequest.js");
         LABKEY.requiresScript("clientapi/Batch.js"); // depends on Experiment.js
         LABKEY.requiresScript("clientapi/HoverPopup.js");
+        LABKEY.requiresScript("clientapi/Form.js");
     }
     else
         LABKEY.requiresScript('clientapi/clientapi' + (LABKEY.devMode ? '.js' : '.min.js'), immediate);

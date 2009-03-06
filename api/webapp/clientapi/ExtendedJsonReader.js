@@ -47,7 +47,7 @@ LABKEY.ext.ExtendedJsonReader = Ext.extend(Ext.data.JsonReader, {
 	        }
 	        this.getRoot = s.root ? this.getJsonAccessor(s.root) : function(p){return p;};
 	        if (s.id) {
-	        	var g = this.getJsonAccessor(s.id);
+	        	var g = this.getJsonAccessor(s.id + ".value");
 	        	this.getId = function(rec) {
 	        		var r = g(rec);
 		        	return (r === undefined || r === "") ? null : r;
@@ -80,7 +80,7 @@ LABKEY.ext.ExtendedJsonReader = Ext.extend(Ext.data.JsonReader, {
 	    for(var i = 0; i < c; i++){
 		    var n = root[i];
 	        var values = {};
-	        var id = n[s.id].value;  //changed from: this.getId(n);
+	        var id = this.getId(n);
 	        for(var j = 0; j < fl; j++){
 	            f = fi[j];
                 var v = this.ef[j](n);

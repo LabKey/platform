@@ -842,6 +842,7 @@ api/webapp/clientapi/Experiment.js -text
 api/webapp/clientapi/ExtJsConfig.js -text
 api/webapp/clientapi/ExtendedJsonReader.js -text
 api/webapp/clientapi/Filter.js -text
+api/webapp/clientapi/Form.js -text
 api/webapp/clientapi/GridView.js -text
 api/webapp/clientapi/HoverPopup.js -text
 api/webapp/clientapi/LongTextEditor.js -text

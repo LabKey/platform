@@ -429,7 +429,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             }
 
             //wrap in <a> if url is present in the record's original JSON
-            if(record.json && record.json[meta.name] && record.json[meta.name].url)
+            if(col.showLink !== false && record.json && record.json[meta.name] && record.json[meta.name].url)
                 return "<a href=\"" + record.json[meta.name].url + "\">" + displayValue + "</a>";
             else
                 return displayValue;
