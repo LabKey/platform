@@ -684,4 +684,13 @@ public class AssayPublishManager implements AssayPublishService.Service
 
         return study.isDateBased() ? TimepointType.DATE : TimepointType.VISIT;
     }
+
+    public String getStudyName(Container container)
+    {
+        Study study = StudyManager.getInstance().getStudy(container);
+        if (null == study)
+            throw new IllegalArgumentException("No study in container: " + container.getPath());
+
+        return study.getLabel();
+    }
 }
