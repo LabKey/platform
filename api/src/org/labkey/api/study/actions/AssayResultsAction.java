@@ -24,9 +24,7 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.AssayResultsView;
-import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.util.PageFlowUtil;
@@ -39,7 +37,7 @@ import org.springframework.web.servlet.ModelAndView;
 * Time: 7:30:05 PM
 */
 @RequiresPermission(ACL.PERM_READ)
-@ActionNames( "assayData, assayResults" )
+@ActionNames( "assayResults, assayData" )
 public class AssayResultsAction extends BaseAssayAction<ProtocolIdForm>
 {
     private ExpProtocol _protocol;

@@ -48,21 +48,10 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
 
     public static class PublishForm extends ProtocolIdForm implements DataRegionSelection.DataSelectionKeyForm
     {
-        private String _viewType;
         private String _dataRegionSelectionKey;
         private String _returnURL;
         private String _containerFilterName;
         private boolean _runIds;
-
-        public String getViewType()
-        {
-            return _viewType;
-        }
-
-        public void setViewType(String viewType)
-        {
-            _viewType = viewType;
-        }
 
         public String getDataRegionSelectionKey()
         {
@@ -261,7 +250,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
     {
         NavTree result = super.appendNavTrail(root);
         result.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
-        result.addChild("Copy to Study: " + _protocol.getName() + ": Choose Study");
+        result.addChild("Copy to Study: Choose Target");
         return result;
     }
 

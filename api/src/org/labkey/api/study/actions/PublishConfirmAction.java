@@ -45,9 +45,9 @@ import java.util.*;
  */
 @RequiresPermission(ACL.PERM_INSERT)
 public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.PublishConfirmForm>
-
 {
     private ExpProtocol _protocol;
+    private String _targetStudyName;
 
     public static class PublishConfirmForm extends ProtocolIdForm implements DataRegionSelection.DataSelectionKeyForm
     {
@@ -178,6 +178,8 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         Map<Object, String> postedVisits = null;
         Map<Object, String> postedPtids = null;
         boolean dateBased = AssayPublishService.get().getTimepointType(targetStudy) == TimepointType.DATE;
+        _targetStudyName = AssayPublishService.get().getStudyName(targetStudy);
+        
         // todo: this isn't a great way to determine if this is our final post, but it'll do for now:
         if (publishConfirmForm.isAttemptPublish())
         {
@@ -352,7 +354,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
     {
         NavTree result = super.appendNavTrail(root);
         result.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
-        result.addChild("Copy to Study: " + _protocol.getName() + ": Verify Data");
+        result.addChild("Copy to " + _targetStudyName + ": Verify Results");
         return result;
     }
 

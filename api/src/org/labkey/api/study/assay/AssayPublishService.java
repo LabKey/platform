@@ -67,6 +67,7 @@ public class AssayPublishService
         ActionURL getPublishHistory(Container container, ExpProtocol protocol, ContainerFilter containerFilter);
 
         TimepointType getTimepointType(Container container);
+        String getStudyName(Container container);
     }
 
     public static void register(Service serviceImpl)
