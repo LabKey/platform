@@ -476,8 +476,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
         DomainProperty studyProp = addProperty(domain, TARGET_STUDY_PROPERTY_NAME, TARGET_STUDY_PROPERTY_CAPTION, PropertyType.STRING);
         studyProp.setLookup(new Lookup(null, "study", "Study"));
 
-        domain.setDescription("The user is prompted for batch properties once for each set of runs they import. The run " +
-                "set is a convenience to let users set properties that seldom change in one place and import many runs " +
+        domain.setDescription("The user is prompted for batch properties once for each set of runs they import. The batch " +
+                "is a convenience to let users set properties that seldom change in one place and import many runs " +
                 "using them. This is the first step of the import process.");
         return new Pair<Domain, Map<DomainProperty, Object>>(domain, Collections.<DomainProperty, Object>emptyMap());
     }
