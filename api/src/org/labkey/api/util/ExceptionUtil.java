@@ -678,7 +678,7 @@ public class ExceptionUtil
                 if (ex instanceof NotFoundException && ex.getMessage() != null)
                     message = ex.getMessage();
                 else
-                    message = responseStatus + ": Page Not Found";                
+                    message = responseStatus + ": Page not Found";                
             }
             else
             {

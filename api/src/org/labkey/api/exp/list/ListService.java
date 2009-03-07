@@ -44,7 +44,7 @@ public class ListService
         Map<String, ListDefinition> getLists(Container container);
         boolean hasLists(Container container);
         ListDefinition createList(Container container, String name);
-        ListDefinition getList(int id);
+        ListDefinition getList(Container container, int id);
         ListDefinition getList(Domain domain);
         ActionURL getManageListsURL(Container container);
 
