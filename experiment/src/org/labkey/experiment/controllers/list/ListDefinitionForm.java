@@ -44,7 +44,7 @@ public class ListDefinitionForm extends ViewFormData
 
         try
         {
-            _listDef = ListService.get().getList(Integer.parseInt(listIdParam));
+            _listDef = ListService.get().getList(getContainer(), Integer.parseInt(listIdParam));
         }
         catch (NumberFormatException e)
         {
@@ -52,7 +52,7 @@ public class ListDefinitionForm extends ViewFormData
         }
 
         if (null == _listDef)
-            throw new NotFoundException("List does not exist");
+            throw new NotFoundException("List does not exist in this container");
     }
 
     public ListDefinition getList()

@@ -845,9 +845,9 @@ public class UserController extends SpringActionController
             }
             if (_userId == null)
             {
-                _userId = Integer.valueOf(form.getUserId());
+                _userId = form.getUserId();
             }
-            User requestedUser = UserManager.getUser(_userId);
+            User requestedUser = UserManager.getUser(_userId.intValue());
             if (requestedUser == null)
                 return HttpView.throwNotFound("User not found");
             List<AccessDetailRow> rows = new ArrayList<AccessDetailRow>();
@@ -862,9 +862,9 @@ public class UserController extends SpringActionController
             VBox view = new VBox(accessView);
 
             if (c.isRoot())
-                view.addView(GroupAuditViewFactory.getInstance().createSiteUserView(getViewContext(), Integer.parseInt(form.getUserId())));
+                view.addView(GroupAuditViewFactory.getInstance().createSiteUserView(getViewContext(), form.getUserId()));
             else
-                view.addView(GroupAuditViewFactory.getInstance().createProjectMemberView(getViewContext(), Integer.parseInt(form.getUserId())));
+                view.addView(GroupAuditViewFactory.getInstance().createProjectMemberView(getViewContext(), form.getUserId()));
 
             if (form.getRenderInHomeTemplate())
             {
@@ -914,19 +914,23 @@ public class UserController extends SpringActionController
     @RequiresLogin
     public class DetailsAction extends SimpleViewAction<UserForm>
     {
-        private Integer _detailsUserId;
+        private int _detailsUserId;
 
         public ModelAndView getView(UserForm form, BindException errors) throws Exception
         {
             User user = getUser();
             int userId = user.getUserId();
-            _detailsUserId = Integer.valueOf(form.getUserId());
-            User detailsUser = UserManager.getUser(_detailsUserId.intValue());
-            boolean isOwnRecord = (_detailsUserId.intValue() == userId);
+            _detailsUserId = form.getUserId();
+            User detailsUser = UserManager.getUser(_detailsUserId);
+
+            boolean isOwnRecord = (_detailsUserId == userId);
 
             // Anyone can view their own record; otherwise, make sure current user can view the details of this user
             if (!isOwnRecord)
                 authorizeUserAction(_detailsUserId, "view details of");
+
+            if (null == detailsUser || detailsUser.isGuest())
+                throw new NotFoundException("User does not exist");
 
             Container c = getContainer();
             boolean isSiteAdmin = user.isAdministrator();
@@ -956,7 +960,7 @@ public class UserController extends SpringActionController
                 bb.add(changeEmail);
 
                 ActionURL deactivateUrl = new ActionURL(detailsUser.isActive() ? DeactivateUsersAction.class : ActivateUsersAction.class, c);
-                deactivateUrl.addParameter("userId", _detailsUserId.intValue());
+                deactivateUrl.addParameter("userId", _detailsUserId);
                 deactivateUrl.addParameter("redirUrl", getViewContext().getActionURL().getEncodedLocalURIString());
                 bb.add(new ActionButton(detailsUser.isActive() ? "Deactivate" : "Re-Activate", deactivateUrl));
             }
@@ -1154,7 +1158,7 @@ public class UserController extends SpringActionController
     @RequiresSiteAdmin
     public class ShowChangeEmail extends FormViewAction<UserForm>
     {
-        private Integer _userId;
+        private int _userId;
 
         public void validateCommand(UserForm target, Errors errors)
         {
@@ -1162,7 +1166,7 @@ public class UserController extends SpringActionController
 
         public ModelAndView getView(UserForm form, boolean reshow, BindException errors) throws Exception
         {
-            _userId = Integer.valueOf(form.getUserId());
+            _userId = form.getUserId();
 
             return new JspView<ChangeEmailBean>("/org/labkey/core/user/changeEmail.jsp", new ChangeEmailBean(_userId, form.getMessage()), errors);
         }
@@ -1171,7 +1175,7 @@ public class UserController extends SpringActionController
         {
             try
             {
-                User user = UserManager.getUser(Integer.parseInt(form.getUserId()));
+                User user = UserManager.getUser(form.getUserId());
 
                 String message = UserManager.changeEmail(user.getUserId(), new ValidEmail(user.getEmail()), new ValidEmail(form.getNewEmail()), getUser());
 
@@ -1187,7 +1191,7 @@ public class UserController extends SpringActionController
 
         public ActionURL getSuccessURL(UserForm form)
         {
-            return new UserUrlsImpl().getUserDetailsURL(getContainer(), Integer.parseInt(form.getUserId()));
+            return new UserUrlsImpl().getUserDetailsURL(getContainer(), form.getUserId());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1270,7 +1274,7 @@ public class UserController extends SpringActionController
 
     public static class UserForm extends ViewFormData
     {
-        private String userId;
+        private int userId;
         private String newEmail;
         private String _message = null;
         private boolean _renderInHomeTemplate = true;
@@ -1286,15 +1290,12 @@ public class UserController extends SpringActionController
             this.newEmail = newEmail;
         }
 
-        public String getUserId()
+        public int getUserId()
         {
-            if (null == userId)
-                return String.valueOf(getUser().getUserId());
-            else
-                return userId;
+            return userId;
         }
 
-        public void setUserId(String userId)
+        public void setUserId(int userId)
         {
             this.userId = userId;
         }

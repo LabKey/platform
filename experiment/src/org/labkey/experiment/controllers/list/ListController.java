@@ -24,8 +24,10 @@ import org.labkey.api.attachments.*;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
+import org.labkey.api.defaults.ClearDefaultValuesAction;
+import org.labkey.api.defaults.DefaultValueService;
+import org.labkey.api.defaults.SetDefaultValuesAction;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
@@ -40,11 +42,9 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.defaults.DefaultValueService;
-import org.labkey.api.defaults.SetDefaultValuesAction;
-import org.labkey.api.defaults.ClearDefaultValuesAction;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.Pair;
 import org.labkey.experiment.list.ListAuditViewFactory;
@@ -58,7 +58,10 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: adam
@@ -337,6 +340,10 @@ public class ListController extends SpringActionController
         public ModelAndView getView(ListQueryForm form, BindException errors) throws Exception
         {
             _list = form.getList();
+
+            if (null == _list)
+                throw new NotFoundException("List does not exist in this container");
+
             return new ListQueryView(form);
         }
 
@@ -829,7 +836,7 @@ public class ListController extends SpringActionController
         {
             int id = NumberUtils.toInt((String)getViewContext().get("rowId"));
             int listId = NumberUtils.toInt((String)getViewContext().get("listId"));
-            _list = ListService.get().getList(listId);
+            _list = ListService.get().getList(getContainer(), listId);
 
             AuditLogEvent event = AuditLogService.get().getEvent(id);
             if (event != null && event.getLsid() != null)

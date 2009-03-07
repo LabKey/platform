@@ -16,10 +16,7 @@
 
 package org.labkey.experiment.list;
 
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
 
@@ -68,9 +65,11 @@ public class ListManager
         return Table.select(getTinfoList(), Table.ALL_COLUMNS, null, null, ListDef.class);
     }
 
-    public ListDef getList(int id)
+    public ListDef getList(Container container, int id) throws SQLException
     {
-        return Table.selectObject(getTinfoList(), id, ListDef.class);
+        SimpleFilter filter = new PkFilter(getTinfoList(), id);
+        filter.addCondition("Container", container);
+        return Table.selectObject(getTinfoList(), filter, null, ListDef.class);
     }
     
     public ListDef insert(User user, ListDef def) throws SQLException

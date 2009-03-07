@@ -49,7 +49,7 @@ public class ListQueryForm extends QueryForm
 
     private ListDefinition getListDef(int listId)
     {
-        ListDefinition listDef = ListService.get().getList(listId);
+        ListDefinition listDef = ListService.get().getList(getContainer(), listId);
 
         if (null == listDef)
             throw new NotFoundException("List does not exist");

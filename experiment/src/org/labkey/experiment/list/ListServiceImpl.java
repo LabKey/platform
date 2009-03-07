@@ -75,10 +75,17 @@ public class ListServiceImpl implements ListService.Interface
         return new ListDefinitionImpl(container, name);
     }
 
-    public ListDefinition getList(int id)
+    public ListDefinition getList(Container container, int id)
     {
-        ListDef def = ListManager.get().getList(id);
-        return ListDefinitionImpl.of(def);
+        try
+        {
+            ListDef def = ListManager.get().getList(container, id);
+            return ListDefinitionImpl.of(def);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public ListDefinition getList(Domain domain)
