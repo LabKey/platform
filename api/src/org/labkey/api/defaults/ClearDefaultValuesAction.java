@@ -30,7 +30,7 @@ import org.springframework.web.servlet.ModelAndView;
  */
 
 @RequiresPermission(ACL.PERM_ADMIN)
-public class ClearDefaultValuesAction extends DefaultValuesAction
+public class ClearDefaultValuesAction extends DefaultValuesAction<DomainIdForm>
 {
     public ModelAndView getView(DomainIdForm domainIdForm, boolean reshow, BindException errors) throws Exception
     {

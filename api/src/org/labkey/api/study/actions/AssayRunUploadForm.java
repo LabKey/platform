@@ -29,6 +29,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.GUID;
 import org.labkey.api.defaults.DefaultValueService;
+import org.apache.commons.beanutils.ConvertUtils;
 
 import java.util.*;
 import java.io.File;
@@ -348,7 +349,9 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                 List<ColumnInfo> pks = lookupTable.getPkColumns();
                 if (pks.size() == 1)
                 {
-                    SimpleFilter filter = new SimpleFilter(pks.get(0).getName(), value);
+                    ColumnInfo pk = pks.get(0);
+                    Object filterValue = ConvertUtils.convert(value, pk.getJavaClass());
+                    SimpleFilter filter = new SimpleFilter(pk.getName(), filterValue);
                     try
                     {
                         Set<String> cols = new HashSet<String>();

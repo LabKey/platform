@@ -1055,7 +1055,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public boolean allowDefaultValues(Domain domain)
     {
         Lsid domainLsid = new Lsid(domain.getTypeURI());
-        return ExpProtocol.ASSAY_DOMAIN_DATA.equals(domainLsid.getNamespacePrefix());
+        return !ExpProtocol.ASSAY_DOMAIN_DATA.equals(domainLsid.getNamespacePrefix());
     }
 
     protected boolean isPipelineSetup(Container container)

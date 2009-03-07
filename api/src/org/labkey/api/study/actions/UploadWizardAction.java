@@ -44,6 +44,7 @@ import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.common.util.Pair;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.BindException;
@@ -215,7 +216,8 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         if (participantVisitResolverCol != null)
         {
             view.getDataRegion().replaceDisplayColumn(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME,
-                    new ParticipantVisitResolverChooser(participantVisitResolverCol.getName(), form.getProvider().getParticipantVisitResolverTypes()));
+                    new ParticipantVisitResolverChooser(participantVisitResolverCol.getName(), form.getProvider().getParticipantVisitResolverTypes(),
+                            participantVisitResolverCol.getColumnInfo()));
         }
 
         return view;
@@ -426,7 +428,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         return result;
     }
 
-    protected class InputDisplayColumn extends SimpleDisplayColumn
+    protected static class InputDisplayColumn extends SimpleDisplayColumn
     {
         protected String _inputName;
 
@@ -453,7 +455,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
     }
 
-    private class StudyPickerColumn extends InputDisplayColumn
+    public static class StudyPickerColumn extends InputDisplayColumn
     {
         ColumnInfo _colInfo;
 
@@ -490,11 +492,17 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             super.renderDetailsData(ctx, out, 1);
         }
 
+        protected boolean isDisabledInput()
+        {
+            return getColumnInfo().getDefaultValueType() == DefaultValueType.FIXED_NON_EDITABLE;
+        }
+
         public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
         {
             Map<Container, String> studies = AssayPublishService.get().getValidPublishTargets(ctx.getViewContext().getUser(), ACL.PERM_READ);
 
-            out.write("<select name=\"" + _inputName + "\">\n");
+            boolean disabled = isDisabledInput();
+            out.write("<select name=\"" + _inputName + "\"" + (disabled ? " DISABLED" : "") + ">\n");
             out.write("    <option value=\"\">[None]</option>\n");
             for (Map.Entry<Container, String> entry : studies.entrySet())
             {
@@ -505,6 +513,8 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 out.write(">" + PageFlowUtil.filter(container.getPath() + " (" + entry.getValue()) + ")</option>\n");
             }
             out.write("</select>");
+            if (disabled)
+                out.write("<input type=\"hidden\" name=\"" +_inputName + "\" value=\"" + PageFlowUtil.filter(value) + "\">");
         }
 
         public ColumnInfo getColumnInfo()

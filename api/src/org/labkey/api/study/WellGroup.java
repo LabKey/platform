@@ -53,5 +53,5 @@ public interface WellGroup extends WellData, WellGroupTemplate
 
     Double getMaxDilution();
 
-    DilutionCurve getDilutionCurve(DilutionCurve.PercentCalculator calculator, boolean expectedDecreasing, DilutionCurve.FitType fitType);
+    DilutionCurve getDilutionCurve(DilutionCurve.PercentCalculator calculator, boolean expectedDecreasing, DilutionCurve.FitType fitType) throws DilutionCurve.FitFailedException;
 }

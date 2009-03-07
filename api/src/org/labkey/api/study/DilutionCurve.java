@@ -25,6 +25,19 @@ import org.labkey.common.util.Pair;
  */
 public interface DilutionCurve
 {
+    public interface Parameters
+    {
+        double getAsymmetry();
+
+        double getInflection();
+
+        double getSlope();
+
+        double getMax();
+
+        double getMin();
+    }
+
     public class FitFailedException extends Exception
     {
         public FitFailedException(String message)
@@ -62,6 +75,8 @@ public interface DilutionCurve
 
     DoublePoint[] getCurve() throws FitFailedException;
 
+    Parameters getParameters() throws FitFailedException;
+
     double getFitError() throws FitFailedException;
 
     double getCutoffDilution(double percent) throws FitFailedException;
@@ -92,6 +107,6 @@ public interface DilutionCurve
 
     public static interface PercentCalculator
     {
-        double getPercent(WellGroup group, WellData data);
+        double getPercent(WellGroup group, WellData data) throws FitFailedException;
     }
 }

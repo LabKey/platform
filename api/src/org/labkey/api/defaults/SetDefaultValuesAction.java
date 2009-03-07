@@ -44,27 +44,41 @@ import java.io.File;
  */
 
 @RequiresPermission(ACL.PERM_ADMIN)
-public class SetDefaultValuesAction extends DefaultValuesAction
+public class SetDefaultValuesAction<FormType extends DomainIdForm> extends DefaultValuesAction<FormType>
 {
     private String _returnUrl;
 
-    public void validateCommand(DomainIdForm target, Errors errors)
+    public SetDefaultValuesAction()
     {
     }
 
-    private class DefaultValueDisplayColumn extends DataColumn
+    public SetDefaultValuesAction(Class formClass)
+    {
+        super(formClass);
+    }
+
+    public void validateCommand(FormType target, Errors errors)
+    {
+    }
+
+    private class DefaultableDataColumn extends DataColumn implements DefaultableDisplayColumn
     {
         private DomainProperty _property;
 
-        public DefaultValueDisplayColumn(DomainProperty property, ColumnInfo col)
+        public DefaultableDataColumn(DomainProperty property, ColumnInfo col)
         {
             super(col);
             _property = property;
         }
 
-        public DomainProperty getProperty()
+        public DefaultValueType getDefaultValueType()
         {
-            return _property;
+            return _property.getDefaultValueTypeEnum();
+        }
+
+        public Class getJavaType()
+        {
+            return _property.getPropertyDescriptor().getPropertyType().getJavaType();
         }
 
         @Override
@@ -80,7 +94,7 @@ public class SetDefaultValuesAction extends DefaultValuesAction
         }
     }
 
-    private class DefaultValueDataRegion extends DataRegion
+    protected class DefaultValueDataRegion extends DataRegion
     {
         public void render(RenderContext ctx, Writer out) throws IOException
         {
@@ -92,19 +106,18 @@ public class SetDefaultValuesAction extends DefaultValuesAction
                     "<th>Default type</th><tr>");
             for (DisplayColumn renderer : getDisplayColumns())
             {
-                if (!shouldRender(renderer, ctx))
+                if (!shouldRender(renderer, ctx) || !(renderer instanceof DefaultableDisplayColumn))
                     continue;
                 renderInputError(ctx, out, 1, renderer);
                 out.write("<tr>");
                 renderer.renderDetailsCaptionCell(ctx, out);
                 renderer.renderInputCell(ctx, out, 1);
                 out.write("<td>");
-                DomainProperty property = ((DefaultValueDisplayColumn) renderer).getProperty();
-                if (property.getPropertyDescriptor().getPropertyType().getJavaType() == File.class)
+                if (((DefaultableDisplayColumn) renderer).getJavaType() == File.class)
                     out.write("Defaults cannot be set for file fields.");
                 else
                 {
-                    DefaultValueType defaultType = property.getDefaultValueTypeEnum();
+                    DefaultValueType defaultType = ((DefaultableDisplayColumn) renderer).getDefaultValueType();
                     if (defaultType == null)
                         defaultType = DefaultValueType.FIXED_EDITABLE;
                     out.write(PageFlowUtil.filter(defaultType.getLabel()));
@@ -119,7 +132,12 @@ public class SetDefaultValuesAction extends DefaultValuesAction
         }
     }
 
-    public ModelAndView getView(DomainIdForm domainIdForm, boolean reshow, BindException errors) throws Exception
+    protected DataRegion createDataRegion()
+    {
+        return new DefaultValueDataRegion();
+    }
+
+    public ModelAndView getView(FormType domainIdForm, boolean reshow, BindException errors) throws Exception
     {
         _returnUrl = domainIdForm.getReturnUrl();
         Domain domain = getDomain(domainIdForm);
@@ -131,13 +149,13 @@ public class SetDefaultValuesAction extends DefaultValuesAction
         }
 
 
-        DataRegion rgn = new DefaultValueDataRegion();
+        DataRegion rgn = createDataRegion();
         TableInfo baseTable = OntologyManager.getTinfoObject();
         rgn.setTable(baseTable);
         for (DomainProperty dp : properties)
         {
             ColumnInfo info = dp.getPropertyDescriptor().createColumnInfo(baseTable, "objecturi", getViewContext().getUser());
-            rgn.addDisplayColumn(new DefaultValueDisplayColumn(dp, info));
+            rgn.addDisplayColumn(new DefaultableDataColumn(dp, info));
         }
         InsertView view = new InsertView(rgn, errors);
 
@@ -161,11 +179,15 @@ public class SetDefaultValuesAction extends DefaultValuesAction
         boolean defaultsDefined = DefaultValueService.get().hasDefaultValues(domainIdForm.getContainer(), domain, false);
 
         ButtonBar bbar = new ButtonBar();
-        ActionButton saveButton = new ActionButton("setDefaultValues.view", "Save Defaults", DataRegion.MODE_INSERT, ActionButton.Action.POST);
+        ActionURL setDefaultsURL = getViewContext().getActionURL().clone().deleteParameters();
+        ActionButton saveButton = new ActionButton(setDefaultsURL, "Save Defaults");
+        saveButton.setActionType(ActionButton.Action.POST);
         bbar.add(saveButton);
         if (defaultsDefined)
         {
-            ActionButton clearButton = new ActionButton("clearDefaultValues.view", "Clear Defaults", DataRegion.MODE_INSERT, ActionButton.Action.POST);
+            ActionURL clearURL = new ActionURL(ClearDefaultValuesAction.class, domainIdForm.getContainer());
+            ActionButton clearButton = new ActionButton(clearURL, "Clear Defaults");
+            clearButton.setActionType(ActionButton.Action.POST);
             bbar.add(clearButton);
         }
         bbar.add(new ActionButton("Cancel", new ActionURL(domainIdForm.getReturnUrl())));
@@ -186,7 +208,8 @@ public class SetDefaultValuesAction extends DefaultValuesAction
         else
             headerHtml.append("Defaults are currently defined for this table in this folder.");
         headerHtml.append("</span>");
-        if (!domain.getContainer().equals(getViewContext().getContainer()))
+        if (!domain.getContainer().equals(getViewContext().getContainer()) &&
+                domain.getContainer().hasPermission(getViewContext().getUser(), ACL.PERM_ADMIN))
         {
             ActionURL url = new ActionURL(SetDefaultValuesAction.class, domain.getContainer());
             url.addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString());
@@ -238,7 +261,7 @@ public class SetDefaultValuesAction extends DefaultValuesAction
         builder.append("</a><br>");
     }
 
-    public boolean handlePost(DomainIdForm domainIdForm, BindException errors) throws Exception
+    public boolean handlePost(FormType domainIdForm, BindException errors) throws Exception
     {
         Domain domain = getDomain(domainIdForm);
         // first, we validate the post:

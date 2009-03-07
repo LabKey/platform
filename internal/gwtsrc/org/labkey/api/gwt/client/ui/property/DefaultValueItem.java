@@ -114,20 +114,22 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
                     {
                         public void saveSuccessful(GWTDomain domain, String designerUrl)
                         {
-                            String actionURL = PropertyUtil.getRelativeURL("setDefaultValues", "list");
+                            String actionURL = domain.getDefaultValuesURL();
                             String queryString = "returnUrl=" + URL.encodeComponent(designerUrl) + "&domainId=" + domain.getDomainId();
-                            final String url = actionURL + "?" + queryString;
+                            boolean hasQueryString = actionURL.indexOf('?') > 0;
+                            final String url = actionURL + (hasQueryString ? "&" : "?") + queryString;
                             WindowUtil.setLocation(url);
                         }
                     });
                 }
                 else
                 {
-                    String actionURL = PropertyUtil.getRelativeURL("setDefaultValues", "list");
+                    String actionURL = _domain.getDefaultValuesURL();
                     String currentURL = PropertyUtil.getCurrentURL();
-                    String queryString = "returnUrl=" + URL.encodeComponent(currentURL) + "&domainId=";
-                    final String baseURL = actionURL + "?" + queryString;
-                    WindowUtil.setLocation(baseURL + _propertyPane.getDomainId());
+                    String queryString = "returnUrl=" + URL.encodeComponent(currentURL) + "&domainId=" +  _propertyPane.getDomainId();
+                    boolean hasQueryString = actionURL.indexOf('?') > 0;
+                    final String url = actionURL + (hasQueryString ? "&" : "?") + queryString;
+                    WindowUtil.setLocation(url);
                 }
             }
         });
@@ -156,8 +158,9 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
         {
             String name = _defaultValueTypes.getValue(_defaultValueTypes.getSelectedIndex());
             DefaultValueType newType = DefaultValueType.valueOf(name);
-            boolean changed = (newType == field.getDefaultValueType());
-            field.setDefaultValueType(DefaultValueType.valueOf(name));
+            boolean changed = (newType != field.getDefaultValueType());
+            if (changed)
+                field.setDefaultValueType(newType);
             return changed;
         }
         return false;
@@ -182,7 +185,7 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
                 if (i < defaultTypes.length - 1)
                     helpString.append("<br><br>");
             }
-            _currentDefault.setText(field.getDefaultValue());
+            _currentDefault.setText(field.getDefaultDisplayValue());
             _helpPopup.setBody(helpString.toString());
             updateEnabledState(field);
         }

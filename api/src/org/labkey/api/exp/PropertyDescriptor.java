@@ -257,18 +257,16 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
 
     public String getDefaultValueType()
     {
-        if (_defaultValueType != null)
-            return _defaultValueType.name();
-        else
-            return null;
+        DefaultValueType type = getDefaultValueTypeEnum();
+        return type != null ? type.name() : null;
     }
 
     public void setDefaultValueType(String defaultValueTypeName)
     {
         if (defaultValueTypeName != null)
-            _defaultValueType = DefaultValueType.valueOf(defaultValueTypeName);
+            setDefaultValueTypeEnum(DefaultValueType.valueOf(defaultValueTypeName));
         else
-            _defaultValueType = null;
+            setDefaultValueTypeEnum(null);
     }
 
     @Override

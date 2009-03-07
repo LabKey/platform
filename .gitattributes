@@ -178,6 +178,8 @@ api/src/org/labkey/api/data/collections/Join.java -text
 api/src/org/labkey/api/defaults/ClearDefaultValuesAction.java -text
 api/src/org/labkey/api/defaults/DefaultValueService.java -text
 api/src/org/labkey/api/defaults/DefaultValuesAction.java -text
+api/src/org/labkey/api/defaults/DefaultableDisplayColumn.java -text
+api/src/org/labkey/api/defaults/DomainIdForm.java -text
 api/src/org/labkey/api/defaults/SetDefaultValuesAction.java -text
 api/src/org/labkey/api/exp/AbstractParameter.java -text
 api/src/org/labkey/api/exp/ChangePropertyDescriptorException.java -text

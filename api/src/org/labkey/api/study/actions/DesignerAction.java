@@ -37,7 +37,7 @@ import java.util.HashMap;
 * Date: Jul 26, 2007
 * Time: 7:22:50 PM
 */
-@RequiresPermission(ACL.PERM_INSERT)
+@RequiresPermission(ACL.PERM_ADMIN)
 public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
 {
     public static class DesignerForm extends ProtocolIdForm

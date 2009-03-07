@@ -231,6 +231,8 @@ LABKEY.Assay = new function()
          * be returned with calculations and well data.
          * @param {Boolean} [config.includeWells]  Whether well-level data should be included in the response.
          * @param {Boolean} [config.calculateNeut]  Whether neutralization should be calculated on the server.
+         * @param {Boolean} [config.includeFitParameters]  Whether the parameters used in the neutralization curve fitting calculation
+         * should be included in the response.
         * @param {Function} config.successCallback
                 Function called when the "getNAbRuns" function executes successfully.
                 This function will be called with the following arguments:

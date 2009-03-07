@@ -21,6 +21,7 @@ import com.google.gwt.user.client.rpc.IsSerializable;
 import java.util.*;
 
 import org.labkey.api.gwt.client.util.StringProperty;
+import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.DefaultValueType;
 
 /**
@@ -40,6 +41,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     private DefaultValueType defaultDefaultValueType = null;
     private DefaultValueType[] defaultValueOptions = new DefaultValueType[0];
     private List<FieldType> fields = new ArrayList<FieldType>();
+    private String defaultValuesURL = null;
 
     private Set<String> mandatoryPropertyDescriptorNames = new HashSet<String>();
 
@@ -60,6 +62,8 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.allowAttachmentProperties = src.allowAttachmentProperties;
         this.defaultDefaultValueType = src.defaultDefaultValueType;
         this.defaultValueOptions = src.defaultValueOptions;
+        this.defaultValuesURL = src.defaultValuesURL;
+
         if (src.getFields() == null)
             return;
         for (int i=0 ; i<src.getFields().size() ; i++)
@@ -200,5 +204,17 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     {
         this.defaultDefaultValueType = defaultDefault;
         this.defaultValueOptions = defaultOptions;
+    }
+
+    public String getDefaultValuesURL()
+    {
+        if (defaultValuesURL == null)
+            return PropertyUtil.getRelativeURL("setDefaultValues", "list");
+        return defaultValuesURL;
+    }
+
+    public void setDefaultValuesURL(String defaultValuesURL)
+    {
+        this.defaultValuesURL = defaultValuesURL;
     }
 }
