@@ -44,6 +44,7 @@ import org.labkey.api.view.template.AppBar;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.assay.AssayServiceImpl;
 import org.labkey.study.assay.ModuleAssayProvider;
+import org.labkey.study.assay.SetDefaultValuesAssayAction;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.assay.actions.GetAssayBatchAction;
 import org.labkey.study.controllers.assay.actions.SaveAssayBatchAction;
@@ -85,7 +86,8 @@ public class AssayController extends SpringActionController
             AssayResultsAction.class,
             AssayResultDetailsAction.class,
             ShowSelectedRunsAction.class,
-            ShowSelectedDataAction.class
+            ShowSelectedDataAction.class,
+            SetDefaultValuesAssayAction.class
         );
 
     public AssayController()

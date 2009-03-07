@@ -39,15 +39,8 @@
 </script>
 <%
     boolean enableRequests = SampleManager.getInstance().getRepositorySettings(me.getViewContext().getContainer()).isEnableRequests();
-    String vialLinkText;
-    if (enableRequests)
-    {
-        vialLinkText = bean.isShowingVials() ? "Hide Vial and Request Options" : "Show Vial and Request Options";
-    }
-    else
-    {
-        vialLinkText = bean.isShowingVials() ? "Hide Vial Info" : "Show Vial Info";
-    }
+    String vialLinkText = bean.isShowingVials() ? "Hide Vial Info" : "Show Vial Info";
+
     if (bean.getViewContext().getContainer().hasPermission(bean.getViewContext().getUser(), ACL.PERM_ADMIN))
     {
 %>

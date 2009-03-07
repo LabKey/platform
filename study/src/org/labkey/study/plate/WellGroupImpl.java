@@ -180,7 +180,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
             _plate.getWell(position.getRow(), position.getColumn()).setDilution(dilution);
     }
 
-    public DilutionCurve getDilutionCurve(DilutionCurve.PercentCalculator calculator, boolean expectedDecreasing, DilutionCurve.FitType fitType)
+    public DilutionCurve getDilutionCurve(DilutionCurve.PercentCalculator calculator, boolean expectedDecreasing, DilutionCurve.FitType fitType) throws DilutionCurve.FitFailedException
     {
         return new WellGroupCurveImpl(this, expectedDecreasing, calculator, fitType);
     }

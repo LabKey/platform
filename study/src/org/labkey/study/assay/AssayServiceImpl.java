@@ -20,6 +20,7 @@ import com.google.gwt.user.client.rpc.SerializableException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
@@ -43,6 +44,7 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.PlateBasedAssayProvider;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.common.util.Pair;
 import org.labkey.study.StudySchema;
@@ -98,7 +100,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         {
             Domain domain = domainInfo.getKey();
             GWTDomain<GWTPropertyDescriptor> gwtDomain = new GWTDomain<GWTPropertyDescriptor>();
-            if (!provider.allowDefaultValues(domain))
+            if (provider.allowDefaultValues(domain))
                 gwtDomain.setDefaultValueOptions(DefaultValueType.values(), DefaultValueType.LAST_ENTERED);
             Set<String> mandatoryPropertyDescriptors = new HashSet<String>();
             if (!copy)
@@ -109,6 +111,9 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             gwtDomain.setDescription(domain.getDescription());
             gwtDomain.setName(domain.getName());
             gwtDomain.setAllowFileLinkProperties(provider.isFileLinkPropertyAllowed(template.getKey(), domain));
+            ActionURL setDefaultValuesAction = new ActionURL(SetDefaultValuesAssayAction.class, getContainer());
+            setDefaultValuesAction.addParameter("providerName", provider.getName());
+            gwtDomain.setDefaultValuesURL(setDefaultValuesAction.getLocalURIString());
             gwtDomains.add(gwtDomain);
             List<GWTPropertyDescriptor> gwtProps = new ArrayList<GWTPropertyDescriptor>();
 
@@ -120,11 +125,29 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                 GWTPropertyDescriptor gwtProp = getPropertyDescriptor(prop, copy);
                 if (gwtProp.getDefaultValueType() == null)
                 {
-                    gwtProp.setDefaultValueType(gwtDomain.getDefaultDefaultValueType());
+                    // we want to explicitly set these "special" properties NOT to remember the user's last entered
+                    // value if it hasn't been set before:
+                    if (AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME.equals(prop.getName()) ||
+                        AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equals(prop.getName()) ||
+                        AbstractAssayProvider.VISITID_PROPERTY_NAME.equals(prop.getName()) ||
+                        AbstractAssayProvider.DATE_PROPERTY_NAME.equals(prop.getName()))
+                    {
+                        prop.setDefaultValueTypeEnum(DefaultValueType.FIXED_EDITABLE);
+                    }
+                    else
+                        gwtProp.setDefaultValueType(gwtDomain.getDefaultDefaultValueType());
                 }
                 gwtProps.add(gwtProp);
                 Object defaultValue = defaultValues.get(prop);
-                gwtProp.setDefaultDisplayValue(DomainUtil.getFormattedDefaultValue(getUser(), prop, defaultValue));
+                if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(gwtProp.getName()) && defaultValue instanceof String)
+                {
+                    Container studyContainer = ContainerManager.getForId((String) defaultValue);
+                    if (studyContainer != null)
+                        gwtProp.setDefaultDisplayValue(studyContainer.getPath());
+                }
+                else
+                    gwtProp.setDefaultDisplayValue(DomainUtil.getFormattedDefaultValue(getUser(), prop, defaultValue));
+
                 gwtProp.setDefaultValue(ConvertUtils.convert(defaultValue));
                 if (provider.isMandatoryDomainProperty(domain, prop.getName()))
                     mandatoryPropertyDescriptors.add(prop.getName());

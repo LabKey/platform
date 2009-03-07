@@ -405,7 +405,7 @@ public class SpecimenApiController extends BaseStudyController
             for (String vialId : vialRequestForm.getVialIds())
             {
                 Specimen vial = getVial(vialId, vialRequestForm.getIdType());
-                SampleManager.getInstance().createRequestSampleMapping(getUser(), request, Collections.singletonList(vial), true);
+                SampleManager.getInstance().createRequestSampleMapping(getUser(), request, Collections.singletonList(vial), true, true);
             }
             final Map<String, Object> response = getRequestResponse(getViewContext(), request);
             return new ApiResponse()
@@ -501,7 +501,7 @@ public class SpecimenApiController extends BaseStudyController
             SpecimenUtils.RequestedSpecimens requested = getUtils().getRequestableBySampleHash(hashes, addSampleToRequestForm.getPreferredLocation());
             List<Specimen> specimens = new ArrayList<Specimen>(requested.getSpecimens().length);
             Collections.addAll(specimens, requested.getSpecimens());
-            SampleManager.getInstance().createRequestSampleMapping(getUser(), request, specimens, true);
+            SampleManager.getInstance().createRequestSampleMapping(getUser(), request, specimens, true, true);
             final Map<String, Object> response = getRequestResponse(getViewContext(), request);
             return new ApiResponse()
             {

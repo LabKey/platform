@@ -38,10 +38,10 @@ public class WellGroupCurveImpl implements DilutionCurve
     private boolean assumeDecreasing;
     private FitType _fitType;
     private Double _fitError;
-    private Double _slope;
     private WellSummary[] _wellSummaries = null;
+    private FitParameters _fitParameters;
 
-    private static class FitParameters implements Cloneable
+    private static class FitParameters implements Cloneable, DilutionCurve.Parameters
     {
         public Double fitError;
         public double asymmetry;
@@ -61,9 +61,39 @@ public class WellGroupCurveImpl implements DilutionCurve
                 throw new RuntimeException(e);
             }
         }
+
+        public Double getFitError()
+        {
+            return fitError;
+        }
+
+        public double getAsymmetry()
+        {
+            return asymmetry;
+        }
+
+        public double getInflection()
+        {
+            return EC50;
+        }
+
+        public double getSlope()
+        {
+            return slope;
+        }
+
+        public double getMax()
+        {
+            return max;
+        }
+
+        public double getMin()
+        {
+            return min;
+        }
     }
 
-    public WellGroupCurveImpl(WellGroup wellGroup, boolean assumeDecreasing, PercentCalculator percentCalculator, DilutionCurve.FitType fitType)
+    public WellGroupCurveImpl(WellGroup wellGroup, boolean assumeDecreasing, PercentCalculator percentCalculator, DilutionCurve.FitType fitType) throws FitFailedException
     {
         _wellGroup = wellGroup;
         this.assumeDecreasing = assumeDecreasing;
@@ -281,16 +311,15 @@ public class WellGroupCurveImpl implements DilutionCurve
         double minPercentage = percentages.get(0);
         double maxPercentage = percentages.get(percentages.size() - 1);
 
-        FitParameters parameters = calculateFitParameters(minPercentage, maxPercentage);
-        _fitError = parameters.fitError;
-        _slope = parameters.slope;
+        _fitParameters = calculateFitParameters(minPercentage, maxPercentage);
+        _fitError = _fitParameters.fitError;
         DoublePoint[] curveData = new DoublePoint[CURVE_SEGMENT_COUNT];
         double logX = Math.log10(_wellGroup.getMinDilution());
         double logInterval = (Math.log10(_wellGroup.getMaxDilution()) - logX) / (CURVE_SEGMENT_COUNT - 1);
         for (int i = 0; i < CURVE_SEGMENT_COUNT; i++)
         {
             double x = Math.pow(10, logX);
-            double y = fitCurve(x, parameters);
+            double y = fitCurve(x, _fitParameters);
             curveData[i] = new DoublePoint(x, y);
             logX += logInterval;
         }
@@ -372,15 +401,14 @@ public class WellGroupCurveImpl implements DilutionCurve
         return Math.sqrt(deviationValue / _wellSummaries.length);
     }
 
+    public Parameters getParameters() throws FitFailedException
+    {
+        ensureCurve();
+        return _fitParameters;
+    }
     public double getFitError() throws FitFailedException
     {
         ensureCurve();
         return _fitError;
-    }
-
-    public double getSlope() throws FitFailedException
-    {
-        ensureCurve();
-        return _slope;
     }
 }

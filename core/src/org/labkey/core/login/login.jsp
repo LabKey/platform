@@ -93,10 +93,6 @@
         <tr><td></td><td><input type=checkbox name="remember" id="remember" <%=bean.remember ? "checked" : ""%>><label for="remember">Remember my email address</label></td></tr>
         <tr><td></td><td><a href="resetPassword.view">Forgot your password?</a></td></tr><%
     }
-    else
-    { %>
-        <tr><td colspan=2>You must agree to terms of use to view data in this project.<br></td></tr><%
-    }
 
     if (null != bean.termsOfUseHtml)
     { %>

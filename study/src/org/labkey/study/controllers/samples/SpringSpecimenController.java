@@ -567,8 +567,7 @@ public class SpringSpecimenController extends BaseStudyController
                     specimensToAdd.add(SampleManager.getInstance().getSpecimen(getContainer(), id));
             }
 
-            SampleManager.getInstance().createRequestSampleMapping(getUser(), request, specimensToAdd, true);
-            SampleManager.getInstance().getRequirementsProvider().generateDefaultRequirements(getUser(), request);
+            SampleManager.getInstance().createRequestSampleMapping(getUser(), request, specimensToAdd, true, true);
             return true;
         }
 
@@ -1438,9 +1437,8 @@ public class SpringSpecimenController extends BaseStudyController
                                 new IllegalStateException("Specimen ID " + sampleId + " was not found in container " + getContainer().getId()));
                     }
                 }
-                SampleManager.getInstance().createRequestSampleMapping(getUser(), _sampleRequest, samples, true);
+                SampleManager.getInstance().createRequestSampleMapping(getUser(), _sampleRequest, samples, true, true);
             }
-            SampleManager.getInstance().getRequirementsProvider().generateDefaultRequirements(getUser(), _sampleRequest);
             if (!SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()))
                 getUtils().sendNewRequestNotifications(_sampleRequest);
             return true;

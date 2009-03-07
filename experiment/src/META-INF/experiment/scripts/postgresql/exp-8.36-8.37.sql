@@ -16,12 +16,40 @@
 
 ALTER TABLE exp.PropertyDescriptor ADD DefaultValueType VARCHAR(50);
 
+-- Set default value type to LAST_ENTERED for all non-data assay domain properties EXCEPT those
+-- that we know should be entered every time :
 UPDATE exp.PropertyDescriptor SET DefaultValueType = 'LAST_ENTERED' WHERE PropertyId IN
 (
-	SELECT exp.PropertyDescriptor.PropertyId FROM exp.PropertyDescriptor
+	SELECT exp.PropertyDescriptor.propertyid FROM exp.PropertyDescriptor
 	JOIN exp.PropertyDomain ON
 		exp.PropertyDescriptor.PropertyId = exp.PropertyDomain.PropertyId
 	JOIN exp.DomainDescriptor ON
 		exp.PropertyDomain.DomainId = exp.DomainDescriptor.DomainId
-	WHERE exp.DomainDescriptor.DomainURI LIKE '%:AssayDomain-%'
+	-- get all assay domains except data domains:
+	WHERE exp.DomainDescriptor.DomainURI LIKE '%:AssayDomain-%' AND
+	exp.DomainDescriptor.DomainURI NOT LIKE '%:AssayDomain-Data%' AND NOT
+		-- first, check for these properties in sample well group domains:
+	      ( exp.PropertyDescriptor.PropertyURI LIKE '%#SpecimenID' OR
+		exp.PropertyDescriptor.PropertyURI LIKE '%#VisitID' OR
+		exp.PropertyDescriptor.PropertyURI LIKE '%#ParticipantID' OR
+		exp.PropertyDescriptor.PropertyURI LIKE '%#Date')
+);
+
+-- Set default value type to LAST_ENTERED for all non-data assay domain properties EXCEPT those
+-- that we know should be entered every time:
+UPDATE exp.PropertyDescriptor SET DefaultValueType = 'FIXED_EDITABLE' WHERE PropertyId IN
+(
+	SELECT exp.PropertyDescriptor.propertyid FROM exp.PropertyDescriptor
+	JOIN exp.PropertyDomain ON
+		exp.PropertyDescriptor.PropertyId = exp.PropertyDomain.PropertyId
+	JOIN exp.DomainDescriptor ON
+		exp.PropertyDomain.DomainId = exp.DomainDescriptor.DomainId
+	-- get all assay domains except data domains:
+	WHERE exp.DomainDescriptor.DomainURI LIKE '%:AssayDomain-%' AND
+	exp.DomainDescriptor.DomainURI NOT LIKE '%:AssayDomain-Data%' AND
+		-- first, check for these properties in sample well group domains:
+	      ( exp.PropertyDescriptor.PropertyURI LIKE '%#SpecimenID' OR
+		exp.PropertyDescriptor.PropertyURI LIKE '%#VisitID' OR
+		exp.PropertyDescriptor.PropertyURI LIKE '%#ParticipantID' OR
+		exp.PropertyDescriptor.PropertyURI LIKE '%#Date')
 );

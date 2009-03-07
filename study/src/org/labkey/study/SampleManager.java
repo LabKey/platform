@@ -1259,7 +1259,7 @@ public class SampleManager
     }
 
     private static final Object REQUEST_ADDITION_LOCK = new Object();
-    public void createRequestSampleMapping(User user, SampleRequest request, List<Specimen> specimens, boolean createEvents) throws SQLException
+    public void createRequestSampleMapping(User user, SampleRequest request, List<Specimen> specimens, boolean createEvents, boolean createRequirements) throws SQLException
     {
         if (specimens == null || specimens.size() == 0)
             return;
@@ -1286,6 +1286,9 @@ public class SampleManager
                 if (createEvents)
                     createRequestEvent(user, request, RequestEventType.SPECIMEN_ADDED, specimen.getSampleDescription(), null);
             }
+
+            if (createRequirements)
+                getRequirementsProvider().generateDefaultRequirements(user, request);
         }
     }
 
