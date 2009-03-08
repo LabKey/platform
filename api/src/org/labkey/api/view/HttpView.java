@@ -399,6 +399,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     {
         if (null == viewName)
             return null;
+
         try
         {
             if (viewName.endsWith(".gm") || viewName.endsWith(".groovy"))
@@ -409,9 +410,6 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
 
             if (viewName.endsWith(".vm"))
                 throw new IllegalStateException("VelocityView is no longer supported");
-
-//            if (viewName.startsWith("/") || viewName.endsWith(".do"))
-//                return new ServletView(viewName);
 
             WebPartFactory f = Portal.getPortalPart(viewName);
             if (null != f)
