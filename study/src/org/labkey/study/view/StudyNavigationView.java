@@ -15,19 +15,17 @@
  */
 package org.labkey.study.view;
 
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.NavTree;
+import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GroovyView;
-import org.labkey.api.security.User;
-import org.labkey.study.model.*;
+import org.labkey.api.view.NavTree;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.model.Cohort;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyManager;
 
 import java.io.PrintWriter;
-import java.util.LinkedList;
-import java.util.Arrays;
-import java.util.Iterator;
 
 /**
  * Created by IntelliJ IDEA.
