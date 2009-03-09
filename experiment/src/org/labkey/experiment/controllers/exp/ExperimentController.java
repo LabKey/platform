@@ -1971,6 +1971,10 @@ public class ExperimentController extends SpringActionController
                     {
                         errors.reject(ERROR_MSG, e.getMessage());
                     }
+                    catch (IOException e)
+                    {
+                        errors.reject(ERROR_MSG, e.getMessage());
+                    }
                 }
             }
             return new JspView<UploadMaterialSetForm>("/org/labkey/experiment/uploadMaterials.jsp", form, errors);
