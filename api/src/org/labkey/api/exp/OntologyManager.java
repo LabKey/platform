@@ -244,7 +244,7 @@ public class OntologyManager
         if (validators != null)
         {
             for (IPropertyValidator validator : validators)
-                if (!validator.validate(prop.getLabel(), value, errors)) ret = false;
+                if (!validator.validate(prop.getLabel() != null ? prop.getLabel() : prop.getName(), value, errors)) ret = false;
         }
         return ret;
     }
