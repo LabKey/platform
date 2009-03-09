@@ -71,8 +71,6 @@ public class AuditController extends SpringActionController
             VBox view = new VBox();
 
             String selected = form.getView();
-            if (selected == null)
-                selected = AuditLogService.get().getAuditViewFactories()[0].getEventType();
 
             JspView jspView = new JspView("/org/labkey/audit/auditLog.jsp");
             ((ModelAndView)jspView).addObject("currentView", selected);
