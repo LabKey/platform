@@ -103,6 +103,8 @@ public class DomainImporter
         
         form.setWidget(panel);
 
+        VerticalPanel uploadPanel = new VerticalPanel();
+        uploadPanel.add(new HTML("Import from TSV or Excel file.<p>"));
         fileUpload = new FileUploadWithListeners();
         fileUpload.setName("uploadFormElement");
         fileUpload.addChangeListener(new ChangeListener()
@@ -112,7 +114,8 @@ public class DomainImporter
                 form.submit();
             }
         });
-        panel.add(fileUpload);
+        uploadPanel.add(fileUpload);
+        panel.add(uploadPanel);
 
         uploadStatusLabel = new HTML("&nbsp;");
 
@@ -295,7 +298,10 @@ public class DomainImporter
             {
                 needGridAndButtons = true;
                 grid = new DomainImportGrid();
-                mainPanel.add(grid);
+                VerticalPanel gridPanel = new VerticalPanel();
+                gridPanel.add(new HTML("Showing first 5 rows:<p>"));
+                gridPanel.add(grid);
+                mainPanel.add(gridPanel);
             }
             grid.setColumns(columns);
             if (!needGridAndButtons && needToMapColumns)

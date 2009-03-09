@@ -134,7 +134,8 @@ public class OntologyManager
 
 		assert total.start();
 		assert getExpSchema().getScope().isTransactionActive();
-		ArrayList<String> lsidList = new ArrayList<String>(rows.size());
+		String[] resultingLsids = new String[rows.size()];
+        int resultingLsidsIndex = 0;
         // Make sure we have enough rows to hande the overflow of the current row so we don't have to resize the list
         List<PropertyRow> propsToInsert = new ArrayList<PropertyRow>(MAX_PROPS_IN_BATCH + descriptors.length);
 
@@ -164,7 +165,7 @@ public class OntologyManager
 			{
 				assert before.start();
 				String lsid = helper.beforeImportObject(map);
-				lsidList.add(lsid);
+				resultingLsids[resultingLsidsIndex++] = lsid;
 				assert before.stop();
 
 				assert ensure.start();
@@ -233,7 +234,7 @@ public class OntologyManager
 		_log.debug("\t" + ensure.toString());
 		_log.debug("\t" + insert.toString());
 
-		return lsidList.toArray(new String[lsidList.size()]);
+		return resultingLsids;
 	}
 
     private static boolean validateProperty(IPropertyValidator[] validators, PropertyDescriptor prop, Object value, List<ValidationError> errors)
