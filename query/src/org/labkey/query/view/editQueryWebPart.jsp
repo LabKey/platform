@@ -25,6 +25,11 @@
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page extends="org.labkey.query.view.EditQueryPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+
+<script type="text/javascript">
+    LABKEY.requiresExtJs(true);
+</script>
+
 <%
     Map<String, String> schemaOptions = new TreeMap<String, String>(new Comparator<String>(){
         public int compare(String o1, String o2)
@@ -83,59 +88,68 @@
     
 %>
 <script type="text/javascript">
-var schemaInfos = <%= new JSONObject(schemaTableNames).toString() %>;
-function updateQueries(schemaName)
-{
-    var tableNames = schemaInfos[schemaName];
-    var querySelect = document.getElementById('queryName');
-
-    querySelect.options.length = 0;
-
-    var names = [];
-    for (var opt in tableNames)
+    var schemaInfos = <%= new JSONObject(schemaTableNames).toString() %>;
+    function updateQueries(schemaName)
     {
-        names.push(opt);
-    }
-    names.sort(function(a,b){
-      var a1 = a.toString().toLowerCase();
-      var b1 = b.toString().toLowerCase();
+        var tableNames = schemaInfos[schemaName];
+        var querySelect = document.getElementById('queryName');
 
-      if (a1 > b1)
-         return 1
-      if (a1 < b1)
-         return -1
-      return 0;
+        querySelect.options.length = 0;
+
+        var names = [];
+        for (var opt in tableNames)
+        {
+            names.push(opt);
+        }
+        names.sort(function(a,b){
+          var a1 = a.toString().toLowerCase();
+          var b1 = b.toString().toLowerCase();
+
+          if (a1 > b1)
+             return 1
+          if (a1 < b1)
+             return -1
+          return 0;
+        });
+        for (var i = 0; i <names.length; i++)
+        {
+            querySelect.options[querySelect.options.length] = new Option(names[i], names[i]);
+        }
+
+        updateViews(querySelect.value);
+    }
+    function updateViews(queryName)
+    {
+        var tableName = document.getElementById('schemaName').value;
+        var viewNames = schemaInfos[tableName][queryName];
+        var viewSelect = document.getElementById('viewName');
+
+        viewSelect.options.length = 0;
+
+        if (viewNames == undefined)
+            return;
+
+        for (var i = 0; i < viewNames.length; i++)
+        {
+            var opt = viewNames[i];
+            viewSelect.options[i] = new Option(opt == "" ? "<default view>" : opt, opt);
+        }
+    }
+    function disableQuerySelect(disable)
+    {
+        document.getElementById('queryName').disabled = disable;
+        document.getElementById('viewName').disabled = disable;
+    }
+
+    Ext.onReady(function()
+    {
+        var schemaName = document.getElementById('schemaName');
+        if (schemaName != undefined)
+            updateQueries(schemaName.value);
     });
-    for (var i = 0; i <names.length; i++)
-    {
-        querySelect.options[querySelect.options.length] = new Option(names[i], names[i]);
-    }
 
-    updateViews(querySelect.value);
-}
-function updateViews(queryName)
-{
-    var tableName = document.getElementById('schemaName').value;
-    var viewNames = schemaInfos[tableName][queryName];
-    var viewSelect = document.getElementById('viewName');
-
-    viewSelect.options.length = 0;
-
-    if (viewNames == undefined)
-        return;
-    
-    for (var i = 0; i < viewNames.length; i++)
-    {
-        var opt = viewNames[i];
-        viewSelect.options[i] = new Option(opt == "" ? "<default view>" : opt, opt);
-    }
-}
-function disableQuerySelect(disable)
-{
-    document.getElementById('queryName').disabled = disable;
-    document.getElementById('viewName').disabled = disable;
-}
 </script>
+
 <form name="frmCustomize" method="post" action="<%=h(_part.getCustomizePostURL(getContainer()))%>">
     <table>
         <tr>

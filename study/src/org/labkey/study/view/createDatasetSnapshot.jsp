@@ -71,7 +71,7 @@
         <tr><td colspan="10" class="labkey-title-area-line"><img height="1" width="1" src="<%=AppProps.getInstance().getContextPath() + "/_.gif"%>"></td></tr>
 
         <tr><td>&nbsp;</td></tr>
-        <tr><td>Snapshot&nbsp;Name:</td><td><input type="text" name="<%=bean.isEdit() ? "" : "snapshotName"%>" <%=bean.isEdit() ? "readonly" : ""%> value="<%=StringUtils.trimToEmpty(bean.getSnapshotName())%>"></td></tr>
+        <tr><td>Snapshot&nbsp;Name:</td><td><input type="text" maxlength="200" size="50" name="<%=bean.isEdit() ? "" : "snapshotName"%>" <%=bean.isEdit() ? "readonly" : ""%> value="<%=StringUtils.trimToEmpty(bean.getSnapshotName())%>"></td></tr>
         <tr><td>&nbsp;</td></tr>
 
         <tr><th colspan="10" class="labkey-header">Snapshot Refresh</th></tr>
@@ -91,14 +91,10 @@
             {
                 out.println(PageFlowUtil.generateSubmitButton("Edit Dataset Definition", "YAHOO.util.Dom.get('action').value='" + StudyController.StudySnapshotForm.EDIT_DATASET + "'"));
                 out.print("&nbsp;");
-                out.println(PageFlowUtil.generateSubmitButton(bean.isEdit() ? "Update" : "Create Snapshot"));
-                out.print("&nbsp;");
-                out.println(PageFlowUtil.generateSubmitButton("Cancel", "YAHOO.util.Dom.get('action').value='" + StudyController.StudySnapshotForm.CANCEL + "'"));
             }
-            else
-            {
-                out.println(PageFlowUtil.generateSubmitButton(bean.isEdit() ? "Update" : "Create Snapshot"));
-            }
+            out.println(PageFlowUtil.generateSubmitButton(bean.isEdit() ? "Save" : "Create Snapshot"));
+            out.print("&nbsp;");
+            out.println(PageFlowUtil.generateSubmitButton(bean.isEdit() ? "Done" : "Cancel", "YAHOO.util.Dom.get('action').value='" + StudyController.StudySnapshotForm.CANCEL + "'"));
         %>
     </table>
     <%  for (DisplayColumn col : QuerySnapshotService.get(bean.getSchemaName()).getDisplayColumns(bean)) { %>

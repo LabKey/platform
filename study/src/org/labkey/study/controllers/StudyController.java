@@ -4574,7 +4574,7 @@ public class StudyController extends BaseStudyController
 
     public static class StudySnapshotForm extends QuerySnapshotForm
     {
-        private int _snapshotDatasetId;
+        private int _snapshotDatasetId = -1;
         private String _action;
 
         public static final String EDIT_DATASET = "editDataset";
@@ -4618,12 +4618,18 @@ public class StudyController extends BaseStudyController
             {
                 QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName().toString(), name);
                 if (def != null)
+                {
                     errors.reject("snapshotQuery.error", "A Snapshot with the same name already exists");
+                    return;
+                }
 
-                // check for a dataset with the same name
+                // check for a dataset with the same name unless it's one that we created
                 DataSetDefinition dataset = StudyManager.getInstance().getDataSetDefinition(StudyManager.getInstance().getStudy(getContainer()), name);
                 if (dataset != null)
-                    errors.reject("snapshotQuery.error", "A Dataset with the same name already exists");
+                {
+                    if (dataset.getDataSetId() != form.getSnapshotDatasetId())
+                        errors.reject("snapshotQuery.error", "A Dataset with the same name already exists");
+                }
             }
             else
                 errors.reject("snapshotQuery.error", "The Query Snapshot name cannot be blank");
@@ -4634,9 +4640,11 @@ public class StudyController extends BaseStudyController
             if (!reshow || errors.hasErrors())
             {
                 ActionURL url = getViewContext().getActionURL();
-                form.setSnapshotName(url.getParameter("ff_snapshotName"));
+
+                if (StringUtils.isEmpty(form.getSnapshotName()))
+                    form.setSnapshotName(url.getParameter("ff_snapshotName"));
                 form.setUpdateDelay(NumberUtils.toInt(url.getParameter("ff_updateDelay")));
-                form.setSnapshotDatasetId(NumberUtils.toInt(url.getParameter("ff_snapshotDatasetId")));
+                form.setSnapshotDatasetId(NumberUtils.toInt(url.getParameter("ff_snapshotDatasetId"), -1));
 
                 return new JspView<QueryForm>("/org/labkey/study/view/createDatasetSnapshot.jsp", form, errors);
             }
@@ -4658,6 +4666,7 @@ public class StudyController extends BaseStudyController
                         "typeURI", dsDef.getTypeURI(),
                         "dateBased", String.valueOf(study.isDateBased()),
                         "returnURL", url.getLocalURIString(),
+                        "cancelURL", url.getLocalURIString(),
                         "create", "false");
 
                 HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.");
@@ -4673,14 +4682,17 @@ public class StudyController extends BaseStudyController
 
         private void deletePreviousDatasetDefinition(StudySnapshotForm form) throws SQLException
         {
-            if (form.getSnapshotDatasetId() != 0)
+            if (form.getSnapshotDatasetId() != -1)
             {
                 Study study = StudyManager.getInstance().getStudy(getContainer());
 
                 // a dataset definition was edited previously, but under a different name, need to delete the old one
                 DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotDatasetId());
                 if (dsDef != null)
+                {
                     StudyManager.getInstance().deleteDataset(study, getUser(), dsDef);
+                    form.setSnapshotDatasetId(-1);
+                }
             }
         }
 
@@ -4839,12 +4851,14 @@ public class StudyController extends BaseStudyController
                     if (dsDef == null)
                         return HttpView.throwNotFound("Unable to edit the created DataSet Definition");
 
+                    ActionURL returnURL = getViewContext().cloneActionURL().replaceParameter("showDataset", "0");
                     Map<String,String> props = PageFlowUtil.map(
                             "studyId", String.valueOf(study.getRowId()),
                             "datasetId", String.valueOf(dsDef.getDataSetId()),
                             "typeURI", dsDef.getTypeURI(),
                             "dateBased", "false",
-                            "returnURL", getViewContext().cloneActionURL().replaceParameter("showDataset", "0").toString(),
+                            "returnURL", returnURL.toString(),
+                            "cancelURL", returnURL.toString(),
                             "create", "false");
 
                     HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.<br>Click the save button to " +
@@ -4865,7 +4879,13 @@ public class StudyController extends BaseStudyController
         {
             List<String> errorList = new ArrayList<String>();
 
-            if (form.isUpdateSnapshot())
+            if (StudySnapshotForm.CANCEL.equals(form.getAction()))
+            {
+                String redirect = getViewContext().getActionURL().getParameter("redirectURL");
+                if (redirect != null)
+                    _successURL = new ActionURL(PageFlowUtil.decode(redirect));
+            }
+            else if (form.isUpdateSnapshot())
             {
                 _successURL = QuerySnapshotService.get(form.getSchemaName()).updateSnapshot(form, errorList);
 

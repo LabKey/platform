@@ -139,6 +139,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     {
         QuerySettings qs = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
         return new ActionURL(StudyController.CreateSnapshotAction.class, context.getContainer()).
+                addParameter("ff_snapshotName", settings.getQueryName() + " Snapshot").
                 addParameter(qs.param(QueryParam.schemaName), settings.getSchemaName()).
                 addParameter(qs.param(QueryParam.queryName), settings.getQueryName()).
                 addParameter(qs.param(QueryParam.viewName), settings.getViewName()).
@@ -373,12 +374,13 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return new ActionURL(StudyController.EditSnapshotAction.class, context.getContainer()).
                 addParameter(qs.param(QueryParam.schemaName), settings.getSchemaName()).
                 addParameter("snapshotName", settings.getQueryName()).
-                addParameter(qs.param(QueryParam.queryName), settings.getQueryName());
+                addParameter(qs.param(QueryParam.queryName), settings.getQueryName()).
+                addParameter("redirectURL", PageFlowUtil.encode(context.getActionURL().getLocalURIString()));
     }
 
     private List<QuerySnapshotDefinition> getDependencies(DataSetDefinition dsDef)
     {
-        Map<QuerySnapshotDefinition, QuerySnapshotDefinition> dependencies = new HashMap<QuerySnapshotDefinition, QuerySnapshotDefinition>();
+        Map<Integer, QuerySnapshotDefinition> dependencies = new HashMap<Integer, QuerySnapshotDefinition>();
         Domain d = PropertyService.get().getDomain(dsDef.getContainer(), dsDef.getTypeURI());
         if (d != null)
         {
@@ -388,9 +390,9 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 {
                     for (QuerySnapshotDefinition snapshot : snapshots)
                     {
-                        if (!dependencies.containsKey(snapshot) && hasDependency(snapshot, prop.getPropertyURI()))
+                        if (!dependencies.containsKey(snapshot.getId()) && hasDependency(snapshot, prop.getPropertyURI()))
                         {
-                            dependencies.put(snapshot, snapshot);
+                            dependencies.put(snapshot.getId(), snapshot);
                         }
                     }
                 }

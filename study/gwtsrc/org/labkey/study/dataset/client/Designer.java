@@ -44,6 +44,7 @@ import java.util.Map;
 public class Designer implements EntryPoint, Saveable<GWTDataset>
 {
     private String _returnURL;
+    private String _cancelURL;
     private boolean _isDateBased;
 
     private GWTDataset _dataset;
@@ -113,6 +114,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
         int datasetId = Integer.parseInt(PropertyUtil.getServerProperty("datasetId"));
         String typeURI = PropertyUtil.getServerProperty("typeURI");
         _returnURL = PropertyUtil.getServerProperty("returnURL");
+        _cancelURL = PropertyUtil.getServerProperty("cancelURL");
         String dateBased = PropertyUtil.getServerProperty("dateBased");
         if (dateBased != null)
             _isDateBased = Boolean.valueOf(dateBased).booleanValue();
@@ -227,7 +229,10 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
 
         public void onClick(Widget sender)
         {
-            cancel();
+            if (_cancelURL != null && _cancelURL.length() > 0)
+                navigate(_cancelURL);
+            else
+                cancel();
         }
     }
 

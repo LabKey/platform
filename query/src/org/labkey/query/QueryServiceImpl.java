@@ -265,7 +265,12 @@ public class QueryServiceImpl extends QueryService
 
     public List<QuerySnapshotDefinition> getQuerySnapshotDefs(Container container, String schema)
     {
-        return new ArrayList<QuerySnapshotDefinition>(getAllQuerySnapshotDefs(container, schema).values());
+        List<QuerySnapshotDefinition> ret = new ArrayList<QuerySnapshotDefinition>();
+        for (QuerySnapshotDef queryDef : QueryManager.get().getQuerySnapshots(container, schema))
+        {
+            ret.add(new QuerySnapshotDefImpl(queryDef));
+        }
+        return ret;
     }
 
     public QuerySnapshotDefinition createQuerySnapshotDef(QueryDefinition queryDef, String name)
