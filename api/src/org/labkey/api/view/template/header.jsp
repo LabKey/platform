@@ -15,9 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.admin.AdminUrls"%>
 <%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
@@ -26,13 +24,10 @@
 <%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.*" %>
-<%@ page import="org.labkey.api.view.PopupAdminView" %>
-<%@ page import="org.labkey.api.data.CoreSchema" %>
-<%@ page import="org.labkey.api.data.DbScope" %>
-<%@ page import="org.labkey.api.util.VersionNumber" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    TemplateHeaderView.TemplateHeaderBean bean = ((TemplateHeaderView) HttpView.currentView()).getModelBean();
+    TemplateHeaderView me = ((TemplateHeaderView) HttpView.currentView());
+    TemplateHeaderView.TemplateHeaderBean bean = me.getModelBean();
     ViewContext currentContext = org.labkey.api.view.HttpView.currentContext();
     Container c = currentContext.getContainer();
     String contextPath = currentContext.getContextPath();
@@ -45,14 +40,16 @@
         <td class="labkey-main-title-area"><span><a id="labkey-main-title" class="labkey-main-title" href="<%= app.getHomePageUrl() %>"><%=h(laf.getShortName())%></a></span>
             </td>
 
-<td class="labkey-main-nav" align="right"><%
+<td class="labkey-main-nav" align="right">
+<%
 
     User user = (User) request.getUserPrincipal();
 
     if (null != user && !user.isGuest())
     {
-        out.print(user.getFriendlyName() + "<br>");%>
-        <a href="<%=h(urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId()))%>">My&nbsp;Account</a>&nbsp;|&nbsp;<a href="<%=h(user.isImpersonated() ? urlProvider(LoginUrls.class).getStopImpersonatingURL(c, request) : urlProvider(LoginUrls.class).getLogoutURL(c))%>"><%=user.isImpersonated() ? "Stop&nbsp;Impersonating" : "Sign&nbsp;Out"%></a><%
+%>
+        <%=user.getFriendlyName()%><br/><a href="<%=h(urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId()))%>">My&nbsp;Account</a>&nbsp;|&nbsp;<a href="<%=h(user.isImpersonated() ? urlProvider(LoginUrls.class).getStopImpersonatingURL(c, request) : urlProvider(LoginUrls.class).getLogoutURL(c))%>"><%=user.isImpersonated() ? "Stop&nbsp;Impersonating" : "Sign&nbsp;Out"%></a>
+<%
     }
     else if (bean.pageConfig.shouldIncludeLoginLink())
     {
@@ -65,69 +62,53 @@
         <a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">Sign&nbsp;In</a><%
     }
 
-%></td></tr>
-<%
-    if (user != null && user.isAdministrator())
-    {
-        if (AppProps.getInstance().isUserRequestedAdminOnlyMode())
-        {
-%><tr><td>&nbsp;</td><td class="labkey-error" style="padding:5px;">Admin only mode: only administrators can log in. When finished, turn this off in the <a href="<%=urlProvider(AdminUrls.class).getCustomizeSiteURL()%>">Admin Console</a>.</td></tr><%
-    }
-
-    if (bean.moduleFailures != null && bean.moduleFailures.size() > 0)
-    {
-    %><tr><td>&nbsp;</td><td style="padding:5px;">
-    <p class="labkey-error">There were errors loading the following modules during server startup:</p>
-    <%= bean.moduleFailures.keySet() %>
-    <p><a href="<%=PageFlowUtil.urlProvider(AdminUrls.class).getModuleErrorsURL(currentContext.getContainer()) %>">Error details</a></p>
-</td></tr><%
-    }
-
-    // Do not HTML encode this message, as it is HTML so it can contain a link to
-    // download a new version, for example.
-    if (bean.upgradeMessage != null)
-    {
-    %><tr><td>&nbsp;</td><td style="padding:5px;"><%= bean.upgradeMessage %></td></tr><%
-    }
-}
 %>
-    <tr style="display:none" id="firebug-warning">
-        <td>&nbsp;</td>
-        <td class="labkey-error" style="padding:5px">
-        Firebug is known to cause this site to run slowly. Please disable Firebug.
-        [<a target="_blank" href="https://www.labkey.org/wiki/home/Documentation/page.view?name=firebug">instructions</a>]
+</td>
+<td id="labkey-warning-message-icon" class="labkey-main-nav" <%=me.isUserHidingWarningMessages() ? "" : "style=display:none;"%>>
+    <img src="<%=getViewContext().getContextPath()%>/_images/warning-small.png" alt="!"
+         title="Click to view warning messages."
+         style="cursor: pointer;"
+         onclick="labkeyShowWarningMessages(true);"/>
+</td>
+</tr>
+<%
+    if(me.getWarningMessages().size() > 0) {
+%>
+    <tr id="labkey-warning-messages-area" <%=me.isUserHidingWarningMessages() ? "style=display:none;" : ""%>>
+        <td colspan="4" style="padding: 2px;">
+            <div class="labkey-warning-messages">
+                <img src="<%=getViewContext().getContextPath()%>/_images/partdelete.gif" alt="x"
+                     style="float: right;cursor:pointer;" onclick="labkeyShowWarningMessages(false);">
+                <ul>
+                <% for(String warningMessage : me.getWarningMessages()) { %>
+                    <li><%=warningMessage%></li>
+                <% } //for each warning message %>
+                </ul>
+            </div>
         </td>
     </tr>
-<%
-    //FIX: 7502
-    //show a warning for postgres versions < 8.3 that we no longer support this
-    DbScope coreScope = CoreSchema.getInstance().getSchema().getScope();
-    if(getViewContext().getUser().isAdministrator() && "PostgreSQL".equalsIgnoreCase(coreScope.getDatabaseProductName()))
-    {
-        VersionNumber dbVersion = new VersionNumber(coreScope.getDatabaseProductVersion());
-        if(dbVersion.getMajor() <= 8 && dbVersion.getMinor() < 3)
-        {
-            %>
-                <tr><td>&nbsp;</td>
-                    <td class="labkey-error" style="padding: 2px">Support for PostgreSQL Version 8.2 and earlier has been deprecated. Please upgrade to version 8.3 or later.</td>
-                </tr>
-            <%
-        }
-    }
-%>
+<%  } //if warning messages %>
 </table>
 <script type="text/javascript">
-    if(window.console && window.console.firebug)
+    LABKEY.requiresExtJs(false);
+</script>
+<script type="text/javascript">
+    function labkeyShowWarningMessages(show)
     {
-        //check version--anything past '1.2.0' is OK
-        var version = window.console.firebug.split(".");
-        for(var idx = 0; idx < version.length; ++idx)
-            version[idx] = parseInt(version[idx]);
-        if(version[0] < 1 && version[1] < 2)
-        {
-            var elem = document.getElementById("firebug-warning");
-            if(elem)
-                elem.style.display = "";
-        }
+        if(undefined === show)
+            show = true;
+
+        var elem = Ext.get("labkey-warning-messages-area");
+        if(elem)
+            elem.setDisplayed(show, true);
+        elem = Ext.get("labkey-warning-message-icon");
+        if(elem)
+            elem.setDisplayed(!show, true);
+
+        Ext.Ajax.request({
+            url: '<%=getViewContext().getContextPath()%>/user/setShowWarningMessages.api',
+            method: 'GET',
+            params: {showMessages: show}
+        });
     }
 </script>

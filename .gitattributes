@@ -1879,6 +1879,7 @@ internal/webapp/_images/toolgrad.gif -text
 internal/webapp/_images/topgrad.gif -text
 internal/webapp/_images/uparrow.gif -text
 internal/webapp/_images/uparrow_disabled.gif -text
+internal/webapp/_images/warning-small.png -text
 internal/webapp/_yui/README -text
 internal/webapp/_yui/build/animation/README -text
 internal/webapp/_yui/build/animation/animation-debug.js -text
