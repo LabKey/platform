@@ -2644,14 +2644,15 @@ public class StudyManager
             }
             else
                 visit = toDouble(map.get(DataSetDefinition.getSequenceNumURI()));
-            String uri = _urnPrefix + visit + "." + ptid;
+            StringBuilder sb = new StringBuilder(_urnPrefix);
+            sb.append(visit).append('.').append(ptid);
             if (null != _keyPropertyURI)
             {
                 Object key = map.get(_keyPropertyURI);
                 if (null != key)
-                    uri += "." + String.valueOf(key);
+                    sb.append('.').append(key);
             }
-            return uri;
+            return sb.toString();
         }
 
 

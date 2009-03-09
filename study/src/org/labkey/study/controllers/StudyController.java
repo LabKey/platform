@@ -46,6 +46,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotForm;
@@ -64,11 +65,10 @@ import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.*;
+import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.view.*;
-import org.labkey.api.view.template.DialogTemplate;
-import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.view.template.AppBar;
-import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.Pair;
 import org.labkey.study.SampleManager;
@@ -95,7 +95,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
-import static org.labkey.api.util.PageFlowUtil.filter;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -716,31 +715,6 @@ public class StudyController extends BaseStudyController
                         deleteRows.setDisplayPermission(ACL.PERM_DELETE);
                         buttonBar.add(deleteRows);
                     }
-                }
-            }
-
-            if (null == visit && !isSnapshot && (user.isAdministrator() || canWrite))
-            {
-                if (!isAssayDataset)
-                {
-                    ActionButton purgeButton = new ActionButton("purgeDataset.view", "Delete All Rows", DataRegion.MODE_GRID, ActionButton.Action.LINK);
-                    purgeButton.setDisplayPermission(ACL.PERM_ADMIN);
-                    purgeButton.setScript("if(confirm(\"Delete all rows of this dataset?\")){ form.action=\"purgeDataset.view\";return true;} else return false;");
-                    purgeButton.setActionType(ActionButton.Action.GET);
-                    buttonBar.add(purgeButton);
-                }
-                else
-                {
-                    ActionButton purgeButton = new ActionButton("button", "Recall All Rows");
-                    ActionURL deleteAllRowsURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
-                    deleteAllRowsURL.addParameter("protocolId", protocol.getRowId());
-                    deleteAllRowsURL.addParameter("deleteAllData", "true");
-                    purgeButton.setDisplayPermission(ACL.PERM_ADMIN);
-                    purgeButton.setScript("if(confirm(\"Recall all rows of this dataset?\")){ form.action=\"" +
-                        deleteAllRowsURL.getLocalURIString() +
-                        "\";return true;} else return false;");
-                    purgeButton.setActionType(ActionButton.Action.GET);
-                    buttonBar.add(purgeButton);
                 }
             }
 

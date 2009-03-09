@@ -191,7 +191,9 @@ public class ListController extends SpringActionController
 
             props.put("typeURI", _list.getDomain().getTypeURI());
 
-            ActionURL cancelURL = new ActionURL(BeginAction.class, getContainer());
+            // Cancel should delete the dataset
+            ActionURL cancelURL = new ActionURL(CancelDefineAndImportListAction.class, getContainer());
+            cancelURL.addParameter("listId", _list.getListId());
             props.put("cancelURL", cancelURL.getLocalURIString());
 
             ActionURL successURL = _list.urlShowData();
@@ -218,6 +220,24 @@ public class ListController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return appendListNavTrail(root, _list, null);
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class CancelDefineAndImportListAction extends SimpleViewAction<ListDefinitionForm>
+    {
+        public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
+        {
+            // Cancelling the import should delete the list
+            ListDefinition _list = form.getList();
+            _list.delete(getUser());
+            HttpView.throwRedirect(getBeginURL(getContainer()));
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
         }
     }
 
