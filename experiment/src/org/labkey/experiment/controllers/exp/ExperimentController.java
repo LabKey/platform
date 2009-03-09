@@ -388,7 +388,7 @@ public class ExperimentController extends SpringActionController
 
             queryView.setTitle("Sample Set Contents");
 
-            DetailsView detailsView = new DetailsView(getMaterialSourceRegion(getViewContext()), form);
+            DetailsView detailsView = new DetailsView(getMaterialSourceRegion(getViewContext(), true), form);
             detailsView.getDataRegion().getDisplayColumn("Name").setURL(null);
             detailsView.getDataRegion().getDisplayColumn("LSID").setVisible(false);
             detailsView.getDataRegion().getDisplayColumn("MaterialLSIDPrefix").setVisible(false);
@@ -1784,7 +1784,7 @@ public class ExperimentController extends SpringActionController
                 HttpView.throwUnauthorized("Cannot edit default sample set");
             }
 
-            return new UpdateView(getMaterialSourceRegion(getViewContext()), form, errors);
+            return new UpdateView(getMaterialSourceRegion(getViewContext(), false), form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1793,7 +1793,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    private DataRegion getMaterialSourceRegion(ViewContext model) throws Exception
+    private DataRegion getMaterialSourceRegion(ViewContext model, boolean detailsView) throws Exception
     {
         TableInfo tableInfo = ExperimentServiceImpl.get().getTinfoMaterialSource();
         DataRegion dr = new DataRegion();
@@ -1805,6 +1805,8 @@ public class ExperimentController extends SpringActionController
         dr.getDisplayColumn("idcol1").setVisible(false);
         dr.getDisplayColumn("idcol2").setVisible(false);
         dr.getDisplayColumn("idcol3").setVisible(false);
+        dr.getDisplayColumn("lsid").setVisible(false);
+        dr.getDisplayColumn("materiallsidprefix").setVisible(false);
         dr.getDisplayColumn("parentcol").setVisible(false);
 
         ActionURL url = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, model.getContainer());
@@ -1814,7 +1816,7 @@ public class ExperimentController extends SpringActionController
 
         ButtonBar bb = new ButtonBar();
 
-        SampleSetWebPart.populateButtonBar(model, dr, bb);
+        SampleSetWebPart.populateButtonBar(model, bb, detailsView);
 
         dr.setButtonBar(bb);
 
@@ -1856,7 +1858,7 @@ public class ExperimentController extends SpringActionController
     {
         public ModelAndView getView(MaterialSourceForm form, BindException errors) throws Exception
         {
-            return new InsertView(getMaterialSourceRegion(getViewContext()), form, errors);
+            return new InsertView(getMaterialSourceRegion(getViewContext(), false), form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1883,6 +1885,7 @@ public class ExperimentController extends SpringActionController
                 HttpView.throwNotFound("MaterialSource with LSID " + _source.getLSID());
             }
             Table.update(getUser(), ExperimentService.get().getTinfoMaterialSource(), form.getTypedValues(), _source.getRowId(), null);
+            ExperimentServiceImpl.get().clearCaches();
             return true;
         }
 

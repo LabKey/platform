@@ -2824,7 +2824,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
         if (pipeRoot == null || !NetworkDrive.exists(pipeRoot.getRootPath()))
         {
-            throw new IllegalArgumentException("The target container must have a valid pipeline root");
+            throw new ExperimentException("The target container must have a valid pipeline root");
         }
         if (outputMaterials.isEmpty())
         {

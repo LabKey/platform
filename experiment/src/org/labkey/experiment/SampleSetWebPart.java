@@ -93,10 +93,10 @@ public class SampleSetWebPart extends QueryView
     protected void populateButtonBar(DataView view, ButtonBar bar, boolean exportAsWebPage)
     {
         super.populateButtonBar(view, bar, exportAsWebPage);
-        populateButtonBar(view.getViewContext(), view.getDataRegion(), bar);
+        populateButtonBar(view.getViewContext(), bar, false);
     }
 
-    public static void populateButtonBar(ViewContext model, DataRegion dr, ButtonBar bb)
+    public static void populateButtonBar(ViewContext model, ButtonBar bb, boolean detailsView)
     {
         ActionButton deleteButton = new ActionButton("deleteMaterialSource.view", "Delete", DataRegion.MODE_GRID, ActionButton.Action.GET);
         deleteButton.setDisplayPermission(ACL.PERM_DELETE);
@@ -121,7 +121,7 @@ public class SampleSetWebPart extends QueryView
         setAsActiveButton.setURL(setAsActiveURL);
         setAsActiveButton.setActionType(ActionButton.Action.POST);
         setAsActiveButton.setDisplayPermission(ACL.PERM_UPDATE);
-        setAsActiveButton.setRequiresSelection(true);
+        setAsActiveButton.setRequiresSelection(!detailsView);
         bb.add(setAsActiveButton);
 
         ActionURL showAllURL = model.cloneActionURL();
