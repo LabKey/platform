@@ -106,7 +106,7 @@ public class FileUtil
     public static String getBaseName(File file, int dots)
     {
         String baseName = file.getName();
-        while (dots-- > 0)
+        while (dots-- > 0 && baseName.indexOf('.') != -1)
             baseName = baseName.substring(0, baseName.lastIndexOf('.'));
         return baseName;
     }
