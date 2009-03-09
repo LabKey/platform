@@ -33,6 +33,7 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PrintTemplate;
+import org.labkey.api.view.template.TemplateHeaderView;
 import org.labkey.core.query.GroupAuditViewFactory;
 import org.labkey.core.query.UserAuditViewFactory;
 import org.labkey.core.security.SecurityController;
@@ -1546,6 +1547,32 @@ public class UserController extends SpringActionController
                 SecurityManager.impersonate(getViewContext(), impersonatedUser, c.getProject(), form.getReturnActionURL());
                 return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
             }
+        }
+    }
+
+    public static class ShowWarningMessagesForm
+    {
+        private boolean _showMessages = true;
+
+        public boolean isShowMessages()
+        {
+            return _showMessages;
+        }
+
+        public void setShowMessages(boolean showMessages)
+        {
+            _showMessages = showMessages;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_NONE)
+    public class SetShowWarningMessagesAction extends ApiAction<ShowWarningMessagesForm>
+    {
+        public ApiResponse execute(ShowWarningMessagesForm form, BindException errors) throws Exception
+        {
+            getViewContext().getSession().setAttribute(TemplateHeaderView.SHOW_WARNING_MESSAGES_SESSION_PROP,
+                    new Boolean(form.isShowMessages()));
+            return new ApiSimpleResponse("success", true);
         }
     }
 }

@@ -1315,6 +1315,20 @@ tr.labkey-wp-header
     vertical-align: top;
 }
 
+.labkey-warning-messages
+{
+    border: 1px solid #C8B560;
+    background-color: #FFF8C6;
+    padding: 2px;
+}
+
+.labkey-warning-messages ul
+{
+    margin: 0px;
+    padding-left: 20px;
+}
+
+
 /* This is used for the left side of the wp header and often contains the title */
 th.labkey-wp-title-left, td.labkey-wp-title-left
 {
