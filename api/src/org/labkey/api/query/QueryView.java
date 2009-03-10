@@ -1036,6 +1036,7 @@ public class QueryView extends WebPartView<Object>
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
         rgn.setMaxRows(0);
+        rgn.setAllowAsync(false);
         view.getRenderContext().setCache(false);
         ResultSet rs = rgn.getResultSet(view.getRenderContext());
         TSVGridWriter tsv = new TSVGridWriter(rs, getExportColumns(rgn.getDisplayColumns()));
@@ -1070,6 +1071,7 @@ public class QueryView extends WebPartView<Object>
     {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
+        rgn.setAllowAsync(false);
         rgn.setMaxRows(ExcelWriter.MAX_ROWS);
         ResultSet rs = rgn.getResultSet(view.getRenderContext());
         return new ExcelWriter(rs, getExportColumns(rgn.getDisplayColumns()));
@@ -1080,6 +1082,7 @@ public class QueryView extends WebPartView<Object>
     {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
+        rgn.setAllowAsync(false);
         return new ExcelWriter(null, getExportColumns(rgn.getDisplayColumns()));
     }
 
