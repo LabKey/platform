@@ -408,9 +408,9 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             name = _ccc.getColumnCaptions().get(columnName.getSource());
         else if (col != null)
             name = col.getCaption();
-        String label = PageFlowUtil.filter(name).replaceAll(" ", "&nbsp;");
-        if (label != null)
+        if (name != null)
         {
+            String label = PageFlowUtil.filter(name).replaceAll(" ", "&nbsp;");
             if (_requiredFields != null && _requiredFields.indexOf(columnName.toLowerCase().getSource()) != -1)
                 return new HString(label + "<span class=\"labkey-error\">*</span>", false);
             return new HString(label,false);

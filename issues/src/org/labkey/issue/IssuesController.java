@@ -780,13 +780,13 @@ public class IssuesController extends SpringActionController
 
             _issue.beforeResolve(user);
 
-            if (null == _issue.getResolution())
+            if (_issue.getResolution().isEmpty())
             {
                 Map<Integer, HString> defaults = IssueManager.getAllDefaults(getContainer());
 
                 HString resolution = defaults.get(ISSUE_RESOLUTION);
 
-                if (null != resolution)
+                if (!resolution.isEmpty())
                     _issue.setResolution(resolution);
             }
 
