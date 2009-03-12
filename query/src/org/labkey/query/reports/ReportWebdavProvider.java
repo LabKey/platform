@@ -1,0 +1,269 @@
+/*
+ * Copyright (c) 2008 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.labkey.query.reports;
+
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
+import org.labkey.api.reports.Report;
+import org.labkey.api.reports.ReportService;
+import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.webdav.*;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.sql.SQLException;
+import java.util.*;
+
+/*
+* User: Karl Lum
+* Date: Nov 13, 2008
+* Time: 3:34:11 PM
+*/
+public class ReportWebdavProvider implements WebdavService.Provider
+{
+    final static String VIEW_NAME = "@views";
+
+    public Set<String> addChildren(@NotNull WebdavResolver.Resource target)
+    {
+        if (!(target instanceof WebdavResolverImpl.WebFolderResource))
+            return null;
+        WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) target;
+        Container c = folder.getContainer();
+
+        return hasViews(null, c) ? PageFlowUtil.set(VIEW_NAME) : null;
+    }
+
+    public WebdavResolver.Resource resolve(@NotNull WebdavResolver.Resource parent, @NotNull String name)
+    {
+        if (!VIEW_NAME.equalsIgnoreCase(name))
+            return null;
+        if (!(parent instanceof WebdavResolverImpl.WebFolderResource))
+            return null;
+        WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) parent;
+        Container c = folder.getContainer();
+
+        return VIEW_NAME.equals(name) ? new ViewProviderResource(c) : null;
+    }
+
+    private boolean hasViews(User user, Container c)
+    {
+        try {
+            return ReportService.get().getReports(user, c).length > 0;
+        }
+        catch (SQLException e)
+        {
+            return false;
+        }
+    }
+
+    static class ViewProviderResource extends AbstractCollectionResource
+    {
+        Container _c;
+
+        ViewProviderResource(Container c)
+        {
+            super(c.getPath(), VIEW_NAME);
+            _c = c;
+            _acl = c.getAcl();
+        }
+
+        @Override
+        public String getName()
+        {
+            return VIEW_NAME;
+        }
+
+        private Map<String, Report> _map;
+        public WebdavResolver.Resource find(String name)
+        {
+            Map<String, Report> map = getReportMap();
+            if (map.containsKey(name))
+                return new ViewResource(this, map.get(name));
+
+            return null;
+        }
+
+        @NotNull
+        public List<String> listNames()
+        {
+            Map<String, Report> map = getReportMap();
+            return new ArrayList<String>(map.keySet());
+        }
+
+        private Map<String, Report> getReportMap()
+        {
+            try {
+                if (_map == null)
+                {
+                    _map = new HashMap<String, Report>();
+                    for (Report report : ReportService.get().getReports(null, _c))
+                    {
+                        _map.put(report.getDescriptor().getReportName() + ".xml", report);
+                    }
+                }
+                return _map;
+            }
+            catch (SQLException e)
+            {
+                return Collections.emptyMap();
+            }
+        }
+
+        public boolean exists()
+        {
+            return true;
+        }
+
+        public boolean isFile()
+        {
+            return false;
+        }
+
+        public long getCreation()
+        {
+            return 0;
+        }
+
+        public long getLastModified()
+        {
+            return 0;
+        }
+    }
+
+    public static class ViewResource extends AbstractDocumentResource
+    {
+        Report _report;
+        Container _c;
+        ViewProviderResource _folder;
+
+        ViewResource(ViewProviderResource folder, Report report)
+        {
+            super(folder.getPath(), report.getDescriptor().getReportName() + ".xml");
+            _report = report;
+            _c = folder._c;
+            _acl = folder._c.getAcl();
+            _folder = folder;
+        }
+
+        public List<WebdavResolver.History> getHistory()
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        public boolean exists()
+        {
+            return true;
+        }
+
+        public boolean isCollection()
+        {
+            return false;
+        }
+
+        public boolean isVirtual()
+        {
+            return true;
+        }
+
+        public boolean isFile()
+        {
+            return exists();
+        }
+
+        public boolean canRename()
+        {
+            return false; // NYI
+        }
+
+        public InputStream getInputStream(User user) throws IOException
+        {
+            byte[] buf = _report.getDescriptor().serialize().getBytes("UTF-8");
+            return new ByteArrayInputStream(buf);
+        }
+
+        public long copyFrom(User user, InputStream in) throws IOException
+        {
+/*
+            ByteArrayOutputStream buf = new ByteArrayOutputStream();
+            FileUtil.copyData(in,buf);
+            long len = buf.size();
+            WikiVersion version = WikiManager.getLatestVersion(_wiki);
+            version.setBody(buf.toString("UTF-8"));
+            try
+            {
+                WikiManager.updateWiki(user, _wiki, version);
+                WikiManager.getLatestVersion(_wiki, true);
+                return len;
+            }
+            catch (SQLException x)
+            {
+                throw new IOException("error writing to wiki");
+            }
+*/
+            return 0;
+        }
+
+
+        // You can't actually delete this file, however, some clients do delete instead of overwrite,
+        // so pretend we deleted it.
+        public boolean delete(User user) throws IOException
+        {
+            copyFrom(user, new ByteArrayInputStream(new byte[0]));
+            return true;
+        }
+
+        public WebdavResolver.Resource parent()
+        {
+            return _folder;
+        }
+
+        public long getCreation()
+        {
+            return _report.getDescriptor().getCreated().getTime();
+        }
+
+        public long getLastModified()
+        {
+            return _report.getDescriptor().getModified().getTime();
+        }
+
+        public String getContentType()
+        {
+            return "text/xml";
+        }
+
+        public long getContentLength()
+        {
+            try
+            {
+                byte[] buf = _report.getDescriptor().serialize().getBytes("UTF-8");
+                return buf.length;
+            }
+            catch (UnsupportedEncodingException e)
+            {
+                return 0;
+            }
+        }
+
+        public WebdavResolver.Resource find(String name)
+        {
+            return null;
+        }
+    }
+}

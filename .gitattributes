@@ -1510,6 +1510,7 @@ query/src/org/labkey/query/persist/QueryDef.java -text
 query/src/org/labkey/query/persist/QueryManager.java -text
 query/src/org/labkey/query/persist/QuerySnapshotDef.java -text
 query/src/org/labkey/query/reports/ReportServiceImpl.java -text
+query/src/org/labkey/query/reports/ReportWebdavProvider.java -text
 query/src/org/labkey/query/reports/ReportsController.java -text
 query/src/org/labkey/query/reports/ReportsPipelineProvider.java -text
 query/src/org/labkey/query/reports/ReportsWebPartFactory.java -text
