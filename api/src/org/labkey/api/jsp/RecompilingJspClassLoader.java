@@ -17,6 +17,7 @@ package org.labkey.api.jsp;
 
 import org.apache.jasper.JspC;
 import org.apache.log4j.Logger;
+import org.apache.axis.utils.StringUtils;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ResourceFinder;
 import org.labkey.api.settings.AppProps;
@@ -213,20 +214,33 @@ public class RecompilingJspClassLoader extends JspClassLoader
         }
     }
 
+
     private String getTomcatCommonLib()
     {
+        String COMMON_LIB = "common/lib";
+
+        String classPath = System.getProperty("java.class.path",".");
+        for (String path : StringUtils.split(classPath, File.pathSeparatorChar))
+        {
+            if (path.endsWith("/bin/bootstrap.jar"))
+            {
+                path = path.substring(0,path.length()-"/bin/bootstrap.jar".length());
+                if (new File(path,COMMON_LIB).isDirectory())
+                    return new File(path,COMMON_LIB).getPath();
+            }
+        }
+
         String tomcat = System.getenv("CATALINA_HOME");
 
-        if (null == tomcat)
+        if (null == tomcat || !(new File(tomcat,COMMON_LIB).isDirectory()))
             tomcat = System.getenv("TOMCAT_HOME");
 
         if (tomcat == null)
-        {
             _log.warn("Could not find CATALINA_HOME environment variable, unlikely to be successful recompiling JSPs");
-        }
 
-        return tomcat + "/common/lib";
+        return new File(tomcat,COMMON_LIB).getPath();
     }
+
 
     private String getWebInfLib()
     {
