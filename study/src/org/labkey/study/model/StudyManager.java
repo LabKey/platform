@@ -1401,6 +1401,14 @@ public class StudyManager
 
     public void deleteAllStudyData(Container c, User user, boolean deleteDatasetData, boolean deleteStudyDesigns) throws SQLException
     {
+        // Before we delete any data, we need to go fetch the Dataset definitions.
+        Study study = StudyManager.getInstance().getStudy(c);
+        DataSetDefinition[] dsds;
+        if (study == null) // no study in this folder
+            dsds = new DataSetDefinition[0];
+        else
+            dsds = study.getDataSets();
+
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         boolean localTransaction = !scope.isTransactionActive();
 
@@ -1478,6 +1486,12 @@ public class StudyManager
             // Specimen comments
             Table.delete(StudySchema.getInstance().getTableInfoSpecimenComment(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoSpecimenComment());
+
+            // Materialized tables
+            for (DataSetDefinition dsd : dsds)
+            {
+                dsd.unmaterialize();
+            }
 
             if (localTransaction)
             {
