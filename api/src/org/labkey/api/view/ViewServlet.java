@@ -380,7 +380,8 @@ public class ViewServlet extends HttpServlet
     {
         super.init(config);
         _servletContext = config.getServletContext();
-        _log.info("ViewServlet initialized");
+        String realPath = config.getServletContext().getRealPath("/");
+        _log.info("ViewServlet initialized: " + realPath);
     }
 
 
