@@ -74,8 +74,7 @@ public class QAggregate extends QExpr
             if (children.size() == 1 && children.get(0) instanceof QField)
             {
                 QField field = (QField) children.get(0);
-                ColumnInfo columnInfo = field.getColumnInfo();
-                ret.copyAttributesFrom(columnInfo);
+                field.getRelationColumn().copyColumnAttributesTo(ret);
                 ret.setCaption(null);
             }
         }

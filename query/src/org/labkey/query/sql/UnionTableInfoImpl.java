@@ -33,7 +33,7 @@ public class UnionTableInfoImpl extends QueryTableInfo implements UnionTableInfo
 
     public UnionTableInfoImpl(TableInfo subquery, String name, String alias)
     {
-        super(subquery, name, alias);
+        super(subquery, name);
     }
 
     public void addUnionColumn(ColumnInfo col)

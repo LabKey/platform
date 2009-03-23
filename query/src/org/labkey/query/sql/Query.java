@@ -23,12 +23,16 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.*;
 import org.labkey.common.tools.DataLoader;
 import org.labkey.query.design.DgQuery;
 import org.labkey.query.design.QueryDocument;
+import org.labkey.query.QueryDefinitionImpl;
+import org.labkey.data.xml.TablesDocument;
+import org.labkey.data.xml.TableType;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
@@ -48,13 +52,15 @@ import java.util.*;
 
 public class Query
 {
+    String _name = null;
     private QuerySchema _schema;
-	@SuppressWarnings({"FieldCanBeLocal"})
-	private String _querySource;
+	String _querySource;
 	private ArrayList<QueryParseException> _parseErrors = new ArrayList<QueryParseException>();
 
-	private QuerySelect _select;
-	private QueryUnion _union;
+    private TablesDocument _metadata = null;
+    private QueryRelation _queryRoot;
+
+    private int _aliasCounter = 0;
 
 	
     public Query(QuerySchema schema)
@@ -64,28 +70,81 @@ public class Query
     }
 
 
+    public Query(QuerySchema schema, String sql)
+    {
+        _schema = schema;
+        _querySource = sql;
+        assert MemTracker.put(this);
+    }
+
+
+    /* for debugging */
+    public void setName(String name)
+    {
+        _name = name;
+        if (null != _queryRoot)
+            _queryRoot.setSavedName(name);
+    }
+
 	QuerySchema getSchema()
 	{
 		return _schema;
 	}
 
 
-	public void parse(String queryText)
+    public final int incrementAliasCounter()
     {
-		_querySource = queryText;
+        return ++_aliasCounter;
+    }
 
+
+    public void setTablesDocument(TablesDocument doc)
+    {
+        _metadata = doc;
+    }
+
+    public TablesDocument getTablesDocument()
+    {
+        return _metadata;
+    }
+
+
+    public void parse()
+    {
+        if (null == _querySource)
+            throw new IllegalStateException("SQL has not been specified");
+        _parse(_querySource);
+    }
+
+    public void parse(String queryText)
+    {
+        _querySource = queryText;
+        _parse(_querySource);
+    }
+
+	private void _parse(String queryText)
+    {
 		try
 		{
 			QNode root = (new SqlParser()).parseQuery(queryText, _parseErrors);
+            QueryRelation relation = null;
             
 			if (root instanceof QQuery)
 			{
-				_select = new QuerySelect(this, (QQuery)root);
+				relation = new QuerySelect(this, (QQuery)root);
 			}
 			else if (root instanceof QUnion)
 			{
-				_union = new QueryUnion(this, (QUnion)root);
+				relation = new QueryUnion(this, (QUnion)root);
 			}
+            
+            if (relation == null)
+                return;
+
+            _queryRoot = relation;
+
+            if (_queryRoot._savedName == null && _name != null)
+                _queryRoot.setSavedName(_name);
 		}
 		catch (RuntimeException ex)
 		{
@@ -103,13 +162,14 @@ public class Query
 		SourceBuilder builder = new SourceBuilder();
 		builder.append("SELECT ");
 		builder.pushPrefix("");
-		TableInfo table = resolveTable(_schema, _parseErrors, null, key, key.getName());
-		if (table == null)
+		QueryRelation relation = resolveTable(_schema, null, key, key.getName());
+		if (relation == null)
 		{
 			builder.append("'Table not found' AS message");
 		}
 		else
 		{
+            TableInfo table = relation.getTableInfo();
 			for (FieldKey field : table.getDefaultVisibleColumns())
 			{
 				if (field.getParent() != null)
@@ -137,23 +197,19 @@ public class Query
 
     public TableInfo getFromTable(FieldKey key)
     {
-		return _select == null ? null : _select.getFromTable(key);
+		return _queryRoot instanceof QuerySelect ? ((QuerySelect)_queryRoot).getFromTable(key) : null;
     }
 
 
     public String getQueryText()
     {
-        if (_union != null)
-            return _union.getQueryText();
-        else if (_select != null)
-		    return _select.getQueryText();
-        return null;
+        return _queryRoot == null ? null : _queryRoot.getQueryText();
     }
 
 
     public Set<FieldKey> getFromTables()
     {
-		return _select == null ? null : _select.getFromTables();
+		return isSelect() ? ((QuerySelect)_queryRoot).getFromTables() : null;
     }
 
 
@@ -165,39 +221,53 @@ public class Query
 
     public boolean isAggregate()
     {
-		return _select != null && _select.isAggregate();
+		return isSelect() && ((QuerySelect)_queryRoot).isAggregate();
     }
 
+
+    public boolean isUnion()
+    {
+        return _queryRoot instanceof QueryUnion;
+    }
+
+
+    public boolean isSelect()
+    {
+        return _queryRoot instanceof QuerySelect;
+    }
+    
 
     public boolean hasSubSelect()
     {
-		return _union != null || _select != null && _select.hasSubSelect();
+		return isSelect() && ((QuerySelect)_queryRoot).hasSubSelect();
     }
 
 
-    public QueryTableInfo getTableInfo(String tableAlias)
+    public TableInfo getTableInfo()
     {
-        if (_parseErrors.size() > 0)
-            return null;
-        if (_union != null)
-            return _union.getTableInfo(tableAlias);
-        else if (_select != null)
-		    return _select.getTableInfo(tableAlias);
-        return null;
+        try
+        {
+            if (_parseErrors.size() > 0)
+                return null;
+            return _queryRoot == null ? null : _queryRoot.getTableInfo();
+        }
+        catch (RuntimeException x)
+        {
+            throw Query.wrapRuntimeException(x, _querySource);
+        }
     }
 
 
     public QueryDocument getDesignDocument()
     {
-		return _select == null ? null : _select.getDesignDocument();
-
+		return isSelect() ? ((QuerySelect)_queryRoot).getDesignDocument() : null;
     }
 
 
     public void update(DgQuery query, List<QueryException> errors)
     {
-		if (null != _select)
-			_select.update(query, errors);
+		if (isSelect())
+			((QuerySelect)_queryRoot).update(query, errors);
     }
 
 
@@ -242,7 +312,7 @@ public class Query
 	/**
 	 * Resolve a particular table name.  The table name may have schema names (folder.schema.table etc.) prepended to it.
 	 */
-	static TableInfo resolveTable(QuerySchema schema, List<QueryParseException> errors, QNode node, FieldKey key, String alias)
+	QueryRelation resolveTable(QuerySchema schema, QNode node, FieldKey key, String alias)
 	{
 		List<String> parts = key.getParts();
 		List<String> names = new ArrayList<String>(parts.size());
@@ -254,25 +324,60 @@ public class Query
 			String name = names.get(i);
 			if (name.startsWith("/"))
 			{
-				parseError(errors, "Schema name should not start with '/'", node);
+				parseError(_parseErrors, "Schema name should not start with '/'", node);
 				return null;
 			}
 			schema = schema.getSchema(name);
 			if (schema == null)
 			{
-				parseError(errors, "Table " + StringUtils.join(names,".") + " not found.", node);
+				parseError(_parseErrors, "Table " + StringUtils.join(names,".") + " not found.", node);
 				return null;
 			}
 		}
 
-		TableInfo ret = schema.getTable(key.getName(), alias);
-		if (ret == null)
+        Object t;
+        if (schema instanceof UserSchema)
+    		t  = ((UserSchema)schema)._getTableOrQuery(key.getName(), true);
+        else
+            t = schema.getTable(key.getName());
+
+		if (t == null)
 		{
-			parseError(errors, "Table " + StringUtils.join(names,".") + " not found.", node);
+			parseError(_parseErrors, "Table " + StringUtils.join(names,".") + " not found.", node);
 			return null;
 		}
 
-		return ret;
+        if (t instanceof TableInfo)
+        {
+            return new QueryTable(this, schema, (TableInfo)t, alias);
+        }
+
+        if (t instanceof QueryDefinition)
+        {
+            QueryDefinitionImpl def = (QueryDefinitionImpl)t;
+            List<QueryException> tableErrors = new ArrayList<QueryException>();
+            Query query = def.getQuery(schema, tableErrors);
+            if (tableErrors.size() > 0)
+            {
+                //noinspection ThrowableInstanceNeverThrown
+                _parseErrors.add(new QueryParseException("Query '" + key.getName() + "' has errors", null, node.getLine(), node.getColumn()));
+                return null;
+            }
+
+            QueryRelation ret = query._queryRoot;
+            ret.setQuery(this);
+
+            if (query.getTablesDocument() != null && query.getTablesDocument().getTables().getTableArray().length > 0)
+            {
+                TableType tableType = query.getTablesDocument().getTables().getTableArray(0);
+                ret = new QueryLookupWrapper(this, query._queryRoot, tableType);
+            }
+
+            ret.setAlias(alias);
+            return ret;
+        }
+
+		return null;
 	}
 	
 
@@ -284,8 +389,8 @@ public class Query
 
     private static class TestDataLoader extends DataLoader
     {
-        static final String[] COLUMNS = new String[] {"d", "seven", "twelve", "day", "month", "date", "duration", "guid"};
-        static final String[] TYPES = new String[] {"double", "int", "int", "string", "string", "date", "string", "string"};
+        static final String[] COLUMNS = new String[] {"d", "seven", "twelve", "day", "month", "date", "duration", "guid", "createdby", "created"};
+        static final String[] TYPES = new String[] {"double", "int", "int", "string", "string", "date", "string", "string", "int", "date"};
         static final String[] days = new String[] {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
         static final String[] months = new String[] {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
 
@@ -294,15 +399,17 @@ public class Query
 
 
 		// UNDONE: need some NULLS in here
-		TestDataLoader(String propertyPrefix, int len)
+        @SuppressWarnings({"UnusedAssignment"})
+        TestDataLoader(String propertyPrefix, int len)
         {
+            String now = DateUtil.toISO(new Date());
             data = new String[len+1][];
             data[0] = COLUMNS;
             for (String c : data[0])
                 templateRow.put(propertyPrefix + "#" + c, c);
             for (int i=1 ; i<=len ; i++)
             {
-                String[] row = data[i] = new String[8];
+                String[] row = data[i] = new String[COLUMNS.length];
                 int c = 0;
                 row[c++] = "" + Math.exp(i);
                 row[c++] = "" + (i%7);
@@ -311,7 +418,9 @@ public class Query
                 row[c++] = months[i%12];
                 row[c++] = DateUtil.toISO(DateUtil.parseDateTime("2000-01-01") + i*24*60*60*1000);
                 row[c++] = DateUtil.formatDuration(i*1000);
-                row[c] = GUID.makeGUID();
+                row[c++] = GUID.makeGUID();
+                row[c++] = "" + TestContext.get().getUser().getUserId();                
+                row[c++] = now;
             }
 
 //            for (String[] row : data) System.err.println(StringUtils.join(row,"\t")); System.err.flush();
@@ -380,6 +489,7 @@ public class Query
 		}
     }
 
+    
 
 	static int Rsize = 84;
 	static int Ssize = 84;
@@ -387,6 +497,7 @@ public class Query
     static SqlTest[] tests = new SqlTest[]
     {
         new SqlTest("SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid FROM R", 8, Rsize),
+        new SqlTest("SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid, R.created, R.createdby, R.createdby.displayname FROM R", 11, Rsize),
         new SqlTest("SELECT R.duration AS elapsed FROM R WHERE R.rowid=1", 1, 1),
 		new SqlTest("SELECT R.rowid, R.seven, R.day FROM R WHERE R.day LIKE '%ues%'", 3, 12),
 		new SqlTest("SELECT R.rowid, R.twelve, R.month FROM R WHERE R.month BETWEEN 'L' and 'O'", 3, 3*7), // March, May, Nov
@@ -416,21 +527,64 @@ public class Query
 		new SqlTest("SELECT R.day, R.month, R.date FROM R LIMIT 5", 3, 5),
 		new SqlTest("SELECT R.day, R.month, R.date FROM R ORDER BY R.date LIMIT 5", 3, 5),
 
+        // saved queries
+        new SqlTest("Rquery",
+                "SELECT R.rowid, R.rowid*2 as rowid2, R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid FROM R",
+                "<tables xmlns=\"http://labkey.org/data/xml\">\n" +
+                "<table tableName=\"Rquery\" tableDbType=\"NOT_IN_DB\">\n" +
+                "<columns>\n" +
+                " <column columnName=\"rowid\">\n" +
+                "  <fk>\n" +
+                "  <fkTable>Squery</fkTable>\n" +
+                "  <fkColumnName>rowid</fkColumnName>\n" +
+                "  </fk>\n" +
+                " </column>\n" +
+                " <column columnName=\"rowid2\">\n" +
+                "  <fk>\n" +
+                "  <fkTable>Squery</fkTable>\n" +
+                "  <fkColumnName>rowid</fkColumnName>\n" +
+                "  </fk>\n" +
+                " </column>\n" +
+                "</columns>\n" +
+                "</table>\n" +
+                "</tables>",
+                10, Rsize),
+            new SqlTest("SELECT Rquery.d FROM Rquery", 1, Rsize),
 
-		// saved queries
-		new SqlTest("Rquery",
-				"SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid FROM R",
-				null,
-				8, Rsize),
-		new SqlTest("Squery",
-				"SELECT S.d, S.seven, S.twelve, S.day, S.month, S.date, S.duration, S.guid FROM Folder.qtest.lists.S S",
-				null,
-				8, Rsize),
+            new SqlTest("Squery",
+                    "SELECT S.rowid, S.d, S.seven, S.twelve, S.day, S.month, S.date, S.duration, S.guid FROM Folder.qtest.lists.S S",
+                    null,
+                    9, Rsize),
+            new SqlTest("SELECT S.rowid, S.d FROM Squery S", 2, Rsize),
 
-		new SqlTest("SELECT Rquery.d FROM Rquery", 1, Rsize)
+            new SqlTest("SELECT Rquery.rowid, Rquery.rowid.duration FROM Rquery", 2, Rsize),
+            new SqlTest("SELECT Rquery.rowid2, Rquery.rowid2.duration FROM Rquery", 2, Rsize),
+            new SqlTest("SELECT Rquery.rowid, Rquery.rowid.date, Rquery.rowid2, Rquery.rowid2.duration FROM Rquery", 4, Rsize),
+
+            // NOTE: DISTINCT means lookups can not be pushed down
+            new SqlTest("Rdistinct", "SELECT DISTINCT R.twelve FROM R",
+                    "<tables xmlns=\"http://labkey.org/data/xml\">\n" +
+                    "<table tableName=\"Rquery\" tableDbType=\"NOT_IN_DB\">\n" +
+                    "<columns>\n" +
+                    " <column columnName=\"twelve\">\n" +
+                    "  <fk>\n" +
+                    "  <fkTable>Squery</fkTable>\n" +
+                    "  <fkColumnName>rowid</fkColumnName>\n" +
+                    "  </fk>\n" +
+                    " </column>\n" +
+                    "</columns>\n" +
+                    "</table>\n" +
+                    "</tables>",
+                    1, 12),
+        new SqlTest("SELECT Rdistinct.twelve, Rdistinct.twelve.duration from Rdistinct", 2, 12),
+
+        // GROUPING
+        new SqlTest("SELECT R.seven, MAX(R.twelve) AS _max FROM R GROUP BY R.seven", 2, 7),
+        new SqlTest("SELECT COUNT(R.rowid) as _count FROM R", 1, 1),
+
+        // METHODS
+        new SqlTest("SELECT ROUND(R.d) AS _d, ROUND(R.d,1) AS _rnd, ROUND(3.1415,2) AS _pi, CONVERT(R.d,SQL_VARCHAR) AS _str FROM R", 4, Rsize),
     };
-
-
 
 	static SqlTest[] postgres = new SqlTest[]
 	{
@@ -439,8 +593,6 @@ public class Query
 		new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date")
 	};
 	
-
-
 	static SqlTest[] negative = new SqlTest[]
 	{
 		new SqlTest("SELECT S.d, S.seven FROM S"),
@@ -475,6 +627,7 @@ public class Query
 			return ContainerManager.ensureContainer(JunitUtil.getTestContainer().getPath() + "/qtest");
 		}
 
+
         private void addProperties(ListDefinition l)
         {
             Domain d = l.getDomain();
@@ -484,15 +637,22 @@ public class Query
                 p.setPropertyURI(d.getName() + hash + "#" + TestDataLoader.COLUMNS[i]);
                 p.setName(TestDataLoader.COLUMNS[i]);
                 p.setRangeURI(TestDataLoader.TYPES[i]);
+                if ("createdby".equals(TestDataLoader.COLUMNS[i]))
+                {
+                    p.setLookup(new Lookup(l.getContainer(), "core", "SiteUsers"));
+                }
             }
         }
-
 
         @Override
         protected void setUp() throws Exception
         {
-            tearDown();
+//            _setUp();
+        }
 
+
+        protected void _setUp() throws Exception
+        {
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
 			Container qtest = getSubfolder();
@@ -511,17 +671,31 @@ public class Query
             addProperties(S);
             S.save(user);
             S.insertListItems(user, new TestDataLoader(S.getName() + hash, Ssize));
-
-            // note getSchema() will return NULL if there are no lists yet
-            lists = DefaultSchema.get(user, c).getSchema(s.getSchemaName());
         }
 
 
 		@Override
         protected void tearDown() throws Exception
         {
-			ListService.Interface s = ListService.get();
+//            _tearDown();
+        }
+
+
+        protected void _tearDown() throws Exception
+        {
             User user = TestContext.get().getUser();
+
+            for (SqlTest test : tests)
+            {
+                if (test.name != null)
+                {
+                    QueryDefinition q = QueryService.get().getQueryDef(JunitUtil.getTestContainer(), "lists", test.name);
+                    if (null != q)
+                        q.delete(user);
+                }
+            }
+
+			ListService.Interface s = ListService.get();
 
 			Container c = JunitUtil.getTestContainer();
 			{
@@ -587,11 +761,16 @@ public class Query
 					q.save(TestContext.get().getUser(), JunitUtil.getTestContainer());
 				}
             }
+            catch (Exception x)
+            {
+                fail(x.getMessage() + "\n" + test.sql);
+            }
             finally
             {
                 ResultSetUtil.close(rs);
             }
         }
+
 
 		private void failidate(SqlTest test) throws Exception
 		{
@@ -622,17 +801,27 @@ public class Query
 
         public void testSQL() throws Exception
         {
-			ListService.Interface s = ListService.get();
+            // note getSchema() will return NULL if there are no lists yet
             User user = TestContext.get().getUser();
-			
+            Container c = JunitUtil.getTestContainer();
+            ListService.Interface s = ListService.get();
+
+            lists = DefaultSchema.get(user, c).getSchema(s.getSchemaName());
+            if (1==1 || null == lists)
+            {
+                _tearDown();
+                _setUp();
+                lists = DefaultSchema.get(user, c).getSchema(s.getSchemaName());
+            }
+
             assertNotNull(lists);
-            TableInfo Rinfo = lists.getTable("R", "R");
+            TableInfo Rinfo = lists.getTable("R");
             assertNotNull(Rinfo);
-			TableInfo Sinfo = DefaultSchema.get(user, getSubfolder()).getSchema(s.getSchemaName()).getTable("S","S");
+			TableInfo Sinfo = DefaultSchema.get(user, getSubfolder()).getSchema(s.getSchemaName()).getTable("S");
             assertNotNull(Sinfo);
 
             // custom tests
-			String sql = "SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration FROM R";
+			String sql = "SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.created, R.createdby FROM R";
             CachedRowSetImpl rs = resultset(sql);
             ResultSetMetaData md = rs.getMetaData();
             assertTrue(sql, 0 < rs.findColumn("d"));
@@ -641,12 +830,13 @@ public class Query
             assertTrue(sql, 0 < rs.findColumn("day"));
             assertTrue(sql, 0 < rs.findColumn("month"));
             assertTrue(sql, 0 < rs.findColumn("date"));
-            assertTrue(sql, 0 < rs.findColumn("duration"));
-            assertEquals(sql, 7, md.getColumnCount());
+            assertTrue(sql, 0 < rs.findColumn("created"));
+            assertTrue(sql, 0 < rs.findColumn("createdby"));
+            assertEquals(sql, 9, md.getColumnCount());
             assertEquals(sql, Rsize, rs.getSize());
 			rs.next();
-			for (int c=1; c<=md.getColumnCount() ; c++)
-				assertNotNull(sql, rs.getObject(c));
+			for (int col=1; col<=md.getColumnCount() ; col++)
+				assertNotNull(sql, rs.getObject(col));
             rs.close();
 
             // simple tests
@@ -666,23 +856,16 @@ public class Query
 				failidate(test);
 			}
 
-			for (SqlTest test : tests)
-			{
-				if (test.name != null)
-				{
-					QueryDefinition q = QueryService.get().getQueryDef(JunitUtil.getTestContainer(), "lists", test.name);
-					assertNotNull(q);
-					q.delete(user);
-				}
-			}
+            for (SqlTest test : tests)
+            {
+                if (test.name != null)
+                {
+                    QueryDefinition q = QueryService.get().getQueryDef(JunitUtil.getTestContainer(), "lists", test.name);
+                    assertNotNull(q);
+//                    q.delete(user);
+                }
+            }
         }
-
-
-		public void testQueryService() throws Exception
-		{
-
-		}
-
 
         public static Test suite()
         {

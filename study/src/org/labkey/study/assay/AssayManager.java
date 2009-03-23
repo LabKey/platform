@@ -103,9 +103,9 @@ public class AssayManager implements AssayService.Interface
         return Collections.unmodifiableList(_providers);
     }
 
-    public ExpRunTable createRunTable(String alias, ExpProtocol protocol, AssayProvider provider, User user, Container container)
+    public ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container)
     {
-        return (ExpRunTable)new AssaySchema(user, container).getTable(getRunsTableName(protocol), alias);
+        return (ExpRunTable)new AssaySchema(user, container).getTable(getRunsTableName(protocol));
     }
 
     public UserSchema createSchema(User user, Container container)

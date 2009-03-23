@@ -430,8 +430,8 @@ public class MothershipManager
     {
         SQLFragment sql = new SQLFragment();
         sql.append("SELECT si.* FROM ");
-        sql.append(getTableInfoServerInstallation());
-        sql.append(" si WHERE si.serverinstallationid IN (SELECT serverinstallationid FROM ");
+        sql.append(getTableInfoServerInstallation(), "si");
+        sql.append(" WHERE si.serverinstallationid IN (SELECT serverinstallationid FROM ");
         sql.append(getTableInfoServerSession());
         sql.append(" WHERE earliestknowntime <= ? AND lastknowntime >= ?)");
         sql.add(cal.getTime());
@@ -444,8 +444,8 @@ public class MothershipManager
     {
         SQLFragment sql = new SQLFragment();
         sql.append("SELECT si.* FROM ");
-        sql.append(getTableInfoServerInstallation());
-        sql.append(" si WHERE si.serverinstallationid IN (SELECT serverinstallationid FROM ");
+        sql.append(getTableInfoServerInstallation(), "si");
+        sql.append(" WHERE si.serverinstallationid IN (SELECT serverinstallationid FROM ");
         sql.append(getTableInfoServerSession());
         sql.append(" WHERE earliestknowntime <= ?)");
         sql.add(cal.getTime());

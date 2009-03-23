@@ -13,26 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.labkey.query.sql;
 
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.util.*;
+import org.labkey.api.settings.AppProps;
 import org.labkey.query.design.*;
 import static org.labkey.query.sql.antlr.SqlBaseTokenTypes.ON;
+import org.labkey.data.xml.ColumnType;
+import org.apache.commons.lang.StringUtils;
+import static org.apache.commons.lang.StringUtils.defaultString;
 
 import java.util.*;
 
 
-public class QuerySelect
+public class QuerySelect extends QueryRelation
 {
     private String _queryText = null;
-    private List<QColumn> _columns;
-    private QuerySchema _schema;
+    private Map<FieldKey, SelectColumn> _columns;
 
-    private QuerySelect _parent;
-    private boolean _inFromClause;
     private QGroupBy _groupBy;
     private QOrder _orderBy;
     private QWhere _filter;
@@ -40,43 +40,42 @@ public class QuerySelect
     private QLimit _limit;
     private QDistinct _distinct;
     private Map<FieldKey, QTable> _from;
-    private Map<FieldKey, TableInfo> _tables;
-    private Map<FieldKey, ColumnInfo> _declaredFields = new HashMap<FieldKey, ColumnInfo>();
+    private Map<FieldKey, QueryRelation> _tables;
+    private Map<FieldKey, RelationColumn> _declaredFields = new HashMap<FieldKey, RelationColumn>();
     private SQLTableInfo _subqueryTable;
-    private List<QueryParseException> _parseErrors;
     private AliasManager _subqueryAliasManager;
-    private AliasManager _queryAliasManager;
 
-
-    private QuerySelect(QuerySchema schema)
+    private QuerySelect(Query query, QuerySchema schema, String alias)
     {
-        _schema = schema;
+        super(query, schema, alias == null ? "_select" + query.incrementAliasCounter() : alias);
+        _subqueryTable = new SQLTableInfo(_schema.getDbSchema());
         _subqueryAliasManager = new AliasManager(schema.getDbSchema());
-        _queryAliasManager = new AliasManager(schema.getDbSchema());
+        _queryText = query == null ? null : query._querySource;
         assert MemTracker.put(this);
     }
 
 
 	QuerySelect(Query query, QQuery root)
 	{
-		this(query.getSchema());
+		this(query, query.getSchema(), null);
+        this._query = query;
 		this._root = root;
-		this._parseErrors = query.getParseErrors();
-		parseTree();
+		initializeSelect();
 	}
 	
 
-    private QuerySelect(QuerySelect parent, QQuery query, boolean inFromClause)
+    private QuerySelect(QuerySelect parent, QQuery query, boolean inFromClause, String alias)
     {
-        this(parent._schema);
-        _queryText = query == null ? null : query.getQuery() == null ? null : query.getQuery()._queryText;
+        this(parent._query, parent._schema, alias);
+        
+        assert inFromClause == (alias != null);
+        this._query = parent._query;
         _parent = parent;
         _root = query;
         _inFromClause = inFromClause;
-        _parseErrors = parent.getParseErrors();
         try
         {
-            parseTree();
+            initializeSelect();
         }
         catch (RuntimeException ex)
         {
@@ -86,41 +85,48 @@ public class QuerySelect
     }
 
 
-    private int getNestingLevel()
+    @Override
+    void setQuery(Query query)
     {
-        if (_parent == null)
-            return 0;
-        return _parent.getNestingLevel() + 1;
+        assert getParseErrors().size() == 0;
+        super.setQuery(query);
+        for (QueryRelation r : _tables.values())
+            r.setQuery(query);
     }
 
-    
-    private void parseTree()
+
+    private void initializeSelect()
     {
-        _columns = new ArrayList<QColumn>();
+        _columns = new LinkedHashMap<FieldKey,SelectColumn>();
         _from = new LinkedHashMap<FieldKey, QTable>();
         _filter = new QWhere();
         if (_root == null)
             return;
         _limit = _root.getLimit();
         QSelect select = _root.getSelect();
+
         if (select != null)
         {
-            boolean first = true;
+            int count = 0;
             for (QNode node : _root.getSelect().children())
             {
+                count++;
                 if (node instanceof QDistinct)
                 {
-                    if (!first)
+                    if (count != 1)
                         parseError("DISTINCT not expected", node);
                     else
                         _distinct = (QDistinct)node;
                     continue;
                 }
-                _columns.add(new QColumn(node));
-                first = false;
+                SelectColumn col = new SelectColumn(node);
+                if (null != col.getAlias())
+                    _columns.put(new FieldKey(null, col.getAlias()), col);
+                else
+                    _columns.put(new FieldKey(null, "." + count + "."), col);
             }
         }
-        _tables = new HashMap<FieldKey, TableInfo>();
+        _tables = new HashMap<FieldKey, QueryRelation>();
         QFrom from = _root.getFrom();
         if (from == null)
         {
@@ -138,31 +144,37 @@ public class QuerySelect
         _orderBy = _root.getOrderBy();
         for (QTable qtable : _from.values())
         {
-            TableInfo table;
-            int nestingLevel = getNestingLevel();
-            String tableName;
-            if (nestingLevel == 0)
+            FieldKey key = qtable.getTableKey();
+            String alias = qtable.getAlias().getName();
+            QNode node = qtable.getTable();
+
+            QueryRelation relation;
+            if (node instanceof QQuery)
             {
-                tableName = "Table" + _tables.size();
+                relation = new QuerySelect(this, (QQuery) node, true, alias);
             }
             else
             {
-                tableName = "Table" + nestingLevel + "_" + _tables.size();
+                relation = _query.resolveTable(_schema, node, key, alias);
+                assert relation != null || getParseErrors().size() > 0;
+                if (null != relation)
+                {
+                    relation.setAlias(alias);
+                    relation._parent = this;
+                }
             }
-            if (qtable.getTable() instanceof QQuery)
-            {
-                QuerySelect query = new QuerySelect(this, (QQuery) qtable.getTable(), true);
-                table = query.getTableInfo(tableName);
-            }
+            assert relation != null || !getParseErrors().isEmpty();
+            if (relation == null)
+                continue;
+            qtable.setQueryRelation(relation);
+            if (!AliasManager.isLegalName(relation.getAlias()))
+                relation.setAlias(AliasManager.makeLegalName(relation.getAlias(), getSqlDialect()) + "$" + _query.incrementAliasCounter());
             else
-            {
-                table = Query.resolveTable(_schema, _parseErrors ,qtable.getTable(), qtable.getTableKey(), tableName);
-            }
-            qtable.setTableObject(table);
-            _tables.put(qtable.getAlias(), table);
+                relation.setAlias(relation.getAlias() + "$" + _query.incrementAliasCounter());
+            _tables.put(qtable.getAlias(), relation);
         }
 
-        Map<String, QColumn> columnMap = new CaseInsensitiveHashMap<QColumn>();
+        Map<String, SelectColumn> columnMap = new CaseInsensitiveHashMap<SelectColumn>();
         if (_parent != null && !_inFromClause)
         {
             if (_columns.size() != 1)
@@ -170,7 +182,7 @@ public class QuerySelect
                 parseError("Subquery can have only one column.", _root);
             }
         }
-        for (QColumn column : _columns)
+        for (SelectColumn column : _columns.values())
         {
             String alias = column.getAlias();
             if (alias == null)
@@ -204,35 +216,30 @@ public class QuerySelect
 
 
 
-
     private SqlDialect getSqlDialect()
     {
-        return getSchema().getSqlDialect();
+        return getDbSchema().getSqlDialect();
     }
 
-    private DbSchema getSchema()
+
+    private DbSchema getDbSchema()
     {
         return _schema.getDbSchema();
     }
 
-    /**
-     * Get the list of columns in the SELECT clause.
-     * @return
-     */
-    private List<QColumn> getColumns()
-    {
-        return Collections.unmodifiableList(_columns);
-    }
 
     public TableInfo getFromTable(FieldKey key)
     {
-        return _tables.get(key);
+        QueryRelation qr = _tables.get(key);
+        if (qr != null)
+            return qr.getTableInfo();
+        return null;
     }
 
 
     public String getQueryText()
     {
-        if (!_parseErrors.isEmpty() && _columns == null)
+        if (!getParseErrors().isEmpty() && _columns == null)
         {
             return "ERROR";
         }
@@ -241,7 +248,7 @@ public class QuerySelect
             builder.pushPrefix("SELECT ");
         else
             builder.pushPrefix("SELECT DISTINCT ");
-        for (QColumn column : _columns)
+        for (SelectColumn column : _columns.values())
         {
             column.appendSource(builder);
             builder.nextPrefix(",\n");
@@ -366,12 +373,11 @@ loop:
         }
     }
 
-    private TableInfo getTable(FieldKey key)
+
+    private QueryRelation getTable(FieldKey key)
     {
-        TableInfo ret = _tables.get(key);
-        if (ret != null)
-            return ret;
-        return null;
+        QueryRelation ret = _tables.get(key);
+        return ret;
     }
 
 	
@@ -382,7 +388,8 @@ loop:
      * or a {@link org.labkey.api.data.TableInfo#getMethod}
      *
      */
-    private QField getField(FieldKey key, QNode expr)
+    @Override
+    protected QField getField(FieldKey key, QNode expr)
     {
         QField ret;
         if (key.getTable() == null)
@@ -391,24 +398,19 @@ loop:
         }
         else
         {
-            ColumnInfo column;
-            column = _declaredFields.get(key);
+            RelationColumn column = _declaredFields.get(key);
             if (column != null)
             {
                 return new QField(column, expr);
             }
             else
             {
-                TableInfo table = getTable(key.getTable());
+                QueryRelation table = getTable(key.getTable());
                 if (table != null)
                 {
                     return new QField(table, key.getName(), expr);
                 }
-                if (_parent != null)
-                {
-                    return _parent.getField(key, expr);
-                }
-                return new QField(null, key.getName(), expr);
+                return super.getField(key,expr);
             }
         }
         return ret;
@@ -418,64 +420,42 @@ loop:
     /**
      * Indicate that a particular ColumnInfo is used by this query.
      */
-    private ColumnInfo declareField(FieldKey key)
+    @Override
+    protected RelationColumn declareField(FieldKey key)
     {
-        ColumnInfo colTry = _declaredFields.get(key);
+        RelationColumn colTry = _declaredFields.get(key);
         if (colTry != null)
             return colTry;
 
         List<String> parts = key.getParts();
         if (parts.size() < 2)
             return null;
-        TableInfo table = getTable(new FieldKey(null, parts.get(0)));
+        QueryRelation table = getTable(new FieldKey(null, parts.get(0)));
         if (table == null)
         {
-            if (_parent != null && !_inFromClause)
-                return _parent.declareField(key);
-            return null;
+            return super.declareField(key);
         }
         key = FieldKey.fromParts(parts.get(0), parts.get(1));
-        ColumnInfo colParent = _declaredFields.get(key);
+        RelationColumn colParent = _declaredFields.get(key);
         if (colParent == null)
         {
-            ColumnInfo realColumn = table.getColumn(key.getName());
-            if (realColumn == null)
+            RelationColumn relColumn = table.getColumn(key.getName());
+            if (relColumn == null)
                 return null;
-            colParent = new ExprColumn(realColumn.getParentTable(), key.toString(), realColumn.getValueSql(), realColumn.getSqlTypeInt());
-            colParent.copyAttributesFrom(realColumn);
-            String alias = _subqueryAliasManager.decideAlias(key.toString());
-            AliasedColumn aliasedColumn = new AliasedColumn(_subqueryTable, colParent.getName(), colParent);
-            aliasedColumn.setAlias(alias);
-            _subqueryTable.addColumn(aliasedColumn);
-            colParent.setAlias(aliasedColumn.getAlias());
-            if (_from.size() == 1 && key.getTable().equals(_from.keySet().iterator().next()))
-            {
-                if (realColumn.isKeyField())
-                {
-                    colParent.setKeyField(true);
-                }
-            }
-            _declaredFields.put(key, colParent);
+            _declaredFields.put(key, relColumn);
+            colParent = relColumn;
         }
         for (int i = 2; i < parts.size(); i ++)
         {
             key = new FieldKey(key, parts.get(i));
-            ColumnInfo nextColumn = _declaredFields.get(key);
+            RelationColumn nextColumn = _declaredFields.get(key);
             if (nextColumn == null)
             {
-                ForeignKey fk = colParent.getFk();
-                if (fk == null)
-                    return null;
-
-                nextColumn = fk.createLookupColumn(colParent, key.getName());
+                nextColumn = table.getLookupColumn(colParent, key.getName());
                 if (nextColumn == null)
                     return null;
+
                 _declaredFields.put(key, nextColumn);
-                String alias = _subqueryAliasManager.decideAlias(key.toString());
-                AliasedColumn aliasedColumn = new AliasedColumn(_subqueryTable, key.toString(), nextColumn);
-                aliasedColumn.setAlias(alias);
-                _subqueryTable.addColumn(aliasedColumn);
-                nextColumn.setAlias(aliasedColumn.getAlias());
             }
             colParent = nextColumn;
         }
@@ -494,15 +474,30 @@ loop:
         }
         if (expr instanceof QQuery)
         {
-            SqlBuilder discard = new SqlBuilder(getSchema());
-            QuerySelect subquery = new QuerySelect(this, (QQuery) expr, false);
-            new QQuery(subquery).appendSql(discard);
+            QuerySelect sub = ((QQuery)expr).getQuerySelect();
+            if (sub == null)
+            {
+                sub = new QuerySelect(this, (QQuery)expr, false, null);
+                ((QQuery)expr)._select = sub;
+            }
+            sub.declareFields();
+            return;
+        }
+        if (expr instanceof QUnion)
+        {
+            QueryUnion sub = ((QUnion)expr).getQueryUnion();
+            if (sub == null)
+            {
+                sub = new QueryUnion(this, (QUnion)expr);
+                ((QUnion)expr)._union= sub;
+            }
+            sub.declareFields();
             return;
         }
         FieldKey key = expr.getFieldKey();
         if (key != null)
         {
-            ColumnInfo column = declareField(key);
+            RelationColumn column = declareField(key);
             if (column == null)
             {
                 parseError("Unknown field " + key.getDisplayString(), expr);
@@ -516,10 +511,10 @@ loop:
     }
 
 
-    private void declareFields()
+    void declareFields()
     {
         if (null != _columns)
-            for (QColumn column : _columns)
+            for (SelectColumn column : _columns.values())
             {
                 declareFields(column.getField());
             }
@@ -543,14 +538,14 @@ loop:
     }
 
 
-    /**
+    /*
      * Return the result of replacing field names in the expression with QField objects.
      */
     private QExpr resolveFields(QExpr expr, QNode parent)
     {
         if (expr instanceof QQuery)
         {
-            QuerySelect subquery = new QuerySelect(this, (QQuery) expr, false);
+            QuerySelect subquery = new QuerySelect(this, (QQuery) expr, false, null);
             return new QQuery(subquery);
         }
         FieldKey key = expr.getFieldKey();
@@ -559,9 +554,7 @@ loop:
             QField ret = getField(key, expr);
             QueryParseException error = ret.fieldCheck(parent);
             if (error != null)
-            {
-                _parseErrors.add(error);
-            }
+                getParseErrors().add(error);
             return ret;
         }
 
@@ -571,14 +564,14 @@ loop:
 
         QueryParseException error = ret.fieldCheck(parent);
         if (error != null)
-            _parseErrors.add(error);
+            getParseErrors().add(error);
         return ret;
     }
 
 
     public List<QueryParseException> getParseErrors()
     {
-        return _parseErrors;
+        return _query.getParseErrors();
     }
 
 
@@ -590,7 +583,7 @@ loop:
         }
         if (null != _columns)
         {
-            for (QColumn column : _columns)
+            for (SelectColumn column : _columns.values())
             {
                 if (column.getField().isAggregate())
                     return true;
@@ -605,7 +598,7 @@ loop:
         if (_columns == null)
             return false;
 
-        for (QColumn column : _columns)
+        for (SelectColumn column : _columns.values())
         {
             QNode field = column.getField();
             if (field instanceof QQuery)
@@ -619,54 +612,82 @@ loop:
      * Construct a table info which represents this query.
      *
      */
-    public QueryTableInfo getTableInfo(String tableAlias)
+    public QueryTableInfo getTableInfo()
     {
-        try
+        SQLFragment sql = _getSql(true);
+        if (null == sql)
+            return null;
+
+        QueryTableInfo ret = new QueryTableInfo(_subqueryTable, "_select");
+        for (SelectColumn col : _columns.values())
         {
-            return _getTableInfo(tableAlias);
+            ColumnInfo aliasedColumn = new RelationColumnInfo(ret, col.getAlias(), col);
+            if (col.getAlias() != null)
+            {
+                aliasedColumn.setCaption(ColumnInfo.captionFromName(col.getAlias()));
+            }
+
+            aliasedColumn.setName(col.getAlias());
+            ret.addColumn(aliasedColumn);
         }
-        catch (RuntimeException x)
-        {
-            throw Query.wrapRuntimeException(x, _queryText);
-        }
+        _subqueryTable.setFromSQL(sql);
+        assert MemTracker.put(ret);
+        return ret;
     }
 
 
-    private QueryTableInfo _getTableInfo(String tableAlias)
+    public SQLFragment getSql()
     {
-        if (_parseErrors.size() != 0)
-            return null;
-        _subqueryTable = new SQLTableInfo(_schema.getDbSchema());
-        _subqueryTable.setName(tableAlias);
-        _subqueryTable.setAlias(tableAlias);
-        declareFields();
-        if (_parseErrors.size() != 0)
-            return null;
-        Map<TableInfo, Map<String, SQLFragment>> joins = new HashMap<TableInfo, Map<String, SQLFragment>>();
+        return _getSql(false);
+    }
 
-        for (ColumnInfo col : _declaredFields.values())
-        {
-            Map<String, SQLFragment> map = joins.get(col.getParentTable());
-            if (map == null)
-            {
-                map = new LinkedHashMap<String, SQLFragment>();
-                joins.put(col.getParentTable(), map);
-            }
-            col.declareJoins(map);
-        }
+
+    public SQLFragment _getSql(boolean selectAll)
+    {
+        if (getParseErrors().size() != 0)
+            return null;
+        
+        _subqueryTable.setName("_select");
+        declareFields();
+        if (getParseErrors().size() != 0)
+            return null;
 
         SqlBuilder sql = new SqlBuilder(_schema.getDbSchema());
-        if (null == _distinct)
-            sql.pushPrefix("SELECT ");
-        else
-            sql.pushPrefix("SELECT DISTINCT ");
-
-        QueryTableInfo ret = new QueryTableInfo(_subqueryTable, tableAlias, tableAlias);
-        for (QColumn col : _columns)
+        String comment = "<QuerySelect@" + System.identityHashCode(this);
+        if (!StringUtils.isEmpty(_savedName))
+            comment += " name='" + StringUtils.trimToEmpty(_savedName) + "'";
+        comment += ">";
+        assert sql.appendComment(comment);
+        if (null != _queryText && AppProps.getInstance().isDevMode())
         {
-            String name = col.getAlias();
-            boolean isKeyColumn = false;
-            if (name == null)
+            for (String s : _queryText.split("\n"))
+                if (null != StringUtils.trimToNull(s))
+                    sql.append("--|         ").append(s).append("\n");
+        }
+
+        if (null == _distinct)
+        {
+            sql.pushPrefix("SELECT ");
+            selectAll = true;
+        }
+        else
+        {
+            sql.pushPrefix("SELECT DISTINCT ");
+        }
+
+        int count = 0;
+        for (SelectColumn col : _columns.values())
+            if (col._selected)
+                count++;
+        if (count == 0)
+            selectAll = true;
+
+        for (SelectColumn col : _columns.values())
+        {
+            if (!selectAll && !col._selected)
+                continue;
+            String alias = col.getAlias();
+            if (alias == null)
             {
                 FieldKey key = col.getField().getFieldKey();
                 if (key == null)
@@ -674,47 +695,16 @@ loop:
                     parseError("Column requires alias", col.getField());
                     return null;
                 }
-                name = key.getName();
+                alias = key.getName();
             }
-
-            QExpr expr = resolveFields(col.getField(), null);
-            if (expr instanceof QField)
-            {
-                if (getFromTables().size() == 1)
-                {
-                    if (((QField) expr).getColumnInfo().isKeyField())
-                    {
-                        isKeyColumn = true;
-                    }
-                }
-            }
-            ColumnInfo subqueryColumn = expr.createColumnInfo(_subqueryTable, _subqueryAliasManager.decideAlias(name));
-            ColumnInfo aliasedColumn = new AliasedColumn(ret, name, subqueryColumn);
-            if (col.getAlias() != null)
-            {
-                aliasedColumn.setCaption(ColumnInfo.captionFromName(col.getAlias()));
-            }
-            else
-            {
-                aliasedColumn.setCaption(subqueryColumn.getCaption());
-            }
-            if (isKeyColumn)
-            {
-                // If there is only one table in the select list, and the column was a key column, then make this column
-                // a key column.  This is to enable someone writing their own query for a built in table, and having it
-                // behave the same as the original table.
-
-                // I'm not sure if anyone uses this functionality.
-                aliasedColumn.setKeyField(true);
-            }
-
-            String alias = _queryAliasManager.decideAlias(name);
-            aliasedColumn.setAlias(alias);
-            ret.addColumn(aliasedColumn);
-            sql.append(subqueryColumn.getSelectSql());
+            sql.append(col.getInternalSql());
+            sql.append(" AS ");
+            sql.append(alias);
             sql.nextPrefix(",\n");
+            count++;
         }
-
+        if (getParseErrors().size() != 0)
+            return null;
 
         sql.popPrefix();
         sql.pushPrefix("\nFROM ");
@@ -738,16 +728,13 @@ loop:
                     sql.append("\nFULL JOIN ");
                     break;
             }
-            sql.append(qt.getTableObject().getFromSQL());
-            Map<String, SQLFragment> map = joins.get(qt.getTableObject());
-            if (map != null)
-            {
-                for (SQLFragment join : map.values())
-                {
-                    sql.append("\n");
-                    sql.append(join);
-                }
-            }
+            SQLFragment sqlRelation = qt.getQueryRelation().getSql();
+            assert sqlRelation != null || getParseErrors().size() > 0;
+            if (sqlRelation == null)
+                return null;
+            sql.append("(").append(sqlRelation).append(") ");
+            sql.append(qt.getQueryRelation().getAlias());
+
             if (qt.getJoinType() != JoinType.root)
             {
                 sql.append(" ON ");
@@ -767,9 +754,10 @@ loop:
             for (QNode expr : _filter.children())
             {
                 sql.append("(");
-                resolveFields((QExpr)expr, null).appendSql(sql);
+                QExpr term = resolveFields((QExpr)expr, null);
+                term.appendSql(sql);
                 sql.append(")");
-                sql.nextPrefix("\nAND ");
+                sql.nextPrefix(" AND ");
             }
             sql.popPrefix();
         }
@@ -809,29 +797,17 @@ loop:
         {
             getSqlDialect().limitRows(sql, _limit.getLimit());
         }
-        _subqueryTable.setFromSQL(sql);
-        if (!_parseErrors.isEmpty())
+        if (!getParseErrors().isEmpty())
             return null;
 
-        assert MemTracker.put(ret);
-        _selectSql = sql;
-        return ret;
+        assert sql.appendComment("</QuerySelect@" + System.identityHashCode(this) + ">");
+        return sql;
     }
 
-
-    SQLFragment _selectSql = null;
-    
-    SQLFragment getSelectSql()
-    {
-        if (_selectSql == null)
-            getTableInfo("SQL");
-        return _selectSql;
-    }
-    
 
 	private void parseError(String message, QNode node)
 	{
-		Query.parseError(_parseErrors, message, node);
+		Query.parseError(getParseErrors(), message, node);
 	}
 
 	
@@ -847,7 +823,7 @@ loop:
         {
             return null;
         }
-        for (QColumn column : getColumns())
+        for (SelectColumn column : _columns.values())
         {
             DgColumn dgColumn = select.addNewColumn();
             if (column.getAlias() != null)
@@ -924,12 +900,12 @@ loop:
             {
                 continue;
             }
-            QColumn column = new QColumn(field);
+            SelectColumn column = new SelectColumn(field);
             if (dgColumn.isSetAlias())
             {
                 column.setAlias(dgColumn.getAlias());
             }
-            _columns.add(column);
+            _columns.put(new FieldKey(null, column.getAlias()), column);
         }
         if (query.getWhere() != null)
         {
@@ -957,4 +933,259 @@ loop:
         }
     }
 
+
+    SelectColumn getColumn(String name)
+    {
+        FieldKey key = new FieldKey(null,name);
+        SelectColumn col = _columns.get(key);
+        if (col != null)
+            col._selected = true;
+        return col;
+    }
+
+
+    protected List<RelationColumn> getAllColumns()
+    {
+        return new ArrayList<RelationColumn>(_columns.values());
+    }
+
+
+    SelectColumn getLookupColumn(RelationColumn parentRelCol, String name)
+    {
+        assert parentRelCol instanceof SelectColumn;
+        assert parentRelCol.getTable() == QuerySelect.this;
+
+        if (null != QuerySelect.this._distinct || QuerySelect.this.isAggregate())
+            return null;
+
+        SelectColumn parent = (SelectColumn)parentRelCol;
+
+        FieldKey key = new FieldKey(parent._key, name);
+        SelectColumn c = _columns.get(key);
+        if (null != c)
+            return c;
+        
+        QExpr qexpr = parent.getResolvedField();
+        if (!(qexpr instanceof QField))
+            return null;
+
+        RelationColumn fromParentColumn = ((QField)qexpr).getRelationColumn();
+        if (fromParentColumn == null)
+            return null;
+        RelationColumn fromLookupColumn = fromParentColumn.getTable().getLookupColumn(fromParentColumn, name);
+        if (fromLookupColumn == null)
+            return null;
+        SelectColumn sc = new SelectColumn(new QField(fromLookupColumn, null));
+        sc._key = key;
+        sc._selected = true;
+        _columns.put(key, sc);
+        return sc;
+    }
+
+
+    RelationColumn getLookupColumn(RelationColumn parentRelCol, ColumnType.Fk fk, String name)
+    {
+        assert parentRelCol instanceof SelectColumn;
+        assert parentRelCol.getTable() == QuerySelect.this;
+
+        if (null != QuerySelect.this._distinct || QuerySelect.this.isAggregate())
+            return null;
+
+        SelectColumn parent = (SelectColumn)parentRelCol;
+
+        FieldKey key = new FieldKey(parent._key, name);
+        SelectColumn c = _columns.get(key);
+        if (null != c)
+            return c;
+
+        QExpr qexpr = parent.getResolvedField();
+        if (!(qexpr instanceof QField))
+            return null;
+
+        RelationColumn fromParentColumn = ((QField)qexpr).getRelationColumn();
+        if (fromParentColumn == null)
+            return null;
+        RelationColumn fromLookupColumn = fromParentColumn.getTable().getLookupColumn(fromParentColumn, fk, name);
+        if (fromLookupColumn == null)
+            return null;
+        SelectColumn col = new SelectColumn(new QField(fromLookupColumn, null));
+        col._key = key;
+        col._selected = true;
+        _columns.put(key, col);
+        return col;
+    }
+
+
+    public class SelectColumn extends RelationColumn
+    {
+        FieldKey _key;
+        boolean _selected = false;
+        QNode _node;
+        QExpr _field;
+        QExpr _resolved;
+        QIdentifier _alias;
+        ColumnType _metadata;
+
+        ColumnInfo _colinfo = null;
+
+        public SelectColumn(QNode node)
+        {
+            _node = node;
+            if (node instanceof QAs)
+            {
+                _field = ((QAs) node).getExpression();
+                _alias = ((QAs) node).getAlias();
+            }
+            else
+            {
+                _field = (QExpr) node;
+                FieldKey fk = _field.getFieldKey();
+                if (null != fk)
+                    _alias = new QIdentifier(fk.getName());
+            }
+            if (null != _alias)
+                _key = new FieldKey(null, _alias.getValueString());
+        }
+
+        public SelectColumn(QExpr expr)
+        {
+            _field = expr;
+            _key = _field.getFieldKey();
+            if (null != _key)
+                _alias = new QIdentifier(_key.getName());
+        }
+
+        public SelectColumn(QField field)
+        {
+            _field = field;
+            _resolved = field;
+            _alias = new QIdentifier(field.getName());
+        }
+
+        public SQLFragment getValueSql(String tableAlias)
+        {
+            return new SQLFragment(defaultString(tableAlias,getAlias()) + "." + getAlias());
+        }
+
+        SQLFragment getInternalSql()
+        {
+            SqlBuilder b = new SqlBuilder(getDbSchema());
+            QExpr expr = getResolvedField();
+            expr.appendSql(b);
+            return b;
+        }
+
+        public String getName()
+        {
+            return _alias.getIdentifier();
+        }
+
+        QueryRelation getTable()
+        {
+            return QuerySelect.this;
+        }
+
+        public int getSqlTypeInt()
+        {
+            return 0;
+        }
+
+        ColumnType getColumnType()
+        {
+            if (null != _metadata)
+                return _metadata;
+            String alias = getAlias();
+            // UNDONE: make ForeignKeys work
+            return null;
+        }
+
+        ColumnInfo getColumnInfo()
+        {
+            if (_colinfo == null)
+            {
+                QExpr expr = getResolvedField();
+                _colinfo = expr.createColumnInfo(_subqueryTable, _subqueryAliasManager.decideAlias(getAlias()));
+            }
+            return _colinfo;
+        }
+
+        void copyColumnAttributesTo(ColumnInfo to)
+        {
+            to.copyAttributesFrom(getColumnInfo());
+        }
+
+        public String getAlias()
+        {
+            if (_alias == null)
+                return null;
+            return _alias.getIdentifier();
+        }
+
+        public boolean isAliasQuoted()
+        {
+            if (_alias == null)
+                return false;
+            return _alias.getTokenType() == SqlTokenTypes.QUOTED_IDENTIFIER;
+        }
+
+        public void appendSource(SourceBuilder builder)
+        {
+            _field.appendSource(builder);
+            if (_alias != null)
+            {
+                builder.append(" AS ");
+                _alias.appendSource(builder);
+            }
+        }
+
+        public FieldKey getFieldKey(FieldKey root, QExpr expr)
+        {
+            if (getAlias() != null)
+            {
+                return new FieldKey(root, getAlias());
+            }
+            if (expr instanceof QField)
+            {
+                return FieldKey.fromString(((QField) expr).getRelationColumn().getName());
+            }
+            return null;
+        }
+
+        public String getFieldName()
+        {
+            if (_field instanceof QField)
+                return ((QField) _field).getName();
+            return null;
+        }
+
+        public void setAlias(String alias)
+        {
+            alias = StringUtils.trimToNull(alias);
+            if (alias == null)
+            {
+                _alias = null;
+            }
+            else
+            {
+                _alias = new QIdentifier(alias);
+            }
+        }
+
+        public QExpr getField()
+        {
+            return _field;
+        }
+
+        public QExpr getResolvedField()
+        {
+            if (null == _resolved)
+                _resolved = resolveFields(getField(), null);
+            return _resolved;
+        }
+
+        public void setField(QExpr field)
+        {
+            _field = field;
+        }
+    }
 }

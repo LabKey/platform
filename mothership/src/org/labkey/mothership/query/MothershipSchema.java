@@ -67,32 +67,29 @@ public class MothershipSchema extends UserSchema
     }
 
 
-    public TableInfo createTable(String name, String alias)
+    public TableInfo createTable(String name)
     {
         if (name.equalsIgnoreCase(SERVER_INSTALLATIONS_TABLE_NAME))
         {
-            return createServerInstallationTable(alias);
+            return createServerInstallationTable();
         }
         else if (name.equalsIgnoreCase(SERVER_SESSIONS_TABLE_NAME))
         {
-            return createServerSessionTable(alias);
+            return createServerSessionTable();
         }
         else if (name.equalsIgnoreCase(EXCEPTION_STACK_TRACE_TABLE_NAME))
         {
             FilteredTable result = createExceptionStackTraceTable();
-            result.setAlias(alias);
             return result;
         }
         else if (name.equalsIgnoreCase(SOFTWARE_RELEASES_TABLE_NAME))
         {
             FilteredTable result = createSoftwareReleasesTable();
-            result.setAlias(alias);
             return result;
         }
         else if (name.equalsIgnoreCase(EXCEPTION_REPORT_TABLE_NAME))
         {
             FilteredTable result = createExceptionReportTable();
-            result.setAlias(alias);
             return result;
         }
         return null;
@@ -116,10 +113,9 @@ public class MothershipSchema extends UserSchema
         return result;
     }
 
-    public FilteredTable createServerSessionTable(String alias)
+    public FilteredTable createServerSessionTable()
     {
         FilteredTable result = new FilteredTable(MothershipManager.get().getTableInfoServerSession(), getContainer());
-        result.setAlias(alias);
         result.wrapAllColumns(true);
         result.setTitleColumn("RowId");
 
@@ -127,7 +123,7 @@ public class MothershipSchema extends UserSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                return createServerInstallationTable(null);
+                return createServerInstallationTable();
             }
         });
         result.getColumn("ServerInstallationId").setCaption("Server");
@@ -161,34 +157,33 @@ public class MothershipSchema extends UserSchema
         return result;
     }
 
-    public TableInfo createServerInstallationTable(String alias)
+    public TableInfo createServerInstallationTable()
     {
         FilteredTable result = new FilteredTable(MothershipManager.get().getTableInfoServerInstallation(), getContainer());
-        result.setAlias(alias);
         result.wrapAllColumns(true);
 
         ActionURL url = new ActionURL(MothershipController.ShowInstallationDetailAction.class, getContainer());
         result.getColumn("ServerHostName").setURL(url + "serverInstallationId=${ServerInstallationId}");
 
         SQLFragment firstPingSQL = new SQLFragment("(SELECT MIN(EarliestKnownTime) FROM ");
-        firstPingSQL.append(MothershipManager.get().getTableInfoServerSession());
-        firstPingSQL.append(" ss WHERE ss.ServerInstallationId = ");
+        firstPingSQL.append(MothershipManager.get().getTableInfoServerSession(), "ss");
+        firstPingSQL.append(" WHERE ss.ServerInstallationId = ");
         firstPingSQL.append(ExprColumn.STR_TABLE_ALIAS);
         firstPingSQL.append(".ServerInstallationId)");
         result.addColumn(new ExprColumn(result, "FirstPing", firstPingSQL, Types.TIMESTAMP));
 
         SQLFragment lastPing = new SQLFragment("(SELECT MAX(LastKnownTime) FROM ");
-        lastPing.append(MothershipManager.get().getTableInfoServerSession());
-        lastPing.append(" ss WHERE ss.ServerInstallationId = ");
+        lastPing.append(MothershipManager.get().getTableInfoServerSession(), "ss");
+        lastPing.append(" WHERE ss.ServerInstallationId = ");
         lastPing.append(ExprColumn.STR_TABLE_ALIAS);
         lastPing.append(".ServerInstallationId)");
         result.addColumn(new ExprColumn(result, "LastPing", lastPing, Types.TIMESTAMP));
 
         SQLFragment exceptionCount = new SQLFragment("(SELECT COUNT(*) FROM ");
-        exceptionCount.append(MothershipManager.get().getTableInfoServerSession());
-        exceptionCount.append(" ss,");
-        exceptionCount.append(MothershipManager.get().getTableInfoExceptionReport());
-        exceptionCount.append(" er WHERE ss.ServerInstallationId = ");
+        exceptionCount.append(MothershipManager.get().getTableInfoServerSession(), "ss");
+        exceptionCount.append(",");
+        exceptionCount.append(MothershipManager.get().getTableInfoExceptionReport(), "er");
+        exceptionCount.append(" WHERE ss.ServerInstallationId = ");
         exceptionCount.append(ExprColumn.STR_TABLE_ALIAS);
         exceptionCount.append(".ServerInstallationId AND ss.serversessionid = er.serversessionid)");
         ExprColumn exceptionCountCol = new ExprColumn(result, "ExceptionCount", exceptionCount, Types.INTEGER);
@@ -200,8 +195,8 @@ public class MothershipSchema extends UserSchema
         SQLFragment daysActive = new SQLFragment("(SELECT ");
         daysActive.append(dialect.getDateDiff(Calendar.DATE, "MAX(LastKnownTime)", "MIN(EarliestKnownTime)"));
         daysActive.append(" FROM ");
-        daysActive.append(MothershipManager.get().getTableInfoServerSession());
-        daysActive.append(" ss WHERE ss.ServerInstallationId = ");
+        daysActive.append(MothershipManager.get().getTableInfoServerSession(), "ss");
+        daysActive.append(" WHERE ss.ServerInstallationId = ");
         daysActive.append(ExprColumn.STR_TABLE_ALIAS);
         daysActive.append(".ServerInstallationId)");
         ExprColumn daysActiveColumn = new ExprColumn(result, "DaysActive", daysActive, Types.INTEGER);
@@ -209,15 +204,15 @@ public class MothershipSchema extends UserSchema
         result.addColumn(daysActiveColumn);
 
         SQLFragment versionCount = new SQLFragment("(SELECT COUNT(DISTINCT(svnrevision)) FROM ");
-        versionCount.append(MothershipManager.get().getTableInfoServerSession());
-        versionCount.append(" ss WHERE ss.ServerInstallationId = ");
+        versionCount.append(MothershipManager.get().getTableInfoServerSession(), "ss");
+        versionCount.append(" WHERE ss.ServerInstallationId = ");
         versionCount.append(ExprColumn.STR_TABLE_ALIAS);
         versionCount.append(".ServerInstallationId)");
         result.addColumn(new ExprColumn(result, "VersionCount", versionCount, Types.INTEGER));
 
         SQLFragment currentVersion = new SQLFragment("(SELECT MAX(ServerSessionID) FROM ");
-        currentVersion.append(MothershipManager.get().getTableInfoServerSession());
-        currentVersion.append(" ss WHERE ss.ServerInstallationId = ");
+        currentVersion.append(MothershipManager.get().getTableInfoServerSession(), "ss");
+        currentVersion.append(" WHERE ss.ServerInstallationId = ");
         currentVersion.append(ExprColumn.STR_TABLE_ALIAS);
         currentVersion.append(".ServerInstallationId)");
         ExprColumn currentVersionColumn = new ExprColumn(result, "MostRecentSession", currentVersion, Types.INTEGER);
@@ -225,7 +220,7 @@ public class MothershipSchema extends UserSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                return createServerSessionTable(null);
+                return createServerSessionTable();
             }
         });
         result.addColumn(currentVersionColumn);
@@ -351,7 +346,7 @@ public class MothershipSchema extends UserSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                return createServerSessionTable(null);
+                return createServerSessionTable();
             }
         };
         fk.setPrefixColumnCaption(false);

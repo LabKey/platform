@@ -111,8 +111,7 @@ public class ParticipantVisitTable extends FilteredTable
 
     protected ColumnInfo createDataSetColumn(String name, final DataSetDefinition dsd)
     {
-        ColumnInfo ret = new AliasedColumn(name, _pvForeign);
-        ret.setAlias(AliasManager.makeLegalName(name, _dialect));
+        ColumnInfo ret = new AliasedColumn(name, AliasManager.makeLegalName(name, _dialect), _pvForeign);
         ret.setFk(new PVForeignKey(dsd));
         ret.setCaption(dsd.getLabel());
         ret.setIsUnselectable(true);
@@ -175,7 +174,8 @@ public class ParticipantVisitTable extends FilteredTable
             setCaption(foreignKey.getCaption() + " " + lookupColumn.getCaption());
         }
 
-        public SQLFragment getJoinCondition()
+        @Override
+        public SQLFragment getJoinCondition(String tableAliasName)
         {
             ColumnInfo fk = foreignKey;
             if (fk instanceof AliasedColumn)
@@ -185,7 +185,7 @@ public class ParticipantVisitTable extends FilteredTable
                 lk = ((AliasedColumn)lk).getColumn();
 
             if (!(fk instanceof ParticipantVisitColumn) || !(lk instanceof ParticipantVisitColumn))
-                return super.getJoinCondition();
+                return super.getJoinCondition(tableAliasName);
 
             ParticipantVisitColumn pvForeign = (ParticipantVisitColumn) fk;
             ParticipantVisitColumn pvLookup = (ParticipantVisitColumn) lk;
@@ -194,11 +194,11 @@ public class ParticipantVisitTable extends FilteredTable
             condition.append("(");
             condition.append(pvForeign._participantColumn.getValueSql());
             condition.append(" = ");
-            condition.append(pvLookup._participantColumn.getValueSql(getTableAlias()));
+            condition.append(pvLookup._participantColumn.getValueSql(tableAliasName));
             condition.append(" AND " );
             condition.append(pvForeign._visitColumn.getValueSql());
             condition.append(" = ");
-            condition.append(pvLookup._visitColumn.getValueSql(getTableAlias()));
+            condition.append(pvLookup._visitColumn.getValueSql(tableAliasName));
             condition.append(")");
             return condition;
         }

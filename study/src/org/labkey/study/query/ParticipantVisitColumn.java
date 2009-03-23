@@ -35,7 +35,6 @@ public class ParticipantVisitColumn extends ColumnInfo
     public ParticipantVisitColumn(String name, TableInfo parentTable, ColumnInfo participantColumn, ColumnInfo visitColumn)
     {
         super(name, parentTable);
-        setAlias(name);
         setSqlTypeName("VARCHAR");
         setIsUnselectable(true);
         _participantColumn = participantColumn;

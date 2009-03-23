@@ -91,7 +91,7 @@ public class DbUserSchema extends UserSchema
         return _tables.keySet();
     }
 
-    public TableInfo createTable(String name, String alias)
+    public TableInfo createTable(String name)
     {
         SchemaTableInfo baseTable = _tables.get(name);
         if (baseTable == null)

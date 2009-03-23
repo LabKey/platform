@@ -64,27 +64,26 @@ public class BtSchema extends UserSchema
         return tableNames;
     }
 
-    public TableInfo createTable(String name, String alias)
+    public TableInfo createTable(String name)
     {
         if (tableNames.contains(name))
         {
             switch (TableType.valueOf(name))
             {
                 case Tasks:
-                    return createTasksTable(alias);
+                    return createTasksTable();
                 case Servers:
-                    return createServersTable(alias);
+                    return createServersTable();
                 case Entities:
-                    return createEntitiesTable(alias);
+                    return createEntitiesTable();
             }
         }
         return null;
     }
 
-    public TableInfo createTasksTable(String alias)
+    public TableInfo createTasksTable()
     {
         FilteredTable ret = new FilteredTable(BtManager.get().getTinfoTask());
-        ret.setAlias(alias);
         SQLFragment containerCondition = new SQLFragment();
         containerCondition.append("(SELECT biotrue.server.container\n" +
                 "FROM biotrue.server\n" +
@@ -103,7 +102,7 @@ public class BtSchema extends UserSchema
         return ret;
     }
 
-    public TableInfo createServersTable(String alias)
+    public TableInfo createServersTable()
     {
         FilteredTable ret = new FilteredTable(BtManager.get().getTinfoServer(), _container);
         ret.addWrapColumn(ret.getRealTable().getColumn("RowId")).setIsHidden(true);
@@ -116,7 +115,7 @@ public class BtSchema extends UserSchema
         return ret;
     }
 
-    public TableInfo createEntitiesTable(String alias)
+    public TableInfo createEntitiesTable()
     {
         FilteredTable ret = new FilteredTable(BtManager.get().getTinfoEntity());
         SQLFragment containerCondition = new SQLFragment("(SELECT biotrue.server.container FROM biotrue.server WHERE biotrue.server.rowid = biotrue.entity.serverid) = ?");
@@ -131,7 +130,7 @@ public class BtSchema extends UserSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                return createEntitiesTable("entities");
+                return createEntitiesTable();
             }
         });
         ret.addColumn(parentColumn);

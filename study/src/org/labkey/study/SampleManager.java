@@ -1496,9 +1496,10 @@ public class SampleManager
                     else
                     {
                         SQLFragment fromSQL = tinfo.getFromSQL();
-                        String sql = "SELECT DISTINCT " + col.getSelectSql() + " FROM " +
-                                fromSQL;
-                        rs = Table.executeQuery(tinfo.getSchema(), sql, fromSQL.getParamsArray());
+                        SQLFragment sql = new SQLFragment("SELECT DISTINCT " + col.getValueSql("_distinct") + " FROM (");
+                        sql.append(fromSQL);
+                        sql.append(") _distinct");
+                        rs = Table.executeQuery(tinfo.getSchema(), sql);
                     }
                     while (rs.next())
                     {
@@ -1586,7 +1587,7 @@ public class SampleManager
         filter.addInClause("SpecimenHash", hashes);
         if (onlyAvailable)
             filter.addCondition("Available", true);
-        SQLFragment sql = new SQLFragment("SELECT * FROM " + StudySchema.getInstance().getTableInfoSpecimenDetail().getAliasName() + " ");
+        SQLFragment sql = new SQLFragment("SELECT * FROM " + StudySchema.getInstance().getTableInfoSpecimenDetail().toString() + " ");
         sql.append(filter.getSQLFragment(StudySchema.getInstance().getSqlDialect()));
 
         Map<String, List<Specimen>> map = new HashMap<String, List<Specimen>>();
@@ -1631,7 +1632,7 @@ public class SampleManager
 
             rs = Table.executeQuery(StudySchema.getInstance().getSchema(), "SELECT " +
                     "SpecimenHash, CAST(AvailableCount AS Integer) AS AvailableCount" +
-                    " FROM " + StudySchema.getInstance().getTableInfoSpecimenSummary().getAliasName() +
+                    " FROM " + StudySchema.getInstance().getTableInfoSpecimenSummary().toString() +
                     " WHERE Container = ?" + extraClause, params.toArray(new Object[params.size()]));
             while(rs.next())
             {
@@ -2046,7 +2047,7 @@ public class SampleManager
                                                                    SpecimenTypeLevel level)
     {
         StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(container), user, true);
-        TableInfo tinfo = schema.getTable("SpecimenDetail", "SpecimenDetailAlias");
+        TableInfo tinfo = schema.getTable("SpecimenDetail");
         Map<String, SpecimenTypeBeanProperty> aliasToTypeProperty = new LinkedHashMap<String, SpecimenTypeBeanProperty>();
 
         Collection<FieldKey> columns = new HashSet<FieldKey>();

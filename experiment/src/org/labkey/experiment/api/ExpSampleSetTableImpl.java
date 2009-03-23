@@ -21,14 +21,11 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
-import java.util.List;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.sql.Types;
 
@@ -38,9 +35,9 @@ import java.sql.Types;
  */
 public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column> implements ExpSampleSetTable
 {
-    public ExpSampleSetTableImpl(String name, String alias, UserSchema schema)
+    public ExpSampleSetTableImpl(String name, UserSchema schema)
     {
-        super(name, alias, ExperimentServiceImpl.get().getTinfoMaterialSource(), schema);
+        super(name, ExperimentServiceImpl.get().getTinfoMaterialSource(), schema);
     }
 
     public ColumnInfo createColumn(String alias, Column column)

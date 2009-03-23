@@ -109,10 +109,10 @@ public class AssaySchema extends UserSchema
     }
 
     @Override
-    public TableInfo createTable(String name, String alias)
+    public TableInfo createTable(String name)
     {
         if (name.equals("AssayList"))
-            return new AssayListTable(this, alias);
+            return new AssayListTable(this);
         else
         {
             for (ExpProtocol protocol : getProtocols())
@@ -122,15 +122,15 @@ public class AssaySchema extends UserSchema
                 {
                     if (name.equalsIgnoreCase(getBatchesTableName(protocol)))
                     {
-                        return createBatchesTable(alias, protocol, provider, null);
+                        return createBatchesTable(protocol, provider, null);
                     }
                     if (name.equalsIgnoreCase(getRunsTableName(protocol)))
                     {
-                        return createRunTable(alias, protocol, provider);
+                        return createRunTable(protocol, provider);
                     }
                     if (name.equalsIgnoreCase(getResultsTableName(protocol)) || name.equalsIgnoreCase(protocol.getName() + " Data"))
                     {
-                        return provider.createDataTable(this, alias, protocol);
+                        return provider.createDataTable(this, protocol);
                     }
                 }
             }
@@ -138,9 +138,9 @@ public class AssaySchema extends UserSchema
         return null;
     }
 
-    public ExpExperimentTable createBatchesTable(String alias, ExpProtocol protocol, AssayProvider provider, final ContainerFilter containerFilter)
+    public ExpExperimentTable createBatchesTable(ExpProtocol protocol, AssayProvider provider, final ContainerFilter containerFilter)
     {
-        final ExpExperimentTable result = ExperimentService.get().createExperimentTable(getBatchesTableName(protocol), alias, this);
+        final ExpExperimentTable result = ExperimentService.get().createExperimentTable(getBatchesTableName(protocol), this);
         result.populate();
         if (containerFilter != null)
         {
@@ -180,9 +180,9 @@ public class AssaySchema extends UserSchema
         return result;
     }
 
-    public ExpRunTable createRunTable(String alias, final ExpProtocol protocol, final AssayProvider provider)
+    public ExpRunTable createRunTable(final ExpProtocol protocol, final AssayProvider provider)
     {
-        final ExpRunTable runTable = provider.createRunTable(this, alias, protocol);
+        final ExpRunTable runTable = provider.createRunTable(this, protocol);
         runTable.setProtocolPatterns(protocol.getLSID());
 
         List<PropertyDescriptor> runColumns = provider.getRunTableColumns(protocol);
@@ -192,10 +192,10 @@ public class AssaySchema extends UserSchema
         propsCol.setFk(new AssayPropertyForeignKey(pds));
 
         SQLFragment batchSQL = new SQLFragment("(SELECT MIN(ExperimentId) FROM ");
-        batchSQL.append(ExperimentService.get().getTinfoRunList());
-        batchSQL.append(" rl, ");
-        batchSQL.append(ExperimentService.get().getTinfoExperiment());
-        batchSQL.append(" e WHERE e.RowId = rl.ExperimentId AND rl.ExperimentRunId = ");
+        batchSQL.append(ExperimentService.get().getTinfoRunList(), "rl");
+        batchSQL.append(", ");
+        batchSQL.append(ExperimentService.get().getTinfoExperiment(), "e");
+        batchSQL.append(" WHERE e.RowId = rl.ExperimentId AND rl.ExperimentRunId = ");
         batchSQL.append(ExprColumn.STR_TABLE_ALIAS);
         batchSQL.append(".RowId AND e.BatchProtocolId = ");
         batchSQL.append(protocol.getRowId());
@@ -205,7 +205,7 @@ public class AssaySchema extends UserSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                return createBatchesTable(null, protocol, provider, runTable.getContainerFilter());
+                return createBatchesTable(protocol, provider, runTable.getContainerFilter());
             }
         });
         runTable.addColumn(batchColumn);

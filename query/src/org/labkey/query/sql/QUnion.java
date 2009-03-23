@@ -25,12 +25,19 @@ import java.util.LinkedList;
 
 public class QUnion extends QExpr
 {
+    QueryUnion _union;
+
     public QUnion(Node node)
     {
 		super(QNode.class);
         from(node);
     }
 
+
+    QueryUnion getQueryUnion()
+    {
+        return _union;
+    }
 
     public void appendSource(SourceBuilder builder)
     {
@@ -50,6 +57,12 @@ public class QUnion extends QExpr
 
     public void appendSql(SqlBuilder builder)
     {
-        throw new UnsupportedOperationException("UNION in subquery");
+        if (_union == null)
+        {
+            throw new IllegalStateException("Fields should have been resolved");
+        }
+        builder.append("(");
+        builder.append(_union.getSql());
+        builder.append(")");
     }
- }
+}

@@ -72,7 +72,7 @@ public class DbUserSchemaTable extends FilteredTable
                     {
                         public TableInfo getLookupTableInfo()
                         {
-                            return _schema.getTable(fkTableName, null);
+                            return _schema.getTable(fkTableName);
                         }
                     });
                 } //if we know the pk col name

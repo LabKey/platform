@@ -97,9 +97,9 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return Arrays.asList(new StudyParticipantVisitResolverType(), new ThawListResolverType());
     }
 
-    public TableInfo createDataTable(UserSchema schema, String alias, ExpProtocol protocol)
+    public TableInfo createDataTable(UserSchema schema, ExpProtocol protocol)
     {
-        return new RunDataTable(schema, alias, protocol);
+        return new RunDataTable(schema, protocol);
     }
 
     public FieldKey getParticipantIDFieldKey()

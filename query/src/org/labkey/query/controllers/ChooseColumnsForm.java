@@ -75,7 +75,7 @@ public class ChooseColumnsForm extends DesignForm
         }
         if (ff_selectedColumns.isEmpty())
         {
-            TableInfo table = getQueryDef().getTable(null, getSchema(), null, true);
+            TableInfo table = getQueryDef().getTable(getSchema(), null, true);
             if (table != null)
             {
                 for (ColumnInfo column : table.getColumns())
@@ -166,7 +166,7 @@ public class ChooseColumnsForm extends DesignForm
     private Map<FieldKey, ColumnInfo> getAvailableColumns()
     {
         Map<FieldKey, ColumnInfo> ret = new TreeMap<FieldKey, ColumnInfo>();
-        TableInfo table = getQueryDef().getTable(null, getSchema(), null, true);
+        TableInfo table = getQueryDef().getTable(getSchema(), null, true);
         addColumns(ret, table, null, 3);
 
         return QueryService.get().getColumns(table, ret.keySet());

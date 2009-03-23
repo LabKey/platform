@@ -309,7 +309,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     public TableInfo getTable(ViewContext context, String name)
     {
         UserSchema schema = createSchema(context.getUser(), context.getContainer());
-        return schema.getTable(name, null);
+        return schema.getTable(name);
     }
 
     public UserSchema createSchema(User user, Container container)

@@ -1291,7 +1291,7 @@ public class MothershipController extends SpringActionController
 
         protected TableInfo createTable()
         {
-            FilteredTable table = ((MothershipSchema) getSchema()).createServerSessionTable(null);
+            FilteredTable table = ((MothershipSchema) getSchema()).createServerSessionTable();
             table.addCondition(table.getRealTable().getColumn("ServerInstallationId"), _serverInstallationId);
             return table;
         }

@@ -42,9 +42,9 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     private ExpMaterial _inputMaterial;
     private ExpData _inputData;
 
-    public ExpRunTableImpl(String name, String alias, UserSchema schema)
+    public ExpRunTableImpl(String name, UserSchema schema)
     {
-        super(name, alias, ExperimentServiceImpl.get().getTinfoExperimentRun(), schema);
+        super(name, ExperimentServiceImpl.get().getTinfoExperimentRun(), schema);
     }
 
     public ExpProtocol getProtocol()

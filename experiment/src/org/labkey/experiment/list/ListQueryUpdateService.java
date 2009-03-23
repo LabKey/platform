@@ -132,7 +132,7 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService<ListItem,
         }
 
         //set the domain properties, doing type coercion as necessary
-        TableInfo table = listdef.getTable(user, null);
+        TableInfo table = listdef.getTable(user);
         for(DomainProperty prop : listdef.getDomain().getProperties())
         {
             //set the prop only if it was supplied in the map

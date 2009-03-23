@@ -282,7 +282,7 @@ public class SpringSpecimenController extends BaseStudyController
             Study study = StudyManager.getInstance().getStudy(context.getContainer());
             StudyQuerySchema schema = new StudyQuerySchema(study, context.getUser(), true);
 
-            TableInfo otherTableInfo = schema.getTable(otherTable, null);
+            TableInfo otherTableInfo = schema.getTable(otherTable);
             for (Map.Entry<String,String[]> param : params.entrySet())
             {
                 int dotIndex = param.getKey().indexOf('.');

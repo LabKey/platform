@@ -607,7 +607,7 @@ public class ExperimentController extends SpringActionController
             {
                 protected TableInfo createTable()
                 {
-                    ExpMaterialTable table = ExperimentServiceImpl.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), "materials", getSchema());
+                    ExpMaterialTable table = ExperimentServiceImpl.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), getSchema());
                     table.setMaterials(predecessorMaterials);
                     table.populate();
                     return table;

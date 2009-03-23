@@ -59,7 +59,7 @@ public class AuditQuerySchema extends UserSchema
         return new HashSet<String>(Arrays.asList(AUDIT_TABLE_NAME));
     }
 
-    public TableInfo createTable(String name, String alias)
+    public TableInfo createTable(String name)
     {
         return new AuditLogTable(this, LogManager.get().getTinfoAuditLog(), name);
     }

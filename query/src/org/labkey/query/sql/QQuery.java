@@ -17,15 +17,11 @@
 package org.labkey.query.sql;
 
 import org.labkey.api.data.Table;
-import org.labkey.api.query.QueryParseException;
-
-import java.util.List;
-import java.util.LinkedList;
 
 
 public class QQuery extends QExpr
 {
-    QuerySelect _query;
+    QuerySelect _select;
 
     public QQuery()
     {
@@ -34,12 +30,12 @@ public class QQuery extends QExpr
 
     public QQuery(QuerySelect query)
     {
-        _query = query;
+        _select = query;
     }
 
-    public QuerySelect getQuery()
+    public QuerySelect getQuerySelect()
     {
-        return _query;
+        return _select;
     }
     
     public QSelect getSelect()
@@ -90,18 +86,12 @@ public class QQuery extends QExpr
 
     public void appendSql(SqlBuilder builder)
     {
-        if (_query == null)
+        if (_select == null)
         {
             throw new IllegalStateException("Fields should have been resolved");
         }
-        QueryTableInfo table = _query.getTableInfo("foo");
-        if (table == null)
-        {
-            builder.append("'ERROR'");
-            return;
-        }
         builder.append("(");
-        builder.append(Table.getSelectSQL(table, table.getColumns(), null, null));
+        builder.append(_select.getSql());
         builder.append(")");
     }
 }

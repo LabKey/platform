@@ -585,13 +585,9 @@ public class ListDefinitionImpl implements ListDefinition
         edit().setTitleColumn(titleColumn);
     }
 
-    public TableInfo getTable(User user, String alias)
+    public TableInfo getTable(User user)
     {
         ListTable ret = new ListTable(user, this);
-        if (alias != null)
-        {
-            ret.setAlias(alias);
-        }
         return ret;
     }
 

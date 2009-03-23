@@ -52,14 +52,13 @@ public class ListTable extends FilteredTable
     public ListTable(User user, ListDefinition listDef)
     {
         super(getIndexTable(listDef.getKeyType()));
+        setName(listDef.getName());
         _list = listDef;
-        AliasManager aliasManager = new AliasManager(ListManager.get().getSchema());
         addCondition(getRealTable().getColumn("ListId"), listDef.getListId());
 
         // All columns visible by default, except for auto-increment integer
         List<FieldKey> defaultVisible = new ArrayList<FieldKey>();
         ColumnInfo colKey = wrapColumn(listDef.getKeyName(), getRealTable().getColumn("Key"));
-        colKey.setAlias(aliasManager.decideAlias(colKey.getName()));
         colKey.setKeyField(true);
         colKey.setInputType("text");
         colKey.setInputLength(-1);
@@ -79,7 +78,6 @@ public class ListTable extends FilteredTable
         {
             ColumnInfo column = new ExprColumn(this, property.getName(),
                     PropertyForeignKey.getValueSql(colObjectId.getValueSql(ExprColumn.STR_TABLE_ALIAS), property.getValueSQL(), property.getPropertyId(), false), property.getSqlType());
-            column.setAlias(aliasManager.decideAlias(column.getName()));
             column.setScale(property.getScale());
             column.setInputType(property.getInputType());
             column.setDescription(property.getDescription());

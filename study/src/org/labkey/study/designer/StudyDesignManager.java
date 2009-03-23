@@ -186,7 +186,7 @@ public class StudyDesignManager
     {
         SimpleFilter filter = new SimpleFilter("Container", c.getId());
         filter.addCondition("studyId", studyId);
-        filter.addWhereClause("revision = (SELECT MAX(revision) FROM " + getStudyVersionTable().getAliasName() + " WHERE studyid=?)", new Object[] {studyId}, "revision","studyid");
+        filter.addWhereClause("revision = (SELECT MAX(revision) FROM " + getStudyVersionTable().toString() + " WHERE studyid=?)", new Object[] {studyId}, "revision","studyid");
 
         StudyDesignVersion[] version = Table.select(getStudyVersionTable(), Table.ALL_COLUMNS, filter, null, StudyDesignVersion.class);
         assert(null == version || version.length == 0 || version.length == 1);
@@ -199,7 +199,7 @@ public class StudyDesignManager
      */
     public Integer getLatestRevisionNumber(Container c, int studyId) throws SQLException
     {
-        String sql = "SELECT Max(revision) FROM " + getStudyVersionTable().getAliasName() + " WHERE Container=? AND StudyId=?";
+        String sql = "SELECT Max(revision) FROM " + getStudyVersionTable().toString() + " WHERE Container=? AND StudyId=?";
         return Table.executeSingleton(getSchema(), sql, new Object[] {c.getId(), studyId}, Integer.class);
     }
 

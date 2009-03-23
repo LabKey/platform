@@ -68,13 +68,13 @@ public class SasSchema extends UserSchema
         _path = path;
     }
 
-    protected TableInfo createTable(String name, String alias)
+    protected TableInfo createTable(String name)
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public Set<String> getTableNames()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 }

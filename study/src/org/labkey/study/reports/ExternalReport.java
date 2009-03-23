@@ -175,7 +175,7 @@ public class ExternalReport extends AbstractReport
 //                QueryDefinition def = QueryService.get().getQueryDef(viewContext.getContainer(), "study", queryName);
 //                QuerySchema schema = QueryService.get().getUserSchema(viewContext.getUser(), viewContext.getContainer(),  "study");
                 UserSchema schema = getStudyQuerySchema(viewContext.getUser(), ACL.PERM_READ, viewContext);
-                TableInfo mainTable = schema.getTable(getQueryName(), "Dataset");
+                TableInfo mainTable = schema.getTable(getQueryName());
                 rs = Table.select(mainTable, mainTable.getColumns(), null, null);
             }
 

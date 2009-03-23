@@ -31,9 +31,9 @@ import java.util.Collections;
 
 public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Column> implements ExpExperimentTable
 {
-    public ExpExperimentTableImpl(String name, String alias, UserSchema schema)
+    public ExpExperimentTableImpl(String name, UserSchema schema)
     {
-        super(name, alias, ExperimentServiceImpl.get().getTinfoExperiment(), schema);
+        super(name, ExperimentServiceImpl.get().getTinfoExperiment(), schema);
         addCondition(new SQLFragment("Hidden = ?", Boolean.FALSE), "Hidden");
     }
 

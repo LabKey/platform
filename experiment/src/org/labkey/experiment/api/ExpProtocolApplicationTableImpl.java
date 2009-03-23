@@ -32,9 +32,9 @@ import java.sql.Types;
 
 public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApplicationTable.Column> implements ExpProtocolApplicationTable
 {
-    public ExpProtocolApplicationTableImpl(String name, String alias, UserSchema schema)
+    public ExpProtocolApplicationTableImpl(String name, UserSchema schema)
     {
-        super(name, alias, ExperimentServiceImpl.get().getTinfoProtocolApplication(), schema);
+        super(name, ExperimentServiceImpl.get().getTinfoProtocolApplication(), schema);
     }
 
     public ColumnInfo createColumn(String alias, ExpProtocolApplicationTable.Column column)
@@ -72,7 +72,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         return ret;
     }
 
-    public ColumnInfo createDataInputColumn(String alias, final ExpSchema schema, String... roleNames)
+    public ColumnInfo createDataInputColumn(String name, final ExpSchema schema, String... roleNames)
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.DataInput.DataId) FROM exp.DataInput\nWHERE ");
         sql.append(ExprColumn.STR_TABLE_ALIAS +".RowId = exp.DataInput.TargetApplicationId");
@@ -90,13 +90,13 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
             sql.append(")");
         }
         sql.append(")");
-        ColumnInfo ret = new ExprColumn(this, alias, sql, Types.INTEGER);
+        ColumnInfo ret = new ExprColumn(this, name, sql, Types.INTEGER);
 
         ret.setFk(new LookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
             {
-                ExpDataTable expDataTable = schema.createDatasTable("lookup");
+                ExpDataTable expDataTable = schema.createDatasTable();
                 expDataTable.setContainerFilter(getContainerFilter());
                 return expDataTable;
             }

@@ -73,7 +73,7 @@ public class DbUserSchemaController extends SpringActionController
                 HttpView.throwNotFound("Schema not found");
                 return null;
             }
-            TableInfo table = schema.getTable(form.getQueryName(), null);
+            TableInfo table = schema.getTable(form.getQueryName());
             if (null == table)
             {
                 HttpView.throwNotFound("Query not found");

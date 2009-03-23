@@ -28,9 +28,9 @@ import java.util.Collections;
 
 public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> implements ExpProtocolTable
 {
-    public ExpProtocolTableImpl(String name, String alias, UserSchema schema)
+    public ExpProtocolTableImpl(String name, UserSchema schema)
     {
-        super(name, alias, ExperimentServiceImpl.get().getTinfoProtocol(), schema);
+        super(name, ExperimentServiceImpl.get().getTinfoProtocol(), schema);
         setTitleColumn("Name");
     }
     public ColumnInfo createColumn(String alias, Column column)

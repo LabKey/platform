@@ -303,7 +303,7 @@ public class JunitController extends SpringActionController
                 for (Enumeration e = _result.errors(); e.hasMoreElements();)
                 {
                     TestFailure tf = (TestFailure) e.nextElement();
-                    out.print(tf);
+                    out.print(PageFlowUtil.filter(tf.toString(),true));
                     out.print("<br><pre>");
                     tf.thrownException().printStackTrace(out);
                     out.print("</pre>");
@@ -319,7 +319,7 @@ public class JunitController extends SpringActionController
                     if (f.thrownException().getMessage().startsWith("<div>"))
                         out.println(f.thrownException().getMessage() + "<br>");
                     else
-                        out.println(PageFlowUtil.filter(f.thrownException().getMessage()) + "<br>");
+                        out.println(PageFlowUtil.filter(f.thrownException().getMessage(),true) + "<br>");
                     String testName = f.failedTest().getClass().getName();
                     int count=0;
                     for (StackTraceElement ste : f.thrownException().getStackTrace())

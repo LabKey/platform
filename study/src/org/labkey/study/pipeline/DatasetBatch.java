@@ -827,23 +827,23 @@ public class DatasetBatch extends StudyBatch implements Serializable
             {
                 Table.execute(schema.getSchema(),
                     "UPDATE " + schema.getTableInfoParticipant() + " SET EnrollmentSiteId=study.Site.RowId\n" +
-                    "FROM " + tinfoTemp + " JOIN study.Site ON " + tinfoTemp.getAliasName() + ".EnrollmentSiteId=study.Site." + siteLookup.getSelectName() + "\n" +
-                    "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.getAliasName() + ".ParticipantId", null);
+                    "FROM " + tinfoTemp + " JOIN study.Site ON " + tinfoTemp.toString() + ".EnrollmentSiteId=study.Site." + siteLookup.getSelectName() + "\n" +
+                    "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + ".ParticipantId", null);
             }
             if (columnMap.containsKey("CurrentSiteId"))
             {
                 Table.execute(schema.getSchema(),
                     "UPDATE " + schema.getTableInfoParticipant() + " SET CurrentSiteId=study.Site.RowId\n" +
-                    "FROM " + tinfoTemp + " JOIN study.Site ON " + tinfoTemp.getAliasName() + ".CurrentSiteId=study.Site." + siteLookup.getSelectName() + "\n" +
-                    "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.getAliasName() + ".ParticipantId", null);
+                    "FROM " + tinfoTemp + " JOIN study.Site ON " + tinfoTemp.toString() + ".CurrentSiteId=study.Site." + siteLookup.getSelectName() + "\n" +
+                    "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + ".ParticipantId", null);
             }
 
             if (columnMap.containsKey("StartDate"))
             {
                 Table.execute(schema.getSchema(),
-                    "UPDATE " + schema.getTableInfoParticipant() + " SET StartDate=" + tinfoTemp.getAliasName() + ".StartDate\n" +
+                    "UPDATE " + schema.getTableInfoParticipant() + " SET StartDate=" + tinfoTemp.toString() + ".StartDate\n" +
                     "FROM " + tinfoTemp + " \n" +
-                    "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.getAliasName() + ".ParticipantId", null);
+                    "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + ".ParticipantId", null);
             }
             tinfoTemp.delete();
         }

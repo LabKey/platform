@@ -1,17 +1,3 @@
-package org.labkey.query.sql;
-
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryParseException;
-import static org.labkey.query.sql.SqlTokenTypes.*;
-
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-
 /*
  * Copyright (c) 2009 LabKey Corporation
  *
@@ -27,26 +13,55 @@ import java.util.Map;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.labkey.query.sql;
 
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.ColumnInfo;
+//import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParseException;
+import static org.labkey.query.sql.SqlTokenTypes.*;
+import org.labkey.data.xml.ColumnType;
+import static org.apache.commons.lang.StringUtils.defaultString;
 
-public class QueryUnion
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+
+public class QueryUnion extends QueryRelation
 {
-    QuerySchema _schema;
-    Query _query;
 	QUnion _qunion;
 	QOrder _qorderBy;
 	
-    List<Object> _termList = new ArrayList<Object>();
-    List<QueryTableInfo> _tinfos = new ArrayList<QueryTableInfo>();
+    List<QueryRelation> _termList = new ArrayList<QueryRelation>();
+    Map<String, UnionColumn> _unionColumns = new HashMap<String, UnionColumn>();
+
 
 	QueryUnion(Query query, QUnion qunion)
     {
-        _query = query;
+        super(query);
 		_qunion = qunion;
-        _schema = query.getSchema();
 
         collectUnionTerms(qunion);
 		_qorderBy = _qunion.getChildOfType(QOrder.class);
+    }
+
+
+    // UNDONE: inFromClause
+    QueryUnion(QueryRelation parent, QUnion qunion)
+    {
+        this(parent._query, qunion);
+        _parent = parent;
+    }
+
+
+    @Override
+    void setQuery(Query query)
+    {
+        super.setQuery(query);
+        for (QueryRelation r : _termList)
+            r.setQuery(query);
     }
 
 
@@ -58,7 +73,8 @@ public class QueryUnion
 
 			if (n instanceof QLimit)
 			{
-				_query.getParseErrors().add(new QueryParseException("LIMIT not supported with UNION", null, n.getLine(), n.getColumn()));
+                //noinspection ThrowableInstanceNeverThrown
+                _query.getParseErrors().add(new QueryParseException("LIMIT not supported with UNION", null, n.getLine(), n.getColumn()));
 			}
             else if (n instanceof QQuery)
             {
@@ -79,40 +95,54 @@ public class QueryUnion
     }
 
 
-    void computeTableInfos()
+    void declareFields()
     {
-        if (_tinfos.size() > 0)
-			return;
-		for (Object o : _termList)
-		{
-			if (o instanceof QuerySelect)
-				_tinfos.add(((QuerySelect)o).getTableInfo("U"));
-			else
-				_tinfos.add(((QueryUnion)o).getTableInfo("U"));
+        for (QueryRelation term : _termList)
+        {
+            term.declareFields();
         }
+    }
+
+
+    void initColumns()
+    {
+        if (_unionColumns.isEmpty())
+        {
+            List<RelationColumn> all = _termList.get(0).getAllColumns();
+            for (RelationColumn c : all)
+            {
+                _unionColumns.put(c.getName(), new UnionColumn(c.getName(), c));
+            }
+        }
+
+//        if (_tinfos.size() > 0)
+//			return;
+//		for (Object o : _termList)
+//		{
+//			if (o instanceof QuerySelect)
+//				_tinfos.add(((QuerySelect)o).getTableInfo());
+//			else
+//				_tinfos.add(((QueryUnion)o).getTableInfo());
+//        }
     }
 
 
 	SQLFragment _unionSql = null;
 
 
-    public QueryTableInfo getTableInfo(String alias)
+    public QueryTableInfo getTableInfo()
     {
-        computeTableInfos();
+        initColumns();
         if (_query.getParseErrors().size() > 0)
             return null;
 
 		String unionOperator = "";
         SQLFragment unionSql = new SQLFragment();
+        assert unionSql.appendComment("<QueryUnion@" + System.identityHashCode(this) + ">");
 
-		for (Object term : _termList)
+		for (QueryRelation term : _termList)
 		{
-			SQLFragment sql;
-			if (term instanceof QuerySelect)
-				sql = ((QuerySelect) term).getSelectSql();
-			else
-				sql = ((QueryUnion) term).getUnionSql();
-
+			SQLFragment sql = term.getSql();
 			unionSql.append(unionOperator);
 			unionSql.append("(");
 			unionSql.append(sql);
@@ -140,22 +170,15 @@ public class QueryUnion
 		}
 
         SQLTableInfo sti = new SQLTableInfo(_schema.getDbSchema());
-        sti.setName("UNION");
-        sti.setAlias(alias);
+        sti.setName("_union");
         sti.setFromSQL(unionSql);
-        UnionTableInfoImpl ret = new UnionTableInfoImpl(sti, "UNION", alias);
-
-        for (int i=0; i < _tinfos.size(); i++)
+        QueryTableInfo ret = new QueryTableInfo(sti, "_union");
+        for (UnionColumn unioncol : _unionColumns.values())
         {
-            QueryTableInfo info = _tinfos.get(i);
-            for (ColumnInfo col : info.getColumns())
-            {
-                ColumnInfo ucol = new AliasedColumn(ret, col.getName(), col);
-                if (i == 0)
-                    ret.addColumn(ucol);
-                ret.addUnionColumn(ucol);
-            }
+            ColumnInfo ucol = new RelationColumnInfo(ret, unioncol.getName(), unioncol);
+            ret.addColumn(ucol);
         }
+        assert unionSql.appendComment("</QueryUnion@" + System.identityHashCode(this) + ">");
 		_unionSql = unionSql;
         return ret;
     }
@@ -166,7 +189,8 @@ public class QueryUnion
 	{
 		if (expr instanceof QQuery)
 		{
-			_query.getParseErrors().add(new QueryParseException("Subquery not allowed in UNION's ORDER BY", null, expr.getLine(), expr.getColumn()));
+            //noinspection ThrowableInstanceNeverThrown
+            _query.getParseErrors().add(new QueryParseException("Subquery not allowed in UNION's ORDER BY", null, expr.getLine(), expr.getColumn()));
 			return expr;
 		}
 		FieldKey key = expr.getFieldKey();
@@ -189,10 +213,36 @@ public class QueryUnion
 	}
 
 
-	SQLFragment getUnionSql()
+    RelationColumn getColumn(String name)
+    {
+        initColumns();
+        return _unionColumns.get(name);
+    }
+
+    
+    protected List<RelationColumn> getAllColumns()
+    {
+        initColumns();
+        return new ArrayList<RelationColumn>(_unionColumns.values());
+    }
+
+
+    RelationColumn getLookupColumn(RelationColumn parent, String name)
+    {
+        return null;
+    }
+
+
+    RelationColumn getLookupColumn(RelationColumn parent, ColumnType.Fk fk, String name)
+    {
+        return null;
+    }
+
+    
+    SQLFragment getSql()
     {
         if (_unionSql == null)
-            getTableInfo("SQL");
+            getTableInfo();
         return _unionSql;
     }
 
@@ -216,5 +266,57 @@ public class QueryUnion
 		}
 
 		return sb.toString();
+    }
+
+
+    class UnionColumn extends RelationColumn
+    {
+        String _name;
+        RelationColumn _first;
+
+        UnionColumn(String name, RelationColumn col)
+        {
+            _name = name;
+            _first = col;
+        }
+        
+        public String getName()
+        {
+            return _name;
+        }
+
+        String getAlias()
+        {
+            return _name;
+        }
+
+        QueryRelation getTable()
+        {
+            return QueryUnion.this;
+        }
+
+        public int getSqlTypeInt()
+        {
+            return _first.getSqlTypeInt();
+        }
+
+        public SQLFragment getValueSql(String tableAlias)
+        {
+            return new SQLFragment(defaultString(tableAlias,getAlias()) + "." + this.getAlias());
+        }
+
+        ColumnInfo getColumnInfo()
+        {
+            ColumnInfo ci = new ColumnInfo(_name);
+            copyColumnAttributesTo(ci);
+            return ci;
+        }
+
+        @Override
+        void copyColumnAttributesTo(ColumnInfo to)
+        {
+            _first.copyColumnAttributesTo(to);
+            to.setFk(null);
+        }
     }
 }

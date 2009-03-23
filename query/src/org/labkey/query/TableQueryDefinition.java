@@ -52,17 +52,17 @@ public class TableQueryDefinition extends QueryDefinitionImpl
         return result;
     }
 
-    public TableInfo getTable(String name, QuerySchema schema, List<QueryException> errors, boolean includeMetadata)
+    public TableInfo getTable(QuerySchema schema, List<QueryException> errors, boolean includeMetadata)
     {
-        if (schema == getSchema() && name == null)
+        if (schema == getSchema())
         {
-            _table = schema.getTable(getName(), "query");
+            _table = schema.getTable(getName());
             if (_table != null)
             {
                 return _table;
             }
         }
-        return super.getTable(name, schema, errors, includeMetadata);
+        return super.getTable(schema, errors, includeMetadata);
     }
 
     public String getSql()
@@ -88,6 +88,6 @@ public class TableQueryDefinition extends QueryDefinitionImpl
 
     public boolean isMetadataEditable()
     {
-        return getTable(null, getSchema(), new ArrayList<QueryException>(), true).isMetadataOverrideable();
+        return getTable(getSchema(), new ArrayList<QueryException>(), true).isMetadataOverrideable();
     }
 }

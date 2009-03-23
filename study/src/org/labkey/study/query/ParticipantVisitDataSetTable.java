@@ -196,7 +196,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
                             "where\n" +
                             "pv.participantid = (");
 
-                        sequenceSelector.append(dsTable.getFromTable().getAliasName() + ".participantId");
+                        sequenceSelector.append(dsTable.getFromTable().toString() + ".participantId");
 
                         sequenceSelector.append(")\n" +
                             "and\n" +

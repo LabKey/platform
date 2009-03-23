@@ -101,7 +101,7 @@ public class RunGroupWebPart extends QueryView
     protected ExpExperimentTable createTable()
     {
         ExpSchema schema = (ExpSchema) getSchema();
-        return (ExpExperimentTable)schema.getTable(ExpSchema.TableType.RunGroups.toString(), "alias");
+        return schema.createExperimentsTable(ExpSchema.TableType.RunGroups.toString());
     }
 
     protected void setupDataView(DataView ret)

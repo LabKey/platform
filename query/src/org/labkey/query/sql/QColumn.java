@@ -76,7 +76,7 @@ public class QColumn
         }
         if (expr instanceof QField)
         {
-            return FieldKey.fromString(((QField) expr).getColumnInfo().getName());
+            return FieldKey.fromString(((QField) expr).getRelationColumn().getName());
         }
         return null;
     }

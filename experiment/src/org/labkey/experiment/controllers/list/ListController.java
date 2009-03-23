@@ -187,6 +187,8 @@ public class ListController extends SpringActionController
         public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
         {
             _list = form.getList();
+            if (_list == null)
+                HttpView.throwNotFound();
             Map<String,String> props = new HashMap<String,String>();
 
             props.put("typeURI", _list.getDomain().getTypeURI());
@@ -200,7 +202,7 @@ public class ListController extends SpringActionController
             props.put("successURL", successURL.getLocalURIString());
 
             // need a comma-separated list of base columns
-            TableInfo tInfo = _list.getTable(getUser(), null);
+            TableInfo tInfo = _list.getTable(getUser());
 
             StringBuilder sb = new StringBuilder();
             boolean needComma = false;
@@ -259,6 +261,8 @@ public class ListController extends SpringActionController
         public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
         {
             _list = form.getList();
+            if (_list == null)
+                HttpView.throwNotFound();
             return FormPage.getView(ListController.class, form, "showListDefinition.jsp");
         }
 
@@ -288,6 +292,8 @@ public class ListController extends SpringActionController
                 form.setDefaults();
 
             _list = form.getList();
+            if (_list == null)
+                HttpView.throwNotFound();
 
             return FormPage.getView(ListController.class, form, errors, "editListDefinition.jsp");
         }
@@ -295,6 +301,8 @@ public class ListController extends SpringActionController
         public boolean handlePost(EditListDefinitionForm form, BindException errors) throws Exception
         {
             _list = form.getList();
+            if (_list == null)
+                HttpView.throwNotFound();
             _list.setTitleColumn(form.ff_titleColumn);
             _list.setKeyName(form.ff_keyName);
             _list.setDescription(form.ff_description);
@@ -331,11 +339,15 @@ public class ListController extends SpringActionController
         public ModelAndView getView(ListDefinitionForm form, boolean reshow, BindException errors) throws Exception
         {
             _list = form.getList();
+            if (_list == null)
+                HttpView.throwNotFound();
             return FormPage.getView(ListController.class, form, "deleteListDefinition.jsp");
         }
 
         public boolean handlePost(ListDefinitionForm form, BindException errors) throws Exception
         {
+            if (_list == form.getList())
+                HttpView.throwNotFound();
             form.getList().delete(getUser());
             return true;
         }
@@ -360,10 +372,8 @@ public class ListController extends SpringActionController
         public ModelAndView getView(ListQueryForm form, BindException errors) throws Exception
         {
             _list = form.getList();
-
             if (null == _list)
                 throw new NotFoundException("List does not exist in this container");
-
             return new ListQueryView(form);
         }
 
@@ -387,7 +397,9 @@ public class ListController extends SpringActionController
         public ModelAndView getView(ListDefinitionForm form, boolean reshow, BindException errors) throws Exception
         {
             _list = form.getList();
-            TableInfo table = _list.getTable(getUser(), null);
+            if (null == _list)
+                HttpView.throwNotFound();
+            TableInfo table = _list.getTable(getUser());
             ListQueryUpdateForm tableForm = new ListQueryUpdateForm(table, getViewContext().getRequest(), _list);
 
             DataView view = getDataView(tableForm, form.getReturnActionURL(), errors);
@@ -399,7 +411,10 @@ public class ListController extends SpringActionController
         public boolean handlePost(ListDefinitionForm form, BindException errors) throws Exception
         {
             ListDefinition list = form.getList();
-            TableInfo table = list.getTable(getUser(), null);
+            if (null == list)
+                HttpView.throwNotFound();
+            _list = list;
+            TableInfo table = list.getTable(getUser());
             ListQueryUpdateForm tableForm = new ListQueryUpdateForm(table, getViewContext().getRequest(), list);
             tableForm.populateValues(errors);
 
@@ -630,7 +645,9 @@ public class ListController extends SpringActionController
         public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
         {
             _list = form.getList();
-            TableInfo table = _list.getTable(getUser(), null);
+            if (null == _list)
+                HttpView.throwNotFound();
+            TableInfo table = _list.getTable(getUser());
 
             ListQueryUpdateForm tableForm = new ListQueryUpdateForm(table, getViewContext().getRequest(), _list);
             DetailsView details = new DetailsView(tableForm);
@@ -675,7 +692,7 @@ public class ListController extends SpringActionController
             {
                 String entityId = item.getEntityId();
 
-                DomainProperty titleProperty = _list.getDomain().getPropertyByName(_list.getTable(getUser(), null).getTitleColumn());
+                DomainProperty titleProperty = _list.getDomain().getPropertyByName(_list.getTable(getUser()).getTitleColumn());
                 Object title = (null != titleProperty ? item.getProperty(titleProperty) : null);
                 String discussionTitle = (null != title ? title.toString() : "Item " + tableForm.getPkVal());
 
@@ -735,6 +752,8 @@ public class ListController extends SpringActionController
         public ActionURL getRedirectURL(ListDefinitionForm form) throws Exception
         {
             ListDefinition list = form.getList();
+            if (null == list)
+                HttpView.throwNotFound();
             ListItem item = list.getListItemForEntityId(getViewContext().getActionURL().getParameter("entityId")); // TODO: Use proper form, validate
             ActionURL url = getViewContext().cloneActionURL().setAction(Action.details.name());   // Clone to preserve discussion params
             url.deleteParameter("entityId");
@@ -750,6 +769,8 @@ public class ListController extends SpringActionController
     {
         public ActionURL getRedirectURL(ListDefinitionForm form) throws Exception
         {
+            if (null == form.getList())
+                HttpView.throwNotFound();
             form.getList().deleteListItems(getUser(), DataRegionSelection.getSelected(getViewContext(), true));
             return form.getList().urlShowData();
         }
@@ -768,6 +789,8 @@ public class ListController extends SpringActionController
         public ModelAndView getView(UploadListItemsForm form, boolean reshow, BindException errors) throws Exception
         {
             _list = form.getList();
+            if (_list == null)
+                HttpView.throwNotFound();
             return FormPage.getView(ListController.class, form, errors, "uploadListItems.jsp");
         }
 
@@ -781,6 +804,8 @@ public class ListController extends SpringActionController
 
             TabLoader tl = new TabLoader(form.ff_data, true);
             _list = form.getList();
+            if (_list == null)
+                HttpView.throwNotFound();
 
             List<String> errorList = _list.insertListItems(getUser(), tl);
 
@@ -813,6 +838,8 @@ public class ListController extends SpringActionController
         public ModelAndView getView(ListQueryForm form, BindException errors) throws Exception
         {
             _list = form.getList();
+            if (_list == null)
+                HttpView.throwNotFound();
             return ListAuditViewFactory.getInstance().createListHistoryView(getViewContext(), _list);
         }
 
@@ -831,6 +858,8 @@ public class ListController extends SpringActionController
         public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
         {
             _list = form.getList();
+            if (_list == null)
+                HttpView.throwNotFound();
             int id = NumberUtils.toInt((String)getViewContext().get("eventId"));
             AuditLogEvent event = AuditLogService.get().getEvent(id);
 
@@ -857,6 +886,8 @@ public class ListController extends SpringActionController
             int id = NumberUtils.toInt((String)getViewContext().get("rowId"));
             int listId = NumberUtils.toInt((String)getViewContext().get("listId"));
             _list = ListService.get().getList(getContainer(), listId);
+            if (_list == null)
+                HttpView.throwNotFound();
 
             AuditLogEvent event = AuditLogService.get().getEvent(id);
             if (event != null && event.getLsid() != null)

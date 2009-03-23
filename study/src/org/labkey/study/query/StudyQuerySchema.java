@@ -87,12 +87,11 @@ public class StudyQuerySchema extends UserSchema
         return ret;
     }
 
-    public FilteredTable getDataSetTable(DataSetDefinition definition, String alias)
+    public FilteredTable getDataSetTable(DataSetDefinition definition)
     {
         try
         {
             DataSetTable ret = new DataSetTable(this, definition);
-            ret.setAlias(alias);
             return ret;
         }
         catch (UnauthorizedException e)
@@ -111,120 +110,101 @@ public class StudyQuerySchema extends UserSchema
 
 
     @Override
-    public TableInfo createTable(String name, String alias)
+    public TableInfo createTable(String name)
     {
         if ("StudyProperties".equals(name))
         {
             StudyPropertiesTable ret = new StudyPropertiesTable(this);
-            ret.setAlias(alias);
             return ret;
         }
         if ("Cohort".equals(name))
         {
             CohortTable ret = new CohortTable(this);
-            ret.setAlias(alias);
             return ret;
         }
         if ("Participant".equals(name))
         {
             ParticipantTable ret = new ParticipantTable(this);
-            ret.setAlias(alias);
             return ret;
         }
         if ("Site".equals(name))
         {
             SiteTable ret = new SiteTable(this);
-            ret.setAlias(alias);
             return ret;
         }
         if ("SpecimenSummary".equals(name))
         {
             SpecimenSummaryTable ret = new SpecimenSummaryTable(this);
-            ret.setAlias(alias);
             return ret;
         }
         if ("SpecimenDetail".equals(name))
         {
             SpecimenDetailTable ret = new SpecimenDetailTable(this);
-            ret.setAlias(alias);
             return ret;
         }
         if ("SpecimenEvent".equals(name))
         {
             SpecimenEventTable ret = new SpecimenEventTable(this);
-            ret.setAlias(alias);
             return ret;
         }
         if ("ParticipantVisit".equals(name))
         {
             ParticipantVisitTable ret = new ParticipantVisitTable(this, null);
-            ret.setAlias(alias);
             return ret;
         }
         if ("SpecimenRequest".equals(name))
         {
             SpecimenRequestTable ret = new SpecimenRequestTable(this);
-            ret.setAlias(alias);
             return ret;
         }
         if ("SpecimenRequestStatus".equals(name))
         {
             RequestStatusTable ret = new RequestStatusTable(this);
-            ret.setAlias(alias);
             return ret;
         }
         if ("Visit".equals(name))
         {
             VisitTable ret = new VisitTable(this);
-            ret.setAlias(alias);
             return ret;
         }
         if ("DataSets".equals(name))
         {
             DataSetsTable ret = new DataSetsTable(this);
-            ret.setAlias(alias);
             return ret;
         }
         if ("DataSetColumns".equals(name))
         {
             DataSetColumnsTable ret = new DataSetColumnsTable(this);
-            ret.setAlias(alias);
             return ret;
         }
         if ("QCState".equals(name))
         {
             FilteredTable ret = new QCStateTable(this);
-            ret.setAlias(alias);
             return ret;
         }
         if ("SpecimenAdditive".equals(name))
         {
             FilteredTable ret = new AdditiveTypeTable(this);
-            ret.setAlias(alias);
             return ret;
         }
         if ("SpecimenDerivative".equals(name))
         {
             FilteredTable ret = new DerivativeTypeTable(this);
-            ret.setAlias(alias);
             return ret;
         }
         if ("SpecimenPrimaryType".equals(name))
         {
             FilteredTable ret = new PrimaryTypeTable(this);
-            ret.setAlias(alias);
             return ret;
         }
         if ("SpecimenComment".equals(name))
         {
             FilteredTable ret = new SpecimenCommentTable(this);
-            ret.setAlias(alias);
             return ret;
         }
         if ("VialRequest".equals(name))
         {
             FilteredTable ret = new VialRequestTable(this);
-            ret.setAlias(alias);
             return ret;
         }
 
@@ -233,7 +213,7 @@ public class StudyQuerySchema extends UserSchema
         {
             return null;
         }
-        return getDataSetTable(dsd, alias);
+        return getDataSetTable(dsd);
     }
 
     public Study getStudy()

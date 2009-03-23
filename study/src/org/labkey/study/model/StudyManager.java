@@ -1740,7 +1740,7 @@ public class StudyManager
             Map<String,ListDefinition> listMap = ListService.get().getLists(container);
             Map<String,TableSnapshotInfo> listSnapshotInfo = new HashMap<String, TableSnapshotInfo>();
             for (String listName : listMap.keySet())
-                listSnapshotInfo.put(listName, new TableSnapshotInfo(listMap.get(listName).getTable(user, listName)));
+                listSnapshotInfo.put(listName, new TableSnapshotInfo(listMap.get(listName).getTable(user)));
 
             tableSnapshotInfo.put("Lists", listSnapshotInfo);
 
@@ -2888,8 +2888,8 @@ public class StudyManager
 
                 // Find the set of cohorts specified in our dataset
                 SQLFragment sqlFragment = new SQLFragment();
-                sqlFragment.append("SELECT DISTINCT " + cohortLabelCol.getSelectName() + " FROM " + cohortDatasetTinfo +
-                        "\nWHERE " + cohortLabelCol.getSelectName() + " IS NOT NULL AND " + cohortLabelCol.getSelectName() + " NOT IN\n" +
+                sqlFragment.append("SELECT DISTINCT " + cohortLabelCol.getValueSql("CO") + " FROM " + cohortDatasetTinfo.getSelectName() + " CO " +
+                        "\nWHERE " + cohortLabelCol.getValueSql("CO") + " IS NOT NULL AND " + cohortLabelCol.getValueSql("CO") + " NOT IN\n" +
                         " (SELECT Label FROM " + StudySchema.getInstance().getTableInfoCohort() + " WHERE Container = ?)");
                 sqlFragment.add(study.getContainer().getId());
 
@@ -2915,12 +2915,11 @@ public class StudyManager
                 }
 
                 // update participants table to reference correct cohorts:
-                String datasetSelect = "SELECT MAX(" + cohortLabelCol.getSelectName() + ") FROM (\n" +
-                        "\tSELECT " + cohortLabelCol.getSelectName() + ", " + cohortDatasetTinfo.getAliasName() + ".ParticipantId FROM " + cohortDatasetTinfo + ", (\n" +
-                        "\t\tSELECT ParticipantId, max(sequencenum) AS SequenceNum FROM " + cohortDatasetTinfo + " GROUP BY ParticipantId\n" +
+                String datasetSelect = "SELECT MAX(CohortLabel) FROM (\n" +
+                        "\tSELECT " + cohortLabelCol.getValueSql("Visits") + " AS CohortLabel, Visits.ParticipantId FROM " + cohortDatasetTinfo + " Visits, (\n" +
+                        "\t\tSELECT ParticipantId, max(sequencenum) AS SequenceNum FROM " + cohortDatasetTinfo.getSelectName() + " GROUP BY ParticipantId\n" +
                         "\t) As LastVisit \n" +
-                        "\tWHERE " + cohortDatasetTinfo.getAliasName() + ".ParticipantId = LastVisit.ParticipantId AND " +
-                        cohortDatasetTinfo.getAliasName() + ".SequenceNum = LastVisit.SequenceNum\n" +
+                        "\tWHERE Visits.ParticipantId = LastVisit.ParticipantId AND Visits.SequenceNum = LastVisit.SequenceNum\n" +
                         ") AS DupEliminationTable GROUP BY ParticipantId HAVING ParticipantId = " + tableParticipant + ".ParticipantId";
 
                 String cohortIdSelect = "SELECT RowId FROM " + StudySchema.getInstance().getTableInfoCohort() +

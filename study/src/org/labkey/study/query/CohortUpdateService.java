@@ -60,7 +60,7 @@ public class CohortUpdateService implements QueryUpdateService
     {
         Study study = StudyManager.getInstance().getStudy(container);
         StudyQuerySchema querySchema = new StudyQuerySchema(study, user, true);
-        TableInfo queryTableInfo = querySchema.getTable("Cohort", "Cohort");
+        TableInfo queryTableInfo = querySchema.getTable("Cohort");
         Map<String,Object> result = Table.selectObject(queryTableInfo, keyFromMap(keys), Map.class);
         return result;
     }

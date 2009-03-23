@@ -385,7 +385,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     mlo.tinfoFrom = tinfoFrom;
                     mlo.tinfoMat = tinfoMat;
                 }
-                TempTableTracker.getLogger().debug("DataSetDefinition returning " + tinfoMat.getFromSQL());
+                TempTableTracker.getLogger().debug("DataSetDefinition returning " + tinfoMat.getSelectName());
                 return tinfoMat;
             }
             catch (SQLException x)
@@ -598,6 +598,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private static class StudyDataTableInfo extends SchemaTableInfo
     {
         int _datasetId;
+        SQLFragment _fromSql;
 
         StudyDataTableInfo(DataSetDefinition def, User user)
         {
@@ -680,28 +681,24 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             _pkColumnNames = Arrays.asList("LSID");
 
 //          <UNDONE> just add a lookup column to the columnlist for VisitDate
-            selectName = new SQLFragment(
-                    "(SELECT SD.lsid, SD.ParticipantId, SD.SourceLSID, SD.SequenceNum, SD.QCState, SD.Created, SD.Modified, SD._VisitDate AS Date, PV.Day, PV.VisitRowId\n" +
-                    "  FROM " + studyData + " SD LEFT OUTER JOIN " + participantVisit + " PV ON SD.Container=PV.Container AND SD.ParticipantId=PV.ParticipantId AND SD.SequenceNum=PV.SequenceNum \n"+ 
-                    "  WHERE SD.container='" + c.getId() + "' AND SD.datasetid=" + _datasetId + ") " + getAliasName());
-            
-//            <UNDONE> parameters don't work in selectName
-//                    "  WHERE PV.container=? AND SD.container=? AND SD.datasetid=?) " + getAliasName());
-//            selectName.add(c.getId());
-//            selectName.add(c.getId());
-//            selectName.add(datasetId);
-//            </UNDONE>
+            _fromSql = new SQLFragment(
+                    "SELECT SD.container, SD.lsid, SD.ParticipantId, SD.SourceLSID, SD.SequenceNum, SD.QCState, SD.Created, SD.Modified, SD._VisitDate AS Date, PV.Day, PV.VisitRowId\n" +
+                    "  FROM " + studyData.getSelectName() + " SD LEFT OUTER JOIN " + participantVisit.getSelectName() + " PV ON SD.Container=PV.Container AND SD.ParticipantId=PV.ParticipantId AND SD.SequenceNum=PV.SequenceNum \n"+
+                    "  WHERE SD.container=? AND SD.datasetid=?");
+            _fromSql.add(c);
+            _fromSql.add(_datasetId);
         }
 
         @Override
-        public String getAliasName()
+        public String getSelectName()
         {
-            return "Dataset" + _datasetId;
+            return null;
         }
 
-        void setSelectName(String name)
+        @Override
+        public SQLFragment getFromSQL()
         {
-            selectName = new SQLFragment(name);
+            return _fromSql;
         }
     }
 

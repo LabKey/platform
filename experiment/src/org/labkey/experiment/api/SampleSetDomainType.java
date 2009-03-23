@@ -87,7 +87,7 @@ public class SampleSetDomainType extends DomainKind
     public Map.Entry<TableInfo, ColumnInfo> getTableInfo(User user, Domain domain, Container[] containerFilter)
     {
         SamplesSchema schema = new SamplesSchema(user, domain.getContainer());
-        TableInfo table = schema.getSampleTable("lookup", ExperimentService.get().getSampleSet(domain.getTypeURI()));
+        TableInfo table = schema.getSampleTable(ExperimentService.get().getSampleSet(domain.getTypeURI()));
         if (table == null)
             return null;
         return new Pair<TableInfo,ColumnInfo>(table, table.getColumn("LSID"));

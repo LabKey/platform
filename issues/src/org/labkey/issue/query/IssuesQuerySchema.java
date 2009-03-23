@@ -66,7 +66,7 @@ public class IssuesQuerySchema extends UserSchema
         return tableNames;
     }
 
-    public TableInfo createTable(String name, String alias)
+    public TableInfo createTable(String name)
     {
         if (name != null)
         {
@@ -75,7 +75,7 @@ public class IssuesQuerySchema extends UserSchema
                 switch(TableType.valueOf(name))
                 {
                     case Issues:
-                        return createIssuesTable(alias);
+                        return createIssuesTable();
                 }
             }
             catch (IllegalArgumentException e){}
@@ -83,7 +83,7 @@ public class IssuesQuerySchema extends UserSchema
         return null;
     }
 
-    public TableInfo createIssuesTable(String alias)
+    public TableInfo createIssuesTable()
     {
         return new IssuesTable(this);
     }

@@ -57,9 +57,9 @@ public class ListDomainType extends DomainKind
         ListDefinitionImpl listDef = (ListDefinitionImpl) ListService.get().getList(domain);
         if (listDef == null)
             return null;
-        SQLFragment ret = new SQLFragment("SELECT IndexTable.ObjectId FROM ");
-        ret.append(listDef.getIndexTable().getFromSQL("IndexTable"));
-        ret.append(" WHERE IndexTable.listId = " + listDef.getListId());
+        SQLFragment ret = new SQLFragment("SELECT IndexTable.ObjectId FROM (");
+        ret.append(listDef.getIndexTable().getFromSQL());
+        ret.append(") IndexTable WHERE IndexTable.listId = " + listDef.getListId());
         return ret;
     }
 
@@ -98,7 +98,7 @@ public class ListDomainType extends DomainKind
 
         ListDefinition list = ListService.get().getList(domain);
         Container c = list.getContainer();
-        TableInfo tinfo = list.getTable(user, null);
+        TableInfo tinfo = list.getTable(user);
         DomainProperty prop = domain.getPropertyByName(pd.getName());
 
         try

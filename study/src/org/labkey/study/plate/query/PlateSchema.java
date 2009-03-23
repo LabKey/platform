@@ -103,7 +103,7 @@ public class PlateSchema extends UserSchema
     }
 
     @Override
-    public TableInfo createTable(String name, String alias)
+    public TableInfo createTable(String name)
     {
         if (name.equals("Plate"))
             return new PlateTable(this);

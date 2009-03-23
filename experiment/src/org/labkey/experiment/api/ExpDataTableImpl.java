@@ -40,9 +40,9 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
     protected boolean _runSpecified;
     protected ExpRun _run;
     protected DataType _type;
-    public ExpDataTableImpl(String name, String alias, UserSchema schema)
+    public ExpDataTableImpl(String name, UserSchema schema)
     {
-        super(name, alias, ExperimentServiceImpl.get().getTinfoData(), schema);
+        super(name, ExperimentServiceImpl.get().getTinfoData(), schema);
     }
 
     public void populate()
@@ -255,8 +255,8 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
 
     public ColumnInfo addInputRunCountColumn(String alias)
     {
-        SQLFragment sql = new SQLFragment("(SELECT COUNT(DISTINCT exp.ProtocolApplication.RunId) \n" +
-                "FROM exp.ProtocolApplication INNER JOIN Exp.DataInput ON exp.ProtocolApplication.RowId = Exp.DataInput.TargetApplicationId\n" +
+        SQLFragment sql = new SQLFragment("(SELECT COUNT(DISTINCT exp.ProtocolApplication.RunId) " +
+                "FROM exp.ProtocolApplication INNER JOIN Exp.DataInput ON exp.ProtocolApplication.RowId = Exp.DataInput.TargetApplicationId " +
                 "WHERE Exp.DataInput.DataId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId)");
         ColumnInfo ret = new ExprColumn(this, alias, sql, Types.INTEGER);
         return doAdd(ret);

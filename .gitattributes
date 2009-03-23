@@ -1568,7 +1568,10 @@ query/src/org/labkey/query/sql/QUnsafeExpr.java -text
 query/src/org/labkey/query/sql/QWhen.java -text
 query/src/org/labkey/query/sql/QWhere.java -text
 query/src/org/labkey/query/sql/Query.java -text
+query/src/org/labkey/query/sql/QueryLookupWrapper.java -text
+query/src/org/labkey/query/sql/QueryRelation.java -text
 query/src/org/labkey/query/sql/QuerySelect.java -text
+query/src/org/labkey/query/sql/QueryTable.java -text
 query/src/org/labkey/query/sql/QueryTableInfo.java -text
 query/src/org/labkey/query/sql/QueryUnion.java -text
 query/src/org/labkey/query/sql/SQLTableInfo.java -text

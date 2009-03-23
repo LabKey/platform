@@ -29,6 +29,7 @@ public class FlagColumn extends ExprColumn
 {
     String _urlFlagged;
     String _urlUnflagged;
+
     public FlagColumn(ColumnInfo parent, String urlFlagged, String urlUnflagged)
     {
         super(parent.getParentTable(), parent.getName() + "$", null, Types.VARCHAR, parent);
@@ -41,6 +42,7 @@ public class FlagColumn extends ExprColumn
         _urlFlagged = urlFlagged;
         _urlUnflagged = urlUnflagged;
     }
+
     public String urlFlag(boolean flagged)
     {
         return flagged ? _urlFlagged : _urlUnflagged;

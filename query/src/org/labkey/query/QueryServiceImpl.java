@@ -317,7 +317,7 @@ public class QueryServiceImpl extends QueryService
                 }
             }
             if (ret != null && !AliasManager.isLegalName(ret.getName()))
-                ret.setAlias(manager.decideAlias(key.toString()));
+                ret = new AliasedColumn(ret.getName(), manager.decideAlias(key.toString()), ret);
             return ret;
         }
         if (columnMap.containsKey(key))
@@ -339,11 +339,13 @@ public class QueryServiceImpl extends QueryService
         {
             return null;
         }
-        ret.setName(key.toString());
-        ret.setAlias(manager.decideAlias(key.toString()));
+        String name = key.toString();
+        ret.setName(name);
+        ret = new AliasedColumn(name, manager.decideAlias(name), ret);
         columnMap.put(key, ret);
         return ret;
     }
+
 
     @NotNull
     public Map<FieldKey, ColumnInfo> getColumns(TableInfo table, Collection<FieldKey> fields)
@@ -517,7 +519,7 @@ public class QueryServiceImpl extends QueryService
 		q.parse(sql);
 		if (q.getParseErrors().size() > 0)
 			throw q.getParseErrors().get(0);
-		TableInfo table = q.getTableInfo("QUERY");
+		TableInfo table = q.getTableInfo();
 		if (q.getParseErrors().size() > 0)
 			throw q.getParseErrors().get(0);
         SQLFragment sqlf = getSelectSQL(table, null, null, null, 0, 0);
@@ -535,26 +537,43 @@ public class QueryServiceImpl extends QueryService
 
 	public SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset)
 	{
-		SqlDialect dialect = table.getSqlDialect();
-		Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
+        SqlDialect dialect = table.getSqlDialect();
+		AliasManager aliasManager = new AliasManager(table.getSchema());
+        Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
 
 		SQLFragment selectFrag = new SQLFragment("SELECT");
 		String strComma = "\n";
 
 		if (null == columns)
-			columns =  table.getColumns();
+			columns = table.getColumns();
 
+        String tableAlias = AliasManager.makeLegalName(table.getName(), table.getSchema().getSqlDialect());
 		for (ColumnInfo column : columns)
 		{
 			assert column.getParentTable() == table : "Column " + column + " is from the wrong table: " + column.getParentTable() + " instead of " + table;
-			column.declareJoins(joins);
+			column.declareJoins(tableAlias, joins);
 			selectFrag.append(strComma);
-			selectFrag.append(column.getSelectSql());
+			selectFrag.append(column.getValueSql(tableAlias));
+            selectFrag.append(" AS " );
+            selectFrag.append(column.getAlias());
+//            selectFrag.append(column.getSelectSql());
 			strComma = ",\n";
 		}
 
 		SQLFragment fromFrag = new SQLFragment("FROM ");
-		fromFrag.append(table.getFromSQL());
+        String selectName = table.getSelectName();
+        if (null != selectName)
+        {
+            fromFrag.append(selectName);
+        }
+        else
+        {
+            fromFrag.append("(");
+            fromFrag.append(table.getFromSQL());
+            fromFrag.append(")");
+        }
+        fromFrag.append(" ").append(tableAlias).append(" ");
+        
 		for (Map.Entry<String, SQLFragment> entry : joins.entrySet())
 		{
 			fromFrag.append("\n").append(entry.getValue());
@@ -585,14 +604,19 @@ public class QueryServiceImpl extends QueryService
 
 		SQLFragment nestedFrom = new SQLFragment();
 		nestedFrom.append("FROM (\n").append(selectFrag).append("\n").append(fromFrag).append(") x\n");
-		if (AppProps.getInstance().isDevMode())
-		{
-			String s = StringUtils.replace(nestedFrom.getSQL(), "\n", "\n\t\t");
-			nestedFrom = new SQLFragment(s, nestedFrom.getParams());
-		}
 
-		return dialect.limitRows(new SQLFragment("SELECT *"), nestedFrom, filterFrag, orderBy, rowCount, offset);
-	}
+		SQLFragment ret = dialect.limitRows(new SQLFragment("SELECT *"), nestedFrom, filterFrag, orderBy, rowCount, offset);
+        if (AppProps.getInstance().isDevMode())
+        {
+            SQLFragment t = new SQLFragment();
+            t.appendComment("<QueryServiceImpl.getSelectSQL()>");
+            t.append(ret);
+            t.appendComment("</QueryServiceImpl.getSelectSQL()>");
+            String s = _prettyPrint(t.getSQL());
+            ret = new SQLFragment(s, ret.getParams());
+        }
+	    return ret;
+    }
 
 	private static Sort createDefaultSort(Collection<ColumnInfo> columns)
 	{
@@ -625,5 +649,31 @@ public class QueryServiceImpl extends QueryService
     public void addQueryListener(QueryListener listener)
     {
         QueryManager.get().addQueryListener(listener);
+    }
+
+
+    private String _prettyPrint(String s)
+    {
+        StringBuilder sb = new StringBuilder(s.length() + 200);
+        
+        String[] lines = StringUtils.split(s, '\n');
+        int indent = 0;
+        for (String line : lines)
+        {
+            String t = line.trim();
+            if (t.length() == 0)
+                continue;
+            if (t.startsWith("-- </"))
+                indent = Math.max(0,indent-1);
+
+            for (int i=0 ; i<indent ; i++)
+                sb.append('\t');
+            sb.append(line);
+            sb.append('\n');
+
+            if (t.startsWith("-- <") && !t.startsWith("-- </"))
+                indent++;
+        }
+        return sb.toString();
     }
 }

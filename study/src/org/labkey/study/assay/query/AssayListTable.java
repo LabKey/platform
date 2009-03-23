@@ -32,10 +32,9 @@ import java.util.*;
 public class AssayListTable extends FilteredTable
 {
     protected AssaySchema _schema;
-    public AssayListTable(AssaySchema schema, String alias)
+    public AssayListTable(AssaySchema schema)
     {
         super(ExperimentService.get().getTinfoProtocol(), schema.getContainer(), new ContainerFilter.CurrentPlusProject(schema.getUser()));
-        setAlias(alias);
 
         addCondition(_rootTable.getColumn("ApplicationType"), "ExperimentRun");
 
@@ -76,7 +75,7 @@ public class AssayListTable extends FilteredTable
         setDefaultVisibleColumns(defaultCols);
 
         // TODO - this is a horrible way to filter out non-assay protocols
-        addCondition(new SQLFragment("(SELECT MAX(pd.PropertyId) from exp.object o, exp.objectproperty op, exp.propertydescriptor pd where pd.propertyid = op.propertyid and op.objectid = o.objectid and o.objecturi = x.lsid AND pd.PropertyURI LIKE '%AssayDomain-Run%') IS NOT NULL"));
+        addCondition(new SQLFragment("(SELECT MAX(pd.PropertyId) from exp.object o, exp.objectproperty op, exp.propertydescriptor pd where pd.propertyid = op.propertyid and op.objectid = o.objectid and o.objecturi = protocol.lsid AND pd.PropertyURI LIKE '%AssayDomain-Run%') IS NOT NULL"));
     }
 
     public StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns)

@@ -16,78 +16,73 @@
 
 package org.labkey.query.sql;
 
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.MethodInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
-import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.ExprColumn;
 
 import java.sql.Types;
 
 
 public class QField extends QInternalExpr
 {
-    TableInfo _table;
+    QueryRelation _table;
     String _name;
-    ColumnInfo _column;
+    QueryRelation.RelationColumn _column;
 
     private QField(QNode orig)
     {
-        setLineAndColumn(orig);
+        if (null != orig)
+            setLineAndColumn(orig);
     }
 
-    public QField(TableInfo table, String name, QNode orig)
+    public QField(QueryRelation table, String name, QNode orig)
     {
         this(orig);
         _table = table;
-        if (table == null)
-        {
-            table = table;
-        }
         _name = name;
     }
 
-    public QField(ColumnInfo column, QNode orig)
+    public QField(QueryRelation.RelationColumn column, QNode orig)
     {
         this(orig);
-        if (column == null)
-            return;
-        _table = column.getParentTable();
-        _name = column.getName();
+        _table = column.getTable();
+        _name = column.getAlias();
         _column = column;
     }
 
-    public ColumnInfo getColumnInfo()
+
+    public QueryRelation.RelationColumn getRelationColumn()
     {
-        if (_column != null)
-            return _column;
-        if (_table == null)
-            return null;
-        _column = _table.getColumn(_name);
+        if (null == _column)
+        {
+            if (null == _table)
+                return null;
+            _column = _table.getColumn(_name);
+        }
         return _column;
     }
 
+
     public void appendSql(SqlBuilder builder)
     {
-        ColumnInfo col = getColumnInfo();
-        if (col == null)
-        {
-            builder.append("~~error~~");
-            return;
-        }
-        builder.append(getColumnInfo().getValueSql());
+        QueryRelation.RelationColumn col = getRelationColumn();
+        builder.append(col.getValueSql(_table.getAlias()));
     }
 
-    public TableInfo getTable()
+
+    public QueryRelation getTable()
     {
         return _table;
     }
+
 
     public String getName()
     {
         return _name;
     }
+
 
     public boolean equals(Object o)
     {
@@ -102,6 +97,7 @@ public class QField extends QInternalExpr
         return true;
     }
 
+
     public int hashCode()
     {
         int result;
@@ -110,29 +106,29 @@ public class QField extends QInternalExpr
         return result;
     }
 
+
     public int getSqlType()
     {
         if (_column != null)
             return _column.getSqlTypeInt();
-        ColumnInfo col = getTable().getColumn(getName());
+        QueryRelation.RelationColumn col = getTable().getColumn(getName());
         if (col == null)
             return Types.OTHER;
         return col.getSqlTypeInt();
     }
 
+
     public ColumnInfo createColumnInfo(SQLTableInfo table, String alias)
     {
-        ColumnInfo baseColumn = getColumnInfo();
-        if (baseColumn == null)
-            return null;
-        AliasedColumn ret = new AliasedColumn(alias, baseColumn);
-        ret.setAlias(alias);
+        ExprColumn ret = new ExprColumn(table, alias,  getRelationColumn().getValueSql(_table.getAlias()),  getRelationColumn().getSqlTypeInt());
+        getRelationColumn().copyColumnAttributesTo(ret);
         return ret;
     }
 
+
     public MethodInfo getMethod()
     {
-        if (_table == null)
+        if (_table == null || !(_table instanceof QueryTable))
         {
             try
             {
@@ -144,14 +140,14 @@ public class QField extends QInternalExpr
             }
         }
 
-        return _table.getMethod(FieldKey.fromString(_name).getName());
+        return _table.getTableInfo().getMethod(FieldKey.fromString(_name).getName());
     }
 
     public QueryParseException fieldCheck(QNode parent)
     {
         if (parent instanceof QMethodCall)
             return null;
-        if (getColumnInfo() == null)
+        if (getRelationColumn() == null)
         {
             if (_table == null)
             {

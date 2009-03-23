@@ -64,7 +64,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
         {
             return null;
         }
-        TableInfo table = schema.getTable(tableName, "alias");
+        TableInfo table = schema.getTable(tableName);
         if (table == null)
         {
             return null;
@@ -214,7 +214,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
 
         UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), schemaName);
         QueryDef queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), gwtTableInfo.getName(), gwtTableInfo.isUserDefinedQuery());
-        TableInfo rawTableInfo = schema.getTable(gwtTableInfo.getName(), "alias", false);
+        TableInfo rawTableInfo = schema.getTable(gwtTableInfo.getName(), false);
 
         TablesDocument doc = null;
         TableType xmlTable = null; 
@@ -330,7 +330,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                     UserSchema fkSchema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), gwtColumnInfo.getLookupSchema());
                     if (fkSchema != null)
                     {
-                        TableInfo fkTableInfo = fkSchema.getTable(gwtColumnInfo.getLookupQuery(), "alias");
+                        TableInfo fkTableInfo = fkSchema.getTable(gwtColumnInfo.getLookupQuery());
                         if (fkTableInfo != null)
                         {
                             List<String> pkCols = fkTableInfo.getPkColumnNames();

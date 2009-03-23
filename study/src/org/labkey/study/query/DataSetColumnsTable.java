@@ -63,17 +63,16 @@ public class DataSetColumnsTable extends FilteredTable
         setDefaultVisibleColumns(defaultCols);
     }
 
-    public SQLFragment getFromSQL(String alias)
+    public SQLFragment getFromSQL()
     {
-        SQLFragment sql = super.getFromSQL("PropertyDescriptor");
+        SQLFragment sql = super.getFromSQL();
 
         SQLFragment result = new SQLFragment("(SELECT DataSet.DataSetId, PropertyDescriptor.* FROM ");
-        result.append(sql);
+        result.append("(").append(sql).append(") AS PropertyDescriptor");
         result.append("\n" +
                 "JOIN exp.PropertyDomain AS PropertyDomain ON PropertyDomain.PropertyId = PropertyDescriptor.PropertyId\n" +
                 "JOIN exp.DomainDescriptor AS DomainDescriptor ON DomainDescriptor.DomainId = PropertyDomain.DomainId\n" +
-                "JOIN study.DataSet AS DataSet ON DataSet.TypeURI = DomainDescriptor.DomainURI\n" +
-                ") AS ").append(alias);
+                "JOIN study.DataSet AS DataSet ON DataSet.TypeURI = DomainDescriptor.DomainURI\n");
         return result;
     }
 }

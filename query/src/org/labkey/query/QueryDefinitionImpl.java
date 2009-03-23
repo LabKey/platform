@@ -218,6 +218,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return ret;
     }
 
+
     public Query getQuery(QuerySchema schema)
     {
         Query query = new Query(schema);
@@ -226,8 +227,25 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         {
             query.parse(sql);
         }
+        query.setName(getSchemaName() + "." + getName());
         return query;
     }
+
+
+    public Query getQuery(QuerySchema schema, List<QueryException> errors)
+    {
+        Query query = new Query(schema);
+        String sql = getSql();
+        if (sql != null)
+        {
+            query.parse(sql);
+        }
+        TablesDocument doc = getTablesDocument(errors);
+        query.setTablesDocument(doc);
+        query.setName(getSchemaName() + "." + getName());
+        return query;
+    }
+
 
     public UserSchema getSchema()
     {
@@ -242,35 +260,39 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return _queryDef.getSchema();
     }
 
-    public TableInfo getTable(String name, QuerySchema schema, List<QueryException> errors, boolean includeMetadata)
+
+    private TablesDocument getTablesDocument(List<QueryException> errors)
     {
-        if (name == null)
+        TablesDocument doc = null;
+        String xml = getMetadataXml();
+        if (xml != null)
         {
-            name = "query";
+            try
+            {
+                doc = TablesDocument.Factory.parse(xml);
+                return doc;
+            }
+            catch (XmlException xmlException)
+            {
+                errors.add(new QueryParseException("Error in XML", xmlException, 0, 0));
+            }
         }
+        return null;
+    }
+
+    public TableInfo getTable(QuerySchema schema, List<QueryException> errors, boolean includeMetadata)
+    {
         if (errors == null)
         {
             errors = new ArrayList<QueryException>();
         }
-        Query query = getQuery(schema);
-        QueryTableInfo ret = query.getTableInfo(name);
-        if (ret != null && includeMetadata)
-        {
-            String xml = getMetadataXml();
-            if (xml != null)
-            {
-                try
-                {
-                    TablesDocument doc = TablesDocument.Factory.parse(xml);
-
-                    ret.loadFromXML(schema, doc.getTables().getTableArray(0), errors);
-                }
-                catch (XmlException xmlException)
-                {
-                    errors.add(new QueryParseException("Error in XML", xmlException, 0, 0));
-                }
-            }
-        }
+        Query query = getQuery(schema, errors);
+        if (!includeMetadata)
+            query.setTablesDocument(null);
+        TableInfo ret = query.getTableInfo();
+        // if query loads all info, then this isn't necessary
+        if (null != ret && null != query.getTablesDocument())
+            ((QueryTableInfo)ret).loadFromXML(schema, query.getTablesDocument().getTables().getTableArray(0), errors);
         errors.addAll(query.getParseErrors());
         return ret;
     }

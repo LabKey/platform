@@ -427,7 +427,7 @@ public class ListItemImpl implements ListItem
                         {
                             if (rowMap == null)
                             {
-                                TableInfo table = _list.getTable(user, null);
+                                TableInfo table = _list.getTable(user);
                                 DetailsView details = new DetailsView(new QueryUpdateForm(table, HttpView.currentRequest()));
                                 RenderContext ctx = details.getRenderContext();
 
@@ -462,7 +462,7 @@ public class ListItemImpl implements ListItem
 
     String getFieldValue(User user, DomainProperty property, Map<String, Object> rowMap)
     {
-        TableInfo table = _list.getTable(user, null);
+        TableInfo table = _list.getTable(user);
         RenderContext ctx = new RenderContext(HttpView.currentContext());
 
         ColumnInfo col = table.getColumn(property.getName());

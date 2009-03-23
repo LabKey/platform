@@ -102,7 +102,7 @@ public class QueryControllerSpring extends SpringActionController
 
     protected boolean queryExists(QueryForm form)
     {
-        return form.getSchema() != null && form.getSchema().getTable(form.getQueryName(), null) != null;
+        return form.getSchema() != null && form.getSchema().getTable(form.getQueryName()) != null;
     }
 
     protected void assertQueryExists(QueryForm form) throws ServletException
@@ -191,7 +191,12 @@ public class QueryControllerSpring extends SpringActionController
         public ModelAndView getView(NewQueryForm form, boolean reshow, BindException errors) throws Exception
         {
             if (form.getSchema() == null)
-                HttpView.throwNotFound("Could not find schema: " + form.getSchemaName().getSource());
+            {
+                if (form.getSchemaName() == null || form.getSchemaName().isEmpty())
+                    HttpView.throwNotFound("Schema name not specified");
+                else
+                    HttpView.throwNotFound("Could not find schema: " + form.getSchemaName().getSource());
+            }
             if (!form.getSchema().canCreate())
                 HttpView.throwUnauthorized();
             getPageConfig().setFocus("forms[0].ff_newQueryName");
@@ -222,7 +227,7 @@ public class QueryControllerSpring extends SpringActionController
                     errors.reject(ERROR_MSG, "The query '" + newQueryName + "' already exists.");
                     return false;
                 }
-                TableInfo existingTable = form.getSchema().getTable(newQueryName, null);
+                TableInfo existingTable = form.getSchema().getTable(newQueryName);
                 if (existingTable != null)
                 {
                     errors.reject(ERROR_MSG, "A table with the name '" + newQueryName + "' already exists.");
@@ -1163,7 +1168,7 @@ public class QueryControllerSpring extends SpringActionController
             String returnURL = (String)this.getProperty(QueryParam.srcURL); // UNDONE: add to QueryForm
             if (returnURL != null)
                 forward = new ActionURL(returnURL);
-            TableInfo table = form.getQueryDef().getTable(null, form.getSchema(), null, true);
+            TableInfo table = form.getQueryDef().getTable(form.getSchema(), null, true);
             QueryUpdateForm quf = new QueryUpdateForm(table, getViewContext().getRequest());
             if (!table.hasPermission(getUser(), ACL.PERM_DELETE))
             {
@@ -2457,7 +2462,7 @@ public class QueryControllerSpring extends SpringActionController
                 if(form.isIncludeColumns())
                 {
                     //get the table and enumerate the columns
-                    TableInfo table = uschema.getTable(qname, null);
+                    TableInfo table = uschema.getTable(qname);
                     List<Map<String,Object>> cinfos = new ArrayList<Map<String,Object>>();
                     for(ColumnInfo col : table.getColumns())
                     {

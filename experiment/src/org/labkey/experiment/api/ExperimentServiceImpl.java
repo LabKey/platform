@@ -342,20 +342,19 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             SQLFragment sql = new SQLFragment();
             sql.append("SELECT mi.Role, MAX(m.CpasType) AS SampleSetLSID, COUNT (DISTINCT m.CpasType) AS SampleSetCount FROM ");
-            sql.append(getTinfoMaterial());
-            sql.append(" m, ");
-            sql.append(getTinfoMaterialInput());
-            sql.append(" mi, ");
-            sql.append(getTinfoProtocolApplication());
-            sql.append(" pa, ");
-            sql.append(getTinfoExperimentRun());
-            sql.append(" r ");
+            sql.append(getTinfoMaterial(), "m");
+            sql.append(", ");
+            sql.append(getTinfoMaterialInput(), "mi");
+            sql.append(", ");
+            sql.append(getTinfoProtocolApplication(), "pa");
+            sql.append(", ");
+            sql.append(getTinfoExperimentRun(), "r");
 
             if (type != null)
             {
                 sql.append(", ");
-                sql.append(getTinfoProtocol());
-                sql.append(" p WHERE p.lsid = pa.protocollsid AND p.applicationtype = ? AND ");
+                sql.append(getTinfoProtocol(), "p");
+                sql.append(" WHERE p.lsid = pa.protocollsid AND p.applicationtype = ? AND ");
                 sql.add(type.toString());
             }
             else
@@ -527,39 +526,39 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new ExpProtocolImpl(protocol);
     }
 
-    public ExpRunTable createRunTable(String name, String alias, UserSchema schema)
+    public ExpRunTable createRunTable(String name, UserSchema schema)
     {
-        return new ExpRunTableImpl(name, alias, schema);
+        return new ExpRunTableImpl(name, schema);
     }
 
-    public ExpDataTable createDataTable(String name, String alias, UserSchema schema)
+    public ExpDataTable createDataTable(String name, UserSchema schema)
     {
-        return new ExpDataTableImpl(name, alias, schema);
+        return new ExpDataTableImpl(name, schema);
     }
 
-    public ExpSampleSetTable createSampleSetTable(String name, String alias, UserSchema schema)
+    public ExpSampleSetTable createSampleSetTable(String name, UserSchema schema)
     {
-        return new ExpSampleSetTableImpl(name, alias, schema);
+        return new ExpSampleSetTableImpl(name, schema);
     }
 
-    public ExpProtocolTableImpl createProtocolTable(String name, String alias, UserSchema schema)
+    public ExpProtocolTableImpl createProtocolTable(String name, UserSchema schema)
     {
-        return new ExpProtocolTableImpl(name, alias, schema);
+        return new ExpProtocolTableImpl(name, schema);
     }
 
-    public ExpExperimentTableImpl createExperimentTable(String name, String alias, UserSchema schema)
+    public ExpExperimentTableImpl createExperimentTable(String name, UserSchema schema)
     {
-        return new ExpExperimentTableImpl(name, alias, schema);
+        return new ExpExperimentTableImpl(name, schema);
     }
 
-    public ExpMaterialTable createMaterialTable(String name, String alias, UserSchema schema)
+    public ExpMaterialTable createMaterialTable(String name, UserSchema schema)
     {
-        return new ExpMaterialTableImpl(name, alias, schema);
+        return new ExpMaterialTableImpl(name, schema);
     }
 
-    public ExpProtocolApplicationTable createProtocolApplicationTable(String name, String alias, UserSchema schema)
+    public ExpProtocolApplicationTable createProtocolApplicationTable(String name, UserSchema schema)
     {
-        return new ExpProtocolApplicationTableImpl(name, alias, schema);
+        return new ExpProtocolApplicationTableImpl(name, schema);
     }
 
     private String getNamespacePrefix(Class<? extends ExpObject> clazz)
@@ -578,7 +577,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             return "SampleSet";
         if (clazz == ExpProtocolApplication.class)
             return "ProtocolApplication";
-        throw new IllegalArgumentException("Invalid class " + clazz.getName());
+        throw new IllegalArgumentException("Inv`alid class " + clazz.getName());
     }
 
     private String generateGuidLSID(Container container, String lsidPrefix)
@@ -818,18 +817,17 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             SQLFragment sql = new SQLFragment("SELECT role FROM ");
             sql.append(table);
             sql.append(" WHERE targetapplicationid IN (SELECT pa.rowid FROM ");
-            sql.append(getTinfoProtocolApplication());
-            sql.append(" pa ");
+            sql.append(getTinfoProtocolApplication(), "pa");
             if (type != null)
             {
                 sql.append(", ");
-                sql.append(getTinfoProtocol());
-                sql.append(" p WHERE p.lsid = pa.protocollsid AND p.applicationtype = ? AND ");
+                sql.append(getTinfoProtocol(), "p");
+                sql.append(" WHERE p.lsid = pa.protocollsid AND p.applicationtype = ? AND ");
                 sql.add(type.toString());
             }
             else
             {
-                sql.append( "WHERE ");
+                sql.append(" WHERE ");
             }
             sql.append(" pa.runid IN (SELECT rowid FROM ");
             sql.append(getTinfoExperimentRun());
@@ -1498,7 +1496,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         StringBuilder sb = new StringBuilder();
         sb.append("SELECT * FROM ");
-        sb.append(getTinfoExperimentRun().getFromSQL());
+        sb.append(getTinfoExperimentRun().getSelectName());
         sb.append(" WHERE ProtocolLSID IN (");
         sb.append("SELECT LSID FROM exp.Protocol WHERE RowId IN (");
         sb.append(StringUtils.join(toIntegers(allProtocolIds), ","));
@@ -1977,10 +1975,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         ExperimentRun[] runs = Table.executeQuery(getExpSchema(), "SELECT * FROM " + getTinfoExperimentRun() + " WHERE \n" +
                 "RowId IN " +
-                "(SELECT pa.RunId FROM " + getTinfoProtocolApplication() + " pa, " + getTinfoDataInput() + " di " +
+                "(SELECT pa.RunId FROM " + getTinfoProtocolApplication().getSelectName() + " pa, " + getTinfoDataInput() + " di " +
                 "WHERE di.TargetApplicationId = pa.RowId AND di.DataID IN (" + dataRowIdSQL + ")) \n" +
                 "OR RowId IN " +
-                "(SELECT pa.RunId FROM " + getTinfoProtocolApplication() + " pa, " + getTinfoData() + " d " +
+                "(SELECT pa.RunId FROM " + getTinfoProtocolApplication().getSelectName() + " pa, " + getTinfoData() + " d " +
                 "WHERE d.SourceApplicationId = pa.RowId AND d.RowId IN (" + dataRowIdSQL + "))", new Object[0], ExperimentRun.class);
         return Arrays.asList(ExpRunImpl.fromRuns(runs));
     }
@@ -2151,17 +2149,17 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             // get the set of starting materials, which do not belong to the run
             String materialSQL = "SELECT M.* "
-                    + " FROM " + getTinfoMaterial().getFromSQL() + " M "
-                    + " INNER JOIN " + getExpSchema().getTable("MaterialInput").getFromSQL() + " MI "
+                    + " FROM " + getTinfoMaterial().getSelectName() + " M "
+                    + " INNER JOIN " + getExpSchema().getTable("MaterialInput").getSelectName() + " MI "
                     + " ON (M.RowId = MI.MaterialId) "
                     + " WHERE MI.TargetApplicationId IN "
-                    + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getFromSQL() + " PA "
+                    + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
                     + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
                     + "  ORDER BY RowId ;";
             String materialInputSQL = "SELECT MI.* "
-                    + " FROM " + getExpSchema().getTable("MaterialInput").getFromSQL() + " MI "
+                    + " FROM " + getExpSchema().getTable("MaterialInput").getSelectName() + " MI "
                     + " WHERE MI.TargetApplicationId IN "
-                    + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getFromSQL() + " PA "
+                    + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
                     + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
                     + "  ORDER BY MI.MaterialId;";
             Object[] params = {new Integer(runId)};
@@ -2180,17 +2178,17 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             // and starting data
             String dataSQL = "SELECT D.*"
-                    + " FROM " + getTinfoData().getFromSQL() + " D "
-                    + " INNER JOIN " + getTinfoDataInput().getFromSQL() + " DI "
+                    + " FROM " + getTinfoData().getSelectName() + " D "
+                    + " INNER JOIN " + getTinfoDataInput().getSelectName() + " DI "
                     + " ON (D.RowId = DI.DataId) "
                     + " WHERE DI.TargetApplicationId IN "
-                    + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getFromSQL() + " PA "
+                    + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
                     + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
                     + "  ORDER BY RowId ;";
             String dataInputSQL = "SELECT DI.*"
-                    + " FROM " + getTinfoDataInput().getFromSQL() + " DI "
+                    + " FROM " + getTinfoDataInput().getSelectName() + " DI "
                     + " WHERE DI.TargetApplicationId IN "
-                    + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getFromSQL() + " PA "
+                    + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
                     + " WHERE PA.RunId = ? AND PA.CpasType= '" + ExpProtocol.ApplicationType.ExperimentRun + "')"
                     + "  ORDER BY DataId;";
             datas = ExpDataImpl.fromDatas(Table.executeQuery(getExpSchema(), dataSQL, params, Data.class));
@@ -2207,9 +2205,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             // now hook up material inputs to processes in both directions
             dataSQL = "SELECT TargetApplicationId, MaterialId "
-                    + " FROM " + getTinfoMaterialInput().getFromSQL()
+                    + " FROM " + getTinfoMaterialInput().getSelectName()
                     + " WHERE TargetApplicationId IN "
-                    + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getFromSQL() + " PA "
+                    + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
                     + " WHERE PA.RunId = ? ) "
                     + " ORDER BY TargetApplicationId, MaterialId ;";
             ResultSet materialInputRS = null;
@@ -2251,9 +2249,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             // now hook up data inputs in both directions
             dataSQL = "SELECT TargetApplicationId, DataId "
-                    + " FROM " + getTinfoDataInput().getFromSQL()
+                    + " FROM " + getTinfoDataInput().getSelectName()
                     + " WHERE TargetApplicationId IN "
-                    + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getFromSQL() + " PA "
+                    + " (SELECT PA.RowId FROM " + getTinfoProtocolApplication().getSelectName() + " PA "
                     + " WHERE PA.RunId = ? ) "
                     + " ORDER BY TargetApplicationId, DataId ;";
 
@@ -2300,8 +2298,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             {
                 String inClause = StringUtils.join(outputMaterialMap.keySet().iterator(), ", ");
                 dataSQL = "SELECT TargetApplicationId, MaterialId, PA.RunId "
-                        + " FROM " + getTinfoMaterialInput().getFromSQL() + " M  "
-                        + " INNER JOIN " + getTinfoProtocolApplication().getFromSQL() + " PA "
+                        + " FROM " + getTinfoMaterialInput().getSelectName() + " M  "
+                        + " INNER JOIN " + getTinfoProtocolApplication().getSelectName() + " PA "
                         + " ON M.TargetApplicationId = PA.RowId "
                         + " WHERE MaterialId IN ( " + inClause + " ) "
                         + " AND PA.RunId <> ? "
@@ -2328,8 +2326,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             {
                 String inClause = StringUtils.join(outputDataMap.keySet().iterator(), ", ");
                 dataSQL = "SELECT TargetApplicationId, DataId, PA.RunId "
-                        + " FROM " + getTinfoDataInput().getFromSQL() + " D  "
-                        + " INNER JOIN " + getTinfoProtocolApplication().getFromSQL() + " PA "
+                        + " FROM " + getTinfoDataInput().getSelectName() + " D  "
+                        + " INNER JOIN " + getTinfoProtocolApplication().getSelectName() + " PA "
                         + " ON D.TargetApplicationId = PA.RowId "
                         + " WHERE DataId IN ( " + inClause + " ) "
                         + " AND PA.RunId <> ? "
@@ -2546,7 +2544,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
         else
         {
-            throw new SQLException("Duplicate " + tiValueTable.getFromSQL() + " value, filter= " + filter + ". Existing parameter is " + existingValue + ", new value is " + param.getValue());
+            throw new SQLException("Duplicate " + tiValueTable.getSelectName() + " value, filter= " + filter + ". Existing parameter is " + existingValue + ", new value is " + param.getValue());
         }
     }
 

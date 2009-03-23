@@ -38,7 +38,7 @@ public class StudyPropertiesUpdateService implements QueryUpdateService
     {
         Study study = StudyManager.getInstance().getStudy(container);
         StudyQuerySchema querySchema = new StudyQuerySchema(study, user, true);
-        TableInfo queryTableInfo = querySchema.getTable("StudyProperties", "StudyProperties");
+        TableInfo queryTableInfo = querySchema.getTable("StudyProperties");
         Map<String,Object> result = Table.selectObject(queryTableInfo, container.getId(), Map.class);
         return result;
     }

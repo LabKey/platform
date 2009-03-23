@@ -58,7 +58,7 @@ public class PipelineManager
             try
             {
                 Table.execute(pipeline.getSchema(),
-                    "UPDATE " + pipeline.getTableInfoPipelineRoots().getFromSQL() + " SET PerlPipeline = ?",
+                    "UPDATE " + pipeline.getTableInfoPipelineRoots().getSelectName() + " SET PerlPipeline = ?",
                         new Object[] { Boolean.TRUE } );
             }
             catch (SQLException e)

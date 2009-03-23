@@ -18,7 +18,6 @@ package org.labkey.query.sql;
 
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.data.TableInfo;
 
 public class QTable
 {
@@ -26,7 +25,7 @@ public class QTable
     JoinType _joinType;
     QIdentifier _alias;
     QExpr _on;
-    TableInfo _tableObject;
+    QueryRelation _queryRelation;
     FilteredTable _wrappedTableObject;
 
     public QTable(QExpr table, JoinType joinType)
@@ -108,13 +107,13 @@ public class QTable
         return _table;
     }
 
-    public TableInfo getTableObject()
+    public QueryRelation getQueryRelation()
     {
-        return _tableObject;
+        return _queryRelation;
     }
 
-    public void setTableObject(TableInfo tableObject)
+    public void setQueryRelation(QueryRelation queryRelation)
     {
-        _tableObject = tableObject;
+        _queryRelation = queryRelation;
     }
 }

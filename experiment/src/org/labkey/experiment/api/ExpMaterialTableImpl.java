@@ -28,7 +28,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.*;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.util.Collections;
@@ -40,9 +39,9 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
 {
     ExpSampleSet _ss;
 
-    public ExpMaterialTableImpl(String name, String alias, UserSchema schema)
+    public ExpMaterialTableImpl(String name, UserSchema schema)
     {
-        super(name, alias, ExperimentServiceImpl.get().getTinfoMaterial(), schema);
+        super(name, ExperimentServiceImpl.get().getTinfoMaterial(), schema);
         setName(ExpSchema.TableType.Materials.name());
     }
 
@@ -74,7 +73,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 {
                     public TableInfo getLookupTableInfo()
                     {
-                        ExpSampleSetTable sampleSetTable = ExperimentService.get().createSampleSetTable(ExpSchema.TableType.SampleSets.toString(), "SampleSets", _schema);
+                        ExpSampleSetTable sampleSetTable = ExperimentService.get().createSampleSetTable(ExpSchema.TableType.SampleSets.toString(), _schema);
                         sampleSetTable.populate();
                         return sampleSetTable;
                     }
@@ -163,7 +162,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         {
             public TableInfo getLookupTableInfo()
             {
-                return new ExpSchema(_schema.getUser(), _schema.getContainer()).createSampleSetTable(null);
+                return new ExpSchema(_schema.getUser(), _schema.getContainer()).createSampleSetTable();
             }
         });
         addContainerColumn(ExpMaterialTable.Column.Folder, null);
@@ -228,8 +227,8 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
 
 
     @Override
-    public SQLFragment getFromSQL(String alias)
+    public SQLFragment getFromSQL()
     {
-        return super.getFromSQL(alias);
+        return super.getFromSQL();
     }
 }

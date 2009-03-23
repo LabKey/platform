@@ -52,18 +52,18 @@ public class CoreQuerySchema extends UserSchema
     }
 
 
-    public TableInfo createTable(String name, String alias)
+    public TableInfo createTable(String name)
     {
         if (name.toLowerCase().equals("users"))
-            return getUsers(alias);
+            return getUsers();
         if (name.toLowerCase().equals("siteusers"))
-            return getSiteUsers(alias);
+            return getSiteUsers();
         return null;
     }
 
-    public TableInfo getSiteUsers(String alias)
+    public TableInfo getSiteUsers()
     {
-        FilteredTable users = getUserTable(alias);
+        FilteredTable users = getUserTable();
 
         //only site admins are allowed to see all site users,
         //so if the user is not a site admin, add a filter that will
@@ -75,12 +75,12 @@ public class CoreQuerySchema extends UserSchema
         return users;
     }
 
-    public TableInfo getUsers(String alias)
+    public TableInfo getUsers()
     {
         if (getContainer().isRoot())
-            return getSiteUsers(alias);
+            return getSiteUsers();
 
-        FilteredTable users = getUserTable(alias);
+        FilteredTable users = getUserTable();
 
         //if the user is a guest, add a filter to produce a null set
         if(getUser().isGuest())
@@ -115,11 +115,10 @@ public class CoreQuerySchema extends UserSchema
         return users;
     }
 
-    protected FilteredTable getUserTable(String alias)
+    protected FilteredTable getUserTable()
     {
         TableInfo usersBase = CoreSchema.getInstance().getTableInfoUsers();
         FilteredTable users = new FilteredTable(usersBase);
-        users.setAlias(alias);
 
         //we only expose user id and display name via Query
         ColumnInfo col = users.wrapColumn(usersBase.getColumn("UserId"));

@@ -192,7 +192,7 @@ public class StudyServiceImpl implements StudyService.Service
         // Unfortunately we need to use two tableinfos: one to get the column names with correct casing,
         // and one to get the data.  We should eventually be able to convert to using Query completely.
         StudyQuerySchema querySchema = new StudyQuerySchema(study, u, true);
-        TableInfo queryTableInfo = querySchema.getDataSetTable(def, null);
+        TableInfo queryTableInfo = querySchema.getDataSetTable(def);
         SimpleFilter filter = new SimpleFilter();
         filter.addInClause("lsid", lsids);
 

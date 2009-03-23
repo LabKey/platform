@@ -383,7 +383,7 @@ public class CustomViewImpl implements CustomView
         DgQuery view = ret.addNewView();
         DgQuery.Select select = view.addNewSelect();
         DgQuery.From from = view.addNewFrom();
-        TableInfo tinfo = getQueryDefinition().getTable(null, schema, null, true);
+        TableInfo tinfo = getQueryDefinition().getTable(schema, null, true);
         if (tinfo == null)
         {
             return null;

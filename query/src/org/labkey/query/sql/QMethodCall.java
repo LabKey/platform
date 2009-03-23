@@ -40,13 +40,17 @@ public class QMethodCall extends QExpr
             builder.appendStringLiteral("Unrecognized method " + getField().getFieldKey());
             return;
         }
-        List<SQLFragment> arguments = new ArrayList();
+        List<SQLFragment> arguments = new ArrayList<SQLFragment>();
         for (QNode n : getLastChild().children())
         {
 			QExpr expr = (QExpr)n;
             arguments.add(expr.getSqlFragment(builder.getDbSchema()));
         }
-        builder.append(method.getSQL(builder.getDbSchema(), arguments.toArray(new SQLFragment[0])));
+        QNode first = getFirstChild();
+        if (first instanceof QField && null != ((QField)first).getTable())
+            builder.append(method.getSQL(((QField)first).getRelationColumn().getTable().getAlias(), builder.getDbSchema(), arguments.toArray(new SQLFragment[arguments.size()])));
+        else
+            builder.append(method.getSQL(builder.getDbSchema(), arguments.toArray(new SQLFragment[arguments.size()])));
     }
 
     public ColumnInfo createColumnInfo(SQLTableInfo table, String alias)
@@ -56,7 +60,7 @@ public class QMethodCall extends QExpr
         {
             return super.createColumnInfo(table, alias);
         }
-        List<ColumnInfo> arguments = new ArrayList();
+        List<ColumnInfo> arguments = new ArrayList<ColumnInfo>();
 
         for (ListIterator<QNode> it = getLastChild().childList().listIterator(); it.hasNext();)
         {

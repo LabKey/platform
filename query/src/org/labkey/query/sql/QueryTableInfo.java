@@ -24,16 +24,15 @@ public class QueryTableInfo extends AbstractTableInfo
 {
     TableInfo _subquery;
 
-    public QueryTableInfo(TableInfo subquery, String name, String alias)
+    public QueryTableInfo(TableInfo subquery, String name)
     {
         super(subquery.getSchema());
         _subquery = subquery;
         setName(name);
-        setAlias(alias);
     }
 
-    public SQLFragment getFromSQL(String alias)
+    public SQLFragment getFromSQL()
     {
-        return _subquery.getFromSQL(alias);
+        return _subquery.getFromSQL();
     }
 }

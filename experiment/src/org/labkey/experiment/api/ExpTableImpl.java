@@ -38,11 +38,10 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
     protected TableEditHelper _editHelper;
     protected final UserSchema _schema;
 
-    public ExpTableImpl(String name, String alias, TableInfo rootTable, UserSchema schema)
+    public ExpTableImpl(String name, TableInfo rootTable, UserSchema schema)
     {
         super(rootTable, schema.getContainer());
         setName(name);
-        setAlias(alias);
         _schema = schema;
     }
 
@@ -103,7 +102,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
 
     public ColumnInfo createPropertyColumn(String name)
     {
-        String sql = "( SELECT objectid FROM exp.object WHERE exp.object.objecturi = " + ExprColumn.STR_TABLE_ALIAS + ".lsid)";
+        String sql = "(SELECT objectid FROM exp.object WHERE exp.object.objecturi = " + ExprColumn.STR_TABLE_ALIAS + ".lsid)";
         ColumnInfo ret = new ExprColumn(this, name, new SQLFragment(sql), Types.INTEGER);
         ret.setIsUnselectable(true);
         return ret;
