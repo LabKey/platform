@@ -75,7 +75,7 @@ final public class DefaultSchema extends AbstractSchema
         _schemas = new CaseInsensitiveHashMap<QuerySchema>();
     }
 
-    public TableInfo getTable(String name, String alias)
+    public TableInfo getTable(String name)
     {
         return null;
     }

@@ -56,6 +56,11 @@ public class QcColumn extends LookupColumn
         return sql;
     }
 
+    public SQLFragment getValueSql(String tableAlias)
+    {
+        return getValueSql();
+    }
+
     public PropertyDescriptor getPropertyDescriptor()
     {
         return pd;
@@ -74,16 +79,16 @@ public class QcColumn extends LookupColumn
         return null;
     }
 
-    public SQLFragment getJoinCondition()
+    public SQLFragment getJoinCondition(String tableAliasName)
     {
-        SQLFragment strJoinNoContainer = super.getJoinCondition();
+        SQLFragment strJoinNoContainer = super.getJoinCondition(tableAliasName);
         String containerId = getContainerId();
         if (containerId == null)
         {
             return strJoinNoContainer;
         }
 
-        strJoinNoContainer.append(" AND " + getTableAlias() + ".Container = '" + containerId + "'");
+        strJoinNoContainer.append(" AND " + tableAliasName + ".Container = '" + containerId + "'");
         return strJoinNoContainer;
     }
 

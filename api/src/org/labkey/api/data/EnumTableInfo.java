@@ -73,9 +73,9 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
         addColumn(column);
     }
 
-    public SQLFragment getFromSQL(String alias)
+    public SQLFragment getFromSQL()
     {
-        SQLFragment sql = new SQLFragment("(");
+        SQLFragment sql = new SQLFragment();
         String separator = "";
         EnumSet<EnumType> enumSet = EnumSet.allOf(_enum);
         for (EnumType e : enumSet)
@@ -85,9 +85,6 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
             sql.append("SELECT ? AS VALUE");
             sql.add(_getter.getValue(e));
         }
-
-        sql.append(") AS ");
-        sql.append(alias);
         return sql;
     }
 }

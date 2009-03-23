@@ -107,7 +107,7 @@ public class DomainEditorServiceBase extends BaseRemoteService
             Map<String, String> availableQueries = new HashMap<String, String>();  //  GWT: TreeMap does not work
             for (String name : schema.getTableAndQueryNames(false))
             {
-                TableInfo table = schema.getTable(name, null);
+                TableInfo table = schema.getTable(name);
                 if (table == null)
                     continue;
                 List<ColumnInfo> pkColumns = table.getPkColumns();

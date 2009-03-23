@@ -28,7 +28,6 @@ public class WrappedColumn extends ExprColumn
     public WrappedColumn(ColumnInfo col, String name)
     {
         super(col.getParentTable(), name, col.getValueSql(), col.getSqlTypeInt());
-
         _col = col;
     }
 

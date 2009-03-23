@@ -82,9 +82,9 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     Map<String, Class<? extends Controller>> getImportActions();
 
-    TableInfo createDataTable(UserSchema schema, String alias, ExpProtocol protocol);
+    TableInfo createDataTable(UserSchema schema, ExpProtocol protocol);
 
-    ExpRunTable createRunTable(UserSchema schema, String alias, ExpProtocol protocol);
+    ExpRunTable createRunTable(UserSchema schema, ExpProtocol protocol);
 
     FieldKey getParticipantIDFieldKey();
 

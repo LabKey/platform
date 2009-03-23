@@ -331,7 +331,7 @@ public class TempTableTracker extends WeakReference<Object>
                         return;
                     //noinspection RedundantCast
                     TempTableTracker t = (TempTableTracker)(Object)r;
-                    t.delete();
+//                    t.delete();
                 }
                 catch (InterruptedException x)
                 {

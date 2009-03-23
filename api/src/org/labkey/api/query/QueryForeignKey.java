@@ -74,7 +74,7 @@ public class QueryForeignKey implements ForeignKey
     {
         if (_table == null && _schema != null)
         {
-            _table = _schema.getTable(_tableName, _tableName);
+            _table = _schema.getTable(_tableName);
         }
         return _table;
     }

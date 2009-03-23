@@ -31,4 +31,7 @@ public interface MethodInfo
     ColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias);
 
     SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments);
+
+    // for table methods
+    SQLFragment getSQL(String tableAlias, DbSchema schema, SQLFragment[] arguments);
 }

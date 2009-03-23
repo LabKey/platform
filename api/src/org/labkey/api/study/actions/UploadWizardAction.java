@@ -309,7 +309,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             }
         }
 
-        ExpRunTable table = AssayService.get().createRunTable(null, _protocol, getProvider(newRunForm), newRunForm.getUser(), newRunForm.getContainer());
+        ExpRunTable table = AssayService.get().createRunTable(_protocol, getProvider(newRunForm), newRunForm.getUser(), newRunForm.getContainer());
         insertView.getDataRegion().addColumn(0, table.getColumn("Name"));
         insertView.getDataRegion().addColumn(1, table.getColumn("Comments"));
 

@@ -95,7 +95,7 @@ public class AliasManager
     public static String makeLegalName(String str, SqlDialect dialect)
     {
         String ret = legalNameFromName(str);
-        if (dialect.getColumnSelectName(str).startsWith("\""))
+        if (null != dialect && dialect.getColumnSelectName(str).startsWith("\""))
             ret = "_" + ret;
         if (ret.length() == 0)
             return "_";
@@ -105,11 +105,11 @@ public class AliasManager
     }
 
 
-    private String findUniqueName(String name, Set<String> set)
+    private String findUniqueName(String name)
     {
         name = makeLegalName(name);
         String ret = name;
-        for (int i = 1; set.contains(ret); i ++)
+        for (int i = 1; _aliases.containsKey(ret); i ++)
         {
             ret = name + i;
         }
@@ -118,7 +118,7 @@ public class AliasManager
 
     public String decideAlias(String name)
     {
-        String ret = findUniqueName(name, _aliases.keySet());
+        String ret = findUniqueName(name);
         _aliases.put(ret, name);
         return ret;
     }

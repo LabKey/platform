@@ -1141,7 +1141,7 @@ public class ModuleLoader implements Filter
         try
         {
             TableInfo modules = getTableInfoModules();
-            SQLFragment sql = new SQLFragment("SELECT * FROM " + modules.getFromSQL() + " WHERE Name=?", name);
+            SQLFragment sql = new SQLFragment("SELECT * FROM " + modules.getSelectName() + " WHERE Name=?", name);
             ModuleContext[] contexts = Table.executeQuery(modules.getSchema(), sql, ModuleContext.class);
             return contexts == null || contexts.length == 0 ? null : contexts[0];
         }
@@ -1151,12 +1151,13 @@ public class ModuleLoader implements Filter
         }
     }
 
+
     private ModuleContext[] getAllModuleContexts()
     {
         try
         {
             TableInfo modules = getTableInfoModules();
-            SQLFragment sql = new SQLFragment("SELECT * FROM " + modules.getFromSQL());
+            SQLFragment sql = new SQLFragment("SELECT * FROM " + modules.getSelectName());
             ModuleContext[] contexts;
             contexts = Table.executeQuery(modules.getSchema(), sql, ModuleContext.class);
             return contexts;

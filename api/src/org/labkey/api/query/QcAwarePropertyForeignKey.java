@@ -200,12 +200,13 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
             return inRangeSQL;
         }
 
-        public void declareJoins(Map<String, SQLFragment> map)
+        @Override
+        public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
         {
             ColumnInfo indicatorCol = getIndicatorColumn(_baseName, this);
-            indicatorCol.declareJoins(map);
+            indicatorCol.declareJoins(parentAlias, map);
             ColumnInfo numberCol = getNumberColumn(_baseName, this);
-            numberCol.declareJoins(map);
+            numberCol.declareJoins(parentAlias, map);
         }
     }
 

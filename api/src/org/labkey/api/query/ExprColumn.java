@@ -28,6 +28,7 @@ public class ExprColumn extends ColumnInfo
     static public final String STR_TABLE_ALIAS = "'''~~TABLE~~'''";
     SQLFragment _sql;
     private ColumnInfo[] _dependentColumns;
+
     public ExprColumn(TableInfo parent, String name, SQLFragment sql, int sqltype, ColumnInfo ... dependentColumns)
     {
         super(name, parent);
@@ -39,6 +40,8 @@ public class ExprColumn extends ColumnInfo
 
     public SQLFragment getValueSql(String tableAlias)
     {
+        if (tableAlias.equals(STR_TABLE_ALIAS))
+            return _sql;
         String sql = StringUtils.replace(_sql.getSQL(), STR_TABLE_ALIAS, tableAlias);
         SQLFragment ret = new SQLFragment(sql);
         ret.addAll(_sql.getParams());
@@ -50,11 +53,12 @@ public class ExprColumn extends ColumnInfo
         _sql = sql;
     }
 
-    public void declareJoins(Map<String, SQLFragment> map)
+    @Override
+    public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
     {
         for (ColumnInfo col : _dependentColumns)
         {
-            col.declareJoins(map);
+            col.declareJoins(parentAlias, map);
         }
     }
 }

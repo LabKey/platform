@@ -99,7 +99,7 @@ public abstract class AbstractForeignKey implements ForeignKey
                 {
                     _tableName = table.getPublicName();
                     if (_tableName == null)
-                        _tableName = table.getAliasName();
+                        _tableName = table.getName();
                 }
 
                 if (_columnName == null)

@@ -228,9 +228,9 @@ public class PropertyManager
     {
         String setSelectName = prop.getTableInfoProperties().getColumn("Set").getSelectName();   // Keyword in some dialects
 
-        String deleteProps = "DELETE FROM " + prop.getTableInfoProperties().getAliasName() +
+        String deleteProps = "DELETE FROM " + prop.getTableInfoProperties().getSelectName() +
                 " WHERE " + setSelectName +  " IN " +
-                "(SELECT " + setSelectName + " FROM " + prop.getTableInfoPropertySets().getAliasName() + " WHERE ObjectId=?)";
+                "(SELECT " + setSelectName + " FROM " + prop.getTableInfoPropertySets().getSelectName() + " WHERE ObjectId=?)";
 
         Table.execute(prop.getSchema(), deleteProps, new Object[] {objectId});
         Table.delete(prop.getTableInfoPropertySets(), new SimpleFilter("ObjectId", objectId));

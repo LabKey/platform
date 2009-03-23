@@ -78,31 +78,46 @@ public class LookupColumn extends ColumnInfo
         return lookupColumn.getValueSql(getTableAlias());
     }
 
+
     public SQLFragment getValueSql(String tableAliasName)
     {
-        return lookupColumn.getValueSql(tableAliasName);
+        return lookupColumn.getValueSql(getTableAlias());
     }
 
-    public SQLFragment getJoinCondition()
+
+    public SQLFragment getJoinCondition(String tableAliasName)
+    {
+        return getJoinConditionHelper(
+            tableAliasName, foreignKey.getValueSql(tableAliasName), foreignKey.getSqlTypeInt(),
+            getTableAlias(), lookupKey.getValueSql(getTableAlias()), lookupKey.getSqlTypeInt(),
+            joinOnContainer, getSqlDialect().isPostgreSQL()
+        );
+    }
+
+
+    // broken out to share code with QueryLookupColumn
+    public static SQLFragment getJoinConditionHelper(String tableAliasName, SQLFragment fkSql, int fkType,
+            String joinAlias, SQLFragment pkSql, int pkType,
+            boolean joinOnContainer, boolean isPostgreSQL)
     {
         SQLFragment condition = new SQLFragment();
-        boolean typeMismatch = foreignKey.getSqlTypeInt() != lookupKey.getSqlTypeInt();
+        boolean typeMismatch = fkType != pkType;
         condition.append("(");
-        if (getSqlDialect().isPostgreSQL() && typeMismatch)
-            condition.append("CAST((").append(foreignKey.getValueSql()).append(") AS VARCHAR)");
+        if (isPostgreSQL && typeMismatch)
+            condition.append("CAST((").append(fkSql).append(") AS VARCHAR)");
         else
-            condition.append(foreignKey.getValueSql());
+            condition.append(fkSql);
         condition.append(" = ");
 
-        if (getSqlDialect().isPostgreSQL() && typeMismatch)
-            condition.append("CAST((").append(lookupKey.getValueSql(getTableAlias())).append(") AS VARCHAR)");
+        if (isPostgreSQL && typeMismatch)
+            condition.append("CAST((").append(pkSql).append(") AS VARCHAR)");
         else
-            condition.append(lookupKey.getValueSql(getTableAlias()));
+            condition.append(pkSql);
 
         if (joinOnContainer)
         {
-            condition.append(" AND ").append(foreignKey.getTableAlias());
-            condition.append(".Container = ").append(getTableAlias()).append(".Container");
+            condition.append(" AND ").append(tableAliasName);
+            condition.append(".Container = ").append(joinAlias).append(".Container");
         }
         condition.append(")");
         return condition;
@@ -110,27 +125,39 @@ public class LookupColumn extends ColumnInfo
 
     
     @SuppressWarnings({"ConstantConditions"})
-    public void declareJoins(Map<String, SQLFragment> map)
+    public void declareJoins(String baseAlias, Map<String, SQLFragment> map)
     {
         boolean assertEnabled = false;
         assert assertEnabled = true;
 
-        String strTableAlias = getTableAlias();
-        if (map.containsKey(strTableAlias))
+        String colTableAlias = getTableAlias();
+
+        if (map.containsKey(colTableAlias))
         {
             if (!assertEnabled)
                 return;
             // if asserts enabled, fall through
         }
 
-        foreignKey.declareJoins(map);
+        foreignKey.declareJoins(baseAlias, map);
         TableInfo lookupTable = lookupKey.getParentTable();
-        SQLFragment strJoin = new SQLFragment("LEFT OUTER JOIN ");
-        strJoin.append(lookupTable.getFromSQL(getTableAlias()));
+        SQLFragment strJoin = new SQLFragment("\n\tLEFT OUTER JOIN ");
+
+        String selectName = lookupTable.getSelectName();
+        if (null != selectName)
+            strJoin.append(selectName);
+        else
+        {
+            strJoin.append("(");
+            strJoin.append(lookupTable.getFromSQL());
+            strJoin.append(")");
+        }
+
+        strJoin.append(" AS ").append(colTableAlias);
         strJoin.append(" ON ");
-        strJoin.append(getJoinCondition());
-        assert null == map.get(strTableAlias) || map.get(strTableAlias).toString().equals(strJoin.toString());
-        map.put(strTableAlias, strJoin);
+        strJoin.append(getJoinCondition(baseAlias));
+        assert null == map.get(colTableAlias) || map.get(colTableAlias).toString().equals(strJoin.toString());
+        map.put(colTableAlias, strJoin);
     }
 
 
@@ -138,6 +165,7 @@ public class LookupColumn extends ColumnInfo
     {
         return foreignKey.getAlias() + "$";
     }
+
 
     public String getColumnName()
     {

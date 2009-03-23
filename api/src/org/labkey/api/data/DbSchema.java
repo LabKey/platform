@@ -767,7 +767,7 @@ public class DbSchema
                 if (col.getName().equalsIgnoreCase("Container"))
                 {
                     sbSql.append( " INSERT INTO "+ tempTableName );
-                    sbSql.append(" SELECT " + String.valueOf(++row) + " AS rowId, '" + t.getFromSQL() + "' AS TableName, ");
+                    sbSql.append(" SELECT " + String.valueOf(++row) + " AS rowId, '" + t.getSelectName() + "' AS TableName, ");
                     List<String> pkColumnNames = t.getPkColumnNames();
 
                     if (pkColumnNames.size() == 1)
@@ -775,7 +775,7 @@ public class DbSchema
                         String pkColumnName = pkColumnNames.get(0);
                         sbSql.append(" '" + pkColumnName);
                         sbSql.append("' AS FirstPKColName, ");
-                        sbSql.append(" CAST( " + t.getFromSQL() + "." + pkColumnName + " AS VARCHAR(100)) "
+                        sbSql.append(" CAST( " + t.getSelectName() + "." + pkColumnName + " AS VARCHAR(100)) "
                                 + " AS FirstPKValue ,");
                     }
                     else
@@ -789,10 +789,10 @@ public class DbSchema
                         sbSql.append(" NULL AS FirstPKValue ,");
                     }
                     sbSql.append(" '" + moduleName + "' AS ModuleName, ");
-                    sbSql.append(" CAST( " + t.getFromSQL() + "." + col.getName() + " AS VARCHAR(100)) AS OrphanedContainer ");
-                    sbSql.append(" FROM " + t.getFromSQL());
+                    sbSql.append(" CAST( " + t.getSelectName() + "." + col.getName() + " AS VARCHAR(100)) AS OrphanedContainer ");
+                    sbSql.append(" FROM " + t.getSelectName());
                     sbSql.append( " LEFT OUTER JOIN " + " core.Containers C ");
-                    sbSql.append(" ON (" + t.getFromSQL() + ".Container = C.EntityId ) ");
+                    sbSql.append(" ON (" + t.getSelectName() + ".Container = C.EntityId ) ");
                     sbSql.append( " WHERE C.EntityId IS NULL ");
 
                     // special handling of MS2 soft deletes

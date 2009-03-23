@@ -61,7 +61,7 @@ public class AssayService
         public List<AssayProvider> getAssayProviders();
         public QueryView createAssayListView(ViewContext context, boolean portalView);
 
-        ExpRunTable createRunTable(String alias, ExpProtocol protocol, AssayProvider provider, User user, Container container);
+        ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container);
 
         public UserSchema createSchema(User user, Container container);
 

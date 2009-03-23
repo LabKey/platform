@@ -90,6 +90,12 @@ public class PropertyColumn extends LookupColumn
     }
 
 
+    public SQLFragment getValueSql(String tableAlias)
+    {
+        return getValueSql();
+    }
+
+
     private String getPropertySqlType(SqlDialect dialect)
     {
         return dialect.sqlTypeNameFromSqlType(getPropertySqlTypeInt());
@@ -142,15 +148,15 @@ public class PropertyColumn extends LookupColumn
         return getPropertyDescriptor().getPropertyURI();
     }
 
-    public SQLFragment getJoinCondition()
+    public SQLFragment getJoinCondition(String tableAliasName)
     {
-        SQLFragment strJoinNoContainer = super.getJoinCondition();
+        SQLFragment strJoinNoContainer = super.getJoinCondition(tableAliasName);
         if (containerId == null)
         {
             return strJoinNoContainer;
         }
 
-        strJoinNoContainer.append(" AND " + getTableAlias() + ".Container = '" + containerId + "'");
+        strJoinNoContainer.append(" AND " + tableAliasName + ".Container = '" + containerId + "'");
         return strJoinNoContainer;
     }
 

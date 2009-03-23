@@ -32,7 +32,6 @@ public class DimensionColumnInfo extends ColumnInfo
         _table = table;
         _dimension = dimension;
         setName(_dimension.getSourceColumn().getAlias());
-        setAlias(_dimension.getSourceColumn().getAlias());
         setCaption(_dimension.getSourceColumn().getCaption());
         setURL(dimension.getUrl());
     }

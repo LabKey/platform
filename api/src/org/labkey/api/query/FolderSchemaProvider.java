@@ -53,13 +53,13 @@ abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
             return Collections.EMPTY_SET;
         }
 
-        protected TableInfo createTable(String name, String alias)
+        protected TableInfo createTable(String name)
         {
             return null;
         }
 
 		@Override
-		public TableInfo getTable(String name, String alias, boolean includeExtraMetadata)
+		public TableInfo getTable(String name, boolean includeExtraMetadata)
 		{
 			return null;
 		}

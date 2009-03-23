@@ -24,6 +24,7 @@ import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpressionFactory.StringExpression;
+import org.labkey.api.query.AliasManager;
 import org.labkey.data.xml.ColumnType;
 
 import java.beans.Introspector;
@@ -35,7 +36,7 @@ import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ColumnInfo extends ColumnRenderProperties
+public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 {
     private static final DisplayColumnFactory DEFAULT_FACTORY = new DisplayColumnFactory()
     {
@@ -124,7 +125,7 @@ public class ColumnInfo extends ColumnRenderProperties
         return alias;
     }
 
-    public void setAlias(String alias)
+    protected void setAlias(String alias)
     {
         this.alias = alias;
     }
@@ -184,7 +185,7 @@ public class ColumnInfo extends ColumnRenderProperties
 
     public SQLFragment getValueSql()
     {
-        return getValueSql(getParentTable().getAliasName());
+        return getValueSql(getParentTable().getName());
     }
 
     public SQLFragment getValueSql(String tableAliasName)
@@ -204,26 +205,13 @@ public class ColumnInfo extends ColumnRenderProperties
         this.propertyURI = propertyURI;
     }
 
-
-    public SQLFragment getSelectSql()
-    {
-        SQLFragment ret = new SQLFragment();
-        ret.append(getValueSql());
-        if (alias != null)
-        {
-            ret.append(" AS ");
-            ret.append(getParentTable().getSqlDialect().getColumnSelectName(alias));
-        }
-        return ret;
-    }
-
-    public void declareJoins(Map<String, SQLFragment> map)
+    public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
     {
     }
 
     public String getTableAlias()
     {
-        return parentTable.getAliasName();
+        return parentTable.getName();
     }
 
     public SqlDialect getSqlDialect()
@@ -1414,16 +1402,19 @@ public class ColumnInfo extends ColumnRenderProperties
     {
         if (rs == null)
             return null;
+        // UNDONE
         return rs.getObject(getAlias());
     }
 
     public int getIntValue(ResultSet rs) throws SQLException
     {
+        // UNDONE
         return rs.getInt(getAlias());
     }
 
     public String getStringValue(ResultSet rs) throws SQLException
     {
+        // UNDONE
         return rs.getString(getAlias());
     }
 
@@ -1432,6 +1423,7 @@ public class ColumnInfo extends ColumnRenderProperties
         Map map = context.getRow();
         if (map == null)
             return null;
+        // UNDONE
         return map.get(getAlias());
     }
 

@@ -41,7 +41,6 @@ public class AggregateColumnInfo extends ColumnInfo
         _measure = measure;
 
         setName(getColumnName(_member, _measure));
-        setAlias(getName());
         setCaption(_measure.getCaption());
 
         if(null != measure.getUrl() && null != member)

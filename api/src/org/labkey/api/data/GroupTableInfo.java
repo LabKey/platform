@@ -47,7 +47,7 @@ public class GroupTableInfo extends VirtualTable
         _groupByCols = groupByCols;
         _measures = measures;
         _sourceFilter = sourceFilter;
-        setAlias(ALIAS);
+        setName(ALIAS);
         setupColumns();
     }
 
@@ -61,9 +61,9 @@ public class GroupTableInfo extends VirtualTable
         this(source, filter, Arrays.asList(groupByCols), Arrays.asList(measures));
     }
 
-    public SQLFragment getFromSQL(String alias)
+    public SQLFragment getFromSQL()
     {
-        SQLFragment sql = new SQLFragment("(SELECT ");
+        SQLFragment sql = new SQLFragment("SELECT ");
         String sep = "";
         
         //add the group-by columns
@@ -104,9 +104,6 @@ public class GroupTableInfo extends VirtualTable
             sql.append(col.getAlias());
             sep = ",\n";
         }
-
-        sql.append(") AS ");
-        sql.append(alias);
 
         return sql;
     }

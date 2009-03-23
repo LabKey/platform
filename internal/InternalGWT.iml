@@ -7,7 +7,7 @@
         <setting name="compilerMaxHeapSize" value="128" />
         <setting name="compilerOutputPath" value="" />
         <setting name="gwtScriptOutputStyle" value="DETAILED" />
-        <setting name="gwtSdkUrl" value="file://$GWT_15_HOME$" />
+        <setting name="gwtSdkUrl" value="file://$GWT_HOME$" />
         <setting name="runGwtCompilerOnMake" value="false" />
         <packaging>
           <module name="org.labkey.api.gwt.Internal" path="/org.labkey.api.gwt.Internal" />

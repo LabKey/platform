@@ -89,25 +89,15 @@ public class SchemaTableInfo implements TableInfo
     }
 
 
-    public SQLFragment getFromSQL()
-    {
-        return selectName;
-    }
-
-    public SQLFragment getFromSQL(String alias)
-    {
-        SQLFragment ret = new SQLFragment();
-        ret.append(selectName);
-        ret.append(" AS ");
-        ret.append(alias);
-        return ret;
-    }
-
-    // usually the same as SelectName, unless getSelectName() returns (SELECT .. ) ALIAS
-    // CONSDIER: rename getSelectName() to getFromSql()
-    public String getAliasName()
+    public String getSelectName()
     {
         return selectName.toString();
+    }
+
+
+    public SQLFragment getFromSQL()
+    {
+        return new SQLFragment().append("SELECT * FROM ").append(selectName);
     }
 
 

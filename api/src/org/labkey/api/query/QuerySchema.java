@@ -34,7 +34,7 @@ public interface QuerySchema
 
     public DbSchema getDbSchema();
 
-    public TableInfo getTable(String name, String alias);
+    public TableInfo getTable(String name);
 
     public QuerySchema getSchema(String name);
 

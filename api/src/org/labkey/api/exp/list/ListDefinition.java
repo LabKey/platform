@@ -171,7 +171,7 @@ public interface ListDefinition
     int getRowCount();
     List<String> insertListItems(User user, DataLoader loader) throws IOException;
 
-    TableInfo getTable(User user, String alias);
+    TableInfo getTable(User user);
 
     ActionURL urlShowDefinition();
     ActionURL urlEditDefinition();

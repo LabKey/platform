@@ -22,7 +22,7 @@ public class VirtualTable extends AbstractTableInfo
     {
         super(schema);
     }
-    public SQLFragment getFromSQL(String alias)
+    public SQLFragment getFromSQL()
     {
         throw new UnsupportedOperationException();
     }

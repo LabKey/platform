@@ -51,7 +51,7 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
         {
             throw new ExperimentException("Could not find schema " + schemaName);
         }
-        _tableInfo = schema.getTable(queryName, null);
+        _tableInfo = schema.getTable(queryName);
         if (_tableInfo == null)
         {
             throw new ExperimentException("Could not find query " + queryName);

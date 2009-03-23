@@ -115,7 +115,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                                                    CopyToStudyContext context) throws SQLException
     {
         UserSchema schema = AssayService.get().createSchema(user, run.getContainer());
-        TableInfo runTable = schema.getTable(AssayService.get().getRunsTableName(run.getProtocol()), null);
+        TableInfo runTable = schema.getTable(AssayService.get().getRunsTableName(run.getProtocol()));
 
         PropertyDescriptor pd = addProperty(study, "RunName", run.getName(), dataMap, types);
         setStandardPropertyAttributes(runTable, "Name", pd);
@@ -841,9 +841,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return Collections.<String, Class<? extends Controller>>singletonMap(IMPORT_DATA_LINK_NAME, UploadWizardAction.class);
     }
     
-    public ExpRunTable createRunTable(UserSchema schema, String alias, ExpProtocol protocol)
+    public ExpRunTable createRunTable(UserSchema schema, ExpProtocol protocol)
     {
-        final ExpRunTable runTable = new ExpSchema(schema.getUser(), schema.getContainer()).createRunsTable(alias);
+        final ExpRunTable runTable = new ExpSchema(schema.getUser(), schema.getContainer()).createRunsTable();
         ColumnInfo dataLinkColumn = runTable.getColumn(ExpRunTable.Column.Name);
         dataLinkColumn.setCaption("Assay Id");
         dataLinkColumn.setDescription("The assay/experiment ID that uniquely identifies this assay run.");

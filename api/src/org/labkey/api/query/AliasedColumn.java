@@ -29,7 +29,6 @@ public class AliasedColumn extends ColumnInfo
     {
         super(name, parent);
         setName(name);
-        setAlias(name);
         copyAttributesFrom(column);
         if (!name.equalsIgnoreCase(column.getName()))
         {
@@ -41,6 +40,12 @@ public class AliasedColumn extends ColumnInfo
     public AliasedColumn(String name, ColumnInfo column)
     {
         this(column.getParentTable(), name, column);
+    }
+
+    public AliasedColumn(String name, String alias, ColumnInfo column)
+    {
+        this(column.getParentTable(), name, column);
+        setAlias(alias);
     }
 
     public SQLFragment getValueSql()
@@ -65,10 +70,11 @@ public class AliasedColumn extends ColumnInfo
         return ret;
     }
 
-    public void declareJoins(Map<String, SQLFragment> map)
+    @Override
+    public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
     {
         if (getParentTable() == _column.getParentTable())
-            _column.declareJoins(map);
+            _column.declareJoins(parentAlias, map);
     }
 
     public ColumnInfo getColumn()

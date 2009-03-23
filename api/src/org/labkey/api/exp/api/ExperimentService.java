@@ -129,13 +129,13 @@ public class ExperimentService
          * These TableInfo's initially have no columns, but have methods to
          * add particular columns as needed by the client.
          */
-        ExpRunTable createRunTable(String name, String alias, UserSchema schema);
-        ExpDataTable createDataTable(String name, String alias, UserSchema schema);
-        ExpSampleSetTable createSampleSetTable(String name, String alias, UserSchema schema);
-        ExpProtocolTable createProtocolTable(String name, String alias, UserSchema schema);
-        ExpExperimentTable createExperimentTable(String name, String alias, UserSchema schema);
-        ExpMaterialTable createMaterialTable(String name, String alias, UserSchema schema);
-        ExpProtocolApplicationTable createProtocolApplicationTable(String name, String alias, UserSchema schema);
+        ExpRunTable createRunTable(String name, UserSchema schema);
+        ExpDataTable createDataTable(String name, UserSchema schema);
+        ExpSampleSetTable createSampleSetTable(String name, UserSchema schema);
+        ExpProtocolTable createProtocolTable(String name, UserSchema schema);
+        ExpExperimentTable createExperimentTable(String name, UserSchema schema);
+        ExpMaterialTable createMaterialTable(String name, UserSchema schema);
+        ExpProtocolApplicationTable createProtocolApplicationTable(String name, UserSchema schema);
 
         String generateLSID(Container container, Class<? extends ExpObject> clazz, String name);
         String generateGuidLSID(Container container, Class<? extends ExpObject> clazz);

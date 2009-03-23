@@ -18,8 +18,10 @@ package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.common.util.Pair;
 
 import java.io.InputStream;
@@ -1943,9 +1945,8 @@ public class ConnectionWrapper implements java.sql.Connection
             if (_msStart != 0)
                 logEntry.append(" time ").append(DateUtil.formatDuration(ms));
 
-            String[] lines = sql.split("\n");
-            for (String line : lines)
-                logEntry.append("\n    ").append(line);
+            logEntry.append("\n    ");
+            logEntry.append(sql.trim().replace("\n", "\n    "));
 
             if (null != _parameters)
             {
@@ -1954,8 +1955,16 @@ public class ConnectionWrapper implements java.sql.Connection
                     try
                     {
                         Object o = i < _parameters.size() ? _parameters.get(i) : null;
-                        String value = String.valueOf(o);
-                        logEntry.append("\n    ?[").append(i).append("] ").append(value);
+                        String value;
+                        if (o == null)
+                            value = "NULL";
+                        else if (o instanceof Container)
+                            value = "'" + ((Container)o).getId() + "'        " + ((Container)o).getPath();
+                        else if (o instanceof String)
+                            value = "'" + StringEscapeUtils.escapeSql((String)o) + "'";
+                        else
+                            value = String.valueOf(o);
+                        logEntry.append("\n    --?[").append(i).append("] ").append(value);
                     }
                     catch (Exception ex)
                     {

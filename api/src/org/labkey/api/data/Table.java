@@ -927,7 +927,7 @@ public class Table
         }
 
         StringBuilder insertSQL = new StringBuilder("INSERT INTO ");
-        insertSQL.append(table.getFromSQL());
+        insertSQL.append(table.getSelectName());
         insertSQL.append("\n\t(");
         insertSQL.append(columnSQL);
         insertSQL.append(")\n\t");
@@ -1062,7 +1062,7 @@ public class Table
         }
 
         // UNDONE: reselect
-        String updateSQL = "UPDATE " + table.getFromSQL() + "\n\t" +
+        String updateSQL = "UPDATE " + table.getSelectName() + "\n\t" +
                 "SET " + setSQL + "\n\t" +
                 whereSQL;
 
@@ -1134,7 +1134,7 @@ public class Table
 
         SQLFragment where = filter.getSQLFragment(table, null);
 
-        String deleteSQL = "DELETE FROM " + table.getFromSQL() + "\n\t" + where.getSQL();
+        String deleteSQL = "DELETE FROM " + table.getSelectName() + "\n\t" + where.getSQL();
         Table.execute(table.getSchema(), deleteSQL, where.getParams().toArray());
 
         notifyTableUpdate(table);
@@ -1477,12 +1477,17 @@ public class Table
     private static Map<String,ColumnInfo> getDisplayColumnsList(List<ColumnInfo> arrColumns)
     {
         Map<String, ColumnInfo> columns = new LinkedHashMap<String, ColumnInfo>();
+        ColumnInfo existing;
         for (ColumnInfo column : arrColumns)
         {
+            existing = columns.get(column.getAlias());
+            assert null == existing || existing.getName().equals(column.getName());
             columns.put(column.getAlias(), column);
             ColumnInfo displayColumn = column.getDisplayField();
             if (displayColumn != null)
             {
+                existing = columns.get(displayColumn.getAlias());
+                assert null == existing || existing.getName().equals(displayColumn.getName());
                 columns.put(displayColumn.getAlias(), displayColumn);
             }
         }
@@ -1548,7 +1553,7 @@ public class Table
 
             // overwrite selectName to not use schema/owner name
             this.name = name;
-            selectName = new SQLFragment(getSqlDialect().getTableSelectName(_tempTableName) + " " + name);
+            selectName = new SQLFragment(getSqlDialect().getTableSelectName(_tempTableName));
             for (ColumnInfo col : cols)
                 col.setParentTable(this);
             columns.addAll(cols);
@@ -1556,25 +1561,18 @@ public class Table
                 _pkColumnNames = pk;
         }
 
-        public SQLFragment getFromSQL()
+
+        public String getSelectName()
         {
-            return getFromSQL(name);
+            return _tempTableName;
         }
 
-        public SQLFragment getFromSQL(String alias)
-        {
-            return new SQLFragment(getSqlDialect().getTableSelectName(_tempTableName) + " " + alias);
-        }
 
         public String getTempTableName()
         {
             return _tempTableName;
         }
 
-        public String getAliasName()
-        {
-            return getName();
-        }
 
         /** Call this method when table is physically created */
         public void track()
@@ -1639,7 +1637,7 @@ public class Table
     public static void snapshot(TableInfo tinfo, String tableName)
             throws SQLException
     {
-        SQLFragment sqlSelect = Table.getSelectSQL(tinfo, tinfo.getColumns(), null, null);
+        SQLFragment sqlSelect = Table.getSelectSQL(tinfo, null, null, null);
         SQLFragment sqlSelectInto = new SQLFragment();
         sqlSelectInto.append("SELECT * INTO ").append(tableName).append(" FROM (");
         sqlSelectInto.append(sqlSelect);
@@ -2078,9 +2076,9 @@ public class Table
             TableInfo membersTable = core.getTableInfoMembers();
             TableInfo principalsTable = core.getTableInfoPrincipals();
 
-            Map[] members = executeQuery(schema, "SELECT * FROM " + membersTable.getFromSQL(), null, Map.class);
+            Map[] members = executeQuery(schema, "SELECT * FROM " + membersTable.getSelectName(), null, Map.class);
             List<Map> users = join(Arrays.asList(members), "UserId", schema,
-                    "SELECT * FROM " + principalsTable.getFromSQL() + " WHERE UserId IN (?)");
+                    "SELECT * FROM " + principalsTable.getSelectName() + " WHERE UserId IN (?)");
             for (Map m : users)
             {
                 String s = PageFlowUtil.toQueryString(m.entrySet());

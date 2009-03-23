@@ -47,6 +47,6 @@ public class UserIdQueryForeignKey extends LookupForeignKey
         {
             _coreSchema = QueryService.get().getUserSchema(_user, _container, "core");
         }
-        return _coreSchema.getTable("users", null);
+        return _coreSchema.getTable("users");
     }
 }

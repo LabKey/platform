@@ -24,6 +24,7 @@ import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.security.User;
 import org.apache.beehive.netui.pageflow.Forward;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.SQLException;
 import java.util.Set;
@@ -45,11 +46,13 @@ public interface TableInfo
 
     String getName();
 
+    /** simple name that can be used in from clause.  e.g. "Issues.Issues", may return null */
+    @Nullable
+    String getSelectName();
+
+    /** SQL representign this table, e.g. "SELECT * FROM Issues.Issues WHERE Container='...'" */
+    @NotNull
     SQLFragment getFromSQL();
-
-    SQLFragment getFromSQL(String alias);
-
-    String getAliasName();
 
     DbSchema getSchema();
 

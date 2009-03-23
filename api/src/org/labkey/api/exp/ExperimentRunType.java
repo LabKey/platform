@@ -71,7 +71,7 @@ public abstract class ExperimentRunType implements Comparable<ExperimentRunType>
     public int getRunCount(User user, Container c)
     {
         UserSchema schema = QueryService.get().getUserSchema(user, c, _schemaName);
-        TableInfo table = schema.getTable(_tableName, null);
+        TableInfo table = schema.getTable(_tableName);
         SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM (");
         sql.append(Table.getSelectSQL(table, table.getColumns(), null, null));
         sql.append(") x");

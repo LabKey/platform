@@ -41,11 +41,22 @@ abstract public class UserSchema extends AbstractSchema
         _name = name;
     }
 
-    public TableInfo getTable(String name, String alias, boolean includeExtraMetadata)
+    public TableInfo getTable(String name, boolean includeExtraMetadata)
+    {
+        Object o = _getTableOrQuery(name, includeExtraMetadata);
+        if (o instanceof TableInfo)
+            return (TableInfo)o;
+        if (o instanceof QueryDefinition)
+            return ((QueryDefinition)o).getTable(this, null, true);
+        return null;
+    }
+
+
+    public Object _getTableOrQuery(String name, boolean includeExtraMetadata)
     {
         if (name == null)
             return null;
-        TableInfo table = createTable(name, alias);
+        TableInfo table = createTable(name);
         if (table != null)
         {
             if (!includeExtraMetadata)
@@ -62,15 +73,16 @@ abstract public class UserSchema extends AbstractSchema
         {
             def.setMetadataXml(null);
         }
-        return def.getTable(alias, this, null, true);
+        return def;
     }
 
-    public final TableInfo getTable(String name, String alias)
+
+    public final TableInfo getTable(String name)
     {
-        return getTable(name, alias, true);
+        return getTable(name, true);
     }
 
-    protected abstract TableInfo createTable(String name, String alias);
+    protected abstract TableInfo createTable(String name);
 
     abstract public Set<String> getTableNames();
 

@@ -46,7 +46,6 @@ abstract public class AbstractTableInfo implements TableInfo
     protected final Map<String, ColumnInfo> _columnMap;
     private Map<String, MethodInfo> _methodMap;
     protected String _name;
-    protected String _alias = "unnamed";
     private List<DetailsURL> _detailsURLs = new ArrayList<DetailsURL>(0);
 
     public List<ColumnInfo> getPkColumns()
@@ -96,11 +95,6 @@ abstract public class AbstractTableInfo implements TableInfo
     public SqlDialect getSqlDialect()
     {
         return getSchema().getSqlDialect();
-    }
-
-    final public SQLFragment getFromSQL()
-    {
-        return getFromSQL(getAliasName());
     }
 
     public List<String> getPkColumnNames()
@@ -243,11 +237,6 @@ abstract public class AbstractTableInfo implements TableInfo
         return _name;
     }
 
-    public String getAliasName()
-    {
-        return _alias;
-    }
-
     public boolean removeColumn(ColumnInfo column)
     {
         return _columnMap.remove(column.getName()) != null;
@@ -284,13 +273,6 @@ abstract public class AbstractTableInfo implements TableInfo
     public void setName(String name)
     {
         _name = name;
-    }
-
-    public void setAlias(String alias)
-    {
-        if (alias == null)
-            return;
-        _alias = alias;
     }
 
     public StringExpressionFactory.StringExpression getDetailsURL(Map<String, ColumnInfo> columns)
@@ -367,6 +349,21 @@ abstract public class AbstractTableInfo implements TableInfo
 
     }
 
+
+    public static ForeignKey makeForeignKey(QuerySchema fromSchema, ColumnType.Fk fk)
+    {
+        QuerySchema fkSchema = fromSchema;
+        if (fk.getFkDbSchema() != null)
+        {
+            fkSchema = QueryService.get().getUserSchema(fromSchema.getUser(), fromSchema.getContainer(), fk.getFkDbSchema());
+            if (fkSchema == null)
+                return null;
+        }
+        QueryForeignKey qfk = new QueryForeignKey(fkSchema, fk.getFkTable(), fk.getFkColumnName(), null);
+        return qfk;
+    }
+
+
     protected void initColumnFromXml(QuerySchema schema, ColumnInfo column, ColumnType xbColumn, Collection<QueryException> qpe)
     {
         column.setName(xbColumn.getColumnName());
@@ -380,19 +377,14 @@ abstract public class AbstractTableInfo implements TableInfo
         }
         if (xbColumn.getFk() != null)
         {
-            ColumnType.Fk fk = xbColumn.getFk();
-            QuerySchema fkSchema = schema;
-            if (fk.getFkDbSchema() != null)
+            ForeignKey qfk = makeForeignKey(schema, xbColumn.getFk());
+            if (qfk == null)
             {
-                fkSchema = QueryService.get().getUserSchema(schema.getUser(), schema.getContainer(), fk.getFkDbSchema());
-                if (fkSchema == null)
-                {
-                    //noinspection ThrowableInstanceNeverThrown
-                    qpe.add(new MetadataException("Schema " + fk.getFkDbSchema() + " not found."));
-                    return;
-                }
+                //noinspection ThrowableInstanceNeverThrown
+                qpe.add(new MetadataException("Schema " + xbColumn.getFk().getFkDbSchema() + " not found."));
+                return;
             }
-            column.setFk(new QueryForeignKey(fkSchema, fk.getFkTable(), fk.getFkColumnName(), null));
+            column.setFk(qfk);
         }
         if (xbColumn.getFormatString() != null)
         {
@@ -502,5 +494,10 @@ abstract public class AbstractTableInfo implements TableInfo
     public boolean isMetadataOverrideable()
     {
         return true;
+    }
+
+    public String getSelectName()
+    {
+        return null;
     }
 }

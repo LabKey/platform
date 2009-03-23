@@ -45,10 +45,9 @@ public interface QueryDefinition
 
     /**
      * Return a tableInfo representing this query.
-     * @param alias may be null if caller does not care about table alias.
      * @param includeMetadata
      */
-    TableInfo getTable(String alias, QuerySchema schema, List<QueryException> errors, boolean includeMetadata);
+    TableInfo getTable(QuerySchema schema, List<QueryException> errors, boolean includeMetadata);
     TableInfo getMainTable();
 
     String getSql();

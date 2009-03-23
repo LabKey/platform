@@ -42,7 +42,7 @@ public class DefaultAuditSchema extends UserSchema
         return Collections.singleton("default");
     }
 
-    protected TableInfo createTable(String name, String alias)
+    protected TableInfo createTable(String name)
     {
         return null;
     }

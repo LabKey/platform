@@ -22,6 +22,7 @@ import org.labkey.api.data.*;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 
 /**
  * A table that filters down to a particular set of values. A typical example
@@ -43,7 +44,6 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         _filter = new SimpleFilter();
         _rootTable = table;
         _name = _rootTable.getName();
-        _alias = _name;
         setTitleColumn(table.getTitleColumn());
     }
 
@@ -174,6 +174,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         addCondition(frag);
     }
 
+
     public void addInClause(ColumnInfo col, Collection<?> params)
     {
         assert col.getParentTable() == _rootTable : "Column is from the wrong table";
@@ -182,19 +183,38 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         addCondition(frag);
     }
 
-    public SQLFragment getFromSQL(String alias)
+
+    @Override
+    public String getSelectName()
     {
         if (_filter.getWhereSQL(_rootTable.getSqlDialect()).length() == 0)
-        {
-            return getFromTable().getFromSQL(alias);
-        }
+            return getFromTable().getSelectName();
+        return null;
+    }
+    
 
-        SQLFragment ret = new SQLFragment("(");
-        ret.append(Table.getSelectSQL(getFromTable(), getFromTable().getColumns(), _filter, null));
-        ret.append(")");
-        ret.append(" AS " + alias);
+    @NotNull
+    public SQLFragment getFromSQL()
+    {
+        if (_filter.getWhereSQL(_rootTable.getSqlDialect()).length() == 0)
+            return getFromTable().getFromSQL();
+
+        SQLFragment fromSQL = getFromTable().getFromSQL();
+        Map<String, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
+        SQLFragment filterFrag = _filter.getSQLFragment(_rootTable.getSqlDialect(), columnMap);
+
+        String s = fromSQL.toString();
+        boolean simple = s.startsWith("SELECT *") && -1 == s.indexOf("WHERE");
+        if (simple)
+            return fromSQL.append(" ").append(filterFrag);
+
+        SQLFragment ret = new SQLFragment("SELECT * FROM (");
+        ret.append(fromSQL);
+        ret.append(") x ");
+        ret.append(filterFrag);
         return ret;
     }
+
 
     public ColumnInfo addWrapColumn(ColumnInfo column)
     {

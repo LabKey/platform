@@ -150,11 +150,47 @@ public class SQLFragment
         return this;
     }
 
-    public SQLFragment append(TableInfo table)
+
+    // return boolean so this can be used in an assert
+    public boolean appendComment(String comment)
     {
-        return append(table.getFromSQL());
+        StringBuilder sb = getStringBuilder();
+//        int len = sb.length();
+//        if (len > 0 && sb.charAt(len-1) != '\n')
+//            sb.append('\n');
+        sb.append("\n-- ").append(comment).append('\n');
+        return true;
     }
 
+
+    public SQLFragment append(TableInfo table)
+    {
+        String s = table.getSelectName();
+        if (s != null)
+            return append(s);
+
+        append("(");
+        append(table.getFromSQL());
+        append(") ");
+        append(table.getName());
+        return this;
+    }
+
+
+    public SQLFragment append(TableInfo table, String alias)
+    {
+        String s = table.getSelectName();
+        if (s != null)
+            return append(s).append(" ").append(alias);
+
+        append("(");
+        append(table.getFromSQL());
+        append(") ");
+        append(alias);
+        return this;
+    }
+
+    
     public SQLFragment append(char ch)
     {
         getStringBuilder().append(ch);

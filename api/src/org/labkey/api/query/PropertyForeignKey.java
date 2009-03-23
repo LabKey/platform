@@ -100,7 +100,7 @@ public class PropertyForeignKey extends AbstractForeignKey
 
     static public SQLFragment getValueSql(ColumnInfo parent, SQLFragment value, int propertyId, boolean parentIsLSID)
     {
-        return getValueSql(parent.getValueSql(), value, propertyId, parentIsLSID);
+        return getValueSql(parent.getValueSql(ExprColumn.STR_TABLE_ALIAS), value, propertyId, parentIsLSID);
     }
 
     static public SQLFragment getValueSql(SQLFragment sqlParentColumn, SQLFragment value, int propertyId, boolean parentIsLSID)

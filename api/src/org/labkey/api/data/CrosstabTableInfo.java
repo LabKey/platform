@@ -82,7 +82,7 @@ public class CrosstabTableInfo extends VirtualTable
 
         _settings = settings;
         _colMembers = colMembers;
-        setAlias(ALIAS);
+        setName(ALIAS);
 
         //add a new column info for each row dimension
         for(CrosstabDimension dim : getSettings().getRowAxis().getDimensions())
@@ -463,22 +463,17 @@ public class CrosstabTableInfo extends VirtualTable
      * Note that Query actually expects a full select statement here
      * wrapped in parens and aliased using the alias parameter
      *
-     * @param alias Alias to give this table
      * @return The FROM clause
      */
-    public SQLFragment getFromSQL(String alias)
+    public SQLFragment getFromSQL()
     {
         assert null != getColMembers();
 
-        SQLFragment sql = new SQLFragment("(");
-
+        SQLFragment sql = new SQLFragment();
         addCrosstabQuery(sql);
-
-        sql.append(") AS ");
-        sql.append(alias);
-
         return sql;
-    } //getFromSQL()
+    }
+    
 
     /**
      * Returns a column map suitable for passing to SimpleFilter's getSQLFragment() method.

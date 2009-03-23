@@ -262,7 +262,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
             {
                 throw new ExperimentException("Could not find schema " + schemaName);
             }
-            TableInfo table = schema.getTable(queryName, null);
+            TableInfo table = schema.getTable(queryName);
             if (table == null)
             {
                 throw new ExperimentException("Could not find table " + queryName);

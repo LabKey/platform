@@ -71,7 +71,7 @@ public class DomainUtil
             UserSchema schema = QueryService.get().getUserSchema(user, lookupContainer, property.getLookup().getSchemaName());
             if (schema != null)
             {
-                TableInfo table = schema.getTable(property.getLookup().getQueryName(), null);
+                TableInfo table = schema.getTable(property.getLookup().getQueryName());
                 if (table != null)
                 {
                     List<String> pks = table.getPkColumnNames();

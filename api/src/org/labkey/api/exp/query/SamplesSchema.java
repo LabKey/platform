@@ -82,17 +82,17 @@ public class SamplesSchema extends AbstractExpSchema
         return getSampleSets().keySet();
     }
 
-    public TableInfo createTable(String name, String alias)
+    public TableInfo createTable(String name)
     {
         ExpSampleSet ss = getSampleSets().get(name);
         if (ss == null)
             return null;
-        return getSampleTable(alias, ss);
+        return getSampleTable(ss);
     }
 
-    public ExpMaterialTable getSampleTable(String alias, ExpSampleSet ss)
+    public ExpMaterialTable getSampleTable(ExpSampleSet ss)
     {
-        ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), alias, this);
+        ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), this);
         if (_containerFilter != null)
             ret.setContainerFilter(_containerFilter);
         ret.populate(ss, true);
@@ -106,7 +106,7 @@ public class SamplesSchema extends AbstractExpSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), "lookup", SamplesSchema.this);
+                ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), SamplesSchema.this);
                 ret.populate(ss, false);
                 QueryService.get().overlayMetadata(ret, ret.getPublicName(), SamplesSchema.this);
                 return ret;

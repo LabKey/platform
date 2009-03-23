@@ -53,12 +53,11 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
     public abstract String getInputMaterialPropertyName();
     public abstract String getDataRowLsidPrefix();
 
-    public PlateBasedAssayRunDataTable(final UserSchema schema, String alias, final ExpProtocol protocol)
+    public PlateBasedAssayRunDataTable(final UserSchema schema, final ExpProtocol protocol)
     {
         super(OntologyManager.getTinfoObject(), schema.getContainer());
 
         final AssayProvider provider = AssayService.get().getProvider(protocol);
-        setAlias(alias);
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
 
         try
@@ -97,7 +96,7 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
                         {
                             public TableInfo getLookupTableInfo()
                             {
-                                ExpMaterialTable materials = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), null, schema);
+                                ExpMaterialTable materials = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), schema);
                                 materials.setSampleSet(sampleSet, true);
                                 materials.addColumn(ExpMaterialTable.Column.Property);
                                 materials.addColumn(ExpMaterialTable.Column.LSID).setIsHidden(true);
@@ -154,7 +153,7 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return AssayService.get().createRunTable(null, protocol, provider, schema.getUser(), schema.getContainer());
+                return AssayService.get().createRunTable(protocol, provider, schema.getUser(), schema.getContainer());
             }
         });
         addColumn(runColumn);

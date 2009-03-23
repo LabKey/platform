@@ -40,10 +40,9 @@ import java.util.Set;
  */
 public class RunDataTable extends FilteredTable
 {
-    public RunDataTable(final QuerySchema schema, String alias, final ExpProtocol protocol)
+    public RunDataTable(final QuerySchema schema, final ExpProtocol protocol)
     {
         super(OntologyManager.getTinfoObject(), schema.getContainer());
-        setAlias(alias);
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
         ColumnInfo objectIdColumn = addWrapColumn(_rootTable.getColumn("ObjectId"));
         objectIdColumn.setKeyField(true);
@@ -91,7 +90,7 @@ public class RunDataTable extends FilteredTable
         {
             public TableInfo getLookupTableInfo()
             {
-                ExpRunTable expRunTable = AssayService.get().createRunTable(null, protocol, provider, schema.getUser(), schema.getContainer());
+                ExpRunTable expRunTable = AssayService.get().createRunTable(protocol, provider, schema.getUser(), schema.getContainer());
                 expRunTable.setContainerFilter(getContainerFilter());
                 return expRunTable;
             }

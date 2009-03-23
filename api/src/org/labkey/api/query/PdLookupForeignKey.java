@@ -57,7 +57,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
             return null;
         }
         UserSchema schema = (UserSchema) qSchema;
-        TableInfo table = schema.getTable(_pd.getLookupQuery(), null);
+        TableInfo table = schema.getTable(_pd.getLookupQuery());
         if (table == null)
             return null;
         if (table.getPkColumns().size() != 1)

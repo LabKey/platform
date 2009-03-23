@@ -94,7 +94,7 @@ abstract public class LookupForeignKey extends AbstractForeignKey
         if (table instanceof ContainerFilterable && parent.getParentTable().getContainerFilter() != null)
         {
             ContainerFilterable newTable = (ContainerFilterable)table;
-            
+
             // Only override if the new table doesn't already have some special filter
             if (newTable.hasDefaultContainerFilter())
                 newTable.setContainerFilter(new DelegatingContainerFilter(parent.getParentTable()));

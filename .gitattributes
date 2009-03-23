@@ -157,6 +157,7 @@ api/src/org/labkey/api/data/RuntimeSQLException.java -text
 api/src/org/labkey/api/data/SQLFragment.java -text
 api/src/org/labkey/api/data/ShowRows.java -text
 api/src/org/labkey/api/data/SimpleFilter.java -text
+api/src/org/labkey/api/data/SqlColumn.java -text
 api/src/org/labkey/api/data/SqlDialect.java -text
 api/src/org/labkey/api/data/SqlScriptManager.java -text
 api/src/org/labkey/api/data/SqlScriptParser.java -text
@@ -467,6 +468,7 @@ api/src/org/labkey/api/query/ValidationError.java -text
 api/src/org/labkey/api/query/ValidationException.java -text
 api/src/org/labkey/api/query/exportRScript.jsp -text
 api/src/org/labkey/api/query/snapshot/AbstractSnapshotProvider.java -text
+api/src/org/labkey/api/query/snapshot/AbstractTableMethodInfo.java -text
 api/src/org/labkey/api/query/snapshot/QuerySnapshotDefinition.java -text
 api/src/org/labkey/api/query/snapshot/QuerySnapshotForm.java -text
 api/src/org/labkey/api/query/snapshot/QuerySnapshotService.java -text
