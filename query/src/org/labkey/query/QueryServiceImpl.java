@@ -555,7 +555,11 @@ public class QueryServiceImpl extends QueryService
 			selectFrag.append(strComma);
 			selectFrag.append(column.getValueSql(tableAlias));
             selectFrag.append(" AS " );
-            selectFrag.append(column.getAlias());
+            String columnAlias = column.getAlias();
+            if (dialect.isReserved(columnAlias))
+                selectFrag.append('"').append(columnAlias).append('"');
+            else
+                selectFrag.append(columnAlias);
 //            selectFrag.append(column.getSelectSql());
 			strComma = ",\n";
 		}
