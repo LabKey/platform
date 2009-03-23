@@ -95,7 +95,7 @@ public class AliasManager
     public static String makeLegalName(String str, SqlDialect dialect)
     {
         String ret = legalNameFromName(str);
-        if (null != dialect && dialect.getColumnSelectName(str).startsWith("\""))
+        if (null != dialect && dialect.isReserved(str))
             ret = "_" + ret;
         if (ret.length() == 0)
             return "_";

@@ -507,6 +507,11 @@ public abstract class SqlDialect
     }
 
 
+    public boolean isReserved(String word)
+    {
+        return reservedWordSet.contains(word);
+    }
+
     // Just return name by default... subclasses can override and (for example) put quotes around keywords
     public String getColumnSelectName(String columnName)
     {
