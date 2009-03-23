@@ -653,17 +653,6 @@ loop:
             return null;
 
         SqlBuilder sql = new SqlBuilder(_schema.getDbSchema());
-        String comment = "<QuerySelect@" + System.identityHashCode(this);
-        if (!StringUtils.isEmpty(_savedName))
-            comment += " name='" + StringUtils.trimToEmpty(_savedName) + "'";
-        comment += ">";
-        assert sql.appendComment(comment);
-        if (null != _queryText && AppProps.getInstance().isDevMode())
-        {
-            for (String s : _queryText.split("\n"))
-                if (null != StringUtils.trimToNull(s))
-                    sql.append("--|         ").append(s).append("\n");
-        }
 
         if (null == _distinct)
         {
@@ -800,8 +789,26 @@ loop:
         if (!getParseErrors().isEmpty())
             return null;
 
-        assert sql.appendComment("</QuerySelect@" + System.identityHashCode(this) + ">");
-        return sql;
+        SQLFragment ret = sql;
+
+        if (AppProps.getInstance().isDevMode())
+        {
+            ret = new SQLFragment();
+            String comment = "<QuerySelect@" + System.identityHashCode(this);
+            if (!StringUtils.isEmpty(_savedName))
+                comment += " name='" + StringUtils.trimToEmpty(_savedName) + "'";
+            comment += ">";
+            ret.appendComment(comment);
+            if (null != _queryText)
+            {
+                for (String s : _queryText.split("\n"))
+                    if (null != StringUtils.trimToNull(s))
+                        sql.append("--|         ").append(s).append("\n");
+            }
+            ret.append(sql);
+            sql.appendComment("</QuerySelect@" + System.identityHashCode(this) + ">");
+        }
+        return ret;
     }
 
 

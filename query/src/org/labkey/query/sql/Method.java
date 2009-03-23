@@ -341,10 +341,14 @@ public enum Method
 		// https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=7078
 		public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
 		{
+            boolean supportsRoundDouble = schema.getSqlDialect().supportsRoundDouble();
             boolean unitRound = arguments.length == 1 || (arguments.length==2 && arguments[1].getSQL().equals("0"));
             if (unitRound)
             {
-                return super.getSQL(schema, new SQLFragment[] {arguments[0]});
+                if (supportsRoundDouble)
+                    return super.getSQL(schema, new SQLFragment[] {arguments[0], new SQLFragment("0")});
+                else
+                    return super.getSQL(schema, new SQLFragment[] {arguments[0]});
             }
 
             int i = Integer.MIN_VALUE;
@@ -356,10 +360,8 @@ public enum Method
             {
             }
 
-            if (schema.getSqlDialect().supportsRoundDouble() || i == Integer.MIN_VALUE)
-            {
+            if (supportsRoundDouble || i == Integer.MIN_VALUE)
                 return super.getSQL(schema, arguments);
-            }
 
             // fall back, only supports simple integer
             SQLFragment scaled = new SQLFragment();
