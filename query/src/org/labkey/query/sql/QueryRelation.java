@@ -22,6 +22,7 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.data.xml.ColumnType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -143,9 +144,15 @@ public abstract class QueryRelation
         abstract String getAlias();
         abstract QueryRelation getTable();
         public abstract int getSqlTypeInt();
-        public abstract SQLFragment getValueSql(String tableAlias);
-        // the sql respresenting this column 'inside' its queryrelation (optional)
+
+        public SQLFragment getValueSql(String tableAlias)
+        {
+            return new SQLFragment(StringUtils.defaultString(tableAlias,getTable().getAlias()) + "." + getDialect(this).getColumnSelectName(getAlias()));
+        }
+
         abstract void copyColumnAttributesTo(ColumnInfo to);
+
+        // the sql respresenting this column 'inside' its queryrelation (optional)
         SQLFragment getInternalSql()
         {
             throw new UnsupportedOperationException();    
@@ -156,6 +163,11 @@ public abstract class QueryRelation
         public ForeignKey getFk()
         {
             return null;
+        }
+
+        protected static SqlDialect getDialect(RelationColumn c)
+        {
+            return c.getTable()._schema.getDbSchema().getSqlDialect();
         }
     }
 

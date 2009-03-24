@@ -300,11 +300,6 @@ public class QueryUnion extends QueryRelation
             return _first.getSqlTypeInt();
         }
 
-        public SQLFragment getValueSql(String tableAlias)
-        {
-            return new SQLFragment(defaultString(tableAlias,getAlias()) + "." + this.getAlias());
-        }
-
         ColumnInfo getColumnInfo()
         {
             ColumnInfo ci = new ColumnInfo(_name);

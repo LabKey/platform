@@ -671,6 +671,7 @@ loop:
         if (count == 0)
             selectAll = true;
 
+        SqlDialect dialect = getSqlDialect();
         for (SelectColumn col : _columns.values())
         {
             if (!selectAll && !col._selected)
@@ -688,7 +689,7 @@ loop:
             }
             sql.append(col.getInternalSql());
             sql.append(" AS ");
-            sql.append(alias);
+            sql.append(dialect.getColumnSelectName(alias));
             sql.nextPrefix(",\n");
             count++;
         }
@@ -1067,11 +1068,6 @@ loop:
             _field = field;
             _resolved = field;
             _alias = new QIdentifier(field.getName());
-        }
-
-        public SQLFragment getValueSql(String tableAlias)
-        {
-            return new SQLFragment(defaultString(tableAlias,getAlias()) + "." + getAlias());
         }
 
         SQLFragment getInternalSql()

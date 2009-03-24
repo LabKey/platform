@@ -222,11 +222,6 @@ public class QueryTable extends QueryRelation
             _col.declareJoins(parentAlias, map);
         }
 
-        public SQLFragment getValueSql(String tableAlias)
-        {
-            return new SQLFragment(defaultString(tableAlias,getAlias()) + "." + _alias);
-        }
-
         SQLFragment getInternalSql()
         {
             return _col.getValueSql(_innerAlias);

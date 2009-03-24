@@ -310,9 +310,7 @@ public class QueryLookupWrapper extends QueryRelation
             if (!_hasLookups)
                 return _wrapped.getValueSql(tableAlias);
             else
-            {
-                return new SQLFragment(defaultString(tableAlias,_table.getAlias()) + "." + _alias);
-            }
+                return super.getValueSql(tableAlias);
         }
 
         SQLFragment getInternalSql()
@@ -322,11 +320,6 @@ public class QueryLookupWrapper extends QueryRelation
     }
 
 
-    static SqlDialect getDialect(RelationColumn c)
-    {
-        return c.getTable()._schema.getDbSchema().getSqlDialect();
-    }
-    
     public QueryLookupColumn createQueryLookupColumn(FieldKey key, RelationColumn parent, @NotNull ForeignKey fk)
     {
         SQLTableInfo qti =  new SQLTableInfo(parent.getTable()._schema.getDbSchema());
@@ -378,11 +371,6 @@ public class QueryLookupWrapper extends QueryRelation
             return _fk.getLookupTableInfo();
         }
         
-        public SQLFragment getValueSql(String tableAlias)
-        {
-            return new SQLFragment(tableAlias + "." + _alias);
-        }
-
         SQLFragment getInternalSql()
         {
             return _lkCol.getValueSql(_source.getAlias());
