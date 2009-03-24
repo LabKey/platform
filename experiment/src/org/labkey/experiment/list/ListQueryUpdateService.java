@@ -90,9 +90,13 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService<ListItem,
     {
         ListDefinition list = getList();
         assert null != list;
-        if(!map.containsKey(list.getKeyName()) || map.get(list.getKeyName()) == null)
-            throw new InvalidKeyException("No value supplied for the key column '" + list.getKeyName() + "'!", map);
-        return map.get(getList().getKeyName());
+        Object o = map.get(list.getKeyName());
+        if (null != o)
+            return o;
+        o = map.get(list.getKeyName().toLowerCase());
+        if (null != o)
+            return o;
+        throw new InvalidKeyException("No value supplied for the key column '" + list.getKeyName() + "'!", map);
     }
 
     public Map<String, Object> mapFromBean(ListItem bean) throws QueryUpdateServiceException
