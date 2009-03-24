@@ -803,10 +803,10 @@ loop:
             {
                 for (String s : _queryText.split("\n"))
                     if (null != StringUtils.trimToNull(s))
-                        sql.append("--|         ").append(s).append("\n");
+                        ret.append("--|         ").append(s).append("\n");
             }
             ret.append(sql);
-            sql.appendComment("</QuerySelect@" + System.identityHashCode(this) + ">");
+            ret.appendComment("</QuerySelect@" + System.identityHashCode(this) + ">");
         }
         return ret;
     }
