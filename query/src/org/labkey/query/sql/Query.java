@@ -582,6 +582,7 @@ public class Query
         // GROUPING
         new SqlTest("SELECT R.seven, MAX(R.twelve) AS _max FROM R GROUP BY R.seven", 2, 7),
         new SqlTest("SELECT COUNT(R.rowid) as _count FROM R", 1, 1),
+        new SqlTest("SELECT R.seven, MAX(R.twelve) AS _max FROM R GROUP BY R.seven HAVING SUM(R.twelve) > 5", 2, 7),
 
         // METHODS
         new SqlTest("SELECT ROUND(R.d) AS _d, ROUND(R.d,1) AS _rnd, ROUND(3.1415,2) AS _pi, CONVERT(R.d,SQL_VARCHAR) AS _str FROM R", 4, Rsize),
@@ -600,8 +601,9 @@ public class Query
 		new SqlTest("SELECT S.d, S.seven FROM Folder.S"),
 		new SqlTest("SELECT S.d, S.seven FROM Folder.qtest.S"),
 		new SqlTest("SELECT S.d, S.seven FROM Folder.qtest.list.S"),
-		new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R LIMIT 5", 3, 5),
-		new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date LIMIT 5", 3, 5)
+		new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R LIMIT 5"),
+		new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date LIMIT 5"),
+        new SqlTest("SELECT R.seven, MAX(R.twelve) AS _max FROM R HAVING SUM(R.twelve) > 5")
 	};
 
 

@@ -35,7 +35,8 @@ public class QuerySelect extends QueryRelation
 
     private QGroupBy _groupBy;
     private QOrder _orderBy;
-    private QWhere _filter;
+    private QWhere _where;
+    private QWhere _having;
     private QQuery _root;
     private QLimit _limit;
     private QDistinct _distinct;
@@ -99,7 +100,6 @@ public class QuerySelect extends QueryRelation
     {
         _columns = new LinkedHashMap<FieldKey,SelectColumn>();
         _from = new LinkedHashMap<FieldKey, QTable>();
-        _filter = new QWhere();
         if (_root == null)
             return;
         _limit = _root.getLimit();
@@ -136,10 +136,8 @@ public class QuerySelect extends QueryRelation
         {
             _from = new FromParser().parseTables(from);
         }
-        if (_root.getWhere() != null)
-        {
-            _filter = _root.getWhere();
-        }
+        _where = _root.getWhere();
+        _having = _root.getHaving();
         _groupBy = _root.getGroupBy();
         _orderBy = _root.getOrderBy();
         for (QTable qtable : _from.values())
@@ -267,10 +265,18 @@ public class QuerySelect extends QueryRelation
             builder.nextPrefix("\n");
         }
         builder.popPrefix();
-        _filter.appendSource(builder);
-        if (_groupBy != null)
+        if (null != _where)
+        {
+            _where.appendSource(builder);
+        }
+        if (null != _groupBy)
         {
             _groupBy.appendSource(builder);
+        }
+        if (null != _having)
+        {
+            assert null != _groupBy;
+            _having.appendSource(builder);
         }
         if (_orderBy != null)
         {
@@ -528,10 +534,11 @@ loop:
             if (on != null)
                 declareFields(on);
         }
-        for (QNode expr : _filter.children())
-        {
-            declareFields((QExpr)expr);
-        }
+        if (null != _where)
+            for (QNode expr : _where.children())
+            {
+                declareFields((QExpr)expr);
+            }
         if (_groupBy != null)
         {
             for (QNode expr : _groupBy.children())
@@ -539,6 +546,11 @@ loop:
                 declareFields((QExpr)expr);
             }
         }
+        if (null != _having)
+            for (QNode expr : _having.children())
+            {
+                declareFields((QExpr)expr);
+            }
     }
 
 
@@ -742,10 +754,10 @@ loop:
                 }
             }
         }
-        if (_filter != null)
+        if (_where != null)
         {
             sql.pushPrefix("\nWHERE ");
-            for (QNode expr : _filter.children())
+            for (QNode expr : _where.children())
             {
                 sql.append("(");
                 QExpr term = resolveFields((QExpr)expr, null);
@@ -764,6 +776,19 @@ loop:
                 resolveFields((QExpr)expr, _groupBy).appendSql(sql);
                 sql.append(")");
                 sql.nextPrefix(",");
+            }
+            sql.popPrefix();
+        }
+        if (_having != null)
+        {
+            sql.pushPrefix("\nHAVING ");
+            for (QNode expr : _having.children())
+            {
+                sql.append("(");
+                QExpr term = resolveFields((QExpr)expr, null);
+                term.appendSql(sql);
+                sql.append(")");
+                sql.nextPrefix(" AND ");
             }
             sql.popPrefix();
         }
@@ -856,11 +881,11 @@ loop:
         }
         if (dgWhere != null)
         {
-            if (_filter == null)
+            if (_where == null)
             {
-                _filter = new QWhere();
+                _where = new QWhere();
             }
-            _filter.fillWhere(dgWhere);
+            _where.fillWhere(dgWhere);
         }
         if (_orderBy != null)
         {
@@ -921,11 +946,11 @@ loop:
         }
         if (query.getWhere() != null)
         {
-            if (_filter == null)
+            if (_where == null)
             {
-                _filter = new QWhere();
+                _where = new QWhere();
             }
-            _filter.updateWhere(query.getWhere(), errors);
+            _where.updateWhere(query.getWhere(), errors);
         }
         if (query.getOrderBy() != null)
         {

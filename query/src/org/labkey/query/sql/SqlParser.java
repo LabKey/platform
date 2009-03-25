@@ -416,6 +416,9 @@ public class SqlParser
             case WHERE:
                 q = new QWhere();
 				break;
+            case HAVING:
+                q = new QWhere(true);
+                break;
             case METHOD_CALL:
                 q = new QMethodCall();
 				break;
@@ -493,9 +496,6 @@ public class SqlParser
 				 return null;
 			case ESCAPE:
 				_parseErrors.add(new RecognitionException("LIKE ESCAPE is not supported"));
-				 return null;
-			case HAVING:
-				_parseErrors.add(new RecognitionException("HAVING is not supported"));
 				 return null;
 			case TRAILING:
 			case LEADING:
@@ -575,13 +575,14 @@ public class SqlParser
 		"(SELECT a FROM R) UNION ALL (SELECT b FROM S UNION (SELECT c FROM T)) ORDER BY a",
         "SELECT a, b FROM (SELECT a, b FROM R UNION SELECT a, b FROM S) U",
 
+        // HAVING
+        "SELECT \"a\",\"b\",AVG(x),COUNT(x),MIN(x),MAX(x),SUM(x),STDDEV(x) FROM R WHERE R.x='key' GROUP BY a,b HAVING SUM(x)>100 ORDER BY a ASC, b DESC, SUM(x)",
+
         // comments
         "SELECT DISTINCT R.a, b AS B --nadlkf (*&F asdfl alsdkfj\nFROM rel R /* aldkjf (alsdf !! */ INNER JOIN S ON R.x=S.x WHERE R.y=0 AND R.a IS NULL OR R.b IS NOT NULL",
 
         "BROKEN",
 
-		// HAVING
-		"SELECT \"a\",\"b\",AVG(x),COUNT(x),MIN(x),MAX(x),SUM(x),STDDEV(x) FROM R WHERE R.x='key' GROUP BY a,b HAVING SUM(x)>100 ORDER BY a ASC, b DESC, SUM(x)",
         // nested JOINS
         "SELECT R.a, \"S\".b FROM R LEFT OUTER JOIN (S RIGHT OUTER JOIN T ON S.y = T.y) ON R.x = S.x",
         // .*
@@ -595,6 +596,7 @@ public class SqlParser
         "lutefisk",
         "SELECT R.a FROM R WHERE > 5", "SELECT R.a + AS A FROM R", "SELECT (R.a +) R.b AS A FROM R",
 		"SELECT R.value, T.a, T.b FROM R INNER JOIN (SELECT S.a, S.b FROM S)",
+        "SELECT \"a\",\"b\",AVG(x),COUNT(x),MIN(x),MAX(x),SUM(x),STDDEV(x) FROM R WHERE R.x='key' HAVING SUM(x)>100 ORDER BY a ASC, b DESC, SUM(x)",
 
         "BROKEN",
             

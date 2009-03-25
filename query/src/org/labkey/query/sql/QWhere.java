@@ -33,14 +33,22 @@ import java.util.StringTokenizer;
 
 public class QWhere extends QNode
 {
+    boolean _having = false;
+
     public QWhere()
     {
 		super(QExpr.class);
     }
 
+    public QWhere(boolean having)
+    {
+		super(QExpr.class);
+        _having = having;
+    }
+
     public void appendSource(SourceBuilder builder)
     {
-        builder.pushPrefix("\nWHERE ");
+        builder.pushPrefix(_having ? "\nHAVING" :"\nWHERE ");
         for (QNode n : children())
         {
             assert null != n;

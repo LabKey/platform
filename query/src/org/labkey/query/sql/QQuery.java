@@ -56,7 +56,23 @@ public class QQuery extends QExpr
 
     public QWhere getWhere()
     {
-        return getChildOfType(QWhere.class);
+        for (QNode child : children())
+        {
+            if (QWhere.class.isAssignableFrom(child.getClass()) && !((QWhere)child)._having)
+                return (QWhere) child;
+        }
+        return null;
+
+    }
+
+    public QWhere getHaving()
+    {
+        for (QNode child : children())
+        {
+            if (QWhere.class.isAssignableFrom(child.getClass()) && ((QWhere)child)._having)
+                return (QWhere) child;
+        }
+        return null;
     }
 
     public QGroupBy getGroupBy()

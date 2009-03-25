@@ -250,7 +250,7 @@ unionTerm
 
 
 select
-	: selectFrom (whereClause)? (groupByClause)?
+	: selectFrom (whereClause)? (groupByClause (havingClause)?)? 
 		{
 			#select = #([QUERY,"query"], #select);
 		}
@@ -355,9 +355,7 @@ alias
 //##     GROUP_BY path ( COMMA path )*;
 
 groupByClause
-	: GROUP^
-		"by"! expression ( COMMA! expression )*
-		(havingClause)?
+	: GROUP^ "by"! expression ( COMMA! expression )*
 	;
 
 //## orderByClause:
