@@ -112,7 +112,6 @@ public class IssuesTable extends FilteredTable
             if (realColumn != null)
             {
                 ColumnInfo column = new AliasedColumn(this, cce.getValue(), realColumn);
-                column.setName(cce.getKey());
                 if (getColumn(column.getName()) == null)
                     addColumn(column);
             }
