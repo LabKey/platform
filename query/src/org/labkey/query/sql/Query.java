@@ -491,12 +491,15 @@ public class Query
 
     
 
+    static int Rcolumns = TestDataLoader.COLUMNS.length + 2; // rowid, entityid
 	static int Rsize = 84;
 	static int Ssize = 84;
 
     static SqlTest[] tests = new SqlTest[]
     {
         new SqlTest("SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid FROM R", 8, Rsize),
+        new SqlTest("SELECT R.* FROM R", Rcolumns, Rsize),
+        new SqlTest("SELECT COUNT(*) AS _count FROM R", 1, 1),
         new SqlTest("SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid, R.created, R.createdby, R.createdby.displayname FROM R", 11, Rsize),
         new SqlTest("SELECT R.duration AS elapsed FROM R WHERE R.rowid=1", 1, 1),
 		new SqlTest("SELECT R.rowid, R.seven, R.day FROM R WHERE R.day LIKE '%ues%'", 3, 12),
@@ -603,7 +606,9 @@ public class Query
 		new SqlTest("SELECT S.d, S.seven FROM Folder.qtest.list.S"),
 		new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R LIMIT 5"),
 		new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date LIMIT 5"),
-        new SqlTest("SELECT R.seven, MAX(R.twelve) AS _max FROM R HAVING SUM(R.twelve) > 5")
+        new SqlTest("SELECT R.seven, MAX(R.twelve) AS _max FROM R HAVING SUM(R.twelve) > 5"),
+        new SqlTest("SELECT * FROM R"),
+        new SqlTest("SELECT SUM(*) FROM R")
 	};
 
 

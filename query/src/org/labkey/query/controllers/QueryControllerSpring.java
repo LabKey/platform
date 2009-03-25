@@ -442,13 +442,10 @@ public class QueryControllerSpring extends SpringActionController
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
+            assertQueryExists(form);
+
             _form = form;
 
-            if (form.getSchema() == null)
-            {
-                HttpView.throwNotFound("Schema not found: " + form.getSchemaName().getSource());
-                return null;
-            }
             QueryDefinition query = form.getQueryDef();
             if (null == query)
             {

@@ -609,7 +609,8 @@ identPrimary
 
 
 aggregate
-	: ( SUM^ | AVG^ | MAX^ | MIN^ | STDDEV^ | COUNT^) OPEN! additiveExpression CLOSE! { #aggregate.setType(AGGREGATE); }
+	: ( SUM^ | AVG^ | MAX^ | MIN^ | STDDEV^ ) OPEN! additiveExpression CLOSE! { #aggregate.setType(AGGREGATE); }
+	| COUNT^ OPEN! (additiveExpression | STAR{ #STAR.setType(ROW_STAR); }) CLOSE! { #aggregate.setType(AGGREGATE); }
 	;
 
 

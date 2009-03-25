@@ -21,6 +21,8 @@ import org.labkey.api.query.QueryParseException;
 
 public class QRowStar extends QExpr
 {
+    static FieldKey _starFieldKey = new FieldKey(null,"*");
+
 	public QRowStar()
 	{
 		super(false);
@@ -33,11 +35,11 @@ public class QRowStar extends QExpr
 
     public FieldKey getFieldKey()
     {
-        return null;
+        return _starFieldKey;
     }
 
     public void appendSql(SqlBuilder builder)
     {
-        throw new UnsupportedOperationException();
+        builder.append("*");
     }
 }
