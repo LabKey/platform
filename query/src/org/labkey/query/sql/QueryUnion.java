@@ -20,6 +20,7 @@ import org.labkey.api.data.ColumnInfo;
 //import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
+import org.labkey.api.util.MemTracker;
 import static org.labkey.query.sql.SqlTokenTypes.*;
 import org.labkey.data.xml.ColumnType;
 import static org.apache.commons.lang.StringUtils.defaultString;
@@ -42,17 +43,20 @@ public class QueryUnion extends QueryRelation
     {
         super(query);
 		_qunion = qunion;
-
         collectUnionTerms(qunion);
 		_qorderBy = _qunion.getChildOfType(QOrder.class);
+        assert MemTracker.put(this);
     }
 
 
-    // UNDONE: inFromClause
-    QueryUnion(QueryRelation parent, QUnion qunion)
+    QueryUnion(QueryRelation parent, QUnion qunion, boolean inFromClause, String alias)
     {
         this(parent._query, qunion);
+        assert inFromClause == (alias != null);
+        this._query = parent._query;
         _parent = parent;
+        _inFromClause = inFromClause;
+        setAlias(alias);
     }
 
 

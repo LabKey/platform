@@ -61,6 +61,7 @@ public class QuerySelect extends QueryRelation
         this._query = query;
 		this._root = root;
 		initializeSelect();
+        assert MemTracker.put(this);
 	}
 	
 
@@ -81,7 +82,6 @@ public class QuerySelect extends QueryRelation
         {
             throw Query.wrapRuntimeException(ex, _queryText);
         }
-        assert MemTracker.put(this);
     }
 
 
@@ -152,6 +152,10 @@ public class QuerySelect extends QueryRelation
             if (node instanceof QQuery)
             {
                 relation = new QuerySelect(this, (QQuery) node, true, alias);
+            }
+            else if (node instanceof  QUnion)
+            {
+                relation = new QueryUnion(this, (QUnion) node, true, alias);
             }
             else
             {
@@ -488,7 +492,7 @@ loop:
             QueryUnion sub = ((QUnion)expr).getQueryUnion();
             if (sub == null)
             {
-                sub = new QueryUnion(this, (QUnion)expr);
+                sub = new QueryUnion(this, (QUnion)expr, false, null);
                 ((QUnion)expr)._union= sub;
             }
             sub.declareFields();

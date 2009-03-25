@@ -573,6 +573,7 @@ public class SqlParser
 		"SELECT a FROM R UNION SELECT b FROM S",
         "SELECT a FROM R UNION ALL SELECT b FROM S",
 		"(SELECT a FROM R) UNION ALL (SELECT b FROM S UNION (SELECT c FROM T)) ORDER BY a",
+        "SELECT a, b FROM (SELECT a, b FROM R UNION SELECT a, b FROM S) U",
 
         // comments
         "SELECT DISTINCT R.a, b AS B --nadlkf (*&F asdfl alsdkfj\nFROM rel R /* aldkjf (alsdf !! */ INNER JOIN S ON R.x=S.x WHERE R.y=0 AND R.a IS NULL OR R.b IS NOT NULL",
@@ -594,9 +595,6 @@ public class SqlParser
         "lutefisk",
         "SELECT R.a FROM R WHERE > 5", "SELECT R.a + AS A FROM R", "SELECT (R.a +) R.b AS A FROM R",
 		"SELECT R.value, T.a, T.b FROM R INNER JOIN (SELECT S.a, S.b FROM S)",
-
-		// nested UNION
-		"SELECT a FROM (SELECT a FROM R UNION SELECT a FROM S) u",			
 
         "BROKEN",
             
@@ -653,7 +651,7 @@ public class SqlParser
                 }
                 catch (Throwable t)
                 {
-                    fail(sql);
+                    fail(t.getMessage() + "\n" + sql);
                 }
             }
             for (String sql : failSql)

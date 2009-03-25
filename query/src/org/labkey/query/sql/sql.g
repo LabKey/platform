@@ -72,7 +72,6 @@ tokens
 	WHERE="where";
 
 	// -- SQL tokens --
-	// These aren't part of HQL, but the SQL fragment parser uses the HQL lexer, so they need to be declared here.
 	CASE="case";
 	END="end";
 	ELSE="else";
@@ -532,7 +531,7 @@ multiplyExpression
 unaryExpression
 	: MINUS^ {#MINUS.setType(UNARY_MINUS);} unaryExpression
 	| PLUS^ {#PLUS.setType(UNARY_PLUS);} unaryExpression
-	| caseExpression
+	| caseExpression                                                           
 	| quantifiedExpression
 	| atom
 	;
@@ -554,10 +553,12 @@ elseClause
 	: (ELSE^ unaryExpression)
 	;
 	
+
 quantifiedExpression
 	: ( SOME^ | EXISTS^ | ALL^ | ANY^ ) 
 	( identifier | collectionExpr | (OPEN! ( subQuery ) CLOSE!) )
 	;
+
 
 // level 0 - expression atom
 // ident qualifier ('.' ident ), array index ( [ expr ] ),
@@ -608,22 +609,17 @@ identPrimary
 	| aggregate
 	;
 
-//## aggregate:
-//##     ( aggregateFunction OPEN path CLOSE ) | ( COUNT OPEN STAR CLOSE ) | ( COUNT OPEN (DISTINCT | ALL) path CLOSE );
-
-//## aggregateFunction:
-//##     COUNT | 'sum' | 'avg' | 'max' | 'min' | 'stddev';
 
 aggregate
 	: ( SUM^ | AVG^ | MAX^ | MIN^ | STDDEV^ | COUNT^) OPEN! additiveExpression CLOSE! { #aggregate.setType(AGGREGATE); }
 	;
 
-//## collection: ( OPEN query CLOSE ) | ( 'elements'|'indices' OPEN path CLOSE );
 
 collectionExpr
 	: (ELEMENTS^ | INDICES^) OPEN! path CLOSE!
 	;
                                            
+
 // NOTE: compoundExpr can be a 'path' where the last token in the path is '.elements' or '.indicies'
 compoundExpr
 	: collectionExpr
@@ -631,11 +627,11 @@ compoundExpr
 	| (OPEN! ( (expression (COMMA! expression)*) | subQuery ) CLOSE!)
 	;
 
-// UNDONE: nested union is not yet supported
+
 subQuery
-//	: union
-	: select
+	: union
 	;
+
 
 exprList
 {
@@ -662,11 +658,6 @@ constant
 	| EMPTY
 	;
 
-//## quantifiedExpression: 'exists' | ( expression 'in' ) | ( expression OP 'any' | 'some' ) collection;
-
-//## compoundPath: path ( OPEN_BRACKET expression CLOSE_BRACKET ( '.' path )? )*;
-
-//## path: identifier ( '.' identifier )*;
 
 path
 	: identifier ( DOT^ { weakKeywords(); } identifier )* |
@@ -677,6 +668,8 @@ path
 identifier
 	: IDENT | QUOTED_IDENTIFIER
 	;
+
+
 
 // **** LEXER ******************************************************************
 
