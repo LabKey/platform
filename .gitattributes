@@ -2083,7 +2083,7 @@ study/src/org/labkey/study/reports/StudyRReport.java -text
 study/src/org/labkey/study/reports/StudyReportUIProvider.java -text
 study/src/org/labkey/study/reports/StudyRunChartReportView.java -text
 study/src/org/labkey/study/reports/StudyRunRReportView.java -text
-study/src/org/labkey/study/reports/configureExportExcel.gm -text
+study/src/org/labkey/study/reports/configureExportExcel.jsp -text
 study/src/org/labkey/study/requirements/DefaultActor.java -text
 study/src/org/labkey/study/requirements/DefaultRequirement.java -text
 study/src/org/labkey/study/requirements/DefaultRequirementProvider.java -text
@@ -2149,7 +2149,7 @@ study/src/org/labkey/study/view/StudySummaryWebPartFactory.java -text
 study/src/org/labkey/study/view/assayList2.jsp -text
 study/src/org/labkey/study/view/bulkDatasetDelete.jsp -text
 study/src/org/labkey/study/view/bulkImportDataTypes.jsp -text
-study/src/org/labkey/study/view/columnPicker.gm -text
+study/src/org/labkey/study/view/columnPicker.jsp -text
 study/src/org/labkey/study/view/confirmDeleteStudy.jsp -text
 study/src/org/labkey/study/view/confirmDeleteVisit.jsp -text
 study/src/org/labkey/study/view/createCrosstabReport.jsp -text
@@ -2188,7 +2188,7 @@ study/src/org/labkey/study/view/manageTypes.jsp -text
 study/src/org/labkey/study/view/manageUndefinedTypes.jsp -text
 study/src/org/labkey/study/view/manageViews.jsp -text
 study/src/org/labkey/study/view/manageVisits.jsp -text
-study/src/org/labkey/study/view/moduleNav.gm -text
+study/src/org/labkey/study/view/moduleNav.jsp -text
 study/src/org/labkey/study/view/overview.jsp -text
 study/src/org/labkey/study/view/participantAll.jsp -text
 study/src/org/labkey/study/view/participantCharacteristics.jsp -text

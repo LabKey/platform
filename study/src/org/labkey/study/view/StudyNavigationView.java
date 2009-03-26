@@ -17,7 +17,7 @@ package org.labkey.study.view;
 
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.GroovyView;
+import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.Cohort;
@@ -28,12 +28,11 @@ import org.labkey.study.model.StudyManager;
 import java.io.PrintWriter;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Jul 28, 2008
  * Time: 1:20:35 PM
  */
-public class StudyNavigationView extends GroovyView<NavTree>
+public class StudyNavigationView extends JspView<NavTree>
 {
     Study _study;
     StudyManager _manager;
@@ -41,7 +40,7 @@ public class StudyNavigationView extends GroovyView<NavTree>
     
     public StudyNavigationView(Study study)
     {
-        super("/org/labkey/study/view/moduleNav.gm");
+        super("/org/labkey/study/view/moduleNav.jsp");
         _study = study;
         _manager = StudyManager.getInstance();
         _base = new ActionURL(StudyController.BeginAction.class, _study.getContainer());

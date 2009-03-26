@@ -406,7 +406,7 @@ public class ReportsController extends BaseStudyController
                     "Choose the form and column to use for the enrollment view.",
                     PropertyType.DATE_TIME);
             bean.pickColumn = false;
-            return new GroovyView<DataPickerBean>("/org/labkey/study/view/columnPicker.gm", bean);
+            return new JspView<DataPickerBean>("/org/labkey/study/view/columnPicker.jsp", bean);
         }
 
         public void validateCommand(ColumnPickerForm target, Errors errors)
@@ -939,12 +939,8 @@ public class ReportsController extends BaseStudyController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("exportExcel", HelpTopic.Area.STUDY));
-            Study study = getStudy();
 
-            HttpView v = new GroovyView("/org/labkey/study/reports/configureExportExcel.gm");
-            v.addObject("study", study);
-
-            return v;
+            return new JspView<Study>("/org/labkey/study/reports/configureExportExcel.jsp", getStudy());
         }
 
         public NavTree appendNavTrail(NavTree root)

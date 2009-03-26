@@ -23,16 +23,15 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.study.model.QCState;
 import org.labkey.common.tools.ColumnDescriptor;
-import org.labkey.common.util.Pair;
 import org.labkey.common.util.CPUTimer;
+import org.labkey.common.util.Pair;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.QCState;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 
-import javax.servlet.ServletException;
 import java.io.*;
 import java.sql.SQLException;
 import java.util.*;
@@ -47,7 +46,7 @@ import java.util.regex.Pattern;
  */
 public class DatasetBatch extends StudyBatch implements Serializable
 {
-    static Logger _log = getJobLogger(DatasetBatch.class);
+    private static final Logger _log = getJobLogger(DatasetBatch.class);
 
     transient ArrayList<DatasetImportJob> jobs = null;
     boolean hasErrors = false;
@@ -259,8 +258,8 @@ public class DatasetBatch extends StudyBatch implements Serializable
                 job.tsv = tsv;
         }
 
-        DatasetImportJob[] a = jobMap.values().toArray(new DatasetImportJob[0]);
-        Arrays.sort(a,new Comparator<DatasetImportJob>()
+        jobs = new ArrayList<DatasetImportJob>(jobMap.values());
+        Collections.sort(jobs, new Comparator<DatasetImportJob>()
         {
             public int compare(DatasetImportJob j1, DatasetImportJob j2)
             {
@@ -273,9 +272,6 @@ public class DatasetBatch extends StudyBatch implements Serializable
                 return j1.datasetDefinition.getDataSetId() - j2.datasetDefinition.getDataSetId();
             }
         });
-
-        jobs = new ArrayList<DatasetImportJob>();
-        jobs.addAll(Arrays.asList(a));
     }
 
 

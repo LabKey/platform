@@ -23,12 +23,15 @@
 <%@ page import="org.labkey.study.model.Site"%>
 <%@ page import="org.labkey.study.model.Study" %>
 <%@ page import="org.labkey.study.reports.ExportExcelReport" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-
-Study s = study;
-User user = (User)request.getUserPrincipal();
-Site[] sites = s.getSites();
-boolean isAdmin = user.isAdministrator() || s.getContainer().hasPermission(user, ACL.PERM_ADMIN);
+    JspView<Study> view = (JspView<Study>)HttpView.currentView();
+    Study s = view.getModelBean();
+    User user = (User)request.getUserPrincipal();
+    Site[] sites = s.getSites();
+    boolean isAdmin = user.isAdministrator() || s.getContainer().hasPermission(user, ACL.PERM_ADMIN);
  %>
 
 <div width="600px">
@@ -63,14 +66,14 @@ for (Site site : sites)
     String label = site.getLabel();
     if (label == null || label.length() == 0)
         label = "" + site.getRowId();
-    %><option value="<%=site.getRowId()%>"><%=filter(label)%></option><%
+    %><option value="<%=site.getRowId()%>"><%=h(label)%></option><%
 }
 %></select></td></tr>
-<%if (isAdmin)
+<%  if (isAdmin)
     {
     %>
-        <tr><th class="labkey-form-label">Report name</th><td><input style="width:250;" type=text id=label name=label value=""></td></tr>
-<%}%>
+        <tr><th class="labkey-form-label">Report name</th><td><input style="width:250;" type=text id=label name=label value=""></td></tr><%
+    } %>
 </table>
 <%=PageFlowUtil.generateSubmitButton("Export")%>        
         <% if (isAdmin)
