@@ -48,11 +48,14 @@ public class AssayListQueryView extends QueryView
     {
         super.populateButtonBar(view, bar);
 
-        ActionURL insertURL = new ActionURL(AssayController.ChooseAssayTypeAction.class, view.getViewContext().getContainer());
-        ActionButton insert = new ActionButton("New Assay Design", insertURL);
-        insert.setActionType(ActionButton.Action.LINK);
-        insert.setDisplayPermission(ACL.PERM_INSERT);
-        bar.add(insert);
+        if (getUser().isAdministrator() || getContainer().hasPermission(getUser(), ACL.PERM_ADMIN))
+        {
+            ActionURL insertURL = new ActionURL(AssayController.ChooseAssayTypeAction.class, view.getViewContext().getContainer());
+            ActionButton insert = new ActionButton("New Assay Design", insertURL);
+            insert.setActionType(ActionButton.Action.LINK);
+            insert.setDisplayPermission(ACL.PERM_INSERT);
+            bar.add(insert);
+        }
 
         Container project = getContainer().getProject();
         if (!project.equals(getContainer()) && project.hasPermission(getUser(), ACL.PERM_INSERT))

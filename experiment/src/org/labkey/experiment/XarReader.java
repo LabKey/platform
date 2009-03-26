@@ -1346,7 +1346,13 @@ public class XarReader extends AbstractXarImporter
         if (existingProtocol != null)
         {
             List<IdentifiableEntity.Difference> diffs = existingProtocol.getDataObject().diff(xarProtocol);
-            if (!diffs.isEmpty())
+            
+            if (diffs.size() == 1 && !xarProtocol.getContainer().equals(existingProtocol.getContainer()) &&
+                existingProtocol.getContainer().equals(ContainerManager.getSharedContainer()))
+            {
+                getLog().info("Reusing the same protocol found in the /Shared container");
+            }
+            else if (!diffs.isEmpty())
             {
                 getLog().error("The protocol specified in the file with LSID '" + protocolLSID + "' has " + diffs.size() + " differences from the protocol that has already been loaded");
                 for (IdentifiableEntity.Difference diff : diffs)

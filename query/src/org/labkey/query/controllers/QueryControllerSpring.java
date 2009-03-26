@@ -482,6 +482,10 @@ public class QueryControllerSpring extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             _print = true;
+            String title = form.getQueryName();
+            if (StringUtils.isEmpty(title))
+                title = form.getSchemaName().toString();
+            getPageConfig().setTitle(title, true);
             return super.getView(form, errors);
         }
     }
@@ -1009,8 +1013,7 @@ public class QueryControllerSpring extends SpringActionController
             if (canEdit)
             {
                 CustomView view = form.getQueryDef().getCustomView(owner, getViewContext().getRequest(), name);
-                // check whether a new view is being created or the default view is being customized
-                if (view == null || (name == null && owner != null && view.getOwner() == null))
+                if (view == null || (owner != null && view.getOwner() == null))
                 {
                     view = form.getQueryDef().createCustomView(owner, name);
                 }
@@ -1274,6 +1277,11 @@ public class QueryControllerSpring extends SpringActionController
     {
         public ApiResponse execute(APIQueryForm form, BindException errors) throws Exception
         {
+            //TODO: remove this hack once we can send maxRows=0 down to the table layer
+            //currently Query and the table layer interprets maxRows=0 as meaning "all rows"
+            String maxRowsParam = StringUtils.trimToNull(getViewContext().getRequest().getParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.maxRows.name()));
+            boolean metaDataOnly = "0".equals(maxRowsParam);
+
             assertQueryExists(form);
 
             //show all rows by default
@@ -1307,10 +1315,12 @@ public class QueryControllerSpring extends SpringActionController
             {
                 String[] cols = columns.split(",");
                 for(String col : cols)
-                    fieldKeys.add(FieldKey.fromString(col));
+                    fieldKeys.add(FieldKey.fromString(col.trim()));
             }
 
             QueryView view = QueryView.create(form);
+            if(metaDataOnly)
+                view.getSettings().setMaxRows(1); //query assumes that 0 means all rows!
 
             //if viewName was specified, ensure that it was actually found and used
             //QueryView.create() will happily ignore an invalid view name and just return the default view
@@ -1323,10 +1333,10 @@ public class QueryControllerSpring extends SpringActionController
             //if requested version is >= 9.1, use the extended api query response
             if(getRequestedApiVersion() >= 9.1)
                 return new ExtendedApiQueryResponse(view, getViewContext(), isSchemaEditable(form.getSchema()), true,
-                        form.getSchemaName().toString(), form.getQueryName(), form.getQuerySettings().getOffset(), fieldKeys);
+                        form.getSchemaName().toString(), form.getQueryName(), form.getQuerySettings().getOffset(), fieldKeys, metaDataOnly);
             else
                 return new ApiQueryResponse(view, getViewContext(), isSchemaEditable(form.getSchema()), true,
-                        form.getSchemaName().toString(), form.getQueryName(), form.getQuerySettings().getOffset(), fieldKeys);
+                        form.getSchemaName().toString(), form.getQueryName(), form.getQuerySettings().getOffset(), fieldKeys, metaDataOnly);
         }
     }
 
@@ -1453,10 +1463,12 @@ public class QueryControllerSpring extends SpringActionController
             settings.setShowRows(ShowRows.ALL);
 
             //apply optional settings (maxRows, offset)
-            if(null != form.getMaxRows())
+            boolean metaDataOnly = false;
+            if(null != form.getMaxRows() && form.getMaxRows().intValue() >= 0)
             {
                 settings.setShowRows(ShowRows.PAGINATED);
-                settings.setMaxRows(form.getMaxRows().intValue());
+                settings.setMaxRows(0 == form.getMaxRows().intValue() ? 1 : form.getMaxRows().intValue());
+                metaDataOnly = (0 == form.getMaxRows().intValue());
             }
 
             if(null != form.getOffset())
@@ -1478,10 +1490,10 @@ public class QueryControllerSpring extends SpringActionController
 
             if(getRequestedApiVersion() >= 9.1)
                 return new ExtendedApiQueryResponse(view, getViewContext(), isSchemaEditable(schema),
-                        false, schemaName, "sql", 0, null);
+                        false, schemaName, "sql", 0, null, metaDataOnly);
             else
                 return new ApiQueryResponse(view, getViewContext(), isSchemaEditable(schema),
-                        false, schemaName, "sql", 0, null);
+                        false, schemaName, "sql", 0, null, metaDataOnly);
         }
     }
 
@@ -1571,9 +1583,10 @@ public class QueryControllerSpring extends SpringActionController
             {
                 for(int idx = 0; idx < rows.length(); ++idx)
                 {
-                    Map<String,Object> rowMap = rows.getJSONObject(idx);
-                    if(null != rowMap)
+                    JSONObject jsonObj = rows.getJSONObject(idx);
+                    if(null != jsonObj)
                     {
+                        CaseInsensitiveHashMap<Object> rowMap = new CaseInsensitiveHashMap<Object>(jsonObj);
                         saveRow(qus, rowMap, responseRows);
                         ++rowsAffected;
                     }
@@ -1803,7 +1816,7 @@ public class QueryControllerSpring extends SpringActionController
         {
 			IdentifierString i = new IdentifierString(form.getBean().getUserSchemaName());
 			if (i.isTainted())
-				errors.reject(ERROR_MSG, "Schema name should only contains Alphanumeric characters");
+                errors.reject(ERROR_MSG, "Schema name should only contains Alphanumeric characters and Underscores");
         }
 
         public ModelAndView getView(DbUserSchemaForm form, boolean reshow, BindException errors) throws Exception
@@ -1845,7 +1858,7 @@ public class QueryControllerSpring extends SpringActionController
 		{
 			IdentifierString i = new IdentifierString(form.getBean().getUserSchemaName());
 			if (i.isTainted())
-				errors.reject(ERROR_MSG, "Schema name should only contains Alphanumeric characters");
+				errors.reject(ERROR_MSG, "Schema name should only contains Alphanumeric characters and Underscores");
 		}
 
         public ModelAndView getView(DbUserSchemaForm form, boolean reshow, BindException errors) throws Exception

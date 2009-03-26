@@ -45,7 +45,7 @@ import org.labkey.api.study.assay.PlateBasedAssayProvider;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.defaults.DefaultValueService;
+import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.common.util.Pair;
 import org.labkey.study.StudySchema;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;

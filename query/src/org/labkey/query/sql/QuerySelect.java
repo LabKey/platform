@@ -64,12 +64,12 @@ public class QuerySelect extends QueryRelation
 		initializeSelect();
         assert MemTracker.put(this);
 	}
-	
+
 
     private QuerySelect(QuerySelect parent, QQuery query, boolean inFromClause, String alias)
     {
         this(parent._query, parent._schema, alias);
-        
+
         assert inFromClause == (alias != null);
         this._query = parent._query;
         _parent = parent;
@@ -304,7 +304,7 @@ public class QuerySelect extends QueryRelation
         }
         return builder.getText();
     }
-    
+
 
     public Set<FieldKey> getFromTables()
     {
@@ -321,7 +321,7 @@ public class QuerySelect extends QueryRelation
 			QNode[] children = l.toArray(new QNode[l.size()]);
 			int inode = 0;
             QNode node = children[inode];
-			
+
             JoinType joinType = JoinType.root;
 
             if (parent.getTokenType() == SqlTokenTypes.JOIN)
@@ -406,7 +406,7 @@ loop:
         return ret;
     }
 
-	
+
     /**
      * Resolve a particular field.
      * The FieldKey may refer to a particular ColumnInfo.
@@ -442,7 +442,7 @@ loop:
         return ret;
     }
 
-	
+
     /**
      * Indicate that a particular ColumnInfo is used by this query.
      */
@@ -524,7 +524,7 @@ loop:
         {
             return;
         }
-        
+
         FieldKey key = expr.getFieldKey();
         if (key != null)
         {
@@ -688,7 +688,7 @@ loop:
     {
         if (getParseErrors().size() != 0)
             return null;
-        
+
         _subqueryTable.setName("_select");
         declareFields();
         if (getParseErrors().size() != 0)
@@ -874,7 +874,7 @@ loop:
 		Query.parseError(getParseErrors(), message, node);
 	}
 
-	
+
 
     public QueryDocument getDesignDocument()
     {
@@ -1028,7 +1028,7 @@ loop:
         SelectColumn c = _columns.get(key);
         if (null != c)
             return c;
-        
+
         QExpr qexpr = parent.getResolvedField();
         if (!(qexpr instanceof QField))
             return null;
@@ -1099,7 +1099,7 @@ loop:
             _alias = new QIdentifier(fk.getName());
             _key = fk;
         }
-        
+
         public SelectColumn(QNode node)
         {
             _node = node;

@@ -61,13 +61,13 @@ public class WorkbookModule extends DefaultModule
     protected void init()
     {
         addController("workbook", WorkbookController.class);
-        ModuleLoader.getInstance().registerFolderType(new WorkbookFolderType());
     }
 
     public void startup(ModuleContext moduleContext)
     {
         // add a container listener so we'll know when our container is deleted:
         ContainerManager.addContainerListener(new WorkbookContainerListener());
+        ModuleLoader.getInstance().registerFolderType(new WorkbookFolderType());
     }
 
     @Override

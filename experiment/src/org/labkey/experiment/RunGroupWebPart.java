@@ -117,7 +117,7 @@ public class RunGroupWebPart extends QueryView
         if (!_narrow)
         {
             ActionButton deleteExperiment = new ActionButton("", "Delete");
-            ActionURL deleteExpUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteSelectedExperimentsURL(getViewContext().getContainer(), getViewContext().getActionURL());
+            ActionURL deleteExpUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteSelectedExperimentsURL(getViewContext().getContainer(), getReturnURL());
             deleteExperiment.setURL(deleteExpUrl);
             deleteExperiment.setActionType(ActionButton.Action.POST);
             deleteExperiment.setDisplayPermission(ACL.PERM_DELETE);
@@ -129,7 +129,7 @@ public class RunGroupWebPart extends QueryView
             addXarFile.setDisplayPermission(ACL.PERM_INSERT);
             bb.add(addXarFile);
 
-            ActionButton createExperiment = new ActionButton(ExperimentController.ExperimentUrlsImpl.get().getCreateRunGroupURL(getViewContext().getContainer(), getViewContext().getActionURL(), false), "Create Run Group");
+            ActionButton createExperiment = new ActionButton(ExperimentController.ExperimentUrlsImpl.get().getCreateRunGroupURL(getViewContext().getContainer(), getReturnURL(), false), "Create Run Group");
             createExperiment.setActionType(ActionButton.Action.LINK);
             createExperiment.setDisplayPermission(ACL.PERM_INSERT);
             bb.add(createExperiment);

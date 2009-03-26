@@ -1902,7 +1902,6 @@ study/src/org/labkey/study/assay/AssayPublishManager.java -text
 study/src/org/labkey/study/assay/AssayServiceImpl.java -text
 study/src/org/labkey/study/assay/ModuleAssayLoader.java -text
 study/src/org/labkey/study/assay/ModuleAssayProvider.java -text
-study/src/org/labkey/study/assay/SetDefaultValuesAssayAction.java -text
 study/src/org/labkey/study/assay/TsvAssayProvider.java -text
 study/src/org/labkey/study/assay/TsvDataHandler.java -text
 study/src/org/labkey/study/assay/query/AssayAuditViewFactory.java -text

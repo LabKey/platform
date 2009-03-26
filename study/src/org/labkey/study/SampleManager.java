@@ -1563,10 +1563,15 @@ public class SampleManager
             for (SpecimenComment comment : allComments)
                 globalUniqueIds.put(comment.getGlobalUniqueId(), comment);
 
-            // reuse the container filter object with an added 'in' clause:
-            filter.addInClause("GlobalUniqueId", globalUniqueIds.keySet());
-            Specimen[] commented = Table.select(StudySchema.getInstance().getTableInfoSpecimen(),
-                    Table.ALL_COLUMNS, filter, null, Specimen.class);
+            SQLFragment sql = new SQLFragment();
+            sql.append("SELECT * FROM ").append(StudySchema.getInstance().getTableInfoSpecimen()).append(" WHERE GlobalUniqueId IN (");
+            sql.append("SELECT DISTINCT GlobalUniqueId FROM ").append(StudySchema.getInstance().getTableInfoSpecimenComment());
+            sql.append(" WHERE Container = ?");
+            sql.add(container.getId());
+            sql.append(") AND Container = ?;");
+            sql.add(container.getId());
+
+            Specimen[] commented = Table.executeQuery(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), Specimen.class);
 
             for (Specimen specimen : commented)
                 result.put(specimen, globalUniqueIds.get(specimen.getGlobalUniqueId()));
@@ -2363,7 +2368,48 @@ public class SampleManager
         Object[] params = new Object[sqlHelper.getViewSql().getParamsArray().length + 1];
         System.arraycopy(sqlHelper.getViewSql().getParamsArray(), 0, params, 0, sqlHelper.getViewSql().getParamsArray().length);
         params[params.length - 1] = Boolean.TRUE;
-        RequestSummaryByVisitType[] summaries = Table.executeQuery(StudySchema.getInstance().getSchema(), sql, params, RequestSummaryByVisitType.class);
+        ResultSet rs = null;
+        List<SummaryByVisitType> ret;
+        try
+        {
+            rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql, params);
+            ret = new ArrayList<SummaryByVisitType>();
+            while (rs.next())
+            {
+                RequestSummaryByVisitType summary = new RequestSummaryByVisitType();
+                summary.setDestinationSiteId(rs.getInt("DestinationSiteId"));
+                summary.setSiteLabel(rs.getString("SiteLabel"));
+                summary.setSequenceNum(rs.getDouble("SequenceNum"));
+                summary.setTotalVolume(rs.getDouble("TotalVolume"));
+                Double vialCount = rs.getDouble("VialCount");
+                summary.setVialCount(vialCount.longValue());
+                for (Map.Entry<String, SpecimenTypeBeanProperty> typeProperty : sqlHelper.getAliasToTypePropertyMap().entrySet())
+                {
+                    String value = rs.getString(typeProperty.getKey());
+                    PropertyUtils.setProperty(summary, typeProperty.getValue().getBeanProperty(), value);
+                }
+                ret.add(summary);
+            }
+        }
+        catch (InvocationTargetException e)
+        {
+            throw new RuntimeException(e);
+        }
+        catch (NoSuchMethodException e)
+        {
+            throw new RuntimeException(e);
+        }
+        catch (IllegalAccessException e)
+        {
+            throw new RuntimeException(e);
+        }
+        finally
+        {
+            if (rs != null)
+                try { rs.close(); } catch (SQLException e) { /* fall through */ }
+        }
+        RequestSummaryByVisitType[] summaries = ret.toArray(new RequestSummaryByVisitType[ret.size()]);
+
         if (includeParticipantLists)
             setSummaryParticpantLists(sql, params, null, summaries, "ParticipantId", "SequenceNum");
         return summaries;
