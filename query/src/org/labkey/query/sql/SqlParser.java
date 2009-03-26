@@ -141,7 +141,7 @@ public class SqlParser
 			assert dump(qnodeRoot);
             assert MemTracker.put(qnodeRoot);
 
-            QQuery ret = qnodeRoot != null && qnodeRoot instanceof QQuery ? (QQuery) qnodeRoot : null;
+            QExpr ret = qnodeRoot != null && qnodeRoot instanceof QExpr ? (QExpr) qnodeRoot : null;
             for (Throwable e : _parseErrors)
             {
                 errors.add(wrapParseException(e));
@@ -610,6 +610,12 @@ public class SqlParser
     };
 
 
+    static String[] exprs = new String[]
+    {
+            "a", "a+b", "a.b", "((a))*b"
+    };
+
+    
     public static class TestCase extends junit.framework.TestCase
     {
         public TestCase()
@@ -669,6 +675,13 @@ public class SqlParser
                 {
                     fail(sql);
                 }
+            }
+            for (String expr : exprs)
+            {
+                List<QueryParseException> errors = new ArrayList<QueryParseException>();
+                QExpr e = new SqlParser().parseExpr(expr,errors);
+                assertTrue(errors.isEmpty());
+                assertNotNull(e);
             }
         }
 
