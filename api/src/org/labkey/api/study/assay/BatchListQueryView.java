@@ -53,7 +53,7 @@ public class BatchListQueryView extends QueryView
     {
         super.populateButtonBar(view, bar);
 
-        ActionURL deleteURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteExperimentsURL(getContainer(), getViewContext().getActionURL());
+        ActionURL deleteURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteExperimentsURL(getContainer(), getReturnURL());
         ActionButton deleteButton = new ActionButton(deleteURL, "Delete");
         deleteButton.setURL(deleteURL);
         deleteButton.setActionType(ActionButton.Action.POST);

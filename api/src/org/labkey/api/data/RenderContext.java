@@ -166,7 +166,7 @@ public class RenderContext extends BoundMap // extends ViewContext
 
     public static List<ColumnInfo> getSelectColumns(List<DisplayColumn> displayColumns, TableInfo tinfo)
     {
-        Set<ColumnInfo> ret = new NullPreventingSet<ColumnInfo>(new HashSet<ColumnInfo>());
+        Set<ColumnInfo> ret = new NullPreventingSet<ColumnInfo>(new LinkedHashSet<ColumnInfo>());
         if (null == displayColumns || displayColumns.size() == 0)
             ret.addAll(tinfo.getColumns());
         else

@@ -86,6 +86,7 @@ import java.util.*;
  * @version 2
  */
 public class JSONObject extends HashMap<String, Object> {
+    public static final String JAVASCRIPT_DATE_FORMAT = "d MMM yyyy HH:mm:ss Z";
 
     /**
      * Construct an empty JSONObject.
@@ -1265,7 +1266,7 @@ public class JSONObject extends HashMap<String, Object> {
         }
         if(value instanceof Date)
         {
-            return quote(DateUtil.formatDateTime((Date)value, "d MMM yyyy HH:mm:ss Z"));
+            return quote(DateUtil.formatDateTime((Date)value, JAVASCRIPT_DATE_FORMAT));
         }
         return quote(value.toString());
     }

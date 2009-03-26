@@ -74,6 +74,12 @@ public class HString implements java.io.Serializable, Comparable<HString>, CharS
         _tainted = tainted;
     }
 
+    public HString(HString s, boolean tainted)
+    {
+        _source = null == s ? "" : s._source;
+        _tainted = tainted;
+    }
+
     protected HString(String s)
     {
         _source = s;

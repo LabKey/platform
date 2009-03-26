@@ -33,6 +33,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 
 import javax.servlet.ServletException;
@@ -173,6 +174,13 @@ public class QueryView extends WebPartView<Object>
         return getSettings().getSelectionKey();
     }
 
+    /** Returns an ActionURL for the "returnURL" parameter or the current ActionURL if none. */
+    public URLHelper getReturnURL()
+    {
+        URLHelper url = getSettings().getReturnURL();
+        return url != null ? url : ViewServlet.getRequestURL();
+    }
+
     protected boolean verboseErrors()
     {
         return true;
@@ -280,14 +288,14 @@ public class QueryView extends WebPartView<Object>
             case sourceQuery:
                 break;
             case chooseColumns:
-                ret.addParameter(QueryParam.srcURL.toString(), getRootContext().getActionURL().toString());
+                ret.addParameter(QueryParam.srcURL.toString(), getReturnURL().getLocalURIString());
                 ret.addParameter(QueryParam.dataRegionName.toString(), getDataRegionName());
                 ret.addParameter(QueryParam.queryName.toString(), getSettings().getQueryName());
                 if (getSettings().getViewName() != null)
                     ret.addParameter(QueryParam.viewName.toString(), getSettings().getViewName());
                 break;
             case deleteQueryRows:
-                ret.addParameter(QueryParam.srcURL.toString(), getViewContext().getActionURL().toString());
+                ret.addParameter(QueryParam.srcURL.toString(), getReturnURL().getLocalURIString());
                 break;
             case editSnapshot:
                 ret.addParameter("snapshotName", getSettings().getQueryName());
@@ -331,7 +339,7 @@ public class QueryView extends WebPartView<Object>
                 bean.setViewName(getSettings().getViewName());
                 bean.setDataRegionName(getDataRegionName());
 
-                bean.setRedirectUrl(getViewContext().getActionURL().toString());
+                bean.setRedirectUrl(getReturnURL().getLocalURIString());
                 return ReportUtil.getRReportDesignerURL(_viewContext, bean);
         }
         return ret;

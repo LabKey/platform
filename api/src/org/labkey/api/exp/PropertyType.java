@@ -283,6 +283,12 @@ public enum PropertyType
 
     public static Object getFromExcelCell(Cell cell) throws ConversionException
     {
+        // special handling for the "number type": prefer double.
+        // Without this, we'd default to integer
+        if (CellType.NUMBER.equals(cell.getType()))
+        {
+            return DOUBLE.convertExcelValue(cell);
+        }
         for (PropertyType t : values())
         {
             if (t.excelCellType.equals(cell.getType()))

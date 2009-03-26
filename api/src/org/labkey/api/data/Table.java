@@ -1505,8 +1505,7 @@ public class Table
 
         if (null != sort)
         {
-            for (Sort.SortField s : sort.getSortList())
-                requiredColumns.add(s.getColumnName());
+            requiredColumns.addAll(sort.getRequiredColumnNames(cols));
         }
 
         // TODO: Ensure pk, filter & where columns in cases where caller is naive

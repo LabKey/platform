@@ -20,6 +20,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.VersionNumber;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -97,7 +98,9 @@ public class TemplateHeaderView extends JspView<TemplateHeaderView.TemplateHeade
             VersionNumber dbVersion = new VersionNumber(coreScope.getDatabaseProductVersion());
             if(dbVersion.getMajor() <= 8 && dbVersion.getMinor() < 3)
             {
-                _warningMessages.add(PageFlowUtil.filter("Support for PostgreSQL Version 8.2 and earlier has been deprecated. Please upgrade to version 8.3 or later."));
+                HelpTopic topic = new HelpTopic("postgresUpgrade", HelpTopic.Area.SERVER);
+                _warningMessages.add("Support for PostgreSQL Version 8.2 and earlier has been deprecated. Please <a href=\""
+                        + topic.getHelpTopicLink() + "\">upgrade to version 8.3 or later</a>.");
             }
         }
     }

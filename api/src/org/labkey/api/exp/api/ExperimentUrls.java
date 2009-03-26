@@ -19,6 +19,7 @@ package org.labkey.api.exp.api;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.util.URLHelper;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -34,13 +35,13 @@ public interface ExperimentUrls extends UrlProvider
     ActionURL getRunTextURL(Container c, int rowId);
     ActionURL getRunTextURL(ExpRun run);
 
-    ActionURL getDeleteExperimentsURL(Container container, ActionURL returnURL);
+    ActionURL getDeleteExperimentsURL(Container container, URLHelper returnURL);
 
-    ActionURL getDeleteDatasURL(Container container, ActionURL returnURL);
+    ActionURL getDeleteDatasURL(Container container, URLHelper returnURL);
 
     ActionURL getExperimentDetailsURL(Container c, ExpExperiment expExperiment);
 
-    ActionURL getRemoveSelectedExpRunsURL(Container container, ActionURL returnURL, ExpExperiment expExperiment);
+    ActionURL getRemoveSelectedExpRunsURL(Container container, URLHelper returnURL, ExpExperiment expExperiment);
 
     ActionURL getExportRunsOptionsURL(Container container, ExpExperiment expExperiment);
 
@@ -48,9 +49,9 @@ public interface ExperimentUrls extends UrlProvider
 
     ActionURL getMoveRunsLocationURL(Container container);
 
-    ActionURL getDeleteSelectedExpRunsURL(Container container, ActionURL returnURL);
+    ActionURL getDeleteSelectedExpRunsURL(Container container, URLHelper returnURL);
 
-    ActionURL getCreateRunGroupURL(Container container, ActionURL returnURL, boolean addSelectedRuns);
+    ActionURL getCreateRunGroupURL(Container container, URLHelper returnURL, boolean addSelectedRuns);
 
     ActionURL getAddRunsToExperimentURL(Container container, ExpExperiment expExperiment);
 

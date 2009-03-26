@@ -16,6 +16,8 @@
 
 package org.labkey.api.gwt.client.util;
 
+import com.google.gwt.http.client.URL;
+
 /**
  * User: brittp
  * Date: Feb 2, 2007
@@ -62,7 +64,17 @@ public class PropertyUtil
 
     public static String getRelativeURL(String action, String pageFlow)
     {
-        return getContextPath() + "/" + pageFlow +
-                PropertyUtil.getContainerPath() + "/" + action + ".view";
+        String[] pathParts = PropertyUtil.getContainerPath().split("/");
+        String encodedPath = "/";
+        for (String pathPart : pathParts)
+        {
+            if (pathPart.length() > 0)
+            {
+                String part = URL.encodeComponent(pathPart);
+                part = part.replaceAll("\\+", "%20");
+                encodedPath += part + "/";
+            }
+        }
+        return getContextPath() + "/" + pageFlow + encodedPath + action + ".view";
     }
 }

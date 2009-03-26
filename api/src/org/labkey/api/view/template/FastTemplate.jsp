@@ -81,7 +81,11 @@ if (me.getView("nav") instanceof HttpView && ((HttpView)me.getView("nav")).isVis
     {
 	me.include(me.getView("nav"),out);
     }
-%><DIV id=divContent style="padding-top:5px;">
+%>
+<script type="text/javascript">
+    LABKEY.requiresClientAPI();
+</script>
+<DIV id=divContent style="padding-top:5px;">
 <%me.include(me.getBody(),out);%>
 </DIV>
 <script type="text/javascript">LABKEY.loadScripts();</script>

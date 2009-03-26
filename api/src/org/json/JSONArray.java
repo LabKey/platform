@@ -184,11 +184,7 @@ public class JSONArray {
      * @throws JSONException If there is no value for the index.
      */
     public Object get(int index) throws JSONException {
-        Object o = opt(index);
-        if (o == null) {
-            throw new JSONException("JSONArray[" + index + "] not found.");
-        }
-        return o;
+        return opt(index);
     }
 
 

@@ -29,7 +29,7 @@ import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.api.defaults.SetDefaultValuesAction;
+import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -92,12 +92,13 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
                 if (!domainInfos.isEmpty())
                 {
                     NavTree setDefaultsTree = new NavTree("set default values");
-                    ActionURL baseEditUrl = new ActionURL(SetDefaultValuesAction.class, getViewContext().getContainer());
+                    ActionURL baseEditUrl = new ActionURL(SetDefaultValuesAssayAction.class, getViewContext().getContainer());
                     baseEditUrl.addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString());
+                    baseEditUrl.addParameter("providerName", provider.getName());
                     for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : domainInfos)
                     {
                         Domain domain = domainInfo.getKey();
-                        if (domain.getProperties().length > 0)
+                        if (provider.allowDefaultValues(domain) && domain.getProperties().length > 0)
                         {
                             ActionURL currentEditUrl = baseEditUrl.clone();
                             currentEditUrl.addParameter("domainId", domain.getTypeId());

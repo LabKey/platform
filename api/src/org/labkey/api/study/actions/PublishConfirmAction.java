@@ -200,7 +200,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             {
                 // Our form contains *all* data, but we only want to process
                 // the selected rows. Skip ahead until we find a match
-                while (!objects[index].equals(selectedObjectId) && index < objects.length)
+                while (index < objects.length && !objects[index].equals(selectedObjectId))
                     index++;
 
                 if (index == objects.length)

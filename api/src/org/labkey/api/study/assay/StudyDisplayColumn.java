@@ -21,10 +21,14 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.FieldKey;
 
 import java.io.Writer;
 import java.io.IOException;
 import java.util.Set;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * User: jgarms
@@ -34,20 +38,26 @@ class StudyDisplayColumn extends DataColumn
 {
     private final String title;
     private final Container container;
-    private final ColumnInfo datasetIdColumn;
+    private final String datasetIdName;
+    private ColumnInfo datasetColumn;
 
-    public StudyDisplayColumn(String title, Container container, ColumnInfo datasetIdColumn, ColumnInfo studyCopiedColumn)
+    public StudyDisplayColumn(String title, Container container, String originalDatasetColumnName, ColumnInfo studyCopiedColumn)
     {
         super(studyCopiedColumn);
         this.title = title;
         this.container = container;
-        this.datasetIdColumn = datasetIdColumn;
+        this.datasetIdName = originalDatasetColumnName;
     }
 
     @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        Integer datasetId = (Integer)datasetIdColumn.getValue(ctx);
+        if (datasetColumn == null)
+        {
+            super.renderGridCellContents(ctx, out);
+            return;
+        }
+        Integer datasetId = (Integer)datasetColumn.getValue(ctx);
         if (datasetId != null)
         {
             ActionURL url = StudyService.get().getDatasetURL(container, datasetId.intValue());
@@ -68,6 +78,18 @@ class StudyDisplayColumn extends DataColumn
     public void addQueryColumns(Set<ColumnInfo> columns)
     {
         super.addQueryColumns(columns);
-        columns.add(datasetIdColumn);
+
+        String name = getColumnInfo().getName();
+        FieldKey fKey = FieldKey.fromString(name);
+        FieldKey parent = fKey.getParent();
+        FieldKey datasetFKey = new FieldKey(parent, datasetIdName);
+        Map<FieldKey,ColumnInfo> map =
+                QueryService.get().getColumns(getColumnInfo().getParentTable(), Collections.singletonList(datasetFKey));
+        if (!map.isEmpty())
+        {
+            datasetColumn = map.get(datasetFKey);
+            if (datasetColumn != null)
+                columns.add(datasetColumn);
+        }
     }
 }

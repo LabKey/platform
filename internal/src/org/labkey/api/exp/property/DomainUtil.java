@@ -386,6 +386,10 @@ public class DomainUtil
             Lookup lu = new Lookup(c, pd.getLookupSchema(), pd.getLookupQuery());
             p.setLookup(lu);
         }
+        else
+        {
+            p.setLookup(null);
+        }
     }
 
     @SuppressWarnings("unchecked")

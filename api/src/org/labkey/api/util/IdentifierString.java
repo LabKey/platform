@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
  */
 public class IdentifierString extends HString
 {
-    Pattern idPattern = Pattern.compile("\\p{Alpha}\\p{Alnum}*");
+     Pattern idPattern = Pattern.compile("[\\p{Alpha}_][\\p{Alnum}_]*");
 
     public IdentifierString(String s)
     {
