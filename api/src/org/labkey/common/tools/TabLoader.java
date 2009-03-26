@@ -18,8 +18,6 @@ package org.labkey.common.tools;
 // UNDONE: should probably be in package org.labkey.common.util
 
 import junit.framework.Test;
-import junit.framework.TestFailure;
-import junit.framework.TestResult;
 import junit.framework.TestSuite;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConversionException;
@@ -56,7 +54,7 @@ import java.util.regex.Pattern;
  */
 public class TabLoader extends DataLoader
 {
-    static Logger _log = Logger.getLogger(TabLoader.class);
+    private static final Logger _log = Logger.getLogger(TabLoader.class);
 
     // source data
     private String _stringData = null;
@@ -1045,47 +1043,4 @@ public class TabLoader extends DataLoader
             return new TestSuite(TabLoaderTestCase.class);
         }
     }
-
-
-    public static void main(String[] args) throws Exception
-    {
-        try
-        {
-            Class c = Class.forName("org.fhcrc.cpas.data.ConvertHelper");
-            c.getMethod("registerHelpers").invoke(null);
-
-            Test test = TabLoaderTestCase.suite();
-            TestResult result = new TestResult();
-            test.run(result);
-            System.out.println(result.wasSuccessful() ? "success" : "fail");
-
-            Enumeration failures = result.failures();
-            Throwable first = null;
-            while (failures.hasMoreElements())
-            {
-                TestFailure failure = (TestFailure) failures.nextElement();
-                System.err.println(failure.toString());
-                if (first == null)
-                    first = failure.thrownException();
-            }
-            Enumeration errors = result.errors();
-            while (errors.hasMoreElements())
-            {
-                TestFailure error = (TestFailure) errors.nextElement();
-                System.err.println(error.toString());
-                if (first == null)
-                    first = error.thrownException();
-            }
-            if (first != null)
-            {
-                System.err.println("first exception");
-                first.printStackTrace(System.err);
-            }
-        }
-        catch (Throwable t)
-        {
-            t.printStackTrace(System.err);
-        }
-    }
-
 }
