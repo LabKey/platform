@@ -1306,7 +1306,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             {
                 public DisplayColumn createRenderer(ColumnInfo colInfo)
                 {
-                    return new StudyDisplayColumn(copiedToStudyColumnCaption, studyContainer, datasetColumn.getName(), colInfo);
+                    return new StudyDisplayColumn(copiedToStudyColumnCaption, studyContainer, datasetColumn, studyCopiedColumn);
                 }
             });
 

@@ -82,13 +82,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             allProps.addAll(Arrays.asList(provider.getBatchDomain(protocol).getProperties()));
             allProps.addAll(Arrays.asList(provider.getRunDomain(protocol).getProperties()));
 
-            Map<String, Object> props = OntologyManager.getProperties(container, run.getLSID());
-            ExpExperiment batch = AssayService.get().findBatch(run);
-            if (batch != null)
-            {
-                Map<String, Object> batchProps = OntologyManager.getProperties(container, batch.getLSID());
-                props.putAll(batchProps);
-            }
+            Map<String, Object> runProps = OntologyManager.getProperties(container, run.getLSID());
             ParticipantVisitResolver resolver = null;
 
             Container targetContainer = null;
@@ -96,7 +90,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             {
                 if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equalsIgnoreCase(runProp.getName()))
                 {
-                    Object targetObject = props.get(runProp.getPropertyURI());
+                    Object targetObject = runProps.get(runProp.getPropertyURI());
                     if (targetObject instanceof String)
                     {
                         targetContainer = ContainerManager.getForId((String)targetObject);
@@ -109,7 +103,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             {
                 if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equalsIgnoreCase(runProp.getName()))
                 {
-                    Object targetObject = props.get(runProp.getPropertyURI());
+                    Object targetObject = runProps.get(runProp.getPropertyURI());
                     if (targetObject instanceof String)
                     {
                         ParticipantVisitResolverType resolverType = AbstractAssayProvider.findType((String)targetObject, provider.getParticipantVisitResolverTypes());

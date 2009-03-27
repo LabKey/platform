@@ -19,7 +19,10 @@ package org.labkey.api.data;
 import org.apache.log4j.Logger;
 import org.labkey.api.util.URLHelper;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 
 public class Sort
@@ -248,28 +251,6 @@ public class Sort
         }
 
         return sb.toString();
-    }
-
-    public Set<String> getRequiredColumnNames(Map<String,? extends ColumnInfo> columns)
-    {
-        if (null == _sortList || _sortList.size() == 0)
-            return Collections.emptySet();
-
-        Set<String> requiredColumnNames = new HashSet<String>();
-        for (SortField sf : _sortList)
-        {
-            String columnName = sf.getColumnName();
-            requiredColumnNames.add(columnName);
-            ColumnInfo col = columns.get(columnName);
-            if (col != null && col.isQcEnabled())
-            {
-                // Note: The columns we're passed won't necessarily contain
-                // our qc column at this point -- we need to let the caller
-                // know it should be added
-                requiredColumnNames.add(col.getQcColumnName());
-            }
-        }
-        return requiredColumnNames;
     }
 
     public String getOrderByClause(SqlDialect dialect)

@@ -19,7 +19,6 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.NullPreventingSet;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.PopupMenu;
@@ -316,26 +315,10 @@ public abstract class DisplayColumn extends RenderColumn
         renderGridHeaderCell(ctx, out, null);
     }
 
-    private Sort.SortField getSortColumn(Sort sort)
-    {
-        if (sort != null)
-        {
-            Set<ColumnInfo> ret = new NullPreventingSet<ColumnInfo>(new HashSet<ColumnInfo>());
-            addQueryColumns(ret);
-            for (ColumnInfo info : ret)
-            {
-                Sort.SortField sortField = sort.getSortColumn(info.getName());
-                if (sortField != null)
-                    return sortField;
-            }
-        }
-        return null;
-    }
-
     public void renderGridHeaderCell(RenderContext ctx, Writer out, String headerClass) throws IOException, SQLException
     {
         Sort sort = getSort(ctx);
-        Sort.SortField sortField = getSortColumn(sort);
+        Sort.SortField sortField = sort != null ? sort.getSortColumn(getColumnInfo().getName()) : null;
         boolean filtered = isFiltered(ctx);
         String baseId = ctx.getCurrentRegion().getName() + ":" + (getColumnInfo() != null ? getColumnInfo().getName() : super.getName());
 
@@ -477,9 +460,9 @@ public abstract class DisplayColumn extends RenderColumn
                 boolean isRemoveableSort = false;
                 if (sort != null)
                 {
-                    sortField = getSortColumn(sort);
+                    sortField = sort.getSortColumn(getColumnInfo().getName());
                     primarySort = sort.indexOf(getColumnInfo().getName()) == 0;
-                    isRemoveableSort = isUserSort(ctx);
+                    isRemoveableSort = isUserSort(ctx, getColumnInfo().getName());
                 }
 
                 boolean selected = sortField != null && sortField.getSortDirection() == Sort.SortDirection.ASC;
@@ -527,10 +510,10 @@ public abstract class DisplayColumn extends RenderColumn
         return navtree;
     }
 
-    public boolean isUserSort(RenderContext ctx)
+    public boolean isUserSort(RenderContext ctx, String columnName)
     {
         Sort userSort = new Sort(ctx.getViewContext().getActionURL(), ctx.getCurrentRegion().getName());
-        return null != getSortColumn(userSort);
+        return null != userSort.getSortColumn(columnName);
     }
 
     public String getGridDataCell(RenderContext ctx)

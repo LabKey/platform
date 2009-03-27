@@ -26,7 +26,6 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.GuidString;
 import org.labkey.api.util.IdentifierString;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.reports.report.ReportIdentifierConverter;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.common.tools.AbstractConvertHelper;
@@ -102,7 +101,6 @@ public class ConvertHelper extends AbstractConvertHelper implements PropertyEdit
         _register(new HString.Converter(), HString.class);
         _register(new GuidString.Converter(), GuidString.class);
 		_register(new IdentifierString.Converter(), IdentifierString.class);
-        _register(new URLHelper.Converter(), URLHelper.class);
     }
 
 

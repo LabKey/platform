@@ -215,34 +215,6 @@ LABKEY.Utils = new function()
             var idx = fileName.lastIndexOf(".");
             var extension = (idx >= 0) ? fileName.substring(idx + 1) : "_generic";
             return LABKEY.ActionURL.buildURL("core", "getAttachmentIcon", "", {extension: extension});
-        },
-
-        /**
-         * Sends a JSON object to the server which turns it into an Excel file and returns it to the browser to be saved or opened.
-         * @param {Object} spreadsheet the JavaScript representation of the data
-         * @param {String} spreadsheet.fileName name to suggest to the browser for saving the file
-         * @param {String} spreadsheet.sheets array of sheets, which are objects with properties:
-         * <ul>
-         * <li><b>name:</b> name of the Excel sheet</li>
-         * <li><b>data:</b> two dimensional array of values</li>
-         * </ul>
-         * The value array may be either primitives (booleans, numbers, Strings, and dates), or may be a map with
-         * the following structure:
-         * <ul>
-         * <li><b>value:</b> the boolean, number, String, or date value of the cell</li>
-         * <li><b>formatString:</b> for dates and numbers, the Java format string used with SimpleDateFormat
-         * or DecimalFormat to control how the value is formatted</li>
-         * <li><b>timeOnly:</b> for dates, whether the date part should be ignored and only the time value is important</li>
-         * </ul>
-         */
-        convertToExcel : function(spreadsheet) {
-            // Insert a hidden <form> into to page, put the JSON into it, and submit it - the server's response
-            // will make the browser pop up a dialog
-            var newForm = Ext.DomHelper.append(document.getElementsByTagName('body')[0],
-                '<form method="POST" action="' + LABKEY.ActionURL.buildURL("experiment", "convertArraysToExcel") + '">' +
-                '<input type="hidden" name="json" value="' + Ext.util.Format.htmlEncode(Ext.util.JSON.encode(spreadsheet)) + '" />' +
-                '</form>');
-            newForm.submit();
         }
     };
 };

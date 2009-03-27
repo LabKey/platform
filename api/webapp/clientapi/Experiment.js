@@ -430,7 +430,7 @@ LABKEY.Exp.Data = function (config) {
      * Retrieves the contents of the data object from the server.
      * @param config An object that contains the following configuration parameters
      * @param {function} config.successCallback The function to call when the function finishes successfully.
-     * This function will be called with the parameters:
+     * This function will be called with a the parameters:
      * <ul>
      * <li><b>content</b> The type of the content varies based on the format requested.
      * <li><b>format</b> The format used in the request
@@ -443,25 +443,11 @@ LABKEY.Exp.Data = function (config) {
      * <li><b>format</b> The format used in the request
      * <li><b>response</b> The original response
      * </ul>
-     * @param {String} [config.format] How to format the content. Defaults to plaintext, supported for text/* MIME types,
-     * including .html, .xml, .tsv, .txt, and .csv. Use 'jsonTSV' to get a JSON version of the .xls, .tsv, .or .csv
-     * files, the structure of which matches the argument to convertToExcel in {@link LABKEY.Utils}.
-     * <ul>
-     * <li><b>fileName:</b> the name of the file</li>
-     * <li><b>sheets:</b> an array of the sheets in the file. Text file types will have a single sheet named 'flat'.
-     * <ul><li><b>name:</b> the name of the sheet</li>
-     *     <li><b>values:</b> two-dimensional array of all the cells in the worksheet. First array index is row, second is column</li>
-     * </ul>
-     * </ul>
-     * <br/>Use 'jsonTSVExtended' to get include metadata in the 2D array of cells.
-     * Text file types will not supply additional metadata but populate the 'value' attribute in the map.
-     * Excel files will include:
-     * <ul>
-     * <li><b>value:</b> the string, boolean, date, or number in the cell</li>
-     * <li><b>timeOnly:</b> whether the date part should be ignored for dates</li>
-     * <li><b>formatString:</b> the Java format string to be used to render the value for dates and numbers</li>
-     * <li><b>formattedValue:</b> the formatted string for that value for all value types</li>
-     * </ul>
+     * @param {string} [config.format] How to format the content. Defaults to plaintext, supported for text/* MIME types,
+     * including .html, .xml, .tsv, .txt, and .csv.. Use 'jsonTSV' to get a JSON version of the .xls, .tsv, .or .csv
+     * files. The resulting JSON object will have a sheets property, which is an array. Each element will have a
+     * 'name' property, and a 'data' property that is a two-dimensional array of values. The sheet names match the
+     * sheet names in Excel files, while .tsv and .csv files will have a single entry in the map called 'flat'. 
      */
     this.getContent = function(config)
     {

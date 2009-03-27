@@ -35,7 +35,7 @@ import java.util.*;
  */
 public enum CompareType
 {
-    EQUAL("Equals", "eq", true, " = ?", "EQUAL"),
+    EQUAL("Equals", "eq", true, " = ?", "EQUALS"),
     DATE_EQUAL("Equals", "dateeq", true, null, "DATE_EQUAL")
         {
             public CompareClause createFilterClause(String colName, Object value)
@@ -50,22 +50,22 @@ public enum CompareType
                 return getDateCompareClause(colName, value);
             }
         },
-    NEQ_OR_NULL("Does Not Equal", "neqornull", true, " <> ?", "NOT_EQUAL_OR_MISSING")
+    NEQ_OR_NULL("Does Not Equal", "neqornull", true, " <> ?", "NOT_EQUAL_OR_NULL")
         {
             public CompareClause createFilterClause(String colName, Object value)
             {
                 return new NotEqualOrNullClause(colName, value);
             }
         },
-    NEQ("Does Not Equal", "neq", true, " <> ?", "NOT_EQUAL"),
-    ISBLANK("Is Blank", "isblank", false, " IS NULL", "MISSING")
+    NEQ("Does Not Equal", "neq", true, " <> ?", "NOT_EQUALS"),
+    ISBLANK("Is Blank", "isblank", false, " IS NULL", "IS_MISSING")
         {
             public FilterClause createFilterClause(String colName, Object value)
             {
                 return super.createFilterClause(colName, null);
             }
         },
-    NONBLANK("Is Not Blank", "isnonblank", false, " IS NOT NULL", "NOT_MISSING")
+    NONBLANK("Is Not Blank", "isnonblank", false, " IS NOT NULL", "IS_NOT_MISSING")
         {
             public FilterClause createFilterClause(String colName, Object value)
             {
@@ -74,8 +74,8 @@ public enum CompareType
         },
     GT("Is Greater Than", "gt", true, " > ?", "GREATER_THAN"),
     LT("Is Less Than", "lt", true, " < ?", "LESS_THAN"),
-    GTE("Is Greater Than or Equal To", "gte", true, " >= ?", "GREATER_THAN_OR_EQUAL"),
-    LTE("Is Less Than or Equal To", "lte", true, " <= ?", "LESS_THAN_OR_EQUAL"),
+    GTE("Is Greater Than or Equal To", "gte", true, " >= ?", "GREATER_THAN_OR_EQUAL_TO"),
+    LTE("Is Less Than or Equal To", "lte", true, " <= ?", "LESS_THAN_OR_EQUAL_TO"),
     CONTAINS("Contains", "contains", true, null, "CONTAINS")
             {
                 public CompareClause createFilterClause(String colName, Object value)
@@ -122,7 +122,7 @@ public enum CompareType
                     return new SimpleFilter.InClause(colName, values, true);
                 }
             },
-    HAS_QC("Has a QC Value", "hasqcvalue", false, null, "QC_VALUE")
+    HAS_QC("Has a QC Value", "hasqcvalue", false, null, "HAS_QC_VALUE")
             {
                 @Override
                 QcClause createFilterClause(String colName, Object value)
@@ -130,7 +130,7 @@ public enum CompareType
                     return new QcClause(colName, false);
                 }
             },
-    NO_QC("Does not have a QC Value", "noqcvalue", false, null, "NOT_QC_VALUE")
+    NO_QC("Does not have a QC Value", "noqcvalue", false, null, "NO_QC_VALUE")
             {
                 @Override
                 QcClause createFilterClause(String colName, Object value)

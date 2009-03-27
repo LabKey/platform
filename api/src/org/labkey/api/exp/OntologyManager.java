@@ -337,16 +337,7 @@ public class OntologyManager
     
     private static Map<String, ObjectProperty> getObjectPropertiesFromDb(Container container, String parentURI) throws SQLException
 	{
-		return getObjectPropertiesFromDb(container, new SimpleFilter("ObjectURI", parentURI));
-    }
-
-    private static Map<String, ObjectProperty> getObjectPropertiesFromDb(Container container, int objectId) throws SQLException
-    {
-        return getObjectPropertiesFromDb(container, new SimpleFilter("ObjectId", objectId));
-    }
-
-    private static Map<String, ObjectProperty> getObjectPropertiesFromDb(Container container, SimpleFilter filter) throws SQLException
-    {
+		SimpleFilter filter = new SimpleFilter("ObjectURI", parentURI);
         if (container != null)
         {
             filter.addCondition("Container", container.getId());
@@ -588,10 +579,8 @@ public class OntologyManager
                     " INNER JOIN " + getTinfoObjectProperty() + " OP ON(O.ObjectId = OP.ObjectId) " +
                     " INNER JOIN " + getTinfoPropertyDomain() + " PDM ON (OP.PropertyId = PDM.PropertyId) " +
                     " INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (PDM.DomainId = DD.DomainId) " +
-                    " INNER JOIN " + getTinfoPropertyDescriptor() + " PD ON (PD.PropertyId = PDM.PropertyId) " +
-                    " WHERE DD.DomainId = " + dd.getDomainId() +
-                    " AND PD.Container = DD.Container";
-            Integer[] objIdsToDelete = Table.executeArray(getExpSchema(), selectObjectsToDelete, new Object[]{}, Integer.class);
+                    " WHERE DD.DomainId = ?  ";
+            Integer[] objIdsToDelete = Table.executeArray(getExpSchema(), selectObjectsToDelete, new Object[]{dd.getDomainId()}, Integer.class);
 
             String sep;
             StringBuilder sqlIN=null;
@@ -622,10 +611,8 @@ public class OntologyManager
                     " (SELECT PDM.PropertyId FROM " + getTinfoPropertyDomain() + " PDM " +
                     " INNER JOIN " + getTinfoPropertyDescriptor() + " PD ON (PDM.PropertyId = PD.PropertyId) " +
                     " INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (PDM.DomainId = DD.DomainId) " +
-                    " WHERE DD.DomainId = " + dd.getDomainId() +
-                    " AND PD.Container = DD.Container " +
-                    " ) ";
-            Table.execute(getExpSchema(), deleteTypePropsSql, new Object[] {});
+                    " WHERE DD.DomainId = ? ) ";
+            Table.execute(getExpSchema(), deleteTypePropsSql, new Object[] {dd.getDomainId()});
 
             if (objIdsToDelete.length > 0)
             {

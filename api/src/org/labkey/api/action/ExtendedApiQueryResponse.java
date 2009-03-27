@@ -50,10 +50,10 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
 
     public ExtendedApiQueryResponse(QueryView view, ViewContext viewContext, boolean schemaEditable,
                                     boolean includeLookupInfo, String schemaName, String queryName,
-                                    long offset, List<FieldKey> fieldKeys, boolean metaDataOnly)
+                                    long offset, List<FieldKey> fieldKeys)
             throws Exception
     {
-        super(view, viewContext, schemaEditable, includeLookupInfo, schemaName, queryName, offset, fieldKeys, metaDataOnly);
+        super(view, viewContext, schemaEditable, includeLookupInfo, schemaName, queryName, offset, fieldKeys);
     }
 
     @Override

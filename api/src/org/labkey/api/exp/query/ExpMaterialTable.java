@@ -36,7 +36,6 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>
         SourceProtocolLSID,
         Property,
         Folder,
-        Created,
     }
     void populate(ExpSampleSet ss, boolean filterSampleSet);
     void setSampleSet(ExpSampleSet ss, boolean filter);

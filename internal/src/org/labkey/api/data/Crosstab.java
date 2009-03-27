@@ -17,9 +17,6 @@ package org.labkey.api.data;
 
 import jxl.write.WritableSheet;
 import jxl.write.WriteException;
-import jxl.write.WritableCellFormat;
-import jxl.format.VerticalAlignment;
-import jxl.format.Alignment;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.util.CaseInsensitiveHashMap;
@@ -238,22 +235,11 @@ public class Crosstab
             columns.add(new CrosstabDisplayColumn(getFieldLabel(crosstab.getRowField())));
 
             for (Object col : _crosstab.getColHeaders())
-                columns.add(new CrosstabDisplayColumn(StringUtils.trimToEmpty(ConvertUtils.convert(col)), Double.class));
+                columns.add(new CrosstabDisplayColumn(col));
 
             columns.add(new CrosstabDisplayColumn("Total", Double.class));
 
             setDisplayColumns(columns);
-
-            String colField = getFieldLabel(_crosstab.getColField());
-            if (!StringUtils.isBlank(colField))
-                setHeaders(Collections.singletonList(colField));
-        }
-
-        protected WritableCellFormat getWrappingTextFormat() throws WriteException
-        {
-            WritableCellFormat format = super.getNonWrappingTextFormat();
-            format.setAlignment(Alignment.CENTRE);            
-            return format;
         }
 
         @Override

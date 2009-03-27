@@ -303,8 +303,6 @@ public class HomeTemplate extends PrintTemplate
     {
         if (url1 == url2)
             return true;
-        if(null == url1 || null == url2)
-            return false;
         return url1.getExtraPath().equalsIgnoreCase(url2.getExtraPath()) && url1.getAction().equalsIgnoreCase(url2.getAction()) && url1.getPageFlow().equalsIgnoreCase(url2.getPageFlow());
     }
 
@@ -350,9 +348,7 @@ public class HomeTemplate extends PrintTemplate
     {
         String title = page.getTitle();
         if (null ==  title || 0 == title.length())
-        {
             title = getDefaultTitle(getRootContext().getActionURL());
-        }
 
         if (page.shouldAppendPathToTitle())
         {

@@ -39,7 +39,7 @@ public class TypePicker extends ListBox
     public final static String xsdAttachment = "http://www.labkey.org/exp/xml#attachment";
 
 
-    static Map<String,String> synonyms = new HashMap<String,String>();
+    static Map synonyms = new HashMap();
 
     static
     {

@@ -69,7 +69,6 @@ public class DataRegion extends DisplayElement
     private int _defaultMode = MODE_GRID;
     private ButtonBarPosition _buttonBarPosition = ButtonBarPosition.BOTTOM;
     private boolean allowAsync = false;
-    private ActionURL _formActionUrl = null;
 
     private boolean _shadeAlternatingRows = false;
     private boolean _showBorders = false;
@@ -1134,7 +1133,6 @@ public class DataRegion extends DisplayElement
         {
             out.write("id=\"" + PageFlowUtil.filter(name) + "\" ");
         }
-        String actionAttr = null == getFormActionUrl() ? "" : getFormActionUrl().getLocalURIString();
         switch (mode)
         {
             case MODE_DETAILS:
@@ -1144,11 +1142,11 @@ public class DataRegion extends DisplayElement
             case MODE_UPDATE:
                 if (isFileUploadForm())
                 {
-                    out.write("enctype=\"multipart/form-data\" action=\"" + actionAttr + "\">");
+                    out.write("enctype=\"multipart/form-data\" action=\"\">");
                 }
                 else
                 {
-                    out.write("action=\"" + actionAttr + "\">");
+                    out.write("action=\"\">");
                 }
                 break;
             case MODE_GRID:
@@ -1929,16 +1927,6 @@ public class DataRegion extends DisplayElement
     public void setAllowAsync(boolean allowAsync)
     {
         this.allowAsync = allowAsync;
-    }
-
-    public ActionURL getFormActionUrl()
-    {
-        return _formActionUrl;
-    }
-
-    public void setFormActionUrl(ActionURL formActionUrl)
-    {
-        _formActionUrl = formActionUrl;
     }
 
     public void addGroup(DisplayColumnGroup group)

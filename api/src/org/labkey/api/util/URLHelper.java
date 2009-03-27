@@ -17,7 +17,6 @@
 
     import org.apache.commons.collections.ArrayStack;
     import org.apache.commons.collections15.multimap.MultiHashMap;
-    import org.apache.commons.beanutils.ConversionException;
     import org.apache.log4j.Logger;
     import org.labkey.common.util.Pair;
     import org.springframework.beans.MutablePropertyValues;
@@ -735,25 +734,6 @@
                     {
                         addParameter(name,String.valueOf(o));
                     }
-                }
-            }
-        }
-
-        public static class Converter implements org.apache.commons.beanutils.Converter
-        {
-            public Object convert(Class type, Object value)
-            {
-                if (value == null)
-                    return null;
-                if (value instanceof URLHelper)
-                    return value;
-                try
-                {
-                    return new URLHelper(String.valueOf(value));
-                }
-                catch (URISyntaxException e)
-                {
-                    throw new ConversionException(e);
                 }
             }
         }

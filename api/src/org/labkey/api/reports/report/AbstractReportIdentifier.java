@@ -15,8 +15,6 @@
  */
 package org.labkey.api.reports.report;
 
-import org.apache.commons.lang.math.NumberUtils;
-
 /*
 * User: Dave
 * Date: Dec 11, 2008
@@ -35,12 +33,6 @@ public abstract class AbstractReportIdentifier implements ReportIdentifier
         try {return new ModuleReportIdentifier(id);}
         catch(IllegalArgumentException ignore) {}
 
-        // final try to support previous versions of identifiers
-        if (NumberUtils.isDigits(id))
-        {
-            try {return new DbReportIdentifier(NumberUtils.toInt(id));}
-            catch(IllegalArgumentException ignore) {}
-        }
         return null;
     }
 

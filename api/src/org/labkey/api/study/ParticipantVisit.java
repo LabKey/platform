@@ -27,8 +27,6 @@ import java.util.Date;
 */
 public interface ParticipantVisit
 {
-    public static final String ASSAY_RUN_MATERIAL_NAMESPACE = "AssayRunMaterial";
-    
     String getParticipantID();
 
     Double getVisitID();

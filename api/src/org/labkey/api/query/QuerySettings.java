@@ -24,16 +24,12 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.util.HString;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.action.ReturnUrlForm;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
-
-import java.net.URISyntaxException;
 
 public class QuerySettings
 {
@@ -53,7 +49,6 @@ public class QuerySettings
     private boolean _showHiddenFieldsWhenCustomizing = false;
 
     PropertyValues _filterSort = null;
-    private URLHelper _returnURL = null;
 
     private String _containerFilterName;
 
@@ -220,20 +215,6 @@ public class QuerySettings
             if (containerFilterNameParam != null)
                 setContainerFilterName(containerFilterNameParam);
         }
-
-        String returnURL = _getParameter(ReturnUrlForm.Params.returnUrl.toString());
-        if (returnURL == null)
-            returnURL = _getParameter("returnURL");
-        if (returnURL == null)
-            returnURL = _getParameter(QueryParam.srcURL.toString());
-        if (returnURL != null)
-        {
-            try
-            {
-                setReturnURL(new URLHelper(returnURL));
-            }
-            catch (URISyntaxException _) { }
-        }
     }
 
 	public void setSchemaName(HString schemaName)
@@ -314,20 +295,6 @@ public class QuerySettings
     public boolean getAllowChooseView()
     {
         return _allowChooseView;
-    }
-
-    /**
-     * Returns the "returnURL" parameter or null if none.
-     * The url may not necessarily be an ActionURL, e.g. if served from a FileContent html page.
-     */
-    public URLHelper getReturnURL()
-    {
-        return _returnURL;
-    }
-
-    public void setReturnURL(URLHelper returnURL)
-    {
-        _returnURL = returnURL;
     }
 
     public String param(QueryParam param)

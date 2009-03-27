@@ -43,7 +43,7 @@ public class StaticContentCachingFilter implements Filter
         {
             HttpServletResponse response = (HttpServletResponse)servletResponse;
             response.setDateHeader("Expires", System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 5);
-            response.setHeader("Cache-Control", "public");
+            response.setHeader("Cache-Control", "private");
         }
 
         filterChain.doFilter(servletRequest, servletResponse);

@@ -89,9 +89,14 @@ public class GWTTabLoader
         String rangeString = (String) map.get("rangeuri");
         if (rangeString != null)
         {
-            String rangeURI = TypePicker.synonyms.get(rangeString.toLowerCase());
-            if (rangeURI != null)
-                return rangeURI;
+            if (rangeString.equalsIgnoreCase("xsd:int"))
+                return TypePicker.xsdInt;
+            if (rangeString.equalsIgnoreCase("xsd:double"))
+                return TypePicker.xsdDouble;
+            if (rangeString.equalsIgnoreCase("xsd:boolean"))
+                return TypePicker.xsdBoolean;
+            if (rangeString.equalsIgnoreCase("xsd:dateTime"))
+                return TypePicker.xsdDateTime;
         }
 
         // Default to string

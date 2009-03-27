@@ -16,14 +16,6 @@
 
 package org.labkey.common.tools;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import org.labkey.common.util.Pair;
-
-import java.util.ArrayList;
-import java.util.List;
-
 public class MS2Modification
 {
     // UNDONE: Change Strings to chars... JDBC seems to have a problem with chars right now
@@ -97,9 +89,6 @@ public class MS2Modification
 
     public void setAminoAcid(String aminoAcid)
     {
-        if (aminoAcid.length() != 1 || aminoAcid.compareTo("A") < 0 || "Z".compareTo(aminoAcid) < 0)
-            throw new RuntimeException("Invalid amino acid specified: \"" + aminoAcid + "\"");
-
         this.aminoAcid = aminoAcid;
     }
 
@@ -149,64 +138,5 @@ public class MS2Modification
     public void setSymbol(String symbol)
     {
         this.symbol = symbol;
-    }
-
-
-    private static final String VALID_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-    public static class MS2ModificationTest extends TestCase
-    {
-        public void test()
-        {
-            List<Pair<String, Boolean>> testAminoAcids = new ArrayList<Pair<String, Boolean>>(300);
-
-            // Add all characters 0 - 255, marking each as valid or not
-            for (int i = 0; i < 256; i++)
-            {
-                String aa = String.valueOf((char)i);
-                testAminoAcids.add(new Pair<String, Boolean>(aa, VALID_CHARS.contains(aa)));
-            }
-
-            // Add a few more bogus amino acids
-            testAminoAcids.add(new Pair<String, Boolean>("", false));
-            testAminoAcids.add(new Pair<String, Boolean>("AA", false));
-            testAminoAcids.add(new Pair<String, Boolean>("z", false));
-            testAminoAcids.add(new Pair<String, Boolean>("a", false));
-            testAminoAcids.add(new Pair<String, Boolean>("[", false));
-            testAminoAcids.add(new Pair<String, Boolean>("]", false));
-            testAminoAcids.add(new Pair<String, Boolean>("0", false));
-            testAminoAcids.add(new Pair<String, Boolean>("9", false));
-            testAminoAcids.add(new Pair<String, Boolean>("hello", false));
-            testAminoAcids.add(new Pair<String, Boolean>("$", false));
-
-            MS2Modification mod = new MS2Modification();
-
-            // Test all characters
-            for (Pair<String, Boolean> pair : testAminoAcids)
-            {
-                Boolean success;
-
-                try
-                {
-                    mod.setAminoAcid(pair.first);
-                    success = true;
-                }
-                catch (Exception e)
-                {
-                    success = false;
-                }
-
-                if (pair.second != success)
-                {
-                    throw new RuntimeException("Amino acid \"" + pair.first + "\" failed validation in setAminoAcid()");
-                }
-            }
-        }
-
-
-        public static Test suite()
-        {
-            return new TestSuite(MS2ModificationTest.class);
-        }
     }
 }

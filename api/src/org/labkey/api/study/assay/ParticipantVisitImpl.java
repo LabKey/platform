@@ -113,7 +113,7 @@ public class ParticipantVisitImpl implements ParticipantVisit
             }
 
             // the study couldn't find a good material, so we'll have to mock one up
-            String lsid = new Lsid(ASSAY_RUN_MATERIAL_NAMESPACE, "Folder-" + _container.getRowId(), name.toString()).toString();
+            String lsid = new Lsid("AssayRunMaterial", "Folder-" + _container.getRowId(), name.toString()).toString();
             _material = ExperimentService.get().getExpMaterial(lsid);
             if (_material == null)
             {

@@ -60,7 +60,6 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     private Map<DomainProperty, File> _additionalFiles;
     private Integer _batchId;
     protected BindException _errors;
-    private List<AssayDataCollector> _collectors;
 
     // Unfortunate query hackery that orders display columns based on default view
     protected DomainProperty[] reorderDomainColumns(DomainProperty[] unorderedColumns, ViewContext context, ExpProtocol protocol)
@@ -139,7 +138,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         {
             String propName = UploadWizardAction.getInputName(pd);
             String value = getRequest().getParameter(propName);
-            if (pd.getPropertyDescriptor().getPropertyType() == PropertyType.BOOLEAN &&
+            if (pd.isRequired() && pd.getPropertyDescriptor().getPropertyType() == PropertyType.BOOLEAN &&
                     (value == null || value.length() == 0))
                 value = Boolean.FALSE.toString();
 
@@ -188,16 +187,9 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         _runProperties = null;
     }
 
-    private List<AssayDataCollector> getDataCollectors()
-    {
-        if (_collectors == null)
-            _collectors = getProvider().getDataCollectors(Collections.<String, File>emptyMap());
-        return _collectors;
-    }
-
     public AssayDataCollector getSelectedDataCollector()
     {
-        List<AssayDataCollector> collectors = getDataCollectors();
+        List<AssayDataCollector> collectors = getProvider().getDataCollectors(Collections.<String, File>emptyMap());
         for (AssayDataCollector collector : collectors)
         {
             if (collector.getShortName().equals(_dataCollectorName))

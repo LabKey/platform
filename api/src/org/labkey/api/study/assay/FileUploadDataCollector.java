@@ -18,9 +18,11 @@ package org.labkey.api.study.assay;
 
 import org.labkey.api.exp.ExperimentException;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 import java.util.Collections;
+import java.util.Iterator;
 import java.io.File;
 import java.io.IOException;
 import java.io.FileNotFoundException;
@@ -31,8 +33,6 @@ import java.io.FileNotFoundException;
  */
 public class FileUploadDataCollector extends AbstractAssayDataCollector
 {
-    private boolean _uploadComplete = false;
-
     public String getHTML(AssayRunUploadContext context)
     {
         return "<input type=\"file\" size=\"40\" name=\"uploadedFile\" />";
@@ -50,9 +50,6 @@ public class FileUploadDataCollector extends AbstractAssayDataCollector
 
     public Map<String, File> createData(AssayRunUploadContext context) throws IOException, IllegalArgumentException, ExperimentException
     {
-        if (_uploadComplete)
-            return Collections.emptyMap();
-
         if (!(context.getRequest() instanceof MultipartHttpServletRequest))
             throw new IllegalStateException("Expected MultipartHttpServletRequest when posting files.");
         
@@ -65,10 +62,5 @@ public class FileUploadDataCollector extends AbstractAssayDataCollector
     public boolean isVisible()
     {
         return true;
-    }
-
-    public void uploadComplete(AssayRunUploadContext context)
-    {
-        _uploadComplete = true;
     }
 }

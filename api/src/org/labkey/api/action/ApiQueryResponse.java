@@ -20,7 +20,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ViewContext;
-import org.json.JSONObject;
 
 import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
@@ -43,7 +42,7 @@ public class ApiQueryResponse implements ApiResponse
     private List<DisplayColumn> _displayColumns = null;
     private RenderContext _ctx = null;
     private ViewContext _viewContext;
-    private SimpleDateFormat _dateFormat = new SimpleDateFormat(JSONObject.JAVASCRIPT_DATE_FORMAT);
+    private SimpleDateFormat _dateFormat = new SimpleDateFormat("d MMM yyyy HH:mm:ss Z");
     private boolean _schemaEditable = false;
     private boolean _includeLookupInfo = true;
     private String _schemaName = null;
@@ -51,10 +50,9 @@ public class ApiQueryResponse implements ApiResponse
     private long _offset = 0;                   //starting offset row number
     private long _numRespRows = 0;              //number of response rows
     private List<FieldKey> _fieldKeys = null;
-    private boolean _metaDataOnly = false;
 
     public ApiQueryResponse(QueryView view, ViewContext viewContext, boolean schemaEditable, boolean includeLookupInfo,
-                            String schemaName, String queryName, long offset, List<FieldKey> fieldKeys, boolean metaDataOnly) throws Exception
+                            String schemaName, String queryName, long offset, List<FieldKey> fieldKeys) throws Exception
     {
         _viewContext = viewContext;
         _schemaEditable = schemaEditable;
@@ -63,7 +61,6 @@ public class ApiQueryResponse implements ApiResponse
         _queryName = queryName;
         _offset = offset;
         _fieldKeys = fieldKeys;
-        _metaDataOnly = metaDataOnly;
         view.exportToApiResponse(this);
     }
 
@@ -283,17 +280,13 @@ public class ApiQueryResponse implements ApiResponse
     {
         List<Object> rowset = new ArrayList<Object>();
         Map<String, Object> rowMap = null;
-        
-        if(!_metaDataOnly)
-        {
-            while(_rs.next())
-            {
-                _ctx.setRow(ResultSetUtil.mapRow(_rs, rowMap));
-                rowset.add(getRow());
-                ++_numRespRows;
-            }
-        }
 
+        while(_rs.next())
+        {
+            _ctx.setRow(ResultSetUtil.mapRow(_rs, rowMap));
+            rowset.add(getRow());
+            ++_numRespRows;
+        }
         return rowset;
     }
 

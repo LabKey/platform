@@ -236,7 +236,6 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             HttpView.throwRedirect(helper);
         }
         InsertView insertView = createBatchInsertView(runForm, errorReshow, errors);
-        insertView.getDataRegion().setFormActionUrl(new ActionURL(UploadWizardAction.class, getContainer()));
 
         ButtonBar bbar = new ButtonBar();
         addNextButton(bbar);
@@ -558,7 +557,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             List<ValidationError> validationErrors = new ArrayList<ValidationError>();
             for (IPropertyValidator validator : PropertyService.get().getPropertyValidators(dp.getPropertyDescriptor()))
             {
-                validator.validate(dp.getLabel() != null ? dp.getLabel() : dp.getName(), value, validationErrors);
+                validator.validate(dp.getLabel(), value, validationErrors);
             }
 
             for (ValidationError ve : validationErrors)
@@ -776,17 +775,20 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                         sb.append(getViewContext().getMessage((MessageSourceResolvable)m));
                         br = "<br>";
                     }
-                    msgBox.append(getViewContext().getMessage((MessageSourceResolvable)m));
-                    msgBox.append("<br>");
+                    else
+                    {
+                        msgBox.append(getViewContext().getMessage((MessageSourceResolvable)m));
+                        msgBox.append("<br>");
+                    }
                 }
                 if (sb.length() > 0)
                     sb.append("</font>");
 
-                if (list.size() > MAX_ERRORS)
+                if (msgBox.length() > 0)
                 {
-                    sb.append("<br><a id='extraErrors' href='#' onclick=\"showPopup('extraErrors', 'All Errors', '");
+                    sb.append("<br><a id='extraErrors' href='#' onclick=\"showPopup('extraErrors', 'Additional Errors', '");
                     sb.append(PageFlowUtil.encodeJavascriptStringLiteral(msgBox.toString()));
-                    sb.append("');return false;\">Too many errors to display (click to show all).<a><br>");
+                    sb.append("');return false;\">Additional errors...<a>");
                 }
                 return sb.toString();
             }

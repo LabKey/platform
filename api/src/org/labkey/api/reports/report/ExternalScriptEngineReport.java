@@ -96,7 +96,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             try {
                 runScript(context, outputSubst, createInputDataFile(context));
             }
-            catch (Exception e)
+            catch (ScriptException e)
             {
                 final String error1 = "Error executing command";
                 final String error2 = PageFlowUtil.filter(e.getMessage());

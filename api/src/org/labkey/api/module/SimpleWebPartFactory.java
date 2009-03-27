@@ -19,11 +19,8 @@ import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.Portal;
-import org.labkey.api.data.Container;
 import org.labkey.data.xml.webpart.WebpartDocument;
 import org.labkey.data.xml.webpart.WebpartType;
-import org.labkey.data.xml.webpart.AvailableEnum;
-import org.labkey.data.xml.webpart.LocationType;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.SchemaProperty;
@@ -59,15 +56,6 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
     private Module _module;
     private WebpartType _webPartDef = null;
     private Exception _loadException = null;
-
-    //map from internal (ugly) location names to public names used in the XML web part definition file
-    private static final Map<String,String> _locationsTranslationMap = new HashMap<String,String>();
-    static
-    {
-        _locationsTranslationMap.put("!content", "body");
-        _locationsTranslationMap.put("right", "right");
-        _locationsTranslationMap.put("menubar", "menu");
-    }
 
     public SimpleWebPartFactory(Module module, File webPartFile)
     {
@@ -143,40 +131,5 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
             throw new Exception("No view name specified for the module web part defined in " + _webPartFile.getAbsolutePath());
 
         return SimpleAction.getModuleHtmlView(getModule(), getViewName());
-    }
-
-    @Override
-    public boolean isAvailable(Container c, String location)
-    {
-        if(isStale())
-            loadDefinition(_webPartFile);
-
-        //if super thinks it should be available, return true
-        if(super.isAvailable(c, location))
-            return true;
-
-        //translate internal location name to public API name
-        String publicLocName = _locationsTranslationMap.get(location);
-        if(null == publicLocName)
-            return false;
-
-        //check web part definition to see when it should be available and
-        //in which locations it should be available
-        if(AvailableEnum.ALWAYS.equals(_webPartDef.getAvailable()) ||
-                c.getActiveModules().contains(getModule()))
-        {
-            if(null != _webPartDef.getLocations())
-            {
-                for(LocationType declaredLoc : _webPartDef.getLocations().getLocationArray())
-                {
-                    if(publicLocName.equalsIgnoreCase(declaredLoc.getName().toString()))
-                        return true;
-                }
-            }
-            else if(location.equalsIgnoreCase(getDefaultLocation())) //if no locations defined, check against default location
-                return true;
-        }
-        
-        return false;
     }
 }

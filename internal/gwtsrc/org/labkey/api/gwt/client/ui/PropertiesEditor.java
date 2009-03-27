@@ -349,10 +349,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             RadioButton radioButton = (RadioButton) _table.getWidget(tableRow, 2);
 
             _propertiesPane.showPropertyDescriptor(pd, !readOnly, radioButton.getAbsoluteTop());
-            if (_defaultValueSelector != null)
-            {
-                _defaultValueSelector.setEnabled(_domain.getDefaultValueOptions().length > 0);
-            }
+            _defaultValueSelector.setEnabled(_domain.getDefaultValueOptions().length > 0);
 
             radioButton.setChecked(true);
             Element e = _table.getRowFormatter().getElement(tableRow);

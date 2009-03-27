@@ -23,7 +23,6 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.WebPartView;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.web.servlet.ModelAndView;
-import org.json.JSONObject;
 
 import javax.servlet.http.HttpServletResponse;
 import java.text.SimpleDateFormat;
@@ -54,7 +53,7 @@ public abstract class ExportScriptModel
 
     public String getCreatedOn()
     {
-        SimpleDateFormat fmt = new SimpleDateFormat(JSONObject.JAVASCRIPT_DATE_FORMAT);
+        SimpleDateFormat fmt = new SimpleDateFormat("d MMM yyyy HH:mm:ss Z");
         return fmt.format(new Date());
     }
 
@@ -108,7 +107,7 @@ public abstract class ExportScriptModel
             //all filter clauses can report col names and values,
             //each of which in this case should contain only one value
             name = clause.getColumnNames().get(0);
-            value = getFilterValue(clause, clause.getParamVals());
+            value = getFilterValue(clause.getParamVals());
 
             //two kinds of clauses can be used on URLs: CompareClause and InClause
             if(clause instanceof CompareType.CompareClause)
@@ -124,29 +123,20 @@ public abstract class ExportScriptModel
         return makeFilterExprs;
     }
 
-    protected String getFilterValue(SimpleFilter.FilterClause clause, Object[] values)
+    protected String getFilterValue(Object[] values)
     {
         if(null == values || values.length == 0)
             return "";
 
-        //in clause has multiple values, which are in semi-colon-delimited list on the URL
-        if(clause instanceof SimpleFilter.InClause)
+        StringBuilder sb = new StringBuilder();
+        String sep = "";
+        for(Object val : values)
         {
-            StringBuilder sb = new StringBuilder();
-            String sep = "";
-            for(Object val : values)
-            {
-                sb.append(sep);
-                sb.append(val.toString());
-                sep = ";";
-            }
-            return sb.toString();
+            sb.append(sep);
+            sb.append(val.toString());
+            sep = ";";
         }
-        else
-        {
-            //should have only one value (convert null to empty string)
-            return null == values[0] ? "" : values[0].toString();
-        }
+        return sb.toString();
     }
 
     @Nullable

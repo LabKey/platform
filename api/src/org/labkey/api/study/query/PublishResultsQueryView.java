@@ -23,7 +23,6 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -165,15 +164,8 @@ public class PublishResultsQueryView extends ResultsQueryView
             if (runId != null && !_resolvers.containsKey(runId))
             {
                 ExpRun run = ExperimentService.get().getExpRun(runId.intValue());
-                ExpExperiment batch = AssayService.get().findBatch(run);
-                Collection<ObjectProperty> properties = new ArrayList<ObjectProperty>(run.getObjectProperties().values());
-                if (batch != null)
-                {
-                    properties.addAll(batch.getObjectProperties().values());
-                }
-
                 AssayProvider provider = AssayService.get().getProvider(_protocol);
-                for (ObjectProperty property : properties)
+                for (ObjectProperty property : run.getObjectProperties().values())
                 {
                     if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equals(property.getName()))
                     {

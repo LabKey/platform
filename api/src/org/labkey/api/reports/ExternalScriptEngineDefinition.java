@@ -43,7 +43,4 @@ public interface ExternalScriptEngineDefinition
 
     public void setEnabled(boolean enabled);
     public boolean isEnabled();
-
-    public void setExternal(boolean external);
-    public boolean isExternal();
 }

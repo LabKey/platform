@@ -393,7 +393,6 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                     cellMetaData.attr = "ext:qtip=\"" + Ext.util.Format.htmlEncode(store.reader.jsonData.qcInfo[qcValue]) + "\"";
                     cellMetaData.css = "labkey-qc";
                 }
-                return qcValue;
             }
 
             if(record.json && record.json[meta.name] && record.json[meta.name].displayValue)
@@ -633,11 +632,11 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         var displayValue = (evt.record.json && evt.record.json[evt.field]) ? evt.record.json[evt.field].displayValue : undefined;
 
         //set the value not found text to be the display value if there is one
-        if(editor && editor.field && editor.field.displayField && displayValue)
+        if(editor && editor.field && editor.displayField && displayValue)
             editor.field.valueNotFoundText = displayValue;
 
         //reset combo mode to local if the lookup store is already populated
-        if(editor && editor.field && editor.field.displayField && editor.field.store && editor.field.store.getCount() > 0)
+        if(editor && editor.field && editor.displayField && editor.field.store && editor.field.store.getCount() > 0)
             editor.field.mode = "local";
     },
 

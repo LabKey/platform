@@ -439,7 +439,7 @@ public class DataColumn extends DisplayColumn
             out.write("\">");
             // disabled inputs are not posted with the form, so we output a hidden form element:
             if (disabledInput)
-                renderHiddenFormInput(ctx, out, formFieldName, checked ? "1" : "");
+                renderHiddenFormInput(ctx, out, formFieldName, value);
         }
         else if (_inputType.equalsIgnoreCase("none"))
             ; //do nothing. Used 

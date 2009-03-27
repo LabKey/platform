@@ -64,7 +64,7 @@ public class TextAreaDataCollector extends AbstractAssayDataCollector
         ByteArrayInputStream bIn = new ByteArrayInputStream(data.getBytes(context.getRequest().getCharacterEncoding()));
 
         writeFile(bIn, file);
-        return Collections.singletonMap(file.getName(), file);
+        return Collections.singletonMap("TSVFile", file);
     }
 
     public boolean isVisible()

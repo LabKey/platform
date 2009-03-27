@@ -285,7 +285,7 @@ public class DomainImporter
 
         public void onFailure(Throwable caught)
         {
-            uploadStatusLabel.setHTML("&nbsp;");
+            uploadStatusLabel.setHTML("&nsbp;");
             Window.alert("Failure:\n" + caught.getMessage());
         }
 
