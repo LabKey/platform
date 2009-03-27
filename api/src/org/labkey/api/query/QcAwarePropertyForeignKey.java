@@ -20,6 +20,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.QcColumn;
+import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.property.DomainProperty;
 
 import java.sql.Types;
@@ -321,7 +322,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
                 indicatorPd.setQcEnabled(false);
 
                 PropertyDescriptor rawValuePd = pd.clone();
-                rawValuePd.setName(pd.getName() + QCDisplayColumnFactory.RAW_VALUE_SUFFIX);
+                rawValuePd.setName(pd.getName() + RawValueColumn.RAW_VALUE_SUFFIX);
                 rawValuePd.setLabel(pd.getName() + " Raw Value");
                 rawValuePd.setQcEnabled(false);
 

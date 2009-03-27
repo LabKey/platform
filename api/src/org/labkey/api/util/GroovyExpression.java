@@ -15,12 +15,11 @@
  */
 package org.labkey.api.util;
 
+import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.Script;
-import groovy.lang.Binding;
 import org.apache.log4j.Logger;
 import org.codehaus.groovy.control.CompilationFailedException;
-import org.labkey.api.data.RenderContext;
 
 import java.io.IOException;
 import java.util.Map;

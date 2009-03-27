@@ -22,22 +22,22 @@
  * @description Filter static class to describe and create filters.
  * @namespace
  * @property {Object} Types Types static class to describe different types of filters.
- * @property {LABKEY.Filter.FilterDefinition} Types.EQUAL Filter with displayText = "Equals", urlSuffix = "eq" and isDataValueRequired = true.
- * @property {LABKEY.Filter.FilterDefinition} Types.DATE_EQUAL Filter with displayText = "Equals", urlSuffix = "dateeq" and isDataValueRequired = true.
- * @property {LABKEY.Filter.FilterDefinition} Types.DATE_NOT_EQUAL Filter with displayText = "Does Not Equal", urlSuffix = "dateneq" and isDataValueRequired = true.
- * @property {LABKEY.Filter.FilterDefinition} Types.NEQ_OR_NULL Filter with displayText = "Does Not Equal", urlSuffix = "neqornull" and isDataValueRequired = true.
- * @property {LABKEY.Filter.FilterDefinition} Types.NEQ Filter with displayText = "Does Not Equal", urlSuffix = "neq"  and isDataValueRequired = true.
- * @property {LABKEY.Filter.FilterDefinition} Types.ISBLANK Filter with displayText = "Is Blank", urlSuffix = "isblank", false),
- * @property {LABKEY.Filter.FilterDefinition} Types.NONBLANK Filter with displayText = "Is Not Blank", urlSuffix = "isnonblank", false),
- * @property {LABKEY.Filter.FilterDefinition} Types.GT Filter with displayText = "Is Greater Than", urlSuffix = "gt" and isDataValueRequired = true.
- * @property {LABKEY.Filter.FilterDefinition} Types.LT Filter with displayText = "Is Less Than", urlSuffix = "lt" and isDataValueRequired = true.
- * @property {LABKEY.Filter.FilterDefinition} Types.GTE Filter with displayText = "Is Greater Than or Equal To", urlSuffix = "gte" and isDataValueRequired = true.
- * @property {LABKEY.Filter.FilterDefinition} Types.LTE Filter with displayText = "Is Less Than or Equal To", urlSuffix = "lte" and isDataValueRequired = true.
- * @property {LABKEY.Filter.FilterDefinition} Types.CONTAINS Filter with displayText = "Contains", urlSuffix = "contains" and isDataValueRequired = true.
- * @property {LABKEY.Filter.FilterDefinition} Types.DOES_NOT_CONTAIN Filter with displayText = "Does Not Contain", urlSuffix = "doesnotcontain" and isDataValueRequired = true.
- * @property {LABKEY.Filter.FilterDefinition} Types.DOES_NOT_START_WITH Filter with displayText = "Does Not Start With", urlSuffix = "doesnotstartwith" and isDataValueRequired = true.
- * @property {LABKEY.Filter.FilterDefinition} Types.STARTS_WITH Filter with displayText = "Starts With", urlSuffix = "startswith" and isDataValueRequired = true.
- * @property {LABKEY.Filter.FilterDefinition} Types.IN Filter with displayText = "Equals One Of", urlSuffix = "in" and isDataValueRequired = true.
+ * @property {LABKEY.Filter.FilterDefinition} Types.EQUAL Finds rows where the column value matches the given filter value. Case-sensitivity depends upon how your underlying relational database was configured.
+ * @property {LABKEY.Filter.FilterDefinition} Types.DATE_EQUAL Finds rows where the date portion of a datetime column matches the filter value (ignoring the time portion).
+ * @property {LABKEY.Filter.FilterDefinition} Types.DATE_NOT_EQUAL Finds rows where the date portion of a datetime column does not match the filter value (ignoring the time portion).
+ * @property {LABKEY.Filter.FilterDefinition} Types.NOT_EQUAL_OR_MISSING Finds rows where the column value does not equal the filter value, or is missing (null).
+ * @property {LABKEY.Filter.FilterDefinition} Types.NOT_EQUAL Finds rows where the column value does not equal the filter value.
+ * @property {LABKEY.Filter.FilterDefinition} Types.MISSING Finds rows where the column value is missing (null). Note that no filter value is required with this operator.
+ * @property {LABKEY.Filter.FilterDefinition} Types.NOT_MISSING Finds rows where the column value is not missing (is not null). Note that no filter value is required with this operator.
+ * @property {LABKEY.Filter.FilterDefinition} Types.GREATER_THAN Finds rows where the column value is greater than the filter value.
+ * @property {LABKEY.Filter.FilterDefinition} Types.LESS_THAN Finds rows where the column value is less than the filter value.
+ * @property {LABKEY.Filter.FilterDefinition} Types.GREATER_THAN_OR_EQUAL Finds rows where the column value is greater than or equal to the filter value.
+ * @property {LABKEY.Filter.FilterDefinition} Types.LESS_THAN_OR_EQUAL Finds rows where the column value is less than or equal to the filter value.
+ * @property {LABKEY.Filter.FilterDefinition} Types.CONTAINS Finds rows where the column value contains the filter value. Note that this may result in a slow query as this cannot use indexes.
+ * @property {LABKEY.Filter.FilterDefinition} Types.DOES_NOT_CONTAIN Finds rows where the column value does not contain the filter value. Note that this may result in a slow query as this cannot use indexes.
+ * @property {LABKEY.Filter.FilterDefinition} Types.DOES_NOT_START_WITH Finds rows where the column value does not start with the filter value.
+ * @property {LABKEY.Filter.FilterDefinition} Types.STARTS_WITH Finds rows where the column value starts with the filter value.
+ * @property {LABKEY.Filter.FilterDefinition} Types.EQUALS_ONE_OF Finds rows where the column value equals one of the supplied filter values. The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
  *
  */
 LABKEY.Filter = new function()
@@ -71,18 +71,27 @@ LABKEY.Filter = new function()
             DATE_EQUAL : getFilterType("Equals", "dateeq", true),
             DATE_NOT_EQUAL : getFilterType("Does Not Equal", "dateneq", true),
             NEQ_OR_NULL : getFilterType("Does Not Equal", "neqornull", true),
+            NOT_EQUAL_OR_MISSING : getFilterType("Does Not Equal", "neqornull", true),
             NEQ : getFilterType("Does Not Equal", "neq", true),
+            NOT_EQUAL : getFilterType("Does Not Equal", "neq", true),
             ISBLANK : getFilterType("Is Blank", "isblank", false),
+            MISSING : getFilterType("Is Blank", "isblank", false),
             NONBLANK : getFilterType("Is Not Blank", "isnonblank", false),
+            NOT_MISSING : getFilterType("Is Not Blank", "isnonblank", false),
             GT : getFilterType("Is Greater Than", "gt", true),
+            GREATER_THAN : getFilterType("Is Greater Than", "gt", true),
             LT : getFilterType("Is Less Than", "lt", true),
+            LESS_THAN : getFilterType("Is Less Than", "lt", true),
             GTE : getFilterType("Is Greater Than or Equal To", "gte", true),
+            GREATER_THAN_OR_EQUAL : getFilterType("Is Greater Than or Equal To", "gte", true),
             LTE : getFilterType("Is Less Than or Equal To", "lte", true),
+            LESS_THAN_OR_EQUAL : getFilterType("Is Less Than or Equal To", "lte", true),
             CONTAINS : getFilterType("Contains", "contains", true),
             DOES_NOT_CONTAIN : getFilterType("Does Not Contain", "doesnotcontain", true),
             DOES_NOT_START_WITH : getFilterType("Does Not Start With", "doesnotstartwith", true),
             STARTS_WITH : getFilterType("Starts With", "startswith", true),
-            IN : getFilterType("Equals One Of", "in", true)
+            IN : getFilterType("Equals One Of", "in", true),
+            EQUALS_ONE_OF : getFilterType("Equals One Of", "in", true)
         },
 
         /**
@@ -115,7 +124,7 @@ LABKEY.Filter = new function()
 		failureCallback: onFailure,
 		filterArray: [
 			LABKEY.Filter.create('FirstName', 'Johnny'),
-			LABKEY.Filter.create('Age', 15, LABKEY.Filter.Types.LTE)
+			LABKEY.Filter.create('Age', 15, LABKEY.Filter.Types.LESS_THAN_OR_EQUAL)
 		]
     });
 &lt;/script&gt; </pre>

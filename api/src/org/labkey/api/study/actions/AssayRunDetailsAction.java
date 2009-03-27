@@ -29,6 +29,8 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.ACL;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 
@@ -36,6 +38,7 @@ import org.springframework.validation.BindException;
  * User: kevink
  * Date: Feb 11, 2009
  */
+@RequiresPermission(ACL.PERM_READ)
 public class AssayRunDetailsAction extends BaseAssayAction<AssayRunDetailsAction.AssayRunDetailsForm>
 {
     public static class AssayRunDetailsForm extends ProtocolIdForm
@@ -63,6 +66,11 @@ public class AssayRunDetailsAction extends BaseAssayAction<AssayRunDetailsAction
         _run = ExperimentService.get().getExpRun(form.getRunId());
         if (_run == null)
             HttpView.throwNotFound("Assay run not found for runId: " + form.getRunId());
+
+        if (!_run.getContainer().equals(getViewContext().getContainer()))
+        {
+            HttpView.throwRedirect(getViewContext().cloneActionURL().setContainer(_run.getContainer()));
+        }
 
         AssayProvider provider = AssayService.get().getProvider(_protocol);
         return provider.createRunDetailsView(context, _protocol, _run);

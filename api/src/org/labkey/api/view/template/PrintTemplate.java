@@ -18,7 +18,9 @@ package org.labkey.api.view.template;
 
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.springframework.web.servlet.ModelAndView;
+import org.apache.commons.lang.StringUtils;
 
 public class PrintTemplate extends JspView<PageConfig>
 {
@@ -50,10 +52,21 @@ public class PrintTemplate extends JspView<PageConfig>
 
     public static String getDefaultTitle(ActionURL helper)
     {
-        String title = helper.getHost();
-        int dotIndex = title.indexOf('.');
-        if (-1 != dotIndex)
-            title = title.substring(0, dotIndex);
+        String title;
+        LookAndFeelProperties lafp = LookAndFeelProperties.getInstance(getContextContainer());
+        if (StringUtils.isNotEmpty(lafp.getShortName()))
+        {
+            title = lafp.getShortName();
+        }
+        else
+        {
+            title = helper.getHost();
+            if (title.startsWith("www."))
+                title = title.substring("www.".length());
+            int dotIndex = title.indexOf('.');
+            if (-1 != dotIndex)
+                title = title.substring(0, dotIndex);
+        }
 
         String extraPath = helper.getExtraPath();
         if (null != extraPath && !"".equals(extraPath))
@@ -64,6 +77,7 @@ public class PrintTemplate extends JspView<PageConfig>
 
             title = title + ": " + extraPath;
         }
+        
         return title;
     }
 
@@ -77,4 +91,5 @@ public class PrintTemplate extends JspView<PageConfig>
             page.setTitle(title);
         }
     }
+
 }

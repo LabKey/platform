@@ -111,7 +111,7 @@ public class PopupMenu
     {
         out.append(
             "<script type=\"text/javascript\">\n" +
-                "LABKEY.requiresClientAPI();\n" +
+                "LABKEY.requiresExtJs();\n" +
              "</script>" +
              "<script type=\"text/javascript\">\n" +
                 "        new Ext.menu.Menu(");

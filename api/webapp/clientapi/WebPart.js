@@ -82,7 +82,7 @@
 				title: 'Webpart Title', 
 				schemaName: 'lists', 
 				queryName: 'People' 
-		}}); 
+		}});
 	queryWebPartRenderer.render(); 
  &lt;/script&gt; </pre></code>
  */
@@ -168,6 +168,7 @@ LABKEY.WebPart = function(config)
                 _partConfig["webpart.title"] = _title;
             if(_titleHref)
                 _partConfig["webpart.titleHref"] = _titleHref;
+            _partConfig.returnURL = _partConfig.returnURL || (window.location.pathname + window.location.search);
 
             if(!_errorCallback)
                 _errorCallback = handleLoadError;

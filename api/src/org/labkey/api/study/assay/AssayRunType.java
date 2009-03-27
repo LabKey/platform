@@ -72,11 +72,7 @@ public class AssayRunType extends ExperimentRunType
             bar.add(copySelectedButton);
         }
 
-        // If we're in the project container, and so is the protocol,
-        // allow choices in the import button
-        boolean includeOtherContainers = _protocol.getContainer().equals(context.getContainer()) && context.getContainer().isProject();
-        List<ActionButton> buttons = AssayService.get().getImportButtons(
-                _protocol, context.getUser(), context.getContainer(), includeOtherContainers);
+        List<ActionButton> buttons = AssayService.get().getImportButtons(_protocol, context.getUser(), context.getContainer(), false);
         bar.addAll(buttons);
     }
 

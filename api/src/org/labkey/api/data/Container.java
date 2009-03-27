@@ -251,6 +251,18 @@ public class Container implements Serializable, Comparable<Container>
         }
     }
 
+    /**
+     * Returns true if possibleAncestor is a parent of this container,
+     * or a parent-of-a-parent, etc.
+     */
+    public boolean hasAncestor(Container possibleAncestor)
+    {
+        if (isRoot())
+            return false;
+        if (getParent().equals(possibleAncestor))
+            return true;
+        return getParent().hasAncestor(possibleAncestor);
+    }
 
     public Container getChild(String folderName)
     {

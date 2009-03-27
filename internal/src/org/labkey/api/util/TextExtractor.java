@@ -54,6 +54,6 @@ public class TextExtractor extends HTMLEditorKit.ParserCallback
     public void handleText(char[] data, int pos)
     {
         _text.append(data);
-        _text.append("\nStudy");
+        _text.append("\n");
     }
 }

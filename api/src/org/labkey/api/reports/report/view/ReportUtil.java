@@ -305,8 +305,48 @@ public class ReportUtil
         return false;
     }
 
-    public static List<Map<String, String>> getViewsJson(ViewContext context, String schemaName, String queryName, boolean includeQueries)
+    public static interface ReportFilter
     {
+        public boolean accept(Report report, ViewContext context);
+
+        /**
+         * Returns the run and edit urls for query views
+         */
+        public ActionURL getViewRunURL(ViewContext context, QueryDefinition def, CustomView view);
+        public ActionURL getViewEditURL(ViewContext context, QueryDefinition def, CustomView view);
+    }
+
+    public static class DefaultReportFilter implements ReportFilter
+    {
+        public boolean accept(Report report, ViewContext context)
+        {
+            return true;
+        }
+
+        public ActionURL getViewRunURL(ViewContext context, QueryDefinition qd, CustomView view)
+        {
+            return qd.urlFor(QueryAction.executeQuery, context.getContainer()).
+                    addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.viewName, view.getName());
+        }
+
+        public ActionURL getViewEditURL(ViewContext context, QueryDefinition qd, CustomView view)
+        {
+            return qd.urlFor(QueryAction.chooseColumns, context.getContainer()).
+                    addParameter(QueryParam.queryName, qd.getName()).
+                    addParameter(QueryParam.viewName, view.getName());
+        }
+    }
+
+    public static List<Map<String, String>> getViews(ViewContext context, String schemaName, String queryName, boolean includeQueries)
+    {
+        return getViews(context, schemaName, queryName, includeQueries, new DefaultReportFilter());
+    }
+
+    public static List<Map<String, String>> getViews(ViewContext context, String schemaName, String queryName, boolean includeQueries, ReportFilter filter)
+    {
+        if (filter == null)
+            throw new IllegalArgumentException("ReportFilter cannot be null");
+        
         String reportKey = null;
 
         if (schemaName != null && queryName != null)
@@ -316,6 +356,9 @@ public class ReportUtil
 
         for (Report r : ReportUtil.getReports(context, reportKey, true))
         {
+            if (!filter.accept(r, context))
+                continue;
+
             if (!StringUtils.isEmpty(r.getDescriptor().getReportName()))
             {
                 ReportDescriptor descriptor = r.getDescriptor();
@@ -410,15 +453,9 @@ public class ReportUtil
                 boolean inherited = isInherited(view, context.getContainer());
                 if (!inherited)
                 {
-                    record.put("editUrl", qd.urlFor(QueryAction.chooseColumns, context.getContainer()).
-                            addParameter(QueryParam.queryName, qd.getName()).
-                            addParameter(QueryParam.viewName, view.getName()).
-                            getLocalURIString());
+                    record.put("editUrl", filter.getViewEditURL(context, qd, view).getLocalURIString());
                 }
-                record.put("runUrl", qd.urlFor(QueryAction.executeQuery, context.getContainer()).
-                        addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.viewName, view.getName()).
-                        getLocalURIString());
-
+                record.put("runUrl", filter.getViewRunURL(context, qd, view).getLocalURIString());
                 record.put("container", view.getContainer().getPath());
                 record.put("inherited", String.valueOf(inherited));
 

@@ -20,6 +20,7 @@ import org.apache.beehive.netui.pageflow.Forward;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.data.*;
+import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -33,6 +34,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 
 import javax.servlet.ServletException;
@@ -173,6 +175,13 @@ public class QueryView extends WebPartView<Object>
         return getSettings().getSelectionKey();
     }
 
+    /** Returns an ActionURL for the "returnURL" parameter or the current ActionURL if none. */
+    public URLHelper getReturnURL()
+    {
+        URLHelper url = getSettings().getReturnURL();
+        return url != null ? url : ViewServlet.getRequestURL();
+    }
+
     protected boolean verboseErrors()
     {
         return true;
@@ -280,14 +289,14 @@ public class QueryView extends WebPartView<Object>
             case sourceQuery:
                 break;
             case chooseColumns:
-                ret.addParameter(QueryParam.srcURL.toString(), getRootContext().getActionURL().toString());
+                ret.addParameter(QueryParam.srcURL.toString(), getReturnURL().getLocalURIString());
                 ret.addParameter(QueryParam.dataRegionName.toString(), getDataRegionName());
                 ret.addParameter(QueryParam.queryName.toString(), getSettings().getQueryName());
                 if (getSettings().getViewName() != null)
                     ret.addParameter(QueryParam.viewName.toString(), getSettings().getViewName());
                 break;
             case deleteQueryRows:
-                ret.addParameter(QueryParam.srcURL.toString(), getViewContext().getActionURL().toString());
+                ret.addParameter(QueryParam.srcURL.toString(), getReturnURL().getLocalURIString());
                 break;
             case editSnapshot:
                 ret.addParameter("snapshotName", getSettings().getQueryName());
@@ -331,7 +340,7 @@ public class QueryView extends WebPartView<Object>
                 bean.setViewName(getSettings().getViewName());
                 bean.setDataRegionName(getDataRegionName());
 
-                bean.setRedirectUrl(getViewContext().getActionURL().toString());
+                bean.setRedirectUrl(getReturnURL().getLocalURIString());
                 return ReportUtil.getRReportDesignerURL(_viewContext, bean);
         }
         return ret;
@@ -1083,7 +1092,15 @@ public class QueryView extends WebPartView<Object>
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
         rgn.setAllowAsync(false);
-        return new ExcelWriter(null, getExportColumns(rgn.getDisplayColumns()));
+        List<DisplayColumn> displayColumns = getExportColumns(rgn.getDisplayColumns());
+        // Need to remove special QC columns
+        for (Iterator<DisplayColumn> it = displayColumns.iterator(); it.hasNext();)
+        {
+            DisplayColumn col = it.next();
+            if (col.getColumnInfo() instanceof RawValueColumn)
+                it.remove();
+        }
+        return new ExcelWriter(null, displayColumns);
     }
 
     public Forward exportToExcel(HttpServletResponse response) throws Exception

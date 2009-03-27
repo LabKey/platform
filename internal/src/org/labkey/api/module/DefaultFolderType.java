@@ -253,7 +253,9 @@ public class DefaultFolderType implements FolderType
 
     protected static Module getModule(String moduleName)
     {
-        return ModuleLoader.getInstance().getModule(moduleName);
+        Module m = ModuleLoader.getInstance().getModule(moduleName);
+        assert null != m;
+        return m;
     }
 
     public void addManageLinks(NavTree adminNavTree, Container container)

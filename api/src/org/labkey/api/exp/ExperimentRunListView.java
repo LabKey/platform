@@ -110,7 +110,7 @@ public class ExperimentRunListView extends QueryView
         if (_showRemoveFromExperimentButton)
         {
             getExperiment();
-            ActionURL removeRunUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getRemoveSelectedExpRunsURL(getContainer(), context.getActionURL(), getExperiment());
+            ActionURL removeRunUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getRemoveSelectedExpRunsURL(getContainer(), getReturnURL(), getExperiment());
             ActionButton removeRunAction = new ActionButton("","Remove");
             removeRunAction.setURL(removeRunUrl);
             removeRunAction.setActionType(ActionButton.Action.POST);
@@ -123,7 +123,7 @@ public class ExperimentRunListView extends QueryView
         if (_showDeleteButton)
         {
             ActionButton deleteButton = new ActionButton("button", "Delete");
-            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteSelectedExpRunsURL(context.getContainer(), context.getActionURL());
+            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteSelectedExpRunsURL(context.getContainer(), getReturnURL());
             deleteButton.setURL(url);
             deleteButton.setActionType(ActionButton.Action.POST);
             deleteButton.setRequiresSelection(true);
@@ -135,7 +135,7 @@ public class ExperimentRunListView extends QueryView
         {
             MenuButton addToExperimentButton = new MenuButton("Add to run group");
 
-            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getCreateRunGroupURL(getViewContext().getContainer(), getViewContext().getActionURL(), true);
+            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getCreateRunGroupURL(getViewContext().getContainer(), getReturnURL(), true);
             String javascript = "javascript: " + view.getDataRegion().getJavascriptFormReference(false) + ".method = \"POST\";\n " +
                     view.getDataRegion().getJavascriptFormReference(false) + ".action = " + PageFlowUtil.jsString(url + "&noPost=true") + ";\n " +
                     view.getDataRegion().getJavascriptFormReference(false) + ".submit();";

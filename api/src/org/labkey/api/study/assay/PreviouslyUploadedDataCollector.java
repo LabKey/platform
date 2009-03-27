@@ -33,6 +33,8 @@ import java.util.Collections;
  */
 public class PreviouslyUploadedDataCollector extends AbstractAssayDataCollector
 {
+    private boolean _uploadComplete = false;
+
     private static final String PATH_FORM_ELEMENT_NAME = "PreviouslyUploadedFilePaths";
     private static final String NAME_FORM_ELEMENT_NAME = "PreviouslyUploadedFileNames";
     private final Map<String, File> _uploadedFiles;
@@ -82,6 +84,9 @@ public class PreviouslyUploadedDataCollector extends AbstractAssayDataCollector
 
     public Map<String, File> createData(AssayRunUploadContext context) throws IOException
     {
+        if (_uploadComplete)
+            return Collections.emptyMap();
+
         String[] paths = context.getRequest().getParameterValues(PATH_FORM_ELEMENT_NAME);
         String[] names = context.getRequest().getParameterValues(NAME_FORM_ELEMENT_NAME);
         if (paths == null)
@@ -122,5 +127,10 @@ public class PreviouslyUploadedDataCollector extends AbstractAssayDataCollector
             view.getDataRegion().addHiddenFormField(NAME_FORM_ELEMENT_NAME, entry.getKey());
             view.getDataRegion().addHiddenFormField(PATH_FORM_ELEMENT_NAME, pipeRoot.relativePath(entry.getValue()));
         }
+    }
+
+    public void uploadComplete(AssayRunUploadContext context)
+    {
+        _uploadComplete = true;
     }
 }

@@ -23,18 +23,16 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.security.ACL;
+import org.labkey.api.study.actions.PublishStartAction;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
-import org.labkey.api.study.actions.PublishStartAction;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.common.util.Pair;
-
-import java.util.List;
 
 /**
  * User: brittp
@@ -95,7 +93,7 @@ public class ResultsQueryView extends AssayBaseQueryView
                     bbar.add(publishButton);
                 }
 
-                handleUploadButton(bbar);
+                bbar.addAll(AssayService.get().getImportButtons(_protocol, getViewContext().getUser(), getViewContext().getContainer(), false));
 
                 view.getDataRegion().setButtonBar(bbar);
             }
@@ -103,16 +101,6 @@ public class ResultsQueryView extends AssayBaseQueryView
         else
             view.getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
         return view;
-    }
-
-    private void handleUploadButton(ButtonBar buttonBar)
-    {
-        // If we're in the project container, and so is the protocol,
-        // allow choices in the import button
-        boolean includeOtherContainers = _protocol.getContainer().equals(getViewContext().getContainer()) && getViewContext().getContainer().isProject();
-        List<ActionButton> buttons = AssayService.get().getImportButtons(
-                _protocol, getViewContext().getUser(), getViewContext().getContainer(), includeOtherContainers);
-        buttonBar.addAll(buttons);
     }
 
     protected TSVGridWriter.ColumnHeaderType getColumnHeaderType()

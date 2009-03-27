@@ -173,7 +173,8 @@ LABKEY.Query = new function()
          * @param {Function} config.successCallback
 				Function called when the "selectRows" function executes successfully. Will be called with arguments:
 				{@link LABKEY.Query.SelectRowsResults} and (optionally) {@link LABKEY.Query.SelectRowsOptions}
-         * @param {Function} [config.errorCallback] Function called when execution of the "selectRows" function fails.
+         * @param {Function} [config.errorCallback] Function called when execution of the "executeSql" function fails.
+         *                   See {@link LABKEY.Query#selectRows} for more information on the parameters passed to this function.
          * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to 100).
          *        If you want to return all possible rows, set this config property to -1.
          * @param {Integer} [config.offset] The index of the first row to return from the server (defaults to 0).
@@ -196,6 +197,9 @@ LABKEY.Query = new function()
                 dataObject.maxRows = config.maxRows;
             if(config.offset && config.offset > 0)
                 dataObject.offset = config.offset;
+
+            if(config.containerFilter)
+                dataObject.containerFilter = config.containerFilter;
 
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL("query", "executeSql", config.containerPath),
@@ -229,7 +233,13 @@ LABKEY.Query = new function()
         * @param {Function} [config.errorCallback] Function called when execution of the "selectRows" function fails.
         *       This function will be called with the following arguments:
 				<ul>
-				    <li>data: an instance of {@link LABKEY.Query.SelectRowsResults}</li>
+				    <li>errorInfo: an object describing the error with the following fields:
+                        <ul>
+                            <li>exception: the exception message</li>
+                            <li>exceptionClass: the Java class of the exception thrown on the server</li>
+                            <li>stackTrace: the Java stack trace at the point when the exception occurred</li>
+                        </ul>
+                    </li>
 				    <li>options: the options used for the AJAX request</li>
 				    <li>responseObj: the XMLHttpResponseObject instance used to make the AJAX request</li>
 				</ul>
@@ -354,6 +364,9 @@ LABKEY.Query = new function()
             if(config.requiredVersion)
                 dataObject.apiVersion = config.requiredVersion;
 
+            if(config.containerFilter)
+                dataObject.containerFilter = config.containerFilter;
+
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'getQuery', config.containerPath),
                 method : 'GET',
@@ -376,6 +389,7 @@ LABKEY.Query = new function()
 						Will be called with arguments: {@link LABKEY.Query.ModifyRowsResults} and (optionally)
 						{@link LABKEY.Query.ModifyRowsOptions}.
         * @param {Function} [config.errorCallback] Function called when execution of the "updateRows" function fails.
+         *                   See {@link LABKEY.Query#selectRows} for more information on the parameters passed to this function.
         * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
         *               The row array must include the primary key column values and values for
         *               other columns you wish to update.
@@ -407,6 +421,7 @@ LABKEY.Query = new function()
 						Will be called with arguments: {@link LABKEY.Query.ModifyRowsResults} and (optionally)
 						{@link LABKEY.Query.ModifyRowsOptions}.
 		* @param {Function} [config.errorCallback]  Function called when execution of the "insertRows" function fails.
+         *                   See {@link LABKEY.Query#selectRows} for more information on the parameters passed to this function.
         * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
         *                  The row data array must include all column values except for the primary key column.
         *                  However, you will need to include the primary key column values if you defined
@@ -439,6 +454,7 @@ LABKEY.Query = new function()
         			Will be called with arguments: {@link LABKEY.Query.ModifyRowsResults} and (optionally)
 				    {@link LABKEY.Query.ModifyRowsOptions}.
 		* @param {Function} [config.errorCallback] Function called when execution of the "deleteRows" function fails.
+         *                   See {@link LABKEY.Query#selectRows} for more information on the parameters passed to this function.
         * @param {Array} config.rowDataArray Array of record objects in which each object has a property for each field.
         *                  The row data array needs to include only the primary key column value, not all columns.
         * @param {String} [config.containerPath] The container path in which the schema and query name are defined.
@@ -561,12 +577,7 @@ LABKEY.Query = new function()
         getQueries : function(config)
         {
             var params = {};
-            if(config.schemaName)
-                params.schemaName = config.schemaName;
-            if(config.includeColumns)
-                params.includeColumns = config.includeColumns;
-            if(config.includeUserQueries)
-                params.includeUserQueries = config.includeUserQueries;
+            Ext.apply(params, config);
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'getQueries', config.containerPath),
                 method : 'GET',

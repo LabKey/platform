@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2008 LabKey Corporation
+ * Copyright (c) 2007-2009 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.labkey.api.study.actions;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.TableViewForm;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -100,7 +101,7 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
                         "{ document.getElementById('ResolverDiv-' + typeElements[i].value).style.display='none'; } " +
                         "document.getElementById('ResolverDiv-' + this.value).style.display='block';\" ");
                 }
-                out.write("type=\"radio\" " +
+                out.write(" type=\"radio\" " +
                         "name=\"" + _typeInputName + "\"" +
                         ( resolver == selected ? " checked=\"true\"" : "") + " " +
                         "value=\"" + PageFlowUtil.filter(resolver.getName()) + "\"" +
@@ -140,6 +141,10 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
 
     protected Object getInputValue(RenderContext ctx)
     {
+        TableViewForm viewForm = ctx.getForm();
+        // check to see if our insert view has explicit initial values:
+        if (null != viewForm && viewForm.getStrings().containsKey(_typeInputName))
+            return viewForm.get(_typeInputName);
         return ctx.get(_typeInputName);
     }
 }

@@ -182,7 +182,10 @@ public class SqlScriptParser
 
             try
             {
-                assert null != _upgradeCode;
+                if (_upgradeCode == null)
+                {
+                    throw new IllegalArgumentException("The " + _moduleContext.getName() + " module does not have an UpgradeCode implementation");
+                }
                 assert null != _methodName;
 
                 DbSchema.invalidateIncompleteSchemas();

@@ -16,10 +16,7 @@
 
 package org.labkey.api.study.query;
 
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.query.ExpSchema;
@@ -55,7 +52,7 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
 
     public PlateBasedAssayRunDataTable(final UserSchema schema, final ExpProtocol protocol)
     {
-        super(OntologyManager.getTinfoObject(), schema.getContainer());
+        super(new ProtocolFilteredObjectTable(schema.getContainer(), protocol.getLSID()), schema.getContainer());
 
         final AssayProvider provider = AssayService.get().getProvider(protocol);
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
@@ -130,12 +127,6 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
             throw new RuntimeSQLException(e);
         }
 
-        SQLFragment filterClause = new SQLFragment("OwnerObjectId IN (\n" +
-                "SELECT ObjectId FROM exp.Object o, exp.Data d, exp.ExperimentRun r WHERE o.ObjectURI = d.lsid AND \n" +
-                "d.RunId = r.RowId and r.ProtocolLSID = ?)");
-        filterClause.add(protocol.getLSID());
-        addCondition(filterClause, "OwnerObjectId");
-
         // TODO - we should have a more reliable (and speedier) way of identifying just the data rows here
         SQLFragment dataRowClause = new SQLFragment("ObjectURI LIKE '%" + getDataRowLsidPrefix() + "%'");
         addCondition(dataRowClause, "ObjectURI");
@@ -186,4 +177,5 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
         }
         setDefaultVisibleColumns(visibleColumns);
     }
+
 }

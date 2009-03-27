@@ -89,6 +89,9 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         if(config.columns)
             baseParams['query.columns'] = config.columns;
 
+        if(config.containerFilter)
+            baseParams.containerFilter = config.containerFilter;
+
         baseParams.apiVersion = 9.1;
 
         this.isLoading = false;
@@ -467,7 +470,10 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         for(var field  in record.getChanges())
         {
             if(record.json && record.json[field])
+            {
                 delete record.json[field].displayValue;
+                delete record.json[field].qcValue;
+            }
         }
     },
 

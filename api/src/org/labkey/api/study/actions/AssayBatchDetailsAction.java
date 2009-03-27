@@ -29,6 +29,8 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.ACL;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 
@@ -36,6 +38,7 @@ import org.springframework.validation.BindException;
  * User: kevink
  * Date: Feb 11, 2009
  */
+@RequiresPermission(ACL.PERM_READ)
 public class AssayBatchDetailsAction extends BaseAssayAction<AssayBatchDetailsAction.AssayBatchDetailsForm>
 {
     public static class AssayBatchDetailsForm extends ProtocolIdForm
@@ -63,6 +66,11 @@ public class AssayBatchDetailsAction extends BaseAssayAction<AssayBatchDetailsAc
         _exp = ExperimentService.get().getExpExperiment(form.getBatchId());
         if (_exp == null)
             HttpView.throwNotFound("Assay batch not found for runId: " + form.getBatchId());
+
+        if (!_exp.getContainer().equals(getViewContext().getContainer()))
+        {
+            HttpView.throwRedirect(getViewContext().cloneActionURL().setContainer(_exp.getContainer()));
+        }
 
         AssayProvider provider = AssayService.get().getProvider(_protocol);
         return provider.createBatchDetailsView(context, _protocol, _exp);

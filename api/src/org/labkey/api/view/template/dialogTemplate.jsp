@@ -55,6 +55,9 @@
             <table class="labkey-full-screen-table">
                 <tr><td class="labkey-full-screen-table-panel"><img src="<%=contextPath%>/_.gif" width=400 height=1></td></tr>
                 <tr>
+                    <script type="text/javascript">
+                        LABKEY.requiresClientAPI();
+                    </script>
                     <td id="dialogBody" class="labkey-dialog-body"><% me.include(me.getBody(), out);%>
 
                     </td></tr>

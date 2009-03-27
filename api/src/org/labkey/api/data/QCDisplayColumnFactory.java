@@ -18,12 +18,16 @@ package org.labkey.api.data;
 
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.QcColumn;
+import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.query.*;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.PropertyForeignKey;
+import org.labkey.api.query.QueryService;
 
+import java.sql.Types;
 import java.util.Collections;
 import java.util.Map;
-import java.sql.Types;
 
 /**
  * User: jgarms
@@ -31,8 +35,6 @@ import java.sql.Types;
  */
 public class QCDisplayColumnFactory implements DisplayColumnFactory
 {
-    public static final String RAW_VALUE_SUFFIX = "RawValue";
-
     public DisplayColumn createRenderer(ColumnInfo colInfo)
     {
         String qcColName = colInfo.getQcColumnName();
@@ -54,7 +56,7 @@ public class QCDisplayColumnFactory implements DisplayColumnFactory
     {
         ColumnInfo qcColumn = new QcColumn(pd, table, parentLsidColumn);
 
-        ColumnInfo rawValueCol = createRawValueColumn(table, valueColumn);
+        ColumnInfo rawValueCol = new RawValueColumn(table, valueColumn);
 
         valueColumn.setDisplayColumnFactory(new QCDisplayColumnFactory());
 
@@ -65,31 +67,22 @@ public class QCDisplayColumnFactory implements DisplayColumnFactory
         return result;
     }
 
-    private static ColumnInfo createRawValueColumn(TableInfo table, ColumnInfo valueColumn)
-    {
-        AliasedColumn rawValueCol = new AliasedColumn(table, valueColumn.getName() + RAW_VALUE_SUFFIX, valueColumn);
-        rawValueCol.setUserEditable(false);
-        rawValueCol.setIsHidden(true);
-        rawValueCol.setQcColumnName(null); // This column itself does not allow QC
-        rawValueCol.setNullable(true); // Otherwise we get complaints on import for required fields
-
-        return rawValueCol;
-    }
-
     private static ColumnInfo[] createQCColumns(AbstractTableInfo table, ColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId)
     {
+        String qcColumnName = property.getName() + QcColumn.QC_INDICATOR_SUFFIX;
         ColumnInfo qcColumn = new ExprColumn(table,
-                property.getName() + QcColumn.QC_INDICATOR_SUFFIX,
+                qcColumnName,
                 PropertyForeignKey.getValueSql(colObjectId.getValueSql(ExprColumn.STR_TABLE_ALIAS), property.getQCValueSQL(), property.getPropertyId(), false),
                 Types.VARCHAR);
 
+        qcColumn.setCaption(qcColumnName);
         qcColumn.setNullable(true);
         qcColumn.setUserEditable(false);
         qcColumn.setIsHidden(true);
 
         valueColumn.setQcColumnName(qcColumn.getName());
 
-        ColumnInfo rawValueCol = createRawValueColumn(table, valueColumn);
+        ColumnInfo rawValueCol = new RawValueColumn(table, valueColumn);
 
         valueColumn.setDisplayColumnFactory(new QCDisplayColumnFactory());
 

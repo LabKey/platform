@@ -53,7 +53,7 @@ public class BatchListQueryView extends QueryView
     {
         super.populateButtonBar(view, bar);
 
-        ActionURL deleteURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteExperimentsURL(getContainer(), getViewContext().getActionURL());
+        ActionURL deleteURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteExperimentsURL(getContainer(), getReturnURL());
         ActionButton deleteButton = new ActionButton(deleteURL, "Delete");
         deleteButton.setURL(deleteURL);
         deleteButton.setActionType(ActionButton.Action.POST);
@@ -69,9 +69,7 @@ public class BatchListQueryView extends QueryView
         viewSelectedButton.setRequiresSelection(true);
         bar.add(viewSelectedButton);
 
-        boolean includeOtherContainers = _protocol.getContainer().equals(getViewContext().getContainer()) && getViewContext().getContainer().isProject();
-        List<ActionButton> buttons = AssayService.get().getImportButtons(
-                _protocol, getViewContext().getUser(), getViewContext().getContainer(), includeOtherContainers);
+        List<ActionButton> buttons = AssayService.get().getImportButtons(_protocol, getViewContext().getUser(), getViewContext().getContainer(), false);
         bar.addAll(buttons);
     }
 

@@ -41,6 +41,7 @@ public class QcColumn extends LookupColumn
         String name = ColumnInfo.legalNameFromName(pd.getName() + QC_INDICATOR_SUFFIX);
         setName(name);
         setAlias(name);
+        setCaption(name);
         setNullable(true);
         setIsHidden(true);
         setUserEditable(false);

@@ -266,19 +266,7 @@ LABKEY.Assay = new function()
         {
             var dataObject = {};
 
-            dataObject['assayName'] = config['assayName'];
-            if (config['includeStats'])
-                dataObject['includeStats'] = config['includeStats'];
-            if (config['includeWells'])
-                dataObject['includeWells'] = config['includeWells'];
-            if (config['calculateNeut'])
-                dataObject['calculateNeut'] = config['calculateNeut'];
-            if (config['sort'])
-                dataObject['sort'] = config['sort'];
-            if (config['offset'])
-                dataObject['offset'] = config['offset'];
-            if (config['dir'])
-                dataObject['dir'] = config['dir'];
+            Ext.apply(dataObject, config);
             if (config.sort)
                 dataObject['query.sort'] = config.sort;
             if(config.offset)

@@ -22,11 +22,13 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.actions.AssayDetailRedirectAction;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Set;
 
 /**
  * User: jgarms
@@ -47,8 +49,8 @@ public class RunDataLinkDisplayColumn extends SimpleDisplayColumn
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         int runId = ((Integer)runIdCol.getValue(ctx)).intValue();
-        ExpRun run = ExperimentService.get().getExpRun(runId);
-        ActionURL runURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(run.getContainer(), protocol, runId);
+        ActionURL runURL = new ActionURL(AssayDetailRedirectAction.class, ctx.getContainer());
+        runURL.addParameter("runId", runId);
         out.write("<a href=\"");
         out.write(runURL.getLocalURIString());
         out.write("\">View Run</a>");

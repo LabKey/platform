@@ -71,8 +71,16 @@ public class AssayService
 
         List<ExpProtocol> getAssayProtocols(Container container);
 
-        @Nullable
-        public List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean includeOtherContainers);
+        /**
+         * Populates the import button with possible containers
+         * @param protocol
+         * @param user
+         * @param currentContainer
+         * @param isStudyView true if this view is from a study, and thus should exclude the current container
+         * unless it already has assay data in it
+         * @return
+         */
+        public List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean isStudyView);
 
         /**
          * Creates a batch object but does not save it to the database

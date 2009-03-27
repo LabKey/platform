@@ -115,6 +115,9 @@ if (bean.showHeader() != PageConfig.TrueFalse.False)
             </td>
             <td class="labkey-proj">
                 <!--content area-->
+                <script type="text/javascript">
+                    LABKEY.requiresClientAPI();
+                </script>
                 <table class="labkey-proj">
                     <% if (null != me.getView("appbar"))
                     {%>

@@ -26,6 +26,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.*;
+import org.labkey.api.study.query.ProtocolFilteredObjectTable;
 
 import java.sql.Types;
 import java.util.ArrayList;
@@ -42,7 +43,7 @@ public class RunDataTable extends FilteredTable
 {
     public RunDataTable(final QuerySchema schema, final ExpProtocol protocol)
     {
-        super(OntologyManager.getTinfoObject(), schema.getContainer());
+        super(new ProtocolFilteredObjectTable(schema.getContainer(), protocol.getLSID()), schema.getContainer());
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
         ColumnInfo objectIdColumn = addWrapColumn(_rootTable.getColumn("ObjectId"));
         objectIdColumn.setKeyField(true);
@@ -66,12 +67,6 @@ public class RunDataTable extends FilteredTable
         }
         column.setFk(fk);
         addColumn(column);
-        
-        SQLFragment filterClause = new SQLFragment("OwnerObjectId IN (\n" +
-                "SELECT ObjectId FROM exp.Object o, exp.Data d, exp.ExperimentRun r WHERE o.ObjectURI = d.lsid AND \n" +
-                "d.RunId = r.RowId and r.ProtocolLSID = ?)");
-        filterClause.add(protocol.getLSID());
-        addCondition(filterClause, "OwnerObjectId");
 
         // TODO - we should have a more reliable (and speedier) way of identifying just the data rows here
         SQLFragment dataRowClause = new SQLFragment("ObjectURI LIKE '%.DataRow-%'");
@@ -119,5 +114,9 @@ public class RunDataTable extends FilteredTable
         setDefaultVisibleColumns(visibleColumns);
     }
 
+    @Override
+    public String toString()
+    {
+        return "RunDataTable";
+    }
 }
- 

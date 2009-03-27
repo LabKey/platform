@@ -77,12 +77,19 @@ public class ExcelLoader extends DataLoader
         this.sheetName = sheetName;
     }
 
-    private Sheet getSheet()
+    private Sheet getSheet() throws IOException
     {
-        if (sheetName != null)
-            return workbook.getSheet(sheetName);
-        else
-            return workbook.getSheet(0);
+        try
+        {
+            if (sheetName != null)
+                return workbook.getSheet(sheetName);
+            else
+                return workbook.getSheet(0);
+        }
+        catch (ArrayIndexOutOfBoundsException e)
+        {
+            throw new IOException("Invalid Excel file");
+        }
     }
 
     public String[][] getFirstNLines(int n) throws IOException
@@ -138,7 +145,7 @@ public class ExcelLoader extends DataLoader
 
         private Map<String, Object> nextRow;
 
-        public ExcelIterator()
+        public ExcelIterator() throws IOException
         {
             // find a converter for each column type
             for (ColumnDescriptor column : _columns)

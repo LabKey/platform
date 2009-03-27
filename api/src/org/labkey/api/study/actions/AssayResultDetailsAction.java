@@ -61,6 +61,11 @@ public class AssayResultDetailsAction extends BaseAssayAction<DataDetailsForm>
         if (_data == null)
             HttpView.throwNotFound("Assay ExpData not found for dataRowId: " + _dataRowId);
 
+        if (!_data.getContainer().equals(getViewContext().getContainer()))
+        {
+            HttpView.throwRedirect(getViewContext().cloneActionURL().setContainer(_data.getContainer()));
+        }
+
         return provider.createResultDetailsView(context, _protocol, _data, _dataRowId);
     }
 
