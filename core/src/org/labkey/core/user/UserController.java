@@ -196,7 +196,7 @@ public class UserController extends SpringActionController
 
             // Could allow project admins to do this... but they can already add users when adding to a group
             ActionButton insert = new ActionButton("showAddUsers", "Add Users");
-            ActionURL actionURL = new ActionURL(SecurityController.AddUsersAction.class, getContainer());
+            ActionURL actionURL = new ActionURL(SecurityController.AddUsersAction.class, ContainerManager.getRoot());
             insert.setURL(actionURL.getLocalURIString());
             insert.setActionType(ActionButton.Action.LINK);
             gridButtonBar.add(insert);

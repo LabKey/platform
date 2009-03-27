@@ -53,7 +53,10 @@ import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.*;
+import org.labkey.api.reports.report.ChartQueryReport;
+import org.labkey.api.reports.report.ChartReportDescriptor;
+import org.labkey.api.reports.report.QueryReport;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -68,7 +71,10 @@ import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.Pair;
-import org.labkey.study.*;
+import org.labkey.study.SampleManager;
+import org.labkey.study.StudyModule;
+import org.labkey.study.StudySchema;
+import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
@@ -89,9 +95,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
-import org.json.JSONObject;
-import org.json.JSONArray;
-import org.labkey.api.security.SecurityManager;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -413,9 +416,8 @@ public class StudyController extends BaseStudyController
         {
             String reportId = (String)getViewContext().get("Dataset.reportId");
 
-            ReportIdentifier identifier = ReportService.get().getReportIdentifier(reportId);
-            if (identifier != null)
-                return identifier.getReport();
+            if (NumberUtils.isDigits(reportId))
+                return ReportManager.get().getReport(getContainer(), NumberUtils.toInt(reportId));
 
             return null;
         }
@@ -3655,7 +3657,7 @@ public class StudyController extends BaseStudyController
             DataRegion dr = new DataRegion();
             dr.setTable(tinfo);
 
-            Set<String> ignoreColumns = new CaseInsensitiveHashSet("lsid", "datasetid", "visitdate", "sourcelsid", "created", "modified", "visitrowid", "day", "qcstate", "dataset");
+            Set<String> ignoreColumns = new CaseInsensitiveHashSet("lsid", "datasetid", "visitdate", "sourcelsid", "created", "modified", "visitrowid", "day", "qcstate");
             if (study.isDateBased())
                 ignoreColumns.add("SequenceNum");
 
@@ -4541,164 +4543,6 @@ public class StudyController extends BaseStudyController
             _appendManageStudy(root);
             root.addChild("Manage Views", new ActionURL(ReportsController.ManageReportsAction.class, getContainer()));
             return root.addChild("Customize Participant View");
-        }
-    }
-
-    @RequiresPermission(ACL.PERM_ADMIN)
-    public class QuickCreateStudyAction extends ApiAction<SimpleApiJsonForm>
-    {
-        public ApiResponse execute(SimpleApiJsonForm simpleApiJsonForm, BindException errors) throws Exception
-        {
-            JSONObject json = simpleApiJsonForm.getJsonObject();
-            if (!json.has("name"))
-                throw new IllegalArgumentException("name is a required attribute.");
-
-            String folderName  = json.getString("name");
-            String startDateStr;
-            if (json.has("startDate"))
-                startDateStr = json.getString("startDate");
-            else
-                startDateStr = DateUtil.formatDate();
-            Date startDate = new Date(DateUtil.parseDateTime(startDateStr));
-
-            String cohortDatasetName = json.getString("cohortDataset");
-            String cohortProperty = json.getString("cohortProperty");
-            if (null != cohortDatasetName && null == cohortProperty)
-                throw new IllegalArgumentException("Specified cohort dataset, but not property");
-
-            JSONArray visits = null;
-            if (json.has("visits"))
-                visits = json.getJSONArray("visits");
-
-            JSONArray jsonDatasets = null;
-            if (json.has("dataSets"))
-            {
-                boolean hasCohortDataset = false;
-                jsonDatasets = json.getJSONArray("dataSets");
-                for (JSONObject jdataset : jsonDatasets.toJSONObjectArray())
-                {
-                    if (!jdataset.has("name"))
-                        throw new IllegalArgumentException("Dataset name required.");
-
-                    if (jdataset.get("name").equals(cohortDatasetName))
-                        hasCohortDataset = true;
-                }
-
-                if (null != cohortDatasetName && hasCohortDataset == false)
-                    throw new IllegalArgumentException("Couldn't find cohort dataset");
-            }
-
-
-            JSONArray jsonWebParts = null;
-            if (json.has("webParts"))
-                jsonWebParts = json.getJSONArray("webParts");
-
-
-            Container parent = getContainer();
-            Container studyFolder = parent.getChild(folderName);
-            if (null == studyFolder)
-                studyFolder = ContainerManager.createContainer(parent, folderName);
-            if (null != StudyManager.getInstance().getStudy(studyFolder))
-                throw new IllegalStateException("Study already exists in folder");
-
-            SecurityManager.setInheritPermissions(studyFolder);
-            studyFolder.setFolderType(ModuleLoader.getInstance().getFolderType(StudyFolderType.NAME));
-
-            Study study = new Study(studyFolder, folderName + " Study");
-            study.setDateBased(true);
-            study.setStartDate(startDate);
-            study = StudyManager.getInstance().createStudy(getUser(), study);
-
-            if (null != visits)
-                for (JSONObject obj : visits.toJSONObjectArray())
-                {
-                    Visit visit = new Visit(studyFolder, obj.getDouble("minDays"), obj.getDouble("maxDays"), obj.getString("label"), Visit.Type.REQUIRED_BY_TERMINATION);
-                    StudyManager.getInstance().createVisit(study, getUser(), visit);
-                }
-
-
-            DbScope scope = StudySchema.getInstance().getSchema().getScope();
-            boolean ownsTransaction = !scope.isTransactionActive();
-
-            List<DataSetDefinition> datasets = new ArrayList<DataSetDefinition>();
-            if (null != jsonDatasets)
-            {
-                try
-                {
-                    if (ownsTransaction)
-                        scope.beginTransaction();
-                    for (JSONObject jdataset : jsonDatasets.toJSONObjectArray())
-                    {
-                        DataSetDefinition dataset = AssayPublishManager.getInstance().createAssayDataset(getUser(), study, jdataset.getString("name"),
-                                jdataset.getString("keyPropertyName"),
-                                jdataset.has("id") ? jdataset.getInt("id") : null,
-                                jdataset.has("demographicData") && jdataset.getBoolean("demographicData"),
-                                null);
-
-                        if (jdataset.has("keyPropertyManaged") && jdataset.getBoolean("keyPropertyManaged"))
-                        {
-                            dataset = dataset.createMutable();
-                            dataset.setKeyPropertyManaged(true);
-                            StudyManager.getInstance().updateDataSetDefinition(getUser(), dataset);
-                        }
-
-                        if (dataset.getName().equals(cohortDatasetName))
-                        {
-                            study = study.createMutable();
-                            study.setParticipantCohortDataSetId(dataset.getDataSetId());
-                            study.setParticipantCohortProperty(cohortProperty);
-                            StudyManager.getInstance().updateStudy(getUser(), study);
-                        }
-
-                        OntologyManager.ensureDomainDescriptor(dataset.getTypeURI(), dataset.getName(), study.getContainer());
-                        datasets.add(dataset);
-                    }
-                    if (ownsTransaction)
-                        scope.commitTransaction();
-                }
-                finally
-                {
-                    if (ownsTransaction)
-                        scope.closeConnection();
-                }
-            }
-
-            if (null != jsonWebParts)
-            {
-                List<Portal.WebPart> webParts = new ArrayList<Portal.WebPart>();
-                for (JSONObject obj : jsonWebParts.toJSONObjectArray())
-                {
-                    WebPartFactory factory = Portal.getPortalPartCaseInsensitive(obj.getString("partName"));
-                    if (null == factory)
-                        continue; //Silently ignore
-                    String location = obj.getString("location");
-                    if (null == location || "body".equals(location))
-                        location = HttpView.BODY;
-                    JSONObject partConfig = null;
-                    if (obj.has("partConfig"))
-                        partConfig = obj.getJSONObject("partConfig");
-
-                    Portal.WebPart part = factory.createWebPart();
-                    part.setLocation(location);
-                    if (null != partConfig)
-                    {
-                        for (Map.Entry<String,Object> entry : partConfig.entrySet())
-                            part.setProperty(entry.getKey(), entry.getValue().toString());
-                    }
-
-                    webParts.add(part);
-                }
-                Portal.saveParts(studyFolder.getId(), webParts.toArray(new Portal.WebPart[webParts.size()]));
-            }
-
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            response.put("label", study.getLabel());
-            response.put("containerId", study.getContainer().getId());
-            response.put("containerPath", study.getContainer().getPath());
-            response.putBeanList("dataSets", datasets, "name", "typeURI", "dataSetId");
-
-
-            return response;
         }
     }
 

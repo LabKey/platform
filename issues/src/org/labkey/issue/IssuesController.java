@@ -731,7 +731,7 @@ public class IssuesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return new DetailsAction(_issue).appendNavTrail(root)
-                    .addChild("(update) " + _issue.getTitle().getSource());
+                    .addChild("(update) " + _issue.getTitle());
         }
     }
 

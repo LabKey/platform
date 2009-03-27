@@ -62,7 +62,7 @@ public class Query
 
     private int _aliasCounter = 0;
 
-
+	
     public Query(QuerySchema schema)
     {
         _schema = schema;
@@ -128,7 +128,7 @@ public class Query
 		{
 			QNode root = (new SqlParser()).parseQuery(queryText, _parseErrors);
             QueryRelation relation = null;
-
+            
 			if (root instanceof QQuery)
 			{
 				relation = new QuerySelect(this, (QQuery)root);
@@ -137,7 +137,7 @@ public class Query
 			{
 				relation = new QueryUnion(this, (QUnion)root);
 			}
-
+            
             if (relation == null)
                 return;
 
@@ -169,7 +169,6 @@ public class Query
 		}
 		else
 		{
-            boolean foundColumn = false;
             TableInfo table = relation.getTableInfo();
 			for (FieldKey field : table.getDefaultVisibleColumns())
 			{
@@ -181,28 +180,7 @@ public class Query
 				QFieldKey qfield = QFieldKey.of(FieldKey.fromParts(parts));
 				qfield.appendSource(builder);
 				builder.nextPrefix(",");
-                foundColumn = true;
 			}
-            if (!foundColumn)
-            {
-                List<String> pkNames = table.getPkColumnNames();
-                if (pkNames.isEmpty())
-                {
-                    builder.append("'No columns selected' AS message");
-                }
-                else
-                {
-                    for (String pkName : pkNames)
-                    {
-                        List<String> parts = new ArrayList<String>();
-                        parts.add(key.getName());
-                        parts.add(pkName);
-                        QFieldKey qfield = QFieldKey.of(FieldKey.fromParts(parts));
-                        qfield.appendSource(builder);
-                        builder.nextPrefix(",");
-                    }
-                }
-            }
 		}
 		builder.popPrefix();
 		builder.append("\nFROM ");
@@ -257,7 +235,7 @@ public class Query
     {
         return _queryRoot instanceof QuerySelect;
     }
-
+    
 
     public boolean hasSubSelect()
     {
@@ -329,7 +307,7 @@ public class Query
 		//noinspection ThrowableInstanceNeverThrown
 		errors.add(new QueryParseException(message, null, line, column));
 	}
-
+	
 
 	/**
 	 * Resolve a particular table name.  The table name may have schema names (folder.schema.table etc.) prepended to it.
@@ -401,7 +379,7 @@ public class Query
 
 		return null;
 	}
-
+	
 
 	//
 	// TESTING
@@ -441,7 +419,7 @@ public class Query
                 row[c++] = DateUtil.toISO(DateUtil.parseDateTime("2000-01-01") + i*24*60*60*1000);
                 row[c++] = DateUtil.formatDuration(i*1000);
                 row[c++] = GUID.makeGUID();
-                row[c++] = "" + TestContext.get().getUser().getUserId();
+                row[c++] = "" + TestContext.get().getUser().getUserId();                
                 row[c++] = now;
             }
 
@@ -511,7 +489,7 @@ public class Query
 		}
     }
 
-
+    
 
     static int Rcolumns = TestDataLoader.COLUMNS.length + 2; // rowid, entityid
 	static int Rsize = 84;
@@ -619,7 +597,7 @@ public class Query
 		new SqlTest("SELECT R.day, R.month, R.date FROM R ORDER BY R.date"),
 		new SqlTest("SELECT R.day, R.month, R.date FROM R UNION SELECT R.day, R.month, R.date FROM R ORDER BY date")
 	};
-
+	
 	static SqlTest[] negative = new SqlTest[]
 	{
 		new SqlTest("SELECT S.d, S.seven FROM S"),
@@ -634,7 +612,7 @@ public class Query
 	};
 
 
-
+	
     public static class TestCase extends junit.framework.TestCase
     {
         public TestCase()
@@ -827,7 +805,7 @@ public class Query
 				ResultSetUtil.close(rs);
 			}
 		}
-
+		
 
         public void testSQL() throws Exception
         {

@@ -34,5 +34,5 @@
             schemaName="<%=model.getSchemaName()%>",
             queryName="<%=model.getQueryName()%>"<% if (null != model.getViewName()) {%>,
             viewName="<%=model.getViewName()%>"<% } if (null != model.getSort()) {%>,
-            sort=<%=model.getSort()%><% } if (null != model.getFilters()) {%>,
-            filter=<%=model.getFilters()%><% } %>);
+            colSort=<%=model.getSort()%><% } if (null != model.getFilters()) {%>,
+            colFilter=<%=model.getFilters()%><% } %>);

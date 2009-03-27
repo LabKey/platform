@@ -223,7 +223,6 @@ public class QWhere extends QNode
         QExpr field = QFieldKey.of(fieldKey);
 
         String literal = compare.getLiteral();
-        String datatype = compare.getDatatype();
         if (op != CompareType.ISBLANK && op != CompareType.NONBLANK &&
             (literal == null || literal.length() == 0))
         {
@@ -238,21 +237,16 @@ public class QWhere extends QNode
             while (st.hasMoreTokens())
             {
                 String token = st.nextToken().trim();
-                QExpr value = null;
                 if (token.length() > 0)
                 {
                     try
                     {
-                        if (!"varchar".equals(datatype) && op != CompareType.DATE_EQUAL && op != CompareType.DATE_NOT_EQUAL)
-                            value = new QNumber(token);
+                        exprList.appendChild(new QNumber(Double.valueOf(token)));
                     }
                     catch (IllegalArgumentException iae)
                     {
-                        /* fall through */
+                        exprList.appendChild(new QString(token));
                     }
-                    if (null == value)
-                        value = new QString(token);
-                    exprList.appendChild(value);
                 }
             }
             return Operator.in.expr(field, exprList);
@@ -263,15 +257,12 @@ public class QWhere extends QNode
         {
             try
             {
-                if (!"varchar".equals(datatype) && op != CompareType.DATE_EQUAL && op != CompareType.DATE_NOT_EQUAL)
-				    value = new QNumber(literal);
+				value = new QNumber(literal);
             }
             catch (IllegalArgumentException iae)
             {
-                /* fall through */
-            }
-            if (value == null)
                 value = new QString(literal);
+            }
         }
 
         switch (op)
@@ -301,9 +292,9 @@ public class QWhere extends QNode
                 return Operator.like.expr(field, new QString("%" + literal + "%"));
         }
         return null;
+
     }
 
-    
     public void updateWhere(DgQuery.Where where, List<? super QueryParseException> errors)
     {
         removeChildren();

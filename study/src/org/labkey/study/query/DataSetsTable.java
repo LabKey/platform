@@ -30,11 +30,9 @@ public class DataSetsTable extends FilteredTable
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
             String name = baseColumn.getName();
-
-            ColumnInfo colInfo = addWrapColumn(baseColumn);
             if ("Container".equalsIgnoreCase(name) || "EntityId".equalsIgnoreCase(name))
-                colInfo.setIsHidden(true);
+                continue;
+            addWrapColumn(baseColumn);
         }
-        setTitleColumn("name");
     }
 }

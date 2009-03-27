@@ -51,9 +51,7 @@ public class QueryUpgradeCode implements UpgradeCode
                 def.setExtensions(new String[]{"R", "r"});
                 def.setLanguageName("R");
                 def.setOutputFileName("script.Rout");
-                def.setEnabled(true);
-                def.setExternal(true);
-                
+
                 LabkeyScriptEngineManager.saveDefinition(def);
             }
         }

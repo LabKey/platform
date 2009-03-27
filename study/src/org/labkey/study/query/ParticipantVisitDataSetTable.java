@@ -148,6 +148,8 @@ public class ParticipantVisitDataSetTable extends VirtualTable
 
     private static boolean _inSequence(Visit v, double seq)
     {
+        assert v.getSequenceNumMin() >= 0;
+        assert v.getSequenceNumMax() >= 0;
         assert v.getSequenceNumMin() <= v.getSequenceNumMax();
         return seq >= v.getSequenceNumMax() && seq <= v.getSequenceNumMax();
     }

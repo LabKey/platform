@@ -219,13 +219,13 @@ public class QueryServiceImpl extends QueryService
     public List<CustomView> getCustomViews(User user, Container container, String schema, String query)
     {
         try {
-            Map<String, CustomView> views = new HashMap<String, CustomView>();
+            List<CustomView> views = new ArrayList<CustomView>();
             Map<Map.Entry<String, String>, QueryDefinition> queryDefs = getAllQueryDefs(container, schema, false, true);
 
             for (CstmView collist : QueryManager.get().getAllColumnLists(container, schema, query, user, true))
                 addCustomView(container, user, views, collist, queryDefs);
 
-            return new ArrayList<CustomView>(views.values());
+            return views;
         }
         catch (SQLException e)
         {
@@ -233,14 +233,14 @@ public class QueryServiceImpl extends QueryService
         }
     }
 
-    private void addCustomView(Container container, User user, Map<String, CustomView> views, CstmView collist, Map<Map.Entry<String, String>, QueryDefinition> queryDefs)
+    private void addCustomView(Container container, User user, List<CustomView> views, CstmView collist, Map<Map.Entry<String, String>, QueryDefinition> queryDefs)
     {
         QueryDefinition qd = queryDefs.get(new Pair(collist.getSchema(), collist.getQueryName()));
         if (qd == null)
             qd = QueryService.get().getUserSchema(user, container, collist.getSchema()).getQueryDefForTable(collist.getQueryName());
 
-        if (qd instanceof QueryDefinitionImpl && !views.containsKey(collist.getName()))
-            views.put(collist.getName(), new CustomViewImpl((QueryDefinitionImpl)qd, collist));
+        if (qd instanceof QueryDefinitionImpl)
+            views.add(new CustomViewImpl((QueryDefinitionImpl)qd, collist));
     }
 
     private Map<String, QuerySnapshotDefinition> getAllQuerySnapshotDefs(Container container, String schemaName)

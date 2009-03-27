@@ -324,17 +324,7 @@ public class ListDefinitionImpl implements ListDefinition
 
         Object errorValue = new Object();
 
-        ColumnDescriptor[] columns;
-        try
-        {
-            columns = loader.getColumns();
-        }
-        catch (IOException e)
-        {
-            errors.add(e.getMessage());
-            return errors;
-        }
-        for (ColumnDescriptor cd : columns)
+        for (ColumnDescriptor cd : loader.getColumns())
         {
             PropertyDescriptor property = propertiesByName.get(cd.name);
             cd.errorValues = errorValue;
@@ -358,7 +348,7 @@ public class ListDefinitionImpl implements ListDefinition
                     }
                     if (foundProperties.containsValue(property) && !property.isQcEnabled())
                     {
-                        errors.add("The fields '" + property.getName() + "' and '" + property.getNonBlankLabel() + "' refer to the same property.");
+                        errors.add("The fields '" + property.getName() + "' and '" + property.getLabel() + "' refer to the same property.");
                     }
                     foundProperties.put(cd.name, property);
                     cd.name = property.getPropertyURI();

@@ -196,38 +196,21 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    public static class ViewsSummaryForm
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class OldManageReportsAction extends SimpleViewAction
     {
-        private String _schemaName;
-        private String _queryName;
-
-        public String getSchemaName()
+        public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return _schemaName;
+            setHelpTopic(new HelpTopic("manageReportsAndViews", HelpTopic.Area.STUDY));
+            StudyManageReportsBean bean = new StudyManageReportsBean(getViewContext(), true, false);
+            bean.setErrors(errors);
+
+            return new StudyJspView<StudyManageReportsBean>(getStudy(), "manageReports.jsp", bean, errors);
         }
 
-        public void setSchemaName(String schemaName)
+        public NavTree appendNavTrail(NavTree root)
         {
-            _schemaName = schemaName;
-        }
-
-        public String getQueryName()
-        {
-            return _queryName;
-        }
-
-        public void setQueryName(String queryName)
-        {
-            _queryName = queryName;
-        }
-    }
-
-    @RequiresPermission(ACL.PERM_READ)
-    public class ManageViewsSummaryAction extends ApiAction<ViewsSummaryForm>
-    {
-        public ApiResponse execute(ViewsSummaryForm form, BindException errors) throws Exception
-        {
-            return new ApiSimpleResponse("views", ReportManager.get().getViews(getViewContext(), form.getSchemaName(), form.getQueryName(), true));
+            return _appendNavTrail(root, "Manage Views");
         }
     }
 

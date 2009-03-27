@@ -41,10 +41,7 @@
     for (ColumnInfo col : allCols)
     {
         if (DataSetDefinition.isDefaultFieldName(col.getName(), study))
-        {
-            if (DataSetDefinition.showOnManageView(col.getName(), study))
-                systemColumns.add(col);
-        }
+            systemColumns.add(col);
         else
             userColumns.add(col);
     }

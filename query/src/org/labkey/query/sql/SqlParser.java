@@ -286,41 +286,22 @@ public class SqlParser
                         break;
                 String name = ((QIdentifier)id).getIdentifier().toLowerCase();
 
-                if (name.equals("convert") || name.equals("cast"))
+                if (name.equals("convert") || name.equals("cast") || name.equals("timestampadd") || name.equals("timestampdiff"))
                 {
-                    if (!(exprList instanceof QExprList) || exprList.childList().size() != 2)
-                    {
-                        _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 2 arguments", null, node.getLine(), node.getColumn()));
-                        break;
-                    }
+                    if (!(exprList instanceof QExprList))
+                             break;
                     LinkedList<QNode> args = new LinkedList<QNode>();
-                    args.add(exprList.childList().get(0));
-                    args.add(constantToStringNode(exprList.childList().get(1)));
-                    exprList._replaceChildren(args);
-                    validateConvertConstant(args.get(1));
-                }
-                else if (name.equals("timestampadd") || name.equals("timestampdiff"))
-                {
-                    if (!(exprList instanceof QExprList) || exprList.childList().size() != 3)
+                    int i = 1;
+					int keywordPos = name.startsWith("timestamp") ? 1 : 2;
+                    for (QNode n : exprList.children())
                     {
-                        _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 3 arguments", null, node.getLine(), node.getColumn()));
-                        break;
+                        if (n instanceof QIdentifier && i==keywordPos)
+                            args.add(toStringNode(n));
+                        else
+                            args.add(n);
+                        i++;
                     }
-                    assert exprList.childList().size() == 3;
-                    LinkedList<QNode> args = new LinkedList<QNode>();
-                    args.add(constantToStringNode(exprList.childList().get(0)));
-                    args.add(exprList.childList().get(1));
-                    args.add(exprList.childList().get(2));
                     exprList._replaceChildren(args);
-                    validateTimestampConstant(args.get(0));
-                }
-                else if (name.equals("locate"))
-                {
-                    if (!(exprList instanceof QExprList) || exprList.childList().size() < 2 || exprList.childList().size() > 3)
-                    {
-                        _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 2 or 3 arguments", null, node.getLine(), node.getColumn()));
-                        break;
-                    }
                 }
 				break;
 
@@ -330,52 +311,6 @@ public class SqlParser
 
 		return qnode(node, children);
 	}
-
-
-    private boolean validateConvertConstant(QNode n)
-    {
-        if (!(n instanceof QString))
-        {
-            _parseErrors.add(new QueryParseException("constant expected", null, n.getLine(), n.getColumn()));
-            return false;
-        }
-        String s = ((QString)n).getValue();
-        if (s.startsWith("SQL_"))
-            s = s.substring(4);
-        try
-        {
-            Method.ConvertType.valueOf(s);
-            return true;
-        }
-        catch (IllegalArgumentException x)
-        {
-            _parseErrors.add(new QueryParseException("Unrecogonized constant '" + ((QString)n).getValue() + "'", null, n.getLine(), n.getColumn()));
-            return false;
-        }
-    }
-
-
-    private boolean validateTimestampConstant(QNode n)
-    {
-        if (!(n instanceof QString))
-        {
-            _parseErrors.add(new QueryParseException("constant expected", null, n.getLine(), n.getColumn()));
-            return false;
-        }
-        String s = ((QString)n).getValue();
-        if (!s.startsWith("SQL_TSI_"))
-            s = "SQL_TSI_" + s;
-        try
-        {
-            Method.TimestampDiffInterval.valueOf(s);
-            return true;
-        }
-        catch (IllegalArgumentException x)
-        {
-            _parseErrors.add(new QueryParseException("Unrecogonized constant '" + ((QString)n).getValue() + "'", null, n.getLine(), n.getColumn()));
-            return false;
-        }
-    }
 
 
 	private static QNode first(LinkedList<QNode> children)
@@ -390,24 +325,12 @@ public class SqlParser
 	}
 	
 
-	private QNode constantToStringNode(QNode node)
+	private QString toStringNode(QNode node)
 	{
-        if (node instanceof QString)
-        {
-            QString q = new QString();
-            q.setTokenText(node.getTokenText().toUpperCase());
-            q.setLineAndColumn(node);
-            return q;
-        }
-        else if (node instanceof QIdentifier)
-        {
-		    String s =  ((QIdentifier)node).getIdentifier();
-		    QString q = new QString(s.toUpperCase());
-		    q.setLineAndColumn(node);
-		    return q;
-        }
-        else
-            return node;
+		String s =  ((QIdentifier)node).getIdentifier();
+		QString q = new QString(s);
+		q.setLineAndColumn(node);
+		return q;
 	}
 
 
@@ -419,7 +342,7 @@ public class SqlParser
         }
     };
 
-    private static class _SqlParser extends SqlBaseParser
+	private static class _SqlParser extends SqlBaseParser
 	{
         final ArrayList<Exception> _errors;
         
@@ -628,11 +551,9 @@ public class SqlParser
         "SELECT MS2SearchRuns.Flag,MS2SearchRuns.Links,MS2SearchRuns.Name,MS2SearchRuns.Created,MS2SearchRuns.RunGroups FROM MS2SearchRuns",
 
         "SELECT CONVERT(a, VARCHAR), CONVERT(a+b, SQL_INTEGER), CONVERT(c, 'SQL_TIMESTAMP'), CONVERT(d, 'TIMESTAMP') FROM R",
-        "SELECT CONVERT(a, VARCHAR), CONVERT(a+b, SQL_INTEGER), CONVERT(c, 'SQL_Timestamp'), CONVERT(d, 'Timestamp') FROM R",
         "SELECT CAST(a AS VARCHAR), CAST(a+b AS INTEGER) FROM R",
         "SELECT CAST(a AS VARCHAR), CAST(a+b AS INTEGER) FROM R",
         "SELECT TIMESTAMPDIFF(SQL_TSI_SECOND,a,b), TIMESTAMPDIFF(SECOND,a,b), TIMESTAMPDIFF('SQL_TSI_DAY',a,b), TIMESTAMPDIFF('DAY',a,b) FROM R",
-        "SELECT TIMESTAMPDIFF('SQL_TSI_Second',a,b), TIMESTAMPDIFF('Second',a,b), TIMESTAMPDIFF('SQL_TSI_Day',a,b), TIMESTAMPDIFF('Day',a,b) FROM R",
 		"SELECT TIMESTAMPADD(SQL_TSI_SECOND,1,b), TIMESTAMPADD(SECOND,1,b), TIMESTAMPADD('SQL_TSI_DAY',1,b), TIMESTAMPADD('DAY',1,b) FROM R",
 
 		"SELECT (SELECT value FROM S WHERE S.x=R.x) AS V FROM R",

@@ -21,7 +21,10 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.*;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -41,7 +44,7 @@ import org.labkey.api.view.template.AppBar;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.assay.AssayServiceImpl;
 import org.labkey.study.assay.ModuleAssayProvider;
-import org.labkey.api.defaults.SetDefaultValuesAssayAction;
+import org.labkey.study.assay.SetDefaultValuesAssayAction;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.assay.actions.GetAssayBatchAction;
 import org.labkey.study.controllers.assay.actions.SaveAssayBatchAction;
@@ -84,8 +87,7 @@ public class AssayController extends SpringActionController
             AssayResultDetailsAction.class,
             ShowSelectedRunsAction.class,
             ShowSelectedDataAction.class,
-            SetDefaultValuesAssayAction.class,
-            AssayDetailRedirectAction.class
+            SetDefaultValuesAssayAction.class
         );
 
     public AssayController()

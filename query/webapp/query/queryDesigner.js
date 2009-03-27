@@ -447,7 +447,7 @@ Tab.prototype = {
                 continue;
             }
             var key = FieldKey.fromString(fields[i]);
-            var node = this.createNodeForField(key, this.designer.columnPicker.fields[key.toString()]);
+            var node = this.createNodeForField(key);
             if (node)
             {
                 nodes.push(node);
@@ -554,7 +554,7 @@ function Bind_Op(designer, dn, tdValue)
     ret.setValue = function(value)
     {
         setValueOld.call(this, value);
-        if (value == '' || value == 'isblank' || value == 'isnonblank' || value == 'hasqcvalue' || value == 'noqcvalue')
+        if (value == '' || value == 'isblank' || value == 'isnonblank')
         {
             tdValue.style.display = "none";
         }
@@ -653,19 +653,13 @@ function FilterTab(designer, dn)
 {
     var ret = new Tab(designer, dn);
     ret.allowDuplicateFields = true;
-    ret.createNodeForField = function(key, field)
+    ret.createNodeForField = function(field)
     {
         var doc = dn.ownerDocument;
         var ret = XMLUtil.createElement(doc, 'compare', nsQuery);
         var dnField = XMLUtil.createElement(doc, 'field', nsQuery);
-        XMLUtil.setInnerText(dnField, key.toString());
+        XMLUtil.setInnerText(dnField, field.toString());
         ret.appendChild(dnField);
-        if (field && field.datatype)
-        {
-            var dnDatatype = XMLUtil.createElement(doc, 'datatype', nsQuery);
-            XMLUtil.setInnerText(dnDatatype, field.datatype);
-            ret.appendChild(dnDatatype);
-        }
         return ret;
     };
     ret.createNodeForSQL = function(strSQL)
@@ -1169,7 +1163,7 @@ QueryOrViewDesigner.prototype =
             if (!dnOp)
                 continue;
             var strOp = XMLUtil.getInnerText(dnOp);
-            if (strOp == "" || strOp == "isblank" || strOp == "isnonblank" || strOp == "hasqcvalue" || strOp == "noqcvalue")
+            if (strOp == "" || strOp == "isblank" || strOp == "isnonblank")
                 continue;
             
             var dnValue = XMLUtil.getChildWithTagName(dnCompare, "literal", nsQuery);
@@ -1261,12 +1255,12 @@ function QueryDesigner(urlCheckSyntax, tableInfoService)
     }
     ret.rgFilterOps = function(type)
             {
-                return ['', 'eq', 'in', 'neq', 'isblank', 'isnonblank', 'gt', 'lt', 'gte', 'lte', 'startswith', 'doesnotstartwith', 'contains', 'doesnotcontain', 'dateeq', 'dateneq', 'hasqcvalue', 'noqcvalue'];
+                return ['', 'eq', 'in', 'neq', 'isblank', 'isnonblank', 'gt', 'lt', 'gte', 'lte', 'startswith', 'doesnotstartwith', 'contains', 'doesnotcontain', 'dateeq', 'dateneq'];
             }
     ret.rgFilterDisplay = function(type )
             {
                 return ['Has Any Value', 'Equals', 'Equals One Of (e.g. \'a;b;c\')', 'Does Not Equal', 'Is Blank', 'Is Not Blank', 'Is Greater Than', 'Is Less Than',
-                        'Is Greater Than Or Equal To', 'Is Less Than Or Equal To', 'Starts With', 'Does Not Start With', 'Contains', 'Does Not Contain', 'Equals', 'Does Not Equal', 'Has a QC Value', 'Does not have a QC Value'];
+                        'Is Greater Than Or Equal To', 'Is Less Than Or Equal To', 'Starts With', 'Does Not Start With', 'Contains', 'Does Not Contain', 'Equals', 'Does Not Equal'];
             }
     ret.updateDocument = function ()
     {

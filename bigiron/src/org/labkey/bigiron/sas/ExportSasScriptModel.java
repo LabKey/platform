@@ -40,7 +40,7 @@ public class ExportSasScriptModel extends ExportScriptModel
         if (filterExprs.isEmpty())
             return null;
 
-        StringBuilder filtersExpr = new StringBuilder("%labkeyMakeFilter(");
+        StringBuilder filtersExpr = new StringBuilder("%makeFilter(");
         String sep = "";
 
         for(String mf : filterExprs)

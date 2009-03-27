@@ -26,18 +26,13 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.*;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.query.ExprColumn;
-import org.labkey.api.query.LookupForeignKey;
 import org.labkey.study.StudySchema;
 import org.labkey.study.query.DataSetTable;
-import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.query.DataSetsTable;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Category;
 import org.apache.commons.lang.StringUtils;
 
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.*;
 
 /**
@@ -77,8 +72,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         "sourcelsid",
         "QCState",
         "visitRowId",
-        "lsid",
-        "Dataset"
+        "lsid"
     };
 
     private static final String[] DEFAULT_DATE_FIELD_NAMES_ARRAY = new String[]
@@ -93,19 +87,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         "VisitSequenceNum"
     };
 
-    // fields to hide on the dataset schema view
-    private static final String[] HIDDEN_DEFAULT_FIELD_NAMES_ARRAY = new String[]
-    {
-        "sourcelsid",
-        "QCState",
-        "visitRowId",
-        "lsid",
-        "Dataset"
-    };
-
     private static final CaseInsensitiveHashSet DEFAULT_DATE_FIELDS;
     private static final CaseInsensitiveHashSet DEFAULT_VISIT_FIELDS;
-    private static final CaseInsensitiveHashSet HIDDEN_DEFAULT_FIELDS = new CaseInsensitiveHashSet(HIDDEN_DEFAULT_FIELD_NAMES_ARRAY);
 
     static
     {
@@ -143,11 +126,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         {
             return DEFAULT_VISIT_FIELDS.contains(fieldName);
         }
-    }
-
-    public static boolean showOnManageView(String fieldName, Study study)
-    {
-        return !HIDDEN_DEFAULT_FIELDS.contains(fieldName);
     }
 
     public Set<String> getDefaultFieldNames()
@@ -622,16 +600,15 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         int _datasetId;
         SQLFragment _fromSql;
 
-        StudyDataTableInfo(DataSetDefinition def, final User user)
+        StudyDataTableInfo(DataSetDefinition def, User user)
         {
             super("StudyData_" + def.getDataSetId(), StudySchema.getInstance().getSchema());
-            final Container c = def.getContainer();
+            Container c = def.getContainer();
             Study study = StudyManager.getInstance().getStudy(c);
             _datasetId = def.getDataSetId();
 
             TableInfo studyData = StudySchema.getInstance().getTableInfoStudyData();
             TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
-            final TableInfo datasetTable = StudySchema.getInstance().getTableInfoDataSet();
             // StudyData columns
             List<ColumnInfo> columnsBase = studyData.getColumns("lsid","participantid","sourcelsid", "created","modified");
             for (ColumnInfo col : columnsBase)
@@ -697,23 +674,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     }
                 }
             }
-
-            // Add the dataset table via a foreign key lookup
-            String datasetSql = "(SELECT D.entityid FROM " + datasetTable + " D WHERE " +
-                    "D.container ='" + c.getId() + "' AND D.datasetid = " + _datasetId + ")";
-
-            ColumnInfo datasetColumn = new ExprColumn(this, "Dataset", new SQLFragment(datasetSql), Types.VARCHAR);
-            LookupForeignKey datasetFk = new LookupForeignKey("entityid")
-            {
-                public TableInfo getLookupTableInfo()
-                {
-                    return new DataSetsTable(new StudyQuerySchema(StudyManager.getInstance().getStudy(c), user, true));
-                }
-            };
-            datasetColumn.setFk(datasetFk);
-            datasetColumn.setUserEditable(false);
-            datasetColumn.setIsHidden(true);
-            columns.add(datasetColumn);
 
             // HACK reset colMap
             colMap = null;

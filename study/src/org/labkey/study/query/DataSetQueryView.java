@@ -22,7 +22,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
-import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportUtil;
@@ -33,17 +32,18 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
-import org.labkey.api.view.NavTree;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.*;
 import org.labkey.study.reports.StudyRReport;
-import org.labkey.study.reports.ReportManager;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -331,44 +331,5 @@ public class DataSetQueryView extends QueryView
         button.addMenuItem("Manage Views", new ActionURL(ReportsController.ManageReportsAction.class, getContainer()).
                 addParameter("schemaName", getSchema().getSchemaName()).
                 addParameter("queryName", getSettings().getQueryName()));
-    }
-
-    protected void addReportViews(MenuButton menu, ActionURL target)
-    {
-        String reportKey = ReportUtil.getReportKey(getSchema().getSchemaName(), getSettings().getQueryName());
-        Map<String, List<Report>> views = new TreeMap<String, List<Report>>();
-        for (Report report : ReportUtil.getReports(getViewContext(), reportKey, true))
-        {
-            // Filter out reports that don't match what this view is supposed to show. This can prevent
-            // reports that were created on the same schema and table/query from a different view from showing up on a
-            // view that's doing magic to add additional filters, for example.
-            if (getViewItemFilter().accept(report.getType(), null))
-            {
-                if (!ReportManager.get().canReadReport(getUser(), getContainer(), report))
-                    continue;
-
-                if (!views.containsKey(report.getType()))
-                    views.put(report.getType(), new ArrayList<Report>());
-
-                views.get(report.getType()).add(report);
-            }
-        }
-
-        if (views.size() > 0)
-            menu.addSeparator();
-
-        for (Map.Entry<String, List<Report>> entry : views.entrySet())
-        {
-            for (Report report : entry.getValue())
-            {
-                String reportId = report.getDescriptor().getReportId().toString();
-                NavTree item = new NavTree(report.getDescriptor().getReportName(), target.clone().replaceParameter(param(QueryParam.reportId), reportId).getLocalURIString());
-                item.setId("Views:" + report.getDescriptor().getReportName());
-                if (report.getDescriptor().getReportId().equals(getSettings().getReportId()))
-                    item.setHighlighted(true);
-                item.setImageSrc(ReportService.get().getReportIcon(getViewContext(), report.getType()));
-                menu.addMenuItem(item);
-            }
-        }
     }
 }
