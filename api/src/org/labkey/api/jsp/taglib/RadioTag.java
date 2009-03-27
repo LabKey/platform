@@ -16,7 +16,6 @@
 
 package org.labkey.api.jsp.taglib;
 
-import org.labkey.api.jsp.taglib.SimpleTagBase;
 import org.apache.commons.lang.ObjectUtils;
 
 import javax.servlet.jsp.JspException;
@@ -26,6 +25,7 @@ import java.io.IOException;
 public class RadioTag extends SimpleTagBase
 {
     protected String _name;
+    protected String _id;
     protected Object _value;
     protected Object _currentValue;
 
@@ -41,6 +41,12 @@ public class RadioTag extends SimpleTagBase
         {
             out.write(" checked");
         }
+        if (_id != null)
+        {
+            out.write(" id=\"");
+            out.write(h(_id));
+            out.write("\"");
+        }
         out.write(">");
     }
 
@@ -48,6 +54,12 @@ public class RadioTag extends SimpleTagBase
     {
         _name = name;
     }
+
+    public void setId(String id)
+    {
+        _id = id;
+    }
+
     public void setValue(Object value)
     {
         _value = value;
