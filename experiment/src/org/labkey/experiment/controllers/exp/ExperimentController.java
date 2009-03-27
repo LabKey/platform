@@ -2211,8 +2211,8 @@ public class ExperimentController extends SpringActionController
 
                     if (!form.isImportMoreSamples() && null != sourceExisting)
                     {
-                        errors.reject(ERROR_MSG, "A sample set with that name already exists.  If you would like to import samples that set, go here:  " +
-                                "<a href=" + getViewContext().getActionURL() + "name=" + form.getName() + "&importMoreSamples=true>Import More Samples</a>");
+                        errors.addError(new FormattedError("A sample set with that name already exists.  If you would like to import samples that set, go here:  " +
+                                "<a href=" + getViewContext().getActionURL() + "name=" + form.getName() + "&importMoreSamples=true>Import More Samples</a>"));
                     }
                     if (form.isImportMoreSamples() && form.getOverwriteChoice() == null)
                     {
