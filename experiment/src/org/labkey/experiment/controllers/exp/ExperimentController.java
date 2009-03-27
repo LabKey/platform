@@ -16,8 +16,11 @@
 
 package org.labkey.experiment.controllers.exp;
 
-import jxl.*;
+import jxl.write.*;
+import jxl.write.NumberFormat;
+import jxl.write.DateFormat;
 import jxl.read.biff.BiffException;
+import jxl.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
@@ -36,10 +39,12 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.actions.UploadWizardAction;
+import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.common.tools.ColumnDescriptor;
@@ -61,11 +66,14 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.imageio.ImageIO;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URI;
 import java.sql.SQLException;
 import java.util.*;
+import java.lang.Boolean;
+import java.text.*;
 
 /**
  * User: jeckels
@@ -545,43 +553,6 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            List<ExpRun> runsToInvestigate = new ArrayList<ExpRun>();
-            ExpRun parentRun = _material.getRun();
-            if (parentRun != null)
-            {
-                runsToInvestigate.add(parentRun);
-            }
-            Set<ExpRun> investigatedRuns = new HashSet<ExpRun>();
-            final Set<ExpMaterial> predecessorMaterials = new HashSet<ExpMaterial>();
-            while (!runsToInvestigate.isEmpty())
-            {
-                ExpRun predecessorRun = runsToInvestigate.remove(0);
-                investigatedRuns.add(predecessorRun);
-                for (ExpData d : predecessorRun.getDataInputs().keySet())
-                {
-                    ExpRun dRun = d.getRun();
-                    if (dRun != null && !investigatedRuns.contains(dRun))
-                    {
-                        runsToInvestigate.add(dRun);
-                    }
-                }
-                for (ExpMaterial m : predecessorRun.getMaterialInputs().keySet())
-                {
-                    ExpRun mRun = m.getRun();
-                    if (mRun != null)
-                    {
-                        if (!investigatedRuns.contains(mRun))
-                        {
-                            runsToInvestigate.add(mRun);
-                        }
-                    }
-                    else
-                    {
-                        predecessorMaterials.add(m);
-                    }
-                }
-            }
-
             if (getContainer().hasPermission(getUser(), ACL.PERM_INSERT))
             {
                 ActionURL deriveURL = new ActionURL(DeriveSamplesChooseTargetAction.class, getContainer());
@@ -592,34 +563,161 @@ public class ExperimentController extends SpringActionController
             }
 
             ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), ExperimentRunType.ALL_RUNS_TYPE, true);
+            runListView.setShowRecordSelectors(false);
             runListView.getRunTable().setRuns(successorRuns);
             runListView.getRunTable().setContainerFilter(new ContainerFilter.AllFolders(getUser()));
             runListView.setAllowableContainerFilterTypes(ContainerFilter.Type.Current, ContainerFilter.Type.CurrentAndSubfolders, ContainerFilter.Type.AllFolders);
             runListView.setTitle("Runs using this material or a derived material");
+
+            Set<ExpMaterial> parentMaterials = getParentMaterials();
+            QueryView parentSamplesView = createMaterialsView(parentMaterials, "parentMaterials", "Parent Samples");
+            vbox.addView(parentSamplesView);
+
+            Set<ExpMaterial> childMaterials = getChildMaterials();
+
+            QueryView childSamplesView = createMaterialsView(childMaterials, "childMaterials", "Child Samples");
+            vbox.addView(childSamplesView);
+
             vbox.addView(runListView);
 
+            return vbox;
+        }
+
+        private QueryView createMaterialsView(final Set<ExpMaterial> parentMaterials, String dataRegionName, String title)
+        {
             ExpSchema schema = new ExpSchema(getUser(), getContainer());
-            QuerySettings settings = new QuerySettings(getViewContext(), "predecessorMaterials");
+            QuerySettings settings = new QuerySettings(getViewContext(), dataRegionName);
             settings.setSchemaName(schema.getSchemaName());
             settings.setQueryName(ExpSchema.TableType.Materials.toString());
             settings.setAllowChooseQuery(false);
-            QueryView predecessorMaterialView = new QueryView(schema, settings)
+            QueryView parentSamplesView = new QueryView(schema, settings)
             {
                 protected TableInfo createTable()
                 {
                     ExpMaterialTable table = ExperimentServiceImpl.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), getSchema());
-                    table.setMaterials(predecessorMaterials);
+                    table.setMaterials(parentMaterials);
                     table.populate();
+                    List<FieldKey> defaultVisibleColumns = new ArrayList<FieldKey>(table.getDefaultVisibleColumns());
+                    for (Iterator<FieldKey> i = defaultVisibleColumns.iterator(); i.hasNext(); )
+                    {
+                        FieldKey fieldKey = i.next();
+                        if (fieldKey.getParent() != null && fieldKey.getParent().getName().equals(ExpMaterialTable.Column.Property.toString()))
+                        {
+                            i.remove();
+                        }
+                    }
+                    defaultVisibleColumns.add(FieldKey.fromParts("Created"));
+                    defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));
+                    defaultVisibleColumns.add(FieldKey.fromParts("Run"));
+                    table.setDefaultVisibleColumns(defaultVisibleColumns);
                     return table;
                 }
             };
-            predecessorMaterialView.setShowBorders(true);
-            predecessorMaterialView.setShowExportButtons(false);
-            predecessorMaterialView.setShadeAlternatingRows(true);
-            predecessorMaterialView.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTTOM);
-            predecessorMaterialView.setTitle("Materials from which this material is derived");
-            vbox.addView(predecessorMaterialView);
-            return vbox;
+            parentSamplesView.setShowBorders(true);
+            parentSamplesView.setShowDetailsColumn(false);
+            parentSamplesView.setShowExportButtons(false);
+            parentSamplesView.setShadeAlternatingRows(true);
+            parentSamplesView.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTTOM);
+            parentSamplesView.setTitle(title);
+            return parentSamplesView;
+        }
+
+        private Set<ExpMaterial> getChildMaterials() throws SQLException
+        {
+            if (isUnknownMaterial(_material))
+            {
+                return Collections.emptySet();
+            }
+            List<ExpRun> runsToInvestigate = new ArrayList<ExpRun>();
+            runsToInvestigate.addAll(Arrays.asList(ExperimentServiceImpl.get().getRunsUsingMaterials(_material.getRowId())));
+            runsToInvestigate.remove(_material.getRun());
+            Set<ExpMaterial> result = new HashSet<ExpMaterial>();
+            Set<ExpRun> investigatedRuns = new HashSet<ExpRun>();
+
+            while (!runsToInvestigate.isEmpty())
+            {
+                ExpRun childRun = runsToInvestigate.remove(0);
+                if (!investigatedRuns.contains(childRun))
+                {
+                    investigatedRuns.add(childRun);
+
+                    List<ExpMaterial> materialOutputs = removeUnknownMaterials(childRun.getMaterialOutputs());
+                    result.addAll(materialOutputs);
+
+                    for (ExpMaterial materialOutput : materialOutputs)
+                    {
+                        runsToInvestigate.addAll(Arrays.asList(ExperimentServiceImpl.get().getRunsUsingMaterials(materialOutput.getRowId())));
+                    }
+
+                    runsToInvestigate.addAll(ExperimentServiceImpl.get().getRunsUsingDatas(childRun.getDataOutputs()));
+                }
+            }
+            result.remove(_material);
+            return result;
+        }
+
+        private boolean isUnknownMaterial(ExpMaterial material)
+        {
+            return material.getName().equals("Unknown") &&
+                    ParticipantVisit.ASSAY_RUN_MATERIAL_NAMESPACE.equals(material.getLSIDNamespacePrefix());
+        }
+
+        private List<ExpMaterial> removeUnknownMaterials(Iterable<ExpMaterial> materials)
+        {
+            // Filter out the generic unknown material, which is just a placeholder and doesn't represent a real
+            // parent
+            ArrayList<ExpMaterial> result = new ArrayList<ExpMaterial>();
+            for (ExpMaterial material : materials)
+            {
+                if (!isUnknownMaterial(material))
+                {
+                    result.add(material);
+                }
+            }
+            return result;
+        }
+
+        private Set<ExpMaterial> getParentMaterials()
+        {
+            if (isUnknownMaterial(_material))
+            {
+                return Collections.emptySet();
+            }
+            List<ExpRun> runsToInvestigate = new ArrayList<ExpRun>();
+            ExpRun parentRun = _material.getRun();
+            if (parentRun != null)
+            {
+                runsToInvestigate.add(parentRun);
+            }
+            Set<ExpRun> investigatedRuns = new HashSet<ExpRun>();
+            final Set<ExpMaterial> parentMaterials = new HashSet<ExpMaterial>();
+            while (!runsToInvestigate.isEmpty())
+            {
+                ExpRun predecessorRun = runsToInvestigate.remove(0);
+                investigatedRuns.add(predecessorRun);
+
+                for (ExpData d : predecessorRun.getDataInputs().keySet())
+                {
+                    ExpRun dRun = d.getRun();
+                    if (dRun != null && !investigatedRuns.contains(dRun))
+                    {
+                        runsToInvestigate.add(dRun);
+                    }
+                }
+                for (ExpMaterial m : removeUnknownMaterials(predecessorRun.getMaterialInputs().keySet()))
+                {
+                    ExpRun mRun = m.getRun();
+                    if (mRun != null)
+                    {
+                        if (!investigatedRuns.contains(mRun))
+                        {
+                            runsToInvestigate.add(mRun);
+                        }
+                    }
+                    parentMaterials.add(m);
+                }
+            }
+            return parentMaterials;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -996,7 +1094,8 @@ public class ExperimentController extends SpringActionController
                 }
 
                 String lowerCaseFileName = realContent.getName().toLowerCase();
-                if ("jsonTSV".equalsIgnoreCase(form.getFormat()))
+                boolean extended = "jsonTSVExtended".equalsIgnoreCase(form.getFormat());
+                if ("jsonTSV".equalsIgnoreCase(form.getFormat()) || extended)
                 {
                     JSONArray sheetsArray = new JSONArray();
                     if (lowerCaseFileName.endsWith(".xls"))
@@ -1026,22 +1125,65 @@ public class ExperimentController extends SpringActionController
                                     JSONArray rowArray = new JSONArray();
                                     for (Cell cell : rowCells)
                                     {
+                                        Object value;
+                                        String formattedValue;
+                                        String formatString = null;
+                                        JSONObject metadataMap = new JSONObject();
                                         if (cell instanceof NumberCell)
                                         {
-                                            rowArray.put(((NumberCell)cell).getValue());
+                                            NumberCell numberCell = (NumberCell) cell;
+                                            value = numberCell.getValue();
+                                            java.text.NumberFormat numberFormat = numberCell.getNumberFormat();
+                                            formattedValue = numberFormat.format(numberCell.getValue());
+                                            if (numberCell.getCellFormat().getFormat().getFormatString() != null &&
+                                                !"".equals(numberCell.getCellFormat().getFormat().getFormatString()) &&
+                                                numberFormat instanceof DecimalFormat)
+                                            {
+                                                formatString = ((DecimalFormat)numberFormat).toPattern();
+                                            }
                                         }
                                         else if (cell instanceof BooleanCell)
                                         {
-                                            rowArray.put(((BooleanCell)cell).getValue());
+                                            BooleanCell booleanCell = (BooleanCell) cell;
+                                            value = booleanCell.getValue();
+                                            formattedValue = value.toString();
                                         }
                                         else if (cell instanceof DateCell)
                                         {
-                                            DateCell dateCell = (DateCell)cell;
-                                            rowArray.put(dateCell.getDateFormat().format(dateCell.getDate()));
+                                            DateCell dateCell = (DateCell) cell;
+                                            value = dateCell.getDate();
+                                            formattedValue = dateCell.getDateFormat().format(dateCell.getDate());
+                                            java.text.DateFormat dateFormat = dateCell.getDateFormat();
+                                            metadataMap.put("timeOnly", dateCell.isTime());
+                                            if (dateCell.getCellFormat().getFormat().getFormatString() != null &&
+                                                !"".equals(dateCell.getCellFormat().getFormat().getFormatString()) &&
+                                                dateFormat instanceof SimpleDateFormat)
+                                            {
+                                                formatString = ((SimpleDateFormat)dateFormat).toPattern();
+                                            }
                                         }
                                         else
                                         {
-                                            rowArray.put(cell.getContents());
+                                            value = cell.getContents();
+                                            if ("".equals(value))
+                                            {
+                                                value = null;
+                                            }
+                                            formattedValue = cell.getContents();
+                                        }
+                                        if (extended && cell.getCellFormat() != null)
+                                        {
+                                            metadataMap.put("value", value);
+                                            if (formatString != null && !"".equals(formatString))
+                                            {
+                                                metadataMap.put("formatString", formatString);
+                                            }
+                                            metadataMap.put("formattedValue", formattedValue);
+                                            rowArray.put(metadataMap);
+                                        }
+                                        else
+                                        {
+                                            rowArray.put(value);
                                         }
                                     }
                                     rowsArray.put(rowArray);
@@ -1079,7 +1221,17 @@ public class ExperimentController extends SpringActionController
                             JSONArray rowArray = new JSONArray();
                             for (ColumnDescriptor col : cols)
                             {
-                                rowArray.put(rowMap.get(col.name));
+                                Object value = rowMap.get(col.name);
+                                if (extended)
+                                {
+                                    JSONObject valueObject = new JSONObject();
+                                    valueObject.put("value", value);
+                                    rowsArray.put(rowArray);
+                                }
+                                else
+                                {
+                                    rowArray.put(value);
+                                }
                             }
                             rowsArray.put(rowArray);
                         }
@@ -1095,6 +1247,7 @@ public class ExperimentController extends SpringActionController
                     }
                     ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse());
                     JSONObject workbookJSON = new JSONObject();
+                    workbookJSON.put("fileName", realContent.getName());
                     workbookJSON.put("sheets", sheetsArray);
                     writer.write(new ApiSimpleResponse(workbookJSON));
                     return null;
@@ -1110,6 +1263,119 @@ public class ExperimentController extends SpringActionController
             return null;
         }
     }
+
+    public static class ConvertArraysToExcelForm
+    {
+        private String _json;
+
+        public String getJson()
+        {
+            return _json;
+        }
+
+        public void setJson(String json)
+        {
+            _json = json;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class ConvertArraysToExcelAction extends ExportAction<ConvertArraysToExcelForm>
+    {
+        public void export(ConvertArraysToExcelForm form, HttpServletResponse response, BindException errors) throws Exception
+        {
+            JSONObject rootObject = new JSONObject(form.getJson());
+            JSONArray sheetsArray = rootObject.getJSONArray("sheets");
+
+            String filename = rootObject.has("fileName") ? rootObject.getString("fileName") : "ExcelExport.xls";
+
+            WorkbookSettings settings = new WorkbookSettings();
+            settings.setArrayGrowSize(300000);
+            WritableWorkbook workbook = Workbook.createWorkbook(response.getOutputStream(), settings);
+
+            SimpleDateFormat dateFormat = new SimpleDateFormat(JSONObject.JAVASCRIPT_DATE_FORMAT);
+
+            for (int sheetIndex = 0; sheetIndex < sheetsArray.length(); sheetIndex++)
+            {
+                JSONObject sheetObject = sheetsArray.getJSONObject(sheetIndex);
+                String sheetName = sheetObject.has("name") ? sheetObject.getString("name") : "Sheet" + sheetIndex;
+                sheetName = ExcelWriter.cleanSheetName(sheetName);
+                WritableSheet sheet = workbook.createSheet(sheetName, sheetIndex);
+
+                WritableCellFormat defaultFormat = new WritableCellFormat();
+                WritableCellFormat defaultDateFormat = new WritableCellFormat(new DateFormat(DateUtil.getStandardDateFormatString()));
+
+                JSONArray rowsArray = sheetObject.getJSONArray("data");
+                for (int rowIndex = 0; rowIndex < rowsArray.length(); rowIndex++)
+                {
+                    JSONArray rowArray = rowsArray.getJSONArray(rowIndex);
+                    for (int colIndex = 0; colIndex < rowArray.length(); colIndex++)
+                    {
+                        Object value = rowArray.get(colIndex);
+                        WritableCell cell = null;
+                        JSONObject metadataObject = null;
+                        WritableCellFormat cellFormat = defaultFormat;
+                        if (value instanceof JSONObject)
+                        {
+                            metadataObject = (JSONObject)value;
+                            value = metadataObject.get("value");
+                        }
+                        if (value instanceof java.lang.Number)
+                        {
+                            cell = new jxl.write.Number(colIndex, rowIndex, ((java.lang.Number) value).doubleValue());
+                            if (metadataObject != null && metadataObject.has("formatString"))
+                            {
+                                cellFormat = new WritableCellFormat(new NumberFormat(metadataObject.getString("formatString")));
+                            }
+                        }
+                        else if (value instanceof Boolean)
+                        {
+                            cell = new jxl.write.Boolean(colIndex, rowIndex, ((Boolean) value).booleanValue());
+                        }
+                        else if (value instanceof String)
+                        {
+                            try
+                            {
+                                // JSON has no date literal syntax so try to parse all Strings as dates
+                                Date d = dateFormat.parse((String)value);
+                                if (metadataObject != null && metadataObject.has("formatString"))
+                                {
+                                    cellFormat = new WritableCellFormat(new DateFormat(metadataObject.getString("formatString")));
+                                }
+                                else
+                                {
+                                    cellFormat = defaultDateFormat;
+                                }
+                                boolean timeOnly = metadataObject != null && metadataObject.has("timeOnly") && Boolean.TRUE.equals(metadataObject.get("timeOnly"));
+                                cell = new DateTime(colIndex, rowIndex, d, cellFormat, timeOnly);
+                            }
+                            catch (ParseException e)
+                            {
+                                // Not a date
+                                cell = new Label(colIndex, rowIndex, (String)value);
+                            }
+                        }
+                        else if (value != null)
+                        {
+                            cell = new Label(colIndex, rowIndex, value.toString());
+                        }
+                        if (cell != null)
+                        {
+                            cell.setCellFormat(cellFormat);
+                            sheet.addCell(cell);
+                        }
+                    }
+                }
+            }
+
+            response.setContentType("application/vnd.ms-excel");
+            response.setHeader("Content-disposition", "attachment; filename=\"" + filename +"\"");
+
+            workbook.write();
+            workbook.close();
+        }
+    }
+
 
     @RequiresPermission(ACL.PERM_READ)
     public class ShowApplicationAction extends SimpleViewAction<ProtocolApplicationForm>
@@ -3169,7 +3435,7 @@ public class ExperimentController extends SpringActionController
             DataRegion drg = new DataRegion();
 
             drg.addHiddenFormField("returnURL", getViewContext().getRequest().getParameter("returnURL"));
-            drg.addHiddenFormField("addSelectedRuns", Boolean.toString("true".equals(getViewContext().getRequest().getParameter("addSelectedRuns"))));
+            drg.addHiddenFormField("addSelectedRuns", java.lang.Boolean.toString("true".equals(getViewContext().getRequest().getParameter("addSelectedRuns"))));
             form.setDataRegionSelectionKey(getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
             for (String rowId : DataRegionSelection.getSelected(getViewContext(), false))
             {
@@ -3196,7 +3462,7 @@ public class ExperimentController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Create Run Group");            
+            return root.addChild("Create Run Group");
         }
     }
 
@@ -3636,9 +3902,9 @@ public class ExperimentController extends SpringActionController
             return getRunTextURL(run.getContainer(), run.getRowId());
         }
 
-        public ActionURL getDeleteExperimentsURL(Container container, ActionURL returnURL)
+        public ActionURL getDeleteExperimentsURL(Container container, URLHelper returnURL)
         {
-            return new ActionURL(DeleteSelectedExperimentsAction.class, container).addParameter("returnURL", returnURL.toString());
+            return new ActionURL(DeleteSelectedExperimentsAction.class, container).addParameter("returnURL", returnURL.getLocalURIString());
         }
 
         public ActionURL getAddRunsToExperimentURL(Container c, ExpExperiment exp)
@@ -3695,19 +3961,19 @@ public class ExperimentController extends SpringActionController
             return url;
         }
 
-        public ActionURL getDeleteDatasURL(Container c, ActionURL returnURL)
+        public ActionURL getDeleteDatasURL(Container c, URLHelper returnURL)
         {
-            return new ActionURL(DeleteSelectedDataAction.class, c).addParameter("returnURL", returnURL.toString());
+            return new ActionURL(DeleteSelectedDataAction.class, c).addParameter("returnURL", returnURL.getLocalURIString());
         }
 
-        public ActionURL getDeleteSelectedExperimentsURL(Container c, ActionURL returnURL)
+        public ActionURL getDeleteSelectedExperimentsURL(Container c, URLHelper returnURL)
         {
-            return new ActionURL(DeleteSelectedExperimentsAction.class, c).addParameter("returnURL", returnURL.toString());
+            return new ActionURL(DeleteSelectedExperimentsAction.class, c).addParameter("returnURL", returnURL.getLocalURIString());
         }
 
-        public ActionURL getDeleteSelectedExpRunsURL(Container container, ActionURL returnURL)
+        public ActionURL getDeleteSelectedExpRunsURL(Container container, URLHelper returnURL)
         {
-            return new ActionURL(DeleteSelectedExpRunsAction.class, container).addParameter("returnURL", returnURL.toString());
+            return new ActionURL(DeleteSelectedExpRunsAction.class, container).addParameter("returnURL", returnURL.getLocalURIString());
         }
 
         public ActionURL getShowUpdateURL(ExpExperiment experiment)
@@ -3715,17 +3981,17 @@ public class ExperimentController extends SpringActionController
             return new ActionURL(ShowUpdateAction.class, experiment.getContainer()).addParameter("rowId", experiment.getRowId());
         }
 
-        public ActionURL getRemoveSelectedExpRunsURL(Container container, ActionURL returnURL, ExpExperiment exp)
+        public ActionURL getRemoveSelectedExpRunsURL(Container container, URLHelper returnURL, ExpExperiment exp)
         {
-            return new ActionURL(RemoveSelectedExpRunsAction.class, container).addParameter("returnURL", returnURL.toString()).addParameter("expRowId", exp.getRowId());
+            return new ActionURL(RemoveSelectedExpRunsAction.class, container).addParameter("returnURL", returnURL.getLocalURIString()).addParameter("expRowId", exp.getRowId());
         }
 
-        public ActionURL getCreateRunGroupURL(Container container, ActionURL returnURL, boolean addSelectedRuns)
+        public ActionURL getCreateRunGroupURL(Container container, URLHelper returnURL, boolean addSelectedRuns)
         {
             ActionURL result = new ActionURL(CreateRunGroupAction.class, container);
             if (returnURL != null)
             {
-                result.addParameter("returnURL", returnURL.toString());
+                result.addParameter("returnURL", returnURL.getLocalURIString());
             }
             if (addSelectedRuns)
             {

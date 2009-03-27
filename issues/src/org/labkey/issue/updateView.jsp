@@ -43,7 +43,7 @@
     BindException errors = bean.getErrors();
 %>
 
-<form method="POST" enctype="multipart/form-data" action="<%=IssuesController.issueURL(context.getContainer(),bean.getAction()+".post")%>">
+<form method="POST" onsubmit="LABKEY.setSubmit(true); return true;" enctype="multipart/form-data" action="<%=IssuesController.issueURL(context.getContainer(),bean.getAction()+".post")%>">
 
     <table>
     <%
@@ -59,7 +59,7 @@
     %>
     </table>
     <table class="labkey-button-bar"><tr>
-        <td><%=PageFlowUtil.generateSubmitButton("Submit", "LABKEY.setSubmit(true); return true;", "name=\"" + bean.getAction() + "\"")%></td>
+        <td><%=PageFlowUtil.generateSubmitButton("Submit", null, "name=\"" + bean.getAction() + "\"")%></td>
         <td><%= generateButton("View Grid", IssuesController.issueURL(context.getContainer(), "list").addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
     </tr></table>
 

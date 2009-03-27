@@ -343,7 +343,7 @@ public class MothershipController extends SpringActionController
             HtmlView linkView = new HtmlView(getLinkBarHTML());
 
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
-            QuerySettings settings = new QuerySettings(getViewContext(), "exceptions");
+            QuerySettings settings = new QuerySettings(getViewContext(), "ExceptionSummary");
             settings.setSchemaName(schema.getSchemaName());
             settings.setQueryName(MothershipSchema.EXCEPTION_STACK_TRACE_TABLE_NAME);
             settings.setAllowChooseQuery(false);

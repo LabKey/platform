@@ -731,7 +731,7 @@ public class IssuesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return new DetailsAction(_issue).appendNavTrail(root)
-                    .addChild("(update) " + _issue.getTitle());
+                    .addChild("(update) " + _issue.getTitle().getSource());
         }
     }
 
@@ -1052,7 +1052,7 @@ public class IssuesController extends SpringActionController
                 if (m.getAllRecipients().length > 0)
                 {
                     m.setMultipart(true);
-                    m.setSubject("Issue #" + issue.getIssueId() + ", \"" + issue.getTitle() + ",\" has been " + change);
+                    m.setSubject("Issue #" + issue.getIssueId() + ", \"" + issue.getTitle().getSource() + ",\" has been " + change);
                     m.setHeader("References", references);
 
                     JspView viewPlain = new JspView<UpdateEmailPage>(IssuesController.class, "updateEmail.jsp", new UpdateEmailPage(detailsURL.getURIString(), issue, true));

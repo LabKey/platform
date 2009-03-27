@@ -16,12 +16,11 @@
 
 package org.labkey.study.query;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
-import org.labkey.api.data.Container;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.Study;
-import org.labkey.study.StudySchema;
+import org.labkey.study.model.StudyManager;
 
 public class StudySchemaProvider extends DefaultSchema.SchemaProvider
 {
@@ -31,7 +30,7 @@ public class StudySchemaProvider extends DefaultSchema.SchemaProvider
         Study study = StudyManager.getInstance().getStudy(container);
         if (study == null)
         {
-            return null;
+            return StudyQuerySchema.createSchemaWithoutStudy(container, schema.getUser());
         }
         return new StudyQuerySchema(study, schema.getUser(), true);
     }

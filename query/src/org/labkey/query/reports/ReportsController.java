@@ -1129,7 +1129,7 @@ public class ReportsController extends SpringActionController
     {
         public ApiResponse execute(ViewsSummaryForm form, BindException errors) throws Exception
         {
-            return new ApiSimpleResponse("views", ReportUtil.getViewsJson(getViewContext(), form.getSchemaName(), form.getQueryName(), true));
+            return new ApiSimpleResponse("views", ReportUtil.getViews(getViewContext(), form.getSchemaName(), form.getQueryName(), true));
         }
     }
 
@@ -1450,11 +1450,11 @@ public class ReportsController extends SpringActionController
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            int reportId = NumberUtils.toInt((String)getViewContext().get(ReportDescriptor.Prop.reportId.name()), -1);
+            ReportIdentifier reportId = ReportService.get().getReportIdentifier((String)getViewContext().get(ReportDescriptor.Prop.reportId.name()));
             String sections = (String)getViewContext().get(Report.renderParam.showSection.name());
-            if (reportId != -1)
+            if (reportId != null)
             {
-                Report report = ReportService.get().getReport(reportId);
+                Report report = reportId.getReport();
 
                 // may need a better way to determine sections, do we want to add to the interface?
                 response.put("success", true);

@@ -1063,27 +1063,36 @@ public class SamplesController extends BaseController
     {
         requiresAdmin();
         SimpleSpecimenImporter importer = new SimpleSpecimenImporter();
-        String specimenTSV = StringUtils.trimToNull(form.getTsv());
 
-        TabLoader loader = new TabLoader(specimenTSV, true);
+        TabLoader loader = new TabLoader(form.getTsv(), true);
         Map<String,String> columnAliases = new CaseInsensitiveHashMap<String>();
         //Make sure we accept the labels
         for (Map.Entry<String,String> entry : importer.getColumnLabels().entrySet())
             columnAliases.put(entry.getValue(), entry.getKey());
         //And a few more aliases
         columnAliases.put("ParticipantId", SimpleSpecimenImporter.PARTICIPANT_ID);
+        columnAliases.put("Participant Id", SimpleSpecimenImporter.PARTICIPANT_ID);
         columnAliases.put("Subject", SimpleSpecimenImporter.PARTICIPANT_ID);
         columnAliases.put("SequenceNum", SimpleSpecimenImporter.VISIT);
+        columnAliases.put("Sequence Num", SimpleSpecimenImporter.VISIT);
         columnAliases.put("Visit", SimpleSpecimenImporter.VISIT);
         columnAliases.put("specimenNumber", SimpleSpecimenImporter.SAMPLE_ID);
+        columnAliases.put("specimen Number", SimpleSpecimenImporter.SAMPLE_ID);
         columnAliases.put("totalVolume", SimpleSpecimenImporter.VOLUME);
+        columnAliases.put("total Volume", SimpleSpecimenImporter.VOLUME);
         columnAliases.put("volumeUnits", SimpleSpecimenImporter.UNITS);
+        columnAliases.put("volume Units", SimpleSpecimenImporter.UNITS);
         columnAliases.put("primaryType", SimpleSpecimenImporter.PRIMARY_SPECIMEN_TYPE);
+        columnAliases.put("primary Type", SimpleSpecimenImporter.PRIMARY_SPECIMEN_TYPE);
         columnAliases.put("additiveType", SimpleSpecimenImporter.ADDITIVE_TYPE);
+        columnAliases.put("additive Type", SimpleSpecimenImporter.ADDITIVE_TYPE);
         columnAliases.put("derivativeType", SimpleSpecimenImporter.DERIVIATIVE_TYPE);
+        columnAliases.put("derivative Type", SimpleSpecimenImporter.DERIVIATIVE_TYPE);
         columnAliases.put("Visit", SimpleSpecimenImporter.VISIT);
         columnAliases.put("drawTimestamp", SimpleSpecimenImporter.DRAW_TIMESTAMP);
+        columnAliases.put("draw Timestamp", SimpleSpecimenImporter.DRAW_TIMESTAMP);
         columnAliases.put("globalUniqueId", SimpleSpecimenImporter.VIAL_ID);
+        columnAliases.put("global Unique Id", SimpleSpecimenImporter.VIAL_ID);
 
         //Remember whether we used a different header so we can put up error messages that make sense
         Map<String,String> labels = new HashMap();
@@ -1129,9 +1138,7 @@ public class SamplesController extends BaseController
                 participants.add((String) row.get(SimpleSpecimenImporter.PARTICIPANT_ID));
 
             Object sampleId = row.get(SimpleSpecimenImporter.SAMPLE_ID);
-            if (null == sampleId)
-                errors.add("main", new ActionMessage("Error", "Error, Row " + rowNum + " missing " + (null == labels.get(SimpleSpecimenImporter.SAMPLE_ID) ? SimpleSpecimenImporter.SAMPLE_ID : labels.get(SimpleSpecimenImporter.SAMPLE_ID))));
-            else
+            if (null != sampleId)
             {
                 Pair<Object,Object> participantVisit = new Pair<Object,Object>(participant, row.get(visitKey));
                 if (sampleIdMap.containsKey(sampleId))
@@ -1145,7 +1152,16 @@ public class SamplesController extends BaseController
 
             Object vialId = row.get(SimpleSpecimenImporter.VIAL_ID);
             if (null == vialId)
-                vialId = sampleId;
+            {
+                if (sampleId != null)
+                {
+                    vialId = sampleId;
+                }
+                else
+                {
+                    errors.add("main", new ActionMessage("Error", "Error, Row " + rowNum + " missing " + (null == labels.get(SimpleSpecimenImporter.VIAL_ID) ? SimpleSpecimenImporter.VIAL_ID : labels.get(SimpleSpecimenImporter.VIAL_ID))));
+                }
+            }
             if (!vialIds.add(vialId))
                 errors.add("main", new ActionMessage("Error", "Error, Row " + rowNum + " duplicate vial id " + vialId));
 

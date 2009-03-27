@@ -408,7 +408,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             name = _ccc.getColumnCaptions().get(columnName.getSource());
         else if (col != null)
             name = col.getCaption();
-        if (name != null)
+        if (name != null && name.length() > 0)
         {
             String label = PageFlowUtil.filter(name).replaceAll(" ", "&nbsp;");
             if (_requiredFields != null && _requiredFields.indexOf(columnName.toLowerCase().getSource()) != -1)

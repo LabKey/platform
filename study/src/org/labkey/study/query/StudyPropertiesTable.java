@@ -37,10 +37,18 @@ public class StudyPropertiesTable extends BaseStudyTable
     {
         super(schema, StudySchema.getInstance().getTableInfoStudy());
 
+        ColumnInfo labelColumn = addWrapColumn(_rootTable.getColumn("label"));
+        labelColumn.setUserEditable(false);
+
+        ColumnInfo startDateColumn = addWrapColumn(_rootTable.getColumn("startDate"));
+        startDateColumn.setUserEditable(false);
+
         ColumnInfo containerColumn = addWrapColumn(_rootTable.getColumn("container"));
         containerColumn.setUserEditable(false);
-        containerColumn.setIsHidden(true);
         containerColumn.setKeyField(true);
+
+        ColumnInfo dateBasedColumn = addWrapColumn(_rootTable.getColumn("dateBased"));
+        dateBasedColumn.setUserEditable(false);
 
         ColumnInfo lsidColumn = addWrapColumn(_rootTable.getColumn("LSID"));
         lsidColumn.setUserEditable(false);

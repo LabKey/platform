@@ -1295,7 +1295,7 @@ public class SpecimenImporter
         return value;
     }
 
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     private String createTempTable(DbSchema schema) throws SQLException
     {

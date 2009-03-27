@@ -1964,6 +1964,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public List<ExpRunImpl> getRunsUsingDatas(List<ExpData> datas) throws SQLException
     {
+        if (datas.isEmpty())
+        {
+            return Collections.emptyList();
+        }
         StringBuilder dataRowIdSQL = new StringBuilder();
         String separator = "";
         for (ExpData data : datas)
@@ -1985,6 +1989,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpRun[] getRunsUsingMaterials(int... ids) throws SQLException
     {
+        if (ids.length == 0)
+        {
+            return new ExpRun[0];
+        }
         String materialRowIdSQL = StringUtils.join(toIntegers(ids), ", ");
         return ExpRunImpl.fromRuns(getRunsForMaterialList(materialRowIdSQL));
     }
@@ -2743,15 +2751,15 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     {
                         if (outputData.getSourceApplication() != null)
                         {
-                            throw new IllegalArgumentException("Output data " + outputData.getName() + "  with rowId + " + outputData.getRowId() + " is already marked as being created by another protocol application");
+                            throw new IllegalArgumentException("Output data " + outputData.getName() + "  with rowId " + outputData.getRowId() + " is already marked as being created by another protocol application");
                         }
                         if (outputData.getSourceProtocol() != null)
                         {
-                            throw new IllegalArgumentException("Output data " + outputData.getName() + "  with rowId + " + outputData.getRowId() + " is already marked as being created by another protocol");
+                            throw new IllegalArgumentException("Output data " + outputData.getName() + "  with rowId " + outputData.getRowId() + " is already marked as being created by another protocol");
                         }
                         if (outputData.getRun() != null)
                         {
-                            throw new IllegalArgumentException("Output data " + outputData.getName() + "  with rowId + " + outputData.getRowId() + " is already marked as being created by another run");
+                            throw new IllegalArgumentException("Output data " + outputData.getName() + "  with rowId " + outputData.getRowId() + " is already marked as being created by another run");
                         }
                         outputData.setSourceApplication(new ExpProtocolApplicationImpl(protApp2));
                         outputData.setSourceProtocol(protocol2);
@@ -2822,7 +2830,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
         if (pipeRoot == null || !NetworkDrive.exists(pipeRoot.getRootPath()))
         {
-            throw new ExperimentException("The target container must have a valid pipeline root");
+            throw new ExperimentException("The child sample's folder, " + info.getContainer().getPath() + ", must have a valid pipeline root");
         }
         if (outputMaterials.isEmpty())
         {

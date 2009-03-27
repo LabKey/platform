@@ -254,7 +254,7 @@ public class StudyModule extends DefaultModule
         public ReportsWebPartFactory()
         {
             super("Views", WebPartFactory.LOCATION_RIGHT);
-            addLegacyNames("Reports");
+            addLegacyNames("Reports", "Reports and Views");
         }
 
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
@@ -273,7 +273,7 @@ public class StudyModule extends DefaultModule
         public ReportsWideWebPartFactory()
         {
             super("Views");
-            addLegacyNames("Reports");
+            addLegacyNames("Reports", "Reports and Views");
         }
 
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException

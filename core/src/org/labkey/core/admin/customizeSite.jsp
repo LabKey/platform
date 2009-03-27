@@ -118,7 +118,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr><td colspan=3 class=labkey-title-area-line><img height=1 width=1 src="<%=request.getContextPath()%>/_.gif"></td></tr>
 <tr>
     <td class="labkey-form-label">System default domain (default domain for user log in)</td>
-    <td><input type="text" name="defaultDomain" size="50" value="<%= h(appProps.getDefaultDomain()) %>"></td>
+    <td><input type="text" id="defaultDomain" name="defaultDomain" size="50" value="<%= h(appProps.getDefaultDomain()) %>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Base server url (used to create links in emails sent by the system)</td>

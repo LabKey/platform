@@ -1034,6 +1034,7 @@ public class AdminController extends SpringActionController
                 getPageConfig().setTemplate(Template.Dialog);
 
             SiteSettingsBean bean = new SiteSettingsBean(form.isUpgradeInProgress(), form.isTestInPage());
+            getPageConfig().setFocusId("defaultDomain");
             return new JspView<SiteSettingsBean>("/org/labkey/core/admin/customizeSite.jsp", bean, errors);
         }
 

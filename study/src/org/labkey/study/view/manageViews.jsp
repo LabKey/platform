@@ -171,6 +171,11 @@
                 filterDiv: 'filterMsg',
             <% } %>
             container: '<%=context.getContainer().getPath()%>',
+            dataConnection : new Ext.data.Connection({
+                url: LABKEY.ActionURL.buildURL("study-reports", "manageViewsSummary", this.container),
+                method: 'GET',
+                timeout: 300000
+            }),
             expander : new Ext.grid.RowExpander({
                 tpl : new Ext.XTemplate(
                         '<table>',
@@ -182,7 +187,9 @@
                             '<tr><td></td><td>',
                                 '<tpl if="runUrl != undefined">&nbsp;[<a href="{runUrl}">view</a>]</tpl>',
                                 '<tpl if="editUrl != undefined">&nbsp;[<a href="{editUrl}">source</a>]</tpl>',
+                            <% if (context.hasPermission(ACL.PERM_ADMIN)) { %>
                                 '<tpl if="!queryView && !inherited">&nbsp;[<a href="<%=permissionURL.getLocalURIString()%>reportId={reportId}">permissions</a>]</tpl>',
+                            <% } %>
                                 '<tpl if="queryView && !inherited">&nbsp;[<a href=\'#\' onclick=\'panel.convertQuery("{schema}","{query}","{name}");return false;\'>convert to view</a>]</tpl></td></tr>',
                         '</table>')
                 }),

@@ -1931,13 +1931,14 @@ public class StudyManager
 
     private static final String CONVERSION_ERROR = "Conversion Error";
 
-    private List<Map<String, Object>> parseData(DataSetDefinition def,
+    private List<Map<String, Object>> parseData(User user,
+                                   DataSetDefinition def,
                                    DataLoader loader,
                                    Map<String, String> columnMap,
                                    List<String> errors)
             throws ServletException, IOException
     {
-        TableInfo tinfo = def.getTableInfo(null, false, false);
+        TableInfo tinfo = def.getTableInfo(user, false, false);
 
         // We're going to lower-case the keys ourselves later,
         // so this needs to be case-insensitive
@@ -2106,7 +2107,7 @@ public class StudyManager
                                       QCState defaultQCState)
         throws IOException, ServletException, SQLException
     {
-        List<Map<String, Object>> dataMaps = parseData(def, loader, columnMap, errors);
+        List<Map<String, Object>> dataMaps = parseData(user, def, loader, columnMap, errors);
         return importDatasetData(study, user, def, dataMaps, lastModified, errors, checkDuplicates, defaultQCState);
     }
 
@@ -2199,7 +2200,7 @@ public class StudyManager
                 {
                     valueMissing = false;
                 }
-                if (valueMissing && !col.isNullable())
+                if (valueMissing && !col.isNullable() && col.isUserEditable())
                 {
                     // Demographic data gets special handling for visit or date fields, depending on the type of study,
                     // since there is usually only one entry for demographic data per dataset

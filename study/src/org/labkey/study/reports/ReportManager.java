@@ -27,11 +27,13 @@ import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.Pair;
 import org.labkey.study.StudySchema;
+import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.*;
 
 import javax.servlet.ServletException;
@@ -314,6 +316,47 @@ public class ReportManager implements StudyManager.UnmaterializeListener
             }
         }
         return true;
+    }
+
+    /**
+     * Returns the list of views available and additionally checks study security.
+     */
+    public List<Map<String, String>> getViews(ViewContext context, String schemaName, String queryName, boolean includeQueries)
+    {
+        return ReportUtil.getViews(context, schemaName, queryName, includeQueries, new StudyReportFilter());
+    }
+
+    public static class StudyReportFilter extends ReportUtil.DefaultReportFilter
+    {
+        Map<String, DataSetDefinition> _datasets;
+
+        public boolean accept(Report report, ViewContext context)
+        {
+            return ReportManager.get().canReadReport(context.getUser(), context.getContainer(), report);
+        }
+
+        private Map<String, DataSetDefinition> getDatasets(ViewContext context)
+        {
+            if (_datasets == null)
+            {
+                _datasets = new CaseInsensitiveHashMap<DataSetDefinition>();
+                for (DataSetDefinition ds : StudyManager.getInstance().getDataSetDefinitions(StudyManager.getInstance().getStudy(context.getContainer())))
+                    _datasets.put(ds.getLabel(), ds);
+            }
+            return _datasets;
+        }
+
+        public ActionURL getViewRunURL(ViewContext context, QueryDefinition def, CustomView view)
+        {
+            Map<String, DataSetDefinition> datasets = getDatasets(context);
+            if (datasets.containsKey(def.getName()))
+            {
+                return new ActionURL(StudyController.DatasetReportAction.class, context.getContainer()).
+                        addParameter(DataSetDefinition.DATASETKEY, datasets.get(def.getName()).getDataSetId()).
+                        addParameter("Dataset.viewName", view.getName());
+            }
+            return super.getViewRunURL(context, def, view);
+        }
     }
 
     /**

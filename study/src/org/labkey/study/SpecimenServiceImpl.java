@@ -85,7 +85,7 @@ public class SpecimenServiceImpl implements SpecimenService.Service
                 }
                 else
                 {
-                    String lsid = new Lsid("AssayRunMaterial", "Folder-" + _container.getRowId(), "Unknown").toString();
+                    String lsid = new Lsid(ParticipantVisit.ASSAY_RUN_MATERIAL_NAMESPACE, "Folder-" + _container.getRowId(), "Unknown").toString();
                     _material = ExperimentService.get().getExpMaterial(lsid);
                     if (_material == null)
                     {

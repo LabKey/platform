@@ -175,19 +175,10 @@ public class DefaultValueServiceImpl extends DefaultValueService
         }
     }
 
-    private Map<DomainProperty, Object> getMergedValues(Container container, Domain domain, User user, String scope)
+    private Map<DomainProperty, Object> getMergedValues(Domain domain, Map<DomainProperty, Object> userValues, Map<DomainProperty, Object> globalValues)
     {
-        Map<DomainProperty, Object> userValues = null;
-        if (user != null)
-        {
-            String userDefaultLSID = getUserDefaultsLSID(container, user, domain, scope);
-            userValues = getObjectValues(container, domain, userDefaultLSID);
-        }
-        String globalDefaultLSID = getContainerDefaultsLSID(container, domain);
-        Map<DomainProperty, Object> globalValues = getObjectValues(container, domain, globalDefaultLSID);
-
         if (userValues == null || userValues.isEmpty())
-            return globalValues;
+            return globalValues != null ? globalValues : Collections.<DomainProperty, Object>emptyMap();
 
         Map<DomainProperty, Object> result = new HashMap<DomainProperty, Object>();
         for (DomainProperty property : domain.getProperties())
@@ -195,20 +186,38 @@ public class DefaultValueServiceImpl extends DefaultValueService
             if (property.getDefaultValueTypeEnum() == DefaultValueType.LAST_ENTERED && userValues.containsKey(property))
                 result.put(property, userValues.get(property));
             else
-                result.put(property, globalValues.get(property));
+            {
+                Object value = globalValues.get(property);
+                if (value != null)
+                    result.put(property, value);
+            }
         }
         return result;
     }
 
     public Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user, String scope)
     {
-        Map<DomainProperty, Object> values = null;
-        while (!container.isRoot() && (values == null || values.isEmpty()))
+        Map<DomainProperty, Object> userValues = null;
+        Container checkContainer = container;
+        if (user != null)
         {
-            values = getMergedValues(container, domain, user, scope);
-            container = container.getParent();
+            while (!checkContainer.isRoot() && (userValues == null || userValues.isEmpty()))
+            {
+                String userDefaultLSID = getUserDefaultsLSID(checkContainer, user, domain, scope);
+                userValues = getObjectValues(checkContainer, domain, userDefaultLSID);
+                checkContainer = checkContainer.getParent();
+            }
         }
-        return values;
+
+        Map<DomainProperty, Object> globalValues = null;
+        checkContainer = container;
+        while (!checkContainer.isRoot() && (globalValues == null || globalValues.isEmpty()))
+        {
+            String globalDefaultLSID = getContainerDefaultsLSID(checkContainer, domain);
+            globalValues = getObjectValues(checkContainer, domain, globalDefaultLSID);
+            checkContainer = checkContainer.getParent();
+        }
+        return getMergedValues(domain, userValues, globalValues);
     }
 
     public Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain, User user)

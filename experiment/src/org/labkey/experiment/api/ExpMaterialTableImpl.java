@@ -102,6 +102,8 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 return ret;
             case Flag:
                 return createFlagColumn(alias);
+            case Created:
+                return wrapColumn(alias, _rootTable.getColumn("Created"));
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -169,6 +171,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         addColumn(ExpMaterialTable.Column.Run).setFk(new ExpSchema(_schema.getUser(), getContainer()).getRunIdForeignKey());
         ColumnInfo colLSID = addColumn(ExpMaterialTable.Column.LSID);
         colLSID.setIsHidden(true);
+        addColumn(ExpMaterialTable.Column.Created);
 
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
         defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Name));

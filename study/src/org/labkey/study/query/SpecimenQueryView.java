@@ -27,7 +27,10 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpecimenUtils;
-import org.labkey.study.model.*;
+import org.labkey.study.model.ParticipantDataset;
+import org.labkey.study.model.Specimen;
+import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyManager;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -506,8 +509,13 @@ public class SpecimenQueryView extends BaseStudyQueryView
                         (settings.getZeroVialsEnum() == SampleManager.DisplaySettings.DisplayOption.ADMINS_ONLY &&
                                 getUser().isAdministrator());
             }
-            rgn.addDisplayColumn(0, new SpecimenRequestDisplayColumn(this, getTable(), zeroVialIndicator, oneVialIndicator,
+            SampleManager.RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(getContainer());
+            if (!settings.isSimple())
+            {
+                // Only add this column if we're using advanced specimen management
+                rgn.addDisplayColumn(0, new SpecimenRequestDisplayColumn(this, getTable(), zeroVialIndicator, oneVialIndicator,
                     SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()) && _showRecordSelectors));
+            }
         }
         catch (SQLException e)
         {

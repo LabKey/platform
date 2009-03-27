@@ -17,6 +17,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -26,6 +27,7 @@ import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.Visit;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -33,8 +35,11 @@ public class StudyQuerySchema extends UserSchema
 {
     public static final String SCHEMA_NAME = "study";
 
-    Study _study;
+    @Nullable // if no study defined in this container
+    final Study _study;
+
     boolean _mustCheckPermissions;
+
     private Map<Integer, List<Double>> _datasetSequenceMap;
 
     public StudyQuerySchema(Study study, User user, boolean mustCheckPermissions)
@@ -44,40 +49,62 @@ public class StudyQuerySchema extends UserSchema
         _mustCheckPermissions = mustCheckPermissions;
     }
 
+    /**
+     * This c-tor is for schemas that have no study defined -- _study is null!
+     */
+    private StudyQuerySchema(Container c, User user)
+    {
+        super(SCHEMA_NAME, user, c, StudySchema.getInstance().getSchema());
+        _study = null;
+        _mustCheckPermissions = true;
+    }
+
+    static StudyQuerySchema createSchemaWithoutStudy(Container c, User u)
+    {
+        return new StudyQuerySchema(c, u);
+    }
+
     public Set<String> getTableNames()
     {
         Set<String> ret = new LinkedHashSet<String>();
+
+        // Always add StudyProperties, even if we have no study
         ret.add("StudyProperties");
-        ret.add("Participant");
-        ret.add("Site");
-        ret.add("Visit");
-        ret.add("SpecimenEvent");
-        ret.add("SpecimenDetail");
-        ret.add("SpecimenSummary");
-        ret.add("SpecimenRequest");
-        ret.add("SpecimenRequestStatus");
-        ret.add("VialRequest");
-        ret.add("ParticipantVisit");
-        ret.add("DataSets");
-        ret.add("DataSetColumns");
+        if (_study != null)
+        {
+            // All these require studies defined
+            ret.add("Participant");
+            ret.add("Site");
+            ret.add("Visit");
+            ret.add("SpecimenEvent");
+            ret.add("SpecimenDetail");
+            ret.add("SpecimenSummary");
+            ret.add("SpecimenRequest");
+            ret.add("SpecimenRequestStatus");
+            ret.add("VialRequest");
+            ret.add("ParticipantVisit");
+            ret.add("DataSets");
+            ret.add("DataSetColumns");
 
-        // Only show cohorts if the user has permission
-        if (StudyManager.getInstance().showCohorts(getContainer(), getUser()))
-            ret.add("Cohort");
+            // Only show cohorts if the user has permission
+            if (StudyManager.getInstance().showCohorts(getContainer(), getUser()))
+                ret.add("Cohort");
 
-        ret.add("QCState");
-        ret.add("SpecimenAdditive");
-        ret.add("SpecimenDerivative");
-        ret.add("SpecimenPrimaryType");
-        ret.add("SpecimenComment");
+            ret.add("QCState");
+            ret.add("SpecimenAdditive");
+            ret.add("SpecimenDerivative");
+            ret.add("SpecimenPrimaryType");
+            ret.add("SpecimenComment");
 
-        ret.addAll(getDataSetDefinitions().keySet());
+            ret.addAll(getDataSetDefinitions().keySet());
+        }
         return ret;
     }
 
     public Map<String, DataSetDefinition> getDataSetDefinitions()
     {
         Map<String, DataSetDefinition> ret = new LinkedHashMap<String, DataSetDefinition>();
+        assert _study != null : "Attempt to get datasets without a study";
         for (DataSetDefinition dsd : _study.getDataSets())
         {
             if (dsd.getLabel() == null)
@@ -117,6 +144,10 @@ public class StudyQuerySchema extends UserSchema
             StudyPropertiesTable ret = new StudyPropertiesTable(this);
             return ret;
         }
+
+        if (_study == null)
+            return null;
+
         if ("Cohort".equals(name))
         {
             CohortTable ret = new CohortTable(this);
@@ -216,6 +247,7 @@ public class StudyQuerySchema extends UserSchema
         return getDataSetTable(dsd);
     }
 
+    @Nullable
     public Study getStudy()
     {
         return _study;

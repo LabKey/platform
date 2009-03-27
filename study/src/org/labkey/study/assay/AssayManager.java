@@ -162,24 +162,22 @@ public class AssayManager implements AssayService.Interface
         return new AssayListQueryView(context, settings);
     }
 
-    public List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean includeOtherContainers)
+    public List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean isStudyView)
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
         assert provider != null : "Could not find a provider for protocol: " + protocol;
         Set<Container> containers = new TreeSet<Container>();
-        if (includeOtherContainers)
-        {
-            // First find all the containers that have contributed data to this protocol
-            ExpRun[] runs = protocol.getExpRuns();
-            for (ExpRun run : runs)
-                containers.add(run.getContainer());
 
-            // If there are none, include the container of the protocol itself
-            if (containers.size() == 0)
-                containers.add(protocol.getContainer());
-        }
-        // Always add the current container
-        containers.add(currentContainer);
+        // First find all the containers that have contributed data to this protocol
+        ExpRun[] runs = protocol.getExpRuns();
+        for (ExpRun run : runs)
+            containers.add(run.getContainer());
+
+        Container protocolContainer = protocol.getContainer();
+
+        // Always add the current container if we're looking at an assay and under the protocol
+        if (!isStudyView && (currentContainer.equals(protocolContainer) || currentContainer.hasAncestor(protocolContainer)))
+            containers.add(currentContainer);
 
 
         // Check for write permission
@@ -210,11 +208,18 @@ public class AssayManager implements AssayService.Interface
         }
         else
         {
-            // It's not the current container, so fall through to show a submenu even though there's
+            // It's not just the current container, so fall through to show a submenu even if there's
             // only one item, in order to indicate that the user is going to be redirected elsewhere
             for (Map.Entry<String, Class<? extends Controller>> entry : provider.getImportActions().entrySet())
             {
                 MenuButton uploadButton = new MenuButton(entry.getKey());
+                // If the current folder is in our list, put it first.
+                if (containers.contains(currentContainer))
+                {
+                    containers.remove(currentContainer);
+                    ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(currentContainer, protocol, entry.getValue());
+                    uploadButton.addMenuItem("Current Folder (" + currentContainer.getPath() + ")", url);
+                }
                 for(Container container : containers)
                 {
                     ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, entry.getValue());

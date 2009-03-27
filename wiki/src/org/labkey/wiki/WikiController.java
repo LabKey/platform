@@ -1098,10 +1098,10 @@ public class WikiController extends SpringActionController
 
         public ModelAndView getView(WikiNameForm form, BindException errors) throws Exception
         {
-            HString name = form.getName().trim();
+            HString name = null != form.getName() ? form.getName().trim() : null;
             //if there's no name parameter, find default page and reload with parameter.
             //default page is not necessarily same page displayed in wiki web part
-            if (name.isEmpty())
+            if (null == name || name.isEmpty())
                 HttpView.throwRedirect(new BeginAction().getUrl());
 
             //page may be existing page, or may be new page
@@ -1208,7 +1208,7 @@ public class WikiController extends SpringActionController
 
         public ModelAndView getView(WikiNameForm form, BindException errors) throws Exception
         {
-            HString name = form.getName().trim();
+            HString name = null != form.getName() ? form.getName().trim() : null;
             int version = form.getVersion();
 
             _wiki = WikiManager.getWiki(getContainer(), name);
@@ -1307,38 +1307,36 @@ public class WikiController extends SpringActionController
 
         public ModelAndView getView(CompareForm form, BindException errors) throws Exception
         {
-            HString name = form.getName().trim();
+            HString name = null != form.getName() ? form.getName().trim() : null;
 
             _wiki = WikiManager.getWiki(getContainer(), name);
             if (null == _wiki)
                 HttpView.throwNotFound();
 
-            _wikiVersion1 = WikiManager.getVersion(_wiki, form.getVersion1());
+            _wikiVersion1 = WikiManager.getVersion(_wiki, form.getEarlierVersion());
 
             if (null == _wikiVersion1)
                 HttpView.throwNotFound();
 
-            _wikiVersion2 = WikiManager.getVersion(_wiki, form.getVersion2());
+            _wikiVersion2 = WikiManager.getVersion(_wiki, form.getLaterVersion());
 
             if (null == _wikiVersion2)
                 HttpView.throwNotFound();
 
-            String html1 = _wikiVersion1.getHtml(getContainer(), _wiki);
-            String html2 = _wikiVersion2.getHtml(getContainer(), _wiki);
-
             DiffMatchPatch diffTool = new DiffMatchPatch();
-            LinkedList<DiffMatchPatch.Diff> diffs = diffTool.diff_main(html1, html2);
-            StringBuilder html = new StringBuilder(diffTool.diff_prettyHtml(diffs));
-            html.append("<hr>");
+            LinkedList<DiffMatchPatch.Diff> diffs = diffTool.diff_main(_wikiVersion1.getBody(), _wikiVersion2.getBody());
+            String htmlDiffs = diffTool.diff_prettyHtml(diffs);
+            HtmlView htmlView = new HtmlView(htmlDiffs);
+            htmlView.setTitle("Source Differences");
 
-            TextExtractor te1 = new TextExtractor(html1);
-            String text1 = te1.extract();
-            TextExtractor te2 = new TextExtractor(html2);
-            String text2 = te2.extract();
-            diffs = diffTool.diff_main(text1, text2);
-            html.append(diffTool.diff_prettyHtml(diffs));
+            TextExtractor te1 = new TextExtractor(_wikiVersion1.getHtml(getContainer(), _wiki));
+            TextExtractor te2 = new TextExtractor(_wikiVersion2.getHtml(getContainer(), _wiki));
+            diffs = diffTool.diff_main(te1.extract(), te2.extract());
+            String textDiffs = diffTool.diff_prettyHtml(diffs);
+            HtmlView textView = new HtmlView(textDiffs);
+            textView.setTitle("Text Differences");
 
-            return new HtmlView(html.toString());
+            return new VBox(htmlView, textView);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1386,6 +1384,16 @@ public class WikiController extends SpringActionController
         public void setVersion2(int version2)
         {
             this.version2 = version2;
+        }
+
+        private int getEarlierVersion()
+        {
+            return version1 < version2 ? version1 : version2;
+        }
+
+        private int getLaterVersion()
+        {
+            return version1 < version2 ? version2 : version1;
         }
     }
 
@@ -2276,9 +2284,8 @@ public class WikiController extends SpringActionController
             String searchTerm = (String)getProperty("search", "");
             boolean includeSubfolders = Search.includeSubfolders(getPropertyValues());
 
-            Module module = ModuleLoader.getInstance().getCurrentModule();
             List<Search.Searchable> l = new ArrayList<Search.Searchable>();
-            l.add((Search.Searchable)module);
+            l.add(new WikiSearchable());
 
             getPageConfig().setHelpTopic(new HelpTopic("search", HelpTopic.Area.DEFAULT));
 
