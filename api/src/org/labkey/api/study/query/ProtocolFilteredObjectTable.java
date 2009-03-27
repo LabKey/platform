@@ -36,7 +36,8 @@ public class ProtocolFilteredObjectTable extends FilteredTable
         _protocolLsid = protocolLsid;
     }
 
-    public SQLFragment getFromSQL(String alias)
+    @Override
+    public SQLFragment getFromSQL()
     {
         SQLFragment fromSQL = new SQLFragment("(");
         fromSQL.append("SELECT o.* FROM " + getFromTable() + " o\n" +
@@ -49,7 +50,6 @@ public class ProtocolFilteredObjectTable extends FilteredTable
                 "\t\tr.ProtocolLSID = ?");
         fromSQL.add(_protocolLsid);
         fromSQL.append(")");
-        fromSQL.append(" AS " + alias);
         return fromSQL;
     }
 }
