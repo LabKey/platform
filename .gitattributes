@@ -848,6 +848,7 @@ filecontent/src/org/labkey/filecontent/FileWebdavProvider.java -text
 filecontent/src/org/labkey/filecontent/FilesWebPart.java -text
 filecontent/src/org/labkey/filecontent/view/configure.jsp -text
 filecontent/src/org/labkey/filecontent/view/customizeWebPart.jsp -text
+filecontent/src/org/labkey/filecontent/view/davfiles.jsp -text
 filecontent/src/org/labkey/filecontent/view/files.jsp -text
 filecontent/src/org/labkey/filecontent/view/iframe.jsp -text
 issues/module.properties -text

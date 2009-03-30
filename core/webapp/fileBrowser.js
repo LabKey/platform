@@ -32,6 +32,8 @@ function parseUri(str)
         uri.hostname = uri.hostname || l.hostname;
         uri.host = uri.host || l.host;
     }
+    if (uri.protocol && uri.protocol.charAt(uri.protocol.length-1) == ":")
+        uri.protocol = uri.protocol.substr(0,uri.protocol.length - 1);
 
     uri[o.q.name] = {};
     uri[o.key[12]].replace(o.q.parser, function ($0, $1, $2)
@@ -746,13 +748,15 @@ var FileBrowser = function(config)
     Ext.apply(this, config);
     this.__init__(config);
 };
+
 Ext.extend(FileBrowser, Ext.Panel,
 {
     FOLDER_ICON: LABKEY.contextPath + "/" + LABKEY.extJsRoot + "/resources/images/default/tree/folder.gif",
 
     // instance/config variables
     resizable : true,
-    showFolders: true,
+    allowChangeDirectory : true,
+    showFolderTree: true,
     showAddressBar: true,
     showDetails: true,
     showProperties: true,
@@ -822,12 +826,7 @@ Ext.extend(FileBrowser, Ext.Panel,
         {
             if (!this.currentDirectory)
                 return;
-            this.fileSystem.reloadFiles(this.currentDirectory.data.path, function(filesystem, success, path, records)
-            {
-                this.store.removeAll();
-                this.store.add(records);
-            }.createDelegate(this));
-//            this.tree.getRootNode().reload();
+            this.fileSystem.reloadFiles(this.currentDirectory.data.path, this.loadRecords.createDelegate(this));
             var sel = this.tree.getSelectionModel().getSelectedNode();
             if (sel)
                 sel.reload();
@@ -1106,10 +1105,29 @@ Ext.extend(FileBrowser, Ext.Panel,
         }
     },
 
+
+    loadRecords : function(filesystem, success, path, records)
+    {
+        if (success && this.currentDirectory.data.path == path)
+        {
+            this.store.removeAll();
+            if (!this.allowChangeDirectory)
+            {
+                var t = records;
+                records = [];
+                for (var i=0 ; i<t.length ; i++)
+                    if (t[i].data.file) records.push(t[i]);
+            }
+            this.store.add(records);
+        }
+    },
+
+
     start : function(wd)
     {
         var root = this.tree.getRootNode();
-        root.expand();
+        if (this.showFolderTree)
+            root.expand();
         if (typeof wd == "string")
         {
             this.changeDirectory(wd);
@@ -1179,18 +1197,14 @@ Ext.extend(FileBrowser, Ext.Panel,
         var tbarConfig;
         if (!this.tbar)
         {
-            tbarConfig =
-            [
-//                {
-//                    text: 'Action Menu',
-//                    menu: { cls: 'extContainer', items: [this.action] }
-//                },
-                this.actions.createDirectory,
-                this.actions.download,
-                this.actions.parentFolder,
-                this.actions.refresh,
-                this.actions.showHistory
-            ];
+            tbarConfig = [];
+            if (this.allowChangeDirectory)
+                tbarConfig.push(this.actions.createDirectory);
+            tbarConfig.push(this.actions.download);
+            if (this.allowChangeDirectory)
+                tbarConfig.push(this.actions.parentFolder);
+            tbarConfig.push(this.actions.refresh);
+//            tbarConfig.push(this.actions.showHistory);
             if (this.actions.help)
                 tbarConfig.push(this.actions.help);
         }
@@ -1229,7 +1243,7 @@ Ext.extend(FileBrowser, Ext.Panel,
                 layout: 'fit',
                 items: [{html:'<div style="background-color:#f0f0f0;height:100%;width:100%">&nbsp</div>', id:'file-details'}]
             });
-        if (this.showAddressBar)
+        if (this.showFolderTree)
             layoutItems.push(
             {
                 region:'west',
@@ -1239,16 +1253,17 @@ Ext.extend(FileBrowser, Ext.Panel,
                 minSize: 100,
                 collapsible: true,
                 margins:'5 0 5 5',
-                layout:'accordion',
+//                layout:'accordion',
                 layoutConfig:{animate:true},
                 items: [
-                    this.tree,
-                    {
-                        title:'Settings',
-                        html:'<p>Some settings in here.</p>',
-                        border:false,
-                        iconCls:'settings'
-                    }]
+                    this.tree
+//                    ,{
+//                        title:'Settings',
+//                        html:'<p>Some settings in here.</p>',
+//                        border:false,
+//                        iconCls:'settings'
+//                    }
+                ]
             });
         layoutItems.push(
             {
@@ -1275,16 +1290,6 @@ Ext.extend(FileBrowser, Ext.Panel,
         var renderTo = config.renderTo || null;
         Ext.apply(config, {layout:'border', tbar:tbarConfig, items: layoutItems, renderTo:null}, {id:'fileBrowser', height:600, width:800});
         FileBrowser.superclass.constructor.call(this, config);
-//        var border = new Ext.Panel(config);
-
-//        var resizer = new Ext.Resizable(config.id, {
-//            width:800, height:600,
-//            minWidth:640,
-//            minHeight:400});
-//        resizer.on("resize", function(o,width,height){
-//            this.setWidth(width);
-//            this.setHeight(height);
-//        }.createDelegate(this));
 
         //
         // EVENTS (tie together components)
@@ -1314,14 +1319,7 @@ Ext.extend(FileBrowser, Ext.Panel,
         this.on(BROWSER_EVENTS.directorychange,function(record)
         {
             this.store.removeAll();
-            this.fileSystem.listFiles(record.data.path, (function(filesystem, success, path, records)
-            {
-                if (success && this.currentDirectory.data.path == path)
-                {
-                    this.store.removeAll();
-                    this.store.add(records);
-                }
-            }).createDelegate(this));
+            this.fileSystem.listFiles(record.data.path, this.loadRecords.createDelegate(this));
         }, this);
 
         this.on(BROWSER_EVENTS.directorychange, function(record)
