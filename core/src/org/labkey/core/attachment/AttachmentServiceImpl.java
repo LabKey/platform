@@ -1375,6 +1375,22 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             return suite;
         }
 
+        void assertSameFile(File a, File b)
+        {
+            if (a.equals(b))
+                return;
+            try
+            {
+                a = a.getCanonicalFile();
+                b = b.getCanonicalFile();
+                assertEquals(a,b);
+            }
+            catch (IOException x)
+            {
+                fail(x.getMessage());
+            }
+        }
+
         public void testDirectories() throws IOException, SQLException, AttachmentService.DuplicateFilenameException
         {
             String projectRoot = AppProps.getInstance().getProjectRoot();
@@ -1397,11 +1413,11 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             File curRoot = svc.getWebRoot(proj);
             if (null == curRoot)
                 svc.setWebRoot(proj, webRoot);
-            assertEquals(svc.getWebRoot(proj), webRoot);
+            assertSameFile(svc.getWebRoot(proj), webRoot);
             AttachmentDirectory attachParent = svc.getMappedAttachmentDirectory(folder, true);
             File attachDir = attachParent.getFileSystemDirectory();
             assertTrue(attachDir.exists());
-            assertEquals(attachDir, new File(webRoot, "Test"));
+            assertSameFile(attachDir, new File(webRoot, "Test"));
 
             MultipartFile f = new MockMultipartFile("file.txt", "file.txt", "text/plain", "Hello World".getBytes());
             Map<String, MultipartFile> fileMap = new HashMap<String, MultipartFile>();
@@ -1421,13 +1437,13 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
             AttachmentDirectory namedParentTest = svc.getRegisteredDirectory(folder, "test");
             assertNotNull(namedParentTest);
-            assertEquals(namedParentTest.getFileSystemDirectory(), namedParent.getFileSystemDirectory());
+            assertSameFile(namedParentTest.getFileSystemDirectory(), namedParent.getFileSystemDirectory());
 
             svc.addAttachments(HttpView.currentContext().getUser(), namedParent, files);
             att = svc.getAttachments(namedParent);
             assertEquals(att.length, 1);
             assertTrue(att[0].getFile().exists());
-            assertTrue(new File(otherDir, "file.txt").equals(att[0].getFile()));
+            assertSameFile(new File(otherDir, "file.txt"), att[0].getFile());
             assertTrue(new File(otherDir, UPLOAD_LOG).exists());
 
             svc.unregisterDirectory(folder, "test");
@@ -1440,7 +1456,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             AttachmentDirectory relativeParent = svc.registerDirectory(folder, "relative", "subdir2", true);
             AttachmentDirectory relativeParentTest = svc.getRegisteredDirectory(folder, "relative");
             assertNotNull(relativeParentTest);
-            assertEquals(relativeParentTest.getFileSystemDirectory(), relativeParent.getFileSystemDirectory());
+            assertSameFile(relativeParentTest.getFileSystemDirectory(), relativeParent.getFileSystemDirectory());
 
             svc.addAttachments(HttpView.currentContext().getUser(), relativeParent, files);
             att = svc.getAttachments(relativeParent);
