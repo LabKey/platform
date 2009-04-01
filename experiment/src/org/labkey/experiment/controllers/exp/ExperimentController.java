@@ -16,11 +16,9 @@
 
 package org.labkey.experiment.controllers.exp;
 
-import jxl.write.*;
-import jxl.write.NumberFormat;
-import jxl.write.DateFormat;
-import jxl.read.biff.BiffException;
 import jxl.*;
+import jxl.read.biff.BiffException;
+import jxl.write.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
@@ -37,14 +35,14 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.ParticipantVisit;
+import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.common.tools.ColumnDescriptor;
@@ -69,11 +67,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.net.URI;
-import java.sql.SQLException;
-import java.util.*;
 import java.lang.Boolean;
-import java.text.*;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.sql.SQLException;
+import java.text.DecimalFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
  * User: jeckels
@@ -1066,11 +1067,20 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(ACL.PERM_READ)
     public class ShowFileAction extends AbstractDataAction
     {
-        protected ModelAndView getDataView(DataForm form, BindException errors) throws Exception
+        protected ModelAndView getDataView(DataForm form, BindException errors) throws IOException
         {
             String dataURL = _data.getDataFileUrl();
+            URI dataURI;
+            try
+            {
+                dataURI = new URI(dataURL);
+            }
+            catch (URISyntaxException use)
+            {
+                throw new UnexpectedException(use);
+            }
 
-            File realContent = new File(new URI(dataURL));
+            File realContent = new File(dataURI);
             if (!realContent.exists() || !realContent.isFile())
             {
                 HttpView.throwNotFound("Data file, " + realContent + ", does not exist on disk");
@@ -1113,7 +1123,7 @@ public class ExperimentController extends SpringActionController
                             }
                             catch (BiffException e)
                             {
-                                throw new NotFoundException("Unable to parse file as Excel data", e);
+                                throw new FileNotFoundException("Unable to parse file as Excel data: " + e);
                             }
                             for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++)
                             {
@@ -1226,7 +1236,7 @@ public class ExperimentController extends SpringActionController
                                 {
                                     JSONObject valueObject = new JSONObject();
                                     valueObject.put("value", value);
-                                    rowsArray.put(rowArray);
+                                    rowArray.put(valueObject);
                                 }
                                 else
                                 {
@@ -1243,7 +1253,7 @@ public class ExperimentController extends SpringActionController
                     }
                     else
                     {
-                        throw new NotFoundException("Unable to convert file " + realContent + " to tsv");
+                        throw new FileNotFoundException("Unable to convert file " + realContent + " to tsv");
                     }
                     ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse());
                     JSONObject workbookJSON = new JSONObject();
@@ -1257,7 +1267,8 @@ public class ExperimentController extends SpringActionController
             }
             catch (IOException e)
             {
-                HttpView.throwNotFound("Unable to get file: " + e.toString());
+                ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse());
+                writer.write(e);
             }
 
             return null;
