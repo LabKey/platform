@@ -72,7 +72,10 @@ public class QueryModule extends DefaultModule
         addController("reports", ReportsController.class);
         addController("dbuserschema", DbUserSchemaController.class);
 
-        QueryService.set(new QueryServiceImpl());
+        QueryServiceImpl i = new QueryServiceImpl();
+        QueryService.set(i);
+        ServiceRegistry.get().registerService(QueryService.class, i);
+
         ContainerManager.addContainerListener(QueryManager.CONTAINER_LISTENER);
 
         ReportService.registerProvider(new ReportServiceImpl());
@@ -127,9 +130,9 @@ public class QueryModule extends DefaultModule
     public Set<Class<? extends TestCase>> getJUnitTests()
     {
         return new HashSet<Class<? extends TestCase>>(Arrays.asList(
-                SqlParser.TestCase.class,
-				Query.TestCase.class
-                //,QueryServiceImpl.TestCase.class
+                SqlParser.TestCase.class
+				,Query.TestCase.class
+                ,QueryServiceImpl.TestCase.class
         ));
     }
 }
