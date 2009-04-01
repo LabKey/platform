@@ -5453,7 +5453,7 @@ public class StudyController extends BaseStudyController
 
         public String getSecurityString()
         {
-            return _securityType.name();
+            return _securityType == null ? null : _securityType.name();
         }
 
         public SecurityType getSecurityType()
