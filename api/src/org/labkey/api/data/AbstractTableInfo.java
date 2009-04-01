@@ -500,4 +500,13 @@ abstract public class AbstractTableInfo implements TableInfo
     {
         return null;
     }
+
+
+    public ColumnInfo getLookupColumn(ColumnInfo parent, String name)
+    {
+        ForeignKey fk = parent.getFk();
+        if (fk == null)
+            return null;
+        return fk.createLookupColumn(parent, name);
+    }
 }

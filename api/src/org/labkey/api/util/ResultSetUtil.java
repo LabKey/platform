@@ -48,17 +48,19 @@ public class ResultSetUtil
     }
 
     
-    public static void close(ResultSet rs)
+    public static ResultSet close(ResultSet rs)
     {
         if (null == rs)
-            return;
+            return null;
         try
         {
             rs.close();
+            return null;
         }
         catch (SQLException x)
         {
             _log.error("unexpected error", x);
+            return rs;
         }
     }
 

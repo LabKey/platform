@@ -1120,7 +1120,7 @@ public class Table
 
         SimpleFilter filter = new SimpleFilter();
         for (int i = 0; i < pkVals.length; i++)
-            filter.addCondition(columnPK.get(i).getSelectName(), pkVals[i]);
+            filter.addCondition(columnPK.get(i), pkVals[i]);
 
         // UNDONE -- rowVersion
         delete(table, filter);
@@ -1161,7 +1161,7 @@ public class Table
         assert pks.length == pkColumns.size() : "Wrong number of primary keys specified";
 
         for (int i = 0; i < pkColumns.size(); i++)
-            filter.addCondition(pkColumns.get(i).getSelectName(), pks[i]);
+            filter.addCondition(pkColumns.get(i), pks[i]);
 
         try
         {
@@ -1214,10 +1214,10 @@ public class Table
         return rowcount;
     }
 
+
     public static SQLFragment getFullSelectSQL(TableInfo table, List<ColumnInfo> select, Filter filter, Sort sort)
     {
         List<ColumnInfo> allColumns = new ArrayList<ColumnInfo>(select);
-        QueryService.get().ensureRequiredColumns(table, allColumns, filter, sort, null);
         return getSelectSQL(table, allColumns, filter, sort, 0, 0);
     }
 

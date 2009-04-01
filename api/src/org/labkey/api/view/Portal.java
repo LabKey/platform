@@ -256,7 +256,7 @@ public class Portal
         Filter filter = new SimpleFilter("PageId", id);
         try
         {
-            parts = Table.select(getTableInfoPortalWebParts(), Table.ALL_COLUMNS, filter, new Sort(getTableInfoPortalWebParts().getColumn("Index").getSelectName()), WebPart.class);
+            parts = Table.select(getTableInfoPortalWebParts(), Table.ALL_COLUMNS, filter, new Sort("Index"), WebPart.class);
         }
         catch (SQLException x)
         {

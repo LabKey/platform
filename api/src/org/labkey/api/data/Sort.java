@@ -58,7 +58,7 @@ public class Sort
 
         public SortField(String str, SortDirection dir)
         {
-            _colName = str;
+            _colName = str.trim();
             _dir = dir;
         }
 
@@ -73,6 +73,7 @@ public class Sort
                 _colName = str.substring(1);
             else
                 _colName = str;
+            _colName = _colName.trim();
         }
 
         public String toUrlString()

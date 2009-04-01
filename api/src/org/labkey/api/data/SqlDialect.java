@@ -25,6 +25,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.query.AliasManager;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
@@ -512,6 +513,7 @@ public abstract class SqlDialect
         return reservedWordSet.contains(word);
     }
 
+
     // Just return name by default... subclasses can override and (for example) put quotes around keywords
     public String getColumnSelectName(String columnName)
     {
@@ -520,6 +522,17 @@ public abstract class SqlDialect
         else
             return columnName;
     }
+
+
+    // quote column identifier if necessary
+    public String quoteColumnIdentifier(String id)
+    {
+        if (!AliasManager.isLegalName(id) || reservedWordSet.contains(id))
+            return "\"" + id.toLowerCase() + "\"";
+        else
+            return id;
+    }
+
 
     // Just return name by default... subclasses can override and (for example) put quotes around keywords
     public String getTableSelectName(String tableName)

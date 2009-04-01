@@ -381,7 +381,9 @@ public class ViewServlet extends HttpServlet
         super.init(config);
         _servletContext = config.getServletContext();
         String realPath = config.getServletContext().getRealPath("/");
-        _log.info("ViewServlet initialized: " + realPath);
+        _log.info("ViewServlet initialized");
+        _log.info("   WEBAPP: " + realPath);
+        _log.info("     PATH: " + System.getenv("PATH"));
     }
 
 

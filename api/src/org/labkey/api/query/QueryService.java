@@ -69,6 +69,8 @@ abstract public class QueryService
      * Ensure that <code>columns</code> contains all of the columns necessary for <code>filter</code> and <code>sort</code>.
      * If <code>unresolvedColumns</code> is not null, then the Filter and Sort will be modified to remove any clauses that
      * involve unresolved columns, and <code>unresolvedColumns</code> will contain the names of the unresolved columns.
+     *
+     * NOTE: shouldn't need to call this anymore unless you really care about the unresolvedColumns
      */
     abstract public void ensureRequiredColumns(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Set<String> unresolvedColumns);
 

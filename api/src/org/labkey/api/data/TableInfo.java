@@ -128,4 +128,6 @@ public interface TableInfo
     public ContainerFilter getContainerFilter();
 
     public boolean isMetadataOverrideable();
+
+    public ColumnInfo getLookupColumn(ColumnInfo parent, String name);
 }

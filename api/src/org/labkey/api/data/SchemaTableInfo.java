@@ -698,4 +698,12 @@ public class SchemaTableInfo implements TableInfo
     {
         return true;
     }
+
+    public ColumnInfo getLookupColumn(ColumnInfo parent, String name)
+    {
+        ForeignKey fk = parent.getFk();
+        if (fk == null)
+            return null;
+        return fk.createLookupColumn(parent, name);
+    }
 }

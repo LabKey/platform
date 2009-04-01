@@ -281,12 +281,8 @@ public enum CompareType
 
         public SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
-            String alias = dialect.getColumnSelectName(_colName);
             ColumnInfo colInfo = columnMap.get(_colName);
-            if (colInfo != null)
-            {
-                alias = colInfo.getAlias();
-            }
+            String alias = colInfo != null ? colInfo.getAlias() : _colName;
             SQLFragment fragment = new SQLFragment(toWhereClause(dialect, alias));
             if (colInfo == null || !isUrlClause() || getParamVals() == null)
             {
