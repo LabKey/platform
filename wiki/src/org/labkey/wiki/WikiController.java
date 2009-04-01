@@ -372,7 +372,7 @@ public class WikiController extends SpringActionController
             if(!perms.allowUpdate(_wiki))
                 HttpView.throwUnauthorized("You do not have permissions to manage this wiki page");
 
-            HttpView manageView = new GroovyView("/org/labkey/wiki/view/wiki_manage.gm");
+            HttpView manageView = new JspView("/org/labkey/wiki/view/wikiManage.jsp");
 
             List<Wiki> allWikis = WikiManager.getPageList(getContainer());
             List<Wiki> descendents = WikiManager.getDescendents(_wiki, true);

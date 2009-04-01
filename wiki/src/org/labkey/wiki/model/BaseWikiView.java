@@ -21,6 +21,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GroovyView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.JspView;
 import org.labkey.api.util.HString;
 import org.labkey.wiki.BaseWikiPermissions;
 import org.labkey.wiki.WikiController;
@@ -33,7 +34,7 @@ import org.apache.log4j.Logger;
  * Time: 3:29:31 PM
  */
 
-abstract class BaseWikiView extends GroovyView
+abstract class BaseWikiView extends JspView<Object>
 {
     String _pageId = null;
     int _index = 0;
@@ -42,7 +43,7 @@ abstract class BaseWikiView extends GroovyView
 
     protected BaseWikiView()
     {
-        super("/org/labkey/wiki/view/wiki.gm");
+        super("/org/labkey/wiki/view/wiki.jsp");
         addObject("hasReadPermission", Boolean.TRUE);
         addObject("hasAdminPermission", Boolean.FALSE);
         addObject("hasInsertPermission", Boolean.FALSE);
@@ -144,7 +145,7 @@ abstract class BaseWikiView extends GroovyView
                 }
             }
             else
-                html = ""; //wiki.gm will display appropriate message if user doesn't have read perms
+                html = ""; //wiki.jsp will display appropriate message if user doesn't have read perms
 
             context.put("wiki", _wiki);
             context.put("name", _wiki.getName());

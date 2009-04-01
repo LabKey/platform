@@ -20,9 +20,12 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.FieldError" %>
+<%@ page import="org.labkey.wiki.model.Wiki" %>
+<%@ page import="java.util.List" %>
 <%
     ViewContext context = HttpView.currentContext();
-    BindException errors = _errors;
+    BindException errors = (BindException)context.get("_errors");
+    Wiki wiki = (Wiki)context.get("wiki");
 %>
 <script>
 function saveWikiList(listName, targetName)
@@ -77,20 +80,20 @@ function orderModule(listName, down, targetName)
 
 
 <form method="post" name="manage" action="manage.post" enctype="multipart/form-data" onsubmit="return checkWikiName(name.value)">
-<input type="hidden" name="containerPath" value="<%=containerPath%>">
-    
+<input type="hidden" name="containerPath" value="<%=context.get("containerPath")%>">
+
 <table>
 
 <%
     FieldError nameError = errors.getFieldError("name");
-	if (nameError)
+	if (null != nameError)
 		{
 		%><tr><td colspan=2><span class="labkey-error"><%=context.getMessage(nameError)%></span></td></tr><%
 		}
   %>
   <tr>
     <td class='labkey-form-label'>Name</td>
-    <td><input type="text" size="40" name="name" value="<%= filter(wiki.getName()) %>"></td>
+    <td><input type="text" size="40" name="name" value="<%= PageFlowUtil.filter(wiki.getName()) %>"></td>
   </tr>
   <tr>
     <td></td>
@@ -98,21 +101,21 @@ function orderModule(listName, down, targetName)
   </tr>
   <tr>
     <td class='labkey-form-label'>Title</td>
-    <td><input type="text" size="40" name="title" value="<%= filter(wiki.latestVersion().getTitle()) %>"></td>
+    <td><input type="text" size="40" name="title" value="<%= PageFlowUtil.filter(wiki.latestVersion().getTitle()) %>"></td>
   </tr>
   <tr>
     <td class='labkey-form-label'>Parent</td>
     <td><select name="parent" onChange="document.manage.nextAction.value = 'manage'; submit();">
         <option <%= wiki.getParent() == -1 ? "selected" : "" %> value="-1">[none]</option>
 <%
-    for (possibleParent in possibleParents)
+    for (Wiki possibleParent : (List<Wiki>)context.get("possibleParents"))
         {
         if (possibleParent.getRowId() != wiki.getRowId())
             {
-            def indent = "";
-            def depth = possibleParent.getDepth();
-            while (depth-- > 0)
-              indent = indent + "&nbsp;&nbsp;";
+                String indent = "";
+                int depth = possibleParent.getDepth();
+                while (depth-- > 0)
+                    indent = indent + "&nbsp;&nbsp;";
 %>
         <option <%= possibleParent.getRowId() == wiki.getParent() ? "selected" : "" %> value="<%= possibleParent.getRowId() %>"><%= indent %><%= possibleParent.latestVersion().getTitle() %> (<%= possibleParent.getName() %>)</option>
 <%
@@ -130,7 +133,7 @@ function orderModule(listName, down, targetName)
                 <td>
                     <select name="siblings" size="10">
 <%
-        for (sibling in siblings)
+        for (Wiki sibling : (List<Wiki>)context.get("siblings"))
             {
 %>
                       <option <%= sibling.getRowId() == wiki.getRowId() ? "selected" : "" %> value="<%= sibling.getRowId() %>"><%= sibling.latestVersion().getTitle() %> (<%= sibling.getName() %>)</option>
@@ -149,7 +152,7 @@ function orderModule(listName, down, targetName)
     </td>
   </tr>
 <%
-    if (showChildren && wiki.getChildren() != null && wiki.getChildren().size() > 0)
+    if (Boolean.TRUE.equals(context.get("showChildren")) && wiki.getChildren() != null && wiki.getChildren().size() > 0)
         {
 %>
   <tr>
@@ -159,7 +162,7 @@ function orderModule(listName, down, targetName)
                 <td>
                     <select name="children" size="10">
 <%
-        for (child in wiki.getChildren())
+        for (Wiki child : wiki.getChildren())
             {
 %>
                       <option value="<%= child.getRowId() %>"><%= child.latestVersion().getTitle() %> (<%= child.getName() %>)</option>
@@ -186,15 +189,15 @@ function orderModule(listName, down, targetName)
 <input type="hidden" name="nextAction" value="">
 <%=PageFlowUtil.generateSubmitButton("Save", "document.manage.nextAction.value = 'page'; return true;", "title=\"Save Changes\"")%>
 <%=PageFlowUtil.generateSubmitButton("Edit Content", "document.manage.nextAction.value = 'editWiki'; return true;", "title=\"Edit Content and Attachments\"")%>
-<% if (deleteLink != null)
+<% if (context.get("deleteLink") != null)
     {
     %>
-        <%=PageFlowUtil.generateButton("Delete Page", deleteLink, "title=\"Delete this Page\"")%><%
+        <%=PageFlowUtil.generateButton("Delete Page", (String)context.get("deleteLink"), "title=\"Delete this Page\"")%><%
     }
 %>
 
 <script type="text/javascript">
-existingWikiPages = [<% for (p in pages) out.print(PageFlowUtil.jsString(p.name) + ","); %>];
+existingWikiPages = [<% for (Wiki p : (List<Wiki>)context.get("pages")) out.print(PageFlowUtil.jsString(p.getName()) + ","); %>];
 function checkWikiName(name)
     {
     if (!name)
