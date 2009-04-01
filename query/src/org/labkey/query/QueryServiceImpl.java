@@ -26,6 +26,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.Cache;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.module.Module;
@@ -710,14 +711,70 @@ public class QueryServiceImpl extends QueryService
 
 
         ResultSet rs = null;
+	    void _close()
+	    {
+		    rs = ResultSetUtil.close(rs);
+	    }
 
-        public void testSelectSQL()
+        public void testSelect() throws SQLException
         {
             QueryService qs = ServiceRegistry.get().getService(QueryService.class);
             assertNotNull(qs);
             assertEquals(qs, QueryService.get());
             TableInfo issues = DbSchema.get("issues").getTable("issues");
             assertNotNull(issues);
+
+            {
+				List<ColumnInfo> l = Arrays.asList(
+					issues.getColumn("issueid"),
+					issues.getColumn("title"),
+					issues.getColumn("status"));
+				rs = qs.select(issues, l, null, null);
+				assertEquals(rs.getMetaData().getColumnCount(),3);
+				_close();
+            }
+
+
+	        {
+				List<ColumnInfo> l = Arrays.asList(
+					issues.getColumn("issueid"),
+					issues.getColumn("title"),
+					issues.getColumn("status"));
+		        Sort sort = new Sort("+milestone");
+				rs = qs.select(issues, l, null, sort);
+				assertEquals(rs.getMetaData().getColumnCount(),3);
+		        _close();
+	        }
+
+	        {
+				List<ColumnInfo> l = Arrays.asList(
+					issues.getColumn("issueid"),
+					issues.getColumn("title"),
+					issues.getColumn("status"));
+				Filter f = new SimpleFilter("assignedto",1001);
+				rs = qs.select(issues, l, f, null);
+				assertEquals(rs.getMetaData().getColumnCount(),3);
+		        _close();
+	        }
+
+	        {
+		        Map<FieldKey,ColumnInfo> map = qs.getColumns(issues, Arrays.asList(
+				        new FieldKey(null, "issueid"),
+				        new FieldKey(null, "title"),
+				        new FieldKey(null, "status"),
+				        new FieldKey(new FieldKey(null, "createdby"), "email")));
+		        Sort sort = new Sort("+milestone");
+				Filter f = new SimpleFilter("assignedto",1001);
+				rs = qs.select(issues, map.values(), f, sort);
+				assertEquals(rs.getMetaData().getColumnCount(),4);
+		        _close();
+	        }
         }
+
+	    @Override
+	    protected void tearDown() throws Exception
+	    {
+		    _close();
+	    }
     }
 }
