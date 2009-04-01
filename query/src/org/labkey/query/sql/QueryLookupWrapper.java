@@ -183,7 +183,7 @@ public class QueryLookupWrapper extends QueryRelation
     }
 
 
-    SQLFragment getSql()
+    public SQLFragment getSql()
     {
         if (!_hasLookups)
         {
@@ -324,7 +324,7 @@ public class QueryLookupWrapper extends QueryRelation
     {
         SQLTableInfo qti =  new SQLTableInfo(parent.getTable()._schema.getDbSchema());
         qti.setName(parent.getTable().getAlias());
-        ColumnInfo fkCol = new RelationColumnInfo(qti, parent.getName(), parent);
+        ColumnInfo fkCol = new RelationColumnInfo(qti, parent);
 
         ColumnInfo lkCol = fk.createLookupColumn(fkCol, key.getName());
         if (null == lkCol)

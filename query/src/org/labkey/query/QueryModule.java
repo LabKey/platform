@@ -31,7 +31,6 @@ import org.labkey.api.reports.report.*;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.api.webdav.WebdavService;
 import org.labkey.query.controllers.QueryControllerSpring;
 import org.labkey.query.controllers.dbuserschema.DbUserSchemaController;
 import org.labkey.query.persist.QueryManager;
@@ -129,6 +128,8 @@ public class QueryModule extends DefaultModule
     {
         return new HashSet<Class<? extends TestCase>>(Arrays.asList(
                 SqlParser.TestCase.class,
-				Query.TestCase.class));
+				Query.TestCase.class
+                //,QueryServiceImpl.TestCase.class
+        ));
     }
 }

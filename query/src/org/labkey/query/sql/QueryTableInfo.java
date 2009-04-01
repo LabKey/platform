@@ -19,20 +19,31 @@ package org.labkey.query.sql;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.jetbrains.annotations.NotNull;
 
 public class QueryTableInfo extends AbstractTableInfo
 {
     TableInfo _subquery;
+    QueryRelation _relation;
 
-    public QueryTableInfo(TableInfo subquery, String name)
+    public QueryTableInfo(QueryRelation relation, TableInfo subquery, String name)
     {
         super(subquery.getSchema());
         _subquery = subquery;
+        _relation = relation;
         setName(name);
     }
 
+    public QueryRelation getQueryRelation()
+    {
+        return _relation;
+    }
+
+    @NotNull
     public SQLFragment getFromSQL()
     {
+        // UNDONE: delay sql generation until it is asked for
+        // return _relation.getSql();
         return _subquery.getFromSQL();
     }
 }

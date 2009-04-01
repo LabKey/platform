@@ -20,6 +20,7 @@ import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.data.*;
+import org.labkey.api.query.AliasManager;
 
 import javax.servlet.ServletException;
 import java.sql.*;
@@ -359,6 +360,15 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
             return "\"" + columnName + "\"";    // SQL Server wants quotes around column names that are key words
         else
             return columnName;
+    }
+
+    // quote column identifier if necessary
+    public String quoteColumnIdentifier(String id)
+    {
+        if (!AliasManager.isLegalName(id) || reservedWordSet.contains(id))
+            return "\"" + id + "\"";
+        else
+            return id;
     }
 
     public String getTableSelectName(String tableName)

@@ -31,9 +31,9 @@ public class UnionTableInfoImpl extends QueryTableInfo implements UnionTableInfo
 {
     protected List<ColumnInfo> _unionColumns = new ArrayList<ColumnInfo>();
 
-    public UnionTableInfoImpl(TableInfo subquery, String name, String alias)
+    public UnionTableInfoImpl(QueryRelation r, TableInfo subquery, String name)
     {
-        super(subquery, name);
+        super(r, subquery, name);
     }
 
     public void addUnionColumn(ColumnInfo col)

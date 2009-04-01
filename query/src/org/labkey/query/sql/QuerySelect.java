@@ -23,7 +23,6 @@ import org.labkey.query.design.*;
 import static org.labkey.query.sql.antlr.SqlBaseTokenTypes.ON;
 import org.labkey.data.xml.ColumnType;
 import org.apache.commons.lang.StringUtils;
-import static org.apache.commons.lang.StringUtils.defaultString;
 
 import java.util.*;
 
@@ -44,13 +43,13 @@ public class QuerySelect extends QueryRelation
     private Map<FieldKey, QueryRelation> _tables;
     private Map<FieldKey, RelationColumn> _declaredFields = new HashMap<FieldKey, RelationColumn>();
     private SQLTableInfo _subqueryTable;
-    private AliasManager _subqueryAliasManager;
+    private AliasManager _aliasManager;
 
     private QuerySelect(Query query, QuerySchema schema, String alias)
     {
         super(query, schema, alias == null ? "_select" + query.incrementAliasCounter() : alias);
         _subqueryTable = new SQLTableInfo(_schema.getDbSchema());
-        _subqueryAliasManager = new AliasManager(schema.getDbSchema());
+        _aliasManager = new AliasManager(schema.getDbSchema());
         _queryText = query == null ? null : query._querySource;
         assert MemTracker.put(this);
     }
@@ -206,29 +205,25 @@ public class QuerySelect extends QueryRelation
         }
         for (SelectColumn column : columnList)
         {
-            FieldKey key = column._key;
-            String alias = column.getAlias();
-//            assert key == null || alias == null || key.getName().equals(alias);
-
-            if (alias == null)
+            String name = column.getName();
+            if (name == null)
             {
                 if (_parent != null && !_inFromClause)
-                {
-                    alias = "~~value~~";
-                    key = new FieldKey(null,alias);
-                }
+                    name = "~~value~~";
                 else
                 {
                     parseError("Expression column requires an alias", column.getField());
                     continue;
                 }
             }
-            if (_columns.containsKey(key))
+            if (null == column._key)
+                column._key = new FieldKey(null,name);
+            if (_columns.containsKey(column._key))
             {
-                parseError("Duplicate column '" + key.getName() + "'", column.getField());
+                parseError("Duplicate column '" + column.getName() + "'", column.getField());
                 continue;
             }
-            _columns.put(key, column);
+            _columns.put(column._key, column);
         }
     }
 
@@ -572,6 +567,13 @@ loop:
             {
                 declareFields((QExpr)expr);
             }
+        if (null != _orderBy)
+        {
+            for (QNode expr : _orderBy.children())
+            {
+                declareFields((QExpr)expr);
+            }
+        }
     }
 
 
@@ -660,16 +662,10 @@ loop:
         if (null == sql)
             return null;
 
-        QueryTableInfo ret = new QueryTableInfo(_subqueryTable, "_select");
+        QueryTableInfo ret = new QueryTableInfo(this, _subqueryTable, "_select");
         for (SelectColumn col : _columns.values())
         {
-            ColumnInfo aliasedColumn = new RelationColumnInfo(ret, col.getAlias(), col);
-            if (col.getAlias() != null)
-            {
-                aliasedColumn.setCaption(ColumnInfo.captionFromName(col.getAlias()));
-            }
-
-            aliasedColumn.setName(col.getAlias());
+            ColumnInfo aliasedColumn = new RelationColumnInfo(ret, col);
             ret.addColumn(aliasedColumn);
         }
         _subqueryTable.setFromSQL(sql);
@@ -722,17 +718,12 @@ loop:
             assert null != alias;
             if (alias == null)
             {
-                FieldKey key = col.getField().getFieldKey();
-                if (key == null)
-                {
-                    parseError("Column requires alias", col.getField());
-                    return null;
-                }
-                alias = key.getName();
+                parseError("Column requires alias", col.getField());
+                return null;
             }
             sql.append(col.getInternalSql());
             sql.append(" AS ");
-            sql.append(dialect.getColumnSelectName(alias));
+            sql.append(dialect.quoteColumnIdentifier(alias));
             sql.nextPrefix(",\n");
             count++;
         }
@@ -1087,17 +1078,16 @@ loop:
         QNode _node;
         QExpr _field;
         QExpr _resolved;
-        QIdentifier _alias;
-        ColumnType _metadata;
-
         ColumnInfo _colinfo = null;
 
+        QIdentifier _aliasId;
+        String _alias;
 
         public SelectColumn(FieldKey fk)
         {
             _field = QFieldKey.of(fk);
-            _alias = new QIdentifier(fk.getName());
             _key = fk;
+            _alias = _aliasManager.decideAlias(getName());
         }
 
         public SelectColumn(QNode node)
@@ -1106,35 +1096,36 @@ loop:
             if (node instanceof QAs)
             {
                 _field = ((QAs) node).getExpression();
-                FieldKey fk = _field.getFieldKey();
-                if (null != fk && fk.getName().equals("*"))
+                FieldKey key = _field.getFieldKey();
+                if (null != key && key.getName().equals("*"))
                     parseError("* expression can not be aliased", node);
-                _alias = ((QAs) node).getAlias();
+                _aliasId = ((QAs) node).getAlias();
             }
             else
             {
                 _field = (QExpr) node;
                 FieldKey fk = _field.getFieldKey();
                 if (null != fk)
-                    _alias = new QIdentifier(fk.getName());
+                    _key = new FieldKey(null, fk.getName());
             }
-            if (null != _alias)
-                _key = new FieldKey(null, _alias.getValueString());
+            _alias = _aliasManager.decideAlias(getName());
         }
 
         public SelectColumn(QExpr expr)
         {
             _field = expr;
-            _key = _field.getFieldKey();
-            if (null != _key)
-                _alias = new QIdentifier(_key.getName());
+            FieldKey key = _field.getFieldKey();
+            if (null != key)
+                _key = new FieldKey(null, key.getName());
+            _alias = _aliasManager.decideAlias(getName());
         }
 
         public SelectColumn(QField field)
         {
             _field = field;
             _resolved = field;
-            _alias = new QIdentifier(field.getName());
+            _key = new FieldKey(null, field.getName());
+            _alias = _aliasManager.decideAlias(getName());
         }
 
         SQLFragment getInternalSql()
@@ -1147,7 +1138,17 @@ loop:
 
         public String getName()
         {
-            return _alias.getIdentifier();
+            if (null != _aliasId)
+                return _aliasId.getIdentifier();
+            else if (null != _key)
+                return _key.getName();
+            else
+                return null;
+        }
+
+        public String getAlias()
+        {
+            return _alias;
         }
 
         QueryRelation getTable()
@@ -1160,21 +1161,14 @@ loop:
             return 0;
         }
 
-        ColumnType getColumnType()
-        {
-            if (null != _metadata)
-                return _metadata;
-            String alias = getAlias();
-            // UNDONE: make ForeignKeys work
-            return null;
-        }
-
         ColumnInfo getColumnInfo()
         {
             if (_colinfo == null)
             {
                 QExpr expr = getResolvedField();
-                _colinfo = expr.createColumnInfo(_subqueryTable, _subqueryAliasManager.decideAlias(getAlias()));
+                _colinfo = expr.createColumnInfo(_subqueryTable, _aliasManager.decideAlias(getAlias()));
+                if (_aliasId != null)
+                    _colinfo.setCaption(ColumnInfo.captionFromName(getName()));
             }
             return _colinfo;
         }
@@ -1184,34 +1178,21 @@ loop:
             to.copyAttributesFrom(getColumnInfo());
         }
 
-        public String getAlias()
-        {
-            if (_alias == null)
-                return null;
-            return _alias.getIdentifier();
-        }
-
         public void appendSource(SourceBuilder builder)
         {
             _field.appendSource(builder);
-            if (_alias != null)
+            if (_aliasId != null)
             {
                 builder.append(" AS ");
-                _alias.appendSource(builder);
+                _aliasId.appendSource(builder);
             }
         }
 
-       public void setAlias(String alias)
+        public void setAlias(String alias)
         {
-            alias = StringUtils.trimToNull(alias);
-            if (alias == null)
-            {
-                _alias = null;
-            }
-            else
-            {
-                _alias = new QIdentifier(alias);
-            }
+            _alias = StringUtils.trimToNull(alias);
+            assert null != _alias;
+            _aliasId = new QIdentifier(_alias);
         }
 
         public QExpr getField()

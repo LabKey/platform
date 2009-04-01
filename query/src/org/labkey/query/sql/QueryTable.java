@@ -138,7 +138,7 @@ public class QueryTable extends QueryRelation
     }
 
 
-    SQLFragment getSql()
+    public SQLFragment getSql()
     {
         Map<String, SQLFragment> joins = new LinkedHashMap<String,SQLFragment>();
         SQLFragment sql = new SQLFragment();

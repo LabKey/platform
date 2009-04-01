@@ -175,6 +175,9 @@ public class Query
 			{
 				if (field.getParent() != null)
 					continue;
+                assert null != table.getColumn(field.getName());
+                if (null == table.getColumn(field.getName()))
+                    continue;
 				List<String> parts = new ArrayList<String>();
 				parts.add(key.getName());
 				parts.addAll(field.getParts());
@@ -552,6 +555,9 @@ public class Query
 		// LIMIT
 		new SqlTest("SELECT R.day, R.month, R.date FROM R LIMIT 5", 3, 5),
 		new SqlTest("SELECT R.day, R.month, R.date FROM R ORDER BY R.date LIMIT 5", 3, 5),
+
+        // quoted identifiers
+        new SqlTest("SELECT T.\"count\", T.\"Opened By\", T.Seven, T.MonthName FROM (SELECT R.d as \"count\", R.seven as \"Seven\", R.twelve, R.day, R.month, R.date, R.duration, R.guid, R.created, R.createdby as \"Opened By\", R.month as MonthName FROM R) T", 4, Rsize),
 
         // saved queries
         new SqlTest("Rquery",

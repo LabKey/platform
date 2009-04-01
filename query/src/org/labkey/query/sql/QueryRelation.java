@@ -77,7 +77,12 @@ public abstract class QueryRelation
         _query = query;
     }
 
-    abstract void declareFields();    
+    public QuerySchema getSchema()
+    {
+        return _schema;
+    }
+
+    abstract void declareFields();
 
     abstract TableInfo getTableInfo();
 
@@ -92,13 +97,13 @@ public abstract class QueryRelation
     abstract @Nullable RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull ColumnType.Fk fk, @NotNull String name);
 
     /** generate server SQL */
-    abstract SQLFragment getSql();
+    public abstract SQLFragment getSql();
 
     /** used w/ Query.setRootTable(), generate a labkey SQL */
     abstract String getQueryText();
 
 
-    protected String getAlias()
+    public String getAlias()
     {
         return _alias;
     }
@@ -147,7 +152,7 @@ public abstract class QueryRelation
 
         public SQLFragment getValueSql(String tableAlias)
         {
-            return new SQLFragment(StringUtils.defaultString(tableAlias,getTable().getAlias()) + "." + getDialect(this).getColumnSelectName(getAlias()));
+            return new SQLFragment(StringUtils.defaultString(tableAlias,getTable().getAlias()) + "." + getDialect(this).quoteColumnIdentifier(getAlias()));
         }
 
         abstract void copyColumnAttributesTo(ColumnInfo to);
@@ -177,18 +182,13 @@ public abstract class QueryRelation
     {
         RelationColumn _column;
 
-        public RelationColumnInfo(TableInfo parent, String name, RelationColumn column)
+        public RelationColumnInfo(TableInfo parent, RelationColumn column)
         {
-            super(name, parent);
-            setName(name);
+            super(column.getName(), parent);
+            setAlias(column.getAlias());
             column.copyColumnAttributesTo(this);
-            if (!name.equalsIgnoreCase(column.getName()))
-            {
-                setCaption(null);
-            }
             _column = column;
         }
-
 
         public SQLFragment getValueSql()
         {

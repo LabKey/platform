@@ -23,7 +23,7 @@ import org.labkey.api.query.QueryParseException;
 import org.labkey.api.util.MemTracker;
 import static org.labkey.query.sql.SqlTokenTypes.*;
 import org.labkey.data.xml.ColumnType;
-import static org.apache.commons.lang.StringUtils.defaultString;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -34,7 +34,7 @@ public class QueryUnion extends QueryRelation
 {
 	QUnion _qunion;
 	QOrder _qorderBy;
-	
+
     List<QueryRelation> _termList = new ArrayList<QueryRelation>();
     Map<String, UnionColumn> _unionColumns = new HashMap<String, UnionColumn>();
 
@@ -176,10 +176,10 @@ public class QueryUnion extends QueryRelation
         SQLTableInfo sti = new SQLTableInfo(_schema.getDbSchema());
         sti.setName("_union");
         sti.setFromSQL(unionSql);
-        QueryTableInfo ret = new QueryTableInfo(sti, "_union");
+        QueryTableInfo ret = new QueryTableInfo(this, sti, "_union");
         for (UnionColumn unioncol : _unionColumns.values())
         {
-            ColumnInfo ucol = new RelationColumnInfo(ret, unioncol.getName(), unioncol);
+            ColumnInfo ucol = new RelationColumnInfo(ret, unioncol);
             ret.addColumn(ucol);
         }
         assert unionSql.appendComment("</QueryUnion@" + System.identityHashCode(this) + ">");
@@ -223,7 +223,7 @@ public class QueryUnion extends QueryRelation
         return _unionColumns.get(name);
     }
 
-    
+
     protected List<RelationColumn> getAllColumns()
     {
         initColumns();
@@ -242,8 +242,8 @@ public class QueryUnion extends QueryRelation
         return null;
     }
 
-    
-    SQLFragment getSql()
+
+    public SQLFragment getSql()
     {
         if (_unionSql == null)
             getTableInfo();

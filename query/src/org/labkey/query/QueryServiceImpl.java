@@ -320,28 +320,22 @@ public class QueryServiceImpl extends QueryService
                 ret = new AliasedColumn(ret.getName(), manager.decideAlias(key.toString()), ret);
             return ret;
         }
+
         if (columnMap.containsKey(key))
-        {
             return columnMap.get(key);
-        }
-        ColumnInfo parent = getColumn(manager, table, columnMap, key.getTable());
+
+        ColumnInfo parent = getColumn(manager, table, columnMap, key.getParent());
         if (parent == null)
-        {
             return null;
-        }
-        ForeignKey fk = parent.getFk();
-        if (fk == null)
-        {
+
+        ColumnInfo lookup = table.getLookupColumn(parent, StringUtils.trimToNull(key.getName()));
+        if (lookup == null)
             return null;
-        }
-        ColumnInfo ret = fk.createLookupColumn(parent, key.getName().length() == 0 ? null : key.getName());
-        if (ret == null)
-        {
-            return null;
-        }
+
+        // slight hack here, if lookup name doesn't match, then AliasedColumn will set caption=null
         String name = key.toString();
-        ret.setName(name);
-        ret = new AliasedColumn(name, manager.decideAlias(name), ret);
+        lookup.setName(name);
+        AliasedColumn ret = new AliasedColumn(key.toString(), manager.decideAlias(key.toString()), lookup);
         columnMap.put(key, ret);
         return ret;
     }
@@ -363,6 +357,7 @@ public class QueryServiceImpl extends QueryService
         }
         return ret;
     }
+
 
     public List<DisplayColumn> getDisplayColumns(TableInfo table, Collection<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> fields)
     {
@@ -529,35 +524,50 @@ public class QueryServiceImpl extends QueryService
 
     public ResultSet select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort) throws SQLException
     {
-        ensureRequiredColumns(table, columns, filter, sort, null);
         SQLFragment sql = getSelectSQL(table, columns, filter, sort, 0, 0);
 		return Table.executeQuery(table.getSchema(), sql);
     }
 
 
-	public SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, int rowCount, long offset)
+	public SQLFragment getSelectSQL(TableInfo table, Collection<ColumnInfo> selectColumns, Filter filter, Sort sort, int rowCount, long offset)
 	{
         SqlDialect dialect = table.getSqlDialect();
-		AliasManager aliasManager = new AliasManager(table.getSchema());
         Map<String, SQLFragment> joins = new LinkedHashMap<String, SQLFragment>();
 
-		SQLFragment selectFrag = new SQLFragment("SELECT");
-		String strComma = "\n";
+		if (null == selectColumns)
+			selectColumns = table.getColumns();
 
-		if (null == columns)
-			columns = table.getColumns();
+        ArrayList<ColumnInfo> allColumns = new ArrayList<ColumnInfo>(selectColumns);
+        ensureRequiredColumns(table, allColumns, filter, sort, null);
+        Map<String, ColumnInfo> columnMap = Table.createColumnMap(table, allColumns);
+        boolean requiresExtraColumns = allColumns.size() > selectColumns.size();
+
+        SQLFragment outerSelect = new SQLFragment("SELECT *");
+        SQLFragment selectFrag = new SQLFragment("SELECT");
+        String strComma = "\n";
 
         String tableAlias = AliasManager.makeLegalName(table.getName(), table.getSchema().getSqlDialect());
-		for (ColumnInfo column : columns)
+		for (ColumnInfo column : allColumns)
 		{
 			assert column.getParentTable() == table : "Column " + column + " is from the wrong table: " + column.getParentTable() + " instead of " + table;
 			column.declareJoins(tableAlias, joins);
-			selectFrag.append(strComma);
-			selectFrag.append(column.getValueSql(tableAlias));
+            selectFrag.append(strComma);
+            selectFrag.append(column.getValueSql(tableAlias));
             selectFrag.append(" AS " );
             selectFrag.append(dialect.getColumnSelectName(column.getAlias()));
-			strComma = ",\n";
-		}
+            strComma = ",\n";
+        }
+        if (requiresExtraColumns)
+        {
+            outerSelect = new SQLFragment("SELECT ");
+            strComma = "";
+            for (ColumnInfo column : selectColumns)
+            {
+                outerSelect.append(strComma);
+                outerSelect.append(dialect.getColumnSelectName(column.getAlias()));
+                strComma = ",";
+            }
+        }
 
 		SQLFragment fromFrag = new SQLFragment("FROM ");
         String selectName = table.getSelectName();
@@ -572,14 +582,13 @@ public class QueryServiceImpl extends QueryService
             fromFrag.append(")");
         }
         fromFrag.append(" ").append(tableAlias).append(" ");
-        
+
 		for (Map.Entry<String, SQLFragment> entry : joins.entrySet())
 		{
 			fromFrag.append("\n").append(entry.getValue());
 		}
 
 		SQLFragment filterFrag = null;
-		Map<String, ColumnInfo> columnMap = Table.createColumnMap(table, columns);
 		if (filter != null)
 		{
 			filterFrag = filter.getSQLFragment(dialect, columnMap);
@@ -588,7 +597,7 @@ public class QueryServiceImpl extends QueryService
 		String orderBy = null;
 		if ((sort == null || sort.getSortList().size() == 0) && (rowCount > 0 || offset > 0))
 		{
-			sort = createDefaultSort(columns);
+			sort = createDefaultSort(selectColumns);
 		}
 		if (sort != null)
 		{
@@ -604,7 +613,7 @@ public class QueryServiceImpl extends QueryService
 		SQLFragment nestedFrom = new SQLFragment();
 		nestedFrom.append("FROM (\n").append(selectFrag).append("\n").append(fromFrag).append(") x\n");
 
-		SQLFragment ret = dialect.limitRows(new SQLFragment("SELECT *"), nestedFrom, filterFrag, orderBy, rowCount, offset);
+		SQLFragment ret = dialect.limitRows(outerSelect, nestedFrom, filterFrag, orderBy, rowCount, offset);
         if (AppProps.getInstance().isDevMode())
         {
             SQLFragment t = new SQLFragment();
@@ -654,7 +663,7 @@ public class QueryServiceImpl extends QueryService
     private String _prettyPrint(String s)
     {
         StringBuilder sb = new StringBuilder(s.length() + 200);
-        
+
         String[] lines = StringUtils.split(s, '\n');
         int indent = 0;
         for (String line : lines)
