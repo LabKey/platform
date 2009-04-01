@@ -352,6 +352,10 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             //remember the first editable column (used during add record)
             if(!this.firstEditableColumn && col.editable)
                 this.firstEditableColumn = idx;
+
+            //HTML-encode the column header
+            if(col.header)
+                col.header = Ext.util.Format.htmlEncode(col.header);
         }
 
         //if a sel model has been set, and if it needs to be added as a column,

@@ -586,16 +586,26 @@ public abstract class DisplayColumn extends RenderColumn
 
     public String getCaption(RenderContext ctx)
     {
-        StringWriter writer = new StringWriter();
-        try
+        return getCaption(ctx, true);
+    }
+    
+    public String getCaption(RenderContext ctx, boolean htmlEncode)
+    {
+        if(!htmlEncode)
+            return _caption.eval(ctx);
+        else
         {
-            renderTitle(ctx, writer);
+            StringWriter writer = new StringWriter();
+            try
+            {
+                renderTitle(ctx, writer);
+            }
+            catch (Exception e)
+            {
+                writer.write(e.getMessage());
+            }
+            return writer.toString();
         }
-        catch (Exception e)
-        {
-            writer.write(e.getMessage());
-        }
-        return writer.toString();
     }
 
 

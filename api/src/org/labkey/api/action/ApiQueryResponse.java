@@ -15,12 +15,12 @@
  */
 package org.labkey.api.action;
 
+import org.json.JSONObject;
 import org.labkey.api.data.*;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ViewContext;
-import org.json.JSONObject;
 
 import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
@@ -257,7 +257,7 @@ public class ApiQueryResponse implements ApiResponse
         if(dc.getTextAlign() != null)
             colModel.put("align", dc.getTextAlign());
         if (dc.getCaption() != null)
-            colModel.put("header", dc.getCaption());
+            colModel.put("header", dc.getCaption(_ctx, false));
         if (dc.getDescription() != null)
             colModel.put("tooltip", dc.getDescription());
         if (dc.getWidth() != null)
