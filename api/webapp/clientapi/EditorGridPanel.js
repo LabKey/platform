@@ -679,7 +679,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
         if(record)
         {
             var index = this.getStore().findBy(function(recordComp, id){return id == record.id;});
-            if(index > 0)
+            if(index >= 0 && undefined !== this.firstEditableColumn)
                 this.startEditing(index, this.firstEditableColumn);
         }
 

@@ -620,7 +620,7 @@ public class TableViewForm extends ViewFormData implements DynaBean, HasBindPara
 
     public ColumnInfo getColumnByFormFieldName(String name)
     {
-        return getTable().getColumn(name);
+        return null == getTable() ? null : getTable().getColumn(name);
     }
 
 
