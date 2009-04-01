@@ -15,12 +15,13 @@
  */
 package org.labkey.api.action;
 
-import org.springframework.validation.Errors;
-import org.springframework.validation.ObjectError;
-import org.springframework.validation.FieldError;
 import org.json.JSONObject;
+import org.springframework.validation.Errors;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
 
 /*
@@ -45,7 +46,7 @@ public class ExtFormResponseWriter extends ApiJsonWriter
         super(response, contentTypeOverride);
     }
 
-    public void write(Errors errors) throws Exception
+    public void write(Errors errors) throws IOException
     {
         /*
             Ext has a particular format they use for consuming validation errors expressed in JSON:

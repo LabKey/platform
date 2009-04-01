@@ -15,12 +15,9 @@
  */
 package org.labkey.api.action;
 
-import org.labkey.api.query.QueryView;
 import org.springframework.validation.Errors;
 
 import javax.servlet.http.HttpServletResponse;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.io.IOException;
 
 /**
@@ -48,11 +45,11 @@ public abstract class ApiResponseWriter
         _response = response;
     }
 
-    public abstract void write(ApiResponse response) throws Exception;
+    public abstract void write(ApiResponse response) throws IOException;
 
-    public abstract void write(Throwable e) throws Exception;
+    public abstract void write(Throwable e) throws IOException;
 
-    public abstract void write(Errors errors) throws Exception;
+    public abstract void write(Errors errors) throws IOException;
 
     protected HttpServletResponse getResponse()
     {

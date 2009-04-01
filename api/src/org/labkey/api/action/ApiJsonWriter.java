@@ -15,19 +15,15 @@
  */
 package org.labkey.api.action;
 
-import org.json.JSONObject;
 import org.json.JSONArray;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.util.ResultSetUtil;
+import org.json.JSONObject;
 import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.Errors;
-import org.springframework.validation.ObjectError;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 
 import javax.servlet.http.HttpServletResponse;
-import java.sql.ResultSet;
-import java.util.Map;
-import java.util.HashMap;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -55,7 +51,7 @@ public class ApiJsonWriter extends ApiResponseWriter
         response.setCharacterEncoding("utf-8");
     }
 
-    public void write(ApiResponse response) throws Exception
+    public void write(ApiResponse response) throws IOException
     {
         if(response instanceof ApiCustomRender)
             ((ApiCustomRender)response).render(Format.JSON, getResponse());
@@ -66,7 +62,7 @@ public class ApiJsonWriter extends ApiResponseWriter
         }
     }
 
-    public void write(Throwable e) throws Exception
+    public void write(Throwable e) throws IOException
     {
         if(e instanceof NotFoundException)
             getResponse().setStatus(404);
@@ -81,7 +77,7 @@ public class ApiJsonWriter extends ApiResponseWriter
         writeJsonObj(jsonObj);
     }
 
-    public void write(Errors errors) throws Exception
+    public void write(Errors errors) throws IOException
     {
         //set the status to 400 to indicate that it was a bad request
         getResponse().setStatus(400);
@@ -116,7 +112,7 @@ public class ApiJsonWriter extends ApiResponseWriter
         writeJsonObj(root);
     }
 
-    protected void writeJsonObj(JSONObject obj) throws Exception
+    protected void writeJsonObj(JSONObject obj) throws IOException
     {
         //jsonObj.write(getResponse().getWriter()); //use this for compact output
         getResponse().getWriter().write(obj.toString(4)); //or this for pretty output
