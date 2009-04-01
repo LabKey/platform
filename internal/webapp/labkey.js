@@ -92,7 +92,7 @@ LABKEY.requiresScript = function(file, immediate)
             });
         }
         else
-            document.write('<script type="text/javascript" language="javascript" src="' + LABKEY.contextPath + "/" + file + '?' + LABKEY.hash + '"></script>');
+            document.write('\n<script type="text/javascript" language="javascript" src="' + LABKEY.contextPath + "/" + file + '?' + LABKEY.hash + '"></script>\n');
     }
 };
 
@@ -170,34 +170,34 @@ LABKEY.requiresExtJs = function(immediate)
 
 LABKEY.requiresClientAPI = function(immediate)
 {
-    if (arguments.length < 2) immediate = true;
+    if (arguments.length < 1) immediate = true;
     LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-all.css');
     LABKEY.requiresExtJs(immediate);
     if(LABKEY.devMode)
     {
         //load individual scripts so that they get loaded from source tree
-        LABKEY.requiresScript("clientapi/ExtJsConfig.js");
-        LABKEY.requiresScript("clientapi/ActionURL.js");
-        LABKEY.requiresScript("clientapi/Assay.js");
-        LABKEY.requiresScript("clientapi/Chart.js");
-        LABKEY.requiresScript("clientapi/Domain.js");
-        LABKEY.requiresScript("clientapi/Experiment.js");
-        LABKEY.requiresScript("clientapi/LongTextEditor.js");
-        LABKEY.requiresScript("clientapi/EditorGridPanel.js");
-        LABKEY.requiresScript("clientapi/Filter.js");
-        LABKEY.requiresScript("clientapi/GridView.js");
-        LABKEY.requiresScript("clientapi/NavTrail.js");
-        LABKEY.requiresScript("clientapi/Query.js");
-        LABKEY.requiresScript("clientapi/ExtendedJsonReader.js");
-        LABKEY.requiresScript("clientapi/Store.js");
-        LABKEY.requiresScript("clientapi/Utils.js");
-        LABKEY.requiresScript("clientapi/WebPart.js");
-        LABKEY.requiresScript("clientapi/Security.js");
-        LABKEY.requiresScript("clientapi/Specimen.js");
-        LABKEY.requiresScript("clientapi/MultiRequest.js");
-        LABKEY.requiresScript("clientapi/Batch.js"); // depends on Experiment.js
-        LABKEY.requiresScript("clientapi/HoverPopup.js");
-        LABKEY.requiresScript("clientapi/Form.js");
+        LABKEY.requiresScript("clientapi/ExtJsConfig.js", immediate);
+        LABKEY.requiresScript("clientapi/ActionURL.js", immediate);
+        LABKEY.requiresScript("clientapi/Assay.js", immediate);
+        LABKEY.requiresScript("clientapi/Chart.js", immediate);
+        LABKEY.requiresScript("clientapi/Domain.js", immediate);
+        LABKEY.requiresScript("clientapi/Experiment.js", immediate);
+        LABKEY.requiresScript("clientapi/LongTextEditor.js", immediate);
+        LABKEY.requiresScript("clientapi/EditorGridPanel.js", immediate);
+        LABKEY.requiresScript("clientapi/Filter.js", immediate);
+        LABKEY.requiresScript("clientapi/GridView.js", immediate);
+        LABKEY.requiresScript("clientapi/NavTrail.js", immediate);
+        LABKEY.requiresScript("clientapi/Query.js", immediate);
+        LABKEY.requiresScript("clientapi/ExtendedJsonReader.js", immediate);
+        LABKEY.requiresScript("clientapi/Store.js", immediate);
+        LABKEY.requiresScript("clientapi/Utils.js", immediate);
+        LABKEY.requiresScript("clientapi/WebPart.js", immediate);
+        LABKEY.requiresScript("clientapi/Security.js", immediate);
+        LABKEY.requiresScript("clientapi/Specimen.js", immediate);
+        LABKEY.requiresScript("clientapi/MultiRequest.js", immediate);
+        LABKEY.requiresScript("clientapi/Batch.js", immediate); // depends on Experiment.js
+        LABKEY.requiresScript("clientapi/HoverPopup.js", immediate);
+        LABKEY.requiresScript("clientapi/Form.js", immediate);
     }
     else
         LABKEY.requiresScript('clientapi/clientapi' + (LABKEY.devMode ? '.js' : '.min.js'), immediate);

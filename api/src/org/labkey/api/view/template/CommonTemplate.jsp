@@ -67,6 +67,9 @@ if (null != bean.getStyles())
         LABKEY.init(<%=PageFlowUtil.jsInitObject()%>);
         LABKEY.requiresScript('util.js');
     </script>
+    <script type="text/javascript">
+        LABKEY.requiresClientAPI();
+    </script>
 <%= null != bean.getScript() && 0 < bean.getScript().length() ? bean.getScript() + "\n": ""
 %>
 </head>
@@ -115,9 +118,6 @@ if (bean.showHeader() != PageConfig.TrueFalse.False)
             </td>
             <td class="labkey-proj">
                 <!--content area-->
-                <script type="text/javascript">
-                    LABKEY.requiresClientAPI();
-                </script>
                 <table class="labkey-proj">
                     <% if (null != me.getView("appbar"))
                     {%>
