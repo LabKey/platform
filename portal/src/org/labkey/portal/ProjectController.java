@@ -837,7 +837,7 @@ public class ProjectController extends SpringActionController
     /**
      * Returns all contains visible to the current user
      */
-    @RequiresLogin
+    @RequiresPermission(ACL.PERM_NONE)
     public class GetContainersAction extends ApiAction<GetContainersForm>
     {
         public ApiResponse execute(GetContainersForm form, BindException errors) throws Exception

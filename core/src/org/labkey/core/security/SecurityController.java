@@ -1603,6 +1603,27 @@ public class SecurityController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ACL.PERM_READ)
+    public class GetGroupsForCurrentUserAction extends ApiAction
+    {
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            List<Map<String,Object>> groupInfos = new ArrayList<Map<String,Object>>();
+            //include both project and global groups
+            List<Group> groups = SecurityManager.getGroups(getViewContext().getContainer(), getViewContext().getUser());
+            for(Group group : groups)
+            {
+                Map<String,Object> groupInfo = new HashMap<String,Object>();
+                groupInfo.put("id", group.getUserId());
+                groupInfo.put("name", SecurityManager.getDisambiguatedGroupName(group));
+                groupInfo.put("isProjectGroup", group.isProjectGroup());
+                groupInfo.put("isSystemGroup", group.isSystemGroup());
+                groupInfos.add(groupInfo);
+            }
+
+            return new ApiSimpleResponse("groups", groupInfos);
+        }
+    }
 
     public static class TestCase extends junit.framework.TestCase
     {
