@@ -1548,17 +1548,17 @@ public class QueryControllerSpring extends SpringActionController
 
             JSONArray rows = json.getJSONArray(PROP_ROWS);
             if(null == rows || rows.length() < 1)
-                throw new Exception("No 'rows' array supplied!");
+                throw new IllegalArgumentException("No 'rows' array supplied!");
 
             //get the schema update service for this schema
             SchemaUpdateService sus = getSchemaUpdateService(schemaName);
             if(null == sus)
-                throw new Exception("The schema '" + schemaName + "' is not editable via the HTTP-based APIs!");
+                throw new IllegalArgumentException("The schema '" + schemaName + "' is not editable via the HTTP-based APIs!");
 
             //get the query update service for the query
             QueryUpdateService qus = sus.getQueryUpdateService(queryName, container, user);
             if(null == qus)
-                throw new Exception("The query '" + queryName + "' in the schema '" + schemaName + "' is not updateable via the HTTP-based APIs!");
+                throw new IllegalArgumentException("The query '" + queryName + "' in the schema '" + schemaName + "' is not updateable via the HTTP-based APIs!");
 
             //we will transact operations by default, but the user may
             //override this by sending a "transacted" property set to false
