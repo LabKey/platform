@@ -245,6 +245,7 @@ core/src/META-INF/core/scripts/postgresql/core-8.20-8.21.sql -text
 core/src/META-INF/core/scripts/postgresql/core-8.20-8.30.sql -text
 core/src/META-INF/core/scripts/postgresql/core-8.21-8.22.sql -text
 core/src/META-INF/core/scripts/postgresql/core-8.30-8.31.sql -text
+core/src/META-INF/core/scripts/postgresql/core-8.30-9.10.sql -text
 core/src/META-INF/core/scripts/postgresql/core-create.sql -text
 core/src/META-INF/core/scripts/postgresql/core-drop.sql -text
 core/src/META-INF/core/scripts/postgresql/obsolete/bootstrap.sql -text
@@ -289,6 +290,7 @@ core/src/META-INF/core/scripts/postgresql/portal-8.22-8.23.sql -text
 core/src/META-INF/core/scripts/postgresql/portal-8.22-8.30.sql -text
 core/src/META-INF/core/scripts/postgresql/prop-0.00-1.00.sql -text
 core/src/META-INF/core/scripts/postgresql/prop-2.00-2.10.sql -text
+core/src/META-INF/core/scripts/postgresql/prop-8.30-9.10.sql -text
 core/src/META-INF/core/scripts/postgresql/prop-8.31-8.32.sql -text
 core/src/META-INF/core/scripts/postgresql/prop-create.sql -text
 core/src/META-INF/core/scripts/postgresql/prop-drop.sql -text
@@ -307,6 +309,7 @@ core/src/META-INF/core/scripts/sql[!!-~]server/core-8.20-8.21.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-8.20-8.30.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-8.21-8.22.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-8.30-8.31.sql -text
+core/src/META-INF/core/scripts/sql[!!-~]server/core-8.30-9.10.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-create.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-drop.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/obsolete/bootstrap.sql -text
@@ -356,6 +359,7 @@ core/src/META-INF/core/scripts/sql[!!-~]server/portal-8.22-8.23.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/portal-8.22-8.30.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/prop-0.00-1.00.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/prop-2.00-2.10.sql -text
+core/src/META-INF/core/scripts/sql[!!-~]server/prop-8.30-9.10.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/prop-8.31-8.32.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/prop-create.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/prop-drop.sql -text
@@ -496,6 +500,7 @@ experiment/src/META-INF/experiment/scripts/postgresql/exp-8.20-8.30.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-8.21-8.22.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-8.23-8.24.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-8.30-8.31.sql -text
+experiment/src/META-INF/experiment/scripts/postgresql/exp-8.30-9.10.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-8.31-8.32.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-8.32-8.33.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-8.34-8.35.sql -text
@@ -576,6 +581,7 @@ experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.20-8.30.sql -te
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.21-8.22.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.23-8.24.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.30-8.31.sql -text
+experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.30-9.10.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.31-8.32.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.32-8.33.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.34-8.35.sql -text
@@ -911,6 +917,7 @@ mothership/src/META-INF/mothership/scripts/postgresql/mothership-2.10-2.20.sql -
 mothership/src/META-INF/mothership/scripts/postgresql/mothership-2.20-2.30.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/mothership-2.30-8.10.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/mothership-8.30-8.31.sql -text
+mothership/src/META-INF/mothership/scripts/postgresql/mothership-8.30-9.10.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/mothership-create.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/mothership-drop.sql -text
 mothership/src/META-INF/mothership/scripts/postgresql/obsolete/mothership-0.00-0.10.sql -text
@@ -931,6 +938,7 @@ mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-2.10-2.20.
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-2.20-2.30.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-2.30-8.10.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-8.30-8.31.sql -text
+mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-8.30-9.10.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-create.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/mothership-drop.sql -text
 mothership/src/META-INF/mothership/scripts/sql[!!-~]server/obsolete/mothership-0.00-0.10.sql -text
@@ -1020,6 +1028,7 @@ pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-8.23-8.24.sql -text
 pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-8.24-8.25.sql -text
 pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-8.261-8.27.sql -text
 pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-8.30-8.31.sql -text
+pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-8.30-9.10.sql -text
 pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-8.31-8.32.sql -text
 pipeline/src/META-INF/pipeline/scripts/postgresql/pipeline-8.32-8.33.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/obsolete/cpas-0.00-0.58.sql -text
@@ -1050,6 +1059,7 @@ pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.23-8.24.sql -t
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.24-8.25.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.261-8.27.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.30-8.31.sql -text
+pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.30-9.10.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.31-8.32.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.32-8.33.sql -text
 pipeline/src/org/labkey/pipeline/AbstractPipelineStartup.java -text
@@ -1433,6 +1443,7 @@ query/src/META-INF/query/scripts/postgresql/query-8.22-8.23.sql -text
 query/src/META-INF/query/scripts/postgresql/query-8.23-8.24.sql -text
 query/src/META-INF/query/scripts/postgresql/query-8.24-8.25.sql -text
 query/src/META-INF/query/scripts/postgresql/query-8.30-8.31.sql -text
+query/src/META-INF/query/scripts/postgresql/query-8.30-9.10.sql -text
 query/src/META-INF/query/scripts/postgresql/query-8.31-8.32.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/obsolete/query-1.51-1.52.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/obsolete/query-1.60-1.61.sql -text
@@ -1450,6 +1461,7 @@ query/src/META-INF/query/scripts/sql[!!-~]server/query-8.22-8.23.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/query-8.23-8.24.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/query-8.24-8.25.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/query-8.30-8.31.sql -text
+query/src/META-INF/query/scripts/sql[!!-~]server/query-8.30-9.10.sql -text
 query/src/META-INF/query/scripts/sql[!!-~]server/query-8.31-8.32.sql -text
 query/src/org/labkey/query/CustomQueryDefinitionImpl.java -text
 query/src/org/labkey/query/CustomViewImpl.java -text
@@ -1774,6 +1786,7 @@ study/src/META-INF/study/scripts/postgresql/study-8.28-8.29.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.29-8.291.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.30-8.301.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.30-8.31.sql -text
+study/src/META-INF/study/scripts/postgresql/study-8.30-9.10.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.301-8.32.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.31-8.32.sql -text
 study/src/META-INF/study/scripts/postgresql/study-8.32-8.33.sql -text
@@ -1875,6 +1888,7 @@ study/src/META-INF/study/scripts/sql[!!-~]server/study-8.28-8.29.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.29-8.291.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.30-8.301.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.30-8.31.sql -text
+study/src/META-INF/study/scripts/sql[!!-~]server/study-8.30-9.10.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.301-8.32.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.31-8.32.sql -text
 study/src/META-INF/study/scripts/sql[!!-~]server/study-8.32-8.33.sql -text

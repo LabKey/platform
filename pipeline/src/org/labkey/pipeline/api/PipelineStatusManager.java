@@ -317,6 +317,10 @@ public class PipelineStatusManager
 
     public static PipelineStatusFileImpl[] getSplitStatusFiles(String parentId) throws SQLException
     {
+        if (parentId == null)
+        {
+            return new PipelineStatusFileImpl[0];
+        }
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition("JobParent", parentId, CompareType.EQUAL);
 

@@ -36,7 +36,7 @@ public class TimelineModule extends DefaultModule
 
     public double getVersion()
     {
-        return 8.30;
+        return 9.10;
     }
 
     protected void init()

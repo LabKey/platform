@@ -84,7 +84,7 @@ for (Site site : sites)
 
         <script type="text/javascript">
         var sites = {};
-        sites['-1'] = 'ALL';
+        sites['0'] = 'ALL';
             <%
             for (Site site : sites)
             {

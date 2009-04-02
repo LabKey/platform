@@ -923,10 +923,10 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    public static class ExportForm extends FormData
+    public static class ExportForm
     {
         private int siteId = 0;
-        private int reportId = 0;
+        private ReportIdentifier reportId;
 
         public int getSiteId()
         {
@@ -938,12 +938,12 @@ public class ReportsController extends BaseStudyController
             this.siteId = siteId;
         }
 
-        public int getReportId()
+        public ReportIdentifier getReportId() 
         {
             return reportId;
         }
 
-        public void setReportId(int reportId)
+        public void setReportId(ReportIdentifier reportId) 
         {
             this.reportId = reportId;
         }
@@ -972,9 +972,9 @@ public class ReportsController extends BaseStudyController
         public ModelAndView getView(ExportForm form, BindException errors) throws Exception
         {
             ExportExcelReport report;
-            if (form.getReportId() != 0)
+            if (form.getReportId() != null)
             {
-                Report r = ReportManager.get().getReport(getContainer(), form.getReportId());
+                Report r = form.getReportId().getReport();
                 if (!(r instanceof ExportExcelReport))
                 {
                     HttpView.throwNotFound();
