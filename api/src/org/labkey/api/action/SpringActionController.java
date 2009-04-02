@@ -449,10 +449,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
             NavTree[] children = root.getChildren();
             if (children.length > 0 && page.getTitle() == null)
                 page.setTitle(children[children.length-1].getKey());
-// UNDONE            
-//            if (page.getTemplate() == PageConfig.Template.Fast)
-//                template = new FastTemplate(context, context.getContainer(), mv, page, root.getChildren());
-//            else
             if(LookAndFeelProperties.getInstance(getContainer()).isAppBarUIEnabled())
                 page.setAppBar(getAppBar(action));
             HomeTemplate template = new HomeTemplate(context, context.getContainer(), mv, page, root.getChildren());
