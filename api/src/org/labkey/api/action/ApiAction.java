@@ -22,6 +22,8 @@ import org.json.JSONException;
 import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.RequestBasicAuthException;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.query.InvalidKeyException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -150,8 +152,17 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         }
         catch (Exception e)
         {
-            Logger.getLogger(ApiAction.class).warn("ApiAction exception: ", e);
-            createResponseWriter().write(e);
+            //don't log exceptions that result from bad inputs
+            if(e instanceof IllegalArgumentException || e instanceof NotFoundException || e instanceof InvalidKeyException)
+            {
+                createResponseWriter().write(e);
+            }
+            else
+            {
+                Logger.getLogger(ApiAction.class).warn("ApiAction exception: ", e);
+
+                createResponseWriter().write(e);
+            }
         }
 
         return null;
