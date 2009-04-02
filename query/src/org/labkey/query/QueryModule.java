@@ -24,6 +24,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.RExportScriptFactory;
+import org.labkey.api.query.JavaScriptExportScriptFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.chart.ChartRendererFactory;
@@ -95,6 +96,7 @@ public class QueryModule extends DefaultModule
         ReportService.get().registerReport(new InternalScriptEngineReport());
 
         QueryView.register(new RExportScriptFactory());
+        QueryView.register(new JavaScriptExportScriptFactory());
 //		WebdavService.addProvider(new QueryWebdavprovider());
     }
 
