@@ -129,7 +129,7 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
         copyValuesToPropertyDescriptor();
 
         int newSpacerHeight = Math.max(0, rowAbsoluteY - getAbsoluteTop() - 25);
-        int bottomOfEditor = _propertiesEditor.getMainPanel().getOffsetHeight() - 5;
+        int bottomOfEditor = _propertiesEditor.getContentPanel().getOffsetHeight() - 5;
         if (newSpacerHeight + (getOffsetHeight() - _spacerHeight) > bottomOfEditor)
         {
             newSpacerHeight = Math.max(0, bottomOfEditor - (getOffsetHeight() - _spacerHeight));

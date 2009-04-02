@@ -31,6 +31,8 @@ public class TextAreaDataCollector extends AbstractAssayDataCollector
 {
     private static final String FORM_ELEMENT_NAME = "TextAreaDataCollector.textArea";
 
+    private boolean _uploadComplete = false;
+
     public String getHTML(AssayRunUploadContext context)
     {
         return "<textarea name=\"" + FORM_ELEMENT_NAME + "\" rows=\"10\" cols=\"80\"></textarea>";
@@ -48,6 +50,9 @@ public class TextAreaDataCollector extends AbstractAssayDataCollector
 
     public Map<String, File> createData(AssayRunUploadContext context) throws IOException, ExperimentException
     {
+        if (_uploadComplete)
+            return Collections.emptyMap();
+
         ExpProtocol protocol = context.getProtocol();
         String data = context.getRequest().getParameter(FORM_ELEMENT_NAME);
         if (data == null)
@@ -70,5 +75,10 @@ public class TextAreaDataCollector extends AbstractAssayDataCollector
     public boolean isVisible()
     {
         return true;
+    }
+
+    public void uploadComplete(AssayRunUploadContext context)
+    {
+        _uploadComplete = true;
     }
 }

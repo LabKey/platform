@@ -235,7 +235,9 @@ public class QueryView extends WebPartView<Object>
             {
                 button.addMenuItem("Design Query", getSchema().urlFor(QueryAction.designQuery, _queryDef));
             }
-            button.addMenuItem("Edit Query", getSchema().urlFor(QueryAction.sourceQuery, _queryDef));
+            NavTree editQueryItem = new NavTree("Edit Query", getSchema().urlFor(QueryAction.sourceQuery, _queryDef));
+            editQueryItem.setId("Query:EditQuery");
+            button.addMenuItem(editQueryItem);
         }
         else
         {

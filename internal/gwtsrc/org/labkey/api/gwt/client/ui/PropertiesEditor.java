@@ -39,6 +39,7 @@ import java.util.*;
 public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> implements LookupListener<FieldType>
 {
     public static final String currentFolder = "[current folder]";
+    private VerticalPanel _contentPanel;
 
     public enum FieldStatus
     {
@@ -162,10 +163,10 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
         refreshButtons(_buttonPanel);
 
-        VerticalPanel propertiesListPanel = new VerticalPanel();
-        propertiesListPanel.add(_noColumnsPanel);
-        propertiesListPanel.add(_table);
-        propertiesListPanel.add(_buttonPanel);
+        _contentPanel = new VerticalPanel();
+        _contentPanel.add(_noColumnsPanel);
+        _contentPanel.add(_table);
+        _contentPanel.add(_buttonPanel);
 
         DockPanel propertyDock = new DockPanel();
 
@@ -181,10 +182,10 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 fireChangeEvent();
             }
         });
-        _panel.add(propertiesListPanel, DockPanel.CENTER);
-        _panel.setCellHorizontalAlignment(propertiesListPanel, HasHorizontalAlignment.ALIGN_LEFT);
-        _panel.setCellVerticalAlignment(propertiesListPanel, HasVerticalAlignment.ALIGN_TOP);
-        _panel.setCellWidth(propertiesListPanel, "100%");
+        _panel.add(_contentPanel, DockPanel.CENTER);
+        _panel.setCellHorizontalAlignment(_contentPanel, HasHorizontalAlignment.ALIGN_LEFT);
+        _panel.setCellVerticalAlignment(_contentPanel, HasVerticalAlignment.ALIGN_TOP);
+        _panel.setCellWidth(_contentPanel, "100%");
 
         HorizontalPanel fillerPanel = new HorizontalPanel();
         propertyDock.add(_propertiesPane, DockPanel.NORTH);
@@ -241,9 +242,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         return _domain;
     }
 
-    public Panel getMainPanel()
+    public VerticalPanel getContentPanel()
     {
-        return _panel;
+        return _contentPanel;
     }
 
     public void init(DomainType domain)

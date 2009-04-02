@@ -297,6 +297,10 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     private ModelAndView getRunPropertiesView(FormType newRunForm, boolean errorReshow, boolean warnings, BindException errors)
     {
+        if (!errorReshow && !newRunForm.isResetDefaultValues())
+        {
+            newRunForm.clearUploadedData();
+        }
         InsertView insertView = createRunInsertView(newRunForm, errorReshow, errors);
         addHiddenBatchProperties(newRunForm, insertView);
 
@@ -315,10 +319,6 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         insertView.getDataRegion().addColumn(1, table.getColumn("Comments"));
 
         addSampleInputColumns(getProtocol(newRunForm), insertView);
-        if (!errorReshow && !newRunForm.isResetDefaultValues())
-        {
-            newRunForm.clearUploadedData();
-        }
         insertView.getDataRegion().addDisplayColumn(new AssayDataCollectorDisplayColumn(newRunForm));
 
         if (warnings)

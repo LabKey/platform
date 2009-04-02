@@ -71,6 +71,7 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
         column.setKeyField(true);
         setTitleColumn(column.getName());
         addColumn(column);
+        setName(e.getSimpleName());
     }
 
     public SQLFragment getFromSQL()
