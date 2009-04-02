@@ -25,6 +25,8 @@
 <%@ page import="javax.servlet.http.HttpServletResponse" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.wiki.WikiController" %>
 <!--wiki-->
 <%
     HttpView me = HttpView.currentView();
@@ -33,6 +35,8 @@
     Wiki wiki = (Wiki) context.get("wiki");
     String formattedHtml = (String) context.get("formattedHtml");
     Container c = (wiki != null && wiki.getContainerId() != null) ? ContainerManager.getForId(wiki.getContainerId()) : context.getContainer();
+    ActionURL printBranchUrl = new ActionURL(WikiController.PrintBranchAction.class, c);
+    printBranchUrl.addParameter("name", wiki.getName());
     if(null == c)
     {
         %><p><span class="labkey-error">This wiki page has an invalid parent container. Please delete this page.</span></p><%
@@ -82,6 +86,11 @@ if (hasContent && includeLinks)
     if (null != context.get("printLink"))
     {
         %>&nbsp;[<a target="_blank" href="<%= PageFlowUtil.filter(context.get("printLink")) %>">print</a>]<%
+    }
+
+    if (null != context.get("printLink") && null != wiki.getChildren() && wiki.getChildren().size() > 0)
+    {
+        %>&nbsp;[<a target="_blank" href="<%= PageFlowUtil.filter(printBranchUrl.getLocalURIString()) %>">print branch</a>]<%
     }
     %>
     </td></tr></table><%

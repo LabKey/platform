@@ -628,6 +628,44 @@ public class WikiController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ACL.PERM_READ)
+    public class PrintBranchAction extends SimpleViewAction<WikiNameForm>
+    {
+        public ModelAndView getView(WikiNameForm form, BindException errors) throws Exception
+        {
+            Container c = getViewContext().getContainer();
+
+            Wiki rootWiki = WikiManager.getWiki(c, form.getName());
+            if(null == rootWiki)
+                throw new NotFoundException("The wiki page named '" + form.getName() + "' was not found.");
+
+            //build a list of wiki pages that are descendants of the root page
+            List<Wiki> wikiPageList = buildPageList(rootWiki);
+
+            JspView v = new JspView<PrintAllBean>("/org/labkey/wiki/view/wikiPrintAll.jsp", new PrintAllBean(wikiPageList, wikiPageList));
+            v.setFrame(WebPartView.FrameType.NONE);
+
+            getPageConfig().setTemplate(PageConfig.Template.None);
+            return new PrintTemplate(v, "Print of " + rootWiki.latestVersion().getTitle() + " and Descendants");
+        }
+        
+        private List<Wiki> buildPageList(Wiki rootWiki)
+        {
+            List<Wiki> ret = new ArrayList<Wiki>();
+            ret.add(rootWiki);
+            for(Wiki child : rootWiki.getChildren())
+            {
+                ret.addAll(buildPageList(child));
+            }
+            return ret;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
 
     public class PrintAllBean
     {
