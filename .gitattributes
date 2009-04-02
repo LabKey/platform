@@ -416,6 +416,7 @@ api/src/org/labkey/api/query/AbstractSchema.java -text
 api/src/org/labkey/api/query/AliasManager.java -text
 api/src/org/labkey/api/query/AliasedColumn.java -text
 api/src/org/labkey/api/query/ChooseQueryView.java -text
+api/src/org/labkey/api/query/CreateJavaScriptModel.java -text
 api/src/org/labkey/api/query/CrosstabExcelWriter.java -text
 api/src/org/labkey/api/query/CrosstabView.java -text
 api/src/org/labkey/api/query/CustomView.java -text
@@ -431,6 +432,7 @@ api/src/org/labkey/api/query/FieldKey.java -text
 api/src/org/labkey/api/query/FilteredTable.java -text
 api/src/org/labkey/api/query/FolderSchemaProvider.java -text
 api/src/org/labkey/api/query/InvalidKeyException.java -text
+api/src/org/labkey/api/query/JavaScriptExportScriptFactory.java -text
 api/src/org/labkey/api/query/LookupForeignKey.java -text
 api/src/org/labkey/api/query/LookupURLExpression.java -text
 api/src/org/labkey/api/query/MetadataException.java -text
@@ -469,6 +471,7 @@ api/src/org/labkey/api/query/UserIdRenderer.java -text
 api/src/org/labkey/api/query/UserSchema.java -text
 api/src/org/labkey/api/query/ValidationError.java -text
 api/src/org/labkey/api/query/ValidationException.java -text
+api/src/org/labkey/api/query/createJavaScript.jsp -text
 api/src/org/labkey/api/query/exportRScript.jsp -text
 api/src/org/labkey/api/query/snapshot/AbstractSnapshotProvider.java -text
 api/src/org/labkey/api/query/snapshot/AbstractTableMethodInfo.java -text
