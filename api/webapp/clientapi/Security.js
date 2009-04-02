@@ -421,7 +421,7 @@ LABKEY.Security = new function()
 
         /**
          * Returns the set of groups the current user belongs to in the current container or specified containerPath.
-         * This may be called by any signed-in user.
+         * This may be called by any user.
          * @param {object} config A configuration object with the following properties:
          * @param {function} config.successCallback A reference to a function that will be called with the results.
          * This function will receive the follwing parameters:
