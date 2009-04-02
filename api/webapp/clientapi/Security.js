@@ -417,7 +417,50 @@ LABKEY.Security = new function()
          * <li>isAdmin: set to true if this user is a system administrator</li>
          * </ul>
          */
-        currentUser : LABKEY.user
+        currentUser : LABKEY.user,
+
+        /**
+         * Returns the set of groups the current user belongs to in the current container or specified containerPath.
+         * This may be called by any signed-in user.
+         * @param {object} config A configuration object with the following properties:
+         * @param {function} config.successCallback A reference to a function that will be called with the results.
+         * This function will receive the follwing parameters:
+         * <ul>
+         * <li>results: an object with the following properties:
+         *  <ul>
+         *      <li>groups: An array of group information objects, each of which has the following properties:
+         *          <ul>
+         *              <li>id: The unique id of the group.</li>
+         *              <li>name: The name of the group.</li>
+         *              <li>isProjectGroup: true if this group is defined at the project level.</li>
+         *              <li>isSystemGroup: true if this group is defined at the system level.</li>
+         *          </ul>
+         *      </li>
+         *  </ul>
+         * </li>
+         * </ul>
+         * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
+         * the current container path will be used.
+         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         */
+        getGroupsForCurrentUser : function(config)
+        {
+            if(!config.successCallback)
+                Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Security.getGroupsForCurrentUser()!");
+
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("security", "getGroupsForCurrentUser", config.containerPath),
+                method: 'GET',
+                success: getCallbackWrapper(config.successCallback, config.scope),
+                failure: getCallbackWrapper(config.errorCallback, config.scope)
+            });
+        }
 
     };
 };
