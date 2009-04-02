@@ -23,14 +23,14 @@
  */
 LABKEY.Experiment = new function()
 {
-    function getCallbackWrapper(createExpFn, fn, scope)
+    function getSuccessCallbackWrapper(createExpFn, fn, scope)
     {
         return function(response, options)
         {
             //ensure response is JSON before trying to decode
             var json = null;
             var experiment = null;
-            if(response && response.getResponseHeader && response.getResponseHeader['Content-Type']
+            if (response && response.getResponseHeader && response.getResponseHeader['Content-Type']
                     && response.getResponseHeader['Content-Type'].indexOf('application/json') >= 0)
             {
                 json = Ext.util.JSON.decode(response.responseText);
@@ -39,6 +39,23 @@ LABKEY.Experiment = new function()
 
             if(fn)
                 fn.call(scope || this, experiment, response);
+        };
+    }
+
+    function getErrorCallbackWrapper(fn, scope)
+    {
+        if (!fn)
+            return Ext.emptyFn;
+        return function (response, options)
+        {
+            var errorInfo = null;
+            if (response && response.getResponseHeader && response.getResponseHeader['Content-Type']
+                    && response.getResponseHeader['Content-Type'].indexOf('application/json') >= 0)
+                errorInfo = Ext.util.JSON.decode(response.responseText);
+            else
+                errorInfo = {exception: (response && response.statusText ? response.statusText : "Communication failure.")};
+
+            fn.call(scope || this, errorInfo, options, response);
         };
     }
 
@@ -52,7 +69,7 @@ LABKEY.Experiment = new function()
          * @param {function} config.successCallback A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
-         * <li><b>runGroup:</b> an @{link LABKEY.Exp.RunGroup} object containing properties about the run group</li>
+         * <li><b>runGroup:</b> a {@link LABKEY.Exp.RunGroup} object containing properties about the run group</li>
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
          * @param {Integer[]} config.runIds An array of integer ids for the runs to be members of the group.
@@ -81,8 +98,8 @@ LABKEY.Experiment = new function()
                 url : LABKEY.ActionURL.buildURL("experiment", "createHiddenRunGroup", config.containerPath),
                 method : 'POST',
                 jsonData : { runIds : config.runIds },
-                success: getCallbackWrapper(createExp, config.successCallback, config.scope),
-                failure: getCallbackWrapper(createExp, config.failureCallback, config.scope),
+                success: getSuccessCallbackWrapper(createExp, config.successCallback, config.scope),
+                failure: getErrorCallbackWrapper(config.failureCallback, config.scope),
                 headers :
                 {
                     'Content-Type' : 'application/json'
@@ -93,12 +110,12 @@ LABKEY.Experiment = new function()
         /**
          * Loads a batch from the server.
          * @param config An object that contains the following configuration parameters
-         * @param {Nubmber} config.assayId The assay protocol id.
+         * @param {Number} config.assayId The assay protocol id.
          * @param {Number} config.batchId The batch id.
          * @param {function} config.successCallback The function to call when the function finishes successfully.
          * This function will be called with a the parameters:
          * <ul>
-         * <li><b>batch</b> A new LABKEY.Exp.RunGroup object.
+         * <li><b>batch</b> A new {@link LABKEY.Exp.RunGroup} object.
          * <li><b>response</b> The original response
          * </ul>
          * @param {function} [config.errorCallback] The function to call if this function encounters an error.
@@ -106,6 +123,7 @@ LABKEY.Experiment = new function()
          * <ul>
          * <li><b>response</b> The original response
          * </ul>
+         * @see The <a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=moduleassay'>Module Assay</a> documentation for more information.
          */
         loadBatch : function (config)
         {
@@ -122,8 +140,8 @@ LABKEY.Experiment = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("assay", "getAssayBatch", LABKEY.ActionURL.getContainer()),
                 method: 'POST',
-                success: getCallbackWrapper(createExp, config.successCallback, config.scope),
-                failure: config.failureCallback,
+                success: getSuccessCallbackWrapper(createExp, config.successCallback, config.scope),
+                failure: getErrorCallbackWrapper(config.failureCallback, config.scope),
                 scope: config.scope,
                 jsonData : {
                     assayId: config.assayId,
@@ -138,7 +156,7 @@ LABKEY.Experiment = new function()
         /**
          * Saves a modified batch.
          * @param config An object that contains the following configuration parameters
-         * @param {Nubmber} config.assayId The assay protocol id.
+         * @param {Number} config.assayId The assay protocol id.
          * @param {LABKEY.Exp.RunGroup} config.batch The modified batch object.
          * @param {function} config.successCallback The function to call when the function finishes successfully.
          * This function will be called with a the parameters:
@@ -151,6 +169,7 @@ LABKEY.Experiment = new function()
          * <ul>
          * <li><b>response</b> The original response
          * </ul>
+         * @see The <a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=moduleassay'>Module Assay</a> documentation for more information.
          */
         saveBatch : function (config)
         {
@@ -171,8 +190,8 @@ LABKEY.Experiment = new function()
                     assayId: config.assayId,
                     batch: config.batch
                 },
-                success: getCallbackWrapper(createExp, config.successCallback, config.scope),
-                failure: config.failureCallback,
+                success: getSuccessCallbackWrapper(createExp, config.successCallback, config.scope),
+                failure: getErrorCallbackWrapper(config.failureCallback, config.scope),
                 scope: config.scope,
                 headers: {
                     'Content-Type' : 'application/json'
@@ -186,15 +205,17 @@ LABKEY.Experiment = new function()
 Ext.namespace('LABKEY', 'LABKEY.Exp');
 
 /**
+ * This constructor isn't called directly, but is used by derived classes.
  * @class Experiment object base class.
- * @extends Ext.util.Observable
  * @memberOf LABKEY.Exp
+ *
+ * @param {Object} [config] private constructor argument.
  *
  * @property {String} lsid The LSID of the object.
  * @property {String} name The name of the object.
  * @property {number} id The id of this object.
  * @property {number} rowId The id of this object.
- * @property {String} comment
+ * @property {String} comment User editable comment.
  * @property {Date} created When the ExpObject was created.
  * @property {String} createdBy Who created the ExpObject.
  * @property {Date} modified When the ExpObject was last modified.
@@ -216,14 +237,52 @@ LABKEY.Exp.ExpObject = function (config) {
 };
 
 /**
+ * Constructs a new experiment run object.
  * @class Experiment Run.
  * @extends LABKEY.Exp.ExpObject
  * @memberOf LABKEY.Exp
  *
- * @property {Array} experiments List of {@link LABKEY.Exp.Experiment}s in the run.
- * @property {String} protocol The {@link LABKEY.Exp.Protocol} for this run.
- * @property {String} filePathRoot The file path where the run is rooted.  File paths in {@link LABKEY.Exp.Data} are relative from this root.
- * @property {Array[LABKEY.Exp.Data]} dataInputs Array of {@link LABKEY.Exp.Data} input files.
+ * @param {Object} [config] private constructor argument.
+ *
+ * @property {LABKEY.Exp.Data[]} dataInputs Array of {@link LABKEY.Exp.Data} input files.
+ * @property {Object[]} dataRows Array of Objects where each Object corresponds to a row in the results domain.
+ *
+ * @see LABKEY.Exp.Data#getContent
+ *
+ * @example
+ * var result = // ... result of uploading a new assay results file
+ * var data = new LABKEY.Exp.Data(result);
+ *
+ * var run = new LABKEY.Exp.Run();
+ * run.name = data.name;
+ * run.properties = { "MyRunProperty" : 3 };
+ * run.dataInputs = [ data ];
+ *
+ * data.getContent({
+ *   format: 'jsonTSV',
+ *   successCallback: function (content, format) {
+ *     data.content = content;
+ *     var sheet = content.sheets[0];
+ *     var filedata = sheet.data;
+ *
+ *     // transform the file content into the dataRows array used by the run
+ *     run.dataRows = [];
+ *     for (var i = 1; i < filedata.length; i++) {
+ *       var row = filedata[i];
+ *       run.dataRows.push({
+ *         "SampleId": row[0],
+ *         "DataValue": row[1],
+ *         // ... other columns
+ *       });
+ *     }
+ *
+ *     var batch = // ... the LABKEY.Exp.RunGroup object
+ *     batch.runs.push(run);
+ *   },
+ *   failureCallbac: function (error, format) {
+ *     alert("error: " + error);
+ *   }
+ * });
  */
 LABKEY.Exp.Run = function (config) {
     LABKEY.Exp.Run.superclass.constructor.call(this, config);
@@ -252,9 +311,14 @@ LABKEY.Exp.Run = function (config) {
 Ext.extend(LABKEY.Exp.Run, LABKEY.Exp.ExpObject);
 
 /**
+ * The Protocol constructor is private.
  * @class Experiment protocol.
  * @extends LABKEY.Exp.ExpObject
  * @memberOf LABKEY.Exp
+ *
+ * @param {Object} [config] private constructor argument.
+ *
+ * @ignore hide from JsDoc for now
  */
 LABKEY.Exp.Protocol = function (config) {
     LABKEY.Exp.Protocol.superclass.constructor.call(this, config);
@@ -286,12 +350,24 @@ LABKEY.Exp.Protocol = function (config) {
 Ext.extend(LABKEY.Exp.Protocol, LABKEY.Exp.ExpObject);
 
 /**
- * @class Experiment Run Group.
+ * The RunGroup constructor is private.  To retrieve a batch RunGroup
+ * from the server, see {@link LABKEY.Experiment#loadBatch}.
+ * @class Experiment Run Group.  An experiment run group contains an array of
+ * {@link LABKEY.Exp.Run}s.  If all runs have the same assay protocol, the run group
+ * is considered a batch.  To add runs to a batch, insert new {@link LABKEY.Exp.Run}
+ * instances into to the 'runs' Array and save the batch. 
+ * <p>
+ * Use {@link LABKEY.Experiment#loadBatch} and {@link LABKEY.Experiment#saveBatch} to
+ * load and save a RunGroup.
+ * <p>
+ * See the <a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=moduleassay'>Module Assay</a> documentation for more information.
  * @extends LABKEY.Exp.ExpObject
  * @memberOf LABKEY.Exp
  *
- * @parameter {Array[LABKEY.Exp.Run]} runs List of runs
- * @parameter {Boolean} hidden
+ * @param {Object} [config] private constructor argument.
+ *
+ * @property {LABKEY.Exp.Run[]} runs Array of {@link LABKEY.Exp.Run} in this run group.
+ * @property {Boolean} hidden Determines whether the RunGroup is hidden.
  */
 LABKEY.Exp.RunGroup = function (config) {
     LABKEY.Exp.RunGroup.superclass.constructor.call(this, config);
@@ -310,6 +386,16 @@ LABKEY.Exp.RunGroup = function (config) {
 };
 Ext.extend(LABKEY.Exp.RunGroup, LABKEY.Exp.ExpObject);
 
+/**
+ * The ProtocolApplication constructor is private.
+ * @class Experiment ProtocolApplication.
+ * @extends LABKEY.Exp.ExpObject
+ * @memberOf LABKEY.Exp
+ *
+ * @param {Object} [config] private constructor argument.
+ *
+ * @ignore hide from JsDoc for now
+ */
 LABKEY.Exp.ProtocolApplication = function (config) {
     LABKEY.Exp.ProtocolApplication.superclass.constructor.call(this, config);
     config = config || {};
@@ -330,9 +416,14 @@ LABKEY.Exp.ProtocolApplication = function (config) {
 Ext.extend(LABKEY.Exp.ProtocolApplication, LABKEY.Exp.ExpObject);
 
 /**
+ * The SampleSet constructor is private.
  * @class Experiment Sample Set
  * @extends LABKEY.Exp.ExpObject
  * @memberOf LABKEY.Exp
+ *
+ * @param {Object} [config] private constructor argument.
+ *
+ * @ignore hide from JsDoc for now
  */
 LABKEY.Exp.SampleSet = function (config) {
     LABKEY.Exp.SampleSet.superclass.constructor.call(this, config);
@@ -349,9 +440,14 @@ LABKEY.Exp.SampleSet = function (config) {
 Ext.extend(LABKEY.Exp.SampleSet, LABKEY.Exp.ExpObject);
 
 /**
+ * The ChildObject constructor is private.
  * @class Experiment Child
  * @extends LABKEY.Exp.ExpObject
  * @memberOf LABKEY.Exp
+ *
+ * @param {Object} [config] private constructor argument.
+ *
+ * @ignore hide from JsDoc for now
  */
 LABKEY.Exp.ChildObject = function (config) {
     LABKEY.Exp.ChildObject.superclass.constructor.call(this, config);
@@ -361,9 +457,13 @@ LABKEY.Exp.ChildObject = function (config) {
 Ext.extend(LABKEY.Exp.ChildObject, LABKEY.Exp.ExpObject);
 
 /**
- * @class Experiment Protocol Output
+ * The ProtocolOutput constructor is private.
+ * @class Experiment Protocol Output.  Base class for {@link LABKEY.Exp.Data}
+ * and {@link LABKEY.Exp.Material}.
  * @extends LABKEY.Exp.ExpObject
  * @memberOf LABKEY.Exp
+
+ * @param {Object} [config] private constructor argument.
  */
 LABKEY.Exp.ProtocolOutput = function (config) {
     LABKEY.Exp.ProtocolOutput.superclass.constructor.call(this, config);
@@ -379,9 +479,14 @@ LABKEY.Exp.ProtocolOutput = function (config) {
 Ext.extend(LABKEY.Exp.ProtocolOutput, LABKEY.Exp.ExpObject);
 
 /**
- * @class Experiment Material
+ * The Material constructor is private.
+ * @class Experiment Material.
  * @extends LABKEY.Exp.ProtocolOutput
  * @memberOf LABKEY.Exp
+ *
+ * @param {Object} [config] private constructor argument.
+ *
+ * @ignore hide from JsDoc for now
  */
 LABKEY.Exp.Material = function (config) {
     LABKEY.Exp.Material.superclass.constructor.call(this, config);
@@ -393,18 +498,79 @@ LABKEY.Exp.Material = function (config) {
 Ext.extend(LABKEY.Exp.Material, LABKEY.Exp.ProtocolOutput);
 
 /**
- * @class Experiment Data.  A data input or output of a run.
+ * The Data constructor is private.
+ * To create a LABKEY.Exp.Data object, upload a file using to the "assayFileUpload" action of
+ * the "assay" controller.
+ * 
+ * @class Experiment Data.  A data input or output of an {@link LABKEY.Exp.Run}.  Usually this
+ * corresponds to an assay results file uploaded to the LabKey server.
+ * <p>
+ * To create a LABKEY.Exp.Data object, upload a file using to the "assayFileUpload" action of
+ * the "assay" controller.
+ * <p>
+ * See the <a href='https://www.labkey.org/wiki/home/Documentation/page.view?name=moduleassay'>Module Assay</a> documentation for more information.
+ *
  * @extends LABKEY.Exp.ProtocolOutput
  * @memberOf LABKEY.Exp
+ *
+ * @param {Object} [config] private constructor argument.
+ *
+ * @property dataFileURL The local file url of the uploaded file.
+ *
+ * @example
+ * &lt;form id="upload-run-form" enctype="multipart/form-data" method="POST">
+ *   &lt;div id="upload-run-button">&lt;/div>
+ * &lt;/form>
+ * &lt;script type="text/javascript">
+ *    LABKEY.requiresScript("FileUploadField.js");
+ * &lt;/script>
+ * &lt;script type="text/javascript">
+ * var form = new Ext.form.BasicForm(
+ *   Ext.get("upload-run-form"), {
+ *     fileUpload: true,
+ *     frame: false,
+ *     url: LABKEY.ActionURL.buildURL("assay", "assayFileUpload"),
+ *     listeners: {
+ *       "actioncomplete" : function (f, action) {
+ *         var data = new LABKEY.Exp.Data(action.result);
+ *
+ *         // now add the data as a dataInput to a LABKEY.Exp.Run
+ *         var run = new LABKEY.Exp.Run();
+ *         run.name = data.name;
+ *         run.dataInputs = [ data ];
+ *
+ *         // add the new run to a LABKEY.Exp.Batch object and
+ *         // fetch the parsed file contents from the data object
+ *         // using the LABKEY.Exp.Data#getContent() method.
+ *       }
+ *     }
+ *   }
+ * );
+ *
+ * var uploadField = new Ext.form.FileUploadField({
+ *   id: "upload-run-field",
+ *   renderTo: "upload-run-button",
+ *   buttonText: "Upload Data...",
+ *   buttonOnly: true,
+ *   buttonCfg: {
+ *     cls: "labkey-button"
+ *   },
+ *   listeners: {
+ *     "fileselected": function (fb, v) {
+ *       form.submit();
+ *     }
+ *   }
+ *  });
+ * &lt;/script>
  */
 LABKEY.Exp.Data = function (config) {
     LABKEY.Exp.Data.superclass.constructor.call(this, config);
     config = config || {};
 
     this.dataType = config.dataType;
-    this.dataFileURI = config.dataFileURI;
+    this.dataFileURL = config.dataFileURL;
 
-    var jsonCallbackWrapper = function(fn, format, scope)
+    function getSuccessCallbackWrapper(fn, format, scope)
     {
         return function(response)
         {
@@ -425,7 +591,23 @@ LABKEY.Exp.Data = function (config) {
         };
     };
 
-    
+    function getErrorCallbackWrapper(fn, scope)
+    {
+        if (!fn)
+            return Ext.emptyFn;
+        return function (response, options)
+        {
+            var errorInfo = null;
+            if (response && response.getResponseHeader && response.getResponseHeader['Content-Type']
+                    && response.getResponseHeader['Content-Type'].indexOf('application/json') >= 0)
+                errorInfo = Ext.util.JSON.decode(response.responseText);
+            else
+                errorInfo = {exception: (response && response.statusText ? response.statusText : "Communication failure.")};
+
+            fn.call(scope || this, errorInfo, options, response);
+        };
+    };
+
     /**
      * Retrieves the contents of the data object from the server.
      * @param config An object that contains the following configuration parameters
@@ -473,8 +655,8 @@ LABKEY.Exp.Data = function (config) {
             url : LABKEY.ActionURL.buildURL("experiment", "showFile"),
             method : 'GET',
             params : { rowId : this.id, format: config.format },
-            success: jsonCallbackWrapper(config.successCallback, config.format, config.scope),
-            failure: jsonCallbackWrapper(config.failureCallback, config.format, config.scope)
+            success: getSuccessCallbackWrapper(config.successCallback, config.format, config.scope),
+            failure: getErrorCallbackWrapper(config.failureCallback, config.scope)
         });
 
     };

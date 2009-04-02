@@ -50,10 +50,7 @@ public class TextAreaDataCollector extends AbstractAssayDataCollector
 
     public Map<String, File> createData(AssayRunUploadContext context) throws IOException, ExperimentException
     {
-        if (_uploadComplete)
-            return Collections.emptyMap();
-
-        ExpProtocol protocol = context.getProtocol();
+        if (_uploadComplete)            return Collections.emptyMap();        ExpProtocol protocol = context.getProtocol();
         String data = context.getRequest().getParameter(FORM_ELEMENT_NAME);
         if (data == null)
         {
@@ -76,9 +73,4 @@ public class TextAreaDataCollector extends AbstractAssayDataCollector
     {
         return true;
     }
-
-    public void uploadComplete(AssayRunUploadContext context)
-    {
-        _uploadComplete = true;
-    }
-}
+    public void uploadComplete(AssayRunUploadContext context)    {        _uploadComplete = true;    }}
