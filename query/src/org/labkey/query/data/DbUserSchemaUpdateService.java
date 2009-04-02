@@ -45,8 +45,11 @@ public class DbUserSchemaUpdateService extends DefaultSchemaUpdateService
     public QueryUpdateService getQueryUpdateService(String queryName, Container container, User user)
     {
         TableInfo table = getSchema().getDbSchema().getTable(queryName);
-        return (null != table && TableInfo.TABLE_TYPE_TABLE == table.getTableType())
-                ? new DbUserQueryUpdateService(table, getUserSchema().getDbContainer())
-                : null;
+        if(null == table || TableInfo.TABLE_TYPE_TABLE != table.getTableType())
+            return null;
+        if(null == table.getPkColumnNames() || table.getPkColumnNames().size() == 0)
+            throw new RuntimeException("The table '" + queryName + "' does not have a primary key defined, and thus cannot be updated reliably. Please define a primary key for this table before attempting an update.");
+        
+        return new DbUserQueryUpdateService(table, getUserSchema().getDbContainer());
     }
 }

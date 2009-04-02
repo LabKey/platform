@@ -147,7 +147,12 @@ else
 
     if (null != wiki.getAttachments() && wiki.getAttachments().size() > 0)
     {
-        %><hr/><%
+        %><p/>
+            <table style="width:100%">
+                <tr><td class="labkey-title-area-line"><img height=1 width=1 alt="" src="<%=request.getContextPath()%>/_.gif"/></td></tr>
+                <tr><td style="font-style:italic;">Files attached to this page:</td></tr>
+            </table>
+        <%
     }
 
     for (Attachment a : wiki.getAttachments())
