@@ -51,6 +51,7 @@ public class TablePropertiesEditor extends PropertiesEditor<GWTTableInfo, GWTCol
                             list.addItem(pd.getName());
                         }
                     }
+                    list.setName("sourceColumn");
                     final DialogBox dialog = new DialogBox(false, true);
                     dialog.setText("Choose a field to wrap");
                     VerticalPanel panel = new VerticalPanel();

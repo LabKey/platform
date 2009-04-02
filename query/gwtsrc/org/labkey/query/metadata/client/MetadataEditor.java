@@ -38,6 +38,7 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
     private String _schemaName;
     private DialogBox _confirmDialog;
     private ImageButton _saveButton;
+    private Label _saveMessage = new Label();
 
     public void onModuleLoad()
     {
@@ -74,6 +75,7 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
         });
         _editor.addButton(_saveButton);
         _saveButton.setEnabled(false);
+        _editor.getContentPanel().add(_saveMessage);
         _editor.addChangeListener(new ChangeListener()
         {
             public void onChange(Widget sender)
@@ -91,6 +93,7 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
                     public void onClick(Widget sender)
                     {
                         _confirmDialog.hide();
+                        _saveMessage.setText("");
                         getService().resetToDefault(_schemaName, _editor.getUpdates().getName(), new AsyncCallback<GWTTableInfo>()
                         {
                             public void onFailure(Throwable caught)
@@ -100,6 +103,7 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
 
                             public void onSuccess(GWTTableInfo newTableInfo)
                             {
+                                _saveMessage.setText("Reset successful.");
                                 _editor.init(newTableInfo);
                             }
                         });
@@ -210,7 +214,14 @@ public class MetadataEditor implements EntryPoint, Saveable<GWTTableInfo>
 
     public void save()
     {
-        save(null);
+        _saveMessage.setText("");
+        save(new SaveListener<GWTTableInfo>()
+        {
+            public void saveSuccessful(GWTTableInfo result, String designerUrl)
+            {
+                _saveMessage.setText("Save successful.");
+            }
+        });
     }
 
     public void save(final SaveListener<GWTTableInfo> listener)
