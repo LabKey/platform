@@ -35,7 +35,10 @@ public class TextAreaDataCollector extends AbstractAssayDataCollector
 
     public String getHTML(AssayRunUploadContext context)
     {
-        return "<textarea name=\"" + FORM_ELEMENT_NAME + "\" rows=\"10\" cols=\"80\"></textarea>";
+        return "<textarea id=\"" + FORM_ELEMENT_NAME + "\" name=\"" + FORM_ELEMENT_NAME + "\" rows=\"10\" cols=\"80\"></textarea>\n" +
+                "<script type=\"text/javascript\">\n" +
+                "    Ext.EventManager.on('" + FORM_ELEMENT_NAME + "', 'keydown', handleTabsInTextArea);\n" +
+                "</script>";
     }
 
     public String getShortName()
@@ -73,4 +76,9 @@ public class TextAreaDataCollector extends AbstractAssayDataCollector
     {
         return true;
     }
-    public void uploadComplete(AssayRunUploadContext context)    {        _uploadComplete = true;    }}
+
+    public void uploadComplete(AssayRunUploadContext context)
+    {
+        _uploadComplete = true;
+    }
+}

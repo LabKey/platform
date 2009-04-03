@@ -19,16 +19,13 @@ package org.labkey.api.view;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.FolderType;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
 import org.labkey.api.view.menu.ProjectAdminMenu;
 import org.labkey.api.view.menu.SiteAdminMenu;
 import org.labkey.api.view.menu.MenuService;
-import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.FolderDisplayMode;
-import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.exp.list.ListService;
 import org.labkey.api.settings.LookAndFeelProperties;
 
 import java.util.SortedSet;
@@ -91,18 +88,22 @@ public class PopupAdminView extends PopupMenuView
 
             c.getFolderType().addManageLinks(navTree, c);
 
-            SortedSet<Module> modules = new TreeSet<Module>(new Comparator<Module>()
+            Comparator<Module> moduleComparator = new Comparator<Module>()
             {
                 public int compare(Module o1, Module o2)
                 {
-                    if(null == o1 && null == o2)
+                    if (null == o1 && null == o2)
                         return 0;
-                    if(null == o1 || null == o2)
+                    if (null == o1 || null == o2)
                         return null == o1 ? -1 : 1;
-                    return o1.getTabName(context).compareTo(o2.getTabName(context));
+                    return o1.getTabName(context).compareToIgnoreCase(o2.getTabName(context));
                 }
-            });
-            modules.addAll(c.getActiveModules());
+            };
+            SortedSet<Module> activeModules = new TreeSet<Module>(moduleComparator);
+            activeModules.addAll(c.getActiveModules());
+            SortedSet<Module> disabledModules = new TreeSet<Module>(moduleComparator);
+            disabledModules.addAll(ModuleLoader.getInstance().getModules());
+            disabledModules.removeAll(activeModules);
 
             NavTree goToModuleMenu = new NavTree("Go To Module");
             Module defaultModule = null;
@@ -112,14 +113,17 @@ public class PopupAdminView extends PopupMenuView
                 goToModuleMenu.addChild(c.getName() + " Start Page", c.getFolderType().getStartURL(c, user));
             }
 
-            for (Module module : modules)
-            {
-                if (null == module || module.equals(defaultModule))
-                    continue;
+            addModulesToMenu(context, activeModules, defaultModule, goToModuleMenu);
 
-                ActionURL tabUrl = module.getTabURL(c, user);
-                if(null != tabUrl)
-                    goToModuleMenu.addChild(module.getTabName(context), tabUrl);
+            if (!disabledModules.isEmpty())
+            {
+                NavTree disabledModuleMenu = new NavTree("Disabled modules");
+                addModulesToMenu(context, disabledModules, defaultModule, disabledModuleMenu);
+                if (disabledModuleMenu.hasChildren())
+                {
+                    goToModuleMenu.addSeparator();
+                    goToModuleMenu.addChild(disabledModuleMenu);
+                }
             }
 
             if (goToModuleMenu.hasChildren())
@@ -130,5 +134,18 @@ public class PopupAdminView extends PopupMenuView
         setNavTree(navTree);
         setAlign(PopupMenu.Align.RIGHT);
         setButtonStyle(PopupMenu.ButtonStyle.BOLDTEXT);
+    }
+
+    private void addModulesToMenu(ViewContext context, SortedSet<Module> modules, Module defaultModule, NavTree menu)
+    {
+        for (Module module : modules)
+        {
+            if (null == module || module.equals(defaultModule))
+                continue;
+
+            ActionURL tabUrl = module.getTabURL(context.getContainer(), context.getUser());
+            if(null != tabUrl)
+                menu.addChild(module.getTabName(context), tabUrl);
+        }
     }
 }
