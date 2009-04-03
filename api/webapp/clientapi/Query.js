@@ -47,8 +47,8 @@ LABKEY.Query = new function()
         Ext.Ajax.request({
             url : LABKEY.ActionURL.buildURL("query", config.action, config.containerPath),
             method : 'POST',
-            success: getSuccessCallbackWrapper(config.successCallback, false),
-            failure: getErrorCallbackWrapper(config.errorCallback),
+            success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+            failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
             jsonData : dataObject,
             headers : {
                 'Content-Type' : 'application/json'
@@ -64,41 +64,17 @@ LABKEY.Query = new function()
         return response && response.getResponseHeader ? response.getResponseHeader['Content-Type'] : null;
     }
 
-    function getSuccessCallbackWrapper(callbackFn, stripHiddenCols)
+    function getSuccessCallbackWrapper(callbackFn, stripHiddenCols, scope)
     {
         if(!callbackFn)
             Ext.Msg.alert("Coding Error!", "You must supply a successCallback function in your configuration object!");
-        
-        return function(response, options)
-        {
-            var data = null;
 
-            var contentType = getContentType(response);
-            if(contentType && contentType.indexOf('application/json') >= 0)
-                data = Ext.util.JSON.decode(response.responseText);
-
+        return LABKEY.Utils.getCallbackWrapper(function(data, response, options){
             if(data && data.rows && stripHiddenCols)
                 stripHiddenColData(data);
-
-            callbackFn(data, options, response);
-        };
-    }
-
-    function getErrorCallbackWrapper(callbackFn)
-    {
-        if (!callbackFn)
-            return Ext.emptyFn;
-        return function(response, options)
-        {
-            var errorInfo = null;
-            var contentType = getContentType(response);
-            if(contentType && contentType.indexOf('application/json') >= 0)
-                errorInfo = Ext.util.JSON.decode(response.responseText);
-            else
-                errorInfo = {exception: (response && response.statusText ? response.statusText : "Communication failure.")};
-
-            callbackFn(errorInfo, options, response);
-        };
+            if(callbackFn)
+                callbackFn.call(scope || this, data, options, response);
+        }, this);
     }
 
     function stripHiddenColData(data)
@@ -204,8 +180,8 @@ LABKEY.Query = new function()
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL("query", "executeSql", config.containerPath),
                 method : 'POST',
-                success: getSuccessCallbackWrapper(config.successCallback, config.stripHiddenColumns),
-                failure: getErrorCallbackWrapper(config.errorCallback),
+                success: getSuccessCallbackWrapper(config.successCallback, config.stripHiddenColumns, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
                 jsonData : dataObject,
                 headers : {
                     'Content-Type' : 'application/json'
@@ -370,8 +346,8 @@ LABKEY.Query = new function()
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'getQuery', config.containerPath),
                 method : 'GET',
-                success: getSuccessCallbackWrapper(config.successCallback, config.stripHiddenColumns),
-                failure: getErrorCallbackWrapper(config.errorCallback),
+                success: getSuccessCallbackWrapper(config.successCallback, config.stripHiddenColumns, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
                 params : dataObject
             });
         },
@@ -531,8 +507,8 @@ LABKEY.Query = new function()
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'getSchemas', config.containerPath),
                 method : 'GET',
-                success: getSuccessCallbackWrapper(config.successCallback, false),
-                failure: getErrorCallbackWrapper(config.errorCallback)
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
             });
         },
 
@@ -581,8 +557,8 @@ LABKEY.Query = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'getQueries', config.containerPath),
                 method : 'GET',
-                success: getSuccessCallbackWrapper(config.successCallback, false),
-                failure: getErrorCallbackWrapper(config.errorCallback),
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
                 params: params
             });
         },
@@ -631,8 +607,8 @@ LABKEY.Query = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'getQueryViews', config.containerPath),
                 method : 'GET',
-                success: getSuccessCallbackWrapper(config.successCallback, false),
-                failure: getErrorCallbackWrapper(config.errorCallback),
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
                 params: params
             });
         },
@@ -652,15 +628,15 @@ LABKEY.Query = new function()
         {
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('query', 'getServerDate'),
-                failure: getErrorCallbackWrapper(config.errorCallback),
-                success: getSuccessCallbackWrapper(function(json){
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope),
+                success: LABKEY.Utils.getCallbackWrapper(function(json){
                     var d;
                     if(json && json.date && config.successCallback)
                     {
                         d = new Date(json.date);
                         config.successCallback(d);
                     }
-                }, false)
+                }, this)
             });
         },
 

@@ -29,8 +29,8 @@ LABKEY.Domain = new function()
         Ext.Ajax.request({
             url : LABKEY.ActionURL.buildURL("property", "getDomain", containerPath),
             method : 'GET',
-            success: successCallback,
-            failure: failureCallback,
+            success: LABKEY.Utils.getCallbackWrapper(successCallback),
+            failure: LABKEY.Utils.getCallbackWrapper(failureCallback, this, true),
             params : parameters
         });
     }
@@ -40,8 +40,8 @@ LABKEY.Domain = new function()
         Ext.Ajax.request({
             url : LABKEY.ActionURL.buildURL("property", "saveDomain", containerPath),
             method : 'POST',
-            success: successCallback,
-            failure: failureCallback,
+            success: LABKEY.Utils.getCallbackWrapper(successCallback),
+            failure: LABKEY.Utils.getCallbackWrapper(failureCallback, this, true),
             jsonData : parameters,
             headers : {
                 'Content-Type' : 'application/json'
@@ -49,15 +49,6 @@ LABKEY.Domain = new function()
         });
     }
 
-    function getSuccessCallbackWrapper(successCallback)
-    {
-        return function(response, options)
-        {
-            var data = Ext.util.JSON.decode(response.responseText);
-            successCallback(data);
-        };
-    }
-    
     /** @scope LABKEY.Domain.prototype */
     return {
 
@@ -103,7 +94,7 @@ LABKEY.Domain = new function()
         get : function(successCallback, failureCallback, schemaName, queryName, containerPath)
         {
             getDomain(
-                getSuccessCallbackWrapper(successCallback),
+                successCallback,
                 failureCallback,
                 {schemaName:schemaName, queryName:queryName}, 
                 containerPath);
@@ -115,7 +106,7 @@ LABKEY.Domain = new function()
         save : function(successCallback, failureCallback, domainDesign, schemaName, queryName, containerPath)
         {
             saveDomain(
-                getSuccessCallbackWrapper(successCallback),
+                successCallback,
                 failureCallback,
                 {domainDesign:domainDesign, schemaName:schemaName, queryName:queryName},
                 containerPath);

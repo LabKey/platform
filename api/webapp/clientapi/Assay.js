@@ -53,20 +53,10 @@ LABKEY.Assay = new function()
 
     function getSuccessCallbackWrapper(successCallback)
     {
-        return function(response, options)
-        {
-            var data = Ext.util.JSON.decode(response.responseText);
-            successCallback(data.definitions);
-        };
-    }
-
-    function getNabRunSuccessCallbackWrapper(successCallback)
-    {
-        return function(response, options)
-        {
-            var data = Ext.util.JSON.decode(response.responseText);
-            successCallback(data.runs);
-        };
+        return LABKEY.Utils.getCallbackWrapper(function(data, response){
+            if(successCallback)
+                successCallback(data.definitions, response);
+        }, this);
     }
 
     function moveParameter(config, param)
@@ -297,8 +287,11 @@ LABKEY.Assay = new function()
             Ext.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('nabassay', 'getNabRuns', config.containerPath),
                 method : 'GET',
-                success: getNabRunSuccessCallbackWrapper(config.successCallback),
-                failure: config.errorCallback,
+                success: LABKEY.Utils.getCallbackWrapper(function(data, response){
+                    if(config.successCallback)
+                        config.successCallback.call(config.scope, data.runs);
+                }, this),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
                 params : dataObject
             });
         }

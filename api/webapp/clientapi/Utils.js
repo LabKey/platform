@@ -253,7 +253,7 @@ LABKEY.Utils = new function()
          * @param isErrorCallback Set to true if the function is an error callback
          */
         getCallbackWrapper : function(fn, scope, isErrorCallback) {
-            return function(response)
+            return function(response, options)
             {
                 //ensure response is JSON before trying to decode
                 var json = null;
@@ -262,10 +262,12 @@ LABKEY.Utils = new function()
                     json = Ext.util.JSON.decode(response.responseText);
 
                 if(!json && isErrorCallback)
-                    json = {exeption: response.statusText};
+                    json = {exeption: (response && response.statusText ? response.statusText : "Communication failure.")};
 
                 if(fn)
-                    fn.call(scope || this, json, response);
+                    fn.call(scope || this, json, response, options);
+                else if(isErrorCallback)
+                    Ext.Msg.alert("Error", json.exception);
             };
         }
     };

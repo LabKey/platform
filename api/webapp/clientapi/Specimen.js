@@ -25,11 +25,9 @@ LABKEY.Specimen = new function()
 {
     function getSuccessCallbackWrapper(successCallback, rootProperty)
     {
-        return function(response, options)
-        {
-            var data = Ext.util.JSON.decode(response.responseText);
+        return LABKEY.Utils.getCallbackWrapper(function(data){
             successCallback(rootProperty ? data[rootProperty] : data);
-        };
+        }, this);
     }
 
     /** @scope LABKEY.Specimen.prototype */
@@ -51,7 +49,7 @@ LABKEY.Specimen = new function()
                   url : LABKEY.ActionURL.buildURL("study-samples-api", "getRespositories", containerPath),
                   method : 'POST',
                   success: getSuccessCallbackWrapper(successCallback, 'repositories'),
-                  failure: failureCallback,
+                  failure: LABKEY.Utils.getCallbackWrapper(failureCallback, this, true),
                   headers : {
                       'Content-Type' : 'application/json'
                   }
@@ -77,7 +75,7 @@ LABKEY.Specimen = new function()
                   url : LABKEY.ActionURL.buildURL("study-samples-api", "getVialsByRowId", containerPath),
                   method : 'POST',
                   success: getSuccessCallbackWrapper(successCallback, 'vials'),
-                  failure: failureCallback,
+                  failure: LABKEY.Utils.getCallbackWrapper(failureCallback, this, true),
                   jsonData : { rowIds : vialRowIdArray },
                   headers : {
                       'Content-Type' : 'application/json'
@@ -106,7 +104,7 @@ LABKEY.Specimen = new function()
                   url : LABKEY.ActionURL.buildURL("study-samples-api", "getOpenRequests", containerPath),
                   method : 'POST',
                   success: getSuccessCallbackWrapper(successCallback, 'requests'),
-                  failure: failureCallback,
+                  failure: LABKEY.Utils.getCallbackWrapper(failureCallback, this, true),
                   jsonData : { allUsers: allUsers },
                   headers : {
                       'Content-Type' : 'application/json'
@@ -133,7 +131,7 @@ LABKEY.Specimen = new function()
                   url : LABKEY.ActionURL.buildURL("study-samples-api", "getRequest", containerPath),
                   method : 'POST',
                   success: getSuccessCallbackWrapper(successCallback, 'request'),
-                  failure: failureCallback,
+                  failure: LABKEY.Utils.getCallbackWrapper(failureCallback, this, true),
                   jsonData : { requestId: requestId },
                   headers : {
                       'Content-Type' : 'application/json'
@@ -162,7 +160,7 @@ LABKEY.Specimen = new function()
                   url : LABKEY.ActionURL.buildURL("study-samples-api", "cancelRequest", containerPath),
                   method : 'POST',
                   success: getSuccessCallbackWrapper(successCallback),
-                  failure: failureCallback,
+                  failure: LABKEY.Utils.getCallbackWrapper(failureCallback, this, true),
                   jsonData : {requestId : requestId },
                   headers : {
                       'Content-Type' : 'application/json'
@@ -196,7 +194,7 @@ LABKEY.Specimen = new function()
                   url : LABKEY.ActionURL.buildURL("study-samples-api", "addVialsToRequest", containerPath),
                   method : 'POST',
                   success: getSuccessCallbackWrapper(successCallback),
-                  failure: failureCallback,
+                  failure: LABKEY.Utils.getCallbackWrapper(failureCallback, this, true),
                   jsonData : {requestId : requestId, vialIds : vialIdArray, idType: idType},
                   headers : {
                       'Content-Type' : 'application/json'
@@ -230,7 +228,7 @@ LABKEY.Specimen = new function()
                   url : LABKEY.ActionURL.buildURL("study-samples-api", "addSamplesToRequest", containerPath),
                   method : 'POST',
                   success: getSuccessCallbackWrapper(successCallback),
-                  failure: failureCallback,
+                  failure: LABKEY.Utils.getCallbackWrapper(failureCallback, this, true),
                   jsonData : {requestId : requestId, specimenHashes : specimenHashArray, preferredLocation : preferredLocation},
                   headers : {
                       'Content-Type' : 'application/json'
@@ -266,7 +264,7 @@ LABKEY.Specimen = new function()
                   method : 'POST',
                   success: getSuccessCallbackWrapper(successCallback),
                   jsonData : {requestId : requestId, vialIds : vialIdArray, idType : idType},
-                  failure: failureCallback,
+                  failure: LABKEY.Utils.getCallbackWrapper(failureCallback, this, true),
                   headers : {
                       'Content-Type' : 'application/json'
                   }
