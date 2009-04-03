@@ -243,6 +243,30 @@ LABKEY.Utils = new function()
                 '<input type="hidden" name="json" value="' + Ext.util.Format.htmlEncode(Ext.util.JSON.encode(spreadsheet)) + '" />' +
                 '</form>');
             newForm.submit();
+        },
+
+        /**
+         * This is used internally by other class methods to automatically parse returned JSON
+         * and call another success function passing that parsed JSON.
+         * @param fn The callback function to wrap
+         * @param scope The scope for the callback function
+         * @param isErrorCallback Set to true if the function is an error callback
+         */
+        getCallbackWrapper : function(fn, scope, isErrorCallback) {
+            return function(response)
+            {
+                //ensure response is JSON before trying to decode
+                var json = null;
+                if(response && response.getResponseHeader && response.getResponseHeader['Content-Type']
+                        && response.getResponseHeader['Content-Type'].indexOf('application/json') >= 0)
+                    json = Ext.util.JSON.decode(response.responseText);
+
+                if(!json && isErrorCallback)
+                    json = {exeption: response.statusText};
+
+                if(fn)
+                    fn.call(scope || this, json, response);
+            };
         }
     };
 };

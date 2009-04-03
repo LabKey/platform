@@ -25,22 +25,6 @@
  */
 LABKEY.Security = new function()
 {
-    /*-- private methods --*/
-    function getCallbackWrapper(fn, scope)
-    {
-        return function(response, options)
-        {
-            //ensure response is JSON before trying to decode
-            var json = null;
-            if(response && response.getResponseHeader && response.getResponseHeader['Content-Type']
-                    && response.getResponseHeader['Content-Type'].indexOf('application/json') >= 0)
-                json = Ext.util.JSON.decode(response.responseText);
-
-            if(fn)
-                fn.call(scope || this, json, response);
-        };
-    }
-
     /*-- public methods --*/
     /** @scope LABKEY.Security.prototype */
     return {
@@ -180,8 +164,8 @@ LABKEY.Security = new function()
                 url: LABKEY.ActionURL.buildURL("security", "getGroupPerms", config.containerPath),
                 method : 'GET',
                 params: params,
-                success: getCallbackWrapper(config.successCallback, config.scope),
-                failure: getCallbackWrapper(config.errorCallback, config.scope)
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
             });
         },
 
@@ -289,8 +273,8 @@ LABKEY.Security = new function()
                 url: LABKEY.ActionURL.buildURL("security", "getUserPerms", config.containerPath),
                 method : 'GET',
                 params: params,
-                success: getCallbackWrapper(config.successCallback, config.scope),
-                failure: getCallbackWrapper(config.errorCallback, config.scope)
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
             });
         },
 
@@ -345,8 +329,8 @@ LABKEY.Security = new function()
                 url: LABKEY.ActionURL.buildURL("user", "getUsers", config.containerPath),
                 method : 'GET',
                 params: params,
-                success: getCallbackWrapper(config.successCallback, config.scope),
-                failure: getCallbackWrapper(config.errorCallback, config.scope)
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
             });
         },
 
@@ -397,8 +381,8 @@ LABKEY.Security = new function()
                 url: LABKEY.ActionURL.buildURL("project", "getContainers", config.containerPath),
                 method : 'GET',
                 params: params,
-                success: getCallbackWrapper(config.successCallback, config.scope),
-                failure: getCallbackWrapper(config.errorCallback, config.scope)
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
             });
         },
 
@@ -458,8 +442,8 @@ LABKEY.Security = new function()
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "getGroupsForCurrentUser", config.containerPath),
                 method: 'GET',
-                success: getCallbackWrapper(config.successCallback, config.scope),
-                failure: getCallbackWrapper(config.errorCallback, config.scope)
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
             });
         },
 
@@ -504,7 +488,7 @@ LABKEY.Security = new function()
                     Ext.Ajax.request({
                         url: LABKEY.ActionURL.buildURL("security", "ensureLogin"),
                         method: 'GET',
-                        success: getCallbackWrapper(function(data, req){
+                        success: LABKEY.Utils.getCallbackWrapper(function(data, req){
                             if(data.currentUser)
                                 LABKEY.Security.currentUser = data.currentUser;
 
@@ -512,7 +496,7 @@ LABKEY.Security = new function()
                                 config.successCallback.call(config.scope || this, data, req);
 
                         }, this),
-                        failure: getCallbackWrapper(config.errorCallback, config.scope)
+                        failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
                     });
                 }
             }
