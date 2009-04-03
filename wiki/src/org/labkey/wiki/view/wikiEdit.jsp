@@ -168,6 +168,9 @@
                                     <form action="">
                                     <textarea rows="30" cols="80" style="width:100%" id="<%=ID_PREFIX%>body"
                                               name="body" onkeypress="setWikiDirty()" onchange="setWikiDirty()"></textarea>
+                                        <script type="text/javascript">
+                                            Ext.EventManager.on('<%=ID_PREFIX%>body', 'keydown', handleTabsInTextArea);
+                                        </script>
                                     </form>
                                 </td>
                             </tr>

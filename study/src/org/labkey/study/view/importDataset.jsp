@@ -43,7 +43,12 @@
         <tr><td class=labkey-form-label width=150 >Tab delimited data (TSV)</td>
         <td>[<a href="template.view?datasetId=<%=form.getDatasetId()%>">template spreadsheet</a>]
         </td></tr>
-        <tr><td colspan=2 width="100%"><textarea id=tsv name=tsv rows=25 cols=80 wrap=off style="width:100%;"><%=h(form.getTsv())%></textarea></td></tr>
+        <tr><td colspan=2 width="100%">
+            <textarea id=tsv name=tsv rows=25 cols=80 wrap=off style="width:100%;"><%=h(form.getTsv())%></textarea>
+            <script type="text/javascript">
+                Ext.EventManager.on('tsv', 'keydown', handleTabsInTextArea);
+            </script>
+        </td></tr>
     </table>
 	<input type=hidden name=datasetId value="<%=form.getDatasetId()%>">
 

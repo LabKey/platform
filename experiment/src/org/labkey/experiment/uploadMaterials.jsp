@@ -61,6 +61,9 @@
             Sample set uploads must formatted as tab separated values (TSV). Copy/paste from Microsoft Excel works well.<br>
             The first row should contain column names, and subsequent rows should contain the data.<br>
             <textarea id="textbox" onchange="updateIds(this)" rows=25 cols="120" style="width: 100%;" name="data" wrap="off"><%=h(form.getData())%></textarea>
+            <script type="text/javascript">
+                Ext.EventManager.on('textbox', 'keydown', handleTabsInTextArea);
+            </script>
         </td>
     </tr>
     <tr>

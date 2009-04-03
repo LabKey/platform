@@ -31,6 +31,9 @@
     <p>SQL:<br>
     <% if (editableSQL) { %>
         <textarea style="width: 100%;" rows="20" cols="80" wrap="off" id="queryText" name="ff_queryText"><%=h(form.ff_queryText)%></textarea>
+        <script type="text/javascript">
+            Ext.EventManager.on('queryText', 'keydown', handleTabsInTextArea);
+        </script>
     <% } else { %>
         <input type="hidden" name="ff_queryText" value="<%=h(form.ff_queryText)%>" />
         <pre><%=h(form.ff_queryText)%></pre>
@@ -50,7 +53,10 @@ if (!form.getQueryDef().isTableQueryDefinition())
     <labkey:button text="Run Query" onclick="submit_onclick('executeQuery')" />
 <p>Metadata XML:<br>
     <textarea style="width: 100%;" rows="20" cols="80" wrap="off" id="metadataText" name="ff_metadataText"<%=canEdit ? "" : " READONLY"%>><%=h(form.ff_metadataText)%></textarea>
-</p>
+    <script type="text/javascript">
+         Ext.EventManager.on('metadataText', 'keydown', handleTabsInTextArea);
+     </script>
+ </p>
 
 </form>
 
