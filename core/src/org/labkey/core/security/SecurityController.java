@@ -1625,6 +1625,32 @@ public class SecurityController extends SpringActionController
         }
     }
 
+    @RequiresLogin
+    @IgnoresTermsOfUse
+    public class EnsureLoginAction extends ApiAction
+    {
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            User user = getViewContext().getUser();
+            Container container = getViewContext().getContainer();
+
+            //return similar info as is already exposed on LABKEY.user & LABKEY.Security.currentUser
+            //so we can swap it out
+            Map<String,Object> userInfo = new HashMap<String,Object>();
+            userInfo.put("id", user.getUserId());
+            userInfo.put("displayName", user.getDisplayName(getViewContext()));
+            userInfo.put("email", user.getEmail());
+            userInfo.put("canInsert", container.hasPermission(user, ACL.PERM_INSERT) ? "true" : "false");
+            userInfo.put("canUpdate", container.hasPermission(user, ACL.PERM_UPDATE) ? "true" : "false");
+            userInfo.put("canUpdateOwn", container.hasPermission(user, ACL.PERM_UPDATEOWN) ? "true" : "false");
+            userInfo.put("canDelete", container.hasPermission(user, ACL.PERM_DELETE) ? "true" : "false");
+            userInfo.put("canDeleteOwn", container.hasPermission(user, ACL.PERM_DELETEOWN) ? "true" : "false");
+            userInfo.put("isAdmin", container.hasPermission(user, ACL.PERM_ADMIN) ? "true" : "false");
+
+            return new ApiSimpleResponse("currentUser", userInfo);
+        }
+    }
+
     public static class TestCase extends junit.framework.TestCase
     {
         public TestCase()
