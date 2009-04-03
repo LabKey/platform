@@ -1765,6 +1765,7 @@ public class PageFlowUtil
         sb.append(",canDelete:").append(container.hasPermission(user, ACL.PERM_DELETE) ? "true" : "false");
         sb.append(",canDeleteOwn:").append(container.hasPermission(user, ACL.PERM_DELETEOWN) ? "true" : "false");
         sb.append(",isAdmin:").append(container.hasPermission(user, ACL.PERM_ADMIN) ? "true" : "false");
+        sb.append(",isGuest:").append(user.isGuest() ? "true" : "false");
         sb.append("}"); //end user object
 
         sb.append(",container:{id:'").append(container.getId()).append("'");

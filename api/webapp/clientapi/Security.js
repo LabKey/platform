@@ -415,6 +415,7 @@ LABKEY.Security = new function()
          * <li>canDelete: set to true if this user can delete data in the current folder</li>
          * <li>canDeleteOwn: set to true if this user can delete data this user created in the current folder</li>
          * <li>isAdmin: set to true if this user is a system administrator</li>
+         * <li>isGuest: set to true if this user is the guest (anonymous) user</li>
          * </ul>
          */
         currentUser : LABKEY.user,
@@ -460,6 +461,65 @@ LABKEY.Security = new function()
                 success: getCallbackWrapper(config.successCallback, config.scope),
                 failure: getCallbackWrapper(config.errorCallback, config.scope)
             });
+        },
+
+        /**
+         * Ensures that the current user is logged in.
+         * @param {object} config A configuration object with the following properties:
+         * @param {boolean} [config.useSiteLoginPage] Set to true to redirect the browser to the normal site login page.
+         * After the user logs in, the browser will be redirected back to the current page, and the current user information
+         * will be available via {@link LABKEY.Security#currentUser}. If omitted or set to false, this function
+         * will attempt to login via an AJAX request, which will cause the browser to display the basic authentication
+         * dialog. After the user logs in successfully, the config.successCallback function will be called.
+         * @param {function} config.successCallback A reference to a function that will be called after a successful login.
+         * It is passed the following parameters:
+         * <ul>
+         *  <li>results: an object with the following properties:
+         *      <ul>
+         *          <li>currentUser: a reference to the current user. See {@link LABKEY.Security#currentUser} for more details.</li>
+         *      </ul>
+         *  </li>
+         * </ul>
+         * Note that if the current user is already logged in, the successCallback function will be called immediately,
+         * passing the current user information from {@link LABKEY.Security#currentUser}.
+         * @param {function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {boolean} [config.force] Set to true to force a login even if the user is already logged in.
+         * This is useful for keeping a session alive during a long-lived page. To do so, call this function
+         * with config.force set to true, and config.useSiteLoginPage to false (or omit).
+         */
+        ensureLogin : function(config)
+        {
+            if(LABKEY.Security.currentUser.isGuest || config.force)
+            {
+                if(config.useSiteLoginPage)
+                    window.location = LABKEY.ActionURL.buildURL("login", "login") + "?URI=" + window.location;
+                else
+                {
+                    Ext.Ajax.request({
+                        url: LABKEY.ActionURL.buildURL("security", "ensureLogin"),
+                        method: 'GET',
+                        success: getCallbackWrapper(function(data, req){
+                            if(data.currentUser)
+                                LABKEY.Security.currentUser = data.currentUser;
+
+                            if(config.successCallback)
+                                config.successCallback.call(config.scope || this, data, req);
+
+                        }, this),
+                        failure: getCallbackWrapper(config.errorCallback, config.scope)
+                    });
+                }
+            }
+            else
+            {
+                config.successCallback.call(config.scope || this, {currentUser: LABKEY.Security.currentUser});
+            }
         }
 
     };
