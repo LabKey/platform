@@ -46,6 +46,7 @@
         }
     %>
     <%=PageFlowUtil.generateSubmitButton(bean.isActivate() ? "Re-activate" : "Deactivate")%>
+    <%=PageFlowUtil.generateButton("Cancel", bean.getRedirUrl())%>
 </form>
 <% if(bean.isActivate()) { %>
 <p><b>Note:</b> Re-activated users will be able to login normally, and all their previous

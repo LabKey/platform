@@ -179,11 +179,6 @@ public class UserController extends SpringActionController
         {
             rgn.setShowRecordSelectors(true);
 
-            ActionButton delete = new ActionButton("deleteUsers.post", "Delete");
-            delete.setRequiresSelection(true, "Are you sure you want to delete these users?");
-            delete.setActionType(ActionButton.Action.POST);
-            gridButtonBar.add(delete);
-
             ActionButton deactivate = new ActionButton("deactivateUsers.post", "Deactivate");
             deactivate.setRequiresSelection(true);
             deactivate.setActionType(ActionButton.Action.POST);
@@ -193,6 +188,11 @@ public class UserController extends SpringActionController
             activate.setRequiresSelection(true);
             activate.setActionType(ActionButton.Action.POST);
             gridButtonBar.add(activate);
+
+            ActionButton delete = new ActionButton("deleteUsers.post", "Delete");
+            delete.setRequiresSelection(true);
+            delete.setActionType(ActionButton.Action.POST);
+            gridButtonBar.add(delete);
 
             // Could allow project admins to do this... but they can already add users when adding to a group
             ActionButton insert = new ActionButton("showAddUsers", "Add Users");
@@ -267,30 +267,6 @@ public class UserController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
-        }
-    }
-
-    @RequiresSiteAdmin
-    public class DeleteUsersAction extends FormHandlerAction
-    {
-        public void validateCommand(Object target, Errors errors)
-        {
-        }
-
-        public boolean handlePost(Object o, BindException errors) throws Exception
-        {
-            Set<String> userIds = DataRegionSelection.getSelected(getViewContext(), true);
-            if (userIds != null)
-            {
-                for (String userId : userIds)
-                    UserManager.deleteUser(Integer.parseInt(userId));
-            }
-            return true;
-        }
-
-        public ActionURL getSuccessURL(Object o)
-        {
-            return new UserUrlsImpl().getSiteUsersURL();
         }
     }
 
@@ -398,6 +374,63 @@ public class UserController extends SpringActionController
         public ActivateUsersAction()
         {
             super(true);
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class DeleteUsersAction extends FormViewAction<UserIdForm>
+    {
+        public void validateCommand(UserIdForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(UserIdForm form, boolean reshow, BindException errors) throws Exception
+        {
+            String siteUsersUrl = new UserUrlsImpl().getSiteUsersURL().getLocalURIString();
+            DeleteUsersBean bean = new DeleteUsersBean();
+
+            if(null != form.getUserId())
+            {
+                for(Integer userId : form.getUserId())
+                    bean.addUser(UserManager.getUser(userId.intValue()));
+            }
+            else
+            {
+                //try to get a user selection list from the dataregion
+                Set<String> userIds = DataRegionSelection.getSelected(getViewContext(), true);
+                if(null == userIds || userIds.size() == 0)
+                    throw new RedirectException(siteUsersUrl);
+
+                for(String userId : userIds)
+                    bean.addUser(UserManager.getUser(Integer.parseInt(userId)));
+            }
+
+            if(bean.getUsers().size() == 0)
+                throw new RedirectException(siteUsersUrl);
+
+            return new JspView<DeleteUsersBean>("/org/labkey/core/user/deleteUsers.jsp", bean, errors);
+        }
+
+        public boolean handlePost(UserIdForm form, BindException errors) throws Exception
+        {
+            if(null == form.getUserId())
+                return false;
+
+            for(Integer userId : form.getUserId())
+            {
+                UserManager.deleteUser(userId.intValue());
+            }
+            return true;
+        }
+
+        public ActionURL getSuccessURL(UserIdForm userIdForm)
+        {
+            return new UserUrlsImpl().getSiteUsersURL();
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Delete Users");
         }
     }
 
@@ -971,6 +1004,10 @@ public class UserController extends SpringActionController
                 deactivateUrl.addParameter("userId", _detailsUserId);
                 deactivateUrl.addParameter("redirUrl", getViewContext().getActionURL().getEncodedLocalURIString());
                 bb.add(new ActionButton(detailsUser.isActive() ? "Deactivate" : "Re-Activate", deactivateUrl));
+
+                ActionURL deleteUrl = new ActionURL(DeleteUsersAction.class, c);
+                deleteUrl.addParameter("userId", _detailsUserId);
+                bb.add(new ActionButton("Delete", deleteUrl));
             }
 
             if (isAnyAdmin)

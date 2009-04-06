@@ -443,8 +443,10 @@ core/src/org/labkey/core/test/form.jsp -text
 core/src/org/labkey/core/test/tags.jsp -text
 core/src/org/labkey/core/themeStylesheet.jsp -text
 core/src/org/labkey/core/user/DeactivateUsersBean.java -text
+core/src/org/labkey/core/user/DeleteUsersBean.java -text
 core/src/org/labkey/core/user/changeEmail.jsp -text
 core/src/org/labkey/core/user/deactivateUsers.jsp -text
+core/src/org/labkey/core/user/deleteUsers.jsp -text
 core/src/org/labkey/core/user/impersonate.jsp -text
 core/src/org/labkey/core/user/toggleInactive.jsp -text
 core/src/org/labkey/core/user/userAccess.jsp -text
