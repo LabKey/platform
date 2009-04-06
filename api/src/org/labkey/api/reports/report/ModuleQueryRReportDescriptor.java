@@ -32,7 +32,8 @@ import java.util.HashMap;
  */
 public class ModuleQueryRReportDescriptor extends ModuleRReportDescriptor
 {
-    private static Map<String,String> _reportTypeMap = new HashMap<String,String>(3);
+    private static Map<String,String> _reportTypeMap = new HashMap<String,String>();
+    static
     {
         _reportTypeMap.put("ms1/Features", "MS1.R.Features");
         _reportTypeMap.put("ms1/Peaks", "MS1.R.Peaks");

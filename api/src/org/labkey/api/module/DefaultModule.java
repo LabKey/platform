@@ -32,6 +32,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Cache;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.*;
 import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.mvc.Controller;
@@ -517,6 +518,30 @@ public abstract class DefaultModule implements Module
             return "schemas/dbscripts/" + dialect.getSQLScriptPath(false) + "/";
     }
 
+    protected File reportKeyToLegalFile(File rootDir, String key)
+    {
+        if(null == key || null == rootDir)
+            return null;
+
+        //the report key is a relative path
+        //need to split it and make each part a legal file name
+        String[] keyParts = key.split("/");
+        for(int idx = 0; idx < keyParts.length; ++idx)
+            keyParts[idx] = FileUtil.makeLegalName(keyParts[idx]);
+
+        //reassemble into final file path
+        String sep = "";
+        StringBuilder legalKey = new StringBuilder();
+        for(String part : keyParts)
+        {
+            legalKey.append(sep);
+            legalKey.append(part);
+            sep = "/";
+        }
+
+        return new File(rootDir, legalKey.toString());
+    }
+
     public List<ReportDescriptor> getReportDescriptors(String key)
     {
         if(null == key)
@@ -524,8 +549,7 @@ public abstract class DefaultModule implements Module
 
         //currently we support only R reports under the queries directory
         //in the future, we can also support R reports that are not tied to a schema/query
-        File queryReportsDir = getQueryReportsDir();
-        File keyDir = new File(queryReportsDir, key);
+        File keyDir = reportKeyToLegalFile(getQueryReportsDir(), key);
         if(keyDir.exists() && keyDir.isDirectory())
         {
             List<ReportDescriptor> reportDescriptors = new ArrayList<ReportDescriptor>();
@@ -560,7 +584,7 @@ public abstract class DefaultModule implements Module
         else
             key = path.substring(0, path.lastIndexOf('/'));
 
-        File reportFile = new File(getReportsDir(), path);
+        File reportFile = reportKeyToLegalFile(getReportsDir(), path);
         if(reportFile.exists() && reportFile.isFile())
         {
             ModuleRReportDescriptor descriptor = (ModuleRReportDescriptor)_reportDescriptorCache.get(reportFile.getAbsolutePath());
