@@ -29,7 +29,6 @@ import java.sql.Types;
 import java.sql.SQLException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Matthew
  * Date: Jun 12, 2006
  * Time: 3:42:15 PM
@@ -48,7 +47,7 @@ public class TempTableLoader extends TabLoader
     public TempTableLoader(File src, boolean hasColumnHeaders) throws IOException
     {
         super(src);
-        _skipLines = hasColumnHeaders ? 1 : 0;
+        setHasColumnHeaders(hasColumnHeaders);
     }
 
     public Table.TempTableInfo loadTempTable(DbSchema schema) throws IOException, SQLException

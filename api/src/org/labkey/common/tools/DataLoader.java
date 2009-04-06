@@ -292,7 +292,7 @@ public abstract class DataLoader
      */
     public void setSkipLines(int skipLines)
     {
-        this._skipLines = skipLines;
+        _skipLines = skipLines;
     }
 
     /**

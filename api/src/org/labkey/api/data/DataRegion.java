@@ -40,7 +40,7 @@ import java.util.*;
  */
 public class DataRegion extends DisplayElement
 {
-    static Logger _log = Logger.getLogger(DataRegion.class);
+    private static final Logger _log = Logger.getLogger(DataRegion.class);
     private List<DisplayColumn> _displayColumns = new ArrayList<DisplayColumn>();
     private List<DisplayColumnGroup> _groups = new ArrayList<DisplayColumnGroup>();
     private List<Aggregate> _aggregates = null;

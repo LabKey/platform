@@ -174,5 +174,4 @@ public interface FolderType
             return null;
         }
     }
-
 }

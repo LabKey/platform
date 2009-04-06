@@ -79,13 +79,13 @@ public class TabLoader extends DataLoader
     public TabLoader(File inputFile, boolean hasColumnHeaders) throws IOException
     {
         setSource(inputFile);
-        _skipLines = hasColumnHeaders ? 1 : 0;
+        setHasColumnHeaders(hasColumnHeaders);
     }
 
     public TabLoader(Reader reader, boolean hasColumnHeaders)
     {
         setSource(reader);
-        _skipLines = hasColumnHeaders ? 1 : 0;
+        setHasColumnHeaders(hasColumnHeaders);
     }
 
     // infer whether there are columnHeaders
@@ -99,7 +99,7 @@ public class TabLoader extends DataLoader
     {
         if (src == null)
             throw new IllegalArgumentException("src cannot be null");
-        _skipLines = hasColumnHeaders ? 1 : 0;
+        setHasColumnHeaders(hasColumnHeaders);
         setSource(src);
     }
 
@@ -114,7 +114,13 @@ public class TabLoader extends DataLoader
             throws IOException
     {
         setSource(inputFile);
-        this._skipLines = skipLines;
+        _skipLines = skipLines;
+    }
+
+
+    public void setHasColumnHeaders(boolean hasColumnHeaders)
+    {
+        _skipLines = hasColumnHeaders ? 1 : 0;
     }
 
 

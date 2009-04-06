@@ -322,7 +322,7 @@ public class ActionButton extends DisplayElement implements Cloneable
     {
         if (_requiresSelection)
         {
-            return "return this.className.indexOf(\"labkey-disabled-button\") == -1 && " +
+            return "return this.className.indexOf(\"labkey-disabled-button\") == -1 &amp;&amp; " +
                     "verifySelected(" +
                         (_encodedSubmitForm != null ? _encodedSubmitForm : "this.form") + ", " +
                         "\"" + (_url != null ? getURL(ctx) : getActionName(ctx)) + "\", " +
