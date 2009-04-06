@@ -28,6 +28,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.util.FileUtil;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
@@ -142,7 +143,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             Collection<Module> modules = allModules ? ModuleLoader.getInstance().getModules() : container.getActiveModules();
             for(Module module : modules)
             {
-                File queryDir = new File(getQueriesDir(module), getSchemaName() + "/" + getName());
+                File queryDir = new File(getQueriesDir(module), getSchemaName() + "/" + FileUtil.makeLegalName(getName()));
                 if(queryDir.exists())
                 {
                     for(File viewFile : queryDir.listFiles(customViewFileFilter))
