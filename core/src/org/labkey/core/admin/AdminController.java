@@ -103,7 +103,6 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "system properties", new ActionURL(SystemPropertiesAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "scripts", new ActionURL(SqlScriptController.ScriptsAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Diagnostics, "groovy templates", new ActionURL(GroovyAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors", new ActionURL(ShowAllErrorsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "view all site errors since reset", new ActionURL(ShowErrorsSinceMarkAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "reset site errors", new ActionURL(ResetErrorMarkAction.class, root));
@@ -2174,78 +2173,6 @@ public class AdminController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return appendAdminNavTrail(root, "System Maintenance", this.getClass());
-        }
-    }
-
-
-    @RequiresSiteAdmin
-    public class GroovyAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            StringBuilder sb = new StringBuilder();
-
-            InputStream s = this.getClass().getResourceAsStream("/META-INF/groovy.txt");
-            List<String> allTemplates = PageFlowUtil.getStreamContentsAsList(s);  // Enumerate this one
-            Collections.sort(allTemplates);
-
-            // Need a copy of allTemplates that we can modify
-            List<String> modifiable = new ArrayList<String>(allTemplates);
-
-            // Create copy of the rendered templates list -- we need to sort it and modify it
-            List<String> renderedTemplates = new ArrayList<String>(GroovyView.getRenderedTemplates());
-
-            int templateCount = allTemplates.size();
-            int renderedCount = renderedTemplates.size();
-
-            sb.append("Groovy templates that have rendered successfully since server startup:<br><br>");
-
-            for (String template : allTemplates)
-            {
-                for (String rt : renderedTemplates)
-                {
-                    if (template.endsWith(rt))
-                    {
-                        sb.append("&nbsp;&nbsp;");
-                        sb.append(template);
-                        sb.append("<br>\n");
-                        modifiable.remove(template);
-                        renderedTemplates.remove(rt);
-                        break;
-                    }
-                }
-            }
-
-            if (!renderedTemplates.isEmpty())
-            {
-                renderedCount = renderedCount - renderedTemplates.size();
-                sb.append("<br><br><b>Warning: unknown Groovy templates:</b><br><br>\n");
-
-                for (String path : renderedTemplates)
-                {
-                    sb.append("&nbsp;&nbsp;");
-                    sb.append(path);
-                    sb.append("<br>\n");
-                }
-            }
-
-            sb.append("<br><br>Groovy templates that have not rendered successfully since server startup:<br><br>\n");
-
-            for (String template : modifiable)
-            {
-                sb.append("&nbsp;&nbsp;");
-                sb.append(template);
-                sb.append("<br>\n");
-            }
-
-            sb.append("<br><br>Rendered ").append(renderedCount).append("/").append(templateCount).append(" (").append(Formats.percent.format(renderedCount / (float)templateCount)).append(").");
-
-            return new HtmlView(sb.toString());
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return appendAdminNavTrail(root, "Groovy Templates", this.getClass());
         }
     }
 

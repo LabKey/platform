@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.core.security.SecurityController" %>
+<%@ page import="org.labkey.api.security.ValidEmail"%>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.GroovyView" %>
-<%@ page import="org.labkey.api.security.ValidEmail" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <form action="updateMembers.post" method="POST">
 <%

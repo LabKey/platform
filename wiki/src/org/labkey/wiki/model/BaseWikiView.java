@@ -16,17 +16,16 @@
 
 package org.labkey.wiki.model;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.GroovyView;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.JspView;
 import org.labkey.api.util.HString;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.wiki.BaseWikiPermissions;
 import org.labkey.wiki.WikiController;
 import org.labkey.wiki.WikiManager;
-import org.apache.log4j.Logger;
 
 /**
  * User: Mark Igra
