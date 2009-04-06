@@ -16,16 +16,16 @@
 package org.labkey.api.module;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Container;
-import org.labkey.api.view.WebPartFactory;
-import org.labkey.api.view.ActionURL;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.ArrayList;
 
 /*
 * User: Dave
@@ -38,6 +38,8 @@ import java.util.ArrayList;
  */
 public class SimpleModule extends DefaultModule
 {
+    int _factorySetHash = 0;
+
     public SimpleModule(@NotNull String name)
     {
         setName(name);
@@ -49,18 +51,32 @@ public class SimpleModule extends DefaultModule
 
     }
 
-    protected Collection<? extends WebPartFactory> createWebPartFactories()
+    protected Collection<SimpleWebPartFactory> createWebPartFactories()
     {
-        List<WebPartFactory> factories = new ArrayList<WebPartFactory>();
-        File viewsDir = new File(getExplodedPath(), SimpleController.VIEWS_DIRECTORY);
-        if(viewsDir.exists() && viewsDir.isDirectory())
+        List<SimpleWebPartFactory> factories = new ArrayList<SimpleWebPartFactory>();
+        for(File webPartFile : getWebPartFiles())
         {
-            for(File webPartFile : viewsDir.listFiles(SimpleWebPartFactory.webPartFileFilter))
-            {
-                factories.add(new SimpleWebPartFactory(this, webPartFile));
-            }
+            factories.add(new SimpleWebPartFactory(this, webPartFile));
         }
+        _factorySetHash = calcFactorySetHash();
         return factories;
+    }
+
+    @NotNull
+    protected File[] getWebPartFiles()
+    {
+        File viewsDir = new File(getExplodedPath(), SimpleController.VIEWS_DIRECTORY);
+        return viewsDir.exists() && viewsDir.isDirectory() ? viewsDir.listFiles(SimpleWebPartFactory.webPartFileFilter) : new File[0];
+    }
+
+    protected boolean isFactorySetStale()
+    {
+        return _factorySetHash != calcFactorySetHash();
+    }
+
+    protected int calcFactorySetHash()
+    {
+        return Arrays.hashCode(getWebPartFiles());
     }
 
     public boolean hasScripts()

@@ -146,6 +146,7 @@ public abstract class DefaultModule implements Module
 
     protected abstract void init();
     protected abstract Collection<? extends WebPartFactory> createWebPartFactories();
+    protected boolean isFactorySetStale() {return false;}
     public abstract boolean hasScripts();
 
     protected String getResourcePath()
@@ -246,7 +247,7 @@ public abstract class DefaultModule implements Module
 
     public final Collection<? extends WebPartFactory> getWebPartFactories()
     {
-        if(null == _webPartFactories)
+        if(null == _webPartFactories || isFactorySetStale())
             _webPartFactories = createWebPartFactories();
 
         return _webPartFactories;

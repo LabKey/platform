@@ -78,6 +78,11 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
         _lastModified = webPartFile.lastModified();
     }
 
+    public File getWebPartFile()
+    {
+        return _webPartFile;
+    }
+
     protected static String getNameFromFile(File webPartFile)
     {
         String name = webPartFile.getName();
