@@ -16,8 +16,6 @@
 
 package org.labkey.study.controllers;
 
-import org.apache.commons.beanutils.converters.BooleanConverter;
-import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.BooleanUtils;
@@ -27,6 +25,8 @@ import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
@@ -53,6 +53,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayPublishService;
@@ -63,7 +64,6 @@ import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.DialogTemplate;
-import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.Pair;
 import org.labkey.study.*;
 import org.labkey.study.assay.AssayPublishManager;
@@ -86,14 +86,15 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
-import org.json.JSONObject;
-import org.json.JSONArray;
-import org.labkey.api.security.SecurityManager;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -104,21 +105,19 @@ import java.text.DecimalFormat;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Nov 28, 2007
  */
 public class StudyController extends BaseStudyController
 {
-    static Logger _log = Logger.getLogger(StudyController.class);
+    private static final Logger _log = Logger.getLogger(StudyController.class);
 
-    private static ActionResolver ACTION_RESOLVER = new DefaultActionResolver(StudyController.class);
+    private static final ActionResolver ACTION_RESOLVER = new DefaultActionResolver(StudyController.class);
     private static final String PARTICIPANT_CACHE_PREFIX = "Study_participants/participantCache";
     private static final String EXPAND_CONTAINERS_KEY = StudyController.class.getName() + "/expandedContainers";
 
     public StudyController()
     {
-        super();
         setActionResolver(ACTION_RESOLVER);
     }
 
@@ -270,7 +269,7 @@ public class StudyController extends BaseStudyController
             if (null == def.getTypeURI())
             {
                 def = def.createMutable();
-                String domainURI = getDomainURI(study.getContainer(), def);
+                String domainURI = StudyManager.getInstance().getDomainURI(study.getContainer(), def);
                 OntologyManager.ensureDomainDescriptor(domainURI, def.getName(), study.getContainer());
                 def.setTypeURI(domainURI);
             }
@@ -747,9 +746,9 @@ public class StudyController extends BaseStudyController
 
         private void createCohortButton(List<ActionButton> buttonBar, Cohort currentCohort)
         {
-            if (StudyManager.getInstance().showCohorts(getViewContext().getContainer(), getViewContext().getUser()))
+            if (StudyManager.getInstance().showCohorts(getContainer(), getUser()))
             {
-                Cohort[] cohorts = StudyManager.getInstance().getCohorts(getViewContext().getContainer(), getViewContext().getUser());
+                Cohort[] cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
                 if (cohorts.length > 0)
                 {
                     MenuButton button = new MenuButton("Cohorts");
@@ -931,7 +930,7 @@ public class StudyController extends BaseStudyController
         {
             VisitMapImporter importer = new VisitMapImporter();
             List<String> errorMsg = new LinkedList<String>();
-            if (!importer.process(getViewContext().getUser(), getStudy(), form.getContent(), errorMsg))
+            if (!importer.process(getUser(), getStudy(), form.getContent(), errorMsg))
             {
                 for (String error : errorMsg)
                     errors.reject("uploadVisitMap", error);
@@ -1048,24 +1047,29 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(StudyPropertiesForm form, BindException errors) throws Exception
         {
-            if (null == getStudy(true))
-            {
-                Study study = new Study(getContainer(), form.getLabel());
-                study.setDateBased(form.isDateBased());
-                study.setStartDate(form.getStartDate());
-                study.setSecurityType(form.getSecurityType());
-                StudyManager.getInstance().createStudy(getUser(), study);
-                SampleManager.RepositorySettings reposSettings = SampleManager.getInstance().getRepositorySettings(getContainer());
-                reposSettings.setSimple(form.isSimpleRepository());
-                reposSettings.setEnableRequests(!form.isSimpleRepository());
-                SampleManager.getInstance().saveRepositorySettings(getContainer(), reposSettings);
-            }
+            createStudy(form);
             return true;
         }
 
         public ActionURL getSuccessURL(StudyPropertiesForm studyPropertiesForm)
         {
             return new ActionURL(ManageStudyAction.class, getContainer());
+        }
+    }
+
+    private void createStudy(StudyPropertiesForm form) throws SQLException, ServletException
+    {
+        if (null == getStudy(true))
+        {
+            Study study = new Study(getContainer(), form.getLabel());
+            study.setDateBased(form.isDateBased());
+            study.setStartDate(form.getStartDate());
+            study.setSecurityType(form.getSecurityType());
+            StudyManager.getInstance().createStudy(getUser(), study);
+            SampleManager.RepositorySettings reposSettings = SampleManager.getInstance().getRepositorySettings(getContainer());
+            reposSettings.setSimple(form.isSimpleRepository());
+            reposSettings.setEnableRequests(!form.isSimpleRepository());
+            SampleManager.getInstance().saveRepositorySettings(getContainer(), reposSettings);
         }
     }
 
@@ -1482,8 +1486,8 @@ public class StudyController extends BaseStudyController
             {
                 if (v.getRowId() == postedVisit.getRowId())
                     continue;
-                double maxL = Math.max(v.getSequenceNumMin(),postedVisit.getSequenceNumMin());
-                double minR = Math.min(v.getSequenceNumMax(),postedVisit.getSequenceNumMax());
+                double maxL = Math.max(v.getSequenceNumMin(), postedVisit.getSequenceNumMin());
+                double minR = Math.min(v.getSequenceNumMax(), postedVisit.getSequenceNumMax());
                 if (maxL<=minR)
                 {
                     errors.reject("visitSummary", getVisitLabel() + " range overlaps with '" + v.getDisplayString() + "'");
@@ -1856,243 +1860,7 @@ public class StudyController extends BaseStudyController
         @SuppressWarnings("unchecked")
         public boolean handlePost(BulkImportTypesForm form, BindException errors) throws Exception
         {
-            Study study = getStudy();
-
-            TabLoader loader = new TabLoader(form.tsv, true);
-            loader.setLowerCaseHeaders(true);
-            loader.setParseQuotes(true);
-            List<Map<String, Object>> mapsLoad = loader.load();
-
-            // CONSIDER: move all this into StudyManager
-            ArrayList<Map<String, Object>> mapsImport = new ArrayList<Map<String, Object>>(mapsLoad.size());
-            PropertyDescriptor[] pds;
-
-            if (mapsLoad.size() > 0)
-            {
-                Map<Integer, DataSetImportInfo> datasetInfoMap = new HashMap<Integer, DataSetImportInfo>();
-                int missingTypeNames = 0;
-                int missingTypeIds = 0;
-                int missingTypeLabels = 0;
-
-                for (Map<String, Object> props : mapsLoad)
-                {
-                    props = new CaseInsensitiveHashMap<Object>(props);
-
-                    String typeName = (String) props.get(form.getTypeNameColumn());
-                    Object typeIdObj = props.get(form.getTypeIdColumn());
-                    String propName = (String) props.get("Property");
-
-                    if (typeName == null || typeName.length() == 0)
-                    {
-                        missingTypeNames++;
-                        continue;
-                    }
-
-                    if (!(typeIdObj instanceof Integer))
-                    {
-                        missingTypeIds++;
-                        continue;
-                    }
-
-                    boolean isHidden = false;
-                    String hiddenValue = (String)props.get("hidden");
-                    if ("true".equalsIgnoreCase(hiddenValue))
-                        isHidden = true;
-
-                    Integer typeId = (Integer) typeIdObj;
-                    DataSetImportInfo info = datasetInfoMap.get(typeId);
-                    if (info != null)
-                    {
-                        if (!info.name.equals(typeName))
-                        {
-                            errors.reject("bulkImportDataTypes", "Type ID " + typeName + " is associated with multiple " +
-                                    "type names ('" + typeName + "' and '" + info.name + "').");
-                            return false;
-                        }
-                        if (!info.isHidden == isHidden)
-                        {
-                            errors.reject("bulkImportDataTypes", "Type ID " + typeName + " is set as both hidden and "
-                            + "not hidden in different fields.");
-                            return false;
-                        }
-                    }
-
-                    // we've got a good entry
-                    if (null == info)
-                    {
-                        info = new DataSetImportInfo(typeName);
-                        info.label = (String) props.get(form.getLabelColumn());
-                        if (info.label == null || info.label.length() == 0)
-                        {
-                            missingTypeLabels++;
-                            continue;
-                        }
-
-                        info.isHidden = isHidden;
-                        datasetInfoMap.put((Integer) typeIdObj, info);
-                    }
-
-                    // filter out the built-in types
-                    if (DataSetDefinition.isDefaultFieldName(propName, study))
-                        continue;
-
-                    // look for visitdate column
-                    String conceptURI = (String)props.get("ConceptURI");
-                    if (null == conceptURI)
-                    {
-                        String vtype = (String)props.get("vtype");  // datafax special case
-                        if (null != vtype && vtype.toLowerCase().contains("visitdate"))
-                            conceptURI = DataSetDefinition.getVisitDateURI();
-                    }
-                    if (DataSetDefinition.getVisitDateURI().equalsIgnoreCase(conceptURI))
-                    {
-                        if (info.visitDatePropertyName == null)
-                            info.visitDatePropertyName = propName;
-                        else
-                        {
-                            errors.reject("bulkImportDataTypes", "Type ID " + typeName + " has multiple visitdate fields (" + info.visitDatePropertyName + " and " + propName+").");
-                            return false;
-                        }
-                    }
-
-                    // Deal with extra key field
-                    IntegerConverter intConverter = new IntegerConverter(0);
-                    Integer keyField = (Integer)intConverter.convert(Integer.class, props.get("key"));
-                    if (keyField != null && keyField.intValue() == 1)
-                    {
-                        if (info.keyPropertyName == null)
-                            info.keyPropertyName = propName;
-                        else
-                        {
-                            // It's already been set
-                            errors.reject("bulkImportDataTypes", "Type ID " + typeName + " has multiple fields with key set to 1.");
-                            return false;
-                        }
-                    }
-
-                    // Deal with managed key field
-                    BooleanConverter booleanConverter = new BooleanConverter(false);
-                    Boolean managedKey = (Boolean)booleanConverter.convert(Boolean.class, props.get("AutoKey"));
-
-                    if (managedKey.booleanValue())
-                    {
-                        if (!info.keyManaged)
-                            info.keyManaged = true;
-                        else
-                        {
-                            // It's already been set
-                            errors.reject("bulkImportDataTypes", "Type ID " + typeName + " has multiple fields set to AutoKey.");
-                            return false;
-                        }
-                        // Check that our key is the key field as well
-                        if (!propName.equals(info.keyPropertyName))
-                        {
-                            errors.reject("bulkImportDataTypes", "Type ID " + typeName + " is set to AutoKey, but is not a key");
-                            return false;
-                        }
-                    }
-
-                    // Category field
-                    String category = (String)props.get("Category");
-                    if (category != null && !"".equals(category))
-                    {
-                        if (info.category != null && !info.category.equalsIgnoreCase(category))
-                        {
-                            // It's changed from field to field within the same dataset
-                            errors.reject("bulkImportDataTypes", "Type ID " + typeName + " has multiple fields set with different categories");
-                            return false;
-                        }
-                        else
-                        {
-                            info.category = category;
-                        }
-                    }
-
-
-                    mapsImport.add(props);
-                }
-
-                if (missingTypeNames > 0)
-                {
-                    errors.reject("bulkImportDataTypes", "Couldn't find type name in column " + form.getTypeNameColumn() + " in " + missingTypeNames + " rows.");
-                    return false;
-                }
-                if (missingTypeIds > 0)
-                {
-                    errors.reject("bulkImportDataTypes", "Couldn't find type id in column " + form.getTypeIdColumn() + " in " + missingTypeIds + " rows.");
-                    return false;
-                }
-                if (missingTypeLabels > 0)
-                {
-                    errors.reject("bulkImportDataTypes", "Couldn't find type label in column " + form.getTypeIdColumn() + " in " + missingTypeLabels + " rows.");
-                    return false;
-                }
-
-                String domainURI = getDomainURI(getContainer(), null);
-
-                List<String> importErrors = new LinkedList<String>();
-                pds = OntologyManager.importTypes(domainURI, form.getTypeNameColumn(), mapsImport, importErrors, getContainer(), true);
-
-                if (!importErrors.isEmpty())
-                {
-                    for (String error : importErrors)
-                        errors.reject("bulkImportDataTypes", error);
-                    return false;
-                }
-
-                if (pds != null && pds.length > 0)
-                {
-                    StudyManager manager = StudyManager.getInstance();
-                    for (Map.Entry<Integer, DataSetImportInfo> entry : datasetInfoMap.entrySet())
-                    {
-                        int id = entry.getKey().intValue();
-                        DataSetImportInfo info = entry.getValue();
-                        String name = info.name;
-                        String label = info.label;
-
-                        // Check for name conflicts
-                        DataSetDefinition existingDef = manager.getDataSetDefinition(getStudy(), label);
-                        if (existingDef != null && existingDef.getDataSetId() != id)
-                        {
-                            errors.reject("bulkImportDataTypes", "A different dataset already exists with the label " + label);
-                            return false;
-                        }
-                        existingDef = manager.getDataSetDefinitionByName(getStudy(), name);
-                        if (existingDef != null && existingDef.getDataSetId() != id)
-                        {
-                            errors.reject("bulkImportDataTypes", "A different dataset already exists with the name " + name);
-                            return false;
-                        }
-
-                        DataSetDefinition def = manager.getDataSetDefinition(getStudy(), id);
-                        Container c = getContainer();
-                        if (def == null)
-                        {
-                            def = new DataSetDefinition(getStudy(), id, name, label, null, getDomainURI(c, name, id));
-                            def.setVisitDatePropertyName(info.visitDatePropertyName);
-                            def.setShowByDefault(!info.isHidden);
-                            def.setKeyPropertyName(info.keyPropertyName);
-                            def.setCategory(info.category);
-                            def.setKeyPropertyManaged(info.keyManaged);
-                            manager.createDataSetDefinition(getUser(), def);
-                        }
-                        else
-                        {
-                            def = def.createMutable();
-                            def.setLabel(label);
-                            def.setName(name);
-                            def.setTypeURI(getDomainURI(c, def));
-                            def.setVisitDatePropertyName(info.visitDatePropertyName);
-                            def.setShowByDefault(!info.isHidden);
-                            def.setKeyPropertyName(info.keyPropertyName);
-                            def.setCategory(info.category);
-                            def.setKeyPropertyManaged(info.keyManaged);
-                            manager.updateDataSetDefinition(getUser(), def);
-                        }
-                    }
-                }
-            }
-            return true;
+            return StudyManager.getInstance().bulkImportTypes(getStudy(), form.tsv, getUser(), form.getLabelColumn(), form.getTypeNameColumn(), form.getTypeIdColumn(), errors);
         }
 
         public ActionURL getSuccessURL(BulkImportTypesForm bulkImportTypesForm)
@@ -2153,22 +1921,6 @@ public class StudyController extends BaseStudyController
         {
             this.labelColumn = labelColumn;
         }
-    }
-
-    private static class DataSetImportInfo
-    {
-        DataSetImportInfo(String name)
-        {
-            this.name = name;
-        }
-        String name;
-        String label;
-        String visitDatePropertyName;
-        String startDatePropertyName;
-        boolean isHidden;
-        String keyPropertyName;
-        boolean keyManaged;
-        String category;
     }
 
     @RequiresPermission(ACL.PERM_UPDATE)
@@ -2472,19 +2224,6 @@ public class StudyController extends BaseStudyController
             return new ActionURL(DatasetAction.class, getContainer()).
                     addParameter(DataSetDefinition.DATASETKEY, form.getDatasetId());
         }
-    }
-
-    private String getDomainURI(Container c, DataSetDefinition def)
-    {
-        if (null == def)
-            return getDomainURI(c, null, 0);
-        else
-            return getDomainURI(c, def.getName(), def.getDataSetId());
-    }
-
-    private String getDomainURI(Container c, String name, int datasetId)
-    {
-        return new DatasetDomainKind().generateDomainURI(c, name);
     }
 
     public static class ImportTypeForm
@@ -3265,19 +3004,8 @@ public class StudyController extends BaseStudyController
                 }
             }
 
-            Study study = getStudy();
-            if (!nullSafeEqual(study.getDefaultAssayQCState(), form.getDefaultAssayQCState()) ||
-                !nullSafeEqual(study.getDefaultPipelineQCState(), form.getDefaultPipelineQCState()) ||
-                !nullSafeEqual(study.getDefaultDirectEntryQCState(), form.getDefaultDirectEntryQCState()) ||
-                study.isShowPrivateDataByDefault() != form.isShowPrivateDataByDefault())
-            {
-                study = study.createMutable();
-                study.setDefaultAssayQCState(form.getDefaultAssayQCState());
-                study.setDefaultPipelineQCState(form.getDefaultPipelineQCState());
-                study.setDefaultDirectEntryQCState(form.getDefaultDirectEntryQCState());
-                study.setShowPrivateDataByDefault(form.isShowPrivateDataByDefault());
-                StudyManager.getInstance().updateStudy(getUser(), study);
-            }
+            updateQcState(getStudy(), getUser(), form);
+
             return true;
         }
 
@@ -3300,6 +3028,23 @@ public class StudyController extends BaseStudyController
         {
             _appendManageStudy(root);
             return root.addChild("Manage QC States");
+        }
+    }
+
+    // TODO: Move to StudyManager?
+    private static void updateQcState(Study study, User user, ManageQCStatesForm form) throws SQLException
+    {
+        if (!nullSafeEqual(study.getDefaultAssayQCState(), form.getDefaultAssayQCState()) ||
+            !nullSafeEqual(study.getDefaultPipelineQCState(), form.getDefaultPipelineQCState()) ||
+            !nullSafeEqual(study.getDefaultDirectEntryQCState(), form.getDefaultDirectEntryQCState()) ||
+            study.isShowPrivateDataByDefault() != form.isShowPrivateDataByDefault())
+        {
+            study = study.createMutable();
+            study.setDefaultAssayQCState(form.getDefaultAssayQCState());
+            study.setDefaultPipelineQCState(form.getDefaultPipelineQCState());
+            study.setDefaultDirectEntryQCState(form.getDefaultDirectEntryQCState());
+            study.setShowPrivateDataByDefault(form.isShowPrivateDataByDefault());
+            StudyManager.getInstance().updateStudy(user, study);
         }
     }
 
@@ -3780,7 +3525,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ACL.PERM_ADMIN)
     public class ImportStudyBatchAction extends SimpleViewAction<PipelineForm>
     {
-        String path;
+        private String path;
 
         public ModelAndView getView(PipelineForm form, BindException errors) throws Exception
         {
@@ -3820,7 +3565,6 @@ public class StudyController extends BaseStudyController
 
             return new StudyJspView<ImportStudyBatchBean>(
                     getStudy(), "importStudyBatch.jsp", new ImportStudyBatchBean(batch, form), errors);
-
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -3855,27 +3599,184 @@ public class StudyController extends BaseStudyController
                     f = root.resolvePath(path);
             }
 
-            if (null == f || !f.exists() || !f.isFile())
+            try
             {
-                HttpView.throwNotFound();
-                return null;
+                submitStudyBatch(study, f, c, getUser(), getViewContext().getActionURL());
             }
-
-            File lockFile = StudyPipeline.lockForDataset(study, f);
-            if (!f.canRead() || lockFile.exists())
+            catch (DatasetLockExistsException e)
             {
-                // Something has changed since the user first viewed this form.
-                // Send them back to validate
                 ActionURL importURL = new ActionURL(ImportStudyBatchAction.class, getContainer());
                 importURL.addParameter("path", form.getPath());
                 return importURL;
             }
 
-            DatasetBatch batch = new DatasetBatch(new ViewBackgroundInfo(
-                    getContainer(), getUser(), getViewContext().getActionURL()), f);
-            batch.submit();
-
             return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
+        }
+    }
+
+    private static void submitStudyBatch(Study study, File datasetFile, Container c, User user, ActionURL url) throws IOException, DatasetLockExistsException, SQLException
+    {
+        if (null == datasetFile || !datasetFile.exists() || !datasetFile.isFile())
+        {
+            HttpView.throwNotFound();
+            return;
+        }
+
+        File lockFile = StudyPipeline.lockForDataset(study, datasetFile);
+        if (!datasetFile.canRead() || lockFile.exists())
+        {
+            throw new DatasetLockExistsException();
+        }
+
+        DatasetBatch batch = new DatasetBatch(new ViewBackgroundInfo(c, user, url), datasetFile);
+        batch.submit();
+    }
+
+    private static class DatasetLockExistsException extends ServletException {}
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class ImportStudy extends FormViewAction
+    {
+        public void validateCommand(Object target, Errors errors)
+        {
+
+        }
+
+        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
+        {
+            Study study = StudyManager.getInstance().getStudy(getContainer());
+
+            if (null == study)
+            {
+                return new HtmlView("No study in this folder.<br><form method=\"post\">" + PageFlowUtil.generateSubmitButton("Import Study") + "</form>");
+            }
+            else
+            {
+                return new HtmlView("Existing study: " + study.getLabel() + "<br><form method=\"post\">" + PageFlowUtil.generateSubmitButton("Delete Study & Import New") + "</form>");
+            }
+        }
+
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+            User user = getUser();
+
+            if (null != StudyManager.getInstance().getStudy(c))
+                StudyManager.getInstance().deleteAllStudyData(c, user, true, false);
+
+            String path = "c:/labkey/sampleData/study/import";
+
+            File file = new File(path, "study.xml");
+
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            dbf.setValidating(false);
+            DocumentBuilder db = dbf.newDocumentBuilder();
+
+            Document doc = db.parse(file);
+
+            Node rootNode = doc.getDocumentElement();
+
+            if (!rootNode.getNodeName().equalsIgnoreCase("study"))
+                throw new ServletException("Invalid study.xml");
+
+            {
+                StudyPropertiesForm form = new StudyPropertiesForm();
+                form.setLabel(DOMUtil.getAttributeValue(rootNode, "label"));
+                form.setDateBased(Boolean.parseBoolean(DOMUtil.getAttributeValue(rootNode, "dateBased")));
+                form.setStartDate(new Date(DateUtil.parseDateTime(DOMUtil.getAttributeValue(rootNode, "startDate"))));
+                form.setSimpleRepository(Boolean.parseBoolean(DOMUtil.getAttributeValue(rootNode, "simpleRepository")));
+                form.setSecurityType(SecurityType.valueOf(DOMUtil.getAttributeValue(rootNode, "securityType")));
+
+                createStudy(form);
+            }
+
+            File visitMap = new File(path, "v068_visit_map.txt");
+
+            if (visitMap.exists())
+            {
+                String content = PageFlowUtil.getFileContentsAsString(visitMap);
+
+                VisitMapImporter importer = new VisitMapImporter();
+                List<String> errorMsg = new LinkedList<String>();
+
+                if (!importer.process(user, getStudy(), content, errorMsg))
+                {
+                    for (String error : errorMsg)
+                        errors.reject("uploadVisitMap", error);
+
+                    return false;
+                }
+            }
+
+            File schemas = new File(path, "schema.tsv");
+
+            if (schemas.exists())
+            {
+                if (!StudyManager.getInstance().bulkImportTypes(getStudy(), schemas, user, "platelabel", "platename", "plateno", errors))
+                    return false;
+            }
+
+            for (Node child : DOMUtil.getChildNodes(rootNode))
+            {
+                if (child.getNodeType() == Node.ELEMENT_NODE)
+                {
+                    String name = child.getNodeName();
+
+                    if ("visits".equals(name))
+                    {
+                        VisitManager visitManager = StudyManager.getInstance().getVisitManager(getStudy());
+
+                        for (Node visitNode : DOMUtil.getChildNodesWithName(child, "visit"))
+                        {
+                            // Just a proof of concept -- only works for "show by default".  TODO: Move to visit map or move entire visit map into xml?
+                            double sequenceNum = Double.parseDouble(DOMUtil.getAttributeValue(visitNode, "sequenceNum"));
+                            Visit visit = visitManager.findVisitBySequence(sequenceNum);
+                            Visit mutable = visit.createMutable();
+                            mutable.setShowByDefault(Boolean.parseBoolean(DOMUtil.getAttributeValue(visitNode, "showByDefault")));
+                            StudyManager.getInstance().updateVisit(user, mutable);
+                        }
+                    }
+                    else if ("cohorts".equals(name))
+                    {
+                        String cohortType = DOMUtil.getAttributeValue(child, "type");
+                        assert cohortType.equals("automatic");
+                        Integer dataSetId = Integer.parseInt(DOMUtil.getAttributeValue(child, "dataSetId"));
+                        String dataSetProperty = DOMUtil.getAttributeValue(child, "dataSetProperty");
+
+                        CohortController.updateAutomaticCohort(getStudy(), user, dataSetId, dataSetProperty);
+                    }
+                    else if ("qcStates".equals(name))
+                    {
+                        // TODO: Generalize to all qc state properties
+                        ManageQCStatesForm form = new ManageQCStatesForm();
+                        form.setShowPrivateDataByDefault(Boolean.parseBoolean(DOMUtil.getAttributeValue(child, "showPrivateDataByDefault")));
+                        updateQcState(getStudy(), user, form);
+                    }
+                    else
+                    {
+                        throw new RuntimeException("study.xml format problem: unknown node '" + name + "'");
+                    }
+                }
+            }
+
+            File datasetFile = new File(path, "v068.dataset");
+
+            if (datasetFile.exists())
+            {
+                submitStudyBatch(getStudy(), datasetFile, c, user, getViewContext().getActionURL());
+            }
+
+            return true;
+        }
+
+        public ActionURL getSuccessURL(Object o)
+        {
+            return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
         }
     }
 
@@ -4581,7 +4482,7 @@ public class StudyController extends BaseStudyController
                         hasCohortDataset = true;
                 }
 
-                if (null != cohortDatasetName && hasCohortDataset == false)
+                if (null != cohortDatasetName && !hasCohortDataset)
                     throw new IllegalArgumentException("Couldn't find cohort dataset");
             }
 
@@ -4848,7 +4749,7 @@ public class StudyController extends BaseStudyController
                         isDemographicData = sourceDef.isDemographicData();
                     }
                 }
-                DataSetDefinition def = AssayPublishManager.getInstance().createAssayDataset(form.getViewContext().getUser(),
+                DataSetDefinition def = AssayPublishManager.getInstance().createAssayDataset(getUser(),
                         study, form.getSnapshotName(), additionalKey, null, isDemographicData, null);
                 if (def != null)
                 {
@@ -4858,7 +4759,7 @@ public class StudyController extends BaseStudyController
                         def = def.createMutable();
                         def.setKeyPropertyManaged(true);
 
-                        StudyManager.getInstance().updateDataSetDefinition(form.getViewContext().getUser(), def);
+                        StudyManager.getInstance().updateDataSetDefinition(getUser(), def);
                     }
 
                     String domainURI = def.getTypeURI();
@@ -4871,7 +4772,7 @@ public class StudyController extends BaseStudyController
                         if (!DataSetDefinition.isDefaultFieldName(col.getName(), study))
                             DatasetSnapshotProvider.addAsDomainProperty(d, col);
                     }
-                    d.save(form.getViewContext().getUser());
+                    d.save(getUser());
                 }
             }
         }
@@ -5454,6 +5355,11 @@ public class StudyController extends BaseStudyController
         public String getSecurityString()
         {
             return _securityType == null ? null : _securityType.name();
+        }
+
+        public void setSecurityType(SecurityType securityType)
+        {
+            _securityType = securityType;
         }
 
         public SecurityType getSecurityType()

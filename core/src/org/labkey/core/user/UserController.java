@@ -463,7 +463,14 @@ public class UserController extends SpringActionController
             gridView.setFilter(filter);
             gridView.setTitle("Users");
 
-            return new VBox(new ImpersonateView(getContainer(), false), gridView);
+            VBox vbox = new VBox();
+
+            ImpersonateView impersonateView = new ImpersonateView(getContainer(), false);
+
+            if (impersonateView.hasUsers())
+                return new VBox(new ImpersonateView(getContainer(), false), gridView);
+            else
+                return gridView;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1498,6 +1505,11 @@ public class UserController extends SpringActionController
 
             if (!isAdminConsole)
                 setTitle("Impersonation");
+        }
+
+        public boolean hasUsers()
+        {
+            return !getModelBean().emails.isEmpty();
         }
     }
 

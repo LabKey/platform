@@ -20,6 +20,8 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.beanutils.converters.IntegerConverter;
+import org.apache.commons.beanutils.converters.BooleanConverter;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.StringUtils;
@@ -68,6 +70,7 @@ import org.springframework.validation.BindException;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.io.File;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
@@ -76,7 +79,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class StudyManager
 {
-    private static Logger _log = Logger.getLogger(StudyManager.class);
+    private static final Logger _log = Logger.getLogger(StudyManager.class);
     
     private static StudyManager _instance;
     private static final Object MANAGED_KEY_LOCK = new Object();
@@ -2420,6 +2423,288 @@ public class StudyManager
             }
         }
         return imported;
+    }
+
+
+    public boolean bulkImportTypes(Study study, String tsv, User user, String labelColumn, String typeNameColumn, String typeIdColumn, BindException errors) throws IOException, SQLException
+    {
+        return bulkImportTypes(study, new TabLoader(tsv), user, labelColumn, typeNameColumn, typeIdColumn, errors);
+    }
+
+
+    public boolean bulkImportTypes(Study study, File tsvFile, User user, String labelColumn, String typeNameColumn, String typeIdColumn, BindException errors) throws IOException, SQLException
+    {
+        return bulkImportTypes(study, new TabLoader(tsvFile), user, labelColumn, typeNameColumn, typeIdColumn, errors);
+    }
+
+
+    private boolean bulkImportTypes(Study study, TabLoader loader, User user, String labelColumn, String typeNameColumn, String typeIdColumn, BindException errors) throws IOException, SQLException
+    {
+        loader.setHasColumnHeaders(true);
+        loader.setLowerCaseHeaders(true);
+        loader.setParseQuotes(true);
+        List<Map<String, Object>> mapsLoad = loader.load();
+
+        ArrayList<Map<String, Object>> mapsImport = new ArrayList<Map<String, Object>>(mapsLoad.size());
+        PropertyDescriptor[] pds;
+
+        if (mapsLoad.size() > 0)
+        {
+            Map<Integer, DataSetImportInfo> datasetInfoMap = new HashMap<Integer, DataSetImportInfo>();
+            int missingTypeNames = 0;
+            int missingTypeIds = 0;
+            int missingTypeLabels = 0;
+
+            for (Map<String, Object> props : mapsLoad)
+            {
+                props = new CaseInsensitiveHashMap<Object>(props);
+
+                String typeName = (String) props.get(typeNameColumn);
+                Object typeIdObj = props.get(typeIdColumn);
+                String propName = (String) props.get("Property");
+
+                if (typeName == null || typeName.length() == 0)
+                {
+                    missingTypeNames++;
+                    continue;
+                }
+
+                if (!(typeIdObj instanceof Integer))
+                {
+                    missingTypeIds++;
+                    continue;
+                }
+
+                boolean isHidden = false;
+                String hiddenValue = (String)props.get("hidden");
+                if ("true".equalsIgnoreCase(hiddenValue))
+                    isHidden = true;
+
+                Integer typeId = (Integer) typeIdObj;
+                DataSetImportInfo info = datasetInfoMap.get(typeId);
+                if (info != null)
+                {
+                    if (!info.name.equals(typeName))
+                    {
+                        errors.reject("bulkImportDataTypes", "Type ID " + typeName + " is associated with multiple " +
+                                "type names ('" + typeName + "' and '" + info.name + "').");
+                        return false;
+                    }
+                    if (!info.isHidden == isHidden)
+                    {
+                        errors.reject("bulkImportDataTypes", "Type ID " + typeName + " is set as both hidden and "
+                        + "not hidden in different fields.");
+                        return false;
+                    }
+                }
+
+                // we've got a good entry
+                if (null == info)
+                {
+                    info = new DataSetImportInfo(typeName);
+                    info.label = (String) props.get(labelColumn);
+                    if (info.label == null || info.label.length() == 0)
+                    {
+                        missingTypeLabels++;
+                        continue;
+                    }
+
+                    info.isHidden = isHidden;
+                    datasetInfoMap.put((Integer) typeIdObj, info);
+                }
+
+                // filter out the built-in types
+                if (DataSetDefinition.isDefaultFieldName(propName, study))
+                    continue;
+
+                // look for visitdate column
+                String conceptURI = (String)props.get("ConceptURI");
+                if (null == conceptURI)
+                {
+                    String vtype = (String)props.get("vtype");  // datafax special case
+                    if (null != vtype && vtype.toLowerCase().contains("visitdate"))
+                        conceptURI = DataSetDefinition.getVisitDateURI();
+                }
+                if (DataSetDefinition.getVisitDateURI().equalsIgnoreCase(conceptURI))
+                {
+                    if (info.visitDatePropertyName == null)
+                        info.visitDatePropertyName = propName;
+                    else
+                    {
+                        errors.reject("bulkImportDataTypes", "Type ID " + typeName + " has multiple visitdate fields (" + info.visitDatePropertyName + " and " + propName+").");
+                        return false;
+                    }
+                }
+
+                // Deal with extra key field
+                IntegerConverter intConverter = new IntegerConverter(0);
+                Integer keyField = (Integer)intConverter.convert(Integer.class, props.get("key"));
+                if (keyField != null && keyField.intValue() == 1)
+                {
+                    if (info.keyPropertyName == null)
+                        info.keyPropertyName = propName;
+                    else
+                    {
+                        // It's already been set
+                        errors.reject("bulkImportDataTypes", "Type ID " + typeName + " has multiple fields with key set to 1.");
+                        return false;
+                    }
+                }
+
+                // Deal with managed key field
+                BooleanConverter booleanConverter = new BooleanConverter(false);
+                Boolean managedKey = (Boolean)booleanConverter.convert(Boolean.class, props.get("AutoKey"));
+
+                if (managedKey.booleanValue())
+                {
+                    if (!info.keyManaged)
+                        info.keyManaged = true;
+                    else
+                    {
+                        // It's already been set
+                        errors.reject("bulkImportDataTypes", "Type ID " + typeName + " has multiple fields set to AutoKey.");
+                        return false;
+                    }
+                    // Check that our key is the key field as well
+                    if (!propName.equals(info.keyPropertyName))
+                    {
+                        errors.reject("bulkImportDataTypes", "Type ID " + typeName + " is set to AutoKey, but is not a key");
+                        return false;
+                    }
+                }
+
+                // Category field
+                String category = (String)props.get("Category");
+                if (category != null && !"".equals(category))
+                {
+                    if (info.category != null && !info.category.equalsIgnoreCase(category))
+                    {
+                        // It's changed from field to field within the same dataset
+                        errors.reject("bulkImportDataTypes", "Type ID " + typeName + " has multiple fields set with different categories");
+                        return false;
+                    }
+                    else
+                    {
+                        info.category = category;
+                    }
+                }
+
+
+                mapsImport.add(props);
+            }
+
+            if (missingTypeNames > 0)
+            {
+                errors.reject("bulkImportDataTypes", "Couldn't find type name in column " + typeNameColumn + " in " + missingTypeNames + " rows.");
+                return false;
+            }
+            if (missingTypeIds > 0)
+            {
+                errors.reject("bulkImportDataTypes", "Couldn't find type id in column " + typeIdColumn + " in " + missingTypeIds + " rows.");
+                return false;
+            }
+            if (missingTypeLabels > 0)
+            {
+                errors.reject("bulkImportDataTypes", "Couldn't find type label in column " + typeIdColumn + " in " + missingTypeLabels + " rows.");
+                return false;
+            }
+
+            String domainURI = getDomainURI(study.getContainer(), (DataSetDefinition)null);
+
+            List<String> importErrors = new LinkedList<String>();
+            pds = OntologyManager.importTypes(domainURI, typeNameColumn, mapsImport, importErrors, study.getContainer(), true);
+
+            if (!importErrors.isEmpty())
+            {
+                for (String error : importErrors)
+                    errors.reject("bulkImportDataTypes", error);
+                return false;
+            }
+
+            if (pds != null && pds.length > 0)
+            {
+                StudyManager manager = StudyManager.getInstance();
+                for (Map.Entry<Integer, DataSetImportInfo> entry : datasetInfoMap.entrySet())
+                {
+                    int id = entry.getKey().intValue();
+                    DataSetImportInfo info = entry.getValue();
+                    String name = info.name;
+                    String label = info.label;
+
+                    // Check for name conflicts
+                    DataSetDefinition existingDef = manager.getDataSetDefinition(study, label);
+                    if (existingDef != null && existingDef.getDataSetId() != id)
+                    {
+                        errors.reject("bulkImportDataTypes", "A different dataset already exists with the label " + label);
+                        return false;
+                    }
+                    existingDef = manager.getDataSetDefinitionByName(study, name);
+                    if (existingDef != null && existingDef.getDataSetId() != id)
+                    {
+                        errors.reject("bulkImportDataTypes", "A different dataset already exists with the name " + name);
+                        return false;
+                    }
+
+                    DataSetDefinition def = manager.getDataSetDefinition(study, id);
+                    Container c = study.getContainer();
+                    if (def == null)
+                    {
+                        def = new DataSetDefinition(study, id, name, label, null, getDomainURI(c, name));
+                        def.setVisitDatePropertyName(info.visitDatePropertyName);
+                        def.setShowByDefault(!info.isHidden);
+                        def.setKeyPropertyName(info.keyPropertyName);
+                        def.setCategory(info.category);
+                        def.setKeyPropertyManaged(info.keyManaged);
+                        manager.createDataSetDefinition(user, def);
+                    }
+                    else
+                    {
+                        def = def.createMutable();
+                        def.setLabel(label);
+                        def.setName(name);
+                        def.setTypeURI(getDomainURI(c, def));
+                        def.setVisitDatePropertyName(info.visitDatePropertyName);
+                        def.setShowByDefault(!info.isHidden);
+                        def.setKeyPropertyName(info.keyPropertyName);
+                        def.setCategory(info.category);
+                        def.setKeyPropertyManaged(info.keyManaged);
+                        manager.updateDataSetDefinition(user, def);
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+
+    public String getDomainURI(Container c, DataSetDefinition def)
+    {
+        if (null == def)
+            return getDomainURI(c, (String)null);
+        else
+            return getDomainURI(c, def.getName());
+    }
+
+    private String getDomainURI(Container c, String name)
+    {
+        return new DatasetDomainKind().generateDomainURI(c, name);
+    }
+
+    private static class DataSetImportInfo
+    {
+        DataSetImportInfo(String name)
+        {
+            this.name = name;
+        }
+        String name;
+        String label;
+        String visitDatePropertyName;
+        String startDatePropertyName;
+        boolean isHidden;
+        String keyPropertyName;
+        boolean keyManaged;
+        String category;
     }
 
     /**

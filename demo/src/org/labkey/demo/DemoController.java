@@ -62,13 +62,6 @@ public class DemoController extends SpringActionController
     }
 
 
-    public ActionURL demoURL(String action)
-    {
-        Container c = getViewContext().getContainer();
-        return new ActionURL("Demo", action, c);
-    }
-
-
     /**
      * This is a minimal Spring controller, so it doesn't have getViewContext()
      */
@@ -89,7 +82,7 @@ public class DemoController extends SpringActionController
 
         public ActionURL getURL()
         {
-            return  demoURL("begin");
+            return new ActionURL(BeginAction.class, getContainer());
         }
     }
 
@@ -151,7 +144,7 @@ public class DemoController extends SpringActionController
 
         public ActionURL getURL()
         {
-            return demoURL("insert");
+            return new ActionURL(InsertAction.class, getContainer());
         }
     }
 
@@ -228,7 +221,7 @@ public class DemoController extends SpringActionController
 
         public ActionURL getURL(Person p)
         {
-            return demoURL("update").addParameter("rowId", ""+p.getRowId());
+            return new ActionURL(UpdateAction.class, getContainer()).addParameter("rowId", ""+p.getRowId());
         }
     }
 
@@ -293,7 +286,7 @@ public class DemoController extends SpringActionController
 
         public ActionURL getURL()
         {
-            return demoURL("bulkUpdate");
+            return new ActionURL(BulkUpdateAction.class, getContainer());
         }
     }
 

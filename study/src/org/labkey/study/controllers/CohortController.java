@@ -24,6 +24,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.PageFlowUtil;
@@ -42,6 +43,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.ServletException;
 import java.util.HashMap;
 import java.util.Map;
+import java.sql.SQLException;
 
 /**
  * User: jgarms
@@ -176,12 +178,7 @@ public class CohortController extends BaseStudyController
                 // Update all participants via the new dataset column
                 // Note: we need to do this even if no changes have been made to
                 // this setting, as it's possible that the user manually set some cohorts previously
-                study = study.createMutable();
-                study.setParticipantCohortDataSetId(form.getParticipantCohortDataSetId());
-                study.setParticipantCohortProperty(form.getParticipantCohortProperty());
-                StudyManager.getInstance().updateStudy(getUser(), study);
-                StudyManager.getInstance().updateParticipantCohorts(getUser(), study);
-
+                updateAutomaticCohort(study, getUser(), form.getParticipantCohortDataSetId(), form.getParticipantCohortProperty());
             }
 
             return true;
@@ -193,6 +190,15 @@ public class CohortController extends BaseStudyController
                 return new ActionURL(ManageCohortsAction.class, getContainer());
             return new ActionURL(StudyController.ManageStudyAction.class, getContainer());
         }
+    }
+
+    public static void updateAutomaticCohort(Study study, User user, Integer participantCohortDataSetId, String participantCohortProperty) throws SQLException
+    {
+        study = study.createMutable();
+        study.setParticipantCohortDataSetId(participantCohortDataSetId);
+        study.setParticipantCohortProperty(participantCohortProperty);
+        StudyManager.getInstance().updateStudy(user, study);
+        StudyManager.getInstance().updateParticipantCohorts(user, study);
     }
 
     public static class ManageCohortsForm

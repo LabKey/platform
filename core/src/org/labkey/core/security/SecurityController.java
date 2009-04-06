@@ -319,7 +319,11 @@ public class SecurityController extends SpringActionController
         if (project.hasPermission(getUser(), ACL.PERM_ADMIN))
         {
             projectViews.addView(getGroupsView(c, expandedGroup, errors, messages));
-            projectViews.addView(new UserController.ImpersonateView(project, false));
+
+            UserController.ImpersonateView impersonateView = new UserController.ImpersonateView(project, false);
+
+            if (impersonateView.hasUsers())
+                projectViews.addView(impersonateView);
         }
 
         ActionURL startURL = c.getFolderType().getStartURL(c, getUser());
