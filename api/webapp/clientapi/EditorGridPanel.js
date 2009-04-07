@@ -451,6 +451,9 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
             if(record.json && record.json[meta.name] && record.json[meta.name].displayValue)
                 return record.json[meta.name].displayValue;
             
+            if(null == data || undefined == data || data.toString().length == 0)
+                return data;
+
             if(lookupStore.loadError)
                 return "ERROR: " + lookupStore.loadError.message;
 
