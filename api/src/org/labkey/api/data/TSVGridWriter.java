@@ -227,7 +227,7 @@ public class TSVGridWriter extends TSVWriter
         StringBuilder row = new StringBuilder();
         for (DisplayColumn dc : displayColumns)
         {
-            if (dc.getVisible(ctx))
+            if (dc.isVisible(ctx))
             {
                 row.append(dc.getTsvFormattedValue(ctx));
                 row.append('\t');
@@ -279,7 +279,7 @@ public class TSVGridWriter extends TSVWriter
 
         for (DisplayColumn dc : displayColumns)
         {
-            if (dc.getVisible(ctx))
+            if (dc.isVisible(ctx))
             {
                 switch(_columnHeaderType)
                 {

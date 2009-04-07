@@ -279,7 +279,7 @@ public class ExcelWriter
 
         for (ExcelColumn column : _columns)
         {
-            if (column.getVisible(ctx))
+            if (column.isVisible(ctx))
                 visibleColumns.add(column);
         }
 

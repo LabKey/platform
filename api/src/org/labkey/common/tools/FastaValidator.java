@@ -15,6 +15,8 @@
  */
 package org.labkey.common.tools;
 
+import org.labkey.api.util.CaseInsensitiveHashSet;
+
 import java.io.File;
 import java.util.Set;
 import java.util.HashSet;
@@ -41,7 +43,7 @@ public class FastaValidator
 
     public List<String> validate()
     {
-        Set<String> proteinNames = new HashSet<String>(1000);
+        Set<String> proteinNames = new CaseInsensitiveHashSet(1000);
         List<String> errors = new ArrayList<String>();
         Format lineFormat = DecimalFormat.getIntegerInstance();
         FastaLoader curLoader = new FastaLoader(_fastaFile);

@@ -896,7 +896,7 @@ public class DataRegion extends DisplayElement
         int colCount = 0;
         for (DisplayColumn col : renderers)
         {
-            if (col.getVisible(ctx))
+            if (col.isVisible(ctx))
             {
                 colCount++;
             }
@@ -956,7 +956,7 @@ public class DataRegion extends DisplayElement
             out.write("<col class=\"labkey-selectors\" width=\"35\"/>");
         for (DisplayColumn renderer : renderers)
         {
-            if (renderer.getVisible(ctx))
+            if (renderer.isVisible(ctx))
                 renderer.renderColTag(out);
         }
         out.write("</colgroup>");
@@ -987,7 +987,7 @@ public class DataRegion extends DisplayElement
 
         for (DisplayColumn renderer : renderers)
         {
-            if (renderer.getVisible(ctx))
+            if (renderer.isVisible(ctx))
             {
                 renderer.renderGridHeaderCell(ctx, out);
             }
@@ -1030,7 +1030,7 @@ public class DataRegion extends DisplayElement
             boolean first = true;
             for (DisplayColumn renderer : renderers)
             {
-                if (renderer.getVisible(ctx))
+                if (renderer.isVisible(ctx))
                 {
                     out.write("<td");
                     if (renderer.getTextAlign() != null)
@@ -1119,7 +1119,7 @@ public class DataRegion extends DisplayElement
 
         String style = null;
         for (DisplayColumn renderer : renderers)
-            if (renderer.getVisible(ctx))
+            if (renderer.isVisible(ctx))
                 renderer.renderGridDataCell(ctx, out, style);
 
         out.write("</tr>\n");
@@ -1287,7 +1287,7 @@ public class DataRegion extends DisplayElement
                 out.write("<table>");
                 for (DisplayColumn renderer : renderers)
                 {
-                    if (!renderer.getVisible(ctx) || (renderer.getDisplayModes() & MODE_DETAILS) == 0)
+                    if (!renderer.isVisible(ctx) || (renderer.getDisplayModes() & MODE_DETAILS) == 0)
                         continue;
                     out.write("  <tr>\n    ");
                     renderer.renderDetailsCaptionCell(ctx, out);
@@ -1704,7 +1704,7 @@ public class DataRegion extends DisplayElement
 
     protected boolean shouldRender(DisplayColumn renderer, RenderContext ctx)
     {
-        return (renderer.getVisible(ctx) && (renderer.getDisplayModes() & (MODE_UPDATE | MODE_INSERT)) != 0);
+        return (renderer.isVisible(ctx) && (renderer.getDisplayModes() & (MODE_UPDATE | MODE_INSERT)) != 0);
     }
 
     private Boolean _isFileUploadForm = null;

@@ -18,7 +18,6 @@ package org.labkey.api.util;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ConnectionWrapper;
-import org.labkey.api.module.ModuleLoader;
 
 import javax.servlet.ServletContextEvent;
 import java.io.*;
@@ -34,19 +33,19 @@ public class BreakpointThread extends Thread implements ShutdownListener
     private boolean _shutdown = false;
 
     private static final Logger _log = Logger.getLogger(BreakpointThread.class);
+    private final File _modulesDir;
 
-    public BreakpointThread()
+    public BreakpointThread(File modulesDir)
     {
         setDaemon(true);
         setName("BreakpointThread");
         ContextListener.addShutdownListener(this);
+        _modulesDir = modulesDir;
     }
 
     public void run()
     {
-        File coreModuleDir = ModuleLoader.getInstance().getCoreModule().getExplodedPath();
-        File modulesDir = coreModuleDir.getParentFile();
-        File labkeyRoot = modulesDir.getParentFile();
+        File labkeyRoot = _modulesDir.getParentFile();
         File requestFile = new File(labkeyRoot, "threadDumpRequest");
         if (!requestFile.exists())
         {

@@ -53,12 +53,12 @@ public class CaseInsensitiveHashSet extends HashSet<String>
 
     public boolean remove(Object o)
     {
-        return super.remove(((String) o).toLowerCase());
+        return super.remove(o == null ? null : ((String) o).toLowerCase());
     }
 
     public boolean add(String s)
     {
-        return super.add(s.toLowerCase());
+        return super.add(s == null ? null : s.toLowerCase());
     }
 
     public void addAll(String... values)
@@ -69,6 +69,6 @@ public class CaseInsensitiveHashSet extends HashSet<String>
 
     public boolean contains(Object o)
     {
-        return super.contains(((String) o).toLowerCase());
+        return super.contains(o == null ? null : ((String) o).toLowerCase());
     }
 }

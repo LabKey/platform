@@ -402,9 +402,6 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
 
         try
         {
-            if (viewName.endsWith(".gm") || viewName.endsWith(".groovy"))
-                return new GroovyView(viewName);
-
             if (viewName.endsWith(".jsp"))
                 return new JspView(viewName);
 

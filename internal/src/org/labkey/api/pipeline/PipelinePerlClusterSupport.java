@@ -148,7 +148,14 @@ public class PipelinePerlClusterSupport
             }
         }
         
-        actions.add(new PipelineProvider.StatusAction(PipelineProvider.CAPTION_RETRY_BUTTON, "\"" + PipelineJob.ERROR_STATUS + "\" == Status"));
+        actions.add(new PipelineProvider.StatusAction(PipelineProvider.CAPTION_RETRY_BUTTON)
+        {
+            @Override
+            public boolean isVisible(PipelineStatusFile statusFile)
+            {
+                return PipelineJob.ERROR_STATUS.equals(statusFile.getStatus());
+            }
+        });
         return actions;
     }
 

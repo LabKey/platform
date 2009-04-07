@@ -85,14 +85,7 @@ public class ExcelColumn extends RenderColumn
             setFormatString(dc.getFormatString());
         }
         setName(dc.getName());
-        try
-        {
-            setCaption(dc.getCaptionExpr());
-            setVisibleExpr(dc.getVisibleExpr());
-        } catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        setCaption(dc.getCaptionExpr());
     }
 
 

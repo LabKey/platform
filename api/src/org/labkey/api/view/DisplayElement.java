@@ -15,12 +15,9 @@
  */
 package org.labkey.api.view;
 
-import org.codehaus.groovy.control.CompilationFailedException;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.security.ACL;
-import org.labkey.api.util.BooleanExpression;
-import org.labkey.api.util.GroovyExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.MemTracker;
 import org.springframework.web.servlet.View;
@@ -35,7 +32,7 @@ import java.util.Map;
 public abstract class DisplayElement implements View, Cloneable
 {
     private int _displayPermission = ACL.PERM_READ;
-    private BooleanExpression _visible = new BooleanExpression(true);
+    private boolean _visible = true;
     private int _displayModes = DataRegion.MODE_ALL;
     protected StringExpressionFactory.StringExpression _caption = null;
     protected boolean _locked = false;
@@ -61,45 +58,21 @@ public abstract class DisplayElement implements View, Cloneable
         _displayPermission = displayPermission;
     }
 
-    public boolean getVisible(Map ctx)
+    public boolean isVisible(Map ctx)
     {
-        return _visible.get(ctx);
+        return _visible;
     }
 
 
     public void setVisible(boolean visible)
     {
         checkLocked();
-        _visible.set(visible);
+        _visible = visible;
     }
-
-
-    public void setVisibleExpr(Object visible) throws IOException, CompilationFailedException
-    {
-        checkLocked();
-        if (null == visible)
-            throw new IllegalArgumentException();
-        if (visible instanceof Boolean)
-            _visible.set((Boolean)visible);
-        else if (visible instanceof String)
-           _visible.set(new GroovyExpression((String)visible));
-        else
-            throw new IllegalArgumentException();
-    }
-
-
-    public Object getVisibleExpr()
-    {
-        if (null != _visible.getStringExpr())
-            return _visible.getStringExpr();
-        else
-            return _visible.getBooleanExpr();
-    }
-
 
     public boolean shouldRender(RenderContext ctx)
     {
-        return _visible.get(ctx) && ctx.getViewContext().hasPermission(_displayPermission);
+        return isVisible(ctx) && ctx.getViewContext().hasPermission(_displayPermission);
     }
 
     public String getOutput(RenderContext ctx)

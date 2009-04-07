@@ -112,7 +112,7 @@ abstract public class PipelineProvider
 
         public FileAction[] getActions()
         {
-            return _actions.toArray(new FileAction[0]);
+            return _actions.toArray(new FileAction[_actions.size()]);
         }
 
         public void addAction(FileAction action)
@@ -137,9 +137,9 @@ abstract public class PipelineProvider
                     if (files != null)
                     {
                         // Use a file object that caches its directory state.
-                        for (int i = 0; i < files.length; i++)
+                        for (File file : files)
                         {
-                            File f = new FileCached(files[i]);
+                            File f = new FileCached(file);
                             _files.put(f.getName(), f);
                         }
                     }
@@ -409,17 +409,10 @@ abstract public class PipelineProvider
     public static class StatusAction
     {
         String _label;
-        String _visible;
 
         public StatusAction(String label)
         {
-            this(label, null);
-        }
-
-        public StatusAction(String label, String visible)
-        {
-            this._label = label;
-            this._visible = visible;
+            _label = label;
         }
 
         public String getLabel()
@@ -427,9 +420,9 @@ abstract public class PipelineProvider
             return _label;
         }
 
-        public String getVisible()
+        public boolean isVisible(PipelineStatusFile statusFile)
         {
-            return _visible;
+            return true;
         }
     }
 
@@ -571,7 +564,14 @@ abstract public class PipelineProvider
     public List<StatusAction> addStatusActions(Container container)
     {
         List<PipelineProvider.StatusAction> actions = new ArrayList<PipelineProvider.StatusAction>();
-        actions.add(new PipelineProvider.StatusAction(CAPTION_RETRY_BUTTON, "\"" + PipelineJob.ERROR_STATUS + "\" == Status && null != JobStore"));
+        actions.add(new PipelineProvider.StatusAction(CAPTION_RETRY_BUTTON)
+        {
+            @Override
+            public boolean isVisible(PipelineStatusFile statusFile)
+            {
+                return PipelineJob.ERROR_STATUS.equals(statusFile.getStatus()) && statusFile.getJobStore() != null;
+            }
+        });
         return actions;
     }
 
