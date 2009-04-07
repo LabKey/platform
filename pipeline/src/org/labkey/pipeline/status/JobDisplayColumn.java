@@ -53,7 +53,7 @@ public class JobDisplayColumn extends SimpleDisplayColumn
             setCaption("Join job");
     }
 
-    public boolean getVisible(Map ctx)
+    public boolean isVisible(Map ctx)
     {
         return getJobStatus(ctx).length > 0;
     }

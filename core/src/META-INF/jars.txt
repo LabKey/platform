@@ -23,7 +23,6 @@ commons-pool-1.4.jar|Commons Pool|1.4|{link:Apache|http://commons.apache.org/poo
 commons-validator.jar|Commons Validator|1.0.4|{link:Apache|http://jakarta.apache.org/commons/validator/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Data validation and error messages
 dom4j-1.4.jar|DOM4J|1.4|{link:DOM4J|http://www.dom4j.org/}|{link:BSD Style|http://www.dom4j.org/license.html}|jeckels|Pipeline (Mule XML parsing)
 ejb-3.0-edr1.jar|EJB|3.0-edr1|{link:Sun|http://java.sun.com/products/ejb/}|{link:JCP|https://cds.sun.com/is-bin/INTERSHOP.enfinity/WFS/CDS-CDS_Developer-Site/en_US/-/USD/ViewLicense-Start}|mbellew|EJB persistence
-groovy-all-1.0-RC-01.jar|Groovy|1.0 RC 1|{link:Codehaus|http://groovy.codehaus.org/}|{link:Custom|http://www.labkey.org/download/groovy-LICENSE.txt}|mbellew|View templates
 gwt-servlet.jar|Server Support for Google Web Toolkit|1.5.3|{link:Google|http://code.google.com/webtoolkit/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|marki|Support for rich web apps
 Jama-1.0.2.jar|Java Matrix Package|1.0.2|{link:MathWorks & NIST|http://math.nist.gov/javanumerics/jama/}|{link:Public Domain|http://creativecommons.org/licenses/publicdomain}|adam|Linear regressions for hydrophobicity
 jaxrpc.jar|Java API for XML-Based RPC|1.1|{link:JAX-RPC|http://java.sun.com/webservices/jaxrpc/}|{link:Sun - JCP|http://java.sun.com/webservices/docs/2.0/LICENSE}|jeckels|Java API for XML RPC, used for webservices

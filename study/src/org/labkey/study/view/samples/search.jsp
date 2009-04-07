@@ -109,9 +109,9 @@ This page may be used to search by <%= bean.isDetailsView() ? " vial" : "specime
             {
                 boolean display;
                 if (pass == 0)
-                    display = col.getVisible(me.getViewContext()) && bean.isDefaultColumn(col.getColumnInfo());
+                    display = col.isVisible(me.getViewContext()) && bean.isDefaultColumn(col.getColumnInfo());
                 else
-                    display = col.getVisible(me.getViewContext()) && availableColumns.contains(col.getColumnInfo().getName());
+                    display = col.isVisible(me.getViewContext()) && availableColumns.contains(col.getColumnInfo().getName());
                 if (display)
                 {
                     String columnName = bean.getDataRegionName() + "." + (col instanceof DataColumn ?

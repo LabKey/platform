@@ -73,7 +73,9 @@ public class TypesController extends SpringActionController
 
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new GroovyView("/org/labkey/experiment/types/begin.gm", "Type Administration");
+            JspView jspView = new JspView("/org/labkey/experiment/types/begin.jsp");
+            jspView.setTitle("Type Administration");
+            return jspView;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -96,7 +98,7 @@ public class TypesController extends SpringActionController
 
         public ModelAndView getView(ImportVocabularyForm form, boolean reshow, BindException errors) throws Exception
         {
-            HttpView view = new GroovyView<ImportVocabularyForm>("/org/labkey/experiment/types/importVocabulary.gm",form);
+            HttpView view = new JspView<ImportVocabularyForm>("/org/labkey/experiment/types/importVocabulary.jsp",form);
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             return view;
         }
@@ -146,213 +148,6 @@ public class TypesController extends SpringActionController
     }
     
 
-/*    
-    @Jpf.Action
-    public Forward importTypes(ImportTypeForm form) throws Exception
-    {
-        requiresAdmin();
-
-        if ("POST".equals(getRequest().getMethod()))
-        {
-            TabLoader loader = new TabLoader(form.tsv, true);
-            Map[] maps = (Map[])loader.load();
-            PropertyDescriptor[] pds = null;
-            List <String> errors = new LinkedList<String>();
-
-            if (maps.length > 0)
-            {
-                if (!maps[0].containsKey(form.typeColumn))
-                {
-                    errors.add("column not found: " + form.typeColumn);
-                }
-                else
-                {
-                    pds = OntologyManager.importTypes(form.vocabulary + "#", form.typeColumn, maps, errors, getContainer(),false);
-                }
-                if (errors.size() == 0 && null != pds && pds.length > 0)
-                {
-                    TreeSet<String> domains = new TreeSet<String>();
-                    for (PropertyDescriptor pd : pds)
-                    {
-                        DomainDescriptor[] ddArray = OntologyManager.getDomainsForProperty(pd.getPropertyURI(), getContainer());
-                        for (int i=0;i< ddArray.length; i++)
-                            domains.add(ddArray[i].getDomainURI());                        
-                    }
-                    // CONSIDER: intermediate success page?
-                    if (domains.size() == 1)
-                        HttpView.redirect("typeDetails.view?type=" + PageFlowUtil.encode(domains.first()));
-                    else
-                    {
-                        HttpView.redirect("types.view");
-                    }
-                }
-            }
-
-            if (errors.size() == 0 && (null == pds || pds.length == 0))
-                errors.add("No properties were successfully imported.");
-            ActionErrors actionErrors = PageFlowUtil.getActionErrors(getRequest(), true);
-            for (String error : errors)
-                actionErrors.add("main", new ActionError("Error", error));
-        }
-
-        // GET/reshow
-        GroovyView view = new GroovyView("/org/labkey/experiment/types/importType.gm");
-        view.addObject("form", form);
-        return includeView(new DialogTemplate(view));
-    }
-
-
-    @Jpf.Action
-    public Forward importData(ImportDataForm form) throws Exception
-    {
-        requiresAdmin();
-        String[] keys = new String[] {"dfplate","ptid", "visit"};
-
-        if ("POST".equals(getRequest().getMethod()))
-        {
-            TabLoader loader = new TabLoader(form.tsv, true);
-            PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(form.typeURI, getContainer());
-            List <String> errors = new LinkedList<String>();
-
-            // create columns to properties map
-            HashSet<String> keysNotFound = new HashSet<String>(Arrays.asList(keys));
-            HashMap<String,PropertyDescriptor> propMap = new HashMap<String,PropertyDescriptor>();
-            HashSet<String> matched = new HashSet<String>();
-            TabLoader.ColumnDescriptor[] cols = loader.getColumns();
-            for (TabLoader.ColumnDescriptor c : cols)
-            {
-                String name = c.name.toLowerCase();
-                keysNotFound.remove(name);
-                PropertyDescriptor match = null;
-                PropertyDescriptor matchURI = null;
-                for (PropertyDescriptor pd : pds)
-                {
-                    if (pd.getName().equalsIgnoreCase(name))
-                    {
-                        match = pd;
-                        break;
-                    }
-                    if (pd.getPropertyURI().endsWith("#" + name))
-                        matchURI = pd;
-                }
-
-                if (null == match)
-                    match = matchURI;
-                if (null == match)
-                    continue;
-
-                if (matched.contains(match.getPropertyURI()))
-                    errors.add("Property '" + match.getPropertyURI() + "' more than once.");
-                matched.add(match.getPropertyURI());
-                propMap.put(c.name, match);
-                c.name = match.getPropertyURI();
-            }
-
-            for (String key : keysNotFound)
-                errors.add("Did not find required key '" + key + "'.");
-
-            // fix-up key names
-            for (int i=0 ; i<keys.length ; i++)
-            {
-                if (propMap.containsKey(keys[i]))
-                    keys[i] = propMap.get(keys[i]).getPropertyURI();
-            }
-
-            String typeShortName = form.typeURI;
-            typeShortName = typeShortName.substring(typeShortName.indexOf('#') + 1);
-            String lsidExpr = typeShortName + "." + getContainer().getRowId();
-            for (String key : keys)
-                lsidExpr += ".${" + key + "}";
-
-            Map[] maps = (Map[])loader.load();
-
-            try
-            {
-                ExperimentService.get().getSchema().getScope().beginTransaction();
-                OntologyManager.insertTabDelimited(getContainer(), null, new OntologyManager.SubstImportHelper(lsidExpr), pds, maps, false);
-                ExperimentService.get().getSchema().getScope().commitTransaction();
-            }
-            finally
-            {
-                ExperimentService.get().getSchema().getScope().closeConnection();
-            }
-
-            if (errors.size() == 0)
-            {
-                getResponse().getWriter().print("" + maps.length + " rows imported.");
-                return null;
-            }
-            ActionErrors actionErrors = PageFlowUtil.getActionErrors(getRequest(), true);
-            for (String error : errors)
-                actionErrors.add("main", new ActionError("Error", error));
-        }
-
-        form.keys = StringUtils.join(keys, ',');
-        // GET/reshow
-        GroovyView view = new GroovyView("/org/labkey/experiment/types/importData.gm");
-        view.addObject("form", form);
-        return includeView(new DialogTemplate(view));
-    }
-
-
-	// UNDONE: delete action confirm page
-	@Jpf.Action
-    public Forward deleteData(DeleteForm form) throws Exception
-    {
-		requiresAdmin();
-
-		if (form.deleteType)
-		{
-			OntologyManager.deleteType(form.getTypeURI(), getContainer());
-		}
-		else
-		{
-			OntologyManager.deleteObjectsOfType(form.getTypeURI(), getContainer());
-		}
-
-		HttpView.redirect("types.view");
-		return null;
-	}
-
-
-    public static class DeleteForm extends FormData
-    {
-        private String typeURI;
-        private boolean deleteType;
-
-        public String getTypeURI()
-        {
-            return typeURI;
-        }
-
-        public void setTypeURI(String typeURI)
-        {
-            this.typeURI = typeURI;
-        }
-
-        public boolean isDeleteType()
-        {
-            return deleteType;
-        }
-
-        public void setDeleteType(boolean deleteType)
-        {
-            this.deleteType = deleteType;
-        }
-    }
-
-    static boolean notEmpty(String s)
-    {
-        return null != StringUtils.trimToNull(s);
-    }
-
-    static boolean isEmpty(String s)
-    {
-        return null == s || null == StringUtils.trimToNull(s);
-    }
-*/
-
-
     @RequiresPermission(ACL.PERM_ADMIN)
     public static class TypesAction extends SimpleViewAction
     {
@@ -373,7 +168,7 @@ public class TypesController extends SpringActionController
                     locals.put(t.getName(), t);
             }
 
-            HttpView view = new GroovyView("/org/labkey/experiment/types/types.gm");
+            HttpView view = new JspView("/org/labkey/experiment/types/types.jsp");
             view.addObject("locals", locals);
             view.addObject("globals", globals);
             return view;
@@ -418,7 +213,7 @@ public class TypesController extends SpringActionController
             if (null != typeName)
                 properties = OntologyManager.getPropertiesForType(typeName, getViewContext().getContainer());
 
-            HttpView view = new GroovyView("/org/labkey/experiment/types/typeDetails.gm");
+            HttpView view = new JspView("/org/labkey/experiment/types/typeDetails.jsp");
             view.addObject("typeName", typeName);
             view.addObject("properties", properties);
             return view;
@@ -574,11 +369,9 @@ public class TypesController extends SpringActionController
                 rows = t;
             }
 
-            HttpView view = new GroovyView("/org/labkey/experiment/types/findConcepts.gm");
+            HttpView view = new JspView("/org/labkey/experiment/types/findConcepts.jsp");
             view.addObject("form", form);
             view.addObject("concepts", rows);
-            view.addObject("selectScript", "window.alert(uri);");
-            view.addObject("conceptScript", "window.location='?concept='+escape(uri);");
             return view;
         }
 
@@ -620,82 +413,6 @@ public class TypesController extends SpringActionController
         public void setName(String name)
         {
             this.name = name;
-        }
-    }
-
-
-    public static class ImportTypeForm
-    {
-        private String vocabulary;
-        private String typeColumn;
-        private String tsv;
-
-        public String getVocabulary()
-        {
-            return vocabulary;
-        }
-
-        public void setVocabulary(String vocabulary)
-        {
-            this.vocabulary = vocabulary;
-        }
-
-        public String getTsv()
-        {
-            return tsv;
-        }
-
-        public void setTsv(String tsv)
-        {
-            this.tsv = tsv;
-        }
-
-            public String getTypeColumn()
-        {
-                return typeColumn;
-        }
-
-            public void setTypeColumn(String typeColumn)
-        {
-                this.typeColumn = typeColumn;
-        }
-    }
-
-
-
-    public static class ImportDataForm
-    {
-        private String typeURI;
-        private String tsv;
-        private String keys;
-
-
-        public String getTypeURI()
-        {
-            return typeURI;
-        }
-
-        public void setTypeURI(String typeURI)
-        {
-            this.typeURI = typeURI;
-        }
-
-        public String getTsv()
-        {
-            return tsv;
-        }
-
-        public void setTsv(String tsv)
-        {
-            this.tsv = tsv;
-        }
-
-        public String getKeys() {
-            return keys;
-        }
-
-        public void setKeys(String keys) {
-            this.keys = keys;
         }
     }
 

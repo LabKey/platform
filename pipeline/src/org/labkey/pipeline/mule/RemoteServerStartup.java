@@ -25,6 +25,7 @@ import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.util.BreakpointThread;
 import org.apache.log4j.Logger;
 
 import javax.jms.*;
@@ -46,6 +47,19 @@ public class RemoteServerStartup extends AbstractPipelineStartup
     public void run(List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles, String[] args) throws Exception
     {
         Map<String, BeanFactory> factories = initContext("org/labkey/pipeline/mule/config/remote.log4j.properties", moduleFiles, moduleConfigFiles, customConfigFiles);
+
+        _log.info("Starting up LabKey Remote Server");
+
+        // Start up a thread that listens for a thread dump request, and lets us hit a breakpoint easily
+        for (File moduleFile : moduleFiles)
+        {
+            if (moduleFile.getName().startsWith("core"))
+            {
+                BreakpointThread thread = new BreakpointThread(moduleFile.getParentFile());
+                thread.start();
+                break;
+            }
+        }
 
         PipelineJobService.RemoteServerProperties props = PipelineJobServiceImpl.get().getRemoteServerProperties();
         if (props == null)

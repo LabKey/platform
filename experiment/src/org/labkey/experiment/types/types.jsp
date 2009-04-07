@@ -15,23 +15,22 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.experiment.types.TypesController"%>
-<%@ page import="java.util.Set"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.exp.DomainDescriptor" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%
-Map g = globals;
-Map l = locals;
+Map<String,DomainDescriptor> g = (Map<String,DomainDescriptor>)HttpView.currentView().getViewContext().get("globals");
+Map<String,DomainDescriptor> l = (Map<String,DomainDescriptor>)HttpView.currentView().getViewContext().get("locals");
 %><h3>global types</h3><%
 for (DomainDescriptor type : g.values())
     {
-    %><a href="typeDetails.view?type=<%=filter(PageFlowUtil.encode(type.getDomainURI()))%>"><%=filter(type.getName())%></a><br /><%
+    %><a href="typeDetails.view?type=<%=PageFlowUtil.filter(PageFlowUtil.encode(type.getDomainURI()))%>"><%=PageFlowUtil.filter(type.getName())%></a><br /><%
     }
 %><h3>local types</h3><%
 for (DomainDescriptor type : l.values())
     {
-    %><a href="typeDetails.view?type=<%=filter(PageFlowUtil.encode(type.getDomainURI()))%>"><%=filter(type.getName())%></a><br /><%
+    %><a href="typeDetails.view?type=<%=PageFlowUtil.filter(PageFlowUtil.encode(type.getDomainURI()))%>"><%=PageFlowUtil.filter(type.getName())%></a><br /><%
     }
 %>
 <!--<p>

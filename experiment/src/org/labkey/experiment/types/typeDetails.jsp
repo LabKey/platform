@@ -18,15 +18,17 @@
 <%@ page import="org.labkey.api.exp.PropertyDescriptor"%>
 <%@ page import="org.labkey.api.exp.PropertyType"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%
-//PropertyDescriptor pd;
-%><h3><%=filter(typeName)%></h3>
+String typeName = (String)HttpView.currentView().getViewContext().get("typeName");
+PropertyDescriptor[] properties = (PropertyDescriptor[])HttpView.currentView().getViewContext().get("properties");
+%><h3><%=PageFlowUtil.filter(typeName)%></h3>
 <table>
 <tr><th>Name</th><th>PropertyURI</th><th>Type</th></tr><%
-for (pd in properties)
+for (PropertyDescriptor pd : properties)
     {
     PropertyType t = pd.getPropertyType();
-    %><tr><td><%=filter(pd.getName())%></td><td><%=filter(pd.getPropertyURI())%></td><td><%=filter(t.getXmlName())%></td></tr><%
+    %><tr><td><%=PageFlowUtil.filter(pd.getName())%></td><td><%=PageFlowUtil.filter(pd.getPropertyURI())%></td><td><%=PageFlowUtil.filter(t.getXmlName())%></td></tr><%
     }
 %></table>
 <!-- <p>

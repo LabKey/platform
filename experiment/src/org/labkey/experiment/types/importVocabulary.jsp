@@ -47,7 +47,7 @@ Specifically it should be a tab-delimited text file with no column headers, and 
 
 <form action="importVocabulary.post" method="POST" enctype="multipart/form-data">
 <table>
-<tr><td class=labkey-form-label>Thesaurus URI<br><small>e.g http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl</small></td><td><input name="name" value="<%=filter(form.getName())%>"></td></tr>
+<tr><td class=labkey-form-label>Thesaurus URI<br><small>e.g http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl</small></td><td><input name="name" value="<%=PageFlowUtil.filter(form.getName())%>"></td></tr>
 <!--<tr><td class=labkey-form-label>Short prefix<br><small>e.g NCI_Thesaurus</small></td><td><input name="prefix" value=""></td></tr> -->
 <tr><td class=labkey-form-label>Upload File</td><td><input type=file name=thesaurus></td></tr>
 </table>

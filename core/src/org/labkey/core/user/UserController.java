@@ -1074,21 +1074,6 @@ public class UserController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_NONE)
-    public class AjaxTestAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            return new GroovyView("/Security/ajaxtest.gm");
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
-
     @RequiresLogin
     public class ShowUpdateAction extends FormViewAction<UpdateForm>
     {

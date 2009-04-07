@@ -18,6 +18,7 @@ package org.labkey.pipeline.status;
 import org.labkey.api.data.*;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.DisplayElement;
@@ -42,6 +43,13 @@ public class ProviderButtonBar extends ButtonBar
     private String _containerCurrent;
     private Map<String, Map<String, List<DisplayElement>>> _providerContainerElements =
             new HashMap<String, Map<String, List<DisplayElement>>>();
+    private PipelineStatusFile _statusFile;
+
+    public ProviderButtonBar(PipelineStatusFile sf)
+    {
+        _statusFile = sf;
+    }
+
 
     public void render(RenderContext ctx, Writer out) throws IOException
     {
@@ -77,27 +85,17 @@ public class ProviderButtonBar extends ButtonBar
 
                         for (PipelineProvider.StatusAction action : actions)
                         {
-                            ActionButton button = new ActionButton("providerAction.view?" +
-                                    "name=" + PageFlowUtil.encode(action.getLabel()) + "&" +
-                                    "rowId=${rowId}", action.getLabel());
-                            button.setActionType(ActionButton.Action.LINK);
-                            if (!ctx.getViewContext().getUser().isAdministrator())
-                                button.setDisplayPermission(ACL.PERM_UPDATE);
-
-                            String visible = action.getVisible();
-                            if (visible != null)
+                            if (action.isVisible(_statusFile))
                             {
-                                try
-                                {
-                                    button.setVisibleExpr(visible);
-                                }
-                                catch (Exception e)
-                                {
-                                    assert false : "Compile error";
-                                }
-                            }
+                                ActionButton button = new ActionButton("providerAction.view?" +
+                                        "name=" + PageFlowUtil.encode(action.getLabel()) + "&" +
+                                        "rowId=${rowId}", action.getLabel());
+                                button.setActionType(ActionButton.Action.LINK);
+                                if (!ctx.getViewContext().getUser().isAdministrator())
+                                    button.setDisplayPermission(ACL.PERM_UPDATE);
 
-                            elements.add(button);
+                                elements.add(button);
+                            }
                         }
                     }
                 }

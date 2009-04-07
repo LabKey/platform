@@ -836,54 +836,6 @@ public class PipelineController extends SpringActionController
         }
     }
 
-/*    public static ActionURL urlFtpDetails(Container c, String path)
-    {
-        ActionURL url = new ActionURL("ftp", "info", c);
-        url.addParameter("pipeline", path);
-        return url;
-    }
-
- replaced with ftpcontroller info.view
-
-    @RequiresPermission(ACL.PERM_READ)
-    public class FtpDetailsAction extends SimpleViewAction<PathForm>
-    {
-        public ModelAndView getView(PathForm form, BindException errors) throws Exception
-        {
-            Container c = getContainer();
-            String path = form.getPath();
-            if (StringUtils.trimToNull(path) == null)
-                return HttpView.throwNotFoundMV("Pipeline root not set or does not exist on disk");
-
-            String fileSystemViewURL = "";
-            String host = AppProps.getInstance().getPipelineFTPHost();
-            String port = AppProps.getInstance().getPipelineFTPPort();
-            String ftpScheme = AppProps.getInstance().isPipelineFTPSecure() ?
-                                "ftps://" : "ftp://";
-            String ftpUser = getUser().getEmail();
-            String ftpPath = host;
-            if (port.length() != 0)
-                ftpPath += ":"+port;
-            ftpPath += c.getPath() + "/" + FtpConnector.PIPELINE_LINK + "/" + path;
-
-            fileSystemViewURL = ftpScheme+PageFlowUtil.encode(ftpUser)+"@"+ftpPath;
-
-            GroovyView detailsView = new GroovyView("/org/labkey/pipeline/ftpdetails.gm");
-            detailsView.setTitle("FTP Instructions");
-            detailsView.addObject("ftpUser", ftpUser);
-            detailsView.addObject("ftpString", ftpScheme+ftpPath);
-            detailsView.addObject("fileSystemViewURL", fileSystemViewURL);
-
-            detailsView.render(getViewContext().getRequest(), getViewContext().getResponse());
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    } */
-    
     /////////////////////////////////////////////////////////////////////////
     //  Email notifications
 

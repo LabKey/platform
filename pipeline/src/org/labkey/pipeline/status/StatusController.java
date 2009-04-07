@@ -1004,7 +1004,13 @@ public class StatusController extends SpringActionController
         col = rgn.getDisplayColumn("DataUrl");
         col.setVisible(false);
 
-        ButtonBar bb = new ProviderButtonBar();
+        PipelineStatusFile sf = getStatusFile(rowId);
+        if (sf == null)
+        {
+            throw new NotFoundException("Could not find status file for rowId " + rowId);
+        }
+
+        ButtonBar bb = new ProviderButtonBar(sf);
 
         ActionButton showGrid = new ActionButton("showList.view?.lastFilter=true", "Show Grid");
         showGrid.setActionType(ActionButton.Action.LINK);
@@ -1018,28 +1024,15 @@ public class StatusController extends SpringActionController
             bb.add(showFolder);
         }
 
-        ActionButton showData = new ActionButton("showData.view?rowId=${rowId}", "Data");
-        showData.setActionType(ActionButton.Action.LINK);
-
-        try
+        if (sf.getDataUrl() != null)
         {
-            showData.setVisibleExpr("null != dataUrl");
+            ActionButton showData = new ActionButton("showData.view?rowId=${rowId}", "Data");
+            showData.setActionType(ActionButton.Action.LINK);
+            bb.add(showData);
         }
-        catch (Exception e)
-        {
-            assert false : "Compile error";
-        }
-
-        bb.add(showData);
 
         // escalate pipeline failure button
-        PipelineStatusFile sf = getStatusFile(rowId);
-        if (sf == null)
-        {
-            HttpView.throwNotFound("Could not find status file for rowId " + rowId);
-        }
-        
-        if (sf != null && !PipelineJob.COMPLETE_STATUS.equals(sf.getStatus()))
+        if (!PipelineJob.COMPLETE_STATUS.equals(sf.getStatus()))
         {
             final String escalationUsers = PipelineEmailPreferences.get().getEscalationUsers(c);
             if (!StringUtils.isEmpty(escalationUsers))
