@@ -115,7 +115,7 @@ public class StudyServiceImpl implements StudyService.Service
 
             StudyManager.getInstance().deleteDatasetRows(study, def, Collections.singletonList(lsid));
 
-            List<Map<String,Object>> dataMap = convertMapToPropertyMapArray(newData, def);
+            List<Map<String,Object>> dataMap = convertMapToPropertyMapArray(u, newData, def);
             
             String[] result = StudyManager.getInstance().importDatasetData(
                 study, u, def, dataMap, System.currentTimeMillis(), errors, true, defaultQCState);
@@ -242,7 +242,7 @@ public class StudyServiceImpl implements StudyService.Service
             if (transactionOwner)
                 beginTransaction();
 
-            List<Map<String,Object>> dataMap = convertMapToPropertyMapArray(data, def);
+            List<Map<String,Object>> dataMap = convertMapToPropertyMapArray(u, data, def);
 
             String[] result = StudyManager.getInstance().importDatasetData(
                 study, u, def, dataMap, System.currentTimeMillis(), errors, true, defaultQCState);
@@ -308,12 +308,12 @@ public class StudyServiceImpl implements StudyService.Service
      * Requests arrive as maps of name->value. The StudyManager expects arrays of maps
      * of property URI -> value. This is a convenience method to do that conversion.
      */
-    private List<Map<String,Object>> convertMapToPropertyMapArray(Map<String,Object> origData, DataSetDefinition def)
+    private List<Map<String,Object>> convertMapToPropertyMapArray(User user, Map<String,Object> origData, DataSetDefinition def)
         throws SQLException
     {
         Map<String,Object> map = new HashMap<String,Object>();
 
-        TableInfo tInfo = def.getTableInfo(null, false, false);
+        TableInfo tInfo = def.getTableInfo(user, false, false);
 
         for (ColumnInfo col : tInfo.getColumns())
         {

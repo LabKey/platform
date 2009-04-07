@@ -42,7 +42,7 @@ public abstract class VisitManager
 
     public void updateParticipantVisits(User user)
     {
-        boolean requiresUncache = updateParticipants();
+        boolean requiresUncache = updateParticipants(user);
         updateParticipantVisitTable(user);
         updateVisitTable(user);
         StudyManager.getInstance().clearVisitCache(_study);
@@ -164,7 +164,7 @@ public abstract class VisitManager
     }
 
     /** Update the Participants table to match the entries in StudyData. Return true if changes require uncaching all datasets */
-    protected boolean updateParticipants()
+    protected boolean updateParticipants(User user)
     {
         try
         {
@@ -193,7 +193,7 @@ public abstract class VisitManager
                              "participantid NOT IN (select ptid from " + tableSpecimen  + " where container = ?)",
                     new Object[] {c, c, c});
 
-            return 0 != updateStartDates();
+            return 0 != updateStartDates(user);
         }
         catch (SQLException x)
         {
@@ -201,7 +201,7 @@ public abstract class VisitManager
         }
     }
 
-    protected int updateStartDates() throws SQLException
+    protected int updateStartDates(User user) throws SQLException
     {
         TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
         //See if there are any demographic datasets that contain a start date
@@ -212,7 +212,7 @@ public abstract class VisitManager
         {
             if (dataset.isDemographicData())
             {
-                TableInfo tInfo = dataset.getTableInfo(null, false, true);
+                TableInfo tInfo = dataset.getTableInfo(user, false, true);
                 //TODO: Use Property URI & Make sure this is set properly
                 ColumnInfo col = tInfo.getColumn("StartDate");
                 if (null != col)

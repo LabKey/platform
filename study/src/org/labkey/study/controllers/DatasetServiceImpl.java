@@ -90,7 +90,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             ds.setCohortMap(cohortMap);
 
             Map<String, String> visitDateMap = new HashMap<String, String>();
-            TableInfo tinfo = dd.getTableInfo(null, false, false);
+            TableInfo tinfo = dd.getTableInfo(getUser(), false, false);
             for (ColumnInfo col : tinfo.getColumns())
             {
                 if (!Date.class.isAssignableFrom(col.getJavaClass()))

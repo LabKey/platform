@@ -16,25 +16,26 @@
 
 package org.labkey.study.model;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Category;
+import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.util.*;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.query.ExprColumn;
-import org.labkey.api.query.LookupForeignKey;
 import org.labkey.study.StudySchema;
 import org.labkey.study.query.DataSetTable;
-import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.DataSetsTable;
-import org.apache.log4j.Logger;
-import org.apache.log4j.Category;
-import org.apache.commons.lang.StringUtils;
+import org.labkey.study.query.StudyQuerySchema;
 
 import java.sql.SQLException;
 import java.sql.Types;
@@ -268,8 +269,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-    public synchronized TableInfo getTableInfo(User user, boolean checkPermission, boolean materialized) throws UnauthorizedException
+    public synchronized TableInfo getTableInfo(@NotNull User user, boolean checkPermission, boolean materialized) throws UnauthorizedException
     {
+        //noinspection ConstantConditions
+        if (user == null)
+            throw new IllegalArgumentException("user cannot be null");
+        
         if (checkPermission && !canRead(user))
             HttpView.throwUnauthorized();
 

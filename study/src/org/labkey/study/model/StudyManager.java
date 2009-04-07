@@ -2034,13 +2034,13 @@ public class StudyManager
      * and do not delete anything
      *
      */
-    HashMap<String,Map> checkAndDeleteDups(Study study, DataSetDefinition def, List<Map<String, Object>> rows) throws SQLException, UnauthorizedException
+    HashMap<String,Map> checkAndDeleteDups(User user, Study study, DataSetDefinition def, List<Map<String, Object>> rows) throws SQLException, UnauthorizedException
     {
         if (null == rows || rows.size() == 0)
             return null;
 
         Container c = study.getContainer();
-        DatasetImportHelper helper = new DatasetImportHelper(null, c, def, 0);
+        DatasetImportHelper helper = new DatasetImportHelper(user, null, c, def, 0);
 
         // duplicate keys found that should be deleted
         Set<String> deleteSet = new HashSet<String>();
@@ -2134,7 +2134,7 @@ public class StudyManager
             return new String[0];
 
         Container c = study.getContainer();
-        TableInfo tinfo = def.getTableInfo(null, false, false);
+        TableInfo tinfo = def.getTableInfo(user, false, false);
         String[] imported = new String[0];
 
         Map<String, QCState> qcStateLabels =  new CaseInsensitiveHashMap<QCState>();
@@ -2270,7 +2270,7 @@ public class StudyManager
             String visitSequenceNumURI = DataSetDefinition.getSequenceNumURI();
             String visitDateURI = DataSetDefinition.getVisitDateURI();
 
-            HashMap<String,Map> failedReplaceMap = checkAndDeleteDups(study, def, dataMaps);
+            HashMap<String,Map> failedReplaceMap = checkAndDeleteDups(user, study, def, dataMaps);
             if (null != failedReplaceMap && failedReplaceMap.size() > 0)
             {
                 StringBuilder error = new StringBuilder();
@@ -2396,7 +2396,7 @@ public class StudyManager
 
                 String typeURI = def.getTypeURI();
                 PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(typeURI, c);
-                helper = new DatasetImportHelper(scope.getConnection(), c, def, lastModified);
+                helper = new DatasetImportHelper(user, scope.getConnection(), c, def, lastModified);
                 imported = OntologyManager.insertTabDelimited(c, null, helper, pds, dataMaps, true);
 
                 if (startedTransaction)
@@ -2878,7 +2878,7 @@ public class StudyManager
 
         TableInfo tinfo = StudySchema.getInstance().getTableInfoStudyData();
 
-        DatasetImportHelper(Connection conn, Container c, DataSetDefinition dataset, long lastModified) throws SQLException, UnauthorizedException
+        DatasetImportHelper(User user, Connection conn, Container c, DataSetDefinition dataset, long lastModified) throws SQLException, UnauthorizedException
         {
             _containerId = c.getId();
             _study = StudyManager.getInstance().getStudy(c);
@@ -2898,7 +2898,7 @@ public class StudyManager
 
             String visitDatePropertyURI = null;
             String keyPropertyURI = null;
-            for (ColumnInfo col : dataset.getTableInfo(null, false, false).getColumns())
+            for (ColumnInfo col : dataset.getTableInfo(user, false, false).getColumns())
             {
                 if (col.getName().equalsIgnoreCase(dataset.getVisitDatePropertyName()))
                     visitDatePropertyURI = col.getPropertyURI();
@@ -3165,7 +3165,7 @@ public class StudyManager
                 scope.beginTransaction();
             DataSetDefinition dataset = study.getDataSet(study.getParticipantCohortDataSetId());
             TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
-            TableInfo cohortDatasetTinfo = dataset.getTableInfo(null, false, true);
+            TableInfo cohortDatasetTinfo = dataset.getTableInfo(user, false, true);
             //TODO: Use Property URI & Make sure this is set properly
             ColumnInfo cohortLabelCol = cohortDatasetTinfo.getColumn(study.getParticipantCohortProperty());
             if (null != cohortLabelCol)
