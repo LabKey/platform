@@ -19,7 +19,6 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.*;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.security.User;
-import org.labkey.api.view.HttpView;
 
 
 /**
@@ -63,17 +62,7 @@ public class PropertyColumn extends LookupColumn
 
         this.containerId = containerId;
 
-        // TODO: don't use the current context. Make sure all callers pass in a non-null user.
-        // See bugs 7714 and 6130
-        if (user == null)
-        {
-            if (HttpView.hasCurrentView())
-            {
-                user = HttpView.currentContext().getUser();
-            }
-        }
-        if (user != null)
-            setFk(new PdLookupForeignKey(user, pd));
+        setFk(new PdLookupForeignKey(user, pd));
 
         setDefaultValueType(pd.getDefaultValueTypeEnum());
     }

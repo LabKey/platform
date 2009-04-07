@@ -30,6 +30,10 @@ public class PdLookupForeignKey extends AbstractForeignKey
     PropertyDescriptor _pd;
     public PdLookupForeignKey(User user, PropertyDescriptor pd)
     {
+        if (user == null)
+            throw new IllegalArgumentException("user cannot be null");
+        if (pd == null)
+            throw new IllegalArgumentException("pd cannot be null");
         _pd = pd;
         _user = user;
     }
