@@ -25,6 +25,7 @@ import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
+import org.apache.beehive.netui.pageflow.FormData;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
@@ -69,6 +70,7 @@ import org.labkey.study.*;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
+import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.client.Designer;
 import org.labkey.study.importer.VisitMapImporter;
@@ -913,20 +915,20 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class UploadVisitMapAction extends FormViewAction<BaseController.TSVForm>
+    public class UploadVisitMapAction extends FormViewAction<TSVForm>
     {
-        public ModelAndView getView(BaseController.TSVForm tsvForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(TSVForm tsvForm, boolean reshow, BindException errors) throws Exception
         {
             ModelAndView view = new StudyJspView<Object>(getStudy(), "uploadVisitMap.jsp", null, errors);
             view.addObject("errors", errors);
             return view;
         }
 
-        public void validateCommand(BaseController.TSVForm target, Errors errors)
+        public void validateCommand(TSVForm target, Errors errors)
         {
         }
 
-        public boolean handlePost(BaseController.TSVForm form, BindException errors) throws Exception
+        public boolean handlePost(TSVForm form, BindException errors) throws Exception
         {
             VisitMapImporter importer = new VisitMapImporter();
             List<String> errorMsg = new LinkedList<String>();
@@ -939,7 +941,7 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
-        public ActionURL getSuccessURL(BaseController.TSVForm tsvForm)
+        public ActionURL getSuccessURL(TSVForm tsvForm)
         {
             return new ActionURL(BeginAction.class, getContainer());
         }
@@ -1047,7 +1049,8 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(StudyPropertiesForm form, BindException errors) throws Exception
         {
-            createStudy(form);
+            createStudy(getStudy(true), getContainer(), getUser(), form);
+            updateRepositorySettings(getContainer(), form.isSimpleRepository());
             return true;
         }
 
@@ -1057,20 +1060,24 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    private void createStudy(StudyPropertiesForm form) throws SQLException, ServletException
+    private static void createStudy(Study study, Container c, User user, StudyPropertiesForm form) throws SQLException, ServletException
     {
-        if (null == getStudy(true))
+        if (null == study)
         {
-            Study study = new Study(getContainer(), form.getLabel());
+            study = new Study(c, form.getLabel());
             study.setDateBased(form.isDateBased());
             study.setStartDate(form.getStartDate());
             study.setSecurityType(form.getSecurityType());
-            StudyManager.getInstance().createStudy(getUser(), study);
-            SampleManager.RepositorySettings reposSettings = SampleManager.getInstance().getRepositorySettings(getContainer());
-            reposSettings.setSimple(form.isSimpleRepository());
-            reposSettings.setEnableRequests(!form.isSimpleRepository());
-            SampleManager.getInstance().saveRepositorySettings(getContainer(), reposSettings);
+            StudyManager.getInstance().createStudy(user, study);
         }
+    }
+
+    private static void updateRepositorySettings(Container c, boolean simple) throws SQLException
+    {
+        SampleManager.RepositorySettings reposSettings = SampleManager.getInstance().getRepositorySettings(c);
+        reposSettings.setSimple(simple);
+        reposSettings.setEnableRequests(!simple);
+        SampleManager.getInstance().saveRepositorySettings(c, reposSettings);
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
@@ -1341,20 +1348,20 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class ManageSitesAction extends FormViewAction<BaseController.BulkEditForm>
+    public class ManageSitesAction extends FormViewAction<BulkEditForm>
     {
-        public void validateCommand(BaseController.BulkEditForm target, Errors errors)
+        public void validateCommand(BulkEditForm target, Errors errors)
         {
         }
 
-        public ModelAndView getView(BaseController.BulkEditForm bulkEditForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(BulkEditForm bulkEditForm, boolean reshow, BindException errors) throws Exception
         {
             ModelAndView view = new StudyJspView<Study>(getStudy(),  "manageSites.jsp", getStudy(), errors);
             view.addObject("errors", errors);
             return view;
         }
 
-        public boolean handlePost(BaseController.BulkEditForm form, BindException errors) throws Exception
+        public boolean handlePost(BulkEditForm form, BindException errors) throws Exception
         {
             int[] ids = form.getIds();
             if (ids != null && ids.length > 0)
@@ -1408,7 +1415,7 @@ public class StudyController extends BaseStudyController
             return errors.getErrorCount() == 0;
         }
 
-        public ActionURL getSuccessURL(BaseController.BulkEditForm bulkEditForm)
+        public ActionURL getSuccessURL(BulkEditForm bulkEditForm)
         {
             return null;
         }
@@ -3637,9 +3644,10 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ACL.PERM_ADMIN)
     public class ImportStudy extends FormViewAction
     {
+        private ActionURL redirect;
+
         public void validateCommand(Object target, Errors errors)
         {
-
         }
 
         public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
@@ -3652,7 +3660,7 @@ public class StudyController extends BaseStudyController
             }
             else
             {
-                return new HtmlView("Existing study: " + study.getLabel() + "<br><form method=\"post\">" + PageFlowUtil.generateSubmitButton("Delete Study & Import New") + "</form>");
+                return new HtmlView("Existing study: " + study.getLabel() + "<br><form method=\"post\">" + PageFlowUtil.generateSubmitButton("Delete Study") + "</form>");
             }
         }
 
@@ -3660,9 +3668,16 @@ public class StudyController extends BaseStudyController
         {
             Container c = getContainer();
             User user = getUser();
+            ActionURL url = getViewContext().getActionURL();
 
             if (null != StudyManager.getInstance().getStudy(c))
+            {
                 StudyManager.getInstance().deleteAllStudyData(c, user, true, false);
+                redirect = new ActionURL(ImportStudy.class, getContainer());
+                return true;
+            }
+
+            redirect = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
 
             String path = "c:/labkey/sampleData/study/import";
 
@@ -3684,86 +3699,118 @@ public class StudyController extends BaseStudyController
                 form.setLabel(DOMUtil.getAttributeValue(rootNode, "label"));
                 form.setDateBased(Boolean.parseBoolean(DOMUtil.getAttributeValue(rootNode, "dateBased")));
                 form.setStartDate(new Date(DateUtil.parseDateTime(DOMUtil.getAttributeValue(rootNode, "startDate"))));
-                form.setSimpleRepository(Boolean.parseBoolean(DOMUtil.getAttributeValue(rootNode, "simpleRepository")));
                 form.setSecurityType(SecurityType.valueOf(DOMUtil.getAttributeValue(rootNode, "securityType")));
 
-                createStudy(form);
+                createStudy(getStudy(true), c, user, form);
             }
 
-            File visitMap = new File(path, "v068_visit_map.txt");
-
-            if (visitMap.exists())
+            for (Node child : DOMUtil.getChildNodes(rootNode, Node.ELEMENT_NODE))
             {
-                String content = PageFlowUtil.getFileContentsAsString(visitMap);
+                String name = child.getNodeName();
 
-                VisitMapImporter importer = new VisitMapImporter();
-                List<String> errorMsg = new LinkedList<String>();
-
-                if (!importer.process(user, getStudy(), content, errorMsg))
+                if ("visits".equals(name))
                 {
-                    for (String error : errorMsg)
-                        errors.reject("uploadVisitMap", error);
+                    String source = DOMUtil.getAttributeValue(child, "source");
+                    File visitMap = new File(path, source);
 
-                    return false;
-                }
-            }
-
-            File schemas = new File(path, "schema.tsv");
-
-            if (schemas.exists())
-            {
-                if (!StudyManager.getInstance().bulkImportTypes(getStudy(), schemas, user, "platelabel", "platename", "plateno", errors))
-                    return false;
-            }
-
-            for (Node child : DOMUtil.getChildNodes(rootNode))
-            {
-                if (child.getNodeType() == Node.ELEMENT_NODE)
-                {
-                    String name = child.getNodeName();
-
-                    if ("visits".equals(name))
+                    if (visitMap.exists())
                     {
-                        VisitManager visitManager = StudyManager.getInstance().getVisitManager(getStudy());
+                        String content = PageFlowUtil.getFileContentsAsString(visitMap);
 
-                        for (Node visitNode : DOMUtil.getChildNodesWithName(child, "visit"))
+                        VisitMapImporter importer = new VisitMapImporter();
+                        List<String> errorMsg = new LinkedList<String>();
+
+                        if (!importer.process(user, getStudy(), content, errorMsg))
                         {
-                            // Just a proof of concept -- only works for "show by default".  TODO: Move to visit map or move entire visit map into xml?
-                            double sequenceNum = Double.parseDouble(DOMUtil.getAttributeValue(visitNode, "sequenceNum"));
-                            Visit visit = visitManager.findVisitBySequence(sequenceNum);
-                            Visit mutable = visit.createMutable();
-                            mutable.setShowByDefault(Boolean.parseBoolean(DOMUtil.getAttributeValue(visitNode, "showByDefault")));
-                            StudyManager.getInstance().updateVisit(user, mutable);
+                            for (String error : errorMsg)
+                                errors.reject("uploadVisitMap", error);
+
+                            return false;
                         }
                     }
-                    else if ("cohorts".equals(name))
-                    {
-                        String cohortType = DOMUtil.getAttributeValue(child, "type");
-                        assert cohortType.equals("automatic");
-                        Integer dataSetId = Integer.parseInt(DOMUtil.getAttributeValue(child, "dataSetId"));
-                        String dataSetProperty = DOMUtil.getAttributeValue(child, "dataSetProperty");
 
-                        CohortController.updateAutomaticCohort(getStudy(), user, dataSetId, dataSetProperty);
-                    }
-                    else if ("qcStates".equals(name))
+                    VisitManager visitManager = StudyManager.getInstance().getVisitManager(getStudy());
+
+                    for (Node visitNode : DOMUtil.getChildNodesWithName(child, "visit"))
                     {
-                        // TODO: Generalize to all qc state properties
-                        ManageQCStatesForm form = new ManageQCStatesForm();
-                        form.setShowPrivateDataByDefault(Boolean.parseBoolean(DOMUtil.getAttributeValue(child, "showPrivateDataByDefault")));
-                        updateQcState(getStudy(), user, form);
-                    }
-                    else
-                    {
-                        throw new RuntimeException("study.xml format problem: unknown node '" + name + "'");
+                        // Just a proof of concept -- only works for "show by default".  TODO: Move to visit map or move entire visit map into xml?
+                        double sequenceNum = Double.parseDouble(DOMUtil.getAttributeValue(visitNode, "sequenceNum"));
+                        Visit visit = visitManager.findVisitBySequence(sequenceNum);
+                        Visit mutable = visit.createMutable();
+                        mutable.setShowByDefault(Boolean.parseBoolean(DOMUtil.getAttributeValue(visitNode, "showByDefault")));
+                        StudyManager.getInstance().updateVisit(user, mutable);
                     }
                 }
-            }
+                else if ("cohorts".equals(name))
+                {
+                    String cohortType = DOMUtil.getAttributeValue(child, "type");
+                    assert cohortType.equals("automatic");
+                    Integer dataSetId = Integer.parseInt(DOMUtil.getAttributeValue(child, "dataSetId"));
+                    String dataSetProperty = DOMUtil.getAttributeValue(child, "dataSetProperty");
 
-            File datasetFile = new File(path, "v068.dataset");
+                    CohortController.updateAutomaticCohort(getStudy(), user, dataSetId, dataSetProperty);
+                }
+                else if ("qcStates".equals(name))
+                {
+                    // TODO: Generalize to all qc state properties
+                    ManageQCStatesForm form = new ManageQCStatesForm();
+                    form.setShowPrivateDataByDefault(Boolean.parseBoolean(DOMUtil.getAttributeValue(child, "showPrivateDataByDefault")));
+                    updateQcState(getStudy(), user, form);
+                }
+                else if ("datasets".equals(name))
+                {
+                    String schemaSource = null;
+                    String labelColumn = null;
+                    String typeNameColumn = null;
+                    String typeIdColumn = null;
+                    String datasetSource = null;
 
-            if (datasetFile.exists())
-            {
-                submitStudyBatch(getStudy(), datasetFile, c, user, getViewContext().getActionURL());
+                    for (Node subElement : DOMUtil.getChildNodes(child, Node.ELEMENT_NODE))
+                    {
+                        String subName = subElement.getNodeName();
+
+                        if ("schemas".equals(subName))
+                        {
+                            schemaSource = DOMUtil.getAttributeValue(subElement, "source");
+                            labelColumn = DOMUtil.getAttributeValue(subElement, "labelColumn");
+                            typeNameColumn = DOMUtil.getAttributeValue(subElement, "typeNameColumn");
+                            typeIdColumn = DOMUtil.getAttributeValue(subElement, "typeIdColumn");
+                        }
+                        else if ("definition".equals(subName))
+                        {
+                            datasetSource = DOMUtil.getAttributeValue(subElement, "source");
+                        }
+                    }
+
+                    File schemas = new File(path, schemaSource);
+
+                    if (schemas.exists())
+                    {
+                        if (!StudyManager.getInstance().bulkImportTypes(getStudy(), schemas, user, labelColumn, typeNameColumn, typeIdColumn, errors))
+                            return false;
+                    }
+
+                    File datasetFile = new File(path, datasetSource);
+
+                    if (datasetFile.exists())
+                    {
+                        submitStudyBatch(getStudy(), datasetFile, c, user, getViewContext().getActionURL());
+                    }
+                }
+                else if ("specimens".equals(name))
+                {
+                    boolean simple = Boolean.parseBoolean(DOMUtil.getAttributeValue(rootNode, "simpleRepository", "true"));
+                    updateRepositorySettings(c, simple);
+
+                    String source = DOMUtil.getAttributeValue(child, "source");
+                    File specimenFile = new File(path, source);
+
+                    SpringSpecimenController.submitSpecimenBatch(c, user, url, specimenFile);
+                }
+                else
+                {
+                    throw new RuntimeException("study.xml format problem: unknown node '" + name + "'");
+                }
             }
 
             return true;
@@ -3771,7 +3818,7 @@ public class StudyController extends BaseStudyController
 
         public ActionURL getSuccessURL(Object o)
         {
-            return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
+            return redirect;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -5841,6 +5888,21 @@ public class StudyController extends BaseStudyController
         {
             _log.error("getAppBar", e);
             return null;
+        }
+    }
+
+    public static class TSVForm extends FormData
+    {
+        private String _content;
+
+        public String getContent()
+        {
+            return _content;
+        }
+
+        public void setContent(String content)
+        {
+            _content = content;
         }
     }
 }

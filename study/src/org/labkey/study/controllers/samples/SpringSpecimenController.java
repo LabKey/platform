@@ -16,61 +16,63 @@
 
 package org.labkey.study.controllers.samples;
 
-import org.labkey.study.controllers.BaseStudyController;
-import org.labkey.study.controllers.BaseController;
-import org.labkey.study.controllers.StudyController;
-
-import org.labkey.study.query.*;
-import org.labkey.study.model.*;
+import org.labkey.api.action.*;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.data.*;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineStatusUrls;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.User;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.*;
+import org.labkey.common.util.Pair;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
-import org.labkey.study.requirements.SpecimenRequestRequirementType;
+import org.labkey.study.controllers.BaseStudyController;
+import org.labkey.study.controllers.StudyController;
+import org.labkey.study.model.*;
+import org.labkey.study.pipeline.SpecimenBatch;
+import org.labkey.study.query.SpecimenEventQueryView;
+import org.labkey.study.query.SpecimenQueryView;
+import org.labkey.study.query.SpecimenRequestQueryView;
+import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.requirements.RequirementProvider;
-import org.labkey.study.samples.notifications.ActorNotificationRecipientSet;
-import org.labkey.study.samples.notifications.NotificationRecipientSet;
-import org.labkey.study.samples.notifications.DefaultRequestNotification;
+import org.labkey.study.requirements.SpecimenRequestRequirementType;
 import org.labkey.study.samples.ByteArrayAttachmentFile;
+import org.labkey.study.samples.notifications.ActorNotificationRecipientSet;
+import org.labkey.study.samples.notifications.DefaultRequestNotification;
+import org.labkey.study.samples.notifications.NotificationRecipientSet;
+import org.labkey.study.samples.report.SpecimenReportExcelWriter;
+import org.labkey.study.samples.report.SpecimenVisitReportParameters;
+import org.labkey.study.samples.report.participant.ParticipantSiteReportFactory;
 import org.labkey.study.samples.report.participant.ParticipantSummaryReportFactory;
-import org.labkey.study.samples.report.request.RequestReportFactory;
-import org.labkey.study.samples.report.request.RequestSiteReportFactory;
+import org.labkey.study.samples.report.participant.ParticipantTypeReportFactory;
 import org.labkey.study.samples.report.request.RequestEnrollmentSiteReportFactory;
 import org.labkey.study.samples.report.request.RequestParticipantReportFactory;
+import org.labkey.study.samples.report.request.RequestReportFactory;
+import org.labkey.study.samples.report.request.RequestSiteReportFactory;
 import org.labkey.study.samples.report.specimentype.TypeCohortReportFactory;
 import org.labkey.study.samples.report.specimentype.TypeParticipantReportFactory;
 import org.labkey.study.samples.report.specimentype.TypeSummaryReportFactory;
-import org.labkey.study.samples.report.participant.ParticipantTypeReportFactory;
-import org.labkey.study.samples.report.participant.ParticipantSiteReportFactory;
-import org.labkey.study.samples.report.SpecimenVisitReportParameters;
-import org.labkey.study.samples.report.SpecimenReportExcelWriter;
-import org.labkey.api.action.*;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.User;
-import org.labkey.api.view.*;
-import org.labkey.api.data.*;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.Attachment;
-import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ExceptionUtil;
-import org.labkey.common.util.Pair;
-
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
+import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.http.HttpSession;
 import javax.servlet.ServletException;
-import java.util.*;
+import javax.servlet.http.HttpSession;
+import java.io.*;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.io.OutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.BufferedOutputStream;
+import java.util.*;
 
 /**
  * User: brittp
@@ -2134,7 +2136,7 @@ public class SpringSpecimenController extends BaseStudyController
     }
 
 
-    public static class EmailSpecimenListForm extends BaseController.IdForm
+    public static class EmailSpecimenListForm extends SamplesController.IdForm
     {
         private boolean _sendXls;
         private boolean _sendTsv;
@@ -2394,7 +2396,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    public static class ExportSiteForm extends BaseController.IdForm
+    public static class ExportSiteForm extends SamplesController.IdForm
     {
         private String _export;
         private String _specimenIds;
@@ -2512,7 +2514,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    public static class LabSpecimenListsForm extends BaseController.IdForm
+    public static class LabSpecimenListsForm extends SamplesController.IdForm
     {
         private String _listType;
 
@@ -3084,5 +3086,159 @@ public class SpringSpecimenController extends BaseStudyController
             return root.addChild("Set vial comments");
         }
     }
-    
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class ImportSpecimenData extends SimpleViewAction<SamplesController.PipelineForm>
+    {
+        private String _path = null;
+
+        public void validateCommand(SamplesController.PipelineForm target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(SamplesController.PipelineForm form, BindException bindErrors) throws Exception
+        {
+            _path = form.getPath();
+            File dataFile = null;
+
+            if (_path != null)
+            {
+                PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+                if (root != null)
+                    dataFile = root.resolvePath(_path);
+            }
+
+            if (null == dataFile || !dataFile.exists() || !dataFile.isFile())
+            {
+                HttpView.throwNotFound();
+                return null;
+            }
+
+            List<String> errors = new ArrayList<String>();
+            if (!dataFile.canRead())
+                errors.add("Can't read data file: " + _path);
+
+            boolean previouslyRun = false;
+            File logFile = new File(dataFile.getPath() + ".log");
+            if (logFile.exists() && logFile.isFile())
+            {
+                if (form.isDeleteLogfile())
+                    logFile.delete();
+                else
+                    previouslyRun = true;
+            }
+
+            SpecimenBatch batch = new SpecimenBatch(new ViewBackgroundInfo(getContainer(), getUser(), getViewContext().getActionURL()), dataFile);
+            if (errors.size() == 0)
+            {
+                List<String> parseErrors = new ArrayList<String>();
+                batch.prepareImport(parseErrors);
+                for (String error : parseErrors)
+                    errors.add(error);
+            }
+
+            return new JspView<ImportSpecimensBean>("/org/labkey/study/view/samples/importSpecimens.jsp",
+                    new ImportSpecimensBean(getContainer(), batch, _path, errors, previouslyRun));
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Import Study Batch - " + _path);
+            return root;
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class SubmitSpecimenImport extends FormHandlerAction<SamplesController.PipelineForm>
+    {
+        public void validateCommand(SamplesController.PipelineForm target, Errors errors)
+        {
+        }
+
+        public boolean handlePost(SamplesController.PipelineForm form, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+            String path = form.getPath();
+            File f = null;
+
+            if (path != null)
+            {
+                PipeRoot root = PipelineService.get().findPipelineRoot(c);
+                if (root != null)
+                    f = root.resolvePath(path);
+            }
+
+            return submitSpecimenBatch(c, getUser(), getViewContext().getActionURL(), f);
+        }
+
+        public ActionURL getSuccessURL(SamplesController.PipelineForm pipelineForm)
+        {
+            return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
+        }
+    }
+
+
+    public static boolean submitSpecimenBatch(Container c, User user, ActionURL url, File f) throws IOException, SQLException
+    {
+        if (null == f || !f.exists() || !f.isFile())
+        {
+            HttpView.throwNotFound();   // TODO: Better error message
+            return false;
+        }
+        File logFile = new File(f.getPath() + ".log");
+        if (logFile.exists() && logFile.isFile())
+            return false;
+
+        SpecimenBatch batch = new SpecimenBatch(new ViewBackgroundInfo(c, user, url), f);
+        batch.submit();
+
+        return true;
+    }
+
+
+    public static class ImportSpecimensBean
+    {
+        private String _path;
+        private SpecimenBatch _batch;
+        private List<String> _errors;
+        private boolean _previouslyRun;
+        private Container _container;
+
+        public ImportSpecimensBean(Container container, SpecimenBatch batch,
+                                   String path, List<String> errors, boolean previouslyRun)
+        {
+            _path = path;
+            _batch = batch;
+            _errors = errors;
+            _previouslyRun = previouslyRun;
+            _container = container;
+        }
+
+        public SpecimenBatch getBatch()
+        {
+            return _batch;
+        }
+
+        public String getPath()
+        {
+            return _path;
+        }
+
+        public List<String> getErrors()
+        {
+            return _errors;
+        }
+
+        public boolean isPreviouslyRun()
+        {
+            return _previouslyRun;
+        }
+
+        public Container getContainer()
+        {
+            return _container;
+        }
+    }
 }

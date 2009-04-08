@@ -15,17 +15,17 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.controllers.samples.SamplesController"%>
+<%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController"%>
 <%@ page import="org.labkey.study.pipeline.SpecimenBatch"%>
 <%@ page import="java.util.List"%>
-<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<org.labkey.study.controllers.samples.SamplesController.ImportSpecimensBean> me =
-            (JspView<SamplesController.ImportSpecimensBean>) HttpView.currentView();
-    SamplesController.ImportSpecimensBean bean = me.getModelBean();
+    JspView<SpringSpecimenController.ImportSpecimensBean> me =
+            (JspView<SpringSpecimenController.ImportSpecimensBean>) HttpView.currentView();
+    SpringSpecimenController.ImportSpecimensBean bean = me.getModelBean();
     boolean hasError = !bean.getErrors().isEmpty();
     List<SpecimenBatch.EntryDescription> entries = bean.getBatch().getEntryDescriptions();
 %>

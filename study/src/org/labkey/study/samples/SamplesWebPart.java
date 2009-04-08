@@ -77,8 +77,6 @@ public class SamplesWebPart extends JspView<SamplesWebPart.SamplesWebPartBean>
                 ActionURL url = parentURL.clone();
                 List<? extends SpecimenTypeSummary.TypeCount> children = count.getChildren();
 
-
-
                 builder.append("<tr class=\"labkey-header\"><td class=\"labkey-nav-tree-node\">");
                 if (!children.isEmpty())
                 {
@@ -102,7 +100,7 @@ public class SamplesWebPart extends JspView<SamplesWebPart.SamplesWebPartBean>
                             "Description"), CompareType.ISBLANK, null);
                 }
 
-                builder.append("<td class=\"labkey-nav-tree-text\" width=\"100%\"><a href=\"").append(url).append("\">");
+                builder.append("<td class=\"labkey-nav-tree-text\" width=\"100%\"><a href=\"").append(url.getEncodedLocalURIString()).append("\">");
                 if (count.getLabel() != null && count.getLabel().length() > 0)
                     builder.append(PageFlowUtil.filter(count.getLabel()));
                 else
@@ -139,6 +137,5 @@ public class SamplesWebPart extends JspView<SamplesWebPart.SamplesWebPartBean>
             SpecimenTypeSummary summary = SampleManager.getInstance().getSpecimenTypeSummary(_viewContext.getContainer());
             return getTypeListHtml(summary.getDerivatives());
         }
-
     }
 }

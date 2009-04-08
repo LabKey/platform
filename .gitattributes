@@ -1935,7 +1935,6 @@ study/src/org/labkey/study/assay/view/publishChooseStudy.jsp -text
 study/src/org/labkey/study/assay/view/resultDetails.jsp -text
 study/src/org/labkey/study/assay/view/runDetails.jsp -text
 study/src/org/labkey/study/assay/view/tsvDataDescription.jsp -text
-study/src/org/labkey/study/controllers/BaseController.java -text
 study/src/org/labkey/study/controllers/BaseStudyController.java -text
 study/src/org/labkey/study/controllers/CohortController.java -text
 study/src/org/labkey/study/controllers/DatasetController.java -text

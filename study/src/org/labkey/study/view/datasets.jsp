@@ -47,27 +47,23 @@ if (null == datasets || datasets.length == 0)
     return;
 }
 
+List<DataSetDefinition> userDatasets = new ArrayList<DataSetDefinition>();
+for (DataSetDefinition dataSet : datasets)
+{
+    if (!dataSet.isShowByDefault())
+        continue;
+
+    if (dataSet.canRead(ctx.getUser()))
+        userDatasets.add(dataSet);
+}
+
+int datasetsPerCol = userDatasets.size() / 3;
 %>
-<table width="100%">
-
-<%
-    List<DataSetDefinition> userDatasets = new ArrayList<DataSetDefinition>();
-    for (DataSetDefinition dataSet : datasets)
-    {
-        if (!dataSet.isShowByDefault())
-            continue;
-
-        if (dataSet.canRead(ctx.getUser()))
-            userDatasets.add(dataSet);
-    }
-
-    int datasetsPerCol = userDatasets.size() / 3;
-
-    %>
+<table width="100%"><tr>
     <td valign=top><%=renderDatasets(ctx, userDatasets, 0, datasetsPerCol + 1)%></td>
     <td valign=top><%=renderDatasets(ctx, userDatasets, datasetsPerCol + 1, (2 * datasetsPerCol) + 1)%></td>
     <td valign=top><%=renderDatasets(ctx, userDatasets, (2 * datasetsPerCol) + 1, userDatasets.size())%></td>
-</table>
+</tr></table>
 <%
     if (container.hasPermission(user, ACL.PERM_ADMIN))
         out.print("<br>" + textLink("Manage Datasets", ctx.getActionURL().relativeUrl("manageTypes.view", null, "Study")));
@@ -81,7 +77,7 @@ if (null == datasets || datasets.length == 0)
 
             String category = startIndex == 0 ? null : datasets.get(startIndex-1).getCategory();
             String datasetUrl = ctx.cloneActionURL().deleteParameters().setAction(StudyController.DefaultDatasetReportAction.class).getLocalURIString();
-            sb.append("<table>");
+            sb.append("<table>\n");
             //Print a column header if necessary
             DataSetDefinition firstDataset = datasets.get(startIndex);
             if (!equal(category, firstDataset.getCategory()))
@@ -111,13 +107,13 @@ if (null == datasets || datasets.length == 0)
 
                 String dataSetLabel = (dataSet.getLabel() != null ? dataSet.getLabel() : "" + dataSet.getDataSetId());
 
-                sb.append("<tr><td>");
-                sb.append("<a href=\"").append(datasetUrl).append("&datasetId=").append(dataSet.getDataSetId());
+                sb.append("        <tr><td>");
+                sb.append("<a href=\"").append(datasetUrl).append("&amp;datasetId=").append(dataSet.getDataSetId());
                 sb.append("\">");
                 sb.append(h(dataSetLabel));
                 sb.append("</a></td></tr>\n");
             }
-            sb.append("</table>");
+            sb.append("    </table>");
 
             return sb.toString();
         }

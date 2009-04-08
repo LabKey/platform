@@ -242,5 +242,4 @@ public class SpecimenSummaryTable extends BaseStudyTable
             out.write(getDisplayText(ctx, "<br>"));
         }
     }
-
 }

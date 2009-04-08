@@ -27,22 +27,25 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
-import org.labkey.api.attachments.*;
+import org.labkey.api.attachments.AttachmentDirectory;
+import org.labkey.api.attachments.AttachmentForm;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.*;
-import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.study.SpecimenService;
-import org.labkey.api.util.*;
+import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.common.tools.TabLoader;
+import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.common.tools.ColumnDescriptor;
+import org.labkey.common.tools.TabLoader;
 import org.labkey.common.util.Pair;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
-import org.labkey.study.controllers.BaseController;
+import org.labkey.study.controllers.BaseStudyController;
+import org.labkey.study.controllers.StudyController;
 import org.labkey.study.designer.MapArrayExcelWriter;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.*;
@@ -51,7 +54,8 @@ import org.labkey.study.query.SpecimenQueryView;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -60,8 +64,43 @@ import java.util.*;
 
 
 @Jpf.Controller(longLived=true,messageBundles = {@Jpf.MessageBundle(bundlePath = "messages.Validation")})
-public class SamplesController extends BaseController
+public class SamplesController extends ViewController
 {
+    public Study getStudy() throws ServletException
+    {
+        // UNDONE: see https://cpas.fhcrc.org/Issues/home/issues/details.view?issueId=1137
+        Container c = getContainer();
+        Study study = StudyManager.getInstance().getStudy(c);
+        if (study == null)
+        {
+            // redirect to the study home page, where admins will see a 'create study' button,
+            // and non-admins will simply see a message that no study exists.
+            HttpView.throwRedirect(new ActionURL(StudyController.BeginAction.class, c));
+        }
+        return study;
+    }
+
+    public Forward _renderInTemplate(HttpView view, String title, NavTree... navtrail) throws Exception
+    {
+        return _renderInTemplate(view, title, null, navtrail);
+    }
+
+    public Forward _renderInTemplate(HttpView view, String title, String helpTopic, NavTree... navtrail) throws Exception
+    {
+        NavTrailConfig trailConfig = new NavTrailConfig(getViewContext());
+        if (title != null)
+            trailConfig.setTitle(title);
+        if (helpTopic != null)
+            trailConfig.setHelpTopic(new HelpTopic(helpTopic, HelpTopic.Area.STUDY));
+        trailConfig.setExtraChildren(navtrail);
+        return includeView(new HomeTemplate(getViewContext(), getContainer(), view, trailConfig));
+    }
+
+    public static <T> boolean nullSafeEqual(T first, T second)
+    {
+        return BaseStudyController.nullSafeEqual(first, second);
+    }
+
     @Jpf.Action
     /**
      * This method represents the point of entry into the pageflow
@@ -429,7 +468,7 @@ public class SamplesController extends BaseController
     }
 
     @Jpf.Action
-    protected Forward manageActorOrder(BulkEditForm form) throws Exception
+    protected Forward manageActorOrder(BaseStudyController.BulkEditForm form) throws Exception
     {
         requiresAdmin();
         if ("POST".equalsIgnoreCase(getRequest().getMethod()))
@@ -458,7 +497,7 @@ public class SamplesController extends BaseController
         return displayManagementSubpage("manageActorOrder", "Manage Actor Order", "specimenRequest");
     }
 
-    public static class StatusEditForm extends BulkEditForm
+    public static class StatusEditForm extends BaseStudyController.BulkEditForm
     {
         private int[] _finalStateIds = new int[0];
         private int[] _specimensLockedIds = new int[0];
@@ -517,7 +556,7 @@ public class SamplesController extends BaseController
         }
     }
 
-    public static class ActorEditForm extends BulkEditForm
+    public static class ActorEditForm extends BaseStudyController.BulkEditForm
     {
         boolean _newPerSite;
 
@@ -613,7 +652,7 @@ public class SamplesController extends BaseController
     }
 
     @Jpf.Action
-    protected Forward manageStatusOrder(BulkEditForm form) throws Exception
+    protected Forward manageStatusOrder(BaseStudyController.BulkEditForm form) throws Exception
     {
         requiresAdmin();
         if ("POST".equalsIgnoreCase(getRequest().getMethod()))
@@ -1254,87 +1293,6 @@ public class SamplesController extends BaseController
 
 
     @Jpf.Action
-    protected Forward submitSpecimenImport(PipelineForm form) throws Exception
-    {
-        requiresPermission(ACL.PERM_ADMIN);
-
-        Container c = getContainer();
-        String path = form.getPath();
-        File f = null;
-
-        if (path != null)
-        {
-            PipeRoot root = PipelineService.get().findPipelineRoot(c);
-            if (root != null)
-                f = root.resolvePath(path);
-        }
-
-        if (null == f || !f.exists() || !f.isFile())
-        {
-            HttpView.throwNotFound();
-            return null;
-        }
-        File logFile = new File(f.getPath() + ".log");
-        if (logFile.exists() && logFile.isFile())
-            return importSpecimenData(form);
-
-        SpecimenBatch batch = new SpecimenBatch(new ViewBackgroundInfo(this), f);
-        batch.submit();
-
-        HttpView.throwRedirect(PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c));
-        return null;
-    }
-
-    @Jpf.Action
-    protected Forward importSpecimenData(PipelineForm form) throws Exception
-    {
-        requiresAdmin();
-        String path = form.getPath();
-        File dataFile = null;
-
-        if (path != null)
-        {
-            PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-            if (root != null)
-                dataFile = root.resolvePath(path);
-        }
-
-        if (null == dataFile || !dataFile.exists() || !dataFile.isFile())
-        {
-            HttpView.throwNotFound();
-            return null;
-        }
-
-        List<String> errors = new ArrayList<String>();
-        if (!dataFile.canRead())
-            errors.add("Can't read data file: " + path);
-
-        boolean previouslyRun = false;
-        File logFile = new File(dataFile.getPath() + ".log");
-        if (logFile.exists() && logFile.isFile())
-        {
-            if (form.isDeleteLogfile())
-                logFile.delete();
-            else
-                previouslyRun = true;
-        }
-
-        SpecimenBatch batch = new SpecimenBatch(new ViewBackgroundInfo(this), dataFile);
-        if (errors.size() == 0)
-        {
-            List<String> parseErrors = new ArrayList<String>();
-            batch.prepareImport(parseErrors);
-            for (String error : parseErrors)
-                errors.add(error);
-        }
-
-        JspView<ImportSpecimensBean> view = new JspView<ImportSpecimensBean>("/org/labkey/study/view/samples/importSpecimens.jsp",
-                new ImportSpecimensBean(getContainer(), batch, path, errors, previouslyRun));
-        return renderInTemplate(view, getContainer(), "Import Study Batch - " + path);
-
-    }
-
-    @Jpf.Action
     protected Forward autoComplete(AutoCompletionForm form) throws Exception
     {
         requiresPermission(ACL.PERM_READ);
@@ -1701,6 +1659,61 @@ public class SamplesController extends BaseController
             DisplayColumnInfo colInfo = defaultColumns.get(info.getName());
             assert colInfo != null : info.getName() + " is not a picklist column.";
             return SampleManager.getInstance().getDistinctColumnValues(_container, info, colInfo.isForceDistinctQuery());
+        }
+    }
+
+    public static class IdForm extends ViewFormData
+    {
+        private int _id;
+
+        public IdForm()
+        {
+        }
+
+        public IdForm(int id)
+        {
+            _id = id;
+        }
+
+        public int getId()
+        {
+            return _id;
+        }
+
+        public void setId(int id)
+        {
+            _id = id;
+        }
+    }
+
+    public static class PipelineForm extends FormData
+    {
+        private String _path;
+        private boolean _deleteLogfile;
+
+        public PipelineForm()
+        {
+//            System.err.println("PipelineForm");
+        }
+
+        public String getPath()
+        {
+            return _path;
+        }
+
+        public void setPath(String path)
+        {
+            this._path = path;
+        }
+
+        public boolean isDeleteLogfile()
+        {
+            return _deleteLogfile;
+        }
+
+        public void setDeleteLogfile(boolean deleteLogfile)
+        {
+            _deleteLogfile = deleteLogfile;
         }
     }
 }

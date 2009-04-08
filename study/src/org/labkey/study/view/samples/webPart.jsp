@@ -15,16 +15,14 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.CompareType"%>
-<%@ page import="org.labkey.api.query.FieldKey"%>
+<%@ page import="org.labkey.api.security.ACL"%>
+<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.ViewContext"%>
-<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.WebPartView"%>
-<%@ page import="org.labkey.study.SampleManager" %>
+<%@ page import="org.labkey.study.SampleManager"%>
 <%@ page import="org.labkey.study.model.SpecimenTypeSummary" %>
 <%@ page import="org.labkey.study.samples.SamplesWebPart" %>
-<%@ page import="org.labkey.api.security.ACL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ViewContext currentContext = HttpView.currentContext();
@@ -49,8 +47,8 @@
     }
 %>
     <% WebPartView.startTitleFrame(out, "Search", null, "100%", null); %>
-<a href="<%= vialsURL.setAction("showSearch").replaceParameter("showVials", "false") %>">Search For Specimens</a><br>
-<a href="<%= vialsURL.setAction("showSearch").replaceParameter("showVials", "true") %>">Search For Vials</a><br>
+<a href="<%=h(vialsURL.setAction("showSearch").replaceParameter("showVials", "false"))%>">Search For Specimens</a><br>
+<a href="<%=h(vialsURL.setAction("showSearch").replaceParameter("showVials", "true"))%>">Search For Vials</a><br>
 <% WebPartView.endTitleFrame(out); %>
 
 <% WebPartView.startTitleFrame(out, "Vials by Primary Type", null, "100%", null); %>
@@ -66,10 +64,8 @@
 <%
     }
 %>
-
-
 <% WebPartView.startTitleFrame(out, "Vials by Derivative", null, "100%", null); %>
-<%= bean.getDerivativeTypeListHtml() %>
+<%=bean.getDerivativeTypeListHtml() %>
 <% WebPartView.endTitleFrame(out); %>
 <%
     if (bean.isWide())
@@ -81,13 +77,12 @@
     }
 %>
 <% WebPartView.startTitleFrame(out, "View All Specimens", null, "100%", null); %>
-<a href="<%= vialsURL.setAction("samples").replaceParameter("showVials", "false") %>">By Specimen</a><br>
-<a href="<%= vialsURL.setAction("samples").replaceParameter("showVials", "true") %>">By Vial</a><br>
+<a href="<%=h(vialsURL.setAction("samples").replaceParameter("showVials", "false"))%>">By Specimen</a><br>
+<a href="<%=h(vialsURL.setAction("samples").replaceParameter("showVials", "true"))%>">By Vial</a><br>
 <%
     url.deleteParameters();
     WebPartView.endTitleFrame(out);
 %>
-
 <%
 if (settings.isEnableRequests())
 {
