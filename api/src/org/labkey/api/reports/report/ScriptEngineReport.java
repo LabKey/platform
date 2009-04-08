@@ -221,10 +221,11 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
         if (_tempFolder == null || _tempFolderPipeline != isPipeline)
         {
             File tempRoot = getTempRoot();
+            String reportId = FileUtil.makeLegalName(String.valueOf(getDescriptor().getReportId())).replaceAll(" ", "_");
             if (isPipeline)
-                _tempFolder = new File(tempRoot, "Report_" + FileUtil.makeLegalName(String.valueOf(getDescriptor().getReportId())));
+                _tempFolder = new File(tempRoot, "Report_" + reportId);
             else
-                _tempFolder = new File(tempRoot.getAbsolutePath() + File.separator + "Report_" + FileUtil.makeLegalName(String.valueOf(getDescriptor().getReportId())), String.valueOf(Thread.currentThread().getId()));
+                _tempFolder = new File(tempRoot.getAbsolutePath() + File.separator + "Report_" + reportId, String.valueOf(Thread.currentThread().getId()));
 
             _tempFolderPipeline = isPipeline;
             if (!_tempFolder.exists())
