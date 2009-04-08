@@ -74,11 +74,6 @@ public class ViewController extends PageFlowControllerFIXED implements Controlle
         return _context;
     }
 
-    protected ViewBackgroundInfo getViewBackgroundInfo() throws ServletException
-    {
-        return new ViewBackgroundInfo(this);
-    }
-
     protected boolean addError(String error)
     {
         PageFlowUtil.getActionErrors(getRequest(), true).add("main", new ActionMessage("Error", error));

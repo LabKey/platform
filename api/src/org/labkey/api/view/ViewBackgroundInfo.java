@@ -20,7 +20,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 
-import javax.servlet.ServletException;
 import java.io.Serializable;
 
 /**
@@ -45,11 +44,6 @@ public class ViewBackgroundInfo implements Serializable
     private transient Container _container;
     private transient User _user;
     private transient ActionURL _url;
-
-    public ViewBackgroundInfo(ViewController controller) throws ServletException
-    {
-        this(controller.getContainer(), controller.getUser(), controller.getActionURL());
-    }
 
     public ViewBackgroundInfo(Container c, User u, ActionURL h)
     {

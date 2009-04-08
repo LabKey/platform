@@ -702,7 +702,7 @@ public class TabLoader extends DataLoader
 
 
     /**
-     * NOTE: we don't use ObjectFactory, because that's not available in the tools build currently.  Hoewever, you
+     * NOTE: we don't use ObjectFactory, because that's not available in the tools build currently.  However, you
      * can easily wrap an ObjectFactory with the Transformer interface
      */
     public class TabTransformer<T> implements Transformer

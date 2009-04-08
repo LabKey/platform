@@ -98,11 +98,19 @@ public class DOMUtil
      */
     public static List<Node> getChildNodes(Node node)
     {
+        return getChildNodes(node, null);
+    }
+
+    public static List<Node> getChildNodes(Node node, Short nodeType)
+    {
         NodeList children = node.getChildNodes();
         List<Node> ret = new ArrayList<Node>(children.getLength());
         for(int idx = 0; idx < children.getLength(); ++idx)
         {
-            ret.add(children.item(idx));
+            Node child = children.item(idx);
+
+            if (null != nodeType && child.getNodeType() == nodeType.shortValue())
+                ret.add(children.item(idx));
         }
         return ret;
     }
@@ -151,13 +159,7 @@ public class DOMUtil
      */
     public static Node getFirstChildElement(Node node)
     {
-        NodeList children = node.getChildNodes();
-        for(int idx = 0; idx < children.getLength(); ++idx)
-        {
-            Node child = children.item(idx);
-            if(child.getNodeType() == Node.ELEMENT_NODE)
-                return child;
-        }
-        return null;
+        List<Node> nodes = getChildNodes(node, Node.ELEMENT_NODE);
+        return nodes.size() > 0 ? nodes.get(0) : null;
     }
 }
