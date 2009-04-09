@@ -29,6 +29,7 @@ import org.labkey.api.data.QcUtil;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.QcFieldWrapper;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.CloseableIterator;
 
 import java.io.File;
 import java.io.IOException;
@@ -120,7 +121,7 @@ public class ExcelLoader extends DataLoader
         return cells.toArray(new String[cells.size()][]);
     }
 
-    protected Iterator<Map<String,Object>> iterator() throws IOException
+    public CloseableIterator<Map<String,Object>> iterator() throws IOException
     {
         return new ExcelIterator();
     }
@@ -136,7 +137,7 @@ public class ExcelLoader extends DataLoader
         workbook.close();
     }
 
-    private class ExcelIterator implements Iterator<Map<String,Object>>
+    private class ExcelIterator implements CloseableIterator<Map<String,Object>>
     {
         private int rowIndex;
         private Sheet sheet;
@@ -292,6 +293,11 @@ public class ExcelLoader extends DataLoader
         public void remove()
         {
             throw new UnsupportedOperationException("Please don't do that.");
+        }
+
+        public void close() throws IOException
+        {
+            //To change body of implemented methods use File | Settings | File Templates.
         }
     }
 

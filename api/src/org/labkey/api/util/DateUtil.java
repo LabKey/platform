@@ -19,15 +19,15 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.collections.FastHashMap;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 
 import java.sql.Timestamp;
 import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public class DateUtil
@@ -36,12 +36,12 @@ public class DateUtil
     {
     }
 
-    private static FastHashMap tzCache = new FastHashMap();
-    private static Locale _localeDefault = Locale.getDefault();
-    private static TimeZone _timezoneDefault = TimeZone.getDefault();
-    private static int currentYear = new GregorianCalendar().get(Calendar.YEAR);
-    private static int twoDigitCutoff = (currentYear - 80) % 100;
-    private static int defaultCentury = (currentYear - 80) - twoDigitCutoff;
+    private static final Map<Integer, TimeZone> tzCache = new ConcurrentHashMap<Integer, TimeZone>();
+    private static final Locale _localeDefault = Locale.getDefault();
+    private static final TimeZone _timezoneDefault = TimeZone.getDefault();
+    private static final int currentYear = new GregorianCalendar().get(Calendar.YEAR);
+    private static final int twoDigitCutoff = (currentYear - 80) % 100;
+    private static final int defaultCentury = (currentYear - 80) - twoDigitCutoff;
 
     private static final String _standardDateFormatString = "yyyy-MM-dd";
     private static final String _standardDateTimeFormatString = "yyyy-MM-dd HH:mm";

@@ -28,6 +28,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.QcUtil;
 import org.labkey.api.exp.QcFieldWrapper;
+import org.labkey.api.util.CloseableIterator;
 
 import java.beans.PropertyDescriptor;
 import java.io.*;
@@ -198,7 +199,7 @@ public class TabLoader extends DataLoader
 
 
     /**
-     * Note we don't handled values with embedded newlines
+     * Note we don't handle values with embedded newlines
      *
      * @param s
      */
@@ -275,11 +276,20 @@ public class TabLoader extends DataLoader
     }
 
 
-    public TabLoaderIterator iterator() throws IOException
+    public CloseableIterator<Map<String, Object>> iterator() throws IOException
     {
         return new TabLoader.TabLoaderIterator();
     }
 
+    public <K> CloseableIterator<K> iterator(Class<K> clazz) throws IOException
+    {
+        return new BeanIterator<K>(clazz);
+    }
+
+    public <K> List<K> load(Class<K> clazz) throws IOException
+    {
+        return new TabTransformer<K>(clazz).load();
+    }
 
     private void initColNameMap() throws IOException
     {
@@ -467,7 +477,7 @@ public class TabLoader extends DataLoader
     }
 
 
-    public class TabLoaderIterator implements Iterator<Map<String, Object>>
+    public class TabLoaderIterator implements CloseableIterator<Map<String, Object>>
     {
         public void close()
         {
@@ -695,21 +705,48 @@ public class TabLoader extends DataLoader
         }
     }
 
-    public <T> TabTransformer<T> createTransformer(Class<T> type) throws IOException
+    private class BeanIterator<K> implements CloseableIterator<K>
     {
-        return new TabTransformer<T>(type);
+        private TabLoaderIterator _mapIter;
+        private TabTransformer<K> _transformer;
+
+        private BeanIterator(Class<K> clazz) throws IOException
+        {
+            _mapIter = new TabLoaderIterator();
+            _transformer = new TabTransformer<K>(clazz);
+        }
+
+        public void close() throws IOException
+        {
+            _mapIter.close();
+        }
+
+        public boolean hasNext()
+        {
+            return _mapIter.hasNext();
+        }
+
+        public K next()
+        {
+            Map<String, Object> row = _mapIter.next();
+            return _transformer.transform(row);
+        }
+
+        public void remove()
+        {
+            _mapIter.remove();
+        }
     }
 
-
     /**
-     * NOTE: we don't use ObjectFactory, because that's not available in the tools build currently.  However, you
+     * NOTE: we don't use ObjectFactory because historically it wasn't available in the tools build.  However, you
      * can easily wrap an ObjectFactory with the Transformer interface
      */
-    public class TabTransformer<T> implements Transformer
+    private class TabTransformer<T> implements Transformer
     {
-        public Class<T> _returnElementClass;
+        private Class<T> _returnElementClass;
 
-        public TabTransformer(Class<T> type) throws IOException
+        private TabTransformer(Class<T> type) throws IOException
         {
             _returnElementClass = type;
             initColumnInfos(_returnElementClass);
@@ -806,11 +843,11 @@ public class TabLoader extends DataLoader
                         if (java.util.Map.class.isAssignableFrom(bean.getClass()))
                         {
                             //cast is ok here because we're explicitly checking
-                            ((Map) bean).put(column.name, value);
+                            ((Map<String, Object>) bean).put(column.name, value);
                         }
-
                     }
                 }
+
                 return bean;
             }
             catch (Exception x)
@@ -819,7 +856,7 @@ public class TabLoader extends DataLoader
             }
         }
 
-        public List<T> load() throws IOException
+        private List<T> load() throws IOException
         {
             List<Map<String, Object>> maps = TabLoader.this.load();
             List<T> result = new ArrayList<T>(maps.size());
@@ -1026,8 +1063,7 @@ public class TabLoader extends DataLoader
             File tsv = _createTempFile(tsvData, ".tsv");
             TabLoader loader = new TabLoader(tsv);
 
-            TabTransformer<TestRow> transformer = loader.createTransformer(TestRow.class);
-            List<TestRow> rows = transformer.load();
+            List<TestRow> rows = loader.load(TestRow.class);
 
             assertTrue(rows.size() == 7);
 

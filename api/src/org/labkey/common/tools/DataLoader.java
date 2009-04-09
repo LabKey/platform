@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections.Transformer;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.QcColumn;
+import org.labkey.api.util.CloseableIterator;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -26,7 +27,7 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * Interface for loading columnar data from different sources: TSVs, Excel files, etc.
+ * Abstract class for loading columnar data from different sources: TSVs, Excel files, etc.
  *
  * User: jgarms
  * Date: Oct 22, 2008
@@ -108,11 +109,6 @@ public abstract class DataLoader
      * if there are fewer rows than that in the data.
      **/
     public abstract String[][] getFirstNLines(int n) throws IOException;
-
-    /**
-     * Returns an iterator over the data in this file
-     */
-    protected abstract Iterator<Map<String, Object>> iterator() throws IOException;
 
     /**
      * Look at first <code>scanAheadLineCount</code> lines of the file and infer col names, data types.
@@ -296,8 +292,12 @@ public abstract class DataLoader
     }
 
     /**
-     * Returns an array of objects one for each non-header row of the file.
-     * By default the objects are maps, but may be java beans.
+     * Returns a map iterator over the data in this file
+     */
+    public abstract CloseableIterator<Map<String, Object>> iterator() throws IOException;
+
+    /**
+     * Returns a list of maps, one for each non-header row of the file.
      */
     public List<Map<String, Object>> load() throws IOException
     {

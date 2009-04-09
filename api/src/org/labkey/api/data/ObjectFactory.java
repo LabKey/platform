@@ -16,13 +16,13 @@
 
 package org.labkey.api.data;
 
-import org.apache.commons.collections.FastHashMap;
 import org.apache.log4j.Logger;
 import org.labkey.common.util.BoundMap;
 
-import java.util.Map;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -36,19 +36,15 @@ public interface ObjectFactory<K>
 
     Map<String, Object> toMap(K bean, Map<String, Object> m);
 
-
     K handle(ResultSet rs) throws SQLException;
-
 
     K[] handleArray(ResultSet rs) throws SQLException;
 
 
     public static class Registry
     {
-        private static Logger _log = Logger.getLogger(Registry.class);
-
-        // UNDONE: Either replace with synchronized map OR setFast(true) at some point
-        static FastHashMap _registry = new FastHashMap(64);
+        private static final Logger _log = Logger.getLogger(Registry.class);
+        private static final Map<Class, ObjectFactory> _registry = new ConcurrentHashMap<Class, ObjectFactory>(64);
 
         public static <K> void register(Class<K> clss, ObjectFactory<K> f)
         {
