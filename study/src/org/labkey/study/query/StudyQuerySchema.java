@@ -105,9 +105,10 @@ public class StudyQuerySchema extends UserSchema
     {
         Map<String, DataSetDefinition> ret = new LinkedHashMap<String, DataSetDefinition>();
         assert _study != null : "Attempt to get datasets without a study";
+        User user = getUser();
         for (DataSetDefinition dsd : _study.getDataSets())
         {
-            if (dsd.getLabel() == null)
+            if (dsd.getLabel() == null || !dsd.canRead(user))
                 continue;
             ret.put(dsd.getLabel(), dsd);
         }
