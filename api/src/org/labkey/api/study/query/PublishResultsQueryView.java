@@ -106,7 +106,7 @@ public class PublishResultsQueryView extends ResultsQueryView
         DataRegion dr = super.createDataRegion();
         dr.setShowFilters(false);
         dr.setSortable(false);
-        dr.setShowPagination(false);
+        dr.setShowPagination(true);
         dr.setShowRows(ShowRows.ALL);
         dr.setMaxRows(0);
         List<DisplayColumn> extraColumns = getExtraColumns();

@@ -137,9 +137,9 @@ public abstract class DomainImporterServiceBase extends BaseRemoteService implem
             String[][] data = loader.getFirstNLines(NUM_SAMPLE_ROWS + 1); // also need the header
             int numRows = data.length;
 
-            for (int i=0; i<columns.length; i++)
+            for (int colIndex=0; colIndex<columns.length; colIndex++)
             {
-                ColumnDescriptor column = columns[i];
+                ColumnDescriptor column = columns[colIndex];
                 GWTPropertyDescriptor prop = new GWTPropertyDescriptor();
                 prop.setName(column.name);
                 prop.setRangeURI(column.getRangeURI());
@@ -147,7 +147,10 @@ public abstract class DomainImporterServiceBase extends BaseRemoteService implem
                 List<String> columnData = new ArrayList<String>();
                 for (int rowIndex=1; rowIndex<numRows; rowIndex++)
                 {
-                    columnData.add(data[rowIndex][i]);
+                    String datum = "";
+                    if (data[rowIndex].length > colIndex) // Not guaranteed that every row has every column
+                        datum = data[rowIndex][colIndex];
+                    columnData.add(datum);
                 }
 
                 InferencedColumn infColumn = new InferencedColumn(prop, columnData);
