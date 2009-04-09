@@ -37,7 +37,6 @@ import java.util.*;
  */
 public class VisitMapImporter
 {
-
     public boolean process(User user, Study study, String content, List<String> errors) throws SQLException
     {
         if (content == null)
@@ -149,7 +148,6 @@ public class VisitMapImporter
                 requiredMapNew.put(new VisitMapKey(dataSetId,visitId), Boolean.TRUE);
         }
             
-
         for (Map.Entry<VisitMapKey,Boolean> e : requiredMapNew.entrySet())
         {
             VisitMapKey key = e.getKey();
@@ -174,7 +172,7 @@ public class VisitMapImporter
         }
 
         // NOTE: extra mappings don't hurt, just make sure they are not required
-        for (Map.Entry<VisitMapKey,Boolean> e : requiredMapCurr.entrySet())
+        for (Map.Entry<VisitMapKey, Boolean> e : requiredMapCurr.entrySet())
         {
             VisitMapKey key = e.getKey();
             Boolean isRequiredCurrent = e.getValue();
@@ -208,7 +206,7 @@ public class VisitMapImporter
                     new ColumnDescriptor("terminationWindow", String.class)
                     });
 
-            // UNDONE: TabLoader does not integerate with ObjectFactory yet...
+            // UNDONE: TabLoader does not integrate with ObjectFactory yet...
             maps = loader.load();
         }
         catch (IOException x)
@@ -225,6 +223,7 @@ public class VisitMapImporter
             if (m.get("sequenceRange") != null)
                 records.add(new VisitMapRecord(m));
         }
+
         return records;
     }
 

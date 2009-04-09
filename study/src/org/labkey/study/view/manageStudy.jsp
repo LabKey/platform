@@ -25,6 +25,8 @@
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.query.StudyPropertiesQueryView" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <h4>General Study Information</h4>
 <%
@@ -34,6 +36,10 @@
     User user = HttpView.currentContext().getUser();
     int numProperties = getStudy().getNumExtendedProperties(user);
 
+    Container c = me.getViewContext().getContainer();
+
+    boolean reload = StudyController.isSetToReload(c);
+
     String propString = numProperties == 1 ? "property" : "properties";
 
 %>
@@ -42,6 +48,11 @@
         <th align="left">Study Label</th>
         <td><%= h(getStudy().getLabel()) %></td>
         <td><%= textLink("Change Label", "manageStudyProperties.view") %></td>
+    </tr>
+    <tr>
+        <th align="left">Reloading</th>
+        <td><%= !reload ? "This study is set to not reload" : "This is study is scheduled to check for reload every 10 seconds"%></td>
+        <td><%= textLink("Manage Reloading", "manageReload.view") %></td>
     </tr>
     <tr>
         <th align="left">Additional Properties</th>

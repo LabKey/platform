@@ -433,7 +433,7 @@ public class TypesController extends SpringActionController
     {
         BufferedReader r = new BufferedReader(new StringReader(tsv));
         TabLoader loader = new TabLoader(r, true);
-        return loader.createTransformer(Concept.class).load();
+        return loader.load(Concept.class);
     }
 
 

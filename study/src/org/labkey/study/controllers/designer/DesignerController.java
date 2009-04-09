@@ -261,7 +261,7 @@ public class DesignerController extends SpringActionController
         {
             List<Map<String,Object>> participantList = new ArrayList<Map<String,Object>>();
             int participantNum = 1;
-            for (GWTCohort cohort : (List<GWTCohort>) getStudyDefinition(form).getGroups())
+            for (GWTCohort cohort : getStudyDefinition(form).getGroups())
             {
                 for (int i = 0; i < cohort.getCount(); i++)
                 {
@@ -532,7 +532,7 @@ public class DesignerController extends SpringActionController
             rowNum++;
         }
         if (!form.isIgnoreWarnings() && errors.size() == 0)
-            for (GWTCohort group : (List<GWTCohort>) def.getGroups())
+            for (GWTCohort group : def.getGroups())
             {
                 if (cohortCounts.get(group.getName()).intValue() < group.getCount())
                 {
@@ -619,17 +619,17 @@ public class DesignerController extends SpringActionController
             return;
         }
         TabLoader loader = new TabLoader(specimenTSV, true);
-        Map<String,String> columnAliases = new HashMap();
+        Map<String, String> columnAliases = new HashMap();
         //Make sure we accept the labels
         SimpleSpecimenImporter importer = new SimpleSpecimenImporter();
-        for (Map.Entry<String,String> entry : importer.getColumnLabels().entrySet())
+        for (Map.Entry<String, String> entry : importer.getColumnLabels().entrySet())
             columnAliases.put(entry.getValue(), entry.getKey());
         //And a few more aliases
         columnAliases.put("ParticipantId", SimpleSpecimenImporter.PARTICIPANT_ID);
         columnAliases.put("Subject", SimpleSpecimenImporter.PARTICIPANT_ID);
 
         //Remember whether we used a different header so we can put up error messages that make sense
-        Map<String,String> labels = new HashMap();
+        Map<String, String> labels = new HashMap();
         for (ColumnDescriptor c : loader.getColumns())
         {
             if (columnAliases.containsKey(c.name))
@@ -642,7 +642,7 @@ public class DesignerController extends SpringActionController
         }
         importer.fixupSpecimenColumns(loader);
 
-        List<Map<String,Object>> specimenRows = loader.load();
+        List<Map<String, Object>> specimenRows = loader.load();
         setSpecimens(specimenRows);
         Set<String> participants = new HashSet<String>();
         int rowNum = 1;
@@ -666,7 +666,7 @@ public class DesignerController extends SpringActionController
         if (!form.isIgnoreWarnings())
         {
             int nParticipantsExpected = 0;
-            for (GWTCohort cohort : (List<GWTCohort>) getStudyDefinition(form).getGroups())
+            for (GWTCohort cohort : getStudyDefinition(form).getGroups())
                 nParticipantsExpected += cohort.getCount();
 
             if (participants.size() != nParticipantsExpected)

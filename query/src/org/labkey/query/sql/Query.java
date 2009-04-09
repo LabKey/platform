@@ -458,12 +458,12 @@ public class Query
 
         int i=1;
 
-        protected Iterator<Map<String, Object>> iterator() throws IOException
+        public CloseableIterator<Map<String, Object>> iterator() throws IOException
         {
             return new _Iterator();
         }
 
-        class _Iterator implements Iterator<Map<String, Object>>
+        class _Iterator implements CloseableIterator<Map<String, Object>>
         {
             public boolean hasNext()
             {
@@ -472,12 +472,16 @@ public class Query
 
             public Map<String, Object> next()
             {
-                return new ArrayListMap<String,Object>(templateRow, data[i++]);
+                return new ArrayListMap<String, Object>(templateRow, data[i++]);
             }
 
             public void remove()
             {
                 throw new UnsupportedOperationException();
+            }
+
+            public void close() throws IOException
+            {
             }
         }
     }

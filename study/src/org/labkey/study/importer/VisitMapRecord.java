@@ -72,7 +72,6 @@ class VisitMapRecord
         init(record);
     }
 
-
     private void init(Map record)
     {
         String range = (String)record.get("sequenceRange");
@@ -85,8 +84,9 @@ class VisitMapRecord
             _sequenceNumberMax = Visit.parseSequenceNum(split[1]);
         else
             _sequenceNumberMax = _sequenceNumberMin;
-        _visitType   = getType((String)record.get("visitType"));
-        _visitLabel =  (String)record.get("visitLabel");
+
+        _visitType = getType((String)record.get("visitType"));
+        _visitLabel = (String)record.get("visitLabel");
         _visitDatePlate = defaultInt((Integer)record.get("visitDatePlate"), -1);
         _visitDateField = (String)record.get("visitDateField");
         _visitDueDay =  defaultInt((Integer)record.get("visitDueDay"), -1);
@@ -96,7 +96,6 @@ class VisitMapRecord
         _missedNotificationPlate = defaultInt((Integer)record.get("missedNotificationPlate"), -1);
         _terminationWindow = (String)record.get("terminationWindow");
     }
-
 
     private static int defaultInt(Integer i, int defaultInt)
     {

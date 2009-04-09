@@ -1225,7 +1225,7 @@ public class ExperimentController extends SpringActionController
                             headerArray.put(col.name);
                         }
                         rowsArray.put(headerArray);
-                        for (TabLoader.TabLoaderIterator i = tabLoader.iterator(); i.hasNext(); )
+                        for (Iterator<Map<String, Object>> i = tabLoader.iterator(); i.hasNext(); )
                         {
                             Map<String, Object> rowMap = i.next();
                             JSONArray rowArray = new JSONArray();

@@ -17,6 +17,7 @@
 package org.labkey.study.importer;
 
 import org.apache.log4j.Logger;
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpSampleSet;
@@ -28,6 +29,7 @@ import org.labkey.common.tools.TabLoader;
 import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.common.util.CPUTimer;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.CloseableIterator;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.Specimen;
@@ -375,7 +377,7 @@ public class SpecimenImporter
     public void process(User user, Container container, File[] files, Logger logger) throws SQLException, IOException
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
-        Map<String,File> fileMap = createFilemap(files);
+        Map<String, File> fileMap = createFilemap(files);
         _logger = logger;
 
         try
@@ -421,7 +423,7 @@ public class SpecimenImporter
         dumpTimers();
     }
 
-    protected void process(User user, Container container, Map<String,List<Map<String, Object>>> tsvMap, Logger logger) throws SQLException, IOException
+    protected void process(User user, Container container, Map<String, CloseableIterator<Map<String, Object>>> tsvMap, Logger logger) throws SQLException, IOException
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         _logger = logger;
@@ -434,15 +436,10 @@ public class SpecimenImporter
 
             SpecimenLoadInfo loadInfo = populateTempSpecimensTable(schema, container, tsvMap.get("specimens"));
 
-            mergeTable(schema, container, "Site", SITE_COLUMNS,
-                    tsvMap.get("labs"), true);
-
-            replaceTable(schema, container, "SpecimenAdditive", ADDITIVE_COLUMNS,
-                    tsvMap.get("additives"), false);
-            replaceTable(schema, container, "SpecimenDerivative", DERIVATIVE_COLUMNS,
-                    tsvMap.get("derivatives"), false);
-            replaceTable(schema, container, "SpecimenPrimaryType", PRIMARYTYPE_COLUMNS,
-                    tsvMap.get("primary_types"), false);
+            mergeTable(schema, container, "Site", SITE_COLUMNS, tsvMap.get("labs"), true);
+            replaceTable(schema, container, "SpecimenAdditive", ADDITIVE_COLUMNS, tsvMap.get("additives"), false);
+            replaceTable(schema, container, "SpecimenDerivative", DERIVATIVE_COLUMNS, tsvMap.get("derivatives"), false);
+            replaceTable(schema, container, "SpecimenPrimaryType", PRIMARYTYPE_COLUMNS, tsvMap.get("primary_types"), false);
             populateSpecimenTables(schema, user, container, loadInfo);
 
             updateSpecimenCommentHashes(container, user);
@@ -491,7 +488,7 @@ public class SpecimenImporter
         return new SpecimenLoadInfo(availableColumns, tempTable);
     }
 
-    private SpecimenLoadInfo populateTempSpecimensTable(DbSchema schema, Container container, List<Map<String, Object>> rows) throws SQLException, IOException
+    private SpecimenLoadInfo populateTempSpecimensTable(DbSchema schema, Container container, CloseableIterator<Map<String, Object>> rows) throws SQLException, IOException
     {
         String tempTable = createTempTable(schema);
         List<SpecimenColumn> availableColumns = populateTempTable(schema, container, tempTable, rows);
@@ -1017,73 +1014,79 @@ public class SpecimenImporter
             return;
         }
 
-        List<Map<String, Object>> maps = loadTsv(potentialColumns, tsvFile, tableName);
-        mergeTable(schema, container, tableName, potentialColumns, maps, addEntityId);
+        Iterator<Map<String, Object>> iter = loadTsv(potentialColumns, tsvFile, tableName);
+        mergeTable(schema, container, tableName, potentialColumns, iter, addEntityId);
     }
 
-    private void mergeTable(DbSchema schema, Container container, String tableName, ImportableColumn[] potentialColumns, List<Map<String, Object>> maps, boolean addEntityId) throws IOException, SQLException
+    private void mergeTable(DbSchema schema, Container container, String tableName, ImportableColumn[] potentialColumns, Iterator<Map<String, Object>> iter, boolean addEntityId) throws IOException, SQLException
     {
         assert cpuMergeTable.start();
         info(tableName + ": Starting merge of data...");
-        List<ImportableColumn> availableColumns = new ArrayList<ImportableColumn>();
-        if (maps.size() > 0)
-        {
-            for (ImportableColumn column : potentialColumns)
-            {
-                if (maps.get(0).containsKey(column.getTsvColumnName()))
-                    availableColumns.add(column);
-            }
-        }
 
+        List<ImportableColumn> availableColumns = new ArrayList<ImportableColumn>();
         List<ImportableColumn> uniqueCols = new ArrayList<ImportableColumn>();
 
-        for (ImportableColumn col : availableColumns)
-        {
-            if (col.isUnique())
-                uniqueCols.add(col);
-        }
-
         StringBuilder selectSql = new StringBuilder();
-        selectSql.append("SELECT * FROM study.").append(tableName).append(" WHERE Container = ? ");
-        for (ImportableColumn col : uniqueCols)
-            selectSql.append(" AND ").append(col.getDbColumnName()).append(" = ? ");
-
         StringBuilder insertSql = new StringBuilder();
-        insertSql.append("INSERT INTO study.").append(tableName).append(" (Container");
-        if (addEntityId)
-            insertSql.append(", EntityId");
-        for (ImportableColumn col : availableColumns)
-            insertSql.append(", ").append(col.getDbColumnName());
-        insertSql.append(") VALUES (?");
-        if (addEntityId)
-            insertSql.append(", ?");
-        for (ImportableColumn col : availableColumns)
-            insertSql.append(", ?");
-        insertSql.append(")");
-
         StringBuilder updateSql = new StringBuilder();
-        updateSql.append("UPDATE study.").append(tableName).append(" SET ");
-        String separator = "";
-        for (ImportableColumn col : availableColumns)
-        {
-            if (!col.isUnique())
-            {
-                updateSql.append(separator).append(col.getDbColumnName()).append(" = ?");
-                separator = ", ";
-            }
-        }
-        updateSql.append(" WHERE Container = ?");
-        separator = " AND ";
-        for (ImportableColumn col : availableColumns)
-        {
-            if (col.isUnique())
-                updateSql.append(separator).append(col.getDbColumnName()).append(" = ?");
-        }
 
+        int rowCount = 0;
         int rowsAdded = 0;
         int rowsUpdated = 0;
-        for (Map row : maps)
+
+        while (iter.hasNext())
         {
+            Map row = iter.next();
+            rowCount++;
+
+            if (1 == rowCount)
+            {
+                for (ImportableColumn column : potentialColumns)
+                {
+                    if (row.containsKey(column.getTsvColumnName()))
+                        availableColumns.add(column);
+                }
+
+                for (ImportableColumn col : availableColumns)
+                {
+                    if (col.isUnique())
+                        uniqueCols.add(col);
+                }
+
+                selectSql.append("SELECT * FROM study.").append(tableName).append(" WHERE Container = ? ");
+                for (ImportableColumn col : uniqueCols)
+                    selectSql.append(" AND ").append(col.getDbColumnName()).append(" = ? ");
+
+                insertSql.append("INSERT INTO study.").append(tableName).append(" (Container");
+                if (addEntityId)
+                    insertSql.append(", EntityId");
+                for (ImportableColumn col : availableColumns)
+                    insertSql.append(", ").append(col.getDbColumnName());
+                insertSql.append(") VALUES (?");
+                if (addEntityId)
+                    insertSql.append(", ?");
+                insertSql.append(StringUtils.repeat(", ?", availableColumns.size()));
+                insertSql.append(")");
+
+                updateSql.append("UPDATE study.").append(tableName).append(" SET ");
+                String separator = "";
+                for (ImportableColumn col : availableColumns)
+                {
+                    if (!col.isUnique())
+                    {
+                        updateSql.append(separator).append(col.getDbColumnName()).append(" = ?");
+                        separator = ", ";
+                    }
+                }
+                updateSql.append(" WHERE Container = ?");
+                separator = " AND ";
+                for (ImportableColumn col : availableColumns)
+                {
+                    if (col.isUnique())
+                        updateSql.append(separator).append(col.getDbColumnName()).append(" = ?");
+                }
+            }
+
             boolean rowExists = false;
             if (!uniqueCols.isEmpty())
             {
@@ -1134,7 +1137,8 @@ public class SpecimenImporter
                 rowsUpdated++;
             }
         }
-        info(tableName + ": inserted " + rowsAdded + " new rows, updated " + rowsUpdated + " rows.  (" + maps.size() + " rows found in input file.)");
+
+        info(tableName + ": inserted " + rowsAdded + " new rows, updated " + rowsUpdated + " rows.  (" + rowCount + " rows found in input file.)");
         assert cpuMergeTable.stop();
     }
 
@@ -1147,42 +1151,47 @@ public class SpecimenImporter
             return;
         }
 
-        List<Map<String, Object>> maps = loadTsv(potentialColumns, tsvFile, tableName);
-        replaceTable(schema, container, tableName, potentialColumns, maps, addEntityId);
+        CloseableIterator<Map<String, Object>> iter = loadTsv(potentialColumns, tsvFile, tableName);
+        replaceTable(schema, container, tableName, potentialColumns, iter, addEntityId);
     }
 
-    private void replaceTable(DbSchema schema, Container container, String tableName, ImportableColumn[] potentialColumns, List<Map<String, Object>> maps, boolean addEntityId) throws IOException, SQLException
+    private void replaceTable(DbSchema schema, Container container, String tableName, ImportableColumn[] potentialColumns, Iterator<Map<String, Object>> iter, boolean addEntityId) throws IOException, SQLException
     {
         assert cpuMergeTable.start();
         info(tableName + ": Starting replacement of all data...");
 
         Table.execute(schema, "DELETE FROM study." + tableName + " WHERE Container = ?", new Object[] { container.getId() });
         List<ImportableColumn> availableColumns = new ArrayList<ImportableColumn>();
-        if (maps.size() > 0)
-        {
-            for (ImportableColumn column : potentialColumns)
-            {
-                if (maps.get(0).containsKey(column.getTsvColumnName()))
-                    availableColumns.add(column);
-            }
-        }
-
         StringBuilder insertSql = new StringBuilder();
-        insertSql.append("INSERT INTO study.").append(tableName).append(" (Container");
-        if (addEntityId)
-            insertSql.append(", EntityId");
-        for (ImportableColumn col : availableColumns)
-            insertSql.append(", ").append(col.getDbColumnName());
-        insertSql.append(") VALUES (?");
-        if (addEntityId)
-            insertSql.append(", ?");
-        for (ImportableColumn col : availableColumns)
-            insertSql.append(", ?");
-        insertSql.append(")");
 
         List<Object[]> rows = new ArrayList<Object[]>();
-        for (Map<String, Object> row : maps)
+        int rowCount = 0;
+
+        while (iter.hasNext())
         {
+            Map<String, Object> row = iter.next();
+            rowCount++;
+
+            if (1 == rowCount)
+            {
+                for (ImportableColumn column : potentialColumns)
+                {
+                    if (row.containsKey(column.getTsvColumnName()))
+                        availableColumns.add(column);
+                }
+
+                insertSql.append("INSERT INTO study.").append(tableName).append(" (Container");
+                if (addEntityId)
+                    insertSql.append(", EntityId");
+                for (ImportableColumn col : availableColumns)
+                    insertSql.append(", ").append(col.getDbColumnName());
+                insertSql.append(") VALUES (?");
+                if (addEntityId)
+                    insertSql.append(", ?");
+                insertSql.append(StringUtils.repeat(", ?", availableColumns.size()));
+                insertSql.append(")");
+            }
+
             Object[] params = new Object[availableColumns.size() + 1 + (addEntityId ? 1 : 0)];
             int colIndex = 0;
             params[colIndex++] = container.getId();
@@ -1192,12 +1201,13 @@ public class SpecimenImporter
                 params[colIndex++] = getValue(col, row);
             rows.add(params);
         }
+
         Table.batchExecute(schema, insertSql.toString(), rows);
-        info(tableName + ": Replaced all data with " + rows.size() + " new rows.  (" + maps.size() + " rows found in input file.)");
+        info(tableName + ": Replaced all data with " + rows.size() + " new rows.  (" + rowCount + " rows found in input file.)");
         assert cpuMergeTable.stop();
     }
 
-    private List<Map<String, Object>> loadTsv(ImportableColumn[] columns, File tsvFile, String tableName) throws IOException
+    private CloseableIterator<Map<String, Object>> loadTsv(ImportableColumn[] columns, File tsvFile, String tableName) throws IOException
     {
         info(tableName + ": Parsing data file for table...");
         Map<String, ColumnDescriptor> expectedColumns = new HashMap<String, ColumnDescriptor>(columns.length);
@@ -1214,19 +1224,22 @@ public class SpecimenImporter
                 column.load = false;
         }
         info(tableName + ": Parsing complete.");
-        return loader.load();
+        return loader.iterator();
     }
 
     private List<SpecimenColumn> populateTempTable(DbSchema schema, Container container, String tempTable, File tsvFile) throws SQLException, IOException
     {
         assert cpuPopulateTempTable.start();
-        List<Map<String, Object>> maps = loadTsv(SPECIMEN_COLUMNS, tsvFile, "Specimen");
-        return populateTempTable(schema, container, tempTable, maps);
+        CloseableIterator<Map<String, Object>> iter = loadTsv(SPECIMEN_COLUMNS, tsvFile, "Specimen");
+        return populateTempTable(schema, container, tempTable, iter);
     }
 
-    private List<SpecimenColumn> populateTempTable(DbSchema schema, Container container, String tempTable, List<Map<String, Object>> maps) throws SQLException, IOException
+    private List<SpecimenColumn> populateTempTable(DbSchema schema, Container container, String tempTable, CloseableIterator<Map<String, Object>> iter) throws SQLException, IOException
     {
         assert cpuPopulateTempTable.start();
+        int rowCount = 0;
+        Map<String, Object> firstRow = null;
+
         try
         {
             info("Populating temp table...");
@@ -1235,8 +1248,7 @@ public class SpecimenImporter
             for (ImportableColumn col : SPECIMEN_COLUMNS)
                 sqlBuilder.append(",\n     ").append(col.getDbColumnName());
             sqlBuilder.append("\n) values (?, ?");
-            for (ImportableColumn col : SPECIMEN_COLUMNS)
-                sqlBuilder.append(", ?");
+            sqlBuilder.append(StringUtils.repeat(", ?", SPECIMEN_COLUMNS.length));
             sqlBuilder.append(")");
 
             List<Object[]> rows = new ArrayList<Object[]>(SQL_BATCH_SIZE);
@@ -1245,8 +1257,15 @@ public class SpecimenImporter
             {
                 info(sql);
             }
-            for (Map properties : maps)
+
+            while (iter.hasNext())
             {
+                Map<String, Object> properties = iter.next();
+                rowCount++;
+
+                if (1 == rowCount)
+                    firstRow = properties;
+
                 String id = (String) properties.get(GLOBAL_UNIQUE_ID_TSV_COL);
                 if (id == null)
                     id = (String) properties.get(SPEC_NUMBER_TSV_COL);
@@ -1274,12 +1293,11 @@ public class SpecimenImporter
         }
 
         List<SpecimenColumn> loadedColumns = new ArrayList<SpecimenColumn>();
-        if (maps.size() > 0)
+        if (rowCount > 0)
         {
-            Map<String, Object> row = maps.get(0);
             for (SpecimenColumn column : SPECIMEN_COLUMNS)
             {
-                if (row.containsKey(column.getTsvColumnName()))
+                if (firstRow.containsKey(column.getTsvColumnName()))
                     loadedColumns.add(column);
             }
         }

@@ -2192,6 +2192,7 @@ study/src/org/labkey/study/view/importStudyBatch.jsp -text
 study/src/org/labkey/study/view/manageCohortsBottom.jsp -text
 study/src/org/labkey/study/view/manageCohortsTop.jsp -text
 study/src/org/labkey/study/view/manageQCStates.jsp -text
+study/src/org/labkey/study/view/manageReload.jsp -text
 study/src/org/labkey/study/view/manageReports.jsp -text
 study/src/org/labkey/study/view/manageSites.jsp -text
 study/src/org/labkey/study/view/manageStudy.jsp -text

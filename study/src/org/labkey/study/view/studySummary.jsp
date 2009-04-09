@@ -31,6 +31,8 @@ if (null == getStudy())
     {
         ActionURL createURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, getViewContext().getContainer());
         out.println(generateButton("Create Study", createURL));
+        ActionURL manageReloadURL = new ActionURL(StudyController.ManageReloadAction.class, getViewContext().getContainer());
+        out.println(generateButton("Manage Reload", manageReloadURL));
     }
     else
     {

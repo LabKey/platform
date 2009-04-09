@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.util.CloseableIterator;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.study.model.Study;
@@ -31,7 +32,6 @@ import java.sql.SQLException;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Mark Igra
  * Date: Apr 26, 2007
  * Time: 1:17:36 PM
@@ -170,7 +170,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
 
         List<Map<String,Object>> specimenRows = new ArrayList<Map<String,Object>>();
         int recordId = 1;
-        for (Map<String,Object> row : rows)
+        for (Map<String, Object> row : rows)
         {
             Map<String,Object> specimenRow = new HashMap<String,Object>();
             for (String colName : row.keySet())
@@ -195,13 +195,45 @@ public class SimpleSpecimenImporter extends SpecimenImporter
             specimenRows.add(specimenRow);
         }
 
-        Map<String,List<Map<String, Object>>> inputTSVs = new HashMap<String, List<Map<String, Object>>>();
-        inputTSVs.put("specimens", specimenRows);
+        Map<String, CloseableIterator<Map<String, Object>>> inputs = new HashMap<String, CloseableIterator<Map<String, Object>>>();
+        inputs.put("specimens", new CloseableListIterator<Map<String, Object>>(specimenRows));
         for (LookupTable lookupTable : lookupTables.values())
-            inputTSVs.put(lookupTable.getName(), lookupTable.toMaps());
+            inputs.put(lookupTable.getName(), new CloseableListIterator<Map<String, Object>>(lookupTable.toMaps()));
 
-        super.process(user, container, inputTSVs, logger);
+        super.process(user, container, inputs, logger);
     }
+
+
+    @Deprecated // Should convert SimpleSpecimenImporter to iterators only, not half map / half iterator
+    private static class CloseableListIterator<K> implements CloseableIterator<K>
+    {
+        private Iterator<K> _iter;
+
+        private CloseableListIterator(List<K> list)
+        {
+            _iter = list.iterator();
+        }
+
+        public void close() throws IOException
+        {
+        }
+
+        public boolean hasNext()
+        {
+            return _iter.hasNext();
+        }
+
+        public K next()
+        {
+            return _iter.next();
+        }
+
+        public void remove()
+        {
+            _iter.remove();
+        }
+    }
+
 
     private static class LookupTable
     {
@@ -209,7 +241,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         private String foreignKeyCol;
         private String idCol;
         private String labelCol;
-        private HashMap<String, Integer> keyMap = new HashMap();
+        private HashMap<String, Integer> keyMap = new HashMap<String, Integer>();
 
         LookupTable(String name, String foreignKeyCol, String idCol, String labelCol)
         {
@@ -238,12 +270,12 @@ public class SimpleSpecimenImporter extends SpecimenImporter
                 // Grow the list so that we can set them in any order
                 maps.add(null);
             }
-            for (Map.Entry<String,Integer> entry : keyMap.entrySet())
+            for (Map.Entry<String, Integer> entry : keyMap.entrySet())
             {
-                Map<String,Object> m = new HashMap<String,Object>();
+                Map<String, Object> m = new HashMap<String, Object>();
                 m.put(labelCol, entry.getKey());
                 m.put(idCol, entry.getValue());
-                maps.set(entry.getValue() - 1, m);
+                maps.set(entry.getValue().intValue() - 1, m);
             }
             return maps;
         }
