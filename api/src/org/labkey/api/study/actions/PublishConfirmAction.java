@@ -169,7 +169,15 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         ViewContext context = getViewContext();
         _protocol = getProtocol(publishConfirmForm);
         AssayProvider provider = AssayService.get().getProvider(_protocol);
-        List<Integer> selectedObjects = getCheckboxIds(false);
+        Set<Integer> selectedObjects = new HashSet<Integer>(getCheckboxIds(false));
+        Integer[] allObjectsArray = publishConfirmForm.getObjectId();
+
+        List<Integer> allObjects;
+        if (allObjectsArray != null) // On first post, this is empty, so use the current selection
+            allObjects = Arrays.asList(allObjectsArray);
+        else
+            allObjects = new ArrayList<Integer>(selectedObjects);
+
         Container targetStudy = ContainerManager.getForId(publishConfirmForm.getTargetStudy());
         if (targetStudy == null)
         {
@@ -189,22 +197,16 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             String[] participantIds = publishConfirmForm.getParticipantId();
             String[] visitIds = publishConfirmForm.getVisitId();
             String[] dates = publishConfirmForm.getDate();
-            Integer[] objects = publishConfirmForm.getObjectId(); // all objects
             boolean missingPtid = false;
             boolean missingVisitId = false;
             boolean missingDate = false;
             boolean badVisitIds = false;
             boolean badDates = false;
             int index = 0;
-            for (int selectedObjectId : selectedObjects)
+            for (int objectId : allObjects)
             {
-                // Our form contains *all* data, but we only want to process
-                // the selected rows. Skip ahead until we find a match
-                while (index < objects.length && !objects[index].equals(selectedObjectId))
-                    index++;
-
-                if (index == objects.length)
-                    continue; // we've walked off the end
+                // we only want to give errors for selected rows, but we want to compute visits and ptids regardless
+                boolean selected = selectedObjects.contains(objectId);
 
                 String participantId = participantIds != null && participantIds.length > index ? participantIds[index] : null;
                 if (participantId == null || participantId.trim().length() == 0)
@@ -217,7 +219,10 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
                     String visitIdStr = visitIds != null && visitIds.length > index ? visitIds[index] : null;
                     Float visitId = null;
                     if (visitIdStr == null || visitIdStr.trim().length() == 0)
-                        missingVisitId = true;
+                    {
+                        if (selected)
+                            missingVisitId = true;
+                    }
                     else
                     {
                         visitIdStr = visitIdStr.trim();
@@ -227,20 +232,24 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
                         }
                         catch (NumberFormatException e)
                         {
-                            badVisitIds = true;
+                            if (selected)
+                                badVisitIds = true;
                         }
                     }
-                    postedPtids.put(selectedObjectId, participantId);
-                    postedVisits.put(selectedObjectId, visitIdStr);
-                    if (visitId != null)
-                        publishData.put(selectedObjectId, new AssayPublishKey(participantId,  visitId.floatValue(),  selectedObjectId));
+                    postedPtids.put(objectId, participantId);
+                    postedVisits.put(objectId, visitIdStr);
+                    if (visitId != null && selected)
+                        publishData.put(objectId, new AssayPublishKey(participantId, visitId.floatValue(), objectId));
                 }
                 else // TimepointType.DATE
                 {
                     String dateStr = dates != null && dates.length > index ? dates[index] : null;
                     Date date = null;
                     if (dateStr == null || dateStr.trim().length() == 0)
-                        missingDate = true;
+                    {
+                        if (selected)
+                            missingDate = true;
+                    }
                     else
                     {
                         dateStr = dateStr.trim();
@@ -250,23 +259,25 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
                         }
                         catch (ConversionException e)
                         {
-                            badDates = true;
+                            if (selected)
+                                badDates = true;
                         }
                     }
-                    postedPtids.put(selectedObjectId, participantId);
-                    postedVisits.put(selectedObjectId, dateStr);
-                    if (date != null)
-                        publishData.put(selectedObjectId, new AssayPublishKey(participantId,  date,  selectedObjectId));
+                    postedPtids.put(objectId, participantId);
+                    postedVisits.put(objectId, dateStr);
+                    if (date != null && selected)
+                        publishData.put(objectId, new AssayPublishKey(participantId, date, objectId));
                 }
+                index++;
             }
             if (missingPtid)
-                errors.reject(null, "You must specify a Participant ID for all rows.");
+                errors.reject(null, "You must specify a Participant ID for all selected rows.");
             if (missingVisitId)
-                errors.reject(null, "You must specify a Visit ID for all rows.");
+                errors.reject(null, "You must specify a Visit ID for all selected rows.");
             if (badVisitIds)
                 errors.reject(null, "Visit IDs must be numbers.");
             if (missingDate || badDates)
-                errors.reject(null, "You must specify a Date for all rows.");
+                errors.reject(null, "You must specify a Date for all selected rows.");
 
             if (errors.getErrorCount() == 0 && !publishConfirmForm.isValidate())
             {
@@ -290,7 +301,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         settings.setQueryName(name);
         settings.setAllowChooseView(false);
         PublishResultsQueryView queryView = new PublishResultsQueryView(_protocol, context, settings,
-                selectedObjects, targetStudy, postedVisits, postedPtids);
+                allObjects, targetStudy, postedVisits, postedPtids);
 
         if (publishConfirmForm.getContainerFilterName() != null)
             queryView.getSettings().setContainerFilterName(publishConfirmForm.getContainerFilterName());
