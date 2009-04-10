@@ -173,24 +173,7 @@ public class CrosstabView extends WebPartView
         _crosstab = crosstab;
         _exportAction = exportAction;
 
-        setTitle(getDescription());
-    }
-
-    public String getDescription()
-    {
-        Stats.StatDefinition stat = null;
-        if (_crosstab.getStatSet().size() == 1)
-            stat = _crosstab.getStatSet().toArray(new Stats.StatDefinition[1])[0];
-
-        String statFieldLabel = getFieldLabel(_crosstab.getStatField());
-        String rowFieldLabel = getFieldLabel(_crosstab.getRowField());
-        String colFieldLabel = getFieldLabel(_crosstab.getColField());
-
-        String title = (null != stat ? stat.getName() + " " : "") + statFieldLabel + " by " + rowFieldLabel;
-        if (null != _crosstab.getColField())
-            title += ", " + colFieldLabel;
-
-        return title;
+        setTitle(_crosstab.getDescription());
     }
 
     private String getFieldLabel(String fieldName)
