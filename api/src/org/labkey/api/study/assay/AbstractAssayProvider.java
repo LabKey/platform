@@ -18,47 +18,49 @@ package org.labkey.api.study.assay;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.*;
-import org.labkey.api.exp.query.ExpSchema;
-import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.gwt.client.ui.PropertiesEditor;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.*;
+import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.actions.UploadWizardAction;
-import org.labkey.api.study.actions.DesignerAction;
-import org.labkey.api.study.actions.AssayRunDetailsAction;
 import org.labkey.api.study.actions.AssayResultDetailsAction;
+import org.labkey.api.study.actions.AssayRunDetailsAction;
+import org.labkey.api.study.actions.DesignerAction;
+import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.study.query.RunListQueryView;
-import org.labkey.api.util.*;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.api.reports.ExternalScriptEngine;
-import org.labkey.api.reports.report.r.ParamReplacementSvc;
-import org.labkey.api.qc.DataExchangeHandler;
-import org.labkey.api.gwt.client.DefaultValueType;
-import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import javax.script.Bindings;
 import javax.script.ScriptContext;
-import java.io.File;
-import java.io.IOException;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
 import java.net.URI;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -1287,7 +1289,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             String studyName = StudyService.get().getStudyName(studyContainer);
             if (studyName == null)
                 continue; // No study in that folder
-            String studyColumnName = "copied_to_" + studyName;
+            String studyColumnName = "copied_to_" + PropertiesEditor.sanitizeName(studyName);
 
             // column names must be unique. Prevent collisions
             while (usedColumnNames.contains(studyColumnName))
