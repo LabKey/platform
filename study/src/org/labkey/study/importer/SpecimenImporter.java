@@ -423,7 +423,7 @@ public class SpecimenImporter
         dumpTimers();
     }
 
-    protected void process(User user, Container container, Map<String, CloseableIterator<Map<String, Object>>> tsvMap, Logger logger) throws SQLException, IOException
+    protected void process(User user, Container container, Map<String, CloseableIterator<Map<String, Object>>> iterMap, Logger logger) throws SQLException, IOException
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         _logger = logger;
@@ -434,12 +434,12 @@ public class SpecimenImporter
             if (!DEBUG)
                 scope.beginTransaction();
 
-            SpecimenLoadInfo loadInfo = populateTempSpecimensTable(schema, container, tsvMap.get("specimens"));
+            SpecimenLoadInfo loadInfo = populateTempSpecimensTable(schema, container, iterMap.get("specimens"));
 
-            mergeTable(schema, container, "Site", SITE_COLUMNS, tsvMap.get("labs"), true);
-            replaceTable(schema, container, "SpecimenAdditive", ADDITIVE_COLUMNS, tsvMap.get("additives"), false);
-            replaceTable(schema, container, "SpecimenDerivative", DERIVATIVE_COLUMNS, tsvMap.get("derivatives"), false);
-            replaceTable(schema, container, "SpecimenPrimaryType", PRIMARYTYPE_COLUMNS, tsvMap.get("primary_types"), false);
+            mergeTable(schema, container, "Site", SITE_COLUMNS, iterMap.get("labs"), true);
+            replaceTable(schema, container, "SpecimenAdditive", ADDITIVE_COLUMNS, iterMap.get("additives"), false);
+            replaceTable(schema, container, "SpecimenDerivative", DERIVATIVE_COLUMNS, iterMap.get("derivatives"), false);
+            replaceTable(schema, container, "SpecimenPrimaryType", PRIMARYTYPE_COLUMNS, iterMap.get("primary_types"), false);
             populateSpecimenTables(schema, user, container, loadInfo);
 
             updateSpecimenCommentHashes(container, user);
@@ -1202,7 +1202,10 @@ public class SpecimenImporter
             rows.add(params);
         }
 
-        Table.batchExecute(schema, insertSql.toString(), rows);
+        // No point in trying to insert zero rows.  Also, insertSql won't be set if no rows exist.
+        if (!rows.isEmpty())
+            Table.batchExecute(schema, insertSql.toString(), rows);
+
         info(tableName + ": Replaced all data with " + rows.size() + " new rows.  (" + rowCount + " rows found in input file.)");
         assert cpuMergeTable.stop();
     }
