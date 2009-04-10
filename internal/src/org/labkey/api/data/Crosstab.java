@@ -15,11 +15,11 @@
  */
 package org.labkey.api.data;
 
+import jxl.format.Alignment;
+import jxl.format.VerticalAlignment;
+import jxl.write.WritableCellFormat;
 import jxl.write.WritableSheet;
 import jxl.write.WriteException;
-import jxl.write.WritableCellFormat;
-import jxl.format.VerticalAlignment;
-import jxl.format.Alignment;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.util.CaseInsensitiveHashMap;
@@ -138,6 +138,35 @@ public class Crosstab
         }
     }
 
+    public String getDescription()
+    {
+        Stats.StatDefinition stat = null;
+        if (getStatSet().size() == 1)
+            stat = getStatSet().toArray(new Stats.StatDefinition[1])[0];
+
+        String statFieldLabel = getFieldLabel(getStatField());
+        String rowFieldLabel = getFieldLabel(getRowField());
+        String colFieldLabel = getFieldLabel(getColField());
+
+        String title = (null != stat ? stat.getName() + " " : "") + statFieldLabel + " by " + rowFieldLabel;
+        if (null != getColField())
+            title += ", " + colFieldLabel;
+
+        return title;
+    }
+
+    public String getFieldLabel(String fieldName)
+    {
+        if (null == fieldName)
+            return "";
+
+        ColumnInfo col = getColumnMap().get(fieldName);
+        if (null != col)
+            return col.getCaption();
+
+        return fieldName;
+    }
+
     public List<Object> getRowHeaders()
     {
         List<Object> l = new ArrayList(crossTab.keySet());
@@ -228,6 +257,7 @@ public class Crosstab
     public static class CrosstabExcelWriter extends ExcelWriter
     {
         private Crosstab _crosstab;
+        private static final String STAT_COLUMN = "Stat";
 
         public CrosstabExcelWriter(Crosstab crosstab)
         {
@@ -235,7 +265,10 @@ public class Crosstab
 
             List<DisplayColumn> columns = new ArrayList<DisplayColumn>();
 
-            columns.add(new CrosstabDisplayColumn(getFieldLabel(crosstab.getRowField())));
+            columns.add(new CrosstabDisplayColumn(_crosstab.getFieldLabel(crosstab.getRowField())));
+
+            if (_crosstab.getStatSet().size() > 1)
+                columns.add(new CrosstabDisplayColumn(STAT_COLUMN, String.class));
 
             for (Object col : _crosstab.getColHeaders())
                 columns.add(new CrosstabDisplayColumn(StringUtils.trimToEmpty(ConvertUtils.convert(col)), Double.class));
@@ -244,15 +277,21 @@ public class Crosstab
 
             setDisplayColumns(columns);
 
-            String colField = getFieldLabel(_crosstab.getColField());
-            if (!StringUtils.isBlank(colField))
-                setHeaders(Collections.singletonList(colField));
+            List<String> headers = new ArrayList<String>();
+
+            headers.add(_crosstab.getDescription());
+            headers.add(_crosstab.getFieldLabel(_crosstab.getColField()));
+
+            setHeaders(headers);
         }
 
         protected WritableCellFormat getWrappingTextFormat() throws WriteException
         {
-            WritableCellFormat format = super.getNonWrappingTextFormat();
-            format.setAlignment(Alignment.CENTRE);            
+            WritableCellFormat format = new WritableCellFormat();
+            format.setWrap(true);
+            format.setVerticalAlignment(VerticalAlignment.TOP);
+            format.setAlignment(Alignment.CENTRE);
+
             return format;
         }
 
@@ -266,7 +305,13 @@ public class Crosstab
             {
                 for (Stats.StatDefinition rowStat : _crosstab.getStatSet())
                 {
-                    rowMap.put(getFieldLabel(_crosstab.getRowField()), String.format("%s (%s)", rowValue, rowStat.getName()));
+                    if (_crosstab.getStatSet().size() > 1)
+                    {
+                        rowMap.put(_crosstab.getFieldLabel(_crosstab.getRowField()), rowValue);
+                        rowMap.put(_crosstab.getFieldLabel(STAT_COLUMN), rowStat.getName());
+                    }
+                    else
+                        rowMap.put(_crosstab.getFieldLabel(_crosstab.getRowField()), rowValue);
 
                     ctx.setRow(mapRow(rowValue, rowStat, rowMap));
                     renderGridRow(sheet, ctx, visibleColumns);
@@ -276,7 +321,13 @@ public class Crosstab
             // stat totals
             for (Stats.StatDefinition rowStat : _crosstab.getStatSet())
             {
-                rowMap.put(getFieldLabel(_crosstab.getRowField()), String.format("Total (%s)", rowStat.getName()));
+                if (_crosstab.getStatSet().size() > 1)
+                {
+                    rowMap.put(_crosstab.getFieldLabel(_crosstab.getRowField()), "Total");
+                    rowMap.put(_crosstab.getFieldLabel(STAT_COLUMN), rowStat.getName());
+                }
+                else
+                    rowMap.put(_crosstab.getFieldLabel(_crosstab.getRowField()), "Total");
 
                 ctx.setRow(mapRow(Crosstab.TOTAL_ROW, rowStat, rowMap));
                 renderGridRow(sheet, ctx, visibleColumns);
@@ -291,18 +342,6 @@ public class Crosstab
             }
             rowMap.put("total", _crosstab.getStats(rowValue, Crosstab.TOTAL_COLUMN).getStat(rowStat));
             return rowMap;
-        }
-
-        private String getFieldLabel(String fieldName)
-        {
-            if (null == fieldName)
-                return "";
-
-            ColumnInfo col = _crosstab.getColumnMap().get(fieldName);
-            if (null != col)
-                return col.getCaption();
-
-            return fieldName;
         }
     }
 

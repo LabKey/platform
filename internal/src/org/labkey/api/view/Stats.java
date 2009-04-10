@@ -407,6 +407,9 @@ public abstract class Stats
             if (stat == COUNT)
                 return String.valueOf(getCount());
 
+            if (Double.isNaN((Double)getStat(stat)))
+                return "";
+            
             return formatter.format((Double) getStat(stat));
         }
 
