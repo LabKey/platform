@@ -65,14 +65,11 @@ Ext.namespace("LABKEY", "LABKEY.ext");
 LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
     constructor: function(config) {
 
-        Ext.apply(this, config, {
-            remoteSort: true
-        });
-
         var baseParams = {schemaName: config.schemaName};
         baseParams['query.queryName'] = config.queryName;
         if (config.sort)
             baseParams['query.sort'] = config.sort;
+        delete config.sort;
 
         if (config.filterArray)
         {
@@ -94,6 +91,10 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
 
         baseParams.apiVersion = 9.1;
 
+        Ext.apply(this, config, {
+            remoteSort: true
+        });
+
         this.isLoading = false;
 
         LABKEY.ext.Store.superclass.constructor.call(this, {
@@ -114,7 +115,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         this.addEvents("beforecommit", "commitcomplete", "commitexception");
 
         //subscribe to the proxy's beforeload event so that we can map parameter names
-        this.proxy.on("beforeload", this.onBeforeLoad, this);
+        this.proxy.on("beforeload", this.onBeforeProxyLoad, this);
     },
 
     /**
@@ -404,7 +405,7 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
         return null;
     },
 
-    onBeforeLoad: function(proxy, options) {
+    onBeforeProxyLoad: function(proxy, options) {
         //the selectRows.api can't handle the 'sort' and 'dir' params
         //sent by Ext, so translate them into the expected form
         if(options.sort)
