@@ -1197,7 +1197,7 @@ public class QueryView extends WebPartView<Object>
             {
                 rgn.setAllowAsync(false);
                 rs = rgn.getResultSet(view.getRenderContext());
-                response.populate(rs, table, getExportColumns(rgn.getDisplayColumns()), rgn.getTotalRows());
+                response.initialize(rs, table, getExportColumns(rgn.getDisplayColumns()), rgn.getTotalRows());
             }
             finally
             {

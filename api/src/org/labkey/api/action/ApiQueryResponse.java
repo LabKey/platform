@@ -34,13 +34,13 @@ import java.util.*;
  * Date: Feb 13, 2008
  * Time: 3:21:08 PM
  */
-public class ApiQueryResponse implements ApiResponse
+public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 {
     private static final String URL_COL_PREFIX = "_labkeyurl_";
-    private Map<String, Object> _props = new HashMap<String, Object>();
     private TableInfo _tinfo = null;
     private ResultSet _rs = null;
     private List<DisplayColumn> _displayColumns = null;
+    private long _rowCount = 0;
     private RenderContext _ctx = null;
     private ViewContext _viewContext;
     private SimpleDateFormat _dateFormat = new SimpleDateFormat(JSONObject.JAVASCRIPT_DATE_FORMAT);
@@ -69,7 +69,28 @@ public class ApiQueryResponse implements ApiResponse
 
     public Map<String, Object> getProperties()
     {
-        return _props;
+        //this will stream the response instead
+        return null;
+    }
+
+    public void render(ApiResponseWriter writer) throws Exception
+    {
+        writer.startResponse();
+
+        //write the metaData section
+        writer.writeProperty("schemaName", _schemaName);
+        writer.writeProperty("queryName", _queryName);
+        writer.writeProperty("formatVersion", getFormatVersion());
+        writer.writeProperty("metaData", getMetaData());
+        writer.writeProperty("columnModel", getColumnModel());
+        Map<String,String> qcInfo = getQcInfo();
+        if (qcInfo != null)
+            writer.writeProperty("qcInfo", qcInfo);
+
+        writeRowset(writer);
+
+        writer.writeProperty("rowCount", _rowCount > 0 ? _rowCount : _offset + _numRespRows);
+        writer.endResponse();
     }
 
     public List<FieldKey> getFieldKeys()
@@ -77,33 +98,16 @@ public class ApiQueryResponse implements ApiResponse
         return _fieldKeys;
     }
 
-    public void populate(ResultSet rs, TableInfo table, List<DisplayColumn> displayColumns, Long rowCount) throws Exception
+    public void initialize(ResultSet rs, TableInfo table, List<DisplayColumn> displayColumns, Long rowCount) throws Exception
     {
         _rs = rs;
         _tinfo = table;
         _displayColumns = displayColumns;
+        if(null != rowCount)
+            _rowCount = rowCount.longValue();
 
         _ctx = new RenderContext(_viewContext);
         _ctx.setResultSet(_rs);
-
-        _props.put("metaData", getMetaData());
-        Map<String,String> qcInfo = getQcInfo();
-        if (qcInfo != null)
-            _props.put("qcInfo", qcInfo);
-        _props.put("columnModel", getColumnModel());
-        _props.put("rows", getRowset());
-        _props.put("schemaName", _schemaName);
-        _props.put("queryName", _queryName);
-
-        //rowCount--use the value supplied by query if possible
-        //otherwise send back the _offset + _numRespRows.
-        if(null != rowCount)
-            _props.put("rowCount", rowCount);
-        else
-            _props.put("rowCount", _offset + _numRespRows);
-
-        //version of format
-        _props.put("formatVersion", getFormatVersion());
     }
 
     protected double getFormatVersion()
@@ -279,22 +283,20 @@ public class ApiQueryResponse implements ApiResponse
         return colModel;
     }
 
-    protected List<Object> getRowset() throws Exception
+    protected void writeRowset(ApiResponseWriter writer) throws Exception
     {
-        List<Object> rowset = new ArrayList<Object>();
         Map<String, Object> rowMap = null;
-        
+        writer.startList("rows");
         if(!_metaDataOnly)
         {
             while(_rs.next())
             {
                 _ctx.setRow(ResultSetUtil.mapRow(_rs, rowMap));
-                rowset.add(getRow());
+                writer.writeListEntry(getRow());
                 ++_numRespRows;
             }
         }
-
-        return rowset;
+        writer.endList();
     }
 
     protected Map<String,Object> getRow() throws Exception

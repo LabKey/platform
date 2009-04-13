@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 LabKey Corporation
+ * Copyright (c) 2009 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,17 @@
  */
 package org.labkey.api.action;
 
-import javax.servlet.http.HttpServletResponse;
+/*
+* User: Dave
+* Date: Apr 13, 2009
+* Time: 12:43:30 PM
+*/
 
 /**
- * ApiResponse objects can implement this interface to do custom rendering if they need to.
- *
- * Created by IntelliJ IDEA.
- * User: Dave
- * Date: Feb 14, 2008
- * Time: 9:46:35 AM
+ * Implement this interface on your ApiResponse object to
+ * stream back your response using the ApiResponseWriter
  */
-public interface ApiCustomRender
+public interface ApiStreamResponse
 {
-    public void render(ApiResponseWriter.Format format, HttpServletResponse response);
+    public void render(ApiResponseWriter writer) throws Exception;
 }

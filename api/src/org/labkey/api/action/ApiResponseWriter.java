@@ -19,6 +19,8 @@ import org.springframework.validation.Errors;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Map;
+import java.util.Stack;
 
 /**
  * Used by API actions to writer various types of objects to the response stream.
@@ -32,6 +34,40 @@ import java.io.IOException;
  */
 public abstract class ApiResponseWriter
 {
+    protected static class StreamState
+    {
+        private String _name;
+        private String _separator;
+        private int _level = 0;
+
+        public StreamState() {}
+        public StreamState(String name)
+        {
+            this(name, 0);
+        }
+        public StreamState(String name, int level)
+        {
+            _name = name;
+        }
+
+        public String getName() { return _name;}
+        public int getLevel() { return _level;}
+        public String getSeparator()
+        {
+            //first time return ""
+            //all successive times, return ","
+            if(null == _separator)
+            {
+                _separator = ",\n";
+                return "";
+            }
+            else
+                return _separator;
+        }
+    }
+
+    protected Stack<StreamState> _streamStack = new Stack<StreamState>();
+
     public enum Format
     {
         JSON,
@@ -50,6 +86,23 @@ public abstract class ApiResponseWriter
     public abstract void write(Throwable e) throws IOException;
 
     public abstract void write(Errors errors) throws IOException;
+
+    //stream oriented methods
+    public abstract void startResponse() throws IOException;
+
+    public abstract void endResponse() throws IOException;
+
+    public abstract void startMap(String name) throws IOException;
+
+    public abstract void endMap() throws IOException;
+
+    public abstract void writeProperty(String name, Object value) throws IOException;
+
+    public abstract void startList(String name) throws IOException;
+
+    public abstract void endList() throws IOException;
+
+    public abstract void writeListEntry(Object entry) throws IOException;
 
     protected HttpServletResponse getResponse()
     {

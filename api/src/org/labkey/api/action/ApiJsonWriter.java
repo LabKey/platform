@@ -24,7 +24,9 @@ import org.springframework.validation.ObjectError;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
+import java.util.Stack;
 
 /**
  * Writes various objects returned by API actions in JSON format.
@@ -36,6 +38,7 @@ import java.util.List;
  */
 public class ApiJsonWriter extends ApiResponseWriter
 {
+
     //per http://www.iana.org/assignments/media-types/application/
     public static final String CONTENT_TYPE_JSON = "application/json";
 
@@ -53,8 +56,22 @@ public class ApiJsonWriter extends ApiResponseWriter
 
     public void write(ApiResponse response) throws IOException
     {
-        if(response instanceof ApiCustomRender)
-            ((ApiCustomRender)response).render(Format.JSON, getResponse());
+        if(response instanceof ApiStreamResponse)
+        {
+            try
+            {
+                ((ApiStreamResponse)response).render(this);
+            }
+            catch(Exception e)
+            {
+                //at this point, we can't guarantee a legitimate
+                //JSON response, and we need to write the exception
+                //back so the client can tell something went wrong
+                if(!getResponse().isCommitted())
+                    getResponse().reset();
+                write(e);
+            }
+        }
         else
         {
             JSONObject json = new JSONObject(response.getProperties());
@@ -116,5 +133,60 @@ public class ApiJsonWriter extends ApiResponseWriter
     {
         //jsonObj.write(getResponse().getWriter()); //use this for compact output
         getResponse().getWriter().write(obj.toString(4)); //or this for pretty output
+    }
+
+    public void startResponse() throws IOException
+    {
+        assert _streamStack.size() == 0 : "called startResponse() after response was already started!";
+        //we always return an object at the top level
+        getResponse().getWriter().write("{");
+        _streamStack.push(new StreamState());
+    }
+
+    public void endResponse() throws IOException
+    {
+        assert _streamStack.size() == 1 : "called endResponse without a corresponding startResponse()!";
+        getResponse().getWriter().write("}");
+        _streamStack.pop();
+    }
+
+    public void startMap(String name) throws IOException
+    {
+        StreamState state = _streamStack.peek();
+        assert(null != state) : "startResponse will start the root-level map!";
+        getResponse().getWriter().write("\n" + JSONObject.quote(name) + ":{");
+        _streamStack.push(new StreamState(name, state.getLevel() + 1));
+    }
+
+    public void endMap() throws IOException
+    {
+        getResponse().getWriter().write("}");
+        _streamStack.pop();
+    }
+
+    public void writeProperty(String name, Object value) throws IOException
+    {
+        StreamState state = _streamStack.peek();
+        getResponse().getWriter().write(state.getSeparator() + JSONObject.quote(name) + ":" 
+                + JSONObject.valueToString(value, 4, state.getLevel()));
+    }
+
+    public void startList(String name) throws IOException
+    {
+        StreamState state = _streamStack.peek();
+        getResponse().getWriter().write(state.getSeparator() + JSONObject.quote(name) + ":[");
+        _streamStack.push(new StreamState(name, state.getLevel() + 1));
+    }
+
+    public void endList() throws IOException
+    {
+        getResponse().getWriter().write("]");
+        _streamStack.pop();
+    }
+
+    public void writeListEntry(Object entry) throws IOException
+    {
+        StreamState state = _streamStack.peek();
+        getResponse().getWriter().write(state.getSeparator() + JSONObject.valueToString(entry, 4, state.getLevel()));
     }
 }
