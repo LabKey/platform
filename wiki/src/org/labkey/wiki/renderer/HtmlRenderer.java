@@ -80,7 +80,7 @@ public class HtmlRenderer implements WikiRenderer
         for (int i=0 ; i<nl.getLength() ; i++)
         {
             Element a = (Element)nl.item(i);
-            String href = a.getAttribute("href");
+            String href = PageFlowUtil.decode(a.getAttribute("href"));
 
             Attachment at = _attachments.get(href);
             if (null != at)
