@@ -19,12 +19,13 @@ package org.labkey.study.importer;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.security.User;
-import org.labkey.common.tools.TabLoader;
+import org.labkey.api.util.Filter;
 import org.labkey.common.tools.ColumnDescriptor;
+import org.labkey.common.tools.TabLoader;
 import org.labkey.study.StudySchema;
-import org.labkey.study.visitmanager.VisitManager;
-import org.labkey.study.visitmanager.SequenceVisitManager;
 import org.labkey.study.model.*;
+import org.labkey.study.visitmanager.SequenceVisitManager;
+import org.labkey.study.visitmanager.VisitManager;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -184,30 +185,34 @@ public class VisitMapImporter
 
     List<VisitMapRecord> getRecords(String content)
     {
-        List<VisitMapRecord> records = new ArrayList<VisitMapRecord>();
-        List<Map<String, Object>> maps;
-
         String tsv = content.replace('|','\t');
         try
         {
             TabLoader loader = new TabLoader(tsv, false);
+            //loader.setDelimiterCharacter('|');
             loader.setColumns(new ColumnDescriptor[]
-                    {
-                    new ColumnDescriptor("sequenceRange", String.class),
-                    new ColumnDescriptor("visitType", String.class),
-                    new ColumnDescriptor("visitLabel", String.class),
-                    new ColumnDescriptor("visitDatePlate", Integer.class),
-                    new ColumnDescriptor("visitDateField", String.class),
-                    new ColumnDescriptor("visitDueDay", Integer.class),
-                    new ColumnDescriptor("visitDueAllowance", Integer.class),
-                    new ColumnDescriptor("requiredPlates", String.class),
-                    new ColumnDescriptor("optionalPlates", String.class),
-                    new ColumnDescriptor("missedNotificationPlate", Integer.class),
-                    new ColumnDescriptor("terminationWindow", String.class)
-                    });
+            {
+                new ColumnDescriptor("sequenceRange", String.class),
+                new ColumnDescriptor("visitType", String.class),
+                new ColumnDescriptor("visitLabel", String.class),
+                new ColumnDescriptor("visitDatePlate", Integer.class),
+                new ColumnDescriptor("visitDateField", String.class),
+                new ColumnDescriptor("visitDueDay", Integer.class),
+                new ColumnDescriptor("visitDueAllowance", Integer.class),
+                new ColumnDescriptor("requiredPlates", String.class),
+                new ColumnDescriptor("optionalPlates", String.class),
+                new ColumnDescriptor("missedNotificationPlate", Integer.class),
+                new ColumnDescriptor("terminationWindow", String.class)
+            });
+            loader.setMapFilter(new Filter<Map<String, Object>>()
+            {
+                public boolean accept(Map<String, Object> map)
+                {
+                    return null != map.get("sequenceRange");
+                }
+            });
 
-            // UNDONE: TabLoader does not integrate with ObjectFactory yet...
-            maps = loader.load();
+            return loader.load(VisitMapRecord.class);
         }
         catch (IOException x)
         {
@@ -217,14 +222,6 @@ public class VisitMapImporter
         {
             throw new RuntimeException(x);
         }
-
-        for (Map<String, Object> m : maps)
-        {
-            if (m.get("sequenceRange") != null)
-                records.add(new VisitMapRecord(m));
-        }
-
-        return records;
     }
 
 

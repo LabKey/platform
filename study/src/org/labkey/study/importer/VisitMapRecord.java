@@ -48,31 +48,7 @@ class VisitMapRecord
     private int _missedNotificationPlate = -1;
     private String _terminationWindow;
 
-
-/*    public VisitMapRecord(String record)
-    {
-        PipeDelimParser parser = new PipeDelimParser(record);
-        _visitNumber = toInt(parser.next());
-        _visitType = getType(parser.next());
-        _visitLabel = parser.next();
-        _visitDatePlate = toInt(parser.next(), -1);
-        _visitDateField = parser.next();
-        _visitDueDay = toInt(parser.next());
-        _visitOverdueAllowance = toInt(parser.next(), -1);
-        _requiredPlates = toIntArray(parser.next());
-        _optionalPlates = toIntArray(parser.next());
-        _missedNotificationPlate = toInt(parser.next(), -1);
-        if (parser.hasNext())
-            _terminationWindow = parser.next();
-    } */
-
-
     public VisitMapRecord(Map record)
-    {
-        init(record);
-    }
-
-    private void init(Map record)
     {
         String range = (String)record.get("sequenceRange");
         if (null == range)
@@ -145,6 +121,7 @@ class VisitMapRecord
 
         StringTokenizer st = new StringTokenizer(list, ", \t;");
         ArrayList<Integer> values = new ArrayList<Integer>(st.countTokens());
+
         while (st.hasMoreTokens())
         {
             String s = st.nextToken();
@@ -161,7 +138,8 @@ class VisitMapRecord
                     values.add(i);
             }
         }
-        return ArrayUtils.toPrimitive(values.toArray(new Integer[0]));
+
+        return ArrayUtils.toPrimitive(values.toArray(new Integer[values.size()]));
     }
 
     private Visit.Type getType(String str)
@@ -177,34 +155,29 @@ class VisitMapRecord
     // set by visit importer
     public void setVisitRowId(int rowId)
     {
-        this._visitRowId = rowId;
+        _visitRowId = rowId;
     }
 
     public int getVisitRowId()
     {
-        return this._visitRowId;
+        return _visitRowId;
     }
 
 
     static
     {
-    ObjectFactory.Registry.register(VisitMapRecord.class, new VisitMapRecordFactory());
+        ObjectFactory.Registry.register(VisitMapRecord.class, new VisitMapRecordFactory());
     }
 
-    // UNDONE: should have BaseObjectFactory to implment handle in terms of fromMap()
+    // UNDONE: should have BaseObjectFactory to implement handle in terms of fromMap()
     static class VisitMapRecordFactory implements ObjectFactory<VisitMapRecord>
     {
-        public void fromMap(VisitMapRecord v, Map<String,Object> m)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        public VisitMapRecord fromMap(Map<String,? extends Object> m)
+        public VisitMapRecord fromMap(Map<String, ?> m)
         {
             return new VisitMapRecord(m);
         }
 
-        public Map toMap(VisitMapRecord bean, Map m)
+        public Map<String, Object> toMap(VisitMapRecord bean, Map m)
         {
             throw new java.lang.UnsupportedOperationException();
         }

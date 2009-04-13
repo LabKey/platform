@@ -142,7 +142,6 @@ public abstract class BaseStudyController extends SpringActionController
 
     public Study getStudy(boolean allowNullStudy) throws ServletException
     {
-        // UNDONE: see https://cpas.fhcrc.org/Issues/home/issues/details.view?issueId=1137
         Container c = getContainer();
         Study study = StudyManager.getInstance().getStudy(c);
         if (!allowNullStudy && study == null)

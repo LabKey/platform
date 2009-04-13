@@ -72,6 +72,7 @@ import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.client.Designer;
+import org.labkey.study.importer.StudyImporter;
 import org.labkey.study.importer.VisitMapImporter;
 import org.labkey.study.model.*;
 import org.labkey.study.pipeline.DatasetBatch;
@@ -87,16 +88,12 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
@@ -587,7 +584,7 @@ public class StudyController extends BaseStudyController
             }
 
             List<ActionButton> buttonBar = new ArrayList<ActionButton>();
-            populateButtonBar(buttonBar, def, queryView, cohort, visit, qcStateSet);
+            populateButtonBar(buttonBar, def, queryView, cohort, qcStateSet);
             queryView.setButtons(buttonBar);
 
             StringBuffer sb = new StringBuffer();
@@ -639,7 +636,7 @@ public class StudyController extends BaseStudyController
             }
         }
 
-        private void populateButtonBar(List<ActionButton> buttonBar, DataSetDefinition def, DataSetQueryView queryView, Cohort cohort, Visit visit, QCStateSet currentStates)
+        private void populateButtonBar(List<ActionButton> buttonBar, DataSetDefinition def, DataSetQueryView queryView, Cohort cohort, QCStateSet currentStates)
         {
             createViewButton(buttonBar, queryView);
             createCohortButton(buttonBar, cohort);
@@ -717,7 +714,7 @@ public class StudyController extends BaseStudyController
             }
 
             ActionButton viewSamples = new ActionButton("button", "View Specimens");
-            String viewSamplesURL = ActionURL.toPathString("Study-Samples", "selectedSamples", getContainer());
+            ActionURL viewSamplesURL = new ActionURL(SpringSpecimenController.SelectedSamplesAction.class, getContainer());
             viewSamples.setURL(viewSamplesURL);
             viewSamples.setRequiresSelection(true);
             viewSamples.setActionType(ActionButton.Action.POST);
@@ -1062,7 +1059,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    private static void createStudy(Study study, Container c, User user, StudyPropertiesForm form) throws SQLException, ServletException
+    public static void createStudy(Study study, Container c, User user, StudyPropertiesForm form) throws SQLException, ServletException
     {
         if (null == study)
         {
@@ -1074,7 +1071,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    private static void updateRepositorySettings(Container c, boolean simple) throws SQLException
+    public static void updateRepositorySettings(Container c, boolean simple) throws SQLException
     {
         SampleManager.RepositorySettings reposSettings = SampleManager.getInstance().getRepositorySettings(c);
         reposSettings.setSimple(simple);
@@ -1094,7 +1091,8 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            try {
+            try
+            {
                 Study study = getStudy();
                 if (study != null)
                     root.addChild(study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
@@ -3041,7 +3039,7 @@ public class StudyController extends BaseStudyController
     }
 
     // TODO: Move to StudyManager?
-    private static void updateQcState(Study study, User user, ManageQCStatesForm form) throws SQLException
+    public static void updateQcState(Study study, User user, ManageQCStatesForm form) throws SQLException
     {
         if (!nullSafeEqual(study.getDefaultAssayQCState(), form.getDefaultAssayQCState()) ||
             !nullSafeEqual(study.getDefaultPipelineQCState(), form.getDefaultPipelineQCState()) ||
@@ -3610,9 +3608,9 @@ public class StudyController extends BaseStudyController
 
             try
             {
-                submitStudyBatch(study, f, c, getUser(), getViewContext().getActionURL());
+                StudyImporter.submitStudyBatch(study, f, c, getUser(), getViewContext().getActionURL());
             }
-            catch (DatasetLockExistsException e)
+            catch (StudyImporter.DatasetLockExistsException e)
             {
                 ActionURL importURL = new ActionURL(ImportStudyBatchAction.class, getContainer());
                 importURL.addParameter("path", form.getPath());
@@ -3622,26 +3620,6 @@ public class StudyController extends BaseStudyController
             return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
         }
     }
-
-    private static void submitStudyBatch(Study study, File datasetFile, Container c, User user, ActionURL url) throws IOException, DatasetLockExistsException, SQLException
-    {
-        if (null == datasetFile || !datasetFile.exists() || !datasetFile.isFile())
-        {
-            HttpView.throwNotFound();
-            return;
-        }
-
-        File lockFile = StudyPipeline.lockForDataset(study, datasetFile);
-        if (!datasetFile.canRead() || lockFile.exists())
-        {
-            throw new DatasetLockExistsException();
-        }
-
-        DatasetBatch batch = new DatasetBatch(new ViewBackgroundInfo(c, user, url), datasetFile);
-        batch.submit();
-    }
-
-    private static class DatasetLockExistsException extends ServletException {}
 
     @RequiresPermission(ACL.PERM_ADMIN)
     public class ImportStudy extends FormViewAction
@@ -3668,9 +3646,24 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
-            Pair<Boolean, ActionURL> pair = importStudy(errors);
-            redirect = pair.second;
-            return pair.first;
+            Container c = getContainer();
+            User user = getUser();
+
+            if (null != StudyManager.getInstance().getStudy(c))
+            {
+                StudyManager.getInstance().deleteAllStudyData(c, user, true, false);
+                redirect = new ActionURL(ImportStudy.class, c);
+                return true;
+            }
+            else
+            {
+                boolean success = importStudy(errors);
+
+                if (success)
+                    redirect = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
+
+                return success;
+            }
         }
 
         public ActionURL getSuccessURL(Object o)
@@ -3685,159 +3678,34 @@ public class StudyController extends BaseStudyController
     }
 
 
-    public Pair<Boolean, ActionURL> importStudy(BindException errors) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException
+    public boolean importStudy(BindException errors) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException
     {
         Container c = getContainer();
         User user = getUser();
         ActionURL url = getViewContext().getActionURL();
 
-        if (null != StudyManager.getInstance().getStudy(c))
+        StudyImporter importer = new StudyImporter(c, user, url, "c:/labkey/sampleData/study/import", errors);
+        return importer.process();
+    }
+
+
+    // TODO: Read or Admin permissions??
+    @RequiresPermission(ACL.PERM_READ)
+    public class ExportStudyAction extends FormHandlerAction
+    {
+        public void validateCommand(Object target, Errors errors)
         {
-            StudyManager.getInstance().deleteAllStudyData(c, user, true, false);
-            return new Pair<Boolean, ActionURL>(true, new ActionURL(ImportStudy.class, getContainer()));
         }
 
-        ActionURL redirect = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
-
-        String path = "c:/labkey/sampleData/study/import";
-
-        File file = new File(path, "study.xml");
-
-        _log.info("Loading study: " + file.getAbsolutePath());
-
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setValidating(false);
-        DocumentBuilder db = dbf.newDocumentBuilder();
-
-        Document doc = db.parse(file);
-
-        Node rootNode = doc.getDocumentElement();
-
-        if (!rootNode.getNodeName().equalsIgnoreCase("study"))
-            throw new ServletException("Invalid study.xml");
-
+        public boolean handlePost(Object o, BindException errors) throws Exception
         {
-            StudyPropertiesForm form = new StudyPropertiesForm();
-            form.setLabel(DOMUtil.getAttributeValue(rootNode, "label"));
-            form.setDateBased(Boolean.parseBoolean(DOMUtil.getAttributeValue(rootNode, "dateBased")));
-            form.setStartDate(new Date(DateUtil.parseDateTime(DOMUtil.getAttributeValue(rootNode, "startDate"))));
-            form.setSecurityType(SecurityType.valueOf(DOMUtil.getAttributeValue(rootNode, "securityType")));
-
-            createStudy(getStudy(true), c, user, form);
+            return false;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
-        for (Node child : DOMUtil.getChildNodes(rootNode, Node.ELEMENT_NODE))
+        public ActionURL getSuccessURL(Object o)
         {
-            String name = child.getNodeName();
-
-            if ("visits".equals(name))
-            {
-                String source = DOMUtil.getAttributeValue(child, "source");
-                File visitMap = new File(path, source);
-
-                if (visitMap.exists())
-                {
-                    String content = PageFlowUtil.getFileContentsAsString(visitMap);
-
-                    VisitMapImporter importer = new VisitMapImporter();
-                    List<String> errorMsg = new LinkedList<String>();
-
-                    if (!importer.process(user, getStudy(), content, errorMsg))
-                    {
-                        for (String error : errorMsg)
-                            errors.reject("uploadVisitMap", error);
-
-                        return new Pair<Boolean, ActionURL>(false, null);
-                    }
-                }
-
-                VisitManager visitManager = StudyManager.getInstance().getVisitManager(getStudy());
-
-                for (Node visitNode : DOMUtil.getChildNodesWithName(child, "visit"))
-                {
-                    // Just a proof of concept -- only works for "show by default".  TODO: Move to visit map or move entire visit map into xml?
-                    double sequenceNum = Double.parseDouble(DOMUtil.getAttributeValue(visitNode, "sequenceNum"));
-                    Visit visit = visitManager.findVisitBySequence(sequenceNum);
-                    Visit mutable = visit.createMutable();
-                    mutable.setShowByDefault(Boolean.parseBoolean(DOMUtil.getAttributeValue(visitNode, "showByDefault")));
-                    StudyManager.getInstance().updateVisit(user, mutable);
-                }
-            }
-            else if ("cohorts".equals(name))
-            {
-                String cohortType = DOMUtil.getAttributeValue(child, "type");
-                assert cohortType.equals("automatic");
-                Integer dataSetId = Integer.parseInt(DOMUtil.getAttributeValue(child, "dataSetId"));
-                String dataSetProperty = DOMUtil.getAttributeValue(child, "dataSetProperty");
-
-                CohortController.updateAutomaticCohort(getStudy(), user, dataSetId, dataSetProperty);
-            }
-            else if ("qcStates".equals(name))
-            {
-                // TODO: Generalize to all qc state properties
-                ManageQCStatesForm form = new ManageQCStatesForm();
-                form.setShowPrivateDataByDefault(Boolean.parseBoolean(DOMUtil.getAttributeValue(child, "showPrivateDataByDefault")));
-                updateQcState(getStudy(), user, form);
-            }
-            else if ("datasets".equals(name))
-            {
-                String schemaSource = null;
-                String labelColumn = null;
-                String typeNameColumn = null;
-                String typeIdColumn = null;
-                String datasetSource = null;
-
-                for (Node subElement : DOMUtil.getChildNodes(child, Node.ELEMENT_NODE))
-                {
-                    String subName = subElement.getNodeName();
-
-                    if ("schemas".equals(subName))
-                    {
-                        schemaSource = DOMUtil.getAttributeValue(subElement, "source");
-                        labelColumn = DOMUtil.getAttributeValue(subElement, "labelColumn");
-                        typeNameColumn = DOMUtil.getAttributeValue(subElement, "typeNameColumn");
-                        typeIdColumn = DOMUtil.getAttributeValue(subElement, "typeIdColumn");
-                    }
-                    else if ("definition".equals(subName))
-                    {
-                        datasetSource = DOMUtil.getAttributeValue(subElement, "source");
-                    }
-                }
-
-                File schemas = new File(path, schemaSource);
-
-                if (schemas.exists())
-                {
-                    if (!StudyManager.getInstance().bulkImportTypes(getStudy(), schemas, user, labelColumn, typeNameColumn, typeIdColumn, errors))
-                        return new Pair<Boolean, ActionURL>(false, null);
-                }
-
-                File datasetFile = new File(path, datasetSource);
-
-                if (datasetFile.exists())
-                {
-                    submitStudyBatch(getStudy(), datasetFile, c, user, getViewContext().getActionURL());
-                }
-            }
-            else if ("specimens".equals(name))
-            {
-                boolean simple = Boolean.parseBoolean(DOMUtil.getAttributeValue(child, "simpleRepository", "true"));
-                updateRepositorySettings(c, simple);
-
-                String source = DOMUtil.getAttributeValue(child, "source");
-                File specimenFile = new File(path, source);
-
-                SpringSpecimenController.submitSpecimenBatch(c, user, url, specimenFile);
-            }
-            else
-            {
-                throw new RuntimeException("study.xml format problem: unknown node '" + name + "'");
-            }
+            return new ActionURL(BeginAction.class, getContainer());
         }
-
-        _log.info("Finished loading study: " + file.getAbsolutePath());
-
-        return new Pair<Boolean, ActionURL>(true, redirect);
     }
 
     @RequiresPermission(ACL.PERM_DELETE)
@@ -5884,6 +5752,7 @@ public class StudyController extends BaseStudyController
     private static Map<Container, ReloadStatus> _lastReload = new ConcurrentHashMap<Container, ReloadStatus>();
     private static Timer _timer = new Timer("Study Reload", true);
 
+    @RequiresPermission(ACL.PERM_ADMIN)
     public class ManageReloadAction extends FormViewAction<ReloadForm>
     {
         public void validateCommand(ReloadForm target, Errors errors)

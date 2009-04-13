@@ -1973,6 +1973,7 @@ study/src/org/labkey/study/importer/LDMSRecord.java -text
 study/src/org/labkey/study/importer/PipeDelimParser.java -text
 study/src/org/labkey/study/importer/SimpleSpecimenImporter.java -text
 study/src/org/labkey/study/importer/SpecimenImporter.java -text
+study/src/org/labkey/study/importer/StudyImporter.java -text
 study/src/org/labkey/study/importer/VisitMapImporter.java -text
 study/src/org/labkey/study/importer/VisitMapRecord.java -text
 study/src/org/labkey/study/model/AbstractStudyCachable.java -text

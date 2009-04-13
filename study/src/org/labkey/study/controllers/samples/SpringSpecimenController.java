@@ -162,6 +162,7 @@ public class SpringSpecimenController extends BaseStudyController
 
 
     private static final String SELECTED_SAMPLES_SESSION_ATTRIB_KEY = SpringSpecimenController.class.getName() + "/SelectedSamples";
+
     @RequiresPermission(ACL.PERM_READ)
     public class SelectedSamplesAction extends QueryViewAction<SampleViewTypeForm, SpecimenQueryView>
     {

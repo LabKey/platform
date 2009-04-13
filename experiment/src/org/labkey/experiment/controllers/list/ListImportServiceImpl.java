@@ -57,7 +57,6 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
         DataLoader loader = getDataLoader();
         try
         {
-
             errors = def.insertListItems(getUser(), loader);
         }
         catch (IOException ioe)
