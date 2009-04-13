@@ -8,6 +8,6 @@ import java.io.Closeable;
  * Date: Apr 8, 2009
  * Time: 7:54:30 PM
  */
-public interface CloseableIterator<K> extends Closeable, Iterator<K>
+public interface CloseableIterator<T> extends Closeable, Iterator<T>
 {
 }

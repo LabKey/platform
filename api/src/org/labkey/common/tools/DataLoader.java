@@ -33,7 +33,7 @@ import java.util.*;
  * Date: Oct 22, 2008
  * Time: 11:26:37 AM
  */
-public abstract class DataLoader
+public abstract class DataLoader   // TODO: implements Iterable<K>
 {
     /**
      * Defines order of column type preferences. 
@@ -70,7 +70,7 @@ public abstract class DataLoader
 
     public void setColumns(ColumnDescriptor[] columns)
     {
-        this._columns = columns;
+        _columns = columns;
     }
 
     public void ensureColumn(ColumnDescriptor column) throws IOException

@@ -54,12 +54,20 @@ public interface ObjectFactory<K>
         public static <K> ObjectFactory<K> getFactory(Class<K> clss)
         {
             ObjectFactory<K> f = (ObjectFactory<K>) _registry.get(clss);
+
             if (f == null && (BoundMap.class.isAssignableFrom(clss) || !java.util.Map.class.isAssignableFrom(clss)))
             {
                 try
                 {
-                    f = new BeanObjectFactory<K>(clss);
-                    _registry.put(clss, f);
+                    // Make sure the class is loaded in case it statically registers a custom factory 
+                    Class.forName(clss.getName());
+                    f = (ObjectFactory<K>) _registry.get(clss);
+
+                    if (f == null)
+                    {
+                        f = new BeanObjectFactory<K>(clss);
+                        _registry.put(clss, f);
+                    }
                 }
                 catch (RuntimeException x)
                 {
@@ -72,6 +80,7 @@ public interface ObjectFactory<K>
                     throw new IllegalStateException(x);
                 }
             }
+
             return f;
         }
     }

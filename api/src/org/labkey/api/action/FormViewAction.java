@@ -57,8 +57,8 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
 
     public final ModelAndView handleRequest() throws Exception
     {
-        FORM form = null;
-        BindException errors = null;
+        FORM form;
+        BindException errors;
         if (null != getCommandClass())
         {
             errors = bindParameters(getPropertyValues());

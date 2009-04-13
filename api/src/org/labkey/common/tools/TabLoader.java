@@ -19,18 +19,17 @@ package org.labkey.common.tools;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.commons.collections.Transformer;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.QcUtil;
 import org.labkey.api.exp.QcFieldWrapper;
 import org.labkey.api.util.CloseableIterator;
+import org.labkey.api.util.Filter;
+import org.labkey.api.util.FilterIterator;
 
-import java.beans.PropertyDescriptor;
 import java.io.*;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -70,6 +69,7 @@ public class TabLoader extends DataLoader
     protected String _strDelimiter = null;
     protected boolean _parseQuotes = false;
     protected boolean _throwOnErrors = false;
+    private Filter<Map<String, Object>> _mapFilter;
 
 
     public TabLoader(File inputFile) throws IOException
@@ -276,19 +276,58 @@ public class TabLoader extends DataLoader
     }
 
 
+    public void setMapFilter(Filter<Map<String, Object>> mapFilter)
+    {
+        _mapFilter = mapFilter;
+    }
+
+/*  TODO: Generify entire TabLoader and uncomment this...
+    public void setBeanFilter(Filter<K> beanFilter)
+    {
+        _beanFilter = beanFilter;
+    }
+*/
+    // TODO: ...and remove this...
+    public <T> CloseableIterator<T> iterator(Class<T> clazz, Filter<T> filter) throws IOException
+    {
+        return new CloseableFilterIterator<T>(iterator(clazz), filter);
+    }
+
+    // TODO: ...and remove this.
+    public <T> List<T> load(Class<T> clazz, Filter<T> filter) throws IOException
+    {
+        return load(iterator(clazz, filter));
+    }
+
     public CloseableIterator<Map<String, Object>> iterator() throws IOException
     {
-        return new TabLoader.TabLoaderIterator();
+        TabLoaderIterator iter = new TabLoaderIterator();
+
+        if (null == _mapFilter)
+            return iter;
+        else
+            return new CloseableFilterIterator<Map<String, Object>>(iter, _mapFilter);
     }
 
-    public <K> CloseableIterator<K> iterator(Class<K> clazz) throws IOException
+    public <T> CloseableIterator<T> iterator(Class<T> clazz) throws IOException
     {
-        return new BeanIterator<K>(clazz);
+        // TODO: check for _beanFilter here
+        return new BeanIterator<T>(iterator(), clazz);
     }
 
-    public <K> List<K> load(Class<K> clazz) throws IOException
+    public <T> List<T> load(Class<T> clazz) throws IOException
     {
-        return new TabTransformer<K>(clazz).load();
+        return load(iterator(clazz));
+    }
+
+    private <T> List<T> load(CloseableIterator<T> iter) throws IOException
+    {
+        List<T> result = new ArrayList<T>();
+
+        while (iter.hasNext())
+            result.add(iter.next());
+
+        return result;
     }
 
     private void initColNameMap() throws IOException
@@ -303,10 +342,14 @@ public class TabLoader extends DataLoader
 
     public void parseAsCSV()
     {
-        _chDelimiter = ',';
-        _parseQuotes = true;
+        setDelimiterCharacter(',');
+        setParseQuotes(true);
     }
 
+    public void setDelimiterCharacter(char delimiter)
+    {
+        _chDelimiter = delimiter;
+    }
 
     public void setParseQuotes(boolean parseQuotes)
     {
@@ -339,13 +382,48 @@ public class TabLoader extends DataLoader
         }
     }
 
+    public String[][] getFirstNLines(int n) throws IOException
+    {
+        BufferedReader reader = getReader();
+        try
+        {
+            String[] lines = new String[n];
+            int i;
+            for (i = 0; i < lines.length;)
+            {
+                String line = reader.readLine();
+                if (null == line)
+                    break;
+                if (line.length() == 0 || line.charAt(0) == '#')
+                    continue;
+                lines[i++] = line;
+            }
+            int nLines = i;
+            if (nLines == 0)
+            {
+                return new String[0][];
+            }
+
+            String[][] lineFields = new String[nLines][];
+            for (i = 0; i < nLines; i++)
+            {
+                lineFields[i] = parseLine(lines[i]);
+            }
+            return lineFields;
+        }
+        finally
+        {
+            try {reader.close();} catch (IOException ioe) {}
+        }
+    }
+
     protected class _RowMap implements Map<String, Object>
     {
         protected Object[] _values;
 
         _RowMap(Object[] values)
         {
-            this._values = values;
+            _values = values;
         }
 
         public Object[] getArray()
@@ -705,15 +783,32 @@ public class TabLoader extends DataLoader
         }
     }
 
-    private class BeanIterator<K> implements CloseableIterator<K>
+    public static class CloseableFilterIterator<T> extends FilterIterator<T> implements CloseableIterator<T>
     {
-        private TabLoaderIterator _mapIter;
-        private TabTransformer<K> _transformer;
+        protected CloseableIterator<T> _iter;
 
-        private BeanIterator(Class<K> clazz) throws IOException
+        public CloseableFilterIterator(CloseableIterator<T> iter, Filter<T> filter)
         {
-            _mapIter = new TabLoaderIterator();
-            _transformer = new TabTransformer<K>(clazz);
+            super(iter, filter);
+            _iter = iter;
+        }
+
+        public void close() throws IOException
+        {
+            _iter.close();
+        }
+    }
+
+    // Iterator that transforms Map<String, Object> to bean using ObjectFactory
+    public static class BeanIterator<T> implements CloseableIterator<T>
+    {
+        private CloseableIterator<Map<String, Object>> _mapIter;
+        private ObjectFactory<T> _factory;
+
+        public BeanIterator(CloseableIterator<Map<String, Object>> mapIter, Class<T> clazz) throws IOException
+        {
+            _mapIter = mapIter;
+            _factory = ObjectFactory.Registry.getFactory(clazz);
         }
 
         public void close() throws IOException
@@ -726,10 +821,10 @@ public class TabLoader extends DataLoader
             return _mapIter.hasNext();
         }
 
-        public K next()
+        public T next()
         {
             Map<String, Object> row = _mapIter.next();
-            return _transformer.transform(row);
+            return _factory.fromMap(row);
         }
 
         public void remove()
@@ -738,170 +833,6 @@ public class TabLoader extends DataLoader
         }
     }
 
-    /**
-     * NOTE: we don't use ObjectFactory because historically it wasn't available in the tools build.  However, you
-     * can easily wrap an ObjectFactory with the Transformer interface
-     */
-    private class TabTransformer<T> implements Transformer
-    {
-        private Class<T> _returnElementClass;
-
-        private TabTransformer(Class<T> type) throws IOException
-        {
-            _returnElementClass = type;
-            initColumnInfos(_returnElementClass);
-        }
-
-        private void initColumnInfos(Class clazz) throws IOException
-        {
-            PropertyDescriptor origDescriptors[] = PropertyUtils.getPropertyDescriptors(clazz);
-            HashMap<String, PropertyDescriptor> mappedPropNames = new HashMap<String, PropertyDescriptor>();
-            for (PropertyDescriptor origDescriptor : origDescriptors)
-            {
-                if (origDescriptor.getName().equals("class"))
-                    continue;
-
-                mappedPropNames.put(origDescriptor.getName().toLowerCase(), origDescriptor);
-            }
-
-            boolean isMapClass = java.util.Map.class.isAssignableFrom(clazz);
-            for (ColumnDescriptor column : getColumns())
-            {
-                PropertyDescriptor prop = mappedPropNames.get(column.name.toLowerCase());
-                if (null != prop)
-                {
-                    column.name = prop.getName();
-                    column.clazz = prop.getPropertyType();
-                    column.isProperty = true;
-                    column.setter = prop.getWriteMethod();
-                    if (column.clazz.isPrimitive())
-                    {
-                        if (Float.TYPE.equals(column.clazz))
-                            column.missingValues = 0.0F;
-                        else if (Double.TYPE.equals(column.clazz))
-                            column.missingValues = 0.0;
-                        else if (Boolean.TYPE.equals(column.clazz))
-                            column.missingValues = Boolean.FALSE;
-                        else
-                            column.missingValues = 0; //Will get converted.
-                    }
-                }
-                else if (isMapClass)
-                {
-                    column.isProperty = false;
-                }
-                else
-                {
-                    column.load = false;
-                }
-            }
-        }
-
-        public T transform(Object o)
-        {
-            try
-            {
-                _RowMap m = (_RowMap) o;
-                T bean = _returnElementClass.newInstance();
-
-                for (int i = 0; i < _columns.length; i++)
-                {
-
-                    ColumnDescriptor column = _columns[i];
-                    if (!column.load) continue;
-                    // CONSIDER: explicit option to not skip blank/null values
-
-                    Object value = m._values[i];
-                    if (null == value)
-                        continue;
-
-                    if (column.isProperty)
-                    {
-                        try
-                        {
-                            if (null != column.setter)
-                            {
-                                column.setter.invoke(bean, value);
-                            }
-                            else
-                            {
-                                BeanUtils.setProperty(bean, column.name, value);
-                            }
-                        }
-                        catch (Exception x)
-                        {
-                            if (null != _columns[i].errorValues)
-                            {
-                                BeanUtils.setProperty(bean, _columns[i].name, _columns[i].errorValues);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        //dhmay correcting this check and making it do something, 7/17/06.
-                        //This was only half-implemented, before.
-                        if (java.util.Map.class.isAssignableFrom(bean.getClass()))
-                        {
-                            //cast is ok here because we're explicitly checking
-                            ((Map<String, Object>) bean).put(column.name, value);
-                        }
-                    }
-                }
-
-                return bean;
-            }
-            catch (Exception x)
-            {
-                throw new RuntimeException(x);
-            }
-        }
-
-        private List<T> load() throws IOException
-        {
-            List<Map<String, Object>> maps = TabLoader.this.load();
-            List<T> result = new ArrayList<T>(maps.size());
-            for (Map<String, Object> map : maps)
-            {
-                result.add(transform(map));
-            }
-            return result;
-        }
-    }
-
-    public String[][] getFirstNLines(int n) throws IOException
-    {
-        BufferedReader reader = getReader();
-        try
-        {
-            String[] lines = new String[n];
-            int i;
-            for (i = 0; i < lines.length;)
-            {
-                String line = reader.readLine();
-                if (null == line)
-                    break;
-                if (line.length() == 0 || line.charAt(0) == '#')
-                    continue;
-                lines[i++] = line;
-            }
-            int nLines = i;
-            if (nLines == 0)
-            {
-                return new String[0][];
-            }
-
-            String[][] lineFields = new String[nLines][];
-            for (i = 0; i < nLines; i++)
-            {
-                lineFields[i] = parseLine(lines[i]);
-            }
-            return lineFields;
-        }
-        finally
-        {
-            try {reader.close();} catch (IOException ioe) {}
-        }
-    }
 
     public static class TabLoaderTestCase extends junit.framework.TestCase
     {

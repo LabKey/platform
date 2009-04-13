@@ -15,36 +15,35 @@
  */
 package org.labkey.api.qc;
 
-import org.labkey.api.study.assay.AssayRunUploadContext;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.ExperimentDataHandler;
-import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.query.ValidationException;
-import org.labkey.api.query.ValidationError;
-import org.labkey.api.query.SimpleValidationError;
-import org.labkey.api.query.PropertyValidationError;
-import org.labkey.api.security.User;
-import org.labkey.api.data.Container;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
-import org.labkey.common.tools.TabLoader;
-import org.labkey.common.tools.ColumnDescriptor;
 import org.apache.commons.lang.StringUtils;
 import org.apache.struts.upload.MultipartRequestHandler;
-import org.springframework.validation.BindException;
+import org.labkey.api.data.Container;
+import org.labkey.api.exp.ExperimentDataHandler;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayRunUploadContext;
+import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
+import org.labkey.common.tools.ColumnDescriptor;
+import org.labkey.common.tools.TabLoader;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.*;
-import java.util.*;
 import java.sql.Types;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.*;
 
 /*
 * User: Karl Lum

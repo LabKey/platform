@@ -686,6 +686,8 @@ api/src/org/labkey/api/util/ExceptionUtil.java -text
 api/src/org/labkey/api/util/FileCopyListener.java -text
 api/src/org/labkey/api/util/FileType.java -text
 api/src/org/labkey/api/util/FileUtil.java -text
+api/src/org/labkey/api/util/Filter.java -text
+api/src/org/labkey/api/util/FilterIterator.java -text
 api/src/org/labkey/api/util/FolderDisplayMode.java -text
 api/src/org/labkey/api/util/Formats.java -text
 api/src/org/labkey/api/util/GUID.java -text

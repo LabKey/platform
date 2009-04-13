@@ -21,7 +21,6 @@ import org.springframework.validation.BindException;
 import org.labkey.api.view.NavTree;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Jun 21, 2007
  * Time: 11:14:21 AM

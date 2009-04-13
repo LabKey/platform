@@ -182,7 +182,7 @@ public class ExcelLoader extends DataLoader
 
             // If this row is blank, keep going until we either find a row or hit the end
             boolean foundData = false;
-            Map<String,Object> row = new HashMap<String,Object>();
+            Map<String, Object> row = new HashMap<String, Object>();
             for (int columnIndex = 0; columnIndex < _columns.length; columnIndex++)
             {
                 ColumnDescriptor column = _columns[columnIndex];
@@ -297,7 +297,6 @@ public class ExcelLoader extends DataLoader
 
         public void close() throws IOException
         {
-            //To change body of implemented methods use File | Settings | File Templates.
         }
     }
 

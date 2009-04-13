@@ -415,8 +415,6 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
     }
 
 
-
-
     /* for TableViewForm, uses BeanUtils to work with DynaBeans */
     static public class BeanUtilsPropertyBindingResult extends BeanPropertyBindingResult
     {
@@ -553,7 +551,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         if (requiresLogin && user.isGuest())
             HttpView.throwUnauthorized();
 
-        if (null == requiresPermission && requiresSiteAdmin && requiresLogin)
+        if (null == requiresPermission && !requiresSiteAdmin && !requiresLogin)
             throw new IllegalStateException("@RequiresPermission, @RequiresSiteAdmin, or @RequiresLogin annotation is required");
     }
 
