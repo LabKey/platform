@@ -22,7 +22,6 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.ui.LookupServiceAsync;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * User: brittp

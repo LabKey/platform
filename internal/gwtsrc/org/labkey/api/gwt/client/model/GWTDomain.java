@@ -20,7 +20,6 @@ import com.google.gwt.user.client.rpc.IsSerializable;
 
 import java.util.*;
 
-import org.labkey.api.gwt.client.util.StringProperty;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.DefaultValueType;
 

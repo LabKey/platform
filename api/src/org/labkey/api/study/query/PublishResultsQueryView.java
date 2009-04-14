@@ -78,12 +78,11 @@ public class PublishResultsQueryView extends ResultsQueryView
         view.getDataRegion().addHiddenFormField("attemptPublish", "true");
         if (_filter != null)
         {
-            SimpleFilter filter = (SimpleFilter) view.getRenderContext().getBaseFilter();
-            if (filter != null)
-                filter.addAllClauses(_filter);
-            else
-                filter = _filter;
-            view.getRenderContext().setBaseFilter(filter);
+            view.getRenderContext().setBaseFilter(_filter);
+        }
+        else
+        {
+            view.getRenderContext().setBaseFilter(new SimpleFilter());
         }
         if (getSettings().getContainerFilterName() != null)
             view.getDataRegion().addHiddenFormField("containerFilterName", getSettings().getContainerFilterName());

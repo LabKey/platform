@@ -16,6 +16,7 @@
 package org.labkey.api.view;
 
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.data.RenderContext;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.StringWriter;
@@ -27,7 +28,7 @@ import java.io.IOException;
  * Date: May 13, 2008
  * Time: 3:30:25 PM
  */
-public class PopupMenu
+public class PopupMenu extends DisplayElement
 {
     private NavTree _navTree;
     private Align _align = Align.LEFT;
@@ -72,6 +73,11 @@ public class PopupMenu
         {
             throw new RuntimeException(e);
         }
+    }
+
+    public void render(RenderContext ctx, Writer out) throws IOException
+    {
+        render(out);
     }
 
     public void render(Writer out) throws IOException

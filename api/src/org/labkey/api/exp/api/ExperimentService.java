@@ -159,7 +159,7 @@ public class ExperimentService
 
         ExpData[] getExpData(Container c) throws SQLException;
         ExpData getExpDataByURL(String canonicalURL, Container container);
-        ExpData getExpDataByURL(File f, Container c) throws IOException;
+        ExpData getExpDataByURL(File f, Container c);
         
         TableInfo getTinfoMaterial();
         TableInfo getTinfoMaterialSource();
@@ -176,7 +176,7 @@ public class ExperimentService
         ExpRun[] getRunsUsingMaterials(int... materialIds) throws SQLException;
         List<? extends ExpRun> getRunsUsingDatas(List<ExpData> datas) throws SQLException;
 
-        ExpRun getCreatingRun(File file, Container c) throws IOException;
+        ExpRun getCreatingRun(File file, Container c);
         List<? extends ExpRun> getExpRunsForProtocolIds(boolean includeRelated, int... rowIds) throws SQLException;
         ExpRun[] getRunsUsingSampleSets(ExpSampleSet... sampleSets) throws SQLException;
 
@@ -186,7 +186,7 @@ public class ExperimentService
         List<ExpRun> runsDeletedWithInput(ExpRun[] runs) throws SQLException;
 
         void deleteProtocolByRowIds(Container container, User user, int... rowIds) throws ExperimentException;
-        void deleteAllExpObjInContainer(Container container, User user) throws Exception;
+        void deleteAllExpObjInContainer(Container container, User user) throws ExperimentException;
         void deleteSampleSet(int rowId, Container c, User user) throws SQLException, ExperimentException;
         void deleteExperimentRunsByRowIds(Container container, User user, int... rowIds);
 

@@ -36,6 +36,7 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.common.tools.ColumnDescriptor;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.common.tools.TabLoader;
 
 import javax.servlet.http.HttpServletRequest;
@@ -109,7 +110,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             pw.append(Props.errorsFile.name());
             pw.append('\t');
             pw.println(errorFile.getAbsolutePath());
-            
+
             return runProps;
         }
         finally
@@ -259,9 +260,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 pw.println();
 
                 // write the rows
-                for (int i=0; i < data.size(); i++)
+                for (Map<String, Object> row : data)
                 {
-                    Map<String, Object> row = data.get(i);
                     sep = "";
                     for (String name : columns)
                     {
@@ -279,7 +279,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
     }
 
-    public void createSampleData(ExpProtocol protocol, ViewContext viewContext, File scriptDir) throws Exception
+    public void createSampleData(@NotNull ExpProtocol protocol, ViewContext viewContext, File scriptDir) throws Exception
     {
         final int SAMPLE_DATA_ROWS = 5;
         File runProps = new File(scriptDir, VALIDATION_RUN_INFO_FILE);
@@ -344,12 +344,13 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         ExpProtocol _protocol;
         ViewContext _context;
 
-        public SampleRunUploadContext(ExpProtocol protocol, ViewContext context)
+        public SampleRunUploadContext(@NotNull ExpProtocol protocol, ViewContext context)
         {
             _protocol = protocol;
             _context = context;
         }
 
+        @NotNull
         public ExpProtocol getProtocol()
         {
             return _protocol;

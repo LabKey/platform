@@ -35,10 +35,9 @@ import java.util.*;
 
 public class NavTree extends Pair<String, String> implements Collapsible
 {
-    /*package*/ static final NavTree MENU_SEPARATOR = new NavTree("-");
+    public static final NavTree MENU_SEPARATOR = new NavTree("-");
 
-    //noinspection unchecked
-    static final List<NavTree> EMPTY_LIST = Collections.EMPTY_LIST;
+    static final List<NavTree> EMPTY_LIST = Collections.emptyList();
 
     String imageSrc = null;
     private boolean _selected = false;

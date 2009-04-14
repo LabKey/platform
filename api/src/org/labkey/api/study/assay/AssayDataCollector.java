@@ -28,7 +28,7 @@ import java.io.IOException;
  */
 public interface AssayDataCollector
 {
-    public String getHTML(AssayRunUploadContext context);
+    public String getHTML(AssayRunUploadContext context) throws ExperimentException;
 
     public String getShortName();
 

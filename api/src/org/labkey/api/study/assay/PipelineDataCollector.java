@@ -40,7 +40,7 @@ public class PipelineDataCollector extends AbstractAssayDataCollector
     {
     }
 
-    public String getHTML(AssayRunUploadContext context)
+    public String getHTML(AssayRunUploadContext context) throws ExperimentException
     {
         List<Map<String, File>> files = getFileCollection(context);
         if (files.isEmpty() || files.get(0).isEmpty())

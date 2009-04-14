@@ -31,6 +31,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.util.PageFlowUtil;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,6 +65,7 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
         return getProtocol(form, true);
     }
 
+    @NotNull
     public static ExpProtocol getProtocol(ProtocolIdForm form, boolean validateContainer)
     {
         if (form.getRowId() == null)

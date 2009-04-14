@@ -147,8 +147,7 @@ public class DomainEditorServiceBase extends BaseRemoteService
             throw new IllegalStateException("You do not have permissions to see this folder.");
         }
 
-        DefaultSchema defSchema = DefaultSchema.get(getUser(), container);
-        return defSchema;
+        return DefaultSchema.get(getUser(), container);
     }
 
     public GWTDomain getDomainDescriptor(String typeURI)

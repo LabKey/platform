@@ -180,7 +180,6 @@ public class SchemaTableInfo implements TableInfo
             {
                 if (column.isStringType() && !column.getSqlTypeName().equalsIgnoreCase("entityid"))
                 {
-                    //TODO: What's the equivalent of this under pg?
                     titleColumn = column.getName();
                     break;
                 }

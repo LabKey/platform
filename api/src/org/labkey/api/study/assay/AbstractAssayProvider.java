@@ -285,12 +285,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
             throw new IllegalStateException("AssayRunUploadContext " + context + " provided no upload data");
         }
 
-        assert files.size() == 1;
-
-        Map.Entry<String, File> entry = files.entrySet().iterator().next();
-
-        ExpData data = createData(context.getContainer(), entry.getValue(), entry.getKey(), _dataType);
-        outputDatas.put(data, "Data");
+        for (Map.Entry<String, File> entry : files.entrySet())
+        {
+            ExpData data = createData(context.getContainer(), entry.getValue(), entry.getKey(), _dataType);
+            outputDatas.put(data, "Data");
+        }
     }
 
     protected void addInputDatas(AssayRunUploadContext context, Map<ExpData, String> inputDatas, ParticipantVisitResolverType resolverType) throws ExperimentException
@@ -484,6 +483,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return new Pair<Domain, Map<DomainProperty, Object>>(domain, Collections.<DomainProperty, Object>emptyMap());
     }
 
+    /**
+     * @return domains and their default property values
+     */
     public List<Pair<Domain, Map<DomainProperty, Object>>> createDefaultDomains(Container c, User user)
     {
         List<Pair<Domain, Map<DomainProperty, Object>>> result = new ArrayList<Pair<Domain, Map<DomainProperty, Object>>>();
@@ -801,7 +803,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         if (run == null)
             return null;
 
-        ExpObject source = null;
+        ExpObject source;
         if (onRunObject)
         {
             source = run;
@@ -1096,28 +1098,21 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public static ExpData createData(Container c, File file, String name, DataType dataType) throws ExperimentException
     {
-        try
+        ExpData data = null;
+        if (file != null)
         {
-            ExpData data = null;
+            data = ExperimentService.get().getExpDataByURL(file, c);
+        }
+        if (data == null)
+        {
+            data = ExperimentService.get().createData(c, dataType, name);
+            data.setLSID(ExperimentService.get().generateGuidLSID(c, dataType));
             if (file != null)
             {
-                data = ExperimentService.get().getExpDataByURL(file, c);
+                data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI());
             }
-            if (data == null)
-            {
-                data = ExperimentService.get().createData(c, dataType, name);
-                data.setLSID(ExperimentService.get().generateGuidLSID(c, dataType));
-                if (file != null)
-                {
-                    data.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI());
-                }
-            }
-            return data;
         }
-        catch (IOException e)
-        {
-            throw new ExperimentException(e);
-        }
+        return data;
     }
 
     public boolean canCopyToStudy()
@@ -1295,7 +1290,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
             while (usedColumnNames.contains(studyColumnName))
                 studyColumnName = studyColumnName + datasetIndex;
             usedColumnNames.add(studyColumnName);
-            String finalStudyColumnName = studyColumnName;
 
             final ExprColumn studyCopiedColumn = new ExprColumn(table,
                 studyColumnName,

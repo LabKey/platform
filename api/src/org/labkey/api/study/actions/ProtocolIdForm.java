@@ -20,6 +20,7 @@ import org.labkey.api.view.ViewFormData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * User: brittp
@@ -53,6 +54,7 @@ public class ProtocolIdForm extends ViewFormData
         _rowId = rowId;
     }
 
+    @NotNull
     public ExpProtocol getProtocol(boolean validateContainer)
     {
         if (_protocol == null)
@@ -60,6 +62,7 @@ public class ProtocolIdForm extends ViewFormData
         return _protocol;
     }
 
+    @NotNull
     public ExpProtocol getProtocol()
     {
         return getProtocol(true);

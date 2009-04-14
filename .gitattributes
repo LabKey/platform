@@ -649,11 +649,13 @@ api/src/org/labkey/api/study/assay/ParticipantVisitImpl.java -text
 api/src/org/labkey/api/study/assay/ParticipantVisitResolver.java -text
 api/src/org/labkey/api/study/assay/ParticipantVisitResolverType.java -text
 api/src/org/labkey/api/study/assay/PipelineDataCollector.java -text
+api/src/org/labkey/api/study/assay/PipelineDataCollectorRedirectAction.java -text
 api/src/org/labkey/api/study/assay/PlateBasedAssayProvider.java -text
 api/src/org/labkey/api/study/assay/PlateSamplePropertyHelper.java -text
 api/src/org/labkey/api/study/assay/PreviouslyUploadedDataCollector.java -text
 api/src/org/labkey/api/study/assay/RunDataTable.java -text
 api/src/org/labkey/api/study/assay/RunListDetailsQueryView.java -text
+api/src/org/labkey/api/study/assay/SampleChooserDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/SimpleAssayDataImportHelper.java -text
 api/src/org/labkey/api/study/assay/StudyDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/StudyParticipantVisitResolver.java -text
@@ -1621,6 +1623,7 @@ internal/gwtsrc/org/labkey/api/gwt/client/assay/AssayDesignerMainPanel.java -tex
 internal/gwtsrc/org/labkey/api/gwt/client/assay/AssayException.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/AssayService.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/AssayServiceAsync.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/assay/SampleChooserUtils.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/model/GWTBatch.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/model/GWTProtocol.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/model/GWTRun.java -text

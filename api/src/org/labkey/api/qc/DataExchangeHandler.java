@@ -20,6 +20,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.view.ViewContext;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 
@@ -36,5 +37,5 @@ public interface DataExchangeHandler
 {
     public File createValidationRunInfo(AssayRunUploadContext context, ExpRun run, File scriptDir) throws Exception;
     public void processValidationOutput(File runInfo) throws ValidationException;
-    public void createSampleData(ExpProtocol protocol, ViewContext viewContext, File scriptDir) throws Exception;
+    public void createSampleData(@NotNull ExpProtocol protocol, ViewContext viewContext, File scriptDir) throws Exception;
 }

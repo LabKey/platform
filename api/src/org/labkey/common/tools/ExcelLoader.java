@@ -190,7 +190,14 @@ public class ExcelLoader extends DataLoader
                 if (columnIndex < numCols) // We can get asked for more data than we contain, as extra columns can exist
                 {
                     Cell cell = sheet.getCell(columnIndex, rowIndex);
-                    contents = PropertyType.getFromExcelCell(cell);
+                    if (column.clazz.equals(String.class))
+                    {
+                        contents = cell.getContents();
+                    }
+                    else
+                    {
+                        contents = PropertyType.getFromExcelCell(cell);
+                    }
                 }
                 else
                 {

@@ -197,6 +197,20 @@ abstract public class AbstractTableInfo implements TableInfo
 
     public String getTitleColumn()
     {
+        if (null == _titleColumn)
+        {
+            for (ColumnInfo column : getColumns())
+            {
+                if (column.isStringType() && !column.getSqlTypeName().equalsIgnoreCase("entityid"))
+                {
+                    _titleColumn = column.getName();
+                    break;
+                }
+            }
+            if (null == _titleColumn)
+                _titleColumn = getColumns().get(0).getName();
+        }
+
         return _titleColumn;
     }
 

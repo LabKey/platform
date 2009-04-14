@@ -16,7 +16,6 @@
 
 package org.labkey.api.study.assay;
 
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Domain;
@@ -25,11 +24,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.apache.struts.upload.MultipartRequestHandler;
-import org.springframework.validation.BindException;
+import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
-import java.util.Collection;
 import java.io.File;
 import java.io.IOException;
 
@@ -40,6 +38,7 @@ import java.io.IOException;
 */
 public interface AssayRunUploadContext
 {
+    @NotNull
     ExpProtocol getProtocol();
 
     Map<DomainProperty, String> getRunProperties();

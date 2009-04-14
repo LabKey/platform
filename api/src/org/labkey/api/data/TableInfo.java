@@ -50,7 +50,7 @@ public interface TableInfo
     @Nullable
     String getSelectName();
 
-    /** SQL representign this table, e.g. "SELECT * FROM Issues.Issues WHERE Container='...'" */
+    /** SQL representing this table, e.g. "SELECT * FROM Issues.Issues WHERE Container='...'" */
     @NotNull
     SQLFragment getFromSQL();
 
@@ -67,6 +67,7 @@ public interface TableInfo
 
     String getVersionColumnName();
 
+    /** @return the default display value for this table if it's the target of a foreign key */
     String getTitleColumn();
 
     int getTableType();
@@ -82,6 +83,7 @@ public interface TableInfo
 
     List<ColumnInfo> getUserEditableColumns();
 
+    /** @param colNames comma separated column names */
     List<ColumnInfo> getColumns(String colNames);
 
     List<ColumnInfo> getColumns(String... colNameArray);

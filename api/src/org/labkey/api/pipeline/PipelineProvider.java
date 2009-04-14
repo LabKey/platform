@@ -20,13 +20,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URIUtil;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.*;
 import org.springframework.web.servlet.mvc.Controller;
 
-import java.io.File;
-import java.io.FileFilter;
+import java.io.*;
 import java.net.URI;
 import java.util.*;
 
@@ -317,32 +315,34 @@ abstract public class PipelineProvider
     public static class FileAction
     {
         String _description;
-        String _label;
-        String _href;
+        NavTree _links;
         File[] _files;
 
-        public FileAction(String label, ActionURL href, File[] files)
+        /** Use NavTree to create a drop-down menu with submenus for the specified files */
+        public FileAction(NavTree links, File[] files)
         {
-            _label = label;
-            _href = href.getLocalURIString();
+            _links = links;
             _files = files;
         }
 
-        public FileAction(String label, String href, File[] files)
+        /** Use a simple button for the specified files */
+        public FileAction(String label, ActionURL href, File[] files)
         {
-            _label = label;
-            _href = href;
-            _files = files;
+            this(new NavTree(label, href), files);
         }
 
         public String getLabel()
         {
-            return _label;
+            return _links.getKey();
         }
 
         public String getHref()
         {
-            return _href;
+            if (_links.getChildCount() != 0)
+            {
+                throw new IllegalStateException("Cannot call getHref() if there is more than one link");
+            }
+            return _links.getValue();
         }
 
         public boolean isRootAction()
@@ -384,23 +384,64 @@ abstract public class PipelineProvider
 
         public String getDisplay(int i)
         {
-            return getButton("setFormAction(" + i + ", '" + PageFlowUtil.filter(getHref()) + "'); submitForm(" + i + "); return false;");
-        }
-
-        public String getDisplay()
-        {
-            return getButton("");
-        }
-
-        protected String getButton(String onClick)
-        {
-            if (onClick != null && onClick.compareTo("") != 0)
+            if (_links.getChildCount() == 0)
             {
+                // No children, use a simple button
+                String onClick = "setFormAction(" + i + ", '" + PageFlowUtil.filter(getHref()) + "'); submitForm(" + i + "); return false;";
                 return PageFlowUtil.generateSubmitButton(getLabel(), onClick);
             }
             else
             {
+                // Use a popup menu
+                NavTree navTree = new NavTree(_links.getKey(), _links.getValue());
+                for (NavTree child : _links.getChildren())
+                {
+                    // Copy the tree so that we can rewrite the click event as JavaScript instead of a simple URL
+                    if (child == NavTree.MENU_SEPARATOR)
+                    {
+                        navTree.addChild(child);
+                    }
+                    else
+                    {
+                        NavTree newChild = new NavTree(child.getKey());
+                        newChild.setScript("setFormAction(" + i + ", '" + child.getValue() + "'); submitForm(" + i + "); return false;");
+                        newChild.setDisabled(child.isDisabled());
+                        newChild.setHighlighted(child.isHighlighted());
+                        newChild.setId(child.getId());
+                        navTree.addChild(newChild);
+                    }
+                }
+                return renderPopupMenu(navTree);
+            }
+        }
+
+        private String renderPopupMenu(NavTree navTree)
+        {
+            PopupMenu menu = new PopupMenu(navTree);
+
+            StringWriter writer = new StringWriter();
+            try
+                {
+                    menu.render(writer);
+                }
+                catch (IOException e)
+            {
+                throw new UnexpectedException(e);
+            }
+            return writer.toString();
+        }
+
+        public String getDisplay()
+        {
+            if (_links.getChildCount() == 0)
+            {
+                // Use a simple button
                 return PageFlowUtil.generateButton(getLabel(), getHref());
+            }
+            else
+            {
+                // Render as a popup menu that contains links
+                return renderPopupMenu(_links);
             }
         }
     }

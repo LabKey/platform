@@ -18,7 +18,9 @@ package org.labkey.api.exp.api;
 
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -26,7 +28,7 @@ public interface ExpSampleSet extends ExpObject
 {
     public String getMaterialLSIDPrefix();
 
-    public PropertyDescriptor[] getPropertiesForType();
+    public DomainProperty[] getPropertiesForType();
 
     public ExpMaterial[] getSamples();
 
@@ -42,10 +44,17 @@ public interface ExpSampleSet extends ExpObject
 
     public boolean hasIdColumns();
 
-    public PropertyDescriptor getIdCol1();
-    public PropertyDescriptor getIdCol2();
-    public PropertyDescriptor getIdCol3();
-    public PropertyDescriptor getParentCol();
+    /** @return property that determines the first part of the sample set's sample's keys */
+    public DomainProperty getIdCol1();
+    /** @return property that determines the second part of the sample set's sample's keys */
+    @Nullable
+    public DomainProperty getIdCol2();
+    /** @return property that determines the third part of the sample set's sample's keys */
+    @Nullable
+    public DomainProperty getIdCol3();
+    /** @return column that contains parent sample names */
+    @Nullable
+    public DomainProperty getParentCol();
 
     void setDescription(String s);
 
@@ -53,7 +62,7 @@ public interface ExpSampleSet extends ExpObject
 
     void insert(User user);
 
-    List<PropertyDescriptor> getIdCols();
+    List<DomainProperty> getIdCols();
 
     void setIdCols(List<PropertyDescriptor> pds);
 }

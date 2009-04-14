@@ -17,7 +17,6 @@
 package org.labkey.api.study.query;
 
 import org.labkey.api.data.*;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -64,7 +63,7 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
             final ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(sampleDomainURI);
             if (sampleSet != null)
             {
-                for (PropertyDescriptor pd : sampleSet.getPropertiesForType())
+                for (DomainProperty pd : sampleSet.getPropertiesForType())
                 {
                     visibleColumns.add(FieldKey.fromParts("Properties", getInputMaterialPropertyName(),
                             ExpMaterialTable.Column.Property.toString(), pd.getName()));
