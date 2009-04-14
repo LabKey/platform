@@ -471,7 +471,17 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             {
                 if (text == null || isLegalName(text))
                     return null;
-                return "Name may only contain letters, numbers, and underscore (_).";
+                return "Name may only contain letters, numbers, spaces, and underscores (_).";
+            }
+
+            @Override
+            String validateValueWarning(String text)
+            {
+                if (text != null && text.contains(" "))
+                {
+                    return "Name should not contain spaces.";
+                }
+                return null;
             }
         };
         nameTextBox.addFocusListener(focusListener);
@@ -840,11 +850,31 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                     Window.alert(message);
                 return;
             }
+            else
+            {
+                // No error. How about a warning?
+                message = validateValueWarning(text);
+                if (null != message)
+                {
+                    this.setStyleName("labkey-textbox-warning");
+                    this.setTitle(message);
+                    return; // Never alert
+                }
+            }
             this.setStyleName("");
             this.setTitle("");
         }
 
         String validateValue(String text)
+        {
+            return null;
+        }
+
+        /**
+         * Indicates a warning should be given -- box turns color,
+         * and pop-up text is given. Does not prevent user from submitting.
+         */
+        String validateValueWarning(String text)
         {
             return null;
         }
@@ -941,6 +971,8 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         if (first)
             return false;
         if (ch >= '0' && ch <= '9')
+            return true;
+        if (ch == ' ')
             return true;
         return false;
     }
