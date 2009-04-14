@@ -231,11 +231,7 @@ public class ExperimentModule extends SpringModule
                 {
                     ExperimentService.get().deleteAllExpObjInContainer(c, user);
                 }
-                catch (SQLException e)
-                {
-                    throw new RuntimeException("Delete failed", e);
-                }
-                catch (Exception ee)
+                catch (ExperimentException ee)
                 {
                     throw new RuntimeException(ee);
                 }

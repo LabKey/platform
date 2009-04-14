@@ -17,7 +17,6 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.data.*;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.ExperimentException;
@@ -28,6 +27,7 @@ import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
@@ -67,9 +67,14 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return _object.getMaterialLSIDPrefix();
     }
 
-    public PropertyDescriptor[] getPropertiesForType()
+    public DomainProperty[] getPropertiesForType()
     {
-        return OntologyManager.getPropertiesForType(getLSID(), getContainer());
+        Domain d = getType();
+        if (d == null)
+        {
+            return new DomainProperty[0];
+        }
+        return d.getProperties();
     }
 
     public String getDescription()
@@ -82,33 +87,33 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return getIdCol1() != null;        
     }
 
-    private PropertyDescriptor getPropertyDescriptor(String uri)
+    private DomainProperty getDomainProperty(String uri)
     {
         if (uri == null)
         {
             return null;
         }
 
-        for (PropertyDescriptor pd : getPropertiesForType())
+        for (DomainProperty property : getPropertiesForType())
         {
-            if (uri.equals(pd.getPropertyURI()))
+            if (uri.equals(property.getPropertyURI()))
             {
-                return pd;
+                return property;
             }
         }
         return null;
     }
 
-    public List<PropertyDescriptor> getIdCols()
+    public List<DomainProperty> getIdCols()
     {
-        List<PropertyDescriptor> result = new ArrayList<PropertyDescriptor>();
+        List<DomainProperty> result = new ArrayList<DomainProperty>();
         result.add(getIdCol1());
-        PropertyDescriptor idCol2 = getIdCol2();
+        DomainProperty idCol2 = getIdCol2();
         if (idCol2 != null)
         {
             result.add(idCol2);
         }
-        PropertyDescriptor idCol3 = getIdCol3();
+        DomainProperty idCol3 = getIdCol3();
         if (idCol3 != null)
         {
             result.add(idCol3);
@@ -132,12 +137,12 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return _object.getIdCol1() != null;
     }
 
-    public PropertyDescriptor getIdCol1()
+    public DomainProperty getIdCol1()
     {
-        PropertyDescriptor result = getPropertyDescriptor(_object.getIdCol1());
+        DomainProperty result = getDomainProperty(_object.getIdCol1());
         if (result == null)
         {
-            PropertyDescriptor[] props = getPropertiesForType();
+            DomainProperty[] props = getPropertiesForType();
             if (props.length > 0)
             {
                 result = props[0];
@@ -146,19 +151,19 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return result;
     }
 
-    public PropertyDescriptor getIdCol2()
+    public DomainProperty getIdCol2()
     {
-        return getPropertyDescriptor(_object.getIdCol2());
+        return getDomainProperty(_object.getIdCol2());
     }
 
-    public PropertyDescriptor getIdCol3()
+    public DomainProperty getIdCol3()
     {
-        return getPropertyDescriptor(_object.getIdCol3());
+        return getDomainProperty(_object.getIdCol3());
     }
 
-    public PropertyDescriptor getParentCol()
+    public DomainProperty getParentCol()
     {
-        return getPropertyDescriptor(_object.getParentCol());
+        return getDomainProperty(_object.getParentCol());
     }
 
     public void setDescription(String s)

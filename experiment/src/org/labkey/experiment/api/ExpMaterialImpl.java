@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.security.User;
@@ -76,11 +77,11 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
         {
             return Collections.emptyMap();
         }
-        PropertyDescriptor[] pds = sampleSet.getPropertiesForType();
+        DomainProperty[] pds = sampleSet.getPropertiesForType();
         Map<PropertyDescriptor, Object> values = new HashMap<PropertyDescriptor, Object>();
-        for (PropertyDescriptor pd : pds)
+        for (DomainProperty pd : pds)
         {
-            values.put(pd, getProperty(pd));
+            values.put(pd.getPropertyDescriptor(), getProperty(pd));
         }
         return values;
     }

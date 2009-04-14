@@ -38,16 +38,13 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
     private List<String> _names;
     private final Map<Integer, String> _lsids = new HashMap<Integer, String>();
     private final ExpSampleSet _sampleSet;
-    private final int _sampleCount;
     private final Container _container;
     private final User _user;
-
 
     public DerivedSamplePropertyHelper(ExpSampleSet sampleSet, int sampleCount, Container c, User user)
     {
         super(getPropertyDescriptors(sampleSet, c));
         _sampleSet = sampleSet;
-        _sampleCount = sampleCount;
         _container = c;
         _user = user;
         _names = new ArrayList<String>();
@@ -143,7 +140,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
         if (_sampleSet != null)
         {
             Set<String> idColNames = new HashSet<String>();
-            for (PropertyDescriptor pd : _sampleSet.getIdCols())
+            for (DomainProperty pd : _sampleSet.getIdCols())
                 idColNames.add(pd.getName());
             List<DomainProperty> properties = new ArrayList<DomainProperty>();
             for (DomainProperty dp : _sampleSet.getType().getProperties())

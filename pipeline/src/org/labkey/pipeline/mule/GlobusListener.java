@@ -118,7 +118,7 @@ public class GlobusListener implements GramJobListener
 
     private void logFault(BaseFaultType fault, PipelineJob job)
     {
-        if (fault instanceof FaultType)
+        if (fault instanceof FaultType && ((FaultType)fault).getCommand() != null)
         {
             job.error("Fault received from Globus on \"" + ((FaultType)fault).getCommand() + "\" command");
         }

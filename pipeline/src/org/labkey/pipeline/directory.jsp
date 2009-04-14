@@ -21,7 +21,6 @@
 <%@ page import="org.labkey.api.pipeline.PipeRoot" %>
 <%@ page import="org.labkey.api.pipeline.PipelineProvider" %>
 <%@ page import="org.labkey.api.security.ACL" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.pipeline.PipelineController" %>
@@ -42,7 +41,7 @@
     PipelineProvider.FileEntry parent = parents.get(parents.size() - 1);
     for (PipelineProvider.FileAction action : parent.getActions())
     {
-        if (action.isRootAction() &&action.getDescription() != null)
+        if (action.isRootAction() && action.getDescription() != null)
         {
             %><%=action.getDescription()%><%
             %><p><%=PageFlowUtil.generateButton(action.getLabel(), action.getHref())%></p><%
@@ -252,7 +251,7 @@ function setFormAction(n, url)
         var param = document.getElementById("param").cloneNode(0);
         param.name = nv[0];
         param.value = unescape(nv[1]);
-        form.appendChild(param)
+        form.appendChild(param);
     }
     form.action = parts[0];
     return true;

@@ -355,19 +355,15 @@ public class DotGraph
     public void writePending(Map<Integer, DotNode> pendingMap, Map<Integer, DotNode> writtenMap)
     {
         Set<Integer> nodesToMove = new HashSet<Integer>();
-        Iterator<Integer> it = pendingMap.keySet().iterator();
-        while (it.hasNext())
+        for (Integer key : pendingMap.keySet())
         {
-            Integer key = it.next();
             DotNode node = pendingMap.get(key);
             if (!nodesToMove.contains(key))
                 node.save(pwOut, urlBase);
             if (node instanceof GroupedNode)
             {
-                Iterator<Integer> itMembers = ((GroupedNode) node).gMap.keySet().iterator();
-                while (itMembers.hasNext())
+                for (Integer memberkey : ((GroupedNode) node).gMap.keySet())
                 {
-                    Integer memberkey = itMembers.next();
                     assert (pendingMap.containsKey(memberkey));
                     if (null != writtenMap)
                         writtenMap.put(memberkey, node);
@@ -380,9 +376,10 @@ public class DotGraph
                 nodesToMove.add(key);
             }
         }
-        Iterator<Integer> itr = nodesToMove.iterator();
-        while (itr.hasNext())
-            pendingMap.remove(itr.next());
+        for (Integer removeId : nodesToMove)
+        {
+            pendingMap.remove(removeId);
+        }
     }
 
     private class DotNode
@@ -446,11 +443,11 @@ public class DotGraph
                 linewidth += labelParts[i].length() + 1;
                 if (linewidth > LABEL_CHAR_WIDTH)
                 {
-                    sb.append("\\n" + labelParts[i]);
+                    sb.append("\\n").append(labelParts[i]);
                     linewidth = labelParts[i].length();
                 }
                 else
-                    sb.append(" " + labelParts[i]);
+                    sb.append(" ").append(labelParts[i]);
             }
             return sb.toString();
         }
@@ -599,7 +596,7 @@ public class DotGraph
             StringBuffer sbIn = new StringBuffer();
             for (Integer rowid : gMap.keySet())
             {
-                sbIn.append(sep + rowid);
+                sbIn.append(sep).append(rowid);
                 sep = ",";
             }
             linkParams += "&rowId~in=" + PageFlowUtil.encode(sbIn.toString()); 

@@ -57,6 +57,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.MalformedURLException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -1333,11 +1334,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public ExpDataImpl getExpDataByURL(File file, Container c) throws IOException
+    public ExpDataImpl getExpDataByURL(File file, Container c)
     {
         File canonicalFile = FileUtil.getAbsoluteCaseSensitiveFile(file);
-        String url = canonicalFile.toURI().toURL().toString();
-        return getExpDataByURL(url, c);
+        try
+        {
+            String url = canonicalFile.toURI().toURL().toString();
+            return getExpDataByURL(url, c);
+        }
+        catch (MalformedURLException e)
+        {
+            throw new UnexpectedException(e);
+        }
     }
 
     public ExpDataImpl getExpDataByURL(String url, Container c)
@@ -1721,24 +1729,24 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public void deleteAllExpObjInContainer(Container c, User user) throws SQLException, ExperimentException
+    public void deleteAllExpObjInContainer(Container c, User user) throws ExperimentException
     {
         if (null == c)
             return;
 
-        String sql = "SELECT RowId FROM " + getTinfoExperimentRun() + " WHERE Container = ? ;";
-        int[] runIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
-
-        ExpExperimentImpl[] exps = getExperiments(c, user, false, true);
-
-        sql = "SELECT RowId FROM " + getTinfoMaterialSource() + " WHERE Container = ? ;";
-        int[] srcIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
-
-        sql = "SELECT RowId FROM " + getTinfoProtocol() + " WHERE Container = ? ;";
-        int[] protIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
-
         try
         {
+            String sql = "SELECT RowId FROM " + getTinfoExperimentRun() + " WHERE Container = ? ;";
+            int[] runIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
+
+            ExpExperimentImpl[] exps = getExperiments(c, user, false, true);
+
+            sql = "SELECT RowId FROM " + getTinfoMaterialSource() + " WHERE Container = ? ;";
+            int[] srcIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
+
+            sql = "SELECT RowId FROM " + getTinfoProtocol() + " WHERE Container = ? ;";
+            int[] protIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
+
             getExpSchema().getScope().beginTransaction();
             // first delete the runs in the container, as that should be fast.  Deletes all Materials, Data,
             // and protocol applications and associated properties and parameters that belong to the run
@@ -1786,6 +1794,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             deleteDataByRowIds(c, dataIds);
 
             getExpSchema().getScope().commitTransaction();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
         }
         finally
         {
@@ -2596,7 +2608,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     }
 
     public ExpRun getCreatingRun(File file, Container c)
-        throws IOException
     {
         ExpDataImpl data = getExpDataByURL(file, c);
         if (data != null)

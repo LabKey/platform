@@ -17,7 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.*;
-import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -212,7 +212,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         addColumn(Column.Property);
         visibleColumns.remove(FieldKey.fromParts("Run"));
         FieldKey keyProp = new FieldKey(null, "Property");
-        for (PropertyDescriptor pd : ss.getPropertiesForType())
+        for (DomainProperty pd : ss.getPropertiesForType())
         {
             visibleColumns.add(new FieldKey(keyProp, pd.getName()));
         }
@@ -226,12 +226,5 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             return SamplesSchema.SCHEMA_NAME;
         }
         return super.getPublicSchemaName();
-    }
-
-
-    @Override
-    public SQLFragment getFromSQL()
-    {
-        return super.getFromSQL();
     }
 }

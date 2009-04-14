@@ -19,7 +19,9 @@
 <ns:tables xsi:schemaLocation="http://labkey.org/data/xml ..\..\..\..\..\schemas\tableInfo.xsd" xmlns:ns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <ns:table tableName="Data" tableDbType="TABLE">
     <ns:columns>
-      <ns:column columnName="RowId"/>
+      <ns:column columnName="RowId">
+        <ns:isKeyField>true</ns:isKeyField>
+      </ns:column>
       <ns:column columnName="LSID"/>
       <ns:column columnName="Name"/>
       <ns:column columnName="CpasType"/>

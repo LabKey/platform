@@ -195,12 +195,12 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public List<QueryException> getParseErrors(QuerySchema schema)
     {
-        List<QueryException> ret = new ArrayList(getQuery(schema).getParseErrors());
+        List<QueryException> ret = new ArrayList<QueryException>(getQuery(schema).getParseErrors());
         String metadata = StringUtils.trimToNull(getMetadataXml());
         if (metadata != null)
         {
             XmlOptions options = new XmlOptions();
-            List<XmlError> errors = new ArrayList();
+            List<XmlError> errors = new ArrayList<XmlError>();
             options.setErrorListener(errors);
             try
             {
@@ -264,14 +264,12 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     private TablesDocument getTablesDocument(List<QueryException> errors)
     {
-        TablesDocument doc = null;
         String xml = getMetadataXml();
         if (xml != null)
         {
             try
             {
-                doc = TablesDocument.Factory.parse(xml);
-                return doc;
+                return TablesDocument.Factory.parse(xml);
             }
             catch (XmlException xmlException)
             {
@@ -480,7 +478,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public boolean updateDesignDocument(QuerySchema schema, QueryDocument doc, List<QueryException> errors)
     {
-        Map<String, DgColumn> columns = new LinkedHashMap();
+        Map<String, DgColumn> columns = new LinkedHashMap<String, DgColumn>();
         DgQuery dgQuery = doc.getQuery();
         DgQuery.Select select = dgQuery.getSelect();
         for (DgColumn column : select.getColumnArray())
@@ -547,7 +545,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         {
             xbColumns = xbTable.addNewColumns();
         }
-        List<ColumnType> lstColumns = new ArrayList();
+        List<ColumnType> lstColumns = new ArrayList<ColumnType>();
         for (Map.Entry<String, DgColumn> entry : columns.entrySet())
         {
             ColumnType xbColumn = entry.getValue().getMetadata();
@@ -557,7 +555,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 lstColumns.add(xbColumn);
             }
         }
-        xbColumns.setColumnArray(lstColumns.toArray(new ColumnType[0]));
+        xbColumns.setColumnArray(lstColumns.toArray(new ColumnType[lstColumns.size()]));
         setMetadataXml(tablesDoc.toString());
         return errors.size() == 0;
     }

@@ -163,7 +163,7 @@ public class AdminController extends SpringActionController
 
     public static class AdminBean
     {
-        public List<Module> modules = ModuleLoader.getInstance().getModules();
+        public final List<Module> modules;
         public String javaVersion = System.getProperty("java.version");
         public String javaHome = System.getProperty("java.home");
         public String userName = System.getProperty("user.name");
@@ -179,6 +179,14 @@ public class AdminController extends SpringActionController
         private AdminBean(User user)
         {
             userEmail = user.getEmail();
+            modules = new ArrayList<Module>(ModuleLoader.getInstance().getModules());
+            Collections.sort(modules, new Comparator<Module>()
+            {
+                public int compare(Module o1, Module o2)
+                {
+                    return o1.getName().compareToIgnoreCase(o2.getName());
+                }
+            });
         }
     }
 

@@ -1063,7 +1063,6 @@ pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.30-9.10.sql -t
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.31-8.32.sql -text
 pipeline/src/META-INF/pipeline/scripts/sql[!!-~]server/pipeline-8.32-8.33.sql -text
 pipeline/src/org/labkey/pipeline/AbstractPipelineStartup.java -text
-pipeline/src/org/labkey/pipeline/DirectoryView.java -text
 pipeline/src/org/labkey/pipeline/FileContentPipelineProvider.java -text
 pipeline/src/org/labkey/pipeline/PipelineController.java -text
 pipeline/src/org/labkey/pipeline/PipelineModule.java -text
@@ -2422,18 +2421,3 @@ xarassay/build.xml -text
 xarassay/module.properties -text
 xarassay/readme.htm -text
 xarassay/src/META-INF/xarassay.xml -text
-xarassay/src/org/labkey/xarassay/CptacAssayProvider.java -text
-xarassay/src/org/labkey/xarassay/MsAssaySchema.java -text
-xarassay/src/org/labkey/xarassay/MsFractionAssayProvider.java -text
-xarassay/src/org/labkey/xarassay/MsFractionDataHandler.java -text
-xarassay/src/org/labkey/xarassay/MsFractionPropertyHelper.java -text
-xarassay/src/org/labkey/xarassay/MsFractionRunDataTable.java -text
-xarassay/src/org/labkey/xarassay/XarAssayController.java -text
-xarassay/src/org/labkey/xarassay/XarAssayDataCollector.java -text
-xarassay/src/org/labkey/xarassay/XarAssayForm.java -text
-xarassay/src/org/labkey/xarassay/XarAssayModule.java -text
-xarassay/src/org/labkey/xarassay/XarAssayPipelineProvider.java -text
-xarassay/src/org/labkey/xarassay/XarAssayProvider.java -text
-xarassay/src/org/labkey/xarassay/XarAssayUploadAction.java -text
-xarassay/src/org/labkey/xarassay/XarChooseAssayForm.java -text
-xarassay/src/org/labkey/xarassay/view/chooseAssay.jsp -text
