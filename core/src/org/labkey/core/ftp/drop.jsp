@@ -61,14 +61,11 @@ LABKEY.writeApplet({
     width:200,
     height:200,
     params:{
-        <%-- TODO switch applet to use URL which encodes more info --%>
         url:<%=PageFlowUtil.jsString(dropPage.getURL())%>,                                     
         webdavPrefix:<%=PageFlowUtil.jsString(contextPath + "/" + WebdavService.getServletPath())%>,
         user:<%=PageFlowUtil.jsString(context.getUser().getEmail())%>,
         password:<%=PageFlowUtil.jsString(sessionId)%>,
-        updateEvent:"dropApplet_Update",
-        dragEnterEvent:"dropApplet_DragEnter",
-        dragExitEvent:"dropApplet_DragExit",
+        events:"appletEvents",
         dropFileLimit:<%=dropPage.getPipeline()!=null?1000:0%>
     }});
 function onWindowLoad()

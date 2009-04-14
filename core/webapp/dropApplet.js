@@ -17,22 +17,31 @@ function getDropApplet()
     return null;
 }
 
-function dropApplet_Update()
-{
-    asyncUpdateUI();
-}
 
-function dropApplet_DragEnter()
+var appletEvents =
 {
-  _id("appletDiv").className = "labkey-nav-bordered labkey-bordered-heavy";
-  _id("appletDiv").style.margin = "1px";
-}
+    ready: function() {},
 
-function dropApplet_DragExit()
-{
-    _id("appletDiv").className = "labkey-nav-bordered";
-    _id("appletDiv").style.margin = "2px";
-}
+    update: function()
+    {
+        asyncUpdateUI();
+    },
+
+    dragEnter : function()
+    {
+        console.debug("dragExit");
+        _id("appletDiv").className = "labkey-nav-bordered labkey-bordered-heavy";
+        _id("appletDiv").style.margin = "1px";
+    },
+
+    dragExit : function()
+    {
+        console.debug("dragExit");
+        _id("appletDiv").className = "labkey-nav-bordered";
+        _id("appletDiv").style.margin = "2px";
+    }
+};
+
 
 function browseFiles()
 {
@@ -58,30 +67,18 @@ function asyncUpdateUI()
 {
     count_asyncUpdateUI++;
     appletUpdated++;
-// this causes multi-threading problems on Firefox, just mark the applet dirty (appletUpdated++) and let
-// 'foreground' thread do the work
-//    if (asyncUpdateIntervalId)
-//        return;
-//    asyncUpdateIntervalId = window.setTimeout(asyncUpdateUI_handler,100);
 }
 
 
-function asyncUpdateUI_handler()
+function pollApplet()
 {
-    window.clearTimeout(asyncUpdateIntervalId); asyncUpdateIntervalId = null;
-    try
-    {
-        updateDropUI();
-    }
-    catch (x)
-    {
-        alert(x);
-    }
-}
+    var applet = getDropApplet();
+    if (!applet) return;
 
+    var js;
+    while (null != (js = applet.getEvent()))
+        eval('' + js);
 
-function updateDropUI()
-{
     if (0 == appletUpdated)
         return;
     appletUpdated = 0;
@@ -317,7 +314,7 @@ function mkdir(path)
             dropApplet.makeDirectory(path);
             dropApplet.changeTargetDirectory(path);
         }
-        updateDropUI();
+        _updateDropUI();
     }
     catch (ex)
     {
@@ -456,7 +453,7 @@ function _div(node) { var div = document.createElement("DIV"); if (node) div.app
 function _tbody() { return document.createElement("TBODY"); }
 function _tr() { return document.createElement("TR"); }
 function _td(node) { var td = document.createElement("TD"); if (node) td.appendChild(node); return td;}
-function _text(s) {return document.createTextNode(s);};
+function _text(s) {return document.createTextNode(s);}
 function _button(s,onclickFN)
 {
 //    var img = document.createElement("IMG");
@@ -495,7 +492,7 @@ function init()
     window.onbeforeunload = LABKEY.beforeunload(pendingTransfers);
 
     // style consistency
-    dropApplet_DragExit();
+    appletEvents.dragExit();
     showTransfers();
 
     var mkdirDiv = _div();
@@ -505,6 +502,5 @@ function init()
                          '<input id="folderName" name="folderName" value=""/><%=PageFlowUtil.generateButton("create", "")%>>';
     document.getElementsByTagName("BODY")[0].appendChild(mkdirDiv);
 
-    //    updateDropUI();
-    foregroundIntervalId = window.setInterval(updateDropUI,100);
+    foregroundIntervalId = window.setInterval(pollApplet,1000/20);
 }
