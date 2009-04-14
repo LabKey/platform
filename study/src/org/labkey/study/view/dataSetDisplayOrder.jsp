@@ -102,8 +102,8 @@ function orderModule(down)
                 </select>
             </td>
             <td align="center" valign="center">
-                <%=PageFlowUtil.generateSubmitButton("Move Up", "return orderModule(1)")%><br><br>
-                <%=PageFlowUtil.generateSubmitButton("Move Down", "return orderModule(0)")%>
+                <%=PageFlowUtil.generateSubmitButton("Move Up", "return orderModule(0)")%><br><br>
+                <%=PageFlowUtil.generateSubmitButton("Move Down", "return orderModule(1)")%>
             </td>
         </tr>
     </table>
