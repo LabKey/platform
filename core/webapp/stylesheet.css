@@ -235,6 +235,11 @@ table.labkey-no-spacing
     border: 1px solid #FF0000;
 }
 
+.labkey-textbox-warning
+{
+    background-color: #FFF8C6;
+}
+
 /* Used for button bars across the site */
 div.labkey-button-bar, table.labkey-button-bar
 {
