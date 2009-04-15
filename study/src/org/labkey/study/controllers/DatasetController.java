@@ -24,6 +24,8 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.QcColumn;
+import org.labkey.api.exp.QcFieldWrapper;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -167,18 +169,6 @@ public class DatasetController extends BaseStudyController
             buttonBar.add(btnSubmit);
             buttonBar.add(btnCancel);
 
-
-//            ButtonBar buttonBar = dataRegion.getButtonBar(DataRegion.MODE_UPDATE);
-//            buttonBar = new ButtonBar(buttonBar); // need to copy since the original is read-only
-//            ActionButton cancelButton = new ActionButton(cancelURL.getLocalURIString(), "Cancel", DataRegion.MODE_UPDATE, ActionButton.Action.GET);
-//            cancelButton.setURL(cancelURL);
-//            buttonBar.add(1, cancelButton);
-//            if (isInsert())
-//            {
-//                // Need to update the URL to be the insert action
-//                buttonBar.getList().remove(0);
-//                buttonBar.add(0, ActionButton.BUTTON_DO_INSERT);
-//            }
             dataRegion.setButtonBar(buttonBar);
 
             return view;
@@ -240,8 +230,19 @@ public class DatasetController extends BaseStudyController
                 Map<DomainProperty, Object> dataMap = new HashMap<DomainProperty, Object>(requestMap.size());
                 for (DomainProperty property : properties)
                 {
-                    ColumnInfo temp = property.getPropertyDescriptor().createColumnInfo(datasetTable, "LSID", getUser());
-                    dataMap.put(property, requestMap.get(updateForm.getFormFieldName(temp)));
+                    ColumnInfo currentColumn = property.getPropertyDescriptor().createColumnInfo(datasetTable, "LSID", getUser());
+                    Object value = requestMap.get(updateForm.getFormFieldName(currentColumn));
+                    if (property.isQcEnabled())
+                    {
+                        ColumnInfo qcColumn = datasetTable.getColumn(property.getName() + QcColumn.QC_INDICATOR_SUFFIX);
+                        String qcValue = (String)requestMap.get(updateForm.getFormFieldName(qcColumn));
+                        QcFieldWrapper qcWrapper = new QcFieldWrapper(value, qcValue);
+                        dataMap.put(property, qcWrapper);
+                    }
+                    else
+                    {
+                        dataMap.put(property, value);
+                    }
                 }
                 DefaultValueService.get().setDefaultValues(getContainer(), dataMap, getUser());
             }
@@ -276,9 +277,9 @@ public class DatasetController extends BaseStudyController
             
             ActionURL url = new ActionURL(StudyController.DatasetAction.class, getContainer());
             url.addParameter(DataSetDefinition.DATASETKEY, form.getDatasetId());
-            if (StudyManager.getInstance().showQCStates(form.getContainer()))
+            if (StudyManager.getInstance().showQCStates(getContainer()))
             {
-                QCStateSet stateSet = QCStateSet.getAllStates(form.getContainer());
+                QCStateSet stateSet = QCStateSet.getAllStates(getContainer());
                 url.addParameter(BaseStudyController.SharedFormParameters.QCState, stateSet.getFormValue());
             }
             return url;
@@ -632,7 +633,7 @@ public class DatasetController extends BaseStudyController
         }
     }
 
-    public static class EditDatasetRowForm extends ViewFormData
+    public static class EditDatasetRowForm
     {
         private String lsid;
         private int datasetId;

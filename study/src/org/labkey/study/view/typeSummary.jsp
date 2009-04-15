@@ -46,7 +46,10 @@
                 systemColumns.add(col);
         }
         else
-            userColumns.add(col);
+        {
+            if (!col.isHidden()) // QC indicator and raw columns shouldn't be displayed
+                userColumns.add(col);
+        }
     }
 %>
 <table>
@@ -57,6 +60,7 @@
         <th>Type</th>
         <th>Format</th>
         <th>Required</th>
+        <th>Allows QC</th>
         <th>Description</th>
     </tr><%
 
@@ -68,6 +72,7 @@
             <td><%=h(col.getFriendlyTypeName())%></td>
             <td><%=h(col.getFormatString())%></td>
             <td align="center"><input type=checkbox disabled <%=col.isNullable() ? "" : "checked"%>></td>
+            <td align="center"><input type=checkbox disabled <%=col.isQcEnabled() ? "checked" : ""%>></td>
             <td><%=h(col.getDescription())%></td>
           </tr><%
     }
@@ -84,6 +89,7 @@
             <td><%=h(col.getFriendlyTypeName())%></td>
             <td><%=h(col.getFormatString())%></td>
             <td align="center"><input type=checkbox disabled <%=col.isNullable() ? "" : "checked"%>></td>
+            <td align="center"><input type=checkbox disabled <%=col.isQcEnabled() ? "checked" : ""%>></td>
             <td><%=h(col.getDescription())%></td>
         </tr>
         <%

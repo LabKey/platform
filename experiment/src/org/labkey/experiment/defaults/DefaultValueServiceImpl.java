@@ -15,16 +15,18 @@
  */
 package org.labkey.experiment.defaults;
 
-import org.labkey.api.defaults.DefaultValueService;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.QcUtil;
+import org.labkey.api.defaults.DefaultValueService;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.gwt.client.DefaultValueType;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -125,9 +127,8 @@ public class DefaultValueServiceImpl extends DefaultValueService
             for (DomainProperty property : domain.getProperties())
             {
                 Object value = values.get(property);
-                boolean qcValue = property.isQcEnabled() && value instanceof String && QcUtil.isQcValue((String) value, container);
                 // Leave it out if it's null, which will prevent it from failing validators
-                if (!qcValue && value != null)
+                if (value != null)
                 {
                     ObjectProperty prop = new ObjectProperty(objectLSID, container, property.getPropertyURI(), value,
                             property.getPropertyDescriptor().getPropertyType(), property.getName());

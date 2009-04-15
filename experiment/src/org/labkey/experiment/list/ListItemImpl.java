@@ -173,15 +173,18 @@ public class ListItemImpl implements ListItem
         if (_properties == null)
         {
             OntologyObject obj = getOntologyObject();
-            if (obj == null)
-            {
-                _properties = new HashMap<String, Object>();
-            }
-            else
+
+            _properties = new HashMap<String, Object>();
+
+            if (obj != null)
             {
                 try
                 {
-                    _properties = OntologyManager.getProperties(obj.getContainer(), obj.getObjectURI());
+                    Map<String,ObjectProperty> objProps = OntologyManager.getPropertyObjects(obj.getContainer(), obj.getObjectURI());
+                    for (Map.Entry<String,ObjectProperty> entry : objProps.entrySet())
+                    {
+                        _properties.put(entry.getKey(), entry.getValue());
+                    }
                 }
                 catch (SQLException e)
                 {

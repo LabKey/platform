@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
+import org.labkey.api.exp.QcFieldWrapper;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
@@ -27,8 +28,8 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.CaseInsensitiveHashMap;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.CsvSet;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.study.controllers.StudyController;
@@ -315,10 +316,25 @@ public class StudyServiceImpl implements StudyService.Service
 
         TableInfo tInfo = def.getTableInfo(user, false, false);
 
+        Set<String> qcColumnNames = new HashSet<String>();
         for (ColumnInfo col : tInfo.getColumns())
         {
             String name = col.getName();
+            if (qcColumnNames.contains(name))
+                continue; // We've have already processed this field
             Object value = origData.get(name);
+
+            if (col.isQcEnabled())
+            {
+                String qcColumnName = col.getQcColumnName();
+                qcColumnNames.add(qcColumnName);
+                String qcValue = (String)origData.get(qcColumnName);
+                if (qcValue != null)
+                {
+                    QcFieldWrapper qcWrapper = new QcFieldWrapper(value, qcValue);
+                    value = qcWrapper;
+                }
+            }
 
             if (value == null) // value isn't in the map. Ignore.
                 continue;

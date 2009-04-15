@@ -28,6 +28,7 @@ import org.labkey.api.defaults.ClearDefaultValuesAction;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.defaults.SetDefaultValuesAction;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.QcFieldWrapper;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
@@ -42,7 +43,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.common.tools.TabLoader;
@@ -455,14 +455,29 @@ public class ListController extends SpringActionController
                     if (!tableForm.hasTypedValue(column))
                         continue;
                     Object formValue = tableForm.getTypedValue(column);
+                    String qcValue = null;
+                    if (column.isQcEnabled())
+                    {
+                        ColumnInfo qcColumn = tableForm.getTable().getColumn(column.getQcColumnName());
+                        qcValue = (String)tableForm.getTypedValue(qcColumn);
+                    }
                     DomainProperty property = domain.getPropertyByName(column.getName());
                     if (column.getName().equals(list.getKeyName()))
                     {
                         item.setKey(formValue);
                     }
-                    if (property != null)
+
+                    if (qcValue == null)
                     {
-                        item.setProperty(property, formValue);
+                        if (property != null)
+                        {
+                            item.setProperty(property, formValue);
+                        }
+                    }
+                    else
+                    {
+                        QcFieldWrapper qcWrapper = new QcFieldWrapper(formValue, qcValue);
+                        item.setProperty(property, qcWrapper);
                     }
                 }
                 if (errors.hasErrors())
