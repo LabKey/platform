@@ -921,6 +921,8 @@ public class QueryView extends WebPartView<Object>
         rgn.setShowBorders(isShowBorders());
         rgn.setShowPagination(isShowPagination());
         rgn.setShowPaginationCount(isShowPaginationCount());
+        if(null != getAggregates())
+            rgn.setAggregates(getAggregates());
 
         rgn.setTable(getTable());
         return rgn;
@@ -1429,6 +1431,11 @@ public class QueryView extends WebPartView<Object>
     public void disableContainerFilterSelection()
     {
         _allowableContainerFilterTypes = Collections.emptyList();
+    }
+
+    public List<Aggregate> getAggregates()
+    {
+        return getSettings().getAggregates();
     }
 
     private static class NavTreeMenuButton extends MenuButton

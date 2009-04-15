@@ -269,6 +269,19 @@ LABKEY.Utils = new function()
                 else if(isErrorCallback)
                     Ext.Msg.alert("Error", json.exception);
             };
+        },
+
+        applyTranslated : function(target, source, translationMap, applyUnmentioned)
+        {
+            var targetPropName;
+            for(var prop in source)
+            {
+                targetPropName = translationMap[prop];
+                if(targetPropName)
+                    target[translationMap[prop]] = source[prop];
+                else if(undefined === targetPropName && applyUnmentioned)
+                    target[prop] = source[prop];
+            }
         }
     };
 };

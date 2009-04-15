@@ -863,6 +863,7 @@ api/webapp/clientapi/LongTextEditor.js -text
 api/webapp/clientapi/MultiRequest.js -text
 api/webapp/clientapi/NavTrail.js -text
 api/webapp/clientapi/Query.js -text
+api/webapp/clientapi/QueryWebPart.js -text
 api/webapp/clientapi/Security.js -text
 api/webapp/clientapi/Specimen.js -text
 api/webapp/clientapi/Store.js -text

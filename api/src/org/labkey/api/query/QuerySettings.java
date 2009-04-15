@@ -20,6 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.ShowRows;
+import org.labkey.api.data.Aggregate;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportIdentifier;
@@ -34,6 +35,8 @@ import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 
 import java.net.URISyntaxException;
+import java.util.List;
+import java.util.ArrayList;
 
 public class QuerySettings
 {
@@ -56,6 +59,7 @@ public class QuerySettings
     private URLHelper _returnURL = null;
 
     private String _containerFilterName;
+    private List<Aggregate> _aggregates = new ArrayList<Aggregate>();
 
 
     public QuerySettings(String dataRegionName)
@@ -133,6 +137,27 @@ public class QuerySettings
         }
     }
 
+    public void setAggregates(PropertyValues pvs)
+    {
+        for(PropertyValue val : pvs.getPropertyValues())
+        {
+            if(val.getName().startsWith(getDataRegionName() + Aggregate.QS_PREFIX))
+            {
+                String columnName = val.getName().substring((getDataRegionName() + Aggregate.QS_PREFIX).length());
+                Aggregate.Type type;
+                try
+                {
+                    type = Aggregate.Type.valueOf(((String)val.getValue()).toUpperCase());
+                }
+                catch(IllegalArgumentException e)
+                {
+                    throw new IllegalArgumentException("'" + val.getValue() + "' is not a valid aggregate type.");
+                }
+                _aggregates.add(new Aggregate(columnName, type));
+            }
+        }
+    }
+
 
     protected String _getParameter(String param)
     {
@@ -164,6 +189,7 @@ public class QuerySettings
         if (null == pvs)
             pvs = new MutablePropertyValues();
         setSortFilter(pvs);
+        setAggregates(pvs);
 
         if (getAllowChooseQuery())
         {
@@ -460,5 +486,15 @@ public class QuerySettings
     public void setContainerFilterName(String name)
     {
         _containerFilterName = name;
+    }
+
+    public List<Aggregate> getAggregates()
+    {
+        return _aggregates;
+    }
+
+    public void setAggregates(List<Aggregate> aggregates)
+    {
+        _aggregates = aggregates;
     }
 }

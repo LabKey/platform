@@ -192,6 +192,7 @@ LABKEY.requiresClientAPI = function(immediate)
         LABKEY.requiresScript("clientapi/Store.js", immediate);
         LABKEY.requiresScript("clientapi/Utils.js", immediate);
         LABKEY.requiresScript("clientapi/WebPart.js", immediate);
+        LABKEY.requiresScript("clientapi/QueryWebPart.js", immediate);
         LABKEY.requiresScript("clientapi/Security.js", immediate);
         LABKEY.requiresScript("clientapi/Specimen.js", immediate);
         LABKEY.requiresScript("clientapi/MultiRequest.js", immediate);

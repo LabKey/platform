@@ -19,6 +19,7 @@ package org.labkey.api.query;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.Aggregate;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
@@ -180,7 +181,11 @@ abstract public class UserSchema extends AbstractSchema
 
     public final QuerySettings getSettings(Portal.WebPart webPart, ViewContext context)
     {
-        QuerySettings settings = createQuerySettings("qwp" + webPart.getIndex());
+        String dataRegionName = webPart.getPropertyMap().get("dataRegionName");
+        if(null == dataRegionName)
+            dataRegionName = "qwp" + webPart.getIndex();
+
+        QuerySettings settings = createQuerySettings(dataRegionName);
         (new BoundMap(settings)).putAll(webPart.getPropertyMap());
         settings.init(context);
         return settings;

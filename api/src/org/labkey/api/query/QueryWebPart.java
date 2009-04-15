@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.security.User;
@@ -23,6 +24,8 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class QueryWebPart extends WebPartView

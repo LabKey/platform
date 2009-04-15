@@ -27,6 +27,7 @@ import java.sql.SQLException;
 public class Aggregate
 {
     public static String STAR = "*";
+    public static String QS_PREFIX = ".agg."; //query string param is "<dataregion>.agg.<column>=<type>"
 
     public enum Type
     {
@@ -85,7 +86,12 @@ public class Aggregate
 
     public Aggregate(ColumnInfo column, Aggregate.Type type)
     {
-        _columnName = column.getAlias();
+        this(column.getAlias(), type);
+    }
+
+    public Aggregate(String columnAlias, Aggregate.Type type)
+    {
+        _columnName = columnAlias;
         _type = type;
         _aggregateColumnName = type.name() + _columnName;
     }

@@ -142,10 +142,13 @@ Ext.extend(LABKEY.DataRegion, Ext.Component, {
     _resizeContainer : function ()
     {
         if (!this.table) return;
-        var newWidth = Math.min(this.table.getWidth(true),
-                YAHOO.util.Dom.getViewportWidth() - YAHOO.util.Dom.getX(this.table.dom.parentNode));
-                // The Ext version doesn't account for the scrollbar width or something
-                //Ext.lib.Dom.getViewWidth() - Ext.lib.Dom.getX(this.table.dom.parentNode));
+        var viewportWidth = Number.MAX_VALUE;
+        //yahoo version seems to handle vertical scrollbar, while Ext does not, so favor that one
+        if(YAHOO && YAHOO.util && YAHOO.util.Dom)
+            viewportWidth = YAHOO.util.Dom.getViewportWidth() - YAHOO.util.Dom.getX(this.table.dom.parentNode);
+        else if(Ext && Ext.lib && Ext.lib.Dom)
+            viewportWidth = Ext.lib.Dom.getViewWidth() - Ext.lib.Dom.getX(this.table.dom.parentNode);
+        var newWidth = Math.min(this.table.getWidth(true), viewportWidth);
 
         // ensure contents of header and footer fit into width
         if (this.header)

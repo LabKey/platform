@@ -57,7 +57,7 @@ LABKEY.Filter = new function()
             getColumnName: function() {return columnName;},
             getValue: function() {return value},
             getFilterType: function() {return filterType},
-            getURLParameterName : function() { return "query." + columnName + "~" + filterType.getURLSuffix() },
+            getURLParameterName : function(dataRegionName) { return (dataRegionName || "query") + "." + columnName + "~" + filterType.getURLSuffix();},
             getURLParameterValue : function() { return filterType.isDataValueRequired() ? value : undefined }
         };
     }
