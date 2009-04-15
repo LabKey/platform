@@ -271,15 +271,35 @@ LABKEY.Utils = new function()
             };
         },
 
-        applyTranslated : function(target, source, translationMap, applyUnmentioned)
+        /**
+         * Applies properties from the source object to the target object, translating
+         * the property names based on the translation map. The translation map should
+         * have an entry per property that you wish to rename when it is applied on
+         * the target object. The key should be the name of the property on the source object
+         * and the value should be the desired name on the target object. The value may
+         * also be set to null or false to prohibit that property from being applied.
+         * By default, this function will also apply all other properties on the source
+         * object that are not listed in the translation map, but you can override this
+         * by supplying false for the applyOthers paramer.
+         * @param target The target object
+         * @param source The source object
+         * @param translationMap A map listing property name translations
+         * @param applyOthers Set to false to prohibit application of properties
+         * not explicitly mentioned in the translation map.
+         */
+        applyTranslated : function(target, source, translationMap, applyOthers)
         {
+            if(undefined === target)
+                target = {};
+            if(undefined === applyOthers)
+                applyOthers = true;
             var targetPropName;
             for(var prop in source)
             {
                 targetPropName = translationMap[prop];
                 if(targetPropName)
                     target[translationMap[prop]] = source[prop];
-                else if(undefined === targetPropName && applyUnmentioned)
+                else if(undefined === targetPropName && applyOthers)
                     target[prop] = source[prop];
             }
         }

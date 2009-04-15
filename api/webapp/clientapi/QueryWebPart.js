@@ -135,7 +135,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable, {
         //setup the params
         var params = {};
         params["webpart.name"] = "Query";
-        LABKEY.Utils.applyTranslated(params, this, this._paramTranslationMap, true);
+        LABKEY.Utils.applyTranslated(params, this, this._paramTranslationMap);
 
         //handle base-filters and sorts (need data region prefix)
         if(this.sort)
