@@ -27,8 +27,8 @@ public class QcUtil
 {
     private static final String[] QC_STATES = new String[] {"Q", "N"};
 
-    private static final String Q_TEXT = "Data currently under quality control review";
-    private static final String N_TEXT = "Required field marked by site as 'data not available'";
+    private static final String Q_TEXT = "Data currently under quality control review.";
+    private static final String N_TEXT = "Required field marked by site as 'data not available'.";
 
     private QcUtil() {}
 
@@ -53,7 +53,7 @@ public class QcUtil
         return getQcValues(c).contains(value);
     }
 
-    public static String getQcLabel(String qcValue)
+    public static String getQcLabel(String qcValue, Container c)
     {
         if ("N".equals(qcValue))
             return N_TEXT;

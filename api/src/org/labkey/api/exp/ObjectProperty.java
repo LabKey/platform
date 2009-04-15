@@ -144,6 +144,12 @@ public class ObjectProperty extends OntologyManager.PropertyRow
         this.typeTag = propertyType.getStorageType();
         //TODO: For resource, need to override with known type
         this.rangeURI = propertyType.getTypeUri();
+        if (value instanceof QcFieldWrapper)
+        {
+            QcFieldWrapper wrapper = (QcFieldWrapper)value;
+            this.qcValue = wrapper.getQcValue();
+            value = wrapper.getValue();
+        }
         switch (propertyType)
         {
             case STRING:
@@ -208,10 +214,7 @@ public class ObjectProperty extends OntologyManager.PropertyRow
         Object value = value();
         if (qcValue == null)
             return value;
-        QcFieldWrapper wrapper = new QcFieldWrapper();
-        wrapper.setValue(value);
-        wrapper.setQcValue(qcValue);
-
+        QcFieldWrapper wrapper = new QcFieldWrapper(value, qcValue);
         return wrapper;
     }
 

@@ -27,6 +27,14 @@ public class QcFieldWrapper
     private Object value;
     private String qcValue;
 
+    public QcFieldWrapper() {}
+
+    public QcFieldWrapper(Object value, String qcValue)
+    {
+        this.value = value;
+        this.qcValue = qcValue;
+    }
+
     public Object getValue()
     {
         return value;

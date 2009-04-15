@@ -419,19 +419,10 @@ public class TableViewForm extends ViewFormData implements DynaBean, HasBindPara
             }
             catch (ConversionException e)
             {
-                // We may have a qc value instead
-                ColumnInfo col = getColumnByFormFieldName(propName);
-                if (col != null && col.isQcEnabled() && QcUtil.isQcValue(str, getContainer()))
-                {
-                    values.put(propName, str);
-                }
-                else
-                {
-                    String error = SpringActionController.ERROR_CONVERSION;
-                    if (null != propType)
-                        error += "." + propType.getSimpleName();
-                    errors.addError(new FieldError(errors.getObjectName(), propName, this, true, new String[] {error}, new String[] {str, caption}, "Could not convert value: " + str));
-                }
+                String error = SpringActionController.ERROR_CONVERSION;
+                if (null != propType)
+                    error += "." + propType.getSimpleName();
+                errors.addError(new FieldError(errors.getObjectName(), propName, this, true, new String[] {error}, new String[] {str, caption}, "Could not convert value: " + str));
             }
         }
         _values = values;

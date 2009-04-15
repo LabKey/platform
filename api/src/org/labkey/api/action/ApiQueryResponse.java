@@ -132,7 +132,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
                 Set<String> qcValues = QcUtil.getQcValues(_viewContext.getContainer());
                 for (String qcValue :qcValues)
                 {
-                    qcInfo.put(qcValue, QcUtil.getQcLabel(qcValue));
+                    qcInfo.put(qcValue, QcUtil.getQcLabel(qcValue, _viewContext.getContainer()));
                 }
                 return qcInfo;
             }

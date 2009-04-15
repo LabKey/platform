@@ -66,7 +66,17 @@ public class QCDisplayColumn extends DataColumn
                     HttpView.currentContext().getContextPath() +
                     "/_images/qc_indicator.gif\" class=\"labkey-qc-indicator\">";
 
-            out.write(PageFlowUtil.helpPopup("QC Value: " + qcValue,QcUtil.getQcLabel(qcValue), false, imgHtml, 0));
+            String popupText = PageFlowUtil.filter(QcUtil.getQcLabel(qcValue, ctx.getContainer()));
+
+            // If we have a raw value, include it in the popup
+            String value = super.getFormattedValue(ctx);
+            if (value != null && !"".equals(value))
+            {
+                popupText += ("<p>The value as originally entered was: '" + value + "'.");
+            }
+
+            out.write(PageFlowUtil.helpPopup("QC Value: " + qcValue, popupText, true, imgHtml, 0));
+
             return;
         }
         // Call super, as we don't want to check twice for the qc value
@@ -135,14 +145,54 @@ public class QCDisplayColumn extends DataColumn
                 val = viewForm.get(formFieldName);
             else if (ctx.getRow() != null)
             {
-                String qcValue = getQcValue(ctx);
-                if (qcValue != null)
-                    val = qcValue; // use qc value if we've got it
-                else
-                    val = getRawValue(ctx);
+                val = getRawValue(ctx);
             }
         }
 
         return val;
+    }
+
+    @Override
+    public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
+    {
+        renderGridCellContents(ctx, out);
+    }
+
+    @Override
+    public void renderInputCell(RenderContext ctx, Writer out, int span) throws IOException
+    {
+        out.write("<td colspan=" + span + ">");
+        renderInputHtml(ctx, out, getInputValue(ctx));
+        renderQCPicker(ctx, out);
+        out.write("</td>");
+    }
+
+    private void renderQCPicker(RenderContext ctx, Writer out) throws IOException
+    {
+        String formFieldName = ctx.getForm().getFormFieldName(qcValueColumn);
+        String selectedQcValue = getQcValue(ctx);
+        Set<String> qcValues = QcUtil.getQcValues(ctx.getContainer());
+        out.write("<br>QC Value:");
+        out.write("<select");
+        outputName(ctx, out, formFieldName);
+        if (isDisabledInput())
+            out.write(" DISABLED");
+        out.write(">\n");
+        out.write("<option value=\"\"></option>");
+        for (String qcValue : qcValues)
+        {
+            out.write("  <option value=\"");
+            out.write(qcValue);
+            out.write("\"");
+            if (null != selectedQcValue && qcValue.equals(selectedQcValue))
+                out.write(" selected ");
+            out.write(" >");
+            out.write(qcValue);
+            out.write("</option>\n");
+        }
+        out.write("</select>");
+        // disabled inputs are not posted with the form, so we output a hidden form element:
+        //if (isDisabledInput())
+        //    renderHiddenFormInput(ctx, out, formFieldName, value);
     }
 }
