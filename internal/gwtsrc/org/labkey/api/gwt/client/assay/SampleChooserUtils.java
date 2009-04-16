@@ -10,6 +10,7 @@ public class SampleChooserUtils
 
     public static final String PROP_NAME_MAX_SAMPLE_COUNT = "maxSampleCount";
     public static final String PROP_NAME_MIN_SAMPLE_COUNT = "minSampleCount";
+    public static final String PROP_NAME_DEFAULT_SAMPLE_COUNT = "defaultSampleCount";
 
     public static final String PROP_NAME_DEFAULT_SAMPLE_SET_LSID = "defaultSampleSetLSID";
     public static final String PROP_NAME_DEFAULT_SAMPLE_SET_NAME = "defaultSampleSetName";

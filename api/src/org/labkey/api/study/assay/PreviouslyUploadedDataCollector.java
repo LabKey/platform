@@ -18,14 +18,13 @@ package org.labkey.api.study.assay;
 
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.study.assay.AbstractAssayDataCollector;
 import org.labkey.api.view.InsertView;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Map;
-import java.util.HashMap;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -77,7 +76,7 @@ public class PreviouslyUploadedDataCollector extends AbstractAssayDataCollector
         return "Previously uploaded files";
     }
 
-    public String getDescription()
+    public String getDescription(AssayRunUploadContext context)
     {
         return "Use the data that was already uploaded to the server";
     }

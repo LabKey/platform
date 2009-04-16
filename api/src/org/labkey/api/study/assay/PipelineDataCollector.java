@@ -32,7 +32,7 @@ import java.util.*;
  * User: jeckels
  * Date: Jan 2, 2008
  */
-public class PipelineDataCollector extends AbstractAssayDataCollector
+public class PipelineDataCollector<ContextType extends AssayRunUploadContext> extends AbstractAssayDataCollector<ContextType>
 {
     public static final String FILE_COLLECTION_ID_PARAMETER_NAME = ".fileCollectionId";
 
@@ -40,21 +40,19 @@ public class PipelineDataCollector extends AbstractAssayDataCollector
     {
     }
 
-    public String getHTML(AssayRunUploadContext context) throws ExperimentException
+    public String getHTML(ContextType context) throws ExperimentException
     {
         List<Map<String, File>> files = getFileCollection(context);
         if (files.isEmpty() || files.get(0).isEmpty())
         {
-            return "No files have been selected.";
+            return "<div class=\"labkey-error>No files have been selected.</div>";
         }
 
-        StringBuilder sb = new StringBuilder("The following file");
-        sb.append(files.get(0).size() > 1 ? "s have" : " has");
-        sb.append(" already been selected:<ul>");
+        StringBuilder sb = new StringBuilder();
         for (File file : files.get(0).values())
         {
             sb.append("<li>");
-            sb.append(PageFlowUtil.filter(file.getAbsolutePath()));
+            sb.append(PageFlowUtil.filter(file.getName()));
             sb.append("</li>");
         }
         sb.append("</ul>");
@@ -74,9 +72,10 @@ public class PipelineDataCollector extends AbstractAssayDataCollector
         return "Pipeline";
     }
 
-    public String getDescription()
+    public String getDescription(ContextType context)
     {
-        return "Use a file from the Data Pipeline";
+        Map<String, File> files = getFileCollection(context).get(0);
+        return (files.size() > 1 ? files.size() + " files" : "File ") + " from the Data Pipeline in " + files.values().iterator().next().getParent();
     }
 
     public static synchronized void setFileCollection(HttpSession session, Container c, ExpProtocol protocol, List<Map<String, File>> files)
@@ -86,12 +85,12 @@ public class PipelineDataCollector extends AbstractAssayDataCollector
         existingFiles.addAll(files);
     }
 
-    public List<Map<String, File>> getFileCollection(AssayRunUploadContext context)
+    public List<Map<String, File>> getFileCollection(ContextType context)
     {
         return getFileCollection(context.getRequest().getSession(true), context.getContainer(), context.getProtocol());
     }
 
-    public static List<Map<String, File>> getFileCollection(HttpSession session, Container c, ExpProtocol protocol)
+    private static List<Map<String, File>> getFileCollection(HttpSession session, Container c, ExpProtocol protocol)
     {
         Map<Pair<Container, Integer>, List<Map<String, File>>> collections = (Map<Pair<Container, Integer>, List<Map<String, File>>>) session.getAttribute(PipelineDataCollector.class.getName());
         if (collections == null)
@@ -109,7 +108,7 @@ public class PipelineDataCollector extends AbstractAssayDataCollector
         return result;
     }
 
-    public Map<String, File> createData(AssayRunUploadContext context) throws IOException, ExperimentException
+    public Map<String, File> createData(ContextType context) throws IOException
     {
         List<Map<String, File>> files = getFileCollection(context);
         if (files.isEmpty())
@@ -124,7 +123,7 @@ public class PipelineDataCollector extends AbstractAssayDataCollector
         return true;
     }
 
-    public void uploadComplete(AssayRunUploadContext context)
+    public void uploadComplete(ContextType context)
     {
         List<Map<String, File>> files = getFileCollection(context);
         if (!files.isEmpty())
@@ -133,7 +132,7 @@ public class PipelineDataCollector extends AbstractAssayDataCollector
         }
     }
 
-    public boolean allowAdditionalUpload(AssayRunUploadContext context)
+    public boolean allowAdditionalUpload(ContextType context)
     {
         return getFileCollection(context).size() > 1; 
     }

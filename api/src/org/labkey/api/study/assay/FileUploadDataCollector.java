@@ -19,21 +19,21 @@ package org.labkey.api.study.assay;
 import org.labkey.api.exp.ExperimentException;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
-import java.util.Map;
-import java.util.Collections;
 import java.io.File;
-import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * User: jeckels
  * Date: Jul 12, 2007
  */
-public class FileUploadDataCollector extends AbstractAssayDataCollector
+public class FileUploadDataCollector<ContextType extends AssayRunUploadContext> extends AbstractAssayDataCollector<ContextType>
 {
     private boolean _uploadComplete = false;
 
-    public String getHTML(AssayRunUploadContext context)
+    public String getHTML(ContextType context)
     {
         return "<input type=\"file\" size=\"40\" name=\"uploadedFile\" />";
     }
@@ -43,12 +43,12 @@ public class FileUploadDataCollector extends AbstractAssayDataCollector
         return "File upload";
     }
 
-    public String getDescription()
+    public String getDescription(ContextType context)
     {
         return "Upload a data file";
     }
 
-    public Map<String, File> createData(AssayRunUploadContext context) throws IOException, IllegalArgumentException, ExperimentException
+    public Map<String, File> createData(ContextType context) throws IOException, IllegalArgumentException, ExperimentException
     {
         if (_uploadComplete)
             return Collections.emptyMap();
@@ -67,7 +67,7 @@ public class FileUploadDataCollector extends AbstractAssayDataCollector
         return true;
     }
 
-    public void uploadComplete(AssayRunUploadContext context)
+    public void uploadComplete(ContextType context)
     {
         _uploadComplete = true;
     }

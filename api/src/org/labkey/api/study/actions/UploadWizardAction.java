@@ -252,9 +252,14 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         return new VBox(headerView, insertView);
     }
 
-    protected boolean showBatchStep(FormType runForm, Domain uploadDomain)
+    /**
+     * Decide whether or not to show the batch properties step in the wizard.
+     * @param form the form with posted values
+     * @param batchDomain domain for the batch fields
+     */
+    protected boolean showBatchStep(FormType form, Domain batchDomain)
     {
-        DomainProperty[] batchColumns = uploadDomain.getProperties();
+        DomainProperty[] batchColumns = batchDomain.getProperties();
         return batchColumns != null && batchColumns.length != 0;
     }
 

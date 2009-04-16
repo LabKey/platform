@@ -16,11 +16,10 @@
 
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.security.User;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -59,8 +58,6 @@ public interface ExpSampleSet extends ExpObject
     void setDescription(String s);
 
     void setMaterialLSIDPrefix(String s);
-
-    void insert(User user);
 
     List<DomainProperty> getIdCols();
 

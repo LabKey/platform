@@ -213,7 +213,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
                     String prefix = sampleSetLSID.toString();
 
                     sampleSet.setMaterialLSIDPrefix(prefix);
-                    sampleSet.insert(context.getUser());
+                    sampleSet.save(context.getUser());
                 }
 
                 Lsid derivedLsid = new Lsid(sampleSet.getMaterialLSIDPrefix() + "OBJECT");

@@ -26,20 +26,20 @@ import java.io.IOException;
  * User: jeckels
  * Date: Jul 12, 2007
  */
-public interface AssayDataCollector
+public interface AssayDataCollector<ContextType extends AssayRunUploadContext>
 {
-    public String getHTML(AssayRunUploadContext context) throws ExperimentException;
+    public String getHTML(ContextType context) throws ExperimentException;
 
     public String getShortName();
 
-    public String getDescription();
+    public String getDescription(ContextType context);
 
     /** Map of original file name to file on disk */
-    public Map<String, File> createData(AssayRunUploadContext context) throws IOException, ExperimentException;
+    public Map<String, File> createData(ContextType context) throws IOException, ExperimentException;
 
     public boolean isVisible();
 
-    void uploadComplete(AssayRunUploadContext context);
+    void uploadComplete(ContextType context);
 
-    public boolean allowAdditionalUpload(AssayRunUploadContext context);
+    public boolean allowAdditionalUpload(ContextType context);
 }

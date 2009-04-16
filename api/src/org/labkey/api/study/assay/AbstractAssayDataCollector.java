@@ -21,14 +21,14 @@ package org.labkey.api.study.assay;
  * User: jeckels
  * Date: Jul 13, 2007
  */
-public abstract class AbstractAssayDataCollector extends AssayFileWriter implements AssayDataCollector
+public abstract class AbstractAssayDataCollector<ContextType extends AssayRunUploadContext> extends AssayFileWriter implements AssayDataCollector<ContextType>
 {
-    public void uploadComplete(AssayRunUploadContext context)
+    public void uploadComplete(ContextType context)
     {
         
     }
 
-    public boolean allowAdditionalUpload(AssayRunUploadContext context)
+    public boolean allowAdditionalUpload(ContextType context)
     {
         return true;
     }

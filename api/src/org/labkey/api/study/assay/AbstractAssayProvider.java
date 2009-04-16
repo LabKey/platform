@@ -840,9 +840,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public abstract ExpData getDataForDataRow(Object dataRowId);
 
 
-    public Map<String, Class<? extends Controller>> getImportActions()
+    public ActionURL getImportURL(Container container, ExpProtocol protocol)
     {
-        return Collections.<String, Class<? extends Controller>>singletonMap(IMPORT_DATA_LINK_NAME, UploadWizardAction.class);
+        return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, UploadWizardAction.class);
     }
     
     public ExpRunTable createRunTable(UserSchema schema, ExpProtocol protocol)

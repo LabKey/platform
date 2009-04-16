@@ -15,11 +15,7 @@
  */
 package org.labkey.api.exp.api;
 
-import org.labkey.api.security.User;
-
-import java.sql.SQLException;
 import java.util.List;
-import java.util.Date;
 
 /*
 * User: jeckels
@@ -27,8 +23,6 @@ import java.util.Date;
 */
 public interface ExpProtocolOutput extends ExpObject
 {
-    void insert(User user) throws SQLException;
-
     ExpProtocol getSourceProtocol();
 
     ExpRun getRun();

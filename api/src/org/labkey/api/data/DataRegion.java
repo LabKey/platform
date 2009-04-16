@@ -1421,7 +1421,7 @@ public class DataRegion extends DisplayElement
 
     protected void renderFormField(RenderContext ctx, Writer out, DisplayColumn renderer) throws SQLException, IOException
     {
-        int span = _groups.isEmpty() ? 1 : (_horizontalGroups ? _groups.get(0).getColumns().size() : _groups.size() + 1);
+        int span = _groups.isEmpty() ? 1 : (_horizontalGroups ? _groups.get(0).getColumns().size() + 1 : _groups.size());
         renderInputError(ctx, out, span, renderer);
         out.write("  <tr>\n    ");
         renderer.renderDetailsCaptionCell(ctx, out);

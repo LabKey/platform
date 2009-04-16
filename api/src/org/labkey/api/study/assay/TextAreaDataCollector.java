@@ -46,7 +46,7 @@ public class TextAreaDataCollector extends AbstractAssayDataCollector
         return "textAreaDataProvider";
     }
 
-    public String getDescription()
+    public String getDescription(AssayRunUploadContext context)
     {
         return "Paste in a tab-separated set of values";
     }

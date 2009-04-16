@@ -80,7 +80,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     Container getAssociatedStudyContainer(ExpProtocol protocol, Object dataId);
 
-    Map<String, Class<? extends Controller>> getImportActions();
+    ActionURL getImportURL(Container container, ExpProtocol protocol);
 
     TableInfo createDataTable(UserSchema schema, ExpProtocol protocol);
 

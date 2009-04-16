@@ -552,7 +552,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
             HttpView.throwUnauthorized();
 
         if (null == requiresPermission && !requiresSiteAdmin && !requiresLogin)
-            throw new IllegalStateException("@RequiresPermission, @RequiresSiteAdmin, or @RequiresLogin annotation is required");
+            throw new IllegalStateException("@RequiresPermission, @RequiresSiteAdmin, or @RequiresLogin annotation is required on class " + actionClass.getName());
     }
 
     public static void checkPermissionsAndTermsOfUse(Class<? extends Controller> actionClass, ViewContext context)

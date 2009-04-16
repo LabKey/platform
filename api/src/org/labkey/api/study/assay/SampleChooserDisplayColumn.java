@@ -43,14 +43,22 @@ public class SampleChooserDisplayColumn extends SimpleDisplayColumn
     private final int _maxSamples;
     private final int _minSamples;
     private final List<ExpMaterial> _matchingMaterials;
+    private final int _defaultSampleCount;
+
+    public SampleChooserDisplayColumn(int minSamples, int maxSamples, List<ExpMaterial> matchingMaterials, int defaultSampleCount)
+    {
+        assert maxSamples >= minSamples : "maxSamples was bigger than minSamples";
+        assert defaultSampleCount <= maxSamples && defaultSampleCount >= minSamples : "defaultSampleCount was not between maxSamples and minSamples";
+        _maxSamples = maxSamples;
+        _minSamples = minSamples;
+        _defaultSampleCount = defaultSampleCount;
+        _matchingMaterials = matchingMaterials;
+        setCaption("Samples");
+    }
 
     public SampleChooserDisplayColumn(int minSamples, int maxSamples, List<ExpMaterial> matchingMaterials)
     {
-        assert maxSamples >= minSamples;
-        _maxSamples = maxSamples;
-        _minSamples = minSamples;
-        _matchingMaterials = matchingMaterials;
-        setCaption("Samples");
+        this(minSamples, maxSamples, matchingMaterials, maxSamples);
     }
 
     public boolean isEditable()
@@ -74,6 +82,7 @@ public class SampleChooserDisplayColumn extends SimpleDisplayColumn
 
         props.put(SampleChooserUtils.PROP_NAME_MAX_SAMPLE_COUNT, Integer.toString(_maxSamples));
         props.put(SampleChooserUtils.PROP_NAME_MIN_SAMPLE_COUNT, Integer.toString(_minSamples));
+        props.put(SampleChooserUtils.PROP_NAME_DEFAULT_SAMPLE_COUNT, Integer.toString(_defaultSampleCount));
 
         if (_matchingMaterials.size() == _maxSamples)
         {

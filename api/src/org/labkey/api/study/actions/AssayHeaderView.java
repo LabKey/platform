@@ -19,6 +19,7 @@ package org.labkey.api.study.actions;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
@@ -27,15 +28,14 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.common.util.Pair;
-import org.springframework.web.servlet.mvc.Controller;
 
 import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -125,10 +125,7 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
         else
         {
             _links.put("manage", PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getViewContext().getContainer(), protocol));
-            for (Map.Entry<String, Class<? extends Controller>> entry : _provider.getImportActions().entrySet())
-            {
-                _links.put(entry.getKey().toLowerCase(), PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(getViewContext().getContainer(), _protocol, entry.getValue()));
-            }
+            _links.put(AbstractAssayProvider.IMPORT_DATA_LINK_NAME, _provider.getImportURL(getViewContext().getContainer(), _protocol));
         }
     }
 
