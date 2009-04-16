@@ -544,7 +544,7 @@ public class ProjectController extends SpringActionController
             //TODO: This is a hack to get this working, should use returnUrl and pass through in webpart
             if ("menubar".equals(webPart.getLocation()))
             {
-                ActionURL url = PageFlowUtil.urlProvider(AdminUrls.class).getLookAndFeelSettingsURL(getContainer());
+                ActionURL url = PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsURL(getContainer());
                 url.addParameter(TabStripView.TAB_PARAM, "menubar");
                 return url;
             }

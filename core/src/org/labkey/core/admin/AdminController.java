@@ -91,7 +91,7 @@ public class AdminController extends SpringActionController
 
         // Configuration
         AdminConsole.addLink(SettingsLinkType.Configuration, "site settings", new AdminUrlsImpl().getCustomizeSiteURL());
-        AdminConsole.addLink(SettingsLinkType.Configuration, "look and feel settings", new AdminUrlsImpl().getLookAndFeelSettingsURL(root));
+        AdminConsole.addLink(SettingsLinkType.Configuration, "look and feel settings", new AdminUrlsImpl().getProjectSettingsURL(root));
         AdminConsole.addLink(SettingsLinkType.Configuration, "authentication", PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL());
         AdminConsole.addLink(SettingsLinkType.Configuration, "email customization", new ActionURL(CustomizeEmailAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Configuration, "project display order", new ActionURL(ReorderFoldersAction.class, root));
@@ -238,21 +238,21 @@ public class AdminController extends SpringActionController
             return url;
         }
 
-        public ActionURL getLookAndFeelSettingsURL(Container c)
+        public ActionURL getProjectSettingsURL(Container c)
         {
-            return new ActionURL(LookAndFeelSettingsAction.class, LookAndFeelProperties.getSettingsContainer(c));
+            return new ActionURL(ProjectSettingsAction.class, LookAndFeelProperties.getSettingsContainer(c));
         }
 
         public ActionURL getLookAndFeelResourcesURL(Container c)
         {
-            ActionURL url = getLookAndFeelSettingsURL(c);
+            ActionURL url = getProjectSettingsURL(c);
             url.addParameter("tabId", "resources");
             return url;
         }
 
-        public ActionURL getLookAndFeelMenuURL(Container c)
+        public ActionURL getProjectSetginsMenuURL(Container c)
         {
-            ActionURL url = getLookAndFeelSettingsURL(c);
+            ActionURL url = getProjectSettingsURL(c);
             url.addParameter("tabId", "menubar");
             return url;
         }
@@ -283,9 +283,9 @@ public class AdminController extends SpringActionController
             return root;
         }
 
-        public ActionURL getCustomizeFolderURL(Container c)
+        public ActionURL getFolderSettingsURL(Container c)
         {
-            return new ActionURL(CustomizeAction.class, c);
+            return new ActionURL(FolderSettingsAction.class, c);
         }
 
         public ActionURL getMemTrackerURL()
@@ -612,8 +612,9 @@ public class AdminController extends SpringActionController
     }
 
 
+    @ActionNames("projectSettings, lookAndFeelSettings")
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class LookAndFeelSettingsAction extends FormViewAction<LookAndFeelSettingsForm>
+    public class ProjectSettingsAction extends FormViewAction<ProjectSettingsForm>
     {
         public void checkPermissions() throws TermsOfUseException, UnauthorizedException
         {
@@ -623,16 +624,16 @@ public class AdminController extends SpringActionController
                 throw new UnauthorizedException();
         }
 
-        public void validateCommand(LookAndFeelSettingsForm target, Errors errors)
+        public void validateCommand(ProjectSettingsForm target, Errors errors)
         {
         }
 
-        public ModelAndView getView(LookAndFeelSettingsForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ProjectSettingsForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new LookAndFeelSettingsTabStrip(form, errors);
+            return new ProjectSettingsTabStrip(form, errors);
         }
 
-        public boolean handlePost(LookAndFeelSettingsForm form, BindException errors) throws Exception
+        public boolean handlePost(ProjectSettingsForm form, BindException errors) throws Exception
         {
             Container c = getContainer();
 
@@ -644,7 +645,7 @@ public class AdminController extends SpringActionController
                 return handlePropertiesPost(c, form, errors);
         }
 
-        public boolean handlePropertiesPost(Container c, LookAndFeelSettingsForm form, BindException errors) throws Exception
+        public boolean handlePropertiesPost(Container c, ProjectSettingsForm form, BindException errors) throws Exception
         {
             WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
 
@@ -772,7 +773,7 @@ public class AdminController extends SpringActionController
             return true;
         }
 
-        public boolean handleMenuPost(Container c, LookAndFeelSettingsForm form, BindException errors) throws SQLException
+        public boolean handleMenuPost(Container c, ProjectSettingsForm form, BindException errors) throws SQLException
         {
             WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
 
@@ -783,14 +784,14 @@ public class AdminController extends SpringActionController
 
         }
 
-        public ActionURL getSuccessURL(LookAndFeelSettingsForm form)
+        public ActionURL getSuccessURL(ProjectSettingsForm form)
         {
             if (form.isResourcesTab())
                 return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
             else if (form.isMenuTab())
-                return new AdminUrlsImpl().getLookAndFeelMenuURL(getContainer());
+                return new AdminUrlsImpl().getProjectSetginsMenuURL(getContainer());
             else
-                return new AdminUrlsImpl().getLookAndFeelSettingsURL(getContainer());
+                return new AdminUrlsImpl().getProjectSettingsURL(getContainer());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -800,20 +801,20 @@ public class AdminController extends SpringActionController
             Container c = getViewContext().getContainer();
 
             if (c.isRoot())
-                return appendAdminNavTrail(root, "Look and Feel Settings", this.getClass());
+                return appendAdminNavTrail(root, "Project Settings", this.getClass());
 
-            root.addChild("Look and Feel Settings");
+            root.addChild("Project Settings");
             return root;
         }
     }
 
 
-    private static class LookAndFeelSettingsTabStrip extends TabStripView
+    private static class ProjectSettingsTabStrip extends TabStripView
     {
-        private LookAndFeelSettingsForm _form;
+        private ProjectSettingsForm _form;
         private BindException _errors;
 
-        private LookAndFeelSettingsTabStrip(LookAndFeelSettingsForm form, BindException errors)
+        private ProjectSettingsTabStrip(ProjectSettingsForm form, BindException errors)
         {
             _form = form;
             _errors = errors;
@@ -821,7 +822,7 @@ public class AdminController extends SpringActionController
 
         public List<NavTree> getTabList()
         {
-            ActionURL url = new AdminUrlsImpl().getLookAndFeelSettingsURL(getViewContext().getContainer());
+            ActionURL url = new AdminUrlsImpl().getProjectSettingsURL(getViewContext().getContainer());
             List<NavTree> tabs = new ArrayList<NavTree>(2);
 
             tabs.add(new TabInfo("Properties", "properties", url));
@@ -953,7 +954,7 @@ public class AdminController extends SpringActionController
             // TODO: Audit log?
 
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-            return new AdminUrlsImpl().getLookAndFeelSettingsURL(getContainer());
+            return new AdminUrlsImpl().getProjectSettingsURL(getContainer());
         }
     }
 
@@ -1252,7 +1253,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    public static class LookAndFeelSettingsForm
+    public static class ProjectSettingsForm
     {
         private String _systemDescription;
         private String _systemShortName;
@@ -2569,7 +2570,7 @@ public class AdminController extends SpringActionController
 
         public ActionURL getRedirectURL(WebThemeForm form) throws Exception
         {
-            ActionURL redirectURL = new AdminUrlsImpl().getLookAndFeelSettingsURL(getContainer());
+            ActionURL redirectURL = new AdminUrlsImpl().getProjectSettingsURL(getContainer());
             handleTheme(form, redirectURL);
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
 
@@ -3642,7 +3643,7 @@ public class AdminController extends SpringActionController
                             SecurityManager.setInheritPermissions(c);
 
                         if (type.equals(FolderType.NONE))
-                            _successURL = new AdminUrlsImpl().getCustomizeFolderURL(c);
+                            _successURL = new AdminUrlsImpl().getFolderSettingsURL(c);
                         else
                             _successURL = PageFlowUtil.urlProvider(SecurityUrls.class).getContainerURL(c);
                     }
@@ -3684,14 +3685,9 @@ public class AdminController extends SpringActionController
     }
 
 
-    private ActionURL getCustomizeURL(Container c)
-    {
-        return new ActionURL(CustomizeAction.class, c);
-    }
-
-
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class CustomizeAction extends FormViewAction<CustomizeFolderForm>
+    @ActionNames("folderSettings, customize")
+    public class FolderSettingsAction extends FormViewAction<CustomizeFolderForm>
     {
         private ActionURL _successURL;
 
@@ -3773,7 +3769,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Customize folder " + getContainer().getPath());
+            root.addChild("Folder Settings: " + getContainer().getPath());
             return root;
         }
     }

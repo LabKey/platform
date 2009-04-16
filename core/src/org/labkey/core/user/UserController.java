@@ -516,7 +516,7 @@ public class UserController extends SpringActionController
             else
             {
                 setHelpTopic(new HelpTopic("manageProjectMembers", HelpTopic.Area.SERVER));
-                return root.addChild("Project Members");
+                return root.addChild("Project Users");
             }
         }
     }
