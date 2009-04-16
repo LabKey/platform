@@ -65,11 +65,6 @@ public class ExpMaterialImpl extends AbstractProtocolOutputImpl<Material> implem
         }
     }
 
-    public void insert(User user) throws SQLException
-    {
-        ExperimentServiceImpl.get().insertMaterial(user, _object);
-    }
-
     public Map<PropertyDescriptor, Object> getPropertyValues()
     {
         ExpSampleSet sampleSet = getSampleSet();

@@ -31,6 +31,7 @@ import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.api.ExpMaterialImpl;
+import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.samples.UploadMaterialSetForm.OverwriteChoice;
 import org.apache.log4j.Logger;
 
@@ -203,7 +204,9 @@ public class UploadSamplesHelper
                 source.setName(_form.getName());
                 setCols(idColPropertyURIs, parentColPropertyURI, source);
                 source.setMaterialLSIDPrefix(new Lsid("Sample", String.valueOf(_form.getContainer().getRowId()) + "." + setName, "").toString());
-                source = ExperimentServiceImpl.get().insertMaterialSource(_form.getUser(), source, dd);
+                ExpSampleSetImpl sampleSet = new ExpSampleSetImpl(source);
+                sampleSet.save(_form.getUser());
+                source = sampleSet.getDataObject();
             }
             else
             {
@@ -213,7 +216,9 @@ public class UploadSamplesHelper
                     assert source.getName().equals(_form.getName());
                     assert source.getLSID().equals(ExperimentServiceImpl.get().getSampleSetLsid(_form.getName(), _form.getContainer()).toString());
                     setCols(idColPropertyURIs, parentColPropertyURI, source);
-                    source = ExperimentServiceImpl.get().updateMaterialSource(_form.getUser(), source);
+                    ExpSampleSetImpl sampleSet = new ExpSampleSetImpl(source);
+                    sampleSet.save(_form.getUser());
+                    source = sampleSet.getDataObject();
                 }
 
                 if (maps.size() > 0)

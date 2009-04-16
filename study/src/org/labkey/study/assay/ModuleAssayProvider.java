@@ -16,33 +16,34 @@
 
 package org.labkey.study.assay;
 
+import org.apache.xmlbeans.XmlError;
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.api.ExpProtocol.AssayDomainTypes;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.module.ModuleHtmlView;
-import org.labkey.study.controllers.assay.AssayController;
-import org.labkey.study.assay.xml.ProviderType;
-import org.labkey.study.assay.xml.DomainDocument;
 import org.labkey.common.util.Pair;
+import org.labkey.study.assay.xml.DomainDocument;
+import org.labkey.study.assay.xml.ProviderType;
+import org.labkey.study.controllers.assay.AssayController;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.Controller;
-import org.apache.xmlbeans.XmlError;
-import org.apache.xmlbeans.XmlOptions;
-import org.apache.xmlbeans.XmlException;
 
 import javax.script.ScriptEngineManager;
 import java.io.File;
@@ -446,12 +447,11 @@ public class ModuleAssayProvider extends TsvAssayProvider
     }
 
     @Override
-    public Map<String, Class<? extends Controller>> getImportActions()
+    public ActionURL getImportURL(Container container, ExpProtocol protocol)
     {
         if (!hasUploadView())
-            return super.getImportActions();
-        return Collections.<String, Class<? extends Controller>>singletonMap(
-                IMPORT_DATA_LINK_NAME, AssayController.ModuleAssayUploadAction.class);
+            return super.getImportURL(container, protocol);
+        return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, AssayController.ModuleAssayUploadAction.class);
     }
 
     protected boolean hasUploadView()

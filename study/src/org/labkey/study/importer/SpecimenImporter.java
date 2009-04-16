@@ -741,7 +741,7 @@ public class SpecimenImporter
             source.setName(name);
             source.setLSID(ExperimentService.get().getSampleSetLsid(name, container).toString());
             source.setDescription("Study specimens for " + container.getPath());
-            source.insert(null);
+            source.save(null);
             cpasType = source.getLSID();
         }
         else

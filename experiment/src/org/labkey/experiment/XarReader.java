@@ -318,13 +318,13 @@ public class XarReader extends AbstractXarImporter
         }
     }
 
-    private MaterialSource loadSampleSet(SampleSetType sampleSet) throws XarFormatException, SQLException
+    private ExpSampleSetImpl loadSampleSet(SampleSetType sampleSet) throws XarFormatException, SQLException
     {
         String lsid = LsidUtils.resolveLsidFromTemplate(sampleSet.getAbout(), getRootContext(), "SampleSet");
-        MaterialSource existingMaterialSource = ExperimentServiceImpl.get().getMaterialSource(lsid);
+        ExpSampleSetImpl existingMaterialSource = ExperimentServiceImpl.get().getSampleSet(lsid);
 
         getLog().info("Importing SampleSet with LSID '" + lsid + "'");
-        MaterialSource materialSource = new MaterialSource();
+        ExpSampleSetImpl materialSource = ExperimentServiceImpl.get().createSampleSet();
         materialSource.setDescription(sampleSet.getDescription());
         materialSource.setName(sampleSet.getName());
         materialSource.setLSID(lsid);
@@ -351,11 +351,7 @@ public class XarReader extends AbstractXarImporter
             return existingMaterialSource;
         }
 
-        materialSource = ExperimentServiceImpl.get().insertMaterialSource(getUser(), materialSource, null);
-        if (ExperimentService.get().lookupActiveSampleSet(getContainer()) == null)
-        {
-            ExperimentService.get().setActiveSampleSet(getContainer(), new ExpSampleSetImpl(materialSource));
-        }
+        materialSource.save(getUser());
 
         return materialSource;
     }

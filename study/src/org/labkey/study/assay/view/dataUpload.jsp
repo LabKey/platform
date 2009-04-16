@@ -64,7 +64,7 @@
                         { %>
                             <td><input value="<%= h(collector.getShortName()) %>" type="hidden" name="dataCollectorName" /></td>
                         <% } %>
-                        <td><%= collector.getDescription() %></td>
+                        <td><%= collector.getDescription(bean) %></td>
                     </tr>
                     <tr style="visibility: <%= first ? "visible" : "collapse" %>;" id="collector-<%= h(collector.getShortName()) %>">
                         <td></td>

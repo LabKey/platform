@@ -180,18 +180,6 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
         _object.setDataFileUrl(s);
     }
 
-    public void insert(User user)
-    {
-        try
-        {
-            _object = ExperimentServiceImpl.get().insertData(user, _object);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-    }
-
     public String getCpasType()
     {
         String result = _object.getCpasType();

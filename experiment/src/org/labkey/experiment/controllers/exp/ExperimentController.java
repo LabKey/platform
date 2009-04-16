@@ -584,20 +584,32 @@ public class ExperimentController extends SpringActionController
             return vbox;
         }
 
-        private QueryView createMaterialsView(final Set<ExpMaterial> parentMaterials, String dataRegionName, String title)
+        private QueryView createMaterialsView(final Set<ExpMaterial> materials, String dataRegionName, String title)
         {
+            // Strip out materials in folders that the user can't see - this lets us avoid a container filter that
+            // enforces the permissions when we do the query
+            for (Iterator<ExpMaterial> iter = materials.iterator(); iter.hasNext(); )
+            {
+                if (!iter.next().getContainer().hasPermission(getUser(), ACL.PERM_READ))
+                {
+                    iter.remove();
+                }
+            }
             ExpSchema schema = new ExpSchema(getUser(), getContainer());
             QuerySettings settings = new QuerySettings(getViewContext(), dataRegionName);
             settings.setSchemaName(schema.getSchemaName());
             settings.setQueryName(ExpSchema.TableType.Materials.toString());
             settings.setAllowChooseQuery(false);
-            QueryView parentSamplesView = new QueryView(schema, settings)
+            QueryView materialsView = new QueryView(schema, settings)
             {
                 protected TableInfo createTable()
                 {
                     ExpMaterialTable table = ExperimentServiceImpl.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), getSchema());
-                    table.setMaterials(parentMaterials);
+                    table.setMaterials(materials);
                     table.populate();
+                    // We've already set an IN clause that restricts us to showing just data that we have permission
+                    // to view
+                    table.setContainerFilter(ContainerFilter.EVERYTHING);
                     List<FieldKey> defaultVisibleColumns = new ArrayList<FieldKey>(table.getDefaultVisibleColumns());
                     for (Iterator<FieldKey> i = defaultVisibleColumns.iterator(); i.hasNext(); )
                     {
@@ -614,13 +626,14 @@ public class ExperimentController extends SpringActionController
                     return table;
                 }
             };
-            parentSamplesView.setShowBorders(true);
-            parentSamplesView.setShowDetailsColumn(false);
-            parentSamplesView.setShowExportButtons(false);
-            parentSamplesView.setShadeAlternatingRows(true);
-            parentSamplesView.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTTOM);
-            parentSamplesView.setTitle(title);
-            return parentSamplesView;
+            materialsView.setAllowableContainerFilterTypes();
+            materialsView.setShowBorders(true);
+            materialsView.setShowDetailsColumn(false);
+            materialsView.setShowExportButtons(false);
+            materialsView.setShadeAlternatingRows(true);
+            materialsView.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTTOM);
+            materialsView.setTitle(title);
+            return materialsView;
         }
 
         private Set<ExpMaterial> getChildMaterials() throws SQLException
@@ -3204,7 +3217,7 @@ public class ExperimentController extends SpringActionController
                 {
                     outputMaterial.setCpasType(sampleSet.getLSID());
                 }
-                outputMaterial.insert(getUser());
+                outputMaterial.save(getUser());
 
                 if (sampleSet != null)
                 {

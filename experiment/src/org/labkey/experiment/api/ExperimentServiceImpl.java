@@ -22,12 +22,10 @@ import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
-import org.labkey.api.exp.query.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.query.*;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
 import org.labkey.api.pipeline.PipeRoot;
@@ -55,9 +53,9 @@ import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.MalformedURLException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -79,7 +77,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     private static final Object XAR_IMPORT_LOCK = new Object();
 
-    private synchronized DatabaseCache<MaterialSource> getMaterialSourceCache()
+    synchronized DatabaseCache<MaterialSource> getMaterialSourceCache()
     {
         if (materialSourceCache == null)
         {
@@ -412,8 +410,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         try
         {
             SimpleFilter filter = createContainerFilter(container, user, includeOtherContainers);
-            MaterialSource[] result = Table.select(getTinfoMaterialSource(), Table.ALL_COLUMNS, filter, new Sort("Name"), MaterialSource.class);
-            return ExpSampleSetImpl.fromMaterialSources(result);
+            MaterialSource[] materialSources = Table.select(getTinfoMaterialSource(), Table.ALL_COLUMNS, filter, null, MaterialSource.class);
+            ExpSampleSetImpl[] result = ExpSampleSetImpl.fromMaterialSources(materialSources);
+            // Do the sort on the Java side to make sure it's always case-insensitive
+            Arrays.sort(result, ExpObject.NAME_COMPARATOR);
+            return result;
         }
         catch (SQLException x)
         {
@@ -1278,39 +1279,29 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpSampleSet ensureDefaultSampleSet()
     {
-        MaterialSource matSource = getMaterialSource(ExperimentService.get().getDefaultSampleSetLsid());
+        ExpSampleSet sampleSet = getSampleSet(ExperimentService.get().getDefaultSampleSetLsid());
 
-        if (null == matSource)
-            return new ExpSampleSetImpl(createDefaultMaterialSource());
+        if (null == sampleSet)
+            return createDefaultSampleSet();
         else
-            return new ExpSampleSetImpl(matSource);
+            return sampleSet;
     }
 
-    private synchronized MaterialSource createDefaultMaterialSource()
+    private synchronized ExpSampleSetImpl createDefaultSampleSet()
     {
         //might have been created on another thread, so check within synch block
-        MaterialSource matSource = getMaterialSource(ExperimentService.get().getDefaultSampleSetLsid());
+        ExpSampleSetImpl matSource = getSampleSet(ExperimentService.get().getDefaultSampleSetLsid());
         if (null == matSource)
         {
-            matSource = new MaterialSource();
+            matSource = createSampleSet();
             matSource.setLSID(ExperimentService.get().getDefaultSampleSetLsid());
             matSource.setName(DEFAULT_MATERIAL_SOURCE_NAME);
             matSource.setMaterialLSIDPrefix(new Lsid("Sample", "Unspecified").toString() + "#");
             matSource.setContainer(ContainerManager.getSharedContainer());
-            matSource = insertMaterialSource(null, matSource, null);
+            matSource.save(null);
         }
 
         return matSource;
-    }
-
-    public Material insertMaterial(User user, Material m) throws SQLException
-    {
-        return Table.insert(user, getTinfoMaterial(), m);
-    }
-
-    public Data insertData(User user, Data d) throws SQLException
-    {
-        return Table.insert(user, getTinfoData(), d);
     }
 
     /**
@@ -1922,53 +1913,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         return source;
     }
-
-
-    public MaterialSource insertMaterialSource(User user, MaterialSource source, DomainDescriptor dd)
-    {
-        try
-        {
-            assert 0 == source.getRowId();
-            source = Table.insert(user, getTinfoMaterialSource(), source);
-            if (dd == null)
-            {
-                Domain domain = PropertyService.get().getDomain(source.getContainer(), source.getLSID());
-                if (domain == null)
-                {
-                    domain = PropertyService.get().createDomain(source.getContainer(), source.getLSID(), source.getName());
-                    try
-                    {
-                        domain.save(user);
-                    }
-                    catch (ChangePropertyDescriptorException e)
-                    {
-                        throw new UnexpectedException(e);
-                    }
-                }
-            }
-
-            getMaterialSourceCache().put(String.valueOf(source.getRowId()), source);
-            ExpSampleSet activeSampleSet = lookupActiveSampleSet(source.getContainer());
-            if (activeSampleSet == null)
-            {
-                setActiveSampleSet(source.getContainer(), new ExpSampleSetImpl(source));
-            }
-            return source;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-    }
-
-    public MaterialSource updateMaterialSource(User user, MaterialSource source) throws SQLException
-    {
-        assert 0 != source.getRowId();
-        source = Table.update(user, getTinfoMaterialSource(), source, source.getRowId(), null);
-        getMaterialSourceCache().put(String.valueOf(source.getRowId()), source);
-        return source;
-    }
-
+    
     public String getDefaultSampleSetLsid()
     {
         return new Lsid("SampleSource", "Default").toString();
@@ -2970,7 +2915,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public ExpSampleSet createSampleSet()
+    public ExpSampleSetImpl createSampleSet()
     {
         return new ExpSampleSetImpl(new MaterialSource());
     }

@@ -326,7 +326,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermission(ACL.PERM_ADMIN)
     public class ChooseAssayTypeAction extends FormViewAction<ProtocolIdForm>
     {
         public void validateCommand(ProtocolIdForm form, Errors errors)

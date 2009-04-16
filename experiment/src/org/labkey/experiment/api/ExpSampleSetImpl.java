@@ -20,6 +20,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
@@ -176,11 +177,6 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         _object.setMaterialLSIDPrefix(s);
     }
 
-    public void insert(User user)
-    {
-        ExperimentServiceImpl.get().insertMaterialSource(user, _object, null);
-    }
-
     public ExpMaterialImpl[] getSamples()
     {
         try
@@ -260,7 +256,32 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     public void save(User user)
     {
+        boolean isNew = _object.getRowId() == 0;
         save(user, ExperimentServiceImpl.get().getTinfoMaterialSource());
+        if (isNew)
+        {
+            Domain domain = PropertyService.get().getDomain(getContainer(), getLSID());
+            if (domain == null)
+            {
+                domain = PropertyService.get().createDomain(getContainer(), getLSID(), getName());
+                try
+                {
+                    domain.save(user);
+                }
+                catch (ChangePropertyDescriptorException e)
+                {
+                    throw new UnexpectedException(e);
+                }
+            }
+
+            ExpSampleSet activeSampleSet = ExperimentServiceImpl.get().lookupActiveSampleSet(getContainer());
+            if (activeSampleSet == null)
+            {
+                ExperimentServiceImpl.get().setActiveSampleSet(getContainer(), this);
+            }
+        }
+
+        ExperimentServiceImpl.get().getMaterialSourceCache().put(String.valueOf(getRowId()), _object);
     }
 
     public void delete(User user)

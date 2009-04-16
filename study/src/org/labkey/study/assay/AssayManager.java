@@ -32,17 +32,15 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.assay.query.AssayListPortalView;
 import org.labkey.study.assay.query.AssayListQueryView;
 import org.labkey.study.assay.query.AssaySchema;
-import org.springframework.web.servlet.mvc.Controller;
 
 import java.util.*;
 
@@ -199,34 +197,28 @@ public class AssayManager implements AssayService.Interface
         if (containers.size() == 1 && containers.iterator().next().equals(currentContainer))
         {
             // Create one import button for each provider, using the current container
-            for (Map.Entry<String, Class<? extends Controller>> entry : provider.getImportActions().entrySet())
-            {
-                ActionButton button = new ActionButton(PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(currentContainer, protocol, entry.getValue()), entry.getKey());
-                button.setActionType(ActionButton.Action.LINK);
-                result.add(button);
-            }
+            ActionButton button = new ActionButton(provider.getImportURL(currentContainer, protocol), AbstractAssayProvider.IMPORT_DATA_LINK_NAME);
+            button.setActionType(ActionButton.Action.LINK);
+            result.add(button);
         }
         else
         {
             // It's not just the current container, so fall through to show a submenu even if there's
             // only one item, in order to indicate that the user is going to be redirected elsewhere
-            for (Map.Entry<String, Class<? extends Controller>> entry : provider.getImportActions().entrySet())
+            MenuButton uploadButton = new MenuButton(AbstractAssayProvider.IMPORT_DATA_LINK_NAME);
+            // If the current folder is in our list, put it first.
+            if (containers.contains(currentContainer))
             {
-                MenuButton uploadButton = new MenuButton(entry.getKey());
-                // If the current folder is in our list, put it first.
-                if (containers.contains(currentContainer))
-                {
-                    containers.remove(currentContainer);
-                    ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(currentContainer, protocol, entry.getValue());
-                    uploadButton.addMenuItem("Current Folder (" + currentContainer.getPath() + ")", url);
-                }
-                for(Container container : containers)
-                {
-                    ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, entry.getValue());
-                    uploadButton.addMenuItem(container.getPath(), url);
-                }
-                result.add(uploadButton);
+                containers.remove(currentContainer);
+                ActionURL url = provider.getImportURL(currentContainer, protocol);
+                uploadButton.addMenuItem("Current Folder (" + currentContainer.getPath() + ")", url);
             }
+            for(Container container : containers)
+            {
+                ActionURL url = provider.getImportURL(container, protocol);
+                uploadButton.addMenuItem(container.getPath(), url);
+            }
+            result.add(uploadButton);
         }
 
         return result;

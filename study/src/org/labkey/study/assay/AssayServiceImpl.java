@@ -45,6 +45,7 @@ import org.labkey.api.study.assay.PlateBasedAssayProvider;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.common.util.Pair;
 import org.labkey.study.StudySchema;
@@ -88,6 +89,10 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
     public GWTProtocol getAssayTemplate(String providerName) throws SerializableException
     {
         AssayProvider provider = org.labkey.api.study.assay.AssayService.get().getProvider(providerName);
+        if (provider == null)
+        {
+            throw new NotFoundException("Could not find assay provider " + providerName);
+        }
         Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> template = provider.getAssayTemplate(getUser(), getContainer());
         return getAssayTemplate(provider, template, false);
     }
