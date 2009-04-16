@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.study.model.Site"%>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Study> me = (JspView<Study>) HttpView.currentView();
@@ -126,7 +127,7 @@
             <td>
                 <%= generateSubmitButton("Save")%>&nbsp;
                 <%= buttonImg("Done", "document.manageActors.nextPage.value=''; return true;")%>
-                <%= generateButton("Cancel", ActionURL.toPathString("Study", "manageStudy.view", study.getContainer()))%>&nbsp;
+                <%= generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, study.getContainer()))%>&nbsp;
                 <%= buttonImg("Change Order", "document.manageActors.nextPage.value='manageActorOrder'; return true;")%>
                 <input type="hidden" name="nextPage" value="manageActors">
             </td>

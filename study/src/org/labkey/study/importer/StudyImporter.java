@@ -47,15 +47,15 @@ public class StudyImporter
     private Container _c;
     private User _user;
     private ActionURL _url;
-    private String _path;
+    private File _root;
     private BindException _errors;
 
-    public StudyImporter(Container c, User user, ActionURL url, String path, BindException errors)
+    public StudyImporter(Container c, User user, ActionURL url, File root, BindException errors)
     {
         _c = c;
         _user = user;
         _url = url;
-        _path = path;
+        _root = root;
         _errors = errors;
     }
 
@@ -76,7 +76,7 @@ public class StudyImporter
 
     public boolean process() throws SQLException, ServletException, IOException, SAXException, ParserConfigurationException
     {
-        File file = new File(_path, "study.xml");
+        File file = new File(_root, "study.xml");
 
         _log.info("Loading study: " + file.getAbsolutePath());
 
@@ -108,7 +108,7 @@ public class StudyImporter
             if ("visits".equals(name))
             {
                 String source = DOMUtil.getAttributeValue(child, "source");
-                File visitMap = new File(_path, source);
+                File visitMap = new File(_root, source);
 
                 if (visitMap.exists())
                 {
@@ -117,7 +117,7 @@ public class StudyImporter
                     VisitMapImporter importer = new VisitMapImporter();
                     List<String> errorMsg = new LinkedList<String>();
 
-                    if (!importer.process(_user, getStudy(), content, errorMsg))
+                    if (!importer.process(_user, getStudy(), content, VisitMapImporter.Format.DataFax, errorMsg))
                     {
                         for (String error : errorMsg)
                             _errors.reject("uploadVisitMap", error);
@@ -179,7 +179,7 @@ public class StudyImporter
                     }
                 }
 
-                File schemas = new File(_path, schemaSource);
+                File schemas = new File(_root, schemaSource);
 
                 if (schemas.exists())
                 {
@@ -187,7 +187,7 @@ public class StudyImporter
                         return false;
                 }
 
-                File datasetFile = new File(_path, datasetSource);
+                File datasetFile = new File(_root, datasetSource);
 
                 if (datasetFile.exists())
                 {
@@ -200,7 +200,7 @@ public class StudyImporter
                 StudyController.updateRepositorySettings(_c, simple);
 
                 String source = DOMUtil.getAttributeValue(child, "source");
-                File specimenFile = new File(_path, source);
+                File specimenFile = new File(_root, source);
 
                 SpringSpecimenController.submitSpecimenBatch(_c, _user, _url, specimenFile);
             }

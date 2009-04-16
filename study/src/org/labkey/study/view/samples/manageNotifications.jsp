@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.query.QueryAction" %>
 <%@ page import="org.labkey.api.query.QueryParam" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
 <script type="text/javascript">
@@ -137,7 +138,7 @@ function setElementDisplayByCheckbox(checkbox, element)
             <th>&nbsp;</th>
             <td>
                 <%= generateSubmitButton("Save") %>&nbsp;
-                <%= generateButton("Cancel", ActionURL.toPathString("Study", "manageStudy", container))%>
+                <%= generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, container))%>
             </td>
         </tr>
     </table>

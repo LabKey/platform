@@ -24,6 +24,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
+import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.apache.commons.lang.math.NumberUtils;
@@ -73,7 +74,12 @@ public class ExportExcelReport extends RedirectReport
     public String getUrl(ViewContext context)
     {
         Container c = getContainer();
-        return ActionURL.toPathString("Study-Reports", "exportExcel", c) + "?reportId=" + getReportId();
+
+        ActionURL url = new ActionURL(ReportsController.ExportExcelAction.class, c);
+        url.addParameter("reportId", getReportId().toString());
+
+
+        return url.toString();
     }
 
 

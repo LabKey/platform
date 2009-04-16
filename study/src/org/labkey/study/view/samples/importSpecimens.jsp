@@ -21,6 +21,8 @@
 <%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController"%>
 <%@ page import="org.labkey.study.pipeline.SpecimenBatch"%>
 <%@ page import="java.util.List"%>
+<%@ page import="org.labkey.api.pipeline.PipelineStatusUrls" %>
+<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpringSpecimenController.ImportSpecimensBean> me =
@@ -75,13 +77,13 @@ Specimen archive <b><%= bean.getBatch().getDefinitionFile().getName() %></b> con
     %>
     <span class="labkey-error">WARNING: A file by this name appears to have been previously imported.</span><br>
     To import a file by this name, the old log file must be deleted.<br><br>
-    <a href="<%= ActionURL.toPathString("Pipeline-Status", "showList", bean.getContainer())%>">
+    <a href="<%= h(urlProvider(PipelineStatusUrls.class).urlBegin(bean.getContainer()))%>">
         Click here</a> to view previous pipeline runs.<br><br>
 
         <form action="importSpecimenData.post" method=POST>
             <input type="hidden" name="deleteLogfile" value="true">
             <input type="hidden" name="path" value="<%= h(bean.getPath())%>">
-            <%= generateSubmitButton("Delete logfile")%>&nbsp;<%= generateButton("Cancel", ActionURL.toPathString("Pipeline", "begin", bean.getContainer()))%>
+            <%= generateSubmitButton("Delete logfile")%>&nbsp;<%= generateButton("Cancel", urlProvider(PipelineUrls.class).urlBegin(bean.getContainer()))%>
         </form>
     <%
             }

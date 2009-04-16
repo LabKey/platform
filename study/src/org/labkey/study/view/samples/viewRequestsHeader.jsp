@@ -32,13 +32,13 @@
     if (context.getContainer().hasPermission(context.getUser(), ACL.PERM_ADMIN) || context.getUser().isAdministrator())
     {
 %>
-<%= textLink("Customize View", bean.getView().getCustomizeURL().getLocalURIString()) %>
+<%= textLink("Customize View", bean.getView().getCustomizeURL()) %>
 <%
     }
 %>
-<%= textLink("All User Requests", userLink.deleteParameter(SpringSpecimenController.ViewRequestsHeaderBean.PARAM_CREATEDBY).getLocalURIString()) %>
+<%= textLink("All User Requests", userLink.deleteParameter(SpringSpecimenController.ViewRequestsHeaderBean.PARAM_CREATEDBY)) %>
 <%= textLink("My Requests", userLink.replaceParameter(SpringSpecimenController.ViewRequestsHeaderBean.PARAM_CREATEDBY,
-        context.getUser().getDisplayName(context)).getLocalURIString()) %>
+        context.getUser().getDisplayName(context))) %>
 Filter by status: <select onChange="document.location=options[selectedIndex].value">
 <%
     ActionURL current = context.cloneActionURL();

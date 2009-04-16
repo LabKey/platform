@@ -15,24 +15,17 @@
  */
 package org.labkey.query;
 
-import org.labkey.api.query.FieldKey;
+import org.apache.log4j.Logger;
 import org.labkey.api.query.CustomView;
-import org.labkey.api.util.DOMUtil;
-import org.labkey.query.ModuleCustomView;
+import org.labkey.api.query.FieldKey;
 import org.labkey.common.util.Pair;
 import org.labkey.data.xml.queryCustomView.*;
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
-import org.apache.log4j.Logger;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.DocumentBuilder;
 import java.io.File;
-import java.util.Map;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /*
 * User: Dave
@@ -41,7 +34,7 @@ import java.util.HashMap;
 */
 
 /**
- * A bean that represents the a custom view definition stored
+ * A bean that represents a custom view definition stored
  * in a module resource file. This is separate from ModuleCustomView
  * because that class cannot be cached, as it must hold a reference
  * to the source QueryDef, which holds a reference to the QueryView,

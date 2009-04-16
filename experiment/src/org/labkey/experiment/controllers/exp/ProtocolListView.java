@@ -16,11 +16,10 @@
 
 package org.labkey.experiment.controllers.exp;
 
-import org.labkey.api.view.GridView;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.data.*;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.GridView;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.util.List;
@@ -38,7 +37,9 @@ public class ProtocolListView extends GridView
         List<ColumnInfo> cols = ti.getColumns("RowId,Name,ActionSequence,ProtocolDescription");
         getDataRegion().setColumns(cols);
         getDataRegion().getDisplayColumn(0).setVisible(false);
-        getDataRegion().getDisplayColumn(1).setURL(ActionURL.toPathString("Experiment", "protocolPredecessors", c) + "?ParentLSID=" + PageFlowUtil.encode(protocol.getLSID()) + "&Sequence=${ActionSequence}");
+        ActionURL pp = new ActionURL(ExperimentController.ProtocolPredecessorsAction.class, c);
+        pp.addParameter("ParentLSID", protocol.getLSID());
+        getDataRegion().getDisplayColumn(1).setURL(pp.toString() + "&Sequence=${ActionSequence}");
         getDataRegion().getDisplayColumn(2).setTextAlign("left");
         getDataRegion().setShadeAlternatingRows(true);
         getDataRegion().setShowBorders(true);

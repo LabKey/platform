@@ -231,5 +231,4 @@ public abstract class VisitManager
         Parameter startDateParam = new Parameter(_study.getStartDate(), Types.TIMESTAMP);
         return count + Table.execute(schema, sqlUpdateStartDates, new Object[] {startDateParam, _study.getContainer()});
     }
-
 }

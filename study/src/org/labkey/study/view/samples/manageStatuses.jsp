@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.study.SampleManager" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Study> me = (JspView<Study>) HttpView.currentView();
@@ -128,7 +129,7 @@ function showSystemRows(value)
                 <td colspan="3">
                     <%= generateSubmitButton("Save")%>&nbsp;
                     <%= buttonImg("Done", "document.manageStatuses.nextPage.value=''; return true;")%>
-                    <%= generateButton("Cancel", ActionURL.toPathString("Study", "manageStudy.view", study.getContainer()))%>&nbsp;
+                    <%= generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, study.getContainer()))%>&nbsp;
                     <%= buttonImg("Change Order", "document.manageStatuses.nextPage.value='manageStatusOrder'; return true;")%>
                     <input type="hidden" name="nextPage" value="manageStatuses">
                 </td>

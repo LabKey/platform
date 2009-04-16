@@ -144,6 +144,9 @@ class VisitMapRecord
 
     private Visit.Type getType(String str)
     {
+        if (null == str)
+            return null;
+
         str = str.trim();
         if (str.length() != 1)
             return null;

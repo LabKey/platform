@@ -384,8 +384,8 @@ public class SamplesController extends ViewController
     {
         JspView<SampleManager.RepositorySettings> view = new JspView<SampleManager.RepositorySettings>("/org/labkey/study/view/samples/manageRepositorySettings.jsp", SampleManager.getInstance().getRepositorySettings(getContainer()));
         return _renderInTemplate(view, "Manage Repository Settings",
-                new NavTree("Study", new ActionURL("Study", "begin.view", getContainer())),
-                new NavTree("Manage Study", new ActionURL("Study", "manageStudy.view", getContainer())));
+                new NavTree("Study", new ActionURL(StudyController.BeginAction.class, getContainer())),
+                new NavTree("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer())));
     }
 
     @Jpf.Action
@@ -396,7 +396,7 @@ public class SamplesController extends ViewController
         settings.setEnableRequests(!form.isSimple()); //We only expose one setting for now...
         SampleManager.getInstance().saveRepositorySettings(getContainer(), settings);
 
-        return new ViewForward("Study", "manageStudy", getContainer());
+        return new ViewForward(new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
     }
 
     private Map<Integer, SampleRequestActor> getIdToRequestActorMap(Container container) throws SQLException
@@ -636,7 +636,7 @@ public class SamplesController extends ViewController
                 if (form.getNextPage() != null && form.getNextPage().length() > 0)
                     return new ViewForward(getActionURL().relativeUrl(form.getNextPage(), null));
                 else
-                    return new ViewForward(ActionURL.toPathString("Study", "manageStudy", getContainer()));
+                    return new ViewForward(new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
             }
         }
         return displayManagementSubpage("manageActors", "Manage Actors", "specimenRequest");
@@ -779,7 +779,7 @@ public class SamplesController extends ViewController
             if (form.getNextPage() != null && form.getNextPage().length() > 0)
                 return new ViewForward(getActionURL().relativeUrl(form.getNextPage(), null));
             else
-                return new ViewForward(ActionURL.toPathString("Study", "manageStudy", getContainer()));
+                return new ViewForward(new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
         }
 
         return displayManagementSubpage("manageStatuses", "Manage Statuses", "specimenRequest");

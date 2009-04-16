@@ -19,15 +19,11 @@ package org.labkey.study.importer;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.security.User;
-import org.labkey.api.util.Filter;
-import org.labkey.common.tools.ColumnDescriptor;
-import org.labkey.common.tools.TabLoader;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
 import org.labkey.study.visitmanager.SequenceVisitManager;
 import org.labkey.study.visitmanager.VisitManager;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -38,7 +34,18 @@ import java.util.*;
  */
 public class VisitMapImporter
 {
-    public boolean process(User user, Study study, String content, List<String> errors) throws SQLException
+    public enum Format
+    {
+        DataFax {
+            public VisitMapReader getReader()
+            {
+                return new DataFaxVisitMapReader();
+            }};
+
+        abstract public VisitMapReader getReader();
+    }
+
+    public boolean process(User user, Study study, String content, Format format, List<String> errors) throws SQLException
     {
         if (content == null)
         {
@@ -49,7 +56,7 @@ public class VisitMapImporter
         List<VisitMapRecord> records;
         try
         {
-            records = getRecords(content);
+            records = format.getReader().getRecords(content);
         }
         catch (NumberFormatException x)
         {
@@ -179,48 +186,6 @@ public class VisitMapImporter
             Boolean isRequiredCurrent = e.getValue();
             if (isRequiredCurrent)
                 StudyManager.getInstance().updateVisitDataSetMapping(user, container, key.visitRowId, key.datasetId, VisitDataSetType.OPTIONAL);
-        }
-    }
-
-
-    List<VisitMapRecord> getRecords(String content)
-    {
-        String tsv = content.replace('|','\t');
-        try
-        {
-            TabLoader loader = new TabLoader(tsv, false);
-            //loader.setDelimiterCharacter('|');
-            loader.setColumns(new ColumnDescriptor[]
-            {
-                new ColumnDescriptor("sequenceRange", String.class),
-                new ColumnDescriptor("visitType", String.class),
-                new ColumnDescriptor("visitLabel", String.class),
-                new ColumnDescriptor("visitDatePlate", Integer.class),
-                new ColumnDescriptor("visitDateField", String.class),
-                new ColumnDescriptor("visitDueDay", Integer.class),
-                new ColumnDescriptor("visitDueAllowance", Integer.class),
-                new ColumnDescriptor("requiredPlates", String.class),
-                new ColumnDescriptor("optionalPlates", String.class),
-                new ColumnDescriptor("missedNotificationPlate", Integer.class),
-                new ColumnDescriptor("terminationWindow", String.class)
-            });
-            loader.setMapFilter(new Filter<Map<String, Object>>()
-            {
-                public boolean accept(Map<String, Object> map)
-                {
-                    return null != map.get("sequenceRange");
-                }
-            });
-
-            return loader.load(VisitMapRecord.class);
-        }
-        catch (IOException x)
-        {
-            throw new RuntimeException(x);
-        }
-        catch (Exception x)
-        {
-            throw new RuntimeException(x);
         }
     }
 

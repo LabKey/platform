@@ -34,7 +34,8 @@ public class ApplicationOutputGrid extends GridView
         List<ColumnInfo> cols = ti.getColumns("RowId,Name");
         getDataRegion().setColumns(cols);
         getDataRegion().getDisplayColumn(0).setVisible(false);
-        getDataRegion().getDisplayColumn(1).setURL(ActionURL.toPathString("Experiment", "resolveLSID", c) + "?lsid=${LSID}");
+        ActionURL resolve = new ActionURL(ExperimentController.ResolveLSIDAction.class, c);
+        getDataRegion().getDisplayColumn(1).setURL(resolve.toString() + "?lsid=${LSID}");
         getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition("SourceApplicationId", rowIdPA);

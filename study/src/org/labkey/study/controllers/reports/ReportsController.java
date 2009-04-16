@@ -110,7 +110,7 @@ public class ReportsController extends BaseStudyController
             if (_study == null)
                 return root.addChild("No Study In Folder");
             else if (getUser().isAdministrator())
-                return root.addChild("Manage Views", ActionURL.toPathString("Study-Reports", "manageReports.view", getContainer()));
+                return root.addChild("Manage Views", new ActionURL(ManageReportsAction.class, getContainer()));
             else
                 return root.addChild("Views");
         }
@@ -169,7 +169,7 @@ public class ReportsController extends BaseStudyController
                         view.delete(context.getUser(), context.getRequest());
                 }
             }
-            return HttpView.redirect(new ActionURL("Study-Reports", "manageReports.view", getContainer()));
+            return HttpView.redirect(new ActionURL(ManageReportsAction.class, getContainer()));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -2154,7 +2154,7 @@ public class ReportsController extends BaseStudyController
             root.addChild(study.getLabel(), url.relativeUrl("overview", null, "Study"));
 
             if (getUser().isAdministrator())
-                root.addChild("Manage Views", ActionURL.toPathString("Study-Reports", "manageReports.view", getContainer()));
+                root.addChild("Manage Views", new ActionURL(ManageReportsAction.class, getContainer()));
         }
         catch (Exception e)
         {
@@ -2170,7 +2170,7 @@ public class ReportsController extends BaseStudyController
             ActionURL url = getViewContext().getActionURL();
             root.addChild(study.getLabel(), url.relativeUrl("overview", null, "Study"));
             if (getUser().isAdministrator())
-                root.addChild("Manage Views", ActionURL.toPathString("Study-Reports", "manageReports.view", getContainer()));
+                root.addChild("Manage Views", new ActionURL(ManageReportsAction.class, getContainer()));
             
             Visit visit = null;
             if (visitRowId > 0)

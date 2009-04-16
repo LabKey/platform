@@ -66,14 +66,16 @@ public class GraphMoreGrid extends GridView
         List<ColumnInfo> cols = ti.getColumns("RowId,Name,LSID,RunId");
         getDataRegion().setColumns(cols);
         getDataRegion().getDisplayColumn(0).setVisible(false);
-        getDataRegion().getDisplayColumn(1).setURL(ActionURL.toPathString("Experiment", "resolveLSID", c) + "?lsid=${LSID}");
+        ActionURL resolve = new ActionURL(ExperimentController.ResolveLSIDAction.class, c);
+        getDataRegion().getDisplayColumn(1).setURL(resolve.toString() + "?lsid=${LSID}");
         getDataRegion().getDisplayColumn(2).setVisible(false);
         getDataRegion().getDisplayColumn(3).setVisible(false);
 
         getDataRegion().addDisplayColumn(new SimpleDisplayColumn("[Lineage Graph]"));
         getDataRegion().getDisplayColumn(4).setWidth("200px");
-        getDataRegion().getDisplayColumn(4).setURL(ActionURL.toPathString("Experiment", "showRunGraphDetail", c)
-                + runIdParam + "&detail=true&focus=" + objectType + "${rowId}");
+
+        ActionURL graphDetail = new ActionURL(ExperimentController.ShowRunGraphDetailAction.class, c);
+        getDataRegion().getDisplayColumn(4).setURL(graphDetail.toString() + runIdParam + "&detail=true&focus=" + objectType + "${rowId}");
 
         getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
         String[] inValues =  url.getParameter("rowId~in").split(",");

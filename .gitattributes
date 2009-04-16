@@ -1968,12 +1968,14 @@ study/src/org/labkey/study/designer/XMLSerializer.java -text
 study/src/org/labkey/study/designer/view/CreateRepositoryWizard.jsp -text
 study/src/org/labkey/study/designer/view/StudyDesignsWebPart.java -text
 study/src/org/labkey/study/designer/view/studyDesignSummary.jsp -text
+study/src/org/labkey/study/importer/DataFaxVisitMapReader.java -text
 study/src/org/labkey/study/importer/LDMSRecord.java -text
 study/src/org/labkey/study/importer/PipeDelimParser.java -text
 study/src/org/labkey/study/importer/SimpleSpecimenImporter.java -text
 study/src/org/labkey/study/importer/SpecimenImporter.java -text
 study/src/org/labkey/study/importer/StudyImporter.java -text
 study/src/org/labkey/study/importer/VisitMapImporter.java -text
+study/src/org/labkey/study/importer/VisitMapReader.java -text
 study/src/org/labkey/study/importer/VisitMapRecord.java -text
 study/src/org/labkey/study/model/AbstractStudyCachable.java -text
 study/src/org/labkey/study/model/AbstractStudyEntity.java -text
@@ -2255,6 +2257,9 @@ study/src/org/labkey/study/view/visitVisibility.jsp -text
 study/src/org/labkey/study/visitmanager/DateVisitManager.java -text
 study/src/org/labkey/study/visitmanager/SequenceVisitManager.java -text
 study/src/org/labkey/study/visitmanager/VisitManager.java -text
+study/src/org/labkey/study/writer/DataFaxVisitMapWriter.java -text
+study/src/org/labkey/study/writer/StudyWriter.java -text
+study/src/org/labkey/study/writer/VisitMapWriter.java -text
 study/webapp/sampleRequest.js -text
 study/webapp/study/assay/SampleLookupTemplate.xls -text
 timeline/Timeline.iml -text

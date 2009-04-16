@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.study.SampleManager"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SamplesController.ManageRequestInputsBean> me = (JspView<SamplesController.ManageRequestInputsBean>) HttpView.currentView();
@@ -189,5 +190,5 @@
     </table>
     <%= buttonImg("Add New Input", "return addRow()")%>
     <%= generateSubmitButton("Save")%>
-    <%= generateButton("Cancel", ActionURL.toPathString("Study", "manageStudy", bean.getContainer()))%>
+    <%= generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, bean.getContainer()))%>
 </form>

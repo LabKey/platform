@@ -203,7 +203,7 @@ public class SpecimenUtils
         if (getViewContext().hasPermission(ACL.PERM_ADMIN))
         {
             ActionButton upload = new ActionButton("button", "Import Specimens");
-            upload.setURL(ActionURL.toPathString("Study-Samples", "showUploadSpecimens", getContainer()));
+            upload.setURL(new ActionURL("Study-Samples", "showUploadSpecimens", getContainer()));
             buttons.add(upload);
         }
 

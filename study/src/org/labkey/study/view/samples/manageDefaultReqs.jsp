@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController"%>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<org.labkey.study.controllers.samples.SpringSpecimenController.ManageReqsBean> me = (JspView<SpringSpecimenController.ManageReqsBean>) HttpView.currentView();
@@ -241,4 +242,4 @@ function verifyNewRequirement(prefix)
     </table>
     <input type="hidden" name="nextPage" value="manageDefaultReqs">
 </form>
-<%= textLink("manage study", ActionURL.toPathString("Study", "manageStudy", me.getViewContext().getContainer())) %>
+<%= textLink("manage study", new ActionURL(StudyController.ManageStudyAction.class, me.getViewContext().getContainer())) %>

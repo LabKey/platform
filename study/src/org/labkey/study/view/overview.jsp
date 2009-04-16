@@ -28,6 +28,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.study.model.QCStateSet" %>
 <%@ page import="org.labkey.study.controllers.BaseStudyController" %>
+<%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyController.OverviewBean> me = (JspView<StudyController.OverviewBean>) HttpView.currentView();
@@ -66,8 +67,8 @@
         basePage += "QCState=" + selectedQCStateSet.getFormValue() + "&";
 
 %><%= bean.canManage ? textLink("Manage Study", "manageStudy.view") : ""%>
-&nbsp;<%= textLink("Views", ActionURL.toPathString("Study-Reports", "begin", container))%>&nbsp;
-&nbsp;<%= textLink("Specimens", ActionURL.toPathString("Study-Samples", "begin", container))%>&nbsp;
+&nbsp;<%= textLink("Views", new ActionURL(ReportsController.BeginAction.class, container))%>&nbsp;
+&nbsp;<%= textLink("Specimens", new ActionURL("Study-Samples", "begin", container))%>&nbsp;
 <%
     boolean hasHiddenData = false;
     for (int i = 0; i < visits.length && !hasHiddenData; i++)

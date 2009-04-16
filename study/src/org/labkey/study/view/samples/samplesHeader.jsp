@@ -23,6 +23,7 @@
 <%@ page import="java.util.Iterator" %>
 <%@ page import="org.labkey.common.util.Pair" %>
 <%@ page import="org.labkey.study.SampleManager" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <script>LABKEY.requiresScript('util.js')</script>
 <script>LABKEY.requiresClientAPI();</script>
@@ -45,7 +46,7 @@
     {
 %>
 <%= this.textLink("Manage Study",
-        ActionURL.toPathString("Study", "manageStudy.view", bean.getViewContext().getContainer()))%>&nbsp;
+        new ActionURL(StudyController.ManageStudyAction.class, bean.getViewContext().getContainer()))%>&nbsp;
 <%
     }
 %>

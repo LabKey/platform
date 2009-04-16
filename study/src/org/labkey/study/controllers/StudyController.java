@@ -66,6 +66,7 @@ import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.common.util.Pair;
 import org.labkey.study.*;
+import org.labkey.study.writer.StudyWriter;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
@@ -931,7 +932,7 @@ public class StudyController extends BaseStudyController
         {
             VisitMapImporter importer = new VisitMapImporter();
             List<String> errorMsg = new LinkedList<String>();
-            if (!importer.process(getUser(), getStudy(), form.getContent(), errorMsg))
+            if (!importer.process(getUser(), getStudy(), form.getContent(), VisitMapImporter.Format.DataFax, errorMsg))
             {
                 for (String error : errorMsg)
                     errors.reject("uploadVisitMap", error);
@@ -948,60 +949,6 @@ public class StudyController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Create New Study: Visit Map Upload");
-        }
-    }
-
-    @RequiresPermission(ACL.PERM_ADMIN)
-    public class ExportVisitMapAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            Study study = getStudy();
-
-            getViewContext().getResponse().setContentType("text/tsv");
-            writeVisitMap(study, getViewContext().getResponse().getWriter());
-            return null;
-        }
-
-        private void writeVisitMap(Study study, PrintWriter out)
-        {
-            Visit[] visits = study.getVisits();
-
-            for (Visit v : visits)
-            {
-                List<VisitDataSet> vds = v.getVisitDataSets();
-
-                if (v.getSequenceNumMin() == v.getSequenceNumMax())
-                    out.printf("%f\t%c\t%s\t\t\t\t\t", v.getSequenceNumMin(), v.getTypeCode(), v.getLabel());
-                else
-                    out.printf("%f-%f\t%c\t%s\t\t\t\t\t", v.getSequenceNumMin(), v.getSequenceNumMax(), v.getTypeCode(), v.getLabel());
-                String s = "";
-                for (VisitDataSet vd : vds)
-                {
-                    if (vd.isRequired())
-                    {
-                        out.print(s);
-                        out.print(vd.getDataSetId());
-                        s = " ";
-                    }
-                }
-                out.print("\t");
-                for (VisitDataSet vd : vds)
-                {
-                    if (vd.isRequired())
-                    {
-                        out.print(s);
-                        out.print(vd.getDataSetId());
-                        s = " ";
-                    }
-                }
-                out.println("\t\t");
-            }
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
         }
     }
 
@@ -3683,16 +3630,33 @@ public class StudyController extends BaseStudyController
         Container c = getContainer();
         User user = getUser();
         ActionURL url = getViewContext().getActionURL();
+        File rootDir = PipelineService.get().findPipelineRoot(c).getRootPath();
 
-        StudyImporter importer = new StudyImporter(c, user, url, "c:/labkey/sampleData/study/import", errors);
+        StudyImporter importer = new StudyImporter(c, user, url, rootDir, errors);
         return importer.process();
     }
 
 
     // TODO: Read or Admin permissions??
     @RequiresPermission(ACL.PERM_READ)
-    public class ExportStudyAction extends FormHandlerAction
+    public class ExportStudyAction extends FormViewAction
     {
+        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
+        {
+            File rootDir = PipelineService.get().findPipelineRoot(getContainer()).getRootPath();
+            File exportDir = new File(rootDir, "export");
+
+            StudyWriter writer = new StudyWriter(getStudy(), getUser(), exportDir);
+            writer.write();
+
+            return new HtmlView("Study was successfully exported to " + exportDir.getAbsolutePath());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+
         public void validateCommand(Object target, Errors errors)
         {
         }
