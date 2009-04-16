@@ -10,9 +10,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 
 /**
  * Copyright (c) 2008-2009 LabKey Corporation
@@ -37,6 +35,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
     private Collection<Row> _rows;
     protected String _title;
     private Visit[] _visits;
+    private Visit[] _nonEmptyVisits;
     protected Container _container;
     protected SimpleFilter _filter;
     private SpecimenVisitReportParameters _parameters;
@@ -44,6 +43,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
     private boolean _viewParticipantCount = false;
     private boolean _viewVolume = false;
     private boolean _viewPtidList = false;
+    private Map<Double, Double> _nonEmptyColumns = new HashMap<Double, Double>();
 
     public SpecimenVisitReport(String titlePrefix, Visit[] visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
@@ -86,10 +86,33 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
 
     public Visit[] getVisits()
     {
-        return _visits;
+        // ensure rows and non-empty columns have been generated
+        getRows();
+        if (!_parameters.isHideEmptyColumns())
+            return _visits;
+        else
+        {
+            if (_nonEmptyVisits == null)
+            {
+                List<Visit> visits = new ArrayList<Visit>();
+                for (Visit visit : _visits)
+                {
+                    if (_nonEmptyColumns.containsKey(visit.getSequenceNumMin()))
+                        visits.add(visit);
+                }
+                _nonEmptyVisits = visits.toArray(new Visit[0]);
+            }
+            return _nonEmptyVisits;
+        }
     }
 
-   protected abstract String getCellHtml(Visit visit, CELLDATA summary);
+    protected void setVisitAsNonEmpty(Double sequenceNum)
+    {
+        if (!_nonEmptyColumns.containsKey(sequenceNum))
+            _nonEmptyColumns.put(sequenceNum, sequenceNum);
+    }
+
+    protected abstract String getCellHtml(Visit visit, CELLDATA summary);
 
     protected abstract String[] getCellExcelText(Visit visit, CELLDATA summary);
 

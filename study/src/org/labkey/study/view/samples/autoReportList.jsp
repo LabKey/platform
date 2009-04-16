@@ -168,6 +168,7 @@
                         <td>
                             <input type="checkbox" name="viewVialCount" <%= !atLeastOneChecked || factory.isViewVialCount() ? "CHECKED" : "" %>> Vial Counts<br>
                             <input type="checkbox" name="viewVolume" <%= factory.isViewVolume() ? "CHECKED" : "" %>> Total Volume<br>
+                            <input type="checkbox" name="hideEmptyColumns" <%= factory.isHideEmptyColumns() ? "CHECKED" : "" %>> Hide Empty Columns<br>
                 <%
                     if (factory.allowsParticipantAggregegates())
                     {

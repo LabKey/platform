@@ -58,6 +58,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
                     row = new Row(titleHierarchy);
                     rows.put(key, row);
                 }
+                setVisitAsNonEmpty(count.getSequenceNum());
                 row.add(count);
             }
             return rows.values();

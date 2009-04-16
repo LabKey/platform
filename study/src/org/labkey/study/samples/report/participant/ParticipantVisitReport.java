@@ -9,9 +9,7 @@ import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.view.ActionURL;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.sql.SQLException;
 
 /**
@@ -65,6 +63,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SampleManager.Su
                     row = new Row(titleHierarchy);
                     rows.put(key, row);
                 }
+                setVisitAsNonEmpty(count.getSequenceNum());
                 row.add(count);
             }
             return rows.values();

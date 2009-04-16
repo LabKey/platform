@@ -47,7 +47,8 @@ public abstract class SpecimenVisitReportParameters extends ViewFormData
         viewVolume,
         baseCustomViewName,
         viewPtidList,
-        typeLevel
+        typeLevel,
+        hideEmptyColumns
     }
 
     public enum Status
@@ -78,6 +79,7 @@ public abstract class SpecimenVisitReportParameters extends ViewFormData
     private boolean _viewParticipantCount = false;
     private boolean _viewVolume = false;
     private boolean _viewPtidList = false;
+    private boolean _hideEmptyColumns;
     private boolean _excelExport;
     private List<? extends SpecimenVisitReport> _reports;
     private SampleManager.SpecimenTypeLevel _typeLevel = SampleManager.SpecimenTypeLevel.Derivative;
@@ -173,6 +175,16 @@ public abstract class SpecimenVisitReportParameters extends ViewFormData
     public void setViewPtidList(boolean viewPtidList)
     {
         _viewPtidList = viewPtidList;
+    }
+
+    public boolean isHideEmptyColumns()
+    {
+        return _hideEmptyColumns;
+    }
+
+    public void setHideEmptyColumns(boolean hideEmptyColumns)
+    {
+        _hideEmptyColumns = hideEmptyColumns;
     }
 
     public boolean isExcelExport()
