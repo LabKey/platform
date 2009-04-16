@@ -250,7 +250,7 @@ public class AdminController extends SpringActionController
             return url;
         }
 
-        public ActionURL getProjectSetginsMenuURL(Container c)
+        public ActionURL getProjectSettingsMenuURL(Container c)
         {
             ActionURL url = getProjectSettingsURL(c);
             url.addParameter("tabId", "menubar");
@@ -645,7 +645,7 @@ public class AdminController extends SpringActionController
                 return handlePropertiesPost(c, form, errors);
         }
 
-        public boolean handlePropertiesPost(Container c, ProjectSettingsForm form, BindException errors) throws Exception
+        private boolean handlePropertiesPost(Container c, ProjectSettingsForm form, BindException errors) throws Exception
         {
             WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
 
@@ -718,7 +718,7 @@ public class AdminController extends SpringActionController
             return true;
         }
 
-        public boolean handleResourcesPost(Container c, BindException errors) throws Exception
+        private boolean handleResourcesPost(Container c, BindException errors) throws Exception
         {
             Map<String, MultipartFile> fileMap = getFileMap();
 
@@ -773,7 +773,7 @@ public class AdminController extends SpringActionController
             return true;
         }
 
-        public boolean handleMenuPost(Container c, ProjectSettingsForm form, BindException errors) throws SQLException
+        private boolean handleMenuPost(Container c, ProjectSettingsForm form, BindException errors) throws SQLException
         {
             WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
 
@@ -789,7 +789,7 @@ public class AdminController extends SpringActionController
             if (form.isResourcesTab())
                 return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
             else if (form.isMenuTab())
-                return new AdminUrlsImpl().getProjectSetginsMenuURL(getContainer());
+                return new AdminUrlsImpl().getProjectSettingsMenuURL(getContainer());
             else
                 return new AdminUrlsImpl().getProjectSettingsURL(getContainer());
         }
@@ -808,6 +808,45 @@ public class AdminController extends SpringActionController
         }
     }
 
+    private static class FolderSettingsTabStrip extends TabStripView
+    {
+        private FolderSettingsForm _form;
+        private BindException _errors;
+
+        private FolderSettingsTabStrip(FolderSettingsForm form, BindException errors)
+        {
+            _form = form;
+            _errors = errors;
+        }
+
+        public List<NavTree> getTabList()
+        {
+            ActionURL url = new AdminUrlsImpl().getFolderSettingsURL(getViewContext().getContainer());
+            List<NavTree> tabs = new ArrayList<NavTree>(2);
+
+            tabs.add(new TabInfo("Folder Type", "folderType", url));
+            tabs.add(new TabInfo("QC Values", "qcValues", url));
+
+            return tabs;
+        }
+
+        public HttpView getTabView(String tabId) throws Exception
+        {
+            if ("folderType".equals(tabId))
+            {
+                return new JspView<FolderSettingsForm>("/org/labkey/core/admin/folderType.jsp", _form, _errors);
+            }
+            else if ("qcValues".equals(tabId))
+            {
+                return new JspView<FolderSettingsForm>("/org/labkey/core/admin/qcValues.jsp", _form, _errors);
+            }
+            else
+            {
+                throw new NotFoundException("Unknown tab id");
+            }
+
+        }
+    }
 
     private static class ProjectSettingsTabStrip extends TabStripView
     {
@@ -3687,11 +3726,11 @@ public class AdminController extends SpringActionController
 
     @RequiresPermission(ACL.PERM_ADMIN)
     @ActionNames("folderSettings, customize")
-    public class FolderSettingsAction extends FormViewAction<CustomizeFolderForm>
+    public class FolderSettingsAction extends FormViewAction<FolderSettingsForm>
     {
         private ActionURL _successURL;
 
-        public void validateCommand(CustomizeFolderForm form, Errors errors)
+        public void validateCommand(FolderSettingsForm form, Errors errors)
         {
             boolean fEmpty = true;
             for (String module : form.activeModules)
@@ -3704,20 +3743,33 @@ public class AdminController extends SpringActionController
             }
             if (fEmpty && "None".equals(form.getFolderType()))
             {
-                errors.reject(ERROR_MSG, "Error: Please select at least one tab to display.");
+                errors.reject(ERROR_MSG, "Error: Please select at least one module to display.");
             }
         }
 
-        public ModelAndView getView(CustomizeFolderForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(FolderSettingsForm form, boolean reshow, BindException errors) throws Exception
         {
             Container c = getContainer();
             if (c.isRoot())
                 HttpView.throwNotFound();
 
-            return new JspView<CustomizeFolderForm>("/org/labkey/core/admin/customizeFolder.jsp", form, errors);
+            return new FolderSettingsTabStrip(form, errors);
         }
 
-        public boolean handlePost(CustomizeFolderForm form, BindException errors) throws Exception
+        public boolean handlePost(FolderSettingsForm form, BindException errors) throws Exception
+        {
+            if (form.isQcValuesTab())
+                return handleQcValuesPost(form, errors);
+            else
+                return handleFolderTypePost(form, errors);
+        }
+
+        private boolean handleQcValuesPost(FolderSettingsForm form, BindException errors)
+        {
+            throw new UnsupportedOperationException("NYI");
+        }
+
+        private boolean handleFolderTypePost(FolderSettingsForm form, BindException errors) throws SQLException
         {
             Container c = getContainer();
             if (c.isRoot())
@@ -3762,7 +3814,7 @@ public class AdminController extends SpringActionController
             return true;
         }
 
-        public ActionURL getSuccessURL(CustomizeFolderForm form)
+        public ActionURL getSuccessURL(FolderSettingsForm form)
         {
             return _successURL;
         }
@@ -3775,12 +3827,13 @@ public class AdminController extends SpringActionController
     }
 
 
-    public static class CustomizeFolderForm
+    public static class FolderSettingsForm
     {
         private String[] activeModules = new String[ModuleLoader.getInstance().getModules().size()];
         private String defaultModule;
         private String folderType;
         private boolean wizard;
+        private String tabId;
 
         public String[] getActiveModules()
         {
@@ -3820,6 +3873,26 @@ public class AdminController extends SpringActionController
         public void setWizard(boolean wizard)
         {
             this.wizard = wizard;
+        }
+
+        public void setTabId(String tabId)
+        {
+            this.tabId = tabId;
+        }
+
+        public String getTabId()
+        {
+            return tabId;
+        }
+
+        public boolean isFolderTypeTab()
+        {
+            return "folderType".equals(getTabId());
+        }
+
+        public boolean isQcValuesTab()
+        {
+            return "qcValues".equals(getTabId());
         }
     }
 

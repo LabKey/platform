@@ -36,7 +36,7 @@ var defaultModules = new Object();
 <% //Generate javascript objects...
 final ViewContext context = HttpView.currentContext();
 Container c = context.getContainer();
-AdminController.CustomizeFolderForm form = (AdminController.CustomizeFolderForm) HttpView.currentModel();
+AdminController.FolderSettingsForm form = (AdminController.FolderSettingsForm) HttpView.currentModel();
 Collection<FolderType> allFolderTypes = ModuleLoader.getInstance().getFolderTypes();
 List<Module> allModules = new ArrayList<Module>(ModuleLoader.getInstance().getModules());
 Collections.sort(allModules, new Comparator<Module>()
