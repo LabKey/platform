@@ -21,7 +21,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -31,11 +30,11 @@ import org.labkey.api.view.ViewContext;
  * Date: Apr 9, 2007
  * Time: 9:51:12 AM
  */
-public class ProjectAdminMenu extends NavTreeMenu
+public class FolderAdminMenu extends NavTreeMenu
 {
-    public ProjectAdminMenu(ViewContext context)
+    public FolderAdminMenu(ViewContext context)
     {
-        super(context, "projectAdmin", "Manage Project", true, getNavTree(context));
+        super(context, "folderAdmin", "Manage Folder", true, getNavTree(context));
     }
 
     public static NavTree[] getNavTree(ViewContext context)
@@ -43,9 +42,9 @@ public class ProjectAdminMenu extends NavTreeMenu
         Container c = context.getContainer();
 
         NavTree[] admin = new NavTree[3];
-        admin[0] = new NavTree("Project Permissions", PageFlowUtil.urlProvider(SecurityUrls.class).getBeginURL(c.getProject()));
-        admin[1] = new NavTree("Project Settings", PageFlowUtil.urlProvider(AdminUrls.class).getProjectSettingsURL(c));
-        admin[2] = new NavTree("Project Users", PageFlowUtil.urlProvider(UserUrls.class).getProjectMembersURL(c));
+        admin[0] = new NavTree("Folder Permissions", PageFlowUtil.urlProvider(SecurityUrls.class).getBeginURL(c));
+        admin[1] = new NavTree("Folder Settings", PageFlowUtil.urlProvider(AdminUrls.class).getFolderSettingsURL(c));
+        admin[2] = new NavTree("Manage Folders", PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(c));
         return admin;
     }
 

@@ -17,21 +17,22 @@
 package org.labkey.api.view;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.module.Module;
 import org.labkey.api.module.FolderType;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.User;
+import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.FolderDisplayMode;
+import org.labkey.api.view.menu.FolderAdminMenu;
+import org.labkey.api.view.menu.MenuService;
 import org.labkey.api.view.menu.ProjectAdminMenu;
 import org.labkey.api.view.menu.SiteAdminMenu;
-import org.labkey.api.view.menu.MenuService;
-import org.labkey.api.util.FolderDisplayMode;
-import org.labkey.api.settings.LookAndFeelProperties;
 
+import java.io.PrintWriter;
+import java.util.Comparator;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.Comparator;
-import java.io.PrintWriter;
 
 /**
  * Created by IntelliJ IDEA.
@@ -85,6 +86,10 @@ public class PopupAdminView extends PopupMenuView
             NavTree projectAdmin = new NavTree("Manage Project");
             projectAdmin.addChildren(ProjectAdminMenu.getNavTree(context));
             navTree.addChild(projectAdmin);
+
+            NavTree folderAdmin = new NavTree("Manage Folder");
+            folderAdmin.addChildren(FolderAdminMenu.getNavTree(context));
+            navTree.addChild(folderAdmin);
 
             c.getFolderType().addManageLinks(navTree, c);
 
