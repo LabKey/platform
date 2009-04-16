@@ -68,23 +68,22 @@ Ext.apply(Ext.QuickTips.getQuickTip(), {
 &lt;div id='grid'/&gt;
  */
 LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
-    lookups: true,
-    pageSize: 20,
-    editable: false,
-    enableFilters: false,
-    autoSave: true,
-    loadingCaption: "[loading...]",
-    lookupNullCaption : "[none]",
-    selModel: new Ext.grid.CheckboxSelectionModel({
-        moveEditorOnEnter: false
-    }),
-    viewConfig: {forceFit: true},
-    id: Ext.id(undefined, 'labkey-ext-grid'),
-    loadMask: true,
-    colModel: new Ext.grid.ColumnModel([]),
-    
     initComponent : function() {
-
+        //set config defaults
+        Ext.applyIf(this, {
+            lookups: true,
+            pageSize: 20,
+            editable: false,
+            enableFilters: false,
+            autoSave: true,
+            loadingCaption: "[loading...]",
+            lookupNullCaption: "[none]",
+            viewConfig: {forceFit: true},
+            id: Ext.id(undefined, "labkey-ext-grid"),
+            loadMask: true,
+            colModel: new Ext.grid.ColumnModel([]),
+            selModel: new Ext.grid.CheckboxSelectionModel({moveEditorOnEnter: false})
+        });
         this.setupDefaultPanelConfig();
 
         LABKEY.ext.EditorGridPanel.superclass.initComponent.call(this, arguments);
