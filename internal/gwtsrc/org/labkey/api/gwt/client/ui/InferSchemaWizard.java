@@ -29,8 +29,8 @@ public class InferSchemaWizard extends DialogBox
     private final PropertiesEditor propertiesEditor;
 
     private final ImageButton submitButton;
-    private RadioButtonWithValue fileButton;
-    private RadioButtonWithValue tsvButton;
+    private RadioButton fileButton;
+    private RadioButton tsvButton;
     private TextArea tsvTextArea;
     private FileUploadWithListeners upload;
     private HTML statusLabel;
@@ -52,9 +52,9 @@ public class InferSchemaWizard extends DialogBox
         VerticalPanel panel = new VerticalPanel();
         form.setWidget(panel);
 
-        fileButton = new RadioButtonWithValue("source", "file");
+        fileButton = new RadioButton("source", "file");
         fileButton.setText("File:");
-        fileButton.setValue("file");
+        fileButton.setFormValue("file");
         fileButton.setChecked(true);
         panel.add(fileButton);
 
@@ -69,9 +69,9 @@ public class InferSchemaWizard extends DialogBox
         });
         panel.add(upload);
 
-        tsvButton = new RadioButtonWithValue("source", "tsv");
+        tsvButton = new RadioButton("source", "tsv");
         tsvButton.setText("Tab-delimited data:");
-        tsvButton.setValue("tsv");
+        tsvButton.setFormValue("tsv");
         panel.add(tsvButton);
         tsvTextArea = new TextArea();
         tsvTextArea.setName("tsvText");
