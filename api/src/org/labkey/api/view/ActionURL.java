@@ -131,13 +131,6 @@ public class ActionURL extends URLHelper implements Cloneable
         this(SpringActionController.getPageFlowName(actionClass), SpringActionController.getActionName(actionClass), container);
     }
 
-    @Deprecated
-    public static String toPathString(String pageFlow, String action, Container c)
-    {
-        return toPathString(pageFlow, action, c.getPath());
-    }
-
-
     private static String toPathString(String pageFlow, String action, String extraPath)
     {
         String[] parts = new String[4];

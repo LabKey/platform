@@ -74,14 +74,14 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
         _writeableProperties = new HashSet<String>(origDescriptors.length * 2);
         _readableProperties = new HashSet<String>(origDescriptors.length * 2);
 
-        for (int i = 0; i < origDescriptors.length; i++)
+        for (PropertyDescriptor origDescriptor : origDescriptors)
         {
-            String name = origDescriptors[i].getName();
+            String name = origDescriptor.getName();
             if ("class".equals(name))
                 continue;
             if (PropertyUtils.isReadable(bean, name))
             {
-                Method readMethod = origDescriptors[i].getReadMethod();
+                Method readMethod = origDescriptor.getReadMethod();
                 if (readMethod != null && readMethod.getParameterTypes().length == 0)
                     _readableProperties.add(name);
             }
@@ -104,13 +104,13 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
     }
 
 
-    public K fromMap(Map<String,? extends Object> m)
+    public K fromMap(Map<String, ?> m)
     {
         try
         {
-        K bean = _class.newInstance();
-        fromMap(bean, m);
-        return bean;
+            K bean = _class.newInstance();
+            fromMap(bean, m);
+            return bean;
         }
         catch (IllegalAccessException x)
         {
@@ -125,7 +125,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
     }
     
 
-    public void fromMap(K bean, Map<String, ? extends Object> m)
+    public void fromMap(K bean, Map<String, ?> m)
     {
         for (String prop : _writeableProperties)
         {
@@ -161,6 +161,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
         {
             if (null == m)
                 m = new CaseInsensitiveHashMap<Object>();
+
             for (String name : _readableProperties)
             {
                 try

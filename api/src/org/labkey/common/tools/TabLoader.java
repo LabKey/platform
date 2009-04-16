@@ -70,6 +70,7 @@ public class TabLoader extends DataLoader
     protected boolean _parseQuotes = false;
     protected boolean _throwOnErrors = false;
     private Filter<Map<String, Object>> _mapFilter;
+    private Filter _beanFilter = null;
 
 
     public TabLoader(File inputFile) throws IOException
@@ -281,22 +282,9 @@ public class TabLoader extends DataLoader
         _mapFilter = mapFilter;
     }
 
-/*  TODO: Generify entire TabLoader and uncomment this...
-    public void setBeanFilter(Filter<K> beanFilter)
+    public void setBeanFilter(Filter beanFilter)
     {
         _beanFilter = beanFilter;
-    }
-*/
-    // TODO: ...and remove this...
-    public <T> CloseableIterator<T> iterator(Class<T> clazz, Filter<T> filter) throws IOException
-    {
-        return new CloseableFilterIterator<T>(iterator(clazz), filter);
-    }
-
-    // TODO: ...and remove this.
-    public <T> List<T> load(Class<T> clazz, Filter<T> filter) throws IOException
-    {
-        return load(iterator(clazz, filter));
     }
 
     public CloseableIterator<Map<String, Object>> iterator() throws IOException
@@ -311,8 +299,10 @@ public class TabLoader extends DataLoader
 
     public <T> CloseableIterator<T> iterator(Class<T> clazz) throws IOException
     {
-        // TODO: check for _beanFilter here
-        return new BeanIterator<T>(iterator(), clazz);
+        if (null == _beanFilter)
+            return new BeanIterator<T>(iterator(), clazz);
+        else
+            return new CloseableFilterIterator<T>(new BeanIterator<T>(iterator(), clazz), (Filter<T>)_beanFilter);
     }
 
     public <T> List<T> load(Class<T> clazz) throws IOException
@@ -443,9 +433,11 @@ public class TabLoader extends DataLoader
 
         public boolean containsKey(Object o)
         {
-            if (o instanceof String && _lowerCaseHeaders)
-                o = ((String) o).toLowerCase();
-            Integer index = _colMap.get(o);
+            if (!(o instanceof String))
+                throw new IllegalStateException();
+
+            String key = _lowerCaseHeaders ? ((String)o).toLowerCase() : (String)o;
+            Integer index = _colMap.get(key);
             return null != index && index < _values.length;
         }
 
@@ -461,7 +453,7 @@ public class TabLoader extends DataLoader
             Integer col = _colMap.get(o);
             if (null == col)
                 return null;
-            int icol = col;
+            int icol = col.intValue();
             if (icol < 0 || icol >= _values.length)
                 return null;
 

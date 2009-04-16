@@ -19,15 +19,14 @@ package org.labkey.api.reports.report;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.Pair;
 
 import java.io.File;
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -79,7 +78,7 @@ public abstract class AbstractScriptRunner implements RScriptRunner
         ResultSetMetaData md = rs.getMetaData();
         ColumnInfo cols[] = new ColumnInfo[md.getColumnCount()];
 
-        List<DisplayColumn> dataColumns = new ArrayList();
+        List<DisplayColumn> dataColumns = new ArrayList<DisplayColumn>();
         for (int i = 0; i < cols.length; i++)
         {
             int sqlColumn = i + 1;
@@ -98,11 +97,11 @@ public abstract class AbstractScriptRunner implements RScriptRunner
         labkey.append("labkey.data <- read.table(\"${input_data}\", header=TRUE, sep=\"\\t\", quote=\"\", comment.char=\"\")\n" +
             "labkey.url <- function (controller, action, list){paste(labkey.url.base,controller,labkey.url.path,action,\".view?\",paste(names(list),list,sep=\"=\",collapse=\"&\"),sep=\"\")}\n" +
             "labkey.resolveLSID <- function(lsid){paste(labkey.url.base,\"experiment/resolveLSID.view?lsid=\",lsid,sep=\"\");}\n");
-        labkey.append("labkey.user.email=\"" + _context.getUser().getEmail() + "\"\n");
+        labkey.append("labkey.user.email=\"").append(_context.getUser().getEmail()).append("\"\n");
 
         ActionURL url = _context.getActionURL();
-        labkey.append("labkey.url.path=\"" + url.getExtraPath() + "/\"\n");
-        labkey.append("labkey.url.base=\"" + url.getBaseServerURI() + _context.getContextPath() + "/\"\n");
+        labkey.append("labkey.url.path=\"").append(url.getExtraPath()).append("/\"\n");
+        labkey.append("labkey.url.base=\"").append(url.getBaseServerURI()).append(_context.getContextPath()).append("/\"\n");
 
         // url parameters
         Pair<String, String>[] params = url.getParameters();
