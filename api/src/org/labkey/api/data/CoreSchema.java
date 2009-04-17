@@ -127,4 +127,9 @@ public class CoreSchema
     {
         return getSchema().getTable("MappedDirectories");
     }
+
+    public TableInfo getTableInfoQcValues()
+    {
+        return getSchema().getTable("QcValues");
+    }
 }
