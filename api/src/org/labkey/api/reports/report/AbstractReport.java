@@ -19,11 +19,17 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.Pair;
+import org.w3c.dom.Document;
+import org.apache.xml.serialize.XMLSerializer;
+import org.apache.xml.serialize.OutputFormat;
+
+import java.io.*;
 
 /**
  * User: migra
@@ -105,6 +111,51 @@ public abstract class AbstractReport implements Report
     }
 
     public void clearCache()
+    {
+    }
+
+    public void serialize(Writer writer) throws IOException
+    {
+        ReportDescriptor descriptor = getDescriptor();
+        if (descriptor.getReportId() != null)
+        {
+            Document doc = descriptor.toXML();
+
+            OutputFormat format = new OutputFormat(doc);
+            format.setIndenting(true);
+            XMLSerializer serializer = new XMLSerializer(writer, format);
+
+            serializer.asDOMSerializer();
+            serializer.serialize(doc);
+        }
+        else
+            throw new IllegalArgumentException("Cannot serialize a report that hasn't been saved yet");
+    }
+
+    public void serializeToFolder(File directory) throws IOException
+    {
+        ReportDescriptor descriptor = getDescriptor();
+
+        if (descriptor.getReportId() != null)
+        {
+            String fileName = String.format("%s.%s.report.xml", descriptor.getReportName(), descriptor.getReportId());
+            fileName = FileUtil.makeLegalName(fileName);
+            FileWriter writer = null;
+            try {
+                writer = new FileWriter(new File(directory, fileName));
+                serialize(writer);
+            }
+            finally
+            {
+                if (writer != null)
+                    try {writer.close();} catch(IOException ioe) {}
+            }
+        }
+        else
+            throw new IllegalArgumentException("Cannot serialize a report that hasn't been saved yet");
+    }
+
+    public void afterDeserializeFromFile(File reportFile) throws IOException
     {
     }
 }

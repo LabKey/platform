@@ -24,6 +24,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;
 
 import java.sql.ResultSet;
+import java.io.File;
+import java.io.Writer;
+import java.io.IOException;
+import java.io.FileNotFoundException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -85,6 +89,25 @@ public interface Report
      */
     void clearCache();
 
+    /**
+     * Generic method to allow serialization of a report.
+     */
+    void serialize(Writer writer) throws IOException;
+
+    /**
+     * Serializes a report to a file(s) in the specified directory. Reports will auto-generate
+     * the eventual file name, reports may generate more than one file.
+     *
+     * @param directory - the folder to serialize the report to
+     */
+    void serializeToFolder(File directory) throws IOException;
+
+    /**
+     * Optional method to perform report specific processing after file based deserialization
+     * @param reportMetaFile - the original file containing the report meta-data
+     */
+    void afterDeserializeFromFile(File reportMetaFile) throws IOException;
+    
     /**
      * Reports which are query or result set oriented, can implement this interface to
      * generate the result set from which results are rendered.

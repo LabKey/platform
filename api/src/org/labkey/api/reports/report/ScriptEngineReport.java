@@ -44,8 +44,7 @@ import java.util.Collections;
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.io.File;
-import java.io.PrintWriter;
+import java.io.*;
 
 /**
  *
@@ -382,6 +381,74 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
     protected String processOutputReplacements(String script, List<ParamReplacement> replacements) throws Exception
     {
         return ParamReplacementSvc.get().processParamReplacement(script, getReportDir(), replacements);
+    }
+
+    @Override
+    public void serializeToFolder(File directory) throws IOException
+    {
+        ReportDescriptor descriptor = getDescriptor();
+        if (descriptor.getReportId() != null)
+        {
+            // for script based reports, write the script portion to a separate file to facilitate script modifications
+            String scriptFileName = getSerializedScriptFileName();
+            FileWriter writer = null;
+            try {
+                writer = new FileWriter(new File(directory, scriptFileName));
+                writer.write(descriptor.getProperty(RReportDescriptor.Prop.script));
+
+                super.serializeToFolder(directory);
+            }
+            finally
+            {
+                if (writer != null)
+                    try {writer.close();} catch(IOException ioe) {}
+            }
+        }
+        else
+            throw new IllegalArgumentException("Cannot serialize a report that hasn't been saved yet");
+    }
+
+    protected String getSerializedScriptFileName()
+    {
+        ScriptEngine engine = getScriptEngine();
+        String extension = "script";
+        ReportDescriptor descriptor = getDescriptor();
+
+        if (engine != null)
+            extension = engine.getFactory().getExtensions().get(0);
+
+        return FileUtil.makeLegalName(String.format("%s.%s.%s", descriptor.getReportName(), descriptor.getReportId(), extension));
+    }
+
+    @Override
+    public void afterDeserializeFromFile(File reportFile) throws IOException
+    {
+        if (reportFile.exists())
+        {
+            // check to see if there is a separate script file on the disk, a separate
+            // script file takes precedence over any meta-data based script.
+
+            File scriptFile = new File(reportFile.getParent(), getSerializedScriptFileName());
+            if (scriptFile.exists())
+            {
+                BufferedReader br = null;
+
+                try {
+                    StringBuilder sb = new StringBuilder();
+                    br = new BufferedReader(new FileReader(scriptFile));
+                    String l;
+                    while ((l = br.readLine()) != null)
+                        sb.append(l);
+
+                    getDescriptor().setProperty(RReportDescriptor.Prop.script, sb.toString());
+                }
+                finally
+                {
+                    if (br != null)
+                        try {br.close();} catch(IOException ioe) {}
+                }
+            }
+        }
     }
 
     public static class NADisplayColumn extends DataColumn
