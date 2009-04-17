@@ -36,6 +36,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.common.util.Pair;
 
 import java.beans.PropertyChangeEvent;
+import java.io.*;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -479,6 +480,67 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     public void viewDeleted(CustomView view)
     {
         _uncacheDependent(view);
+    }
+
+    public Report deserialize(Reader reader) throws IOException
+    {
+        BufferedReader br = null;
+
+        try {
+            StringBuilder sb = new StringBuilder();
+            br = new BufferedReader(reader);
+            String l;
+            while ((l = br.readLine()) != null)
+                sb.append(l);
+
+            ReportDescriptor descriptor = ReportDescriptor.createFromXML(sb.toString());
+            if (descriptor != null)
+            {
+                //descriptor.setReportId(new DbReportIdentifier(r.getRowId()));
+                //descriptor.setOwner(r.getReportOwner());
+
+                String type = descriptor.getReportType();
+                Report report = createReportInstance(type);
+                if (report != null)
+                    report.setDescriptor(descriptor);
+                return report;
+            }
+        }
+        finally
+        {
+            if (br != null)
+                try {br.close();} catch(IOException ioe) {}
+        }
+        return null;
+    }
+
+    public Report deserializeFromFile(File reportFile) throws IOException
+    {
+        if (reportFile.exists())
+        {
+            Report report = deserialize(new FileReader(reportFile));
+            report.afterDeserializeFromFile(reportFile);
+
+            // reset any report identifier, we want to treat an imported report as a new
+            // report instance
+            report.getDescriptor().setReportId(new DbReportIdentifier(-1));
+
+            return report;
+        }
+        throw new IllegalArgumentException("Specified file does not exist: " + reportFile.getAbsolutePath());
+    }
+
+    public Report importReport(User user, Container container, File reportFile) throws IOException, SQLException
+    {
+        Report report = deserializeFromFile(reportFile);
+        ReportDescriptor descriptor = report.getDescriptor();
+
+        String key = ReportUtil.getReportKey(descriptor.getProperty(ReportDescriptor.Prop.schemaName), descriptor.getProperty(ReportDescriptor.Prop.queryName));
+        int rowId = _saveReport(user, container, key, descriptor).getRowId();
+
+        descriptor.setReportId(new DbReportIdentifier(rowId));
+
+        return report;
     }
 
     private void _uncacheDependent(CustomView view)
