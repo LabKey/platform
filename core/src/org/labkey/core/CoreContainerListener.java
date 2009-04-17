@@ -15,19 +15,20 @@
  */
 package org.labkey.core;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.HttpView;
+import org.apache.log4j.Logger;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
-import org.apache.log4j.Logger;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.QcUtil;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 
-import java.sql.SQLException;
 import java.beans.PropertyChangeEvent;
+import java.sql.SQLException;
 
 /**
  * User: adam
@@ -59,6 +60,7 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
         try
         {
             PropertyManager.purgeObjectProperties(c.getId());
+            QcUtil.containerDeleted(c);
             // Let containerManager delete ACLs, we want that to happen last
 
             String message = c.isProject() ? "Project " + c.getName() + " was deleted" :

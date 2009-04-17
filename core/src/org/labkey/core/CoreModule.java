@@ -71,7 +71,7 @@ public class CoreModule extends SpringModule
 
     public double getVersion()
     {
-        return 9.10;
+        return 9.11;
     }
 
     @Override
@@ -200,6 +200,36 @@ public class CoreModule extends SpringModule
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
+        }
+
+        if (moduleContext.getInstalledVersion() < 9.11)
+        {
+            installDefaultQcValues();
+        }
+    }
+
+    private void installDefaultQcValues()
+    {
+        try
+        {
+            // Need to insert standard QC values for the root
+            Container rootContainer = ContainerManager.getRoot();
+            String rootContainerId = rootContainer.getId();
+            Map<String,String> qcMap = QcUtil.getDefaultQcValues();
+            TableInfo qcValuesTable = CoreSchema.getInstance().getTableInfoQcValues();
+            for(Map.Entry<String,String> qcEntry : qcMap.entrySet())
+            {
+                Map<String,Object> params = new HashMap<String,Object>();
+                params.put("Container", rootContainerId);
+                params.put("QcValue", qcEntry.getKey());
+                params.put("Label", qcEntry.getValue());
+
+                Table.insert(null, qcValuesTable, params);
+            }
+        }
+        catch (SQLException se)
+        {
+            UnexpectedException.rethrow(se);
         }
     }
 

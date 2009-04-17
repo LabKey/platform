@@ -466,5 +466,14 @@
         <ns:column columnName="Path"/>
       </ns:columns>
     </ns:table>
+
+    <ns:table tableName="QcValues" tableDbType="TABLE">
+        <ns:columns>
+            <ns:column columnName="Container"/>
+            <ns:column columnName="QcValue"/>
+            <ns:column columnName="Label"/>
+        </ns:columns>
+    </ns:table>
+
 </ns:tables>
 
