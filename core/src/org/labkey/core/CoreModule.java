@@ -190,7 +190,7 @@ public class CoreModule extends SpringModule
         super.afterUpdate(moduleContext);
 
         if (moduleContext.isNewInstall())
-            bootstrap(moduleContext);
+            bootstrap();
 
         try
         {
@@ -234,7 +234,7 @@ public class CoreModule extends SpringModule
     }
 
 
-    private void bootstrap(ModuleContext moduleContext)
+    private void bootstrap()
     {
         // Other containers inherit permissions from root; admins get all permisssions, users & guests none
         ContainerManager.bootstrapContainer("/", ACL.PERM_ALLOWALL, 0, 0);

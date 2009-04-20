@@ -40,6 +40,8 @@ import org.labkey.study.query.StudyQuerySchema;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.*;
+import java.text.NumberFormat;
+import java.text.DecimalFormat;
 
 /**
  * User: brittp
@@ -65,6 +67,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private transient TableInfo _tableInfoProperties;
     private Integer _cohortId;
     private Integer _protocolId; // indicates that dataset came from an assay. Null indicates no source assay
+    private String _fileName; // Filename from the original import  TODO: save this at import time and load it from db
 
     private static final String[] BASE_DEFAULT_FIELD_NAMES_ARRAY = new String[]
     {
@@ -171,6 +174,25 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     public void setName(String name)
     {
         _name = name;
+    }
+
+    public String getFileName()
+    {
+        if (null == _fileName)
+        {
+            NumberFormat dsf = new DecimalFormat("plate000.tsv");
+
+            return dsf.format(getDataSetId());
+        }
+        else
+        {
+            return _fileName;
+        }
+    }
+
+    public void setFileName(String fileName)
+    {
+        _fileName = fileName;
     }
 
     public String getCategory()

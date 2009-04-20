@@ -16,37 +16,34 @@
 
 package org.labkey.query;
 
+import junit.framework.Test;
+import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
-//import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Cache;
-import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.common.util.Pair;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.persist.*;
-import org.labkey.query.view.DbUserSchema;
 import org.labkey.query.sql.Query;
+import org.labkey.query.view.DbUserSchema;
 
+import java.io.File;
+import java.io.FilenameFilter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import java.io.File;
-import java.io.FilenameFilter;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
 
 public class QueryServiceImpl extends QueryService
 {
@@ -143,7 +140,7 @@ public class QueryServiceImpl extends QueryService
             for(Module module : modules)
             {
                 File schemaDir = new File(getModuleQueriesDir(module), schemaName);
-                File[] fileSet = null;
+                File[] fileSet;
 
                 //always scan the file system in dev mode
                 if(AppProps.getInstance().isDevMode())
@@ -241,7 +238,7 @@ public class QueryServiceImpl extends QueryService
 
     private void addCustomView(Container container, User user, Map<String, CustomView> views, CstmView collist, Map<Map.Entry<String, String>, QueryDefinition> queryDefs)
     {
-        QueryDefinition qd = queryDefs.get(new Pair(collist.getSchema(), collist.getQueryName()));
+        QueryDefinition qd = queryDefs.get(new Pair<String, String>(collist.getSchema(), collist.getQueryName()));
         if (qd == null)
             qd = QueryService.get().getUserSchema(user, container, collist.getSchema()).getQueryDefForTable(collist.getQueryName());
 

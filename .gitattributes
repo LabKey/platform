@@ -2261,8 +2261,14 @@ study/src/org/labkey/study/visitmanager/DateVisitManager.java -text
 study/src/org/labkey/study/visitmanager/SequenceVisitManager.java -text
 study/src/org/labkey/study/visitmanager/VisitManager.java -text
 study/src/org/labkey/study/writer/DataFaxVisitMapWriter.java -text
+study/src/org/labkey/study/writer/DataSetWriter.java -text
+study/src/org/labkey/study/writer/ExportContext.java -text
+study/src/org/labkey/study/writer/FileExportContext.java -text
+study/src/org/labkey/study/writer/QueryWriter.java -text
+study/src/org/labkey/study/writer/ReportWriter.java -text
 study/src/org/labkey/study/writer/StudyWriter.java -text
-study/src/org/labkey/study/writer/VisitMapWriter.java -text
+study/src/org/labkey/study/writer/VisitMapExporter.java -text
+study/src/org/labkey/study/writer/Writer.java -text
 study/webapp/sampleRequest.js -text
 study/webapp/study/assay/SampleLookupTemplate.xls -text
 timeline/Timeline.iml -text

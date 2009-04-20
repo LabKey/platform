@@ -67,6 +67,7 @@ import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.common.util.Pair;
 import org.labkey.study.*;
 import org.labkey.study.writer.StudyWriter;
+import org.labkey.study.writer.FileExportContext;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
@@ -3646,10 +3647,10 @@ public class StudyController extends BaseStudyController
             File rootDir = PipelineService.get().findPipelineRoot(getContainer()).getRootPath();
             File exportDir = new File(rootDir, "export");
 
-            StudyWriter writer = new StudyWriter(getStudy(), getUser(), exportDir);
-            writer.write();
+            StudyWriter writer = new StudyWriter();
+            writer.write(getStudy(), new FileExportContext(exportDir, getUser()));
 
-            return new HtmlView("Study was successfully exported to " + exportDir.getAbsolutePath());
+            return new HtmlView("Study was successfully exported to " + exportDir.getAbsolutePath() + "<br><br>" + PageFlowUtil.generateButton("Back", new ActionURL(ManageStudyAction.class, getContainer())));
         }
 
         public NavTree appendNavTrail(NavTree root)

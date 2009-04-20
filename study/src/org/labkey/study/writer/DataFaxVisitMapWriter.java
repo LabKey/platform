@@ -15,81 +15,86 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.study.model.Study;
 import org.labkey.study.model.Visit;
 import org.labkey.study.model.VisitDataSet;
 
-import java.io.File;
 import java.io.PrintWriter;
-import java.util.List;
+import java.io.FileNotFoundException;
+import java.io.UnsupportedEncodingException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.List;
 
 /**
  * User: adam
  * Date: Apr 15, 2009
  * Time: 10:57:56 AM
  */
-public class DataFaxVisitMapWriter extends VisitMapWriter
+public class DataFaxVisitMapWriter implements Writer<Visit[]>
 {
-    protected DataFaxVisitMapWriter(Study study, File dir)
+    public void write(Visit[] visits, ExportContext ctx) throws FileNotFoundException, UnsupportedEncodingException
     {
-        super(study, new File(dir, "visit_map.txt"));
-    }
+        PrintWriter out = ctx.getPrintWriter("visit_map.txt");
 
-    protected void write(Visit[] visits, PrintWriter out)
-    {
-        NumberFormat df = new DecimalFormat("#.#####");
-
-        for (Visit v : visits)
+        try
         {
-            List<VisitDataSet> vds = v.getVisitDataSets();
+            NumberFormat df = new DecimalFormat("#.#####");
 
-            out.print(df.format(v.getSequenceNumMin()));
-
-            if (v.getSequenceNumMin() != v.getSequenceNumMax())
+            for (Visit v : visits)
             {
-                out.print("-");
-                out.print(df.format(v.getSequenceNumMax()));
-            }
+                List<VisitDataSet> vds = v.getVisitDataSets();
 
-            out.print('|');
+                out.print(df.format(v.getSequenceNumMin()));
 
-            if (null != v.getTypeCode())
-                out.print(v.getTypeCode());
-
-            out.print('|');
-
-            if (null != v.getLabel())
-                out.print(v.getLabel());
-
-            out.printf("|||||");
-
-            String s = "";
-
-            for (VisitDataSet vd : vds)
-            {
-                if (vd.isRequired())
+                if (v.getSequenceNumMin() != v.getSequenceNumMax())
                 {
-                    out.print(s);
-                    out.print(vd.getDataSetId());
-                    s = " ";
+                    out.print("-");
+                    out.print(df.format(v.getSequenceNumMax()));
                 }
-            }
 
-            out.print("|");
+                out.print('|');
 
-            for (VisitDataSet vd : vds)
-            {
-                if (vd.isRequired())
+                if (null != v.getTypeCode())
+                    out.print(v.getTypeCode());
+
+                out.print('|');
+
+                if (null != v.getLabel())
+                    out.print(v.getLabel());
+
+                out.printf("|||||");
+
+                String s = "";
+
+                for (VisitDataSet vd : vds)
                 {
-                    out.print(s);
-                    out.print(vd.getDataSetId());
-                    s = " ";
+                    if (vd.isRequired())
+                    {
+                        out.print(s);
+                        out.print(vd.getDataSetId());
+                        s = " ";
+                    }
                 }
-            }
 
-            out.println("||");
+                out.print("|");
+
+                for (VisitDataSet vd : vds)
+                {
+                    if (vd.isRequired())
+                    {
+                        out.print(s);
+                        out.print(vd.getDataSetId());
+                        s = " ";
+                    }
+                }
+
+                out.println("||");
+            }
+        }
+        finally
+        {
+            if (null != out)
+                out.close();
         }
     }
 }
