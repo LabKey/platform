@@ -119,8 +119,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     }
 
     public ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, ExpProtocol protocol,
-                                          Map<String, Object>[] dataMaps, Map<String, PropertyType> types, String keyPropertyName, List<String> errors)
-            throws SQLException, IOException, ServletException
+                                          List<Map<String, Object>> dataMaps, Map<String, PropertyType> types, String keyPropertyName, List<String> errors)
     {
         List<PropertyDescriptor> propertyDescriptors = new ArrayList<PropertyDescriptor>();
         for (Map.Entry<String, PropertyType> entry : types.entrySet())
@@ -138,8 +137,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     }
 
     public ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, ExpProtocol protocol,
-                                         Map<String, Object>[] dataMaps, Map<String, PropertyType> types, List<String> errors)
-            throws SQLException, IOException, ServletException
+                                         List<Map<String, Object>> dataMaps, Map<String, PropertyType> types, List<String> errors)
     {
         return publishAssayData(user, sourceContainer, targetContainer, assayName, protocol, dataMaps, types, null, errors);
     }
@@ -178,8 +176,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     }
 
     public ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, @Nullable ExpProtocol protocol,
-                                          Map<String, Object>[] dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
-            throws SQLException, IOException, UnauthorizedException
+                                          List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
     {
         Study targetStudy = StudyManager.getInstance().getStudy(targetContainer);
         assert verifyRequiredColumns(dataMaps, targetStudy.isDateBased());
@@ -290,6 +287,10 @@ public class AssayPublishManager implements AssayPublishService.Service
 
             return url;
         }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
         finally
         {
             if (ownsTransaction)
@@ -297,7 +298,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         }
     }
 
-    private Map<String, int[]> getSourceLSID(Map<String, Object>[] dataMaps)
+    private Map<String, int[]> getSourceLSID(List<Map<String, Object>> dataMaps)
     {
         Map<String, int[]> lsidMap = new HashMap<String, int[]>();
 
@@ -322,7 +323,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         return lsidMap;
     }
 
-    private boolean verifyRequiredColumns(Map<String, Object>[] dataMaps, boolean isDateBased)
+    private boolean verifyRequiredColumns(List<Map<String, Object>> dataMaps, boolean isDateBased)
     {
         for (Map<String, Object> dataMap : dataMaps)
         {
@@ -337,9 +338,9 @@ public class AssayPublishManager implements AssayPublishService.Service
         return true;
     }
 
-    private List<Map<String, Object>> convertPropertyNamesToURIs(Map<String, Object>[] dataMaps, Map<String, String> propertyNamesToUris)
+    private List<Map<String, Object>> convertPropertyNamesToURIs(List<Map<String, Object>> dataMaps, Map<String, String> propertyNamesToUris)
     {
-        List<Map<String, Object>> ret = new ArrayList<Map<String, Object>>(dataMaps.length);
+        List<Map<String, Object>> ret = new ArrayList<Map<String, Object>>(dataMaps.size());
         for (Map<String, Object> dataMap : dataMaps)
         {
             Map<String, Object> newMap = new CaseInsensitiveHashMap<Object>(dataMap.size());
@@ -355,7 +356,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     }
 
     private Map<String, String> ensurePropertyDescriptors(Container container, User user, DataSetDefinition dataset,
-                                                          Map<String, Object>[] dataMaps, List<PropertyDescriptor> types) throws SQLException, UnauthorizedException
+                                                          List<Map<String, Object>> dataMaps, List<PropertyDescriptor> types) throws SQLException, UnauthorizedException
     {
         PropertyDescriptor[] pds = OntologyManager.getPropertiesForType(dataset.getTypeURI(), container);
         // Strip out any spaces from existing PropertyDescriptors in the dataset

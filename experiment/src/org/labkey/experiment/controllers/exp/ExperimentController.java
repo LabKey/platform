@@ -515,7 +515,7 @@ public class ExperimentController extends SpringActionController
 
             DataRegion dr = new DataRegion();
             dr.addColumns(ExperimentServiceImpl.get().getTinfoMaterial().getUserEditableColumns());
-            dr.removeColumns("RowId", "RunId", "LSID", "SourceProtocolLSID", "SourceApplicationId", "CpasType");
+            dr.removeColumns("RowId", "RunId", "LSID", "SourceApplicationId", "CpasType");
 
             //dr.addColumns(extraProps);
             dr.addDisplayColumn(new ExperimentRunDisplayColumn(run, "Source Experiment Run"));
@@ -672,7 +672,7 @@ public class ExperimentController extends SpringActionController
 
         private boolean isUnknownMaterial(ExpMaterial material)
         {
-            return material.getName().equals("Unknown") &&
+            return "Unknown".equals(material.getName()) &&
                     ParticipantVisit.ASSAY_RUN_MATERIAL_NAMESPACE.equals(material.getLSIDNamespacePrefix());
         }
 
@@ -1028,7 +1028,7 @@ public class ExperimentController extends SpringActionController
 
             DataRegion dr = new DataRegion();
             dr.addColumns(ExperimentServiceImpl.get().getTinfoData().getUserEditableColumns());
-            dr.removeColumns("DataFileUrl", "RowId", "RunId", "LSID", "CpasType", "SourceProtocolLSID", "SourceApplicationId");
+            dr.removeColumns("DataFileUrl", "RowId", "RunId", "LSID", "CpasType", "SourceApplicationId");
             dr.addDisplayColumn(new DataFileURLDisplayColumn(_data));
             dr.addDisplayColumn(new ExperimentRunDisplayColumn(run, "Source Experiment Run"));
             dr.addDisplayColumn(new ProtocolDisplayColumn(sourceProtocol, "Source Protocol"));

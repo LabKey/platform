@@ -350,11 +350,6 @@ public class XarExporter
         {
             xMaterial.setProperties(materialProperties);
         }
-        ExpProtocol sourceProtocol = material.getSourceProtocol();
-        if (sourceProtocol != null)
-        {
-            xMaterial.setSourceProtocolLSID(_relativizedLSIDs.relativize(sourceProtocol.getLSID()));
-        }
     }
 
     private void addSampleSet(String cpasType) throws ExperimentException
@@ -575,15 +570,6 @@ public class XarExporter
         if (dataProperties != null)
         {
             xData.setProperties(dataProperties);
-        }
-        ExpProtocol protocol = data.getSourceProtocol();
-        if (protocol != null)
-        {
-            String sourceProtocolLSID = _relativizedLSIDs.relativize(protocol.getLSID());
-            if (sourceProtocolLSID != null)
-            {
-                xData.setSourceProtocolLSID(sourceProtocolLSID);
-            }
         }
     }
 

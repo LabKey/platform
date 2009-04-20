@@ -350,7 +350,7 @@ public class StudyDesignManager
         study.setParticipantCohortProperty("Cohort");
         StudyManager.getInstance().updateStudy(user, study);
         
-        AssayPublishService.get().publishAssayData(user, parent, studyFolder, "Subjects", null, participantDataset.toArray(new Map[participantDataset.size()]), nameMap, errors);
+        AssayPublishService.get().publishAssayData(user, parent, studyFolder, "Subjects", null, participantDataset, nameMap, errors);
         if (errors.size() > 0) //We were supposed to check these coming in
             throw new RuntimeException(StringUtils.join(errors, '\n'));
 

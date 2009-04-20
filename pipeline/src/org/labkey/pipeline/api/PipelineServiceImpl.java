@@ -17,32 +17,33 @@
 package org.labkey.pipeline.api;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.browse.BrowseForm;
 import org.labkey.api.pipeline.browse.BrowseView;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.pipeline.browse.BrowseViewImpl;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
 import org.labkey.pipeline.mule.ResumableDescriptor;
-import org.labkey.pipeline.browse.BrowseViewImpl;
-import org.mule.umo.model.UMOModel;
+import org.mule.MuleManager;
 import org.mule.umo.UMODescriptor;
 import org.mule.umo.UMOException;
-import org.mule.MuleManager;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.mule.umo.model.UMOModel;
 
+import javax.jms.ConnectionFactory;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.jms.ConnectionFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -100,6 +101,27 @@ public class PipelineServiceImpl extends PipelineService
             }
         }
         return null;
+    }
+
+    @Override
+    public boolean hasValidPipelineRoot(Container container)
+    {
+        PipelineService service = PipelineService.get();
+        URI uriRoot = null;
+        PipeRoot pr = service.findPipelineRoot(container);
+        if (pr != null)
+        {
+            uriRoot = pr.getUri(container);
+            if (uriRoot != null)
+            {
+                File f = new File(uriRoot);
+                if (NetworkDrive.exists(f) && f.isDirectory())
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
 

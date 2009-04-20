@@ -158,9 +158,20 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
         }
     }
 
-    public ExpProtocol[] getParentProtocols()
+    public List<ExpProtocol> getParentProtocols()
     {
-        return ExperimentServiceImpl.get().getParentProtocols(getRowId());        
+        try
+        {
+            String sql = "SELECT P.* FROM " + ExperimentServiceImpl.get().getTinfoProtocol() + " P, " + ExperimentServiceImpl.get().getTinfoProtocolAction() + " PA "
+                    + " WHERE P.RowId = PA.ParentProtocolID AND PA.ChildProtocolId = ?" ;
+
+            ExpProtocol[] expProtocols = fromProtocols(Table.executeQuery(ExperimentServiceImpl.get().getExpSchema(), sql, new Object[]{getRowId()}, Protocol.class));
+            return Arrays.asList(expProtocols);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public void setContainer(Container container)
@@ -195,7 +206,18 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
 
     public List<ExpProtocol> getChildProtocols()
     {
-        return ExperimentServiceImpl.get().getChildProtocols(_object.getRowId());
+        try
+        {
+            String sql = "SELECT P.* FROM " + ExperimentServiceImpl.get().getTinfoProtocol() + " P, " + ExperimentServiceImpl.get().getTinfoProtocolAction() + " PA "
+                    + " WHERE P.RowId = PA.ParentProtocolID AND PA.ParentProtocolId = ? ORDER BY PA.Sequence" ;
+
+            ExpProtocolImpl[] result = fromProtocols(Table.executeQuery(ExperimentServiceImpl.get().getExpSchema(), sql, new Object[]{_object.getRowId()}, Protocol.class));
+            return Arrays.<ExpProtocol>asList(result);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
 
     }
 

@@ -123,7 +123,7 @@ GO
 
 CREATE VIEW exp.ChildMaterialForApplication AS
 
-SELECT     exp.Material.RowId, exp.Material.LSID, exp.Material.Name, exp.Material.SourceApplicationId, exp.Material.SourceProtocolLSID, exp.Material.RunId, exp.Material.Created, 
+SELECT     exp.Material.RowId, exp.Material.LSID, exp.Material.Name, exp.Material.SourceApplicationId, exp.Material.RunId, exp.Material.Created,
                       exp.ProtocolApplication.RowId AS ApplicationID, exp.ProtocolApplication.LSID AS ApplicationLSID, exp.ProtocolApplication.Name AS ApplicationName, 
                       exp.ProtocolApplication.CpasType AS ApplicationType
 FROM         exp.Material INNER JOIN
@@ -134,7 +134,7 @@ GO
 
 CREATE VIEW exp.ChildDataForApplication AS
 
-SELECT     exp.Data.RowId, exp.Data.LSID, exp.Data.Name, exp.Data.SourceApplicationId, exp.Data.SourceProtocolLSID, exp.Data.DataFileUrl, exp.Data.RunId, exp.Data.Created, 
+SELECT     exp.Data.RowId, exp.Data.LSID, exp.Data.Name, exp.Data.SourceApplicationId, exp.Data.DataFileUrl, exp.Data.RunId, exp.Data.Created,
                       exp.ProtocolApplication.RowId AS ApplicationID, exp.ProtocolApplication.LSID AS ApplicationLSID, exp.ProtocolApplication.Name AS ApplicationName, 
                       exp.ProtocolApplication.CpasType AS ApplicationType
 FROM         exp.Data INNER JOIN
@@ -145,7 +145,7 @@ GO
 
 CREATE VIEW exp.MarkedOutputMaterialForRun AS
 
-	SELECT     exp.Material.RowId, exp.Material.LSID, exp.Material.Name, exp.Material.SourceApplicationId, exp.Material.SourceProtocolLSID, exp.Material.RunId, exp.Material.Created, 
+	SELECT     exp.Material.RowId, exp.Material.LSID, exp.Material.Name, exp.Material.SourceApplicationId, exp.Material.RunId, exp.Material.Created,
 	                      PAStartNode.RowId AS ApplicationID, PAStartNode.LSID AS ApplicationLSID, PAStartNode.Name AS ApplicationName, 
 	                      PAStartNode.CpasType AS ApplicationCpasType
 	FROM         exp.Material INNER JOIN
@@ -158,7 +158,7 @@ GO
 
 CREATE VIEW exp.MarkedOutputDataForRun AS
 
-	SELECT     exp.Data.RowId, exp.Data.LSID, exp.Data.Name, exp.Data.SourceApplicationId, exp.Data.SourceProtocolLSID, exp.Data.DataFileUrl, exp.Data.RunId, exp.Data.Created, 
+	SELECT     exp.Data.RowId, exp.Data.LSID, exp.Data.Name, exp.Data.SourceApplicationId, exp.Data.DataFileUrl, exp.Data.RunId, exp.Data.Created,
 	                      PAStartNode.RowId AS ApplicationID, PAStartNode.LSID AS ApplicationLSID, PAStartNode.Name AS ApplicationName, 
 	                      PAStartNode.CpasType AS ApplicationCpasType
 	FROM         exp.Data INNER JOIN
@@ -170,19 +170,19 @@ GO
 
 CREATE VIEW exp.OutputMaterialForNode AS
 
-	SELECT     RowId, LSID, Name, SourceApplicationId, SourceProtocolLSID,  RunId, Created, ApplicationID, ApplicationLSID, ApplicationName
+	SELECT     RowId, LSID, Name, SourceApplicationId, RunId, Created, ApplicationID, ApplicationLSID, ApplicationName
 	FROM         exp.ChildMaterialforApplication
 	UNION ALL
-	SELECT     RowId, LSID, Name, SourceApplicationId, SourceProtocolLSID,  RunId, Created, ApplicationID, ApplicationLSID, ApplicationName
+	SELECT     RowId, LSID, Name, SourceApplicationId, RunId, Created, ApplicationID, ApplicationLSID, ApplicationName
 	FROM         exp.MarkedOutputMaterialForRun
 GO
 
 CREATE VIEW exp.OutputDataForNode AS
 
-	SELECT     RowId, LSID, Name, SourceApplicationId, SourceProtocolLSID,  DataFileUrl, RunId, Created, ApplicationID, ApplicationLSID, ApplicationName
+	SELECT     RowId, LSID, Name, SourceApplicationId, DataFileUrl, RunId, Created, ApplicationID, ApplicationLSID, ApplicationName
 	FROM         exp.ChildDataforApplication
 	UNION ALL
-	SELECT     RowId, LSID, Name, SourceApplicationId, SourceProtocolLSID,  DataFileUrl, RunId, Created, ApplicationID, ApplicationLSID, ApplicationName
+	SELECT     RowId, LSID, Name, SourceApplicationId, DataFileUrl, RunId, Created, ApplicationID, ApplicationLSID, ApplicationName
 	FROM         exp.MarkedOutputDataForRun
 GO
 

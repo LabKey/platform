@@ -464,7 +464,7 @@ public class XarReader extends AbstractXarImporter
             if (existingProtocol != null)
             {
                 // Delete any protocols from the XAR that are in the database but aren't referenced as part of a ProtocolActionSet
-                if (existingProtocol.getParentProtocols().length == 0)
+                if (existingProtocol.getParentProtocols().isEmpty())
                 {
                     getLog().info("Deleting existing protocol with LSID '" + protocolLSID + "' so that the protocol specified in the file can be uploaded");
                     ExperimentService.get().deleteProtocolByRowIds(getContainer(), getUser(), existingProtocol.getRowId());
@@ -876,15 +876,6 @@ public class XarReader extends AbstractXarImporter
             m.setLSID(materialLSID);
             m.setName(trimString(xbMaterial.getName()));
             m.setCpasType(declaredType);
-            if (xbMaterial.isSetSourceProtocolLSID())
-            {
-                String sourceProtocolLSID = xbMaterial.getSourceProtocolLSID();
-                if (sourceProtocolLSID != null && !"".equals(sourceProtocolLSID))
-                {
-                    sourceProtocolLSID = LsidUtils.resolveLsidFromTemplate(sourceProtocolLSID, context, "Protocol");
-                    m.setSourceProtocolLSID(sourceProtocolLSID);
-                }
-            }
 
             if (null != run)
                 m.setRunId(run.getRowId());
@@ -905,7 +896,7 @@ public class XarReader extends AbstractXarImporter
         }
         else
         {
-            updateSourceInfo(material.getDataObject(), xbMaterial.getSourceProtocolLSID(), sourceApplicationId, run == null ? null : run.getRowId(), context, tiMaterial);
+            updateSourceInfo(material.getDataObject(), sourceApplicationId, run == null ? null : run.getRowId(), context, tiMaterial);
         }
 
         _xarSource.addMaterial(run == null ? null : run.getLSID(), material);
@@ -914,7 +905,7 @@ public class XarReader extends AbstractXarImporter
         return material;
     }
 
-    private void updateSourceInfo(ProtocolOutput output, String sourceProtocolLSID, Integer sourceApplicationId,
+    private void updateSourceInfo(ProtocolOutput output, Integer sourceApplicationId,
                                   Integer runId, XarContext context, TableInfo tableInfo)
             throws XarFormatException, SQLException
     {
@@ -924,24 +915,6 @@ public class XarReader extends AbstractXarImporter
 
         getLog().info("Found an existing entry for " + description + " LSID " + lsid + ", not reloading its values from scratch");
 
-        if (sourceProtocolLSID != null && !"".equals(sourceProtocolLSID))
-        {
-            String newSourceProtocolLSID = LsidUtils.resolveLsidFromTemplate(sourceProtocolLSID, context, "Protocol");
-            if (output.getSourceProtocolLSID() == null)
-            {
-                getLog().info("Updating  " + description + " with LSID '" + lsid + "', setting SourceProtocolLSID");
-                output.setSourceProtocolLSID(newSourceProtocolLSID);
-                changed = true;
-            }
-            else if (output.getSourceProtocolLSID().equals(newSourceProtocolLSID))
-            {
-                getLog().info(description + " with LSID '" + lsid + "' already has a SourceProtocolLSID of '" + output.getSourceProtocolLSID() + "'");
-            }
-            else
-            {
-                throw new XarFormatException(description + " with LSID '" + lsid + "' already has a source protocol LSID of " + output.getSourceProtocolLSID() + ", cannot set it to " + sourceProtocolLSID);
-            }
-        }
         if (sourceApplicationId != null)
         {
             if (output.getSourceApplicationId() == null)
@@ -1028,7 +1001,7 @@ public class XarReader extends AbstractXarImporter
                 throw new XarFormatException("Cannot reference a data file (" + databaseData.getDataFileUrl() + ") that has already been loaded into another container, " + containerDesc);
             }
             Integer runId = experimentRun == null || sourceApplicationId == null ? null : experimentRun.getRowId();
-            updateSourceInfo(databaseData.getDataObject(), trimString(xbData.getSourceProtocolLSID()), sourceApplicationId, runId, context, tiData);
+            updateSourceInfo(databaseData.getDataObject(), sourceApplicationId, runId, context, tiData);
         }
         else
         {
@@ -1036,12 +1009,6 @@ public class XarReader extends AbstractXarImporter
             data.setLSID(dataLSID);
             data.setName(trimString(xbData.getName()));
             data.setCpasType(declaredType);
-            String sourceProtocolLSID = trimString(xbData.getSourceProtocolLSID());
-            if (sourceProtocolLSID != null && !"".equals(sourceProtocolLSID))
-            {
-                sourceProtocolLSID = LsidUtils.resolveLsidFromTemplate(sourceProtocolLSID, context, "Protocol");
-                data.setSourceProtocolLSID(sourceProtocolLSID);
-            }
             data.setContainer(getContainer());
 
             if (null != sourceApplicationId)

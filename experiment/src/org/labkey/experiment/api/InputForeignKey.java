@@ -43,7 +43,7 @@ public class InputForeignKey extends LookupForeignKey
         super(null);
         _schema = schema;
         _type = type;
-        _filter = filter;
+        _filter = filter == null ? ContainerFilter.Type.Current.create(schema.getUser()) : filter;
     }
 
 
@@ -76,7 +76,7 @@ public class InputForeignKey extends LookupForeignKey
     {
         if (_dataInputs == null)
         {
-            _dataInputs = ExperimentService.get().getDataInputRoles(_schema.getContainer(), _type);
+            _dataInputs = ExperimentService.get().getDataInputRoles(_schema.getContainer(), _filter, _type);
         }
         return _dataInputs;
     }
@@ -85,7 +85,7 @@ public class InputForeignKey extends LookupForeignKey
     {
         if (_materialInputs == null)
         {
-            _materialInputs = ExperimentService.get().getSampleSetsForRoles(_schema.getContainer(), _type);
+            _materialInputs = ExperimentService.get().getSampleSetsForRoles(_schema.getContainer(), _filter, _type);
         }
         return _materialInputs;
     }

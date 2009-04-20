@@ -31,7 +31,6 @@ public abstract class ProtocolOutput extends IdentifiableBase
     private Integer _runId;
     private int _rowId;
     private Date _created;
-    private String _sourceProtocolLSID;
     private String _cpasType;
     private Integer _sourceApplicationId;
 
@@ -73,16 +72,6 @@ public abstract class ProtocolOutput extends IdentifiableBase
     public void setCreated(Date created)
     {
         this._created = created;
-    }
-
-    public String getSourceProtocolLSID()
-    {
-        return this._sourceProtocolLSID;
-    }
-
-    public void setSourceProtocolLSID(String s)
-    {
-        this._sourceProtocolLSID = s;
     }
 
     public String getCpasType()

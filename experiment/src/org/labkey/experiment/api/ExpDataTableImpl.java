@@ -16,23 +16,22 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.api.*;
 import org.labkey.api.data.*;
-import org.labkey.api.query.*;
-
-import java.sql.Types;
-import java.util.Collections;
-import java.util.ArrayList;
-import java.util.List;
-import java.io.Writer;
-import java.io.IOException;
-
-import org.labkey.api.exp.query.SamplesSchema;
-import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.query.ExpDataTable;
-import org.labkey.api.view.ActionURL;
+import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.query.*;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+
+import java.io.IOException;
+import java.io.Writer;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implements ExpDataTable
 {
@@ -58,6 +57,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         addColumn(Column.ViewFileLink);
         addColumn(Column.ContentLink);
         addColumn(Column.Thumbnail);
+        addColumn(Column.SourceProtocolApplication).setIsHidden(true);
         addColumn(Column.Protocol).setIsHidden(true);
         addContainerColumn(Column.Folder, null);
 
@@ -88,7 +88,17 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
             case Name:
                 return wrapColumn(alias, _rootTable.getColumn("Name"));
             case Protocol:
-                return wrapColumn(alias, _rootTable.getColumn("SourceProtocolLSID"));
+                ExprColumn col = new ExprColumn(this, Column.Protocol.toString(), new SQLFragment(
+                        "(SELECT ProtocolLSID FROM " + ExperimentServiceImpl.get().getTinfoProtocolApplication() + " pa " +
+                        " WHERE pa.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".SourceApplicationId)"), Types.VARCHAR, getColumn(Column.SourceProtocolApplication));
+                col.setFk(getExpSchema().getProtocolForeignKey("LSID"));
+                return col;
+            case SourceProtocolApplication:
+            {
+                ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("SourceApplicationId"));
+                columnInfo.setFk(getExpSchema().getProtocolApplicationForeignKey());
+                return columnInfo;
+            }
             case RowId:
             {
                 ColumnInfo ret = wrapColumn(alias, _rootTable.getColumn("RowId"));
@@ -99,7 +109,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
             case Run:
                 return wrapColumn(alias, _rootTable.getColumn("RunId"));
             case Flag:
-                return createFlagColumn(alias);
+                return   createFlagColumn(alias);
             case DownloadLink:
             {
                 ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));

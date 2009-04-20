@@ -244,6 +244,10 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 });
 
                 return col;
+            case Input:
+                return createInputLookupColumn();
+            case Output:
+                return createOutputLookupColumn();
 
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
@@ -290,24 +294,24 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         return doAdd(new ExprColumn(this, alias, sql, Types.INTEGER));
     }
 
-    public ColumnInfo createInputLookupColumn(String alias, ExpSchema schema)
+    public ColumnInfo createInputLookupColumn()
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.ProtocolApplication.RowId) FROM exp.ProtocolApplication " +
                 "\nWHERE exp.ProtocolApplication.RunId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId" +
                 "\nAND exp.ProtocolApplication.CpasType = '" + ExpProtocol.ApplicationType.ExperimentRun + "')");
-        ColumnInfo ret = new ExprColumn(this, alias, sql, Types.INTEGER);
-        ret.setFk(new InputForeignKey(schema, ExpProtocol.ApplicationType.ExperimentRun, new DelegatingContainerFilter(this)));
+        ColumnInfo ret = new ExprColumn(this, Column.Input.toString(), sql, Types.INTEGER);
+        ret.setFk(new InputForeignKey(getExpSchema(), ExpProtocol.ApplicationType.ExperimentRun, new DelegatingContainerFilter(this)));
         ret.setIsUnselectable(true);
         return ret;
     }
 
-    public ColumnInfo createOutputLookupColumn(String alias, ExpSchema schema)
+    public ColumnInfo createOutputLookupColumn()
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.ProtocolApplication.RowId) FROM exp.ProtocolApplication " +
                 "\nWHERE exp.ProtocolApplication.RunId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId" +
                 "\nAND exp.ProtocolApplication.CpasType = '" + ExpProtocol.ApplicationType.ExperimentRunOutput + "')");
-        ColumnInfo ret = new ExprColumn(this, alias, sql, Types.INTEGER);
-        ret.setFk(new InputForeignKey(schema, ExpProtocol.ApplicationType.ExperimentRunOutput, new DelegatingContainerFilter(this)));
+        ColumnInfo ret = new ExprColumn(this, Column.Output.toString(), sql, Types.INTEGER);
+        ret.setFk(new InputForeignKey(getExpSchema(), ExpProtocol.ApplicationType.ExperimentRunOutput, new DelegatingContainerFilter(this)));
         ret.setIsUnselectable(true);
         return ret;
     }
@@ -325,6 +329,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addColumn(Column.Flag);
         addColumn(Column.Links);
         addColumn(Column.Name);
+        setTitleColumn(Column.Name.toString());
         addColumn(Column.Comments);
         addColumn(Column.Created);
         addColumn(Column.CreatedBy);
@@ -333,9 +338,9 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addColumn(Column.LSID).setIsHidden(true);
         addColumn(Column.Protocol).setFk(schema.getProtocolForeignKey("LSID"));
         addColumn(Column.RunGroups);
+        addColumn(Column.Input);
+        addColumn(Column.Output);
 
-        addColumn(createInputLookupColumn("Input", schema));
-        addColumn(createOutputLookupColumn("Output", schema));
         ActionURL urlDetails = new ActionURL(ExperimentController.ShowRunTextAction.class, schema.getContainer());
         setDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("rowId", "RowId")));
         addDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("LSID", "LSID")));

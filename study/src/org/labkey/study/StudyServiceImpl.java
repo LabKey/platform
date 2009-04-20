@@ -37,7 +37,6 @@ import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.model.*;
 import org.labkey.study.query.*;
 
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -117,7 +116,7 @@ public class StudyServiceImpl implements StudyService.Service
             StudyManager.getInstance().deleteDatasetRows(study, def, Collections.singletonList(lsid));
 
             List<Map<String,Object>> dataMap = convertMapToPropertyMapArray(u, newData, def);
-            
+
             String[] result = StudyManager.getInstance().importDatasetData(
                 study, u, def, dataMap, System.currentTimeMillis(), errors, true, defaultQCState);
 
@@ -137,10 +136,6 @@ public class StudyServiceImpl implements StudyService.Service
             addDatasetAuditEvent(u, c, def, oldData, newData, auditComment);
 
             return result[0];
-        }
-        catch (IOException ioe)
-        {
-            throw UnexpectedException.wrap(ioe);
         }
         finally
         {
@@ -189,7 +184,7 @@ public class StudyServiceImpl implements StudyService.Service
         {
             throw new RuntimeException("Dataset for id " + datasetId + " not found");
         }
-        
+
         // Unfortunately we need to use two tableinfos: one to get the column names with correct casing,
         // and one to get the data.  We should eventually be able to convert to using Query completely.
         StudyQuerySchema querySchema = new StudyQuerySchema(study, u, true);
@@ -200,7 +195,7 @@ public class StudyServiceImpl implements StudyService.Service
         TableInfo tInfo = def.getTableInfo(u, true, false);
         Map<String,Object>[] datas = Table.select(tInfo, Table.ALL_COLUMNS, filter, null, Map.class);
 
-        if (datas == null || datas.length == 0)
+        if (datas.length == 0)
             return null;
 
         Map<String,Object>[] canonicalDatas = new HashMap[datas.length];
@@ -247,7 +242,7 @@ public class StudyServiceImpl implements StudyService.Service
 
             String[] result = StudyManager.getInstance().importDatasetData(
                 study, u, def, dataMap, System.currentTimeMillis(), errors, true, defaultQCState);
-            
+
             if (result.length > 0)
             {
                 // Log to the audit log
@@ -264,10 +259,6 @@ public class StudyServiceImpl implements StudyService.Service
 
             // Update failed
             return null;
-        }
-        catch (IOException ioe)
-        {
-            throw UnexpectedException.wrap(ioe);
         }
         finally
         {

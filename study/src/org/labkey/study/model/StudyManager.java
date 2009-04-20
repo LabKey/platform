@@ -2128,7 +2128,7 @@ public class StudyManager
      */
     public String[] importDatasetData(Study study, User user, DataSetDefinition def, List<Map<String, Object>> dataMaps, long lastModified,
                                       List<String> errors, boolean checkDuplicates, QCState defaultQCState)
-            throws IOException, UnauthorizedException, SQLException
+            throws SQLException
     {
         if (dataMaps.size() == 0)
             return new String[0];

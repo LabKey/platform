@@ -512,6 +512,7 @@ experiment/src/META-INF/experiment/scripts/postgresql/exp-8.34-8.35.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-8.35-8.36.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-8.36-8.37.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-8.37-8.38.sql -text
+experiment/src/META-INF/experiment/scripts/postgresql/exp-9.10-9.11.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-create.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-drop.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/obsolete/deleteOrphans.sql -text
@@ -593,6 +594,7 @@ experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.34-8.35.sql -te
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.35-8.36.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.36-8.37.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.37-8.38.sql -text
+experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-9.10-9.11.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-create.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-drop.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/deleteOrphans.sql -text
@@ -2430,8 +2432,3 @@ workbook/src/org/labkey/workbook/view/WorkbookList.java -text
 workbook/src/org/labkey/workbook/view/createWorkbook.jsp -text
 workbook/src/org/labkey/workbook/view/hello.jsp -text
 workbook/src/org/labkey/workbook/view/workbookList.jsp -text
-xarassay/ListTableData.xls -text
-xarassay/build.xml -text
-xarassay/module.properties -text
-xarassay/readme.htm -text
-xarassay/src/META-INF/xarassay.xml -text

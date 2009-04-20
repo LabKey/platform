@@ -90,11 +90,12 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
 
     public ExpProtocol getSourceProtocol()
     {
-        if (_object.getSourceProtocolLSID() == null)
+        ExpProtocolApplication protApp = getSourceApplication();
+        if (protApp != null)
         {
-            return null;
+            return protApp.getProtocol();
         }
-        return ExperimentService.get().getExpProtocol(_object.getSourceProtocolLSID());
+        return null;
     }
 
     public ExpProtocolApplication getSourceApplication()
@@ -150,21 +151,11 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
             throw new IllegalArgumentException();
         }
         _object.setSourceApplicationId(app == null ? null : app.getRowId());
-        _object.setSourceProtocolLSID(app == null ? null : app.getProtocol().getLSID());
         _object.setContainer(getContainer());
         _object.setRunId(app == null ? null : app.getRun().getRowId());
         _sourceApp = null;
         _successorAppList = null;
         _successorRunIdList = null;
-    }
-
-    public void setSourceProtocol(ExpProtocol protocol)
-    {
-        if (protocol != null && protocol.getLSID() == null)
-        {
-            throw new IllegalArgumentException();
-        }
-        _object.setSourceProtocolLSID(protocol == null ? null : protocol.getLSID());
     }
 
     public void setRun(ExpRun run)

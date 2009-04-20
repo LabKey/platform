@@ -73,7 +73,19 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     public ExpExperimentImpl[] getExperiments()
     {
-        return ExperimentServiceImpl.get().getExpExperimentsForRun(_object.getLSID());
+        try
+        {
+            final String sql= " SELECT E.* FROM " + ExperimentServiceImpl.get().getTinfoExperiment() + " E "
+                            + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoRunList() + " RL ON (E.RowId = RL.ExperimentId) "
+                            + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoExperimentRun() + " ER ON (ER.RowId = RL.ExperimentRunId) "
+                            + " WHERE ER.LSID = ? AND E.Hidden = ?;"  ;
+
+            return ExpExperimentImpl.fromExperiments(Table.executeQuery(ExperimentServiceImpl.get().getExpSchema(), sql, new Object[]{_object.getLSID(), Boolean.FALSE}, Experiment.class));
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
     }
 
     public ExpProtocolImpl getProtocol()
@@ -290,14 +302,14 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             String sql = " ";
             sql += "DELETE FROM exp.ProtocolApplicationParameter WHERE ProtocolApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ");\n";
 
-            sql += "UPDATE " + ExperimentServiceImpl.get().getTinfoData() + " SET SourceApplicationId = NULL, RunId = NULL, SourceProtocolLSID = NULL  " +
+            sql += "UPDATE " + ExperimentServiceImpl.get().getTinfoData() + " SET SourceApplicationId = NULL, RunId = NULL " +
                     " WHERE RowId IN (SELECT exp.Data.RowId FROM exp.Data " +
                     " INNER JOIN exp.DataInput ON exp.Data.RowId = exp.DataInput.DataId " +
                     " INNER JOIN exp.ProtocolApplication PAOther ON exp.DataInput.TargetApplicationId = PAOther.RowId " +
                     " INNER JOIN exp.ProtocolApplication PA ON exp.Data.SourceApplicationId = PA.RowId " +
                     " WHERE PAOther.RunId <> PA.RunId AND PA.RunId = " + getRowId() + ");\n";
 
-            sql += "UPDATE " + ExperimentServiceImpl.get().getTinfoMaterial() + " SET SourceApplicationId = NULL, RunId = NULL, SourceProtocolLSID = NULL  " +
+            sql += "UPDATE " + ExperimentServiceImpl.get().getTinfoMaterial() + " SET SourceApplicationId = NULL, RunId = NULL " +
                     " WHERE RowId IN (SELECT exp.Material.RowId FROM exp.Material " +
                     " INNER JOIN exp.MaterialInput ON exp.Material.RowId = exp.MaterialInput.MaterialId " +
                     " INNER JOIN exp.ProtocolApplication PAOther ON exp.MaterialInput.TargetApplicationId = PAOther.RowId " +

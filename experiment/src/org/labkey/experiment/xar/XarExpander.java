@@ -498,7 +498,6 @@ public class XarExpander extends AbstractXarImporter
         xbMaterial.setAbout(outputLSID);
         xbMaterial.setName(outputName);
         xbMaterial.setCpasType(outputType);
-        xbMaterial.setSourceProtocolLSID(pbStep.stepProtocolLSID);
 
         Material material = new Material();
         material.setName(outputName);
@@ -574,7 +573,6 @@ public class XarExpander extends AbstractXarImporter
         xbData.setAbout(outputLSID);
         xbData.setName(outputName);
         xbData.setCpasType(outputType);
-        xbData.setSourceProtocolLSID(pbStep.stepProtocolLSID);
         xbData.setDataFileUrl(outputUrl);
 
         Data data = new Data();

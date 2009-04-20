@@ -38,6 +38,7 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.study.assay.query.AssayListPortalView;
 import org.labkey.study.assay.query.AssayListQueryView;
 import org.labkey.study.assay.query.AssaySchema;
@@ -183,8 +184,8 @@ public class AssayManager implements AssayService.Interface
         {
             Container container = iter.next();
             boolean hasPermission = container.hasPermission(user, ACL.PERM_INSERT);
-            boolean allowsUpload = provider.allowUpload(user, container, protocol);
-            if (!hasPermission || !allowsUpload)
+            boolean hasPipeline = PipelineService.get().hasValidPipelineRoot(container);
+            if (!hasPermission || !hasPipeline)
             {
                 iter.remove();
             }

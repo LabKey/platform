@@ -124,8 +124,7 @@ public class BtTaskManager
         }
         catch (SQLException e)
         {
-            _log.error("Error", e);
-            return false;
+            throw new RuntimeSQLException(e);
         }
     }
 

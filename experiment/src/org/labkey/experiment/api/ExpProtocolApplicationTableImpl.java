@@ -43,6 +43,14 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         {
             case RowId:
                 return wrapColumn(alias, _rootTable.getColumn("RowId"));
+            case Name:
+                return wrapColumn(alias, _rootTable.getColumn("Name"));
+            case LSID:
+                return wrapColumn(alias, _rootTable.getColumn("LSID"));
+            case Protocol:
+                ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("ProtocolLSID"));
+                columnInfo.setFk(getExpSchema().getProtocolForeignKey("LSID"));
+                return columnInfo;
         }
         throw new IllegalArgumentException("Unknown column " + column);
     }
@@ -107,5 +115,9 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
     public void populate()
     {
         addColumn(Column.RowId);
+        addColumn(Column.Name);
+        setTitleColumn(Column.Name.toString());
+        addColumn(Column.LSID).setIsHidden(true);
+        addColumn(Column.Protocol);
     }
 }

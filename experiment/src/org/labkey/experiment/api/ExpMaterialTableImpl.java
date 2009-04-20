@@ -18,10 +18,7 @@ package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.query.ExpSchema;
-import org.labkey.api.exp.query.ExpSampleSetTable;
-import org.labkey.api.exp.query.ExpMaterialTable;
-import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.exp.query.*;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -34,6 +31,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
+import java.sql.Types;
 
 public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
@@ -81,9 +79,19 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 return columnInfo;
             }
             case SourceProtocolLSID:
-                ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("SourceProtocolLSID"));
+            {
+                ExprColumn columnInfo = new ExprColumn(this, ExpDataTable.Column.Protocol.toString(), new SQLFragment(
+                        "(SELECT ProtocolLSID FROM " + ExperimentServiceImpl.get().getTinfoProtocolApplication() + " pa " +
+                        " WHERE pa.RowId = " + ExprColumn.STR_TABLE_ALIAS + ".SourceApplicationId)"), Types.VARCHAR);//, getColumn("SourceProtocolApplication"));
                 columnInfo.setFk(getExpSchema().getProtocolForeignKey("LSID"));
                 return columnInfo;
+            }
+            case SourceProtocolApplication:
+            {
+                ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("SourceApplicationId"));
+                columnInfo.setFk(getExpSchema().getProtocolApplicationForeignKey());
+                return columnInfo;
+            }
             case Run:
                 return wrapColumn(alias, _rootTable.getColumn("RunId"));
             case RowId:
@@ -97,7 +105,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 ColumnInfo ret = createPropertyColumn(alias);
                 if (_ss != null)
                 {
-                    ret.setFk(new DomainForeignKey(_ss.getContainer(), _ss.getLSID(), _schema));
+                    ret.setFk(new DomainForeignKey(_ss.getType(), _schema));
                 }
                 return ret;
             case Flag:
@@ -155,6 +163,8 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         }
 
         addColumn(ExpMaterialTable.Column.RowId).setIsHidden(true);
+        ColumnInfo appCol = addColumn(Column.SourceProtocolApplication);
+        appCol.setIsHidden(true);
         ColumnInfo sourceProtocolCol = addColumn(Column.SourceProtocolLSID);
         sourceProtocolCol.setIsHidden(true);
         sourceProtocolCol.setCaption("Source Protocol");

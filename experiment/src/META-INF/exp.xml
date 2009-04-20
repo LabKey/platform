@@ -26,7 +26,6 @@
       <ns:column columnName="Name"/>
       <ns:column columnName="CpasType"/>
       <ns:column columnName="SourceApplicationId"/>
-      <ns:column columnName="SourceProtocolLSID"/>
       <ns:column columnName="DataFileUrl"/>
       <ns:column columnName="RunId"/>
       <ns:column columnName="Created"/>
@@ -163,7 +162,6 @@
           <ns:columnTitle>Sample Set</ns:columnTitle>
       </ns:column>
       <ns:column columnName="SourceApplicationId"/>
-      <ns:column columnName="SourceProtocolLSID"/>
       <ns:column columnName="RunId"/>
       <ns:column columnName="Created"/>
       <ns:column columnName="Container"/>
@@ -401,7 +399,6 @@
       <ns:column columnName="LSID"/>
       <ns:column columnName="Name"/>
       <ns:column columnName="SourceApplicationId"/>
-      <ns:column columnName="SourceProtocolLSID"/>
       <ns:column columnName="DataFileUrl"/>
       <ns:column columnName="RunId"/>
       <ns:column columnName="Created"/>
@@ -417,7 +414,6 @@
       <ns:column columnName="LSID"/>
       <ns:column columnName="Name"/>
       <ns:column columnName="SourceApplicationId"/>
-      <ns:column columnName="SourceProtocolLSID"/>
       <ns:column columnName="RunId"/>
       <ns:column columnName="Created"/>
       <ns:column columnName="ApplicationID"/>
@@ -432,7 +428,6 @@
       <ns:column columnName="LSID"/>
       <ns:column columnName="Name"/>
       <ns:column columnName="SourceApplicationId"/>
-      <ns:column columnName="SourceProtocolLSID"/>
       <ns:column columnName="DataFileUrl"/>
       <ns:column columnName="RunId"/>
       <ns:column columnName="Created"/>
@@ -448,7 +443,6 @@
       <ns:column columnName="LSID"/>
       <ns:column columnName="Name"/>
       <ns:column columnName="SourceApplicationId"/>
-      <ns:column columnName="SourceProtocolLSID"/>
       <ns:column columnName="RunId"/>
       <ns:column columnName="Created"/>
       <ns:column columnName="ApplicationID"/>
@@ -463,7 +457,6 @@
       <ns:column columnName="LSID"/>
       <ns:column columnName="Name"/>
       <ns:column columnName="SourceApplicationId"/>
-      <ns:column columnName="SourceProtocolLSID"/>
       <ns:column columnName="DataFileUrl"/>
       <ns:column columnName="RunId"/>
       <ns:column columnName="Created"/>
@@ -478,7 +471,6 @@
       <ns:column columnName="LSID"/>
       <ns:column columnName="Name"/>
       <ns:column columnName="SourceApplicationId"/>
-      <ns:column columnName="SourceProtocolLSID"/>
       <ns:column columnName="RunId"/>
       <ns:column columnName="Created"/>
       <ns:column columnName="ApplicationID"/>
@@ -641,7 +633,6 @@
       <ns:column columnName="Name"/>
       <ns:column columnName="CpasType"/>
       <ns:column columnName="SourceApplicationId"/>
-      <ns:column columnName="SourceProtocolLSID"/>
       <ns:column columnName="RunId"/>
       <ns:column columnName="Created"/>
       <ns:column columnName="Container"/>
@@ -671,7 +662,6 @@
       <ns:column columnName="Name"/>
       <ns:column columnName="CpasType"/>
       <ns:column columnName="SourceApplicationId"/>
-      <ns:column columnName="SourceProtocolLSID"/>
       <ns:column columnName="DataFileUrl"/>
       <ns:column columnName="RunId"/>
       <ns:column columnName="Created"/>

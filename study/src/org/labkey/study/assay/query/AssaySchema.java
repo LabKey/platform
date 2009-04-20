@@ -225,8 +225,6 @@ public class AssaySchema extends UserSchema
                 visibleColumns.add(new FieldKey(batchPropsKey, col.getName()));
         }
 
-
-        runTable.setTitleColumn("");
         runTable.setDefaultVisibleColumns(visibleColumns);
 
         return runTable;
