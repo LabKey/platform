@@ -239,6 +239,7 @@ public class ContainerManager
     
 
     private static final String SHARED_CONTAINER_PATH = "/Shared";
+
     public static Container getSharedContainer()
     {
         Container c = getForPath(SHARED_CONTAINER_PATH);
@@ -1606,7 +1607,7 @@ public class ContainerManager
 
     public static class ContainerFactory implements ObjectFactory<Container>
     {
-        public Container fromMap(Map<String, ? extends Object> m)
+        public Container fromMap(Map<String, ?> m)
         {
             throw new UnsupportedOperationException();
         }

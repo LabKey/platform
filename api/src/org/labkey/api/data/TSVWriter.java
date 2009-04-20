@@ -91,6 +91,21 @@ public class TSVWriter
         }
     }
 
+    // Prepare the TSVWriter to write TSV file to the file system -- can be used for testing
+    public void prepare(File file) throws ServletException
+    {
+        try
+        {
+            _pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
+        }
+        catch(IOException e)
+        {
+            _log.error("prepare", e);
+            throw new ServletException(e);
+        }
+    }
+
+
     public void prepare(StringBuilder builder)
     {
         _pw = new PrintWriter(new StringBuilderWriter(builder));
@@ -157,6 +172,14 @@ public class TSVWriter
     }
 
 
+    // Write a newly created TSV file to the PrintWriter.
+    public void write(PrintWriter pw) throws ServletException
+    {
+        _pw = pw;
+        write();
+        close();
+    }
+
     // Write a newly created TSV file to the file system.
     public void write(File file) throws ServletException
     {
@@ -198,21 +221,6 @@ public class TSVWriter
             // no-op
         }
     }
-
-    // Prepare the TSVWriter to write TSV file to the file system -- can be used for testing
-    public void prepare(File file) throws ServletException
-    {
-        try
-        {
-            _pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
-        }
-        catch(IOException e)
-        {
-            _log.error("prepare", e);
-            throw new ServletException(e);
-        }
-    }
-
 
     public void close() throws ServletException
     {
