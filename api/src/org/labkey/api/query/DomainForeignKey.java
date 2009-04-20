@@ -16,14 +16,26 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.Container;
-import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 
 
 public class DomainForeignKey extends PropertyForeignKey
 {
-    public DomainForeignKey(Container container, String domainURI, QuerySchema schema)
+    public DomainForeignKey(Domain domain, QuerySchema schema)
     {
-        super(OntologyManager.getPropertiesForType(domainURI, container), schema);
+        super(convertProperties(domain), schema);
+    }
+
+    private static PropertyDescriptor[] convertProperties(Domain domain)
+    {
+        DomainProperty[] properties = domain.getProperties();
+        PropertyDescriptor[] result = new PropertyDescriptor[properties.length];
+        for (int i = 0; i < properties.length; i++)
+        {
+            result[i] = properties[i].getPropertyDescriptor();
+        }
+        return result;
     }
 }

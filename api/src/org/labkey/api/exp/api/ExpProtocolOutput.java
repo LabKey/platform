@@ -33,8 +33,6 @@ public interface ExpProtocolOutput extends ExpObject
     void setSourceApplication(ExpProtocolApplication sourceApplication);
     ExpProtocolApplication getSourceApplication();
 
-    void setSourceProtocol(ExpProtocol protocol);
-
     void setRun(ExpRun run);
 
     List<ExpProtocolApplication> getSuccessorApps();

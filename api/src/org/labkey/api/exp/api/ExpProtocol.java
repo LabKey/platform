@@ -109,7 +109,7 @@ public interface ExpProtocol extends ExpObject
      */
     public ExpProtocolAction addStep(User user, ExpProtocol childProtocol, int actionSequence);
 
-    public ExpProtocol[] getParentProtocols();
+    public List<ExpProtocol> getParentProtocols();
     
     ExpRun[] getExpRuns();
 

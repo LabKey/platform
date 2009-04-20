@@ -19,6 +19,7 @@ package org.labkey.api.exp.api;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.*;
@@ -88,7 +89,7 @@ public class ExperimentService
          */
         List<? extends ExpMaterial> getExpMaterialsByName(String name, Container container, User user);
 
-        Map<String, ExpSampleSet> getSampleSetsForRoles(Container container, ExpProtocol.ApplicationType type);
+        Map<String, ExpSampleSet> getSampleSetsForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type);
 
         ExpSampleSet getSampleSet(int rowid);
         ExpSampleSet getSampleSet(String lsid);
@@ -117,7 +118,7 @@ public class ExperimentService
         /**
          * @param type may be null. If non-null, only return roles that are used for that type of application (input, output, or intermediate)
          */
-        Set<String> getDataInputRoles(Container container, ExpProtocol.ApplicationType type);
+        Set<String> getDataInputRoles(Container container, ContainerFilter containerFilter, ExpProtocol.ApplicationType type);
         /**
          * @param type may be null. If non-null, only return roles that are used for that type of application (input, output, or intermediate) 
          */
@@ -164,10 +165,12 @@ public class ExperimentService
         TableInfo getTinfoMaterial();
         TableInfo getTinfoMaterialSource();
         TableInfo getTinfoProtocol();
+        TableInfo getTinfoProtocolApplication();
         TableInfo getTinfoExperiment();
         TableInfo getTinfoExperimentRun();
         TableInfo getTinfoRunList();
         TableInfo getTinfoData();
+        TableInfo getTinfoDataInput();
         TableInfo getTinfoPropertyDescriptor();
         ExpSampleSet ensureDefaultSampleSet();
         ExpSampleSet ensureActiveSampleSet(Container container);

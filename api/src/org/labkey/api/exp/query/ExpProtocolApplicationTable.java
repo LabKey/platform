@@ -24,8 +24,9 @@ public interface ExpProtocolApplicationTable extends ExpTable<ExpProtocolApplica
     enum Column
     {
         RowId,
-        DataCount,
-        MaterialCount,
+        Name,
+        LSID,
+        Protocol,
     }
 
     public ColumnInfo createMaterialInputColumn(String alias, SamplesSchema schema, ExpSampleSet sampleSet, String... roleNames);

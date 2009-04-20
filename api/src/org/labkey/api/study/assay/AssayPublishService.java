@@ -25,9 +25,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.view.ActionURL;
 
-import javax.servlet.ServletException;
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -47,16 +44,13 @@ public class AssayPublishService
     public interface Service
     {
         ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, ExpProtocol protocol,
-                                      Map<String,Object>[] dataMaps, Map<String, PropertyType> propertyTypes, List<String> errors)
-                throws SQLException, IOException, ServletException;
+                                      List<Map<String,Object>> dataMaps, Map<String, PropertyType> propertyTypes, List<String> errors);
 
         ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, ExpProtocol protocol,
-                                       Map<String, Object>[] dataMaps, Map<String, PropertyType> propertyTypes, String keyPropertyName, List<String> errors)
-                throws SQLException, IOException, ServletException;
+                                       List<Map<String, Object>> dataMaps, Map<String, PropertyType> propertyTypes, String keyPropertyName, List<String> errors);
 
         ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, ExpProtocol protocol,
-                                       Map<String, Object>[] dataMaps, List<PropertyDescriptor> propertyTypes, String keyPropertyName, List<String> errors)
-                throws SQLException, IOException, ServletException;
+                                       List<Map<String, Object>> dataMaps, List<PropertyDescriptor> propertyTypes, String keyPropertyName, List<String> errors);
 
         /**
          * Container -> Study label

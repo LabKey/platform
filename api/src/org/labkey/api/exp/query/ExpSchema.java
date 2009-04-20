@@ -79,11 +79,17 @@ public class ExpSchema extends AbstractExpSchema
         {
             public TableInfo createTable(ExpSchema expSchema)
             {
-                return ExperimentService.get().createProtocolApplicationTable(ProtocolApplications.toString(), expSchema);
+                return expSchema.createProtocolApplicationsTable();
             }
         };
 
         public abstract TableInfo createTable(ExpSchema expSchema);
+    }
+
+    public ExpProtocolApplicationTable createProtocolApplicationsTable()
+    {
+        ExpProtocolApplicationTable result = ExperimentService.get().createProtocolApplicationTable(TableType.ProtocolApplications.toString(), this);
+        return setupTable(result);
     }
 
     public ExpExperimentTable createExperimentsTable(String name)
@@ -199,6 +205,17 @@ public class ExpSchema extends AbstractExpSchema
     {
         ExpProtocolTable ret = ExperimentService.get().createProtocolTable(TableType.Protocols.toString(), this);
         return setupTable(ret);
+    }
+
+    public ForeignKey getProtocolApplicationForeignKey()
+    {
+        return new LookupForeignKey("RowId")
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return createProtocolApplicationsTable();
+            }
+        };
     }
 
     public ForeignKey getProtocolForeignKey(String targetColumnName)

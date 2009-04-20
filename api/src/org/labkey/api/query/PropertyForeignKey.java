@@ -42,7 +42,7 @@ public class PropertyForeignKey extends AbstractForeignKey
      */
     public PropertyForeignKey(PropertyDescriptor[] pds, QuerySchema schema)
     {
-        _pdMap = new TreeMap();
+        _pdMap = new TreeMap<String, PropertyDescriptor>();
         for (PropertyDescriptor pd : pds)
         {
             _pdMap.put(pd.getName(), pd);
@@ -141,8 +141,7 @@ public class PropertyForeignKey extends AbstractForeignKey
         }
         else
         {
-            ExprColumn expr = new ExprColumn(parent.getParentTable(), name, getValueSql(parent, pd), pd.getPropertyType().getSqlType(), parent);
-            ret = expr;
+            ret = new ExprColumn(parent.getParentTable(), name, getValueSql(parent, pd), pd.getPropertyType().getSqlType(), parent);
         }
         initColumn(_schema.getUser(), ret, pd);
         return ret;

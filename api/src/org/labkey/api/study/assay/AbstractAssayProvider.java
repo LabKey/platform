@@ -29,9 +29,6 @@ import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.ui.PropertiesEditor;
-import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.ExternalScriptEngine;
@@ -61,7 +58,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.net.URI;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.*;
@@ -106,11 +102,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
         registerLsidHandler();
     }
 
-    private void setStandardPropertyAttributes(TableInfo runTable, String runTableColName, PropertyDescriptor studyPd)
+    protected void setStandardPropertyAttributes(ColumnInfo colInfo, PropertyDescriptor studyPd)
     {
-        ColumnInfo runColumn = runTable.getColumn(runTableColName);
-        studyPd.setLabel(runColumn.getCaption());
-        studyPd.setDescription(runColumn.getDescription());
+        studyPd.setLabel(colInfo.getCaption());
+        studyPd.setDescription(colInfo.getDescription());
     }
 
     protected void addStandardRunPublishProperties(User user, Container study, Collection<PropertyDescriptor> types, Map<String, Object> dataMap, ExpRun run,
@@ -120,14 +115,14 @@ public abstract class AbstractAssayProvider implements AssayProvider
         TableInfo runTable = schema.getTable(AssayService.get().getRunsTableName(run.getProtocol()));
 
         PropertyDescriptor pd = addProperty(study, "RunName", run.getName(), dataMap, types);
-        setStandardPropertyAttributes(runTable, "Name", pd);
+        setStandardPropertyAttributes(runTable.getColumn("Name"), pd);
         pd = addProperty(study, "RunComments", run.getComments(), dataMap, types);
-        setStandardPropertyAttributes(runTable, "Comments", pd);
+        setStandardPropertyAttributes(runTable.getColumn("Comments"), pd);
         pd = addProperty(study, "RunCreatedOn", run.getCreated(), dataMap, types);
-        setStandardPropertyAttributes(runTable, "Created", pd);
+        setStandardPropertyAttributes(runTable.getColumn("Created"), pd);
         User createdBy = run.getCreatedBy();
         pd = addProperty(study, "RunCreatedBy", createdBy == null ? null : createdBy.getDisplayName(HttpView.currentContext()), dataMap, types);
-        setStandardPropertyAttributes(runTable, "CreatedBy", pd);
+        setStandardPropertyAttributes(runTable.getColumn("CreatedBy"), pd);
 
         Map<String, Object> runProperties = context.getProperties(run);
         for (PropertyDescriptor runPD : context.getRunPDs())
@@ -152,11 +147,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 addProperty(publishPd, batchProperties.get(batchPD.getPropertyURI()), dataMap, types);
             }
         }
-
-
-        
     }
 
+    /** Helper for caching objects during a copy to study */
     protected class CopyToStudyContext
     {
         private Map<ExpRun, ExpExperiment> _batches = new HashMap<ExpRun, ExpExperiment>();
@@ -164,6 +157,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
         private Map<ExpExperiment, Map<String, Object>> _batchPropertyCache = new HashMap<ExpExperiment, Map<String, Object>>();
         private List<PropertyDescriptor> _runPDs;
         private List<PropertyDescriptor> _batchPDs;
+        /** Up to the caller to decide what the keys mean */
+        private Map<Integer, ExpRun> _runsByOntologyObjectId = new HashMap<Integer, ExpRun>();
+        private Map<Integer, ExpRun> _runsByDataId = new HashMap<Integer, ExpRun>();
+        private Map<Integer, ExpData> _data = new HashMap<Integer, ExpData>();
 
         public CopyToStudyContext(ExpProtocol protocol, PropertyDescriptor... extraRunPDs)
         {
@@ -220,6 +217,41 @@ public abstract class AbstractAssayProvider implements AssayProvider
         public Map<String, Object> getProperties(ExpRun run) throws SQLException
         {
             return getProperties(run, _runPropertyCache);
+        }
+
+        public ExpData getData(int dataId)
+        {
+            ExpData result = _data.get(dataId);
+            if (result == null)
+            {
+                result = ExperimentService.get().getExpData(dataId);
+                _data.put(dataId, result);
+            }
+            return result;
+        }
+
+        public ExpRun getRun(ExpData data)
+        {
+            ExpRun result = _runsByDataId.get(data.getRowId());
+            if (result == null)
+            {
+                result = data.getRun();
+                _runsByDataId.put(data.getRowId(), result);
+            }
+            return result;
+        }
+
+        public ExpRun getRun(OntologyObject o)
+        {
+            ExpRun result = _runsByOntologyObjectId.get(o.getOwnerObjectId());
+            if (result == null)
+            {
+                OntologyObject dataRowParent = OntologyManager.getOntologyObject(o.getOwnerObjectId().intValue());
+                ExpData data = ExperimentService.get().getExpData(dataRowParent.getObjectURI());
+                result = data.getRun();
+                _runsByOntologyObjectId.put(o.getOwnerObjectId(), result);
+            }
+            return result;
         }
     }
 
@@ -350,7 +382,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_BATCH);
     }
 
-    public Domain getRunInputDomain(ExpProtocol protocol)
+    public Domain getRunDomain(ExpProtocol protocol)
     {
         return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_RUN);
     }
@@ -527,15 +559,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return result;
     }
 
-    public Domain getRunDomain(ExpProtocol protocol)
-    {
-        return getRunInputDomain(protocol);
-    }
-
     protected ExpRun createExperimentRun(AssayRunUploadContext context) throws ExperimentException
     {
+        String runName = context.getName();
         File file = null;
-        String originalFileName = null;
         {
             try
             {
@@ -544,24 +571,18 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 {
                     Map.Entry<String, File> entry = uploadedData.entrySet().iterator().next();
                     file = entry.getValue();
-                    originalFileName = entry.getKey();
+                    if (runName == null)
+                    {
+                        runName = entry.getKey();
+                    }
                 }
             }
             catch (IOException e)
             {
-                throw new RuntimeException(e);
+                throw new ExperimentException(e);
             }
         }
-        String name = null;
-        if (context.getName() != null)
-        {
-            name = context.getName();
-        }
-        else if (file != null)
-        {
-            name = originalFileName;
-        }
-        ExpRun run = createExperimentRun(name, context.getContainer(), context.getProtocol());
+        ExpRun run = createExperimentRun(runName, context.getContainer(), context.getProtocol());
 
         run.setComments(context.getComments());
         if (file != null)
@@ -1051,49 +1072,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return domainMap;
     }
 
-    public boolean allowUpload(User user, Container container, ExpProtocol protocol)
-    {
-        return isPipelineSetup(container);
-    }
-
     public boolean allowDefaultValues(Domain domain)
     {
         Lsid domainLsid = new Lsid(domain.getTypeURI());
         return !ExpProtocol.ASSAY_DOMAIN_DATA.equals(domainLsid.getNamespacePrefix());
-    }
-
-    protected boolean isPipelineSetup(Container container)
-    {
-        PipelineService service = PipelineService.get();
-        URI uriRoot = null;
-        if (container != null)
-        {
-            PipeRoot pr = service.findPipelineRoot(container);
-            if (pr != null)
-            {
-                uriRoot = pr.getUri(container);
-            }
-        }
-        return (uriRoot != null);
-    }
-
-    public HttpView getDisallowedUploadMessageView(User user, Container container, ExpProtocol protocol)
-    {
-        if (!isPipelineSetup(container))
-        {
-            StringBuilder html = new StringBuilder();
-            html.append("<b>Pipeline root has not been set.</b> ");
-            if (container.hasPermission(user, ACL.PERM_ADMIN))
-            {
-                ActionURL url = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(container);
-                html.append("[<a href=\"").append(url.getLocalURIString()).append("\">setup pipeline</a>]");
-            }
-            else
-                html.append(" Please ask an administrator for assistance.");
-            return new HtmlView(html.toString());
-        }
-
-        return null;
     }
 
     public static ExpData createData(Container c, File file, String name, DataType dataType) throws ExperimentException

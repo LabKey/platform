@@ -18,10 +18,8 @@ package org.labkey.api.exp.query;
 
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.query.TableEditHelper;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.QuerySchema;
-import org.labkey.api.security.User;
 
 abstract public interface ExpTable<C extends Enum> extends ContainerFilterable
 {

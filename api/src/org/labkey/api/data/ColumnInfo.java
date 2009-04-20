@@ -20,11 +20,11 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.CaseInsensitiveHashSet;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpressionFactory.StringExpression;
-import org.labkey.api.query.AliasManager;
 import org.labkey.data.xml.ColumnType;
 
 import java.beans.Introspector;
@@ -116,6 +116,11 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public String getName()
     {
         return name;
+    }
+
+    public FieldKey getFieldKey()
+    {
+        return FieldKey.fromString(name);
     }
 
     public String getAlias()

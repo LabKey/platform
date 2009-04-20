@@ -361,7 +361,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             AssayProvider provider = AssayService.get().getProvider(_protocol);
             Map<DomainProperty, String> runProperties = new HashMap<DomainProperty, String>();
 
-            for (DomainProperty prop : provider.getRunInputDomain(_protocol).getProperties())
+            for (DomainProperty prop : provider.getRunDomain(_protocol).getProperties())
                 runProperties.put(prop, getSampleValue(prop));
 
             return runProperties;

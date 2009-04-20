@@ -139,7 +139,7 @@ public class SampleChooserDisplayColumn extends SimpleDisplayColumn
             return material;
         }
         String name = getSampleName(index, request);
-        if (name == null)
+        if (name == null || "".equals(name))
         {
             name = "Unknown";
         }

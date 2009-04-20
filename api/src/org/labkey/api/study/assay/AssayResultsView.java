@@ -16,59 +16,18 @@
 
 package org.labkey.api.study.assay;
 
-import org.labkey.api.data.DataRegion;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.study.actions.AssayHeaderView;
 import org.labkey.api.study.query.ResultsQueryView;
-import org.labkey.api.view.VBox;
-import org.labkey.api.view.ViewContext;
 
 /**
  * User: kevink
  */
-public class AssayResultsView extends VBox
+public class AssayResultsView extends AbstractAssayView
 {
-    private AssayProvider _provider;
-    private ExpProtocol _protocol;
-    private ResultsQueryView _resultsView;
-    private boolean _minimizeLinks;
-
-    public AssayResultsView(AssayProvider provider, ExpProtocol protocol)
-    {
-        _provider = provider;
-        _protocol = protocol;
-        initalize();
-    }
-
     public AssayResultsView(ExpProtocol protocol, boolean minimizeLinks)
     {
-        _protocol = protocol;
-        _provider = AssayService.get().getProvider(_protocol);
-        _minimizeLinks = minimizeLinks;
-        initalize();
-    }
-
-    protected void initalize()
-    {
-        ViewContext context = getViewContext();
-
-        _resultsView = _provider.createResultsQueryView(context, _protocol);
-        AssayHeaderView headerView = new AssayHeaderView(_protocol, _provider, _minimizeLinks, _resultsView.getTable().getContainerFilter());
-        if (_minimizeLinks)
-        {
-            _resultsView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
-            _resultsView.setShowRecordSelectors(false);
-        }
-        else
-        {
-            _resultsView.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
-        }
-
-        addView(headerView);
-
-        if (!_provider.allowUpload(context.getUser(), context.getContainer(), _protocol))
-            addView(_provider.getDisallowedUploadMessageView(context.getUser(), context.getContainer(), _protocol));
-
-        addView(_resultsView);
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        ResultsQueryView resultsView = provider.createResultsQueryView(getViewContext(), protocol);
+        setupViews(resultsView, minimizeLinks, provider, protocol);
     }
 }

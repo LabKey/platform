@@ -77,7 +77,7 @@ public abstract class ExperimentRunType implements Comparable<ExperimentRunType>
         sql.append(") x");
         try
         {
-            return Table.executeSingleton(schema.getDbSchema(), sql.getSQL(), sql.getParamsArray(), Integer.class, true);
+            return Table.executeSingleton(schema.getDbSchema(), sql.getSQL(), sql.getParamsArray(), Integer.class);
         }
         catch (SQLException e)
         {

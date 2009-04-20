@@ -23,8 +23,6 @@ import java.util.List;
 
 public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
 {
-    static public final String COLUMN_ROWID = "exp.experimentrun.rowid";
-
     enum Column
     {
         RowId,
@@ -42,6 +40,8 @@ public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
         Flag,
         Links,
         RunGroups,
+        Input,
+        Output,
     }
 
     /**
@@ -73,14 +73,4 @@ public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
      * Returns a column which displays the number of data inputs of the specified role.
      */
     ColumnInfo addDataCountColumn(String alias, String roleName);
-
-    /**
-     * Returns a column which is a lookup to a table which has columns for input datas and materials from the run protocol app.
-     */
-    ColumnInfo createInputLookupColumn(String alias, ExpSchema schema);
-
-    /**
-     * Returns a column which is a lookup to a table which has columns for output datas and materials from the run output protocol app.
-     */
-    ColumnInfo createOutputLookupColumn(String alias, ExpSchema schema);
 }

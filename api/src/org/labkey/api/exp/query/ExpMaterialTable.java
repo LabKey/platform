@@ -34,6 +34,7 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>
         Run,
         SampleSet,
         SourceProtocolLSID,
+        SourceProtocolApplication,
         Property,
         Folder,
         Created,

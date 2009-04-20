@@ -248,7 +248,7 @@ public class UserManager
     {
         try
         {
-            return Table.executeSingleton(_core.getSchema(), "SELECT COUNT(*) FROM " + _core.getTableInfoUsersData() + " WHERE LastLogin >= ?", new Object[] { since }, Integer.class, true);
+            return Table.executeSingleton(_core.getSchema(), "SELECT COUNT(*) FROM " + _core.getTableInfoUsersData() + " WHERE LastLogin >= ?", new Object[] { since }, Integer.class);
         }
         catch (SQLException e)
         {

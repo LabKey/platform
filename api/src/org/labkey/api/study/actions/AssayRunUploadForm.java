@@ -109,7 +109,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         if (_runProperties == null)
         {
             AssayProvider provider = AssayService.get().getProvider(getProtocol());
-            Domain domain = provider.getRunInputDomain(getProtocol());
+            Domain domain = provider.getRunDomain(getProtocol());
             DomainProperty[] properties = domain.getProperties();
             properties = reorderDomainColumns(properties, getViewContext(), getProtocol());
             _runProperties = getPropertyMapFromRequest(Arrays.asList(properties));

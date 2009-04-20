@@ -115,8 +115,7 @@ public class Table
             }
             finally
             {
-                if (null != parameters)
-                    closeParameters(parameters);
+                closeParameters(parameters);
             }
         }
         if (asyncRequest != null)
@@ -429,15 +428,6 @@ public class Table
      */
     public static <K> K executeSingleton(DbSchema schema, String sql, Object[] parameters, Class<K> c) throws SQLException
     {
-        return executeSingleton(schema, sql, parameters, c, false);
-    }
-
-    /**
-     * return a result from a one row one column resultset
-     * does not distinguish between not found, and set NULL
-     */
-    public static <K> K executeSingleton(DbSchema schema, String sql, Object[] parameters, Class<K> c, boolean iKnowHowToHandleExceptionsCorrectly) throws SQLException
-    {
         Connection conn = null;
         ResultSet rs = null;
 
@@ -452,10 +442,7 @@ public class Table
         }
         catch(SQLException e)
         {
-            if (!iKnowHowToHandleExceptionsCorrectly)
-            {
-                _doCatch(sql, parameters, conn, e);
-            }
+            _doCatch(sql, parameters, conn, e);
             throw e;
         }
         finally
@@ -549,6 +536,7 @@ public class Table
     }
 
 
+    /** return a result from a one column resultset. K should be a string or number type */
     public static <K> K[] executeArray(TableInfo table, ColumnInfo col, Filter filter, Sort sort, Class<K> c)
             throws SQLException
     {
@@ -585,21 +573,15 @@ public class Table
             _doFinally(rs, null, conn, schema);
         }
     }
-
-
-    /**
-     * return a result from a one column resultset
-     */
+    
+    /** return a result from a one column resultset. K should be a string or number type */
     public static <K> K[] executeArray(DbSchema schema, SQLFragment sql, Class<K> c)
             throws SQLException
     {
         return executeArray(schema, sql.getSQL(), sql.getParams().toArray(), c);
     }
-    
 
-    /**
-     * return a result from a one column resultset
-     */
+    /** return a result from a one column resultset. K should be a string or number type */
     public static <K> K[] executeArray(DbSchema schema, String sql, Object[] parameters, Class<K> c)
             throws SQLException
     {
@@ -1244,7 +1226,7 @@ public class Table
     }
 
 
-    public static TableResultSet select(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort)
+    public static TableResultSet select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort)
             throws SQLException
     {
         SQLFragment sql = getSelectSQL(table, columns, filter, sort);
@@ -1269,14 +1251,14 @@ public class Table
 
 
     @NotNull
-    public static <K> K[] select(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort, Class<K> clss)
+    public static <K> K[] select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Class<K> clss)
             throws SQLException
     {
         return select(table, columns, filter, sort, clss, 0, 0);
     }
 
     @NotNull
-    public static <K> K[] select(TableInfo table, List<ColumnInfo> columns, Filter filter, Sort sort, Class<K> clss, int rowCount, long offset)
+    public static <K> K[] select(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Class<K> clss, int rowCount, long offset)
             throws SQLException
     {
         long queryOffset = offset, scrollOffset = 0;

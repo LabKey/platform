@@ -15,17 +15,15 @@
  */
 package org.labkey.api.study.assay;
 
-import org.labkey.api.exp.api.*;
-import org.labkey.api.exp.*;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.security.User;
 import org.labkey.api.data.*;
+import org.labkey.api.exp.*;
+import org.labkey.api.exp.api.*;
+import org.labkey.api.security.User;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.view.ActionURL;
 
-import javax.servlet.ServletException;
-import java.util.*;
 import java.sql.SQLException;
-import java.io.IOException;
+import java.util.*;
 
 /**
  * User: jeckels
@@ -77,13 +75,11 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
 
             SimpleFilter filter = new SimpleFilter();
             filter.addInClause(getDataRowIdFieldKey().toString(), dataKeys.keySet());
-            int rowIndex = 0;
             OntologyObject[] dataRows = Table.select(OntologyManager.getTinfoObject(), Table.ALL_COLUMNS, filter,
                     new Sort(getDataRowIdFieldKey().toString()), OntologyObject.class);
 
-            Map<String, Object>[] dataMaps = new Map[dataRows.length];
+            List<Map<String, Object>> dataMaps = new ArrayList<Map<String, Object>>(dataRows.length);
 
-            Map<Integer, ExpRun> runCache = new HashMap<Integer, ExpRun>();
             CopyToStudyContext context = new CopyToStudyContext(protocol);
 
             Set<PropertyDescriptor> typeList = new LinkedHashSet<PropertyDescriptor>();
@@ -117,16 +113,8 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
                         addProperty(pd, rowProperties.get(pd.getPropertyURI()), dataMap, tempTypes);
                 }
 
-                ExpRun run = runCache.get(row.getOwnerObjectId());
-                if (run == null)
-                {
-                    OntologyObject dataRowParent = OntologyManager.getOntologyObject(row.getOwnerObjectId().intValue());
-                    ExpData data = ExperimentService.get().getExpData(dataRowParent.getObjectURI());
-
-                    run = data.getRun();
-                    sourceContainer = run.getContainer();
-                    runCache.put(row.getOwnerObjectId(), run);
-                }
+                ExpRun run = context.getRun(row);
+                sourceContainer = run.getContainer();
 
                 AssayPublishKey publishKey = dataKeys.get(row.getObjectId());
                 dataMap.put("ParticipantID", publishKey.getParticipantId());
@@ -140,7 +128,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
 
                 addStandardRunPublishProperties(user, study, tempTypes, dataMap, run, context);
 
-                dataMaps[rowIndex++] = dataMap;
+                dataMaps.add(dataMap);
                 tempTypes = null;
             }
             return AssayPublishService.get().publishAssayData(user, sourceContainer, study, protocol.getName(), protocol,
@@ -149,16 +137,6 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
-        }
-        catch (IOException e)
-        {
-            errors.add(e.getMessage());
-            return null;
-        }
-        catch (ServletException e)
-        {
-            errors.add(e.getMessage());
-            return null;
         }
     }
 }

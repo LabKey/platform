@@ -810,7 +810,7 @@ public class SecurityManager
         }
         catch (SQLException e)
         {
-            _log.error("getPasswordHash: Retrieving Crypt failed.", e);
+            throw new RuntimeSQLException(e);
         }
 
         return hash;

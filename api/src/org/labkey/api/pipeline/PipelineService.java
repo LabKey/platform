@@ -56,6 +56,9 @@ abstract public class PipelineService
     @Nullable
     abstract public PipeRoot findPipelineRoot(Container container);
 
+    /** @return true if this container (or an inherited parent container) has a pipeline root that exists on disk */
+    abstract public boolean hasValidPipelineRoot(Container container);
+
     @NotNull
     abstract public PipeRoot[] getAllPipelineRoots();
 

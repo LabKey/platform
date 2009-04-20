@@ -1502,7 +1502,7 @@ public class ContainerManager
         }
         catch (SQLException e)
         {
-            _log.error("SQL Error setting up container for path '" + path + "'", e);
+            throw new RuntimeSQLException(e);
         }
         return c;
     }

@@ -21,6 +21,11 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 
 /**
+ * Specify comma-separated names for an action. Once this annotation is added to an action, it replaces the
+ * standard naming, so you must include the default name if you want it to continue resolving.
+ * For example, if you annotate GetDataAction and want http://server/controller/container/getData.view to resolve,
+ * you must include "getData" in your value string.
+ *
  * User: adam
  * Date: Dec 20, 2007
  * Time: 1:13:03 PM

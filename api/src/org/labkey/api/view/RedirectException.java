@@ -21,6 +21,11 @@ public class RedirectException extends ServletException
 {
     String _url;
 
+    public RedirectException(ActionURL url)
+    {
+        this(url.getLocalURIString());
+    }
+
     public RedirectException(String url)
     {
         _url = url;

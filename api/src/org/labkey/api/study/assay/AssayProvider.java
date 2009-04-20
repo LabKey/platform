@@ -55,8 +55,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     Domain getRunDomain(ExpProtocol protocol);
 
-    Domain getRunInputDomain(ExpProtocol protocol);
-
     Domain getRunDataDomain(ExpProtocol protocol);
 
     /**
@@ -114,11 +112,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     boolean isMandatoryDomainProperty(Domain domain, String propertyName);
 
-    boolean allowUpload(User user, Container container, ExpProtocol protocol);
-
     boolean allowDefaultValues(Domain domain);
-
-    HttpView getDisallowedUploadMessageView(User user, Container container, ExpProtocol protocol);
 
     ResultsQueryView createResultsQueryView(ViewContext context, ExpProtocol protocol);
 

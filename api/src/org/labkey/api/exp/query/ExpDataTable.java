@@ -28,6 +28,7 @@ public interface ExpDataTable extends ExpTable<ExpDataTable.Column>
         LSID,
         Name,
         Protocol,
+        SourceProtocolApplication,
         DataFileUrl,
         Run,
         Created,

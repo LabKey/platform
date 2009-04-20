@@ -129,6 +129,10 @@ public class PublishResultsQueryView extends ResultsQueryView
             DisplayColumn current = it.next();
             if (hiddenCols.contains(current.getCaption()))
                 it.remove();
+            if (current instanceof DetailsColumn)
+            {
+                it.remove();
+            }
         }
         dr.setShowRecordSelectors(true);
         dr.setShowStatusBar(false);

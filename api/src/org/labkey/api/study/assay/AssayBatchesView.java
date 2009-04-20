@@ -16,28 +16,23 @@
 
 package org.labkey.api.study.assay;
 
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.query.ExpExperimentTable;
-import org.labkey.api.study.actions.AssayHeaderView;
-import org.labkey.api.study.actions.ShowSelectedRunsAction;
-import org.labkey.api.study.actions.AssayBatchDetailsAction;
-import org.labkey.api.view.VBox;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.study.actions.AssayBatchDetailsAction;
+import org.labkey.api.study.actions.ShowSelectedRunsAction;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
-public class AssayBatchesView extends VBox
+public class AssayBatchesView extends AbstractAssayView
 {
-    private BatchListQueryView _batchesView;
-
     public AssayBatchesView(final ExpProtocol protocol, boolean minimizeLinks)
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -47,7 +42,7 @@ public class AssayBatchesView extends VBox
         QuerySettings settings = new QuerySettings(context, tableName, tableName);
         settings.setAllowChooseQuery(false);
 
-        _batchesView = new BatchListQueryView(protocol, AssayService.get().createSchema(context.getUser(), context.getContainer()), settings);
+        BatchListQueryView batchesView = new BatchListQueryView(protocol, AssayService.get().createSchema(context.getUser(), context.getContainer()), settings);
 
         // Unfortunately this seems to be the best way to figure out the name of the URL parameter to filter by batch id
         ActionURL fakeURL = new ActionURL(ShowSelectedRunsAction.class, context.getContainer());
@@ -56,7 +51,7 @@ public class AssayBatchesView extends VBox
         String batchParam = fakeURL.getParameters()[0].getKey() + "=" + fakeURL.getParameters()[0].getValue();
 
         // Need to make sure that we keep the same container filter after following the link
-        ExpExperimentTable tableInfo = (ExpExperimentTable)_batchesView.getTable();
+        ExpExperimentTable tableInfo = (ExpExperimentTable)batchesView.getTable();
         ActionURL runsURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(context.getContainer(), protocol, tableInfo.getContainerFilter());
         tableInfo.getColumn(ExpExperimentTable.Column.Name).setURL(runsURL.toString() + "&" + batchParam);
 
@@ -67,27 +62,11 @@ public class AssayBatchesView extends VBox
             Map<String, String> params = new HashMap<String, String>();
             params.put("batchId", "RowId");
 
-            _batchesView.setShowDetailsColumn(true);
-            AbstractTableInfo table = (AbstractTableInfo)_batchesView.getTable();
+            batchesView.setShowDetailsColumn(true);
+            AbstractTableInfo table = (AbstractTableInfo)batchesView.getTable();
             table.setDetailsURL(new DetailsURL(detailsURL, params));
         }
 
-        AssayHeaderView headerView = new AssayHeaderView(protocol, provider, minimizeLinks, _batchesView.getTable().getContainerFilter());
-        if (minimizeLinks)
-        {
-            _batchesView.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
-            _batchesView.setShowRecordSelectors(false);
-        }
-        else
-        {
-            _batchesView.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
-        }
-
-        addView(headerView);
-
-        if (!provider.allowUpload(context.getUser(), context.getContainer(), protocol))
-            addView(provider.getDisallowedUploadMessageView(context.getUser(), context.getContainer(), protocol));
-
-        addView(_batchesView);
+        setupViews(batchesView, minimizeLinks, provider, protocol);
     }
 }
