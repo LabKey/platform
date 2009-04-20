@@ -27,7 +27,7 @@ public class SimpleValidationError implements ValidationError
     
     public SimpleValidationError(String message)
     {
-        assert null != message: "Null message passed to SimpleValidationErorr!";
+        assert null != message: "Null message passed to SimpleValidationError!";
         _message = message;
     }
 

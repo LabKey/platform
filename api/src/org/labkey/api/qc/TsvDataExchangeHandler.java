@@ -69,11 +69,13 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         runDataUploadedFile,
         errorsFile,
     }
+    public static final String SAMPLE_DATA_PROP_NAME = "sampleData";
     public static final String VALIDATION_RUN_INFO_FILE = "runProperties.tsv";
     public static final String ERRORS_FILE = "validationErrors.tsv";
     public static final String RUN_DATA_FILE = "runData.tsv";
 
     private Map<String, String> _formFields = new HashMap<String, String>();
+    private Map<String, List<Map<String, Object>>> _sampleProperties = new HashMap<String, List<Map<String, Object>>>();
 
     public File createValidationRunInfo(AssayRunUploadContext context, ExpRun run, File scriptDir) throws Exception
     {
@@ -82,7 +84,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
         try {
             // serialize the run properties to a tsv
-            serializeRunProperties(context, scriptDir, pw);
+            writeRunProperties(context, scriptDir, pw);
 
             // add the run data entries
             for (ExpData expData : run.getDataOutputs())
@@ -98,13 +100,24 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     pw.append(Props.runDataFile.name());
                     pw.append('\t');
                     pw.println(runData.getAbsolutePath());
-
-                    // the original path as well
-                    pw.append(Props.runDataUploadedFile.name());
-                    pw.append('\t');
-                    pw.println(expData.getDataFile().getAbsolutePath());
                 }
+                // the original path as well
+                pw.append(Props.runDataUploadedFile.name());
+                pw.append('\t');
+                pw.println(expData.getDataFile().getAbsolutePath());
             }
+
+            // any additional sample property sets
+            for (Map.Entry<String, List<Map<String, Object>>> set : _sampleProperties.entrySet())
+            {
+                File sampleData = new File(scriptDir, set.getKey() + ".tsv");
+                writeRunData(set.getValue(), sampleData);
+
+                pw.append(set.getKey());
+                pw.append('\t');
+                pw.println(sampleData.getAbsolutePath());
+            }
+
             // errors file location
             File errorFile = new File(scriptDir, ERRORS_FILE);
             pw.append(Props.errorsFile.name());
@@ -119,7 +132,36 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
     }
 
-    private void serializeRunProperties(AssayRunUploadContext context, File scriptDir, PrintWriter pw)
+    /**
+     *
+     * @param propertyName
+     * @param propertySet
+     */
+    public void addSampleProperties(String propertyName, String groupColumnName, Map<String, Map<DomainProperty, String>> propertySet)
+    {
+        List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
+        // convert to a list of row maps
+
+        for (Map.Entry<String, Map<DomainProperty, String>> entry : propertySet.entrySet())
+        {
+            Map<String, Object> row = new HashMap<String, Object>();
+
+            row.put(groupColumnName, entry.getKey());
+            for (Map.Entry<DomainProperty, String> colEntry : entry.getValue().entrySet())
+            {
+                row.put(colEntry.getKey().getLabel(), colEntry.getValue());
+            }
+            rows.add(row);
+        }
+        addSampleProperties(propertyName, rows);
+    }
+
+    protected void addSampleProperties(String propertyName, List<Map<String, Object>> rows)
+    {
+        _sampleProperties.put(propertyName, rows);
+    }
+
+    protected void writeRunProperties(AssayRunUploadContext context, File scriptDir, PrintWriter pw)
     {
         Map<DomainProperty, String> runProperties = new HashMap<DomainProperty, String>(context.getRunProperties());
         for (Map.Entry<DomainProperty, String> entry : runProperties.entrySet())
@@ -229,7 +271,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
      * @param name
      * @return
      */
-    private String mapPropertyName(String name)
+    protected String mapPropertyName(String name)
     {
         if (Props.assayId.name().equals(name))
             return "name";
@@ -241,7 +283,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         return null;
     }
 
-    private void writeRunData(List<Map<String, Object>> data, File runDataFile) throws Exception
+    protected void writeRunData(List<Map<String, Object>> data, File runDataFile) throws Exception
     {
         if (data.size() > 0)
         {
@@ -288,7 +330,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         try {
             AssayRunUploadContext context = new SampleRunUploadContext(protocol, viewContext);
 
-            serializeRunProperties(context, scriptDir, pw);
+            writeRunProperties(context, scriptDir, pw);
 
             // create the sample run data
             AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -322,7 +364,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
     }
 
-    private static String getSampleValue(DomainProperty prop)
+    protected static String getSampleValue(DomainProperty prop)
     {
         switch (prop.getPropertyDescriptor().getPropertyType().getSqlType())
         {

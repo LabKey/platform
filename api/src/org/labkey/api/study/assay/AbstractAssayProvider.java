@@ -356,7 +356,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
         return result;
     }
-    
+
     public static Domain getDomainByPrefix(ExpProtocol protocol, String domainPrefix)
     {
         Container container = protocol.getContainer();
@@ -450,7 +450,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         return addProperty(domain, name, label, type, null);
     }
-    
+
     protected DomainProperty addProperty(Domain domain, String name, String label, PropertyType type, String description)
     {
         DomainProperty prop = domain.addProperty();
@@ -663,7 +663,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 Container targetStudy = null;
                 if (targetStudyId != null && targetStudyId.length() > 0)
                     targetStudy = ContainerManager.getForId(targetStudyId);
-                
+
                 resolver = resolverType.createResolver(Collections.unmodifiableCollection(inputMaterials.keySet()),
                         Collections.unmodifiableCollection(inputDatas.keySet()),
                         Collections.unmodifiableCollection(outputMaterials.keySet()),
@@ -698,7 +698,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             run.save(context.getUser());
             // Add the run to the batch so that we can find it when we're loading the data files
             batch.addRuns(context.getUser(), run);
-            
+
             run = ExperimentService.get().insertSimpleExperimentRun(run,
                 inputMaterials,
                 inputDatas,
@@ -865,7 +865,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, UploadWizardAction.class);
     }
-    
+
     public ExpRunTable createRunTable(UserSchema schema, ExpProtocol protocol)
     {
         final ExpRunTable runTable = new ExpSchema(schema.getUser(), schema.getContainer()).createRunsTable();
@@ -1149,7 +1149,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         return false;
     }
-    
+
     public ModelAndView createBatchesView(ViewContext context, ExpProtocol protocol)
     {
         return null;
@@ -1248,7 +1248,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             String datasetIdSQL = "(SELECT max(sd.datasetid) FROM study.StudyData sd, study.dataset d " +
                 "WHERE sd.container = '" + studyContainer.getId() + "' AND " +
                 "sd.container = d.container AND sd.datasetid = d.datasetid AND " +
-                "d.protocolid = " + protocol.getRowId() + " AND " +    
+                "d.protocolid = " + protocol.getRowId() + " AND " +
                 "sd._key = CAST(" + ExprColumn.STR_TABLE_ALIAS + "." + keyColumnName + " AS " +
                 table.getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR) +
                 "(200)))";
@@ -1442,7 +1442,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     finally
                     {
                         // clean up temp directory
-                        FileUtil.deleteDir(scriptDir);
+                        if (FileUtil.deleteDir(scriptDir))
+                        {
+                            File parent = scriptDir.getParentFile();
+                            if (parent != null)
+                                parent.delete();
+                        }
                     }
                 }
                 else
