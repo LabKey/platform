@@ -15,17 +15,17 @@
  */
 package org.labkey.core;
 
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.data.*;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.UnexpectedException;
 
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.HashMap;
 
 /**
  * User: adam
@@ -91,6 +91,31 @@ public class CoreUpgradeCode implements UpgradeCode
 
         PropertyManager.saveProperties(configProps);
         PropertyManager.saveProperties(lafProps);
+    }
+
+    public void installDefaultQcValues()
+    {
+        try
+        {
+            // Need to insert standard QC values for the root
+            Container rootContainer = ContainerManager.getRoot();
+            String rootContainerId = rootContainer.getId();
+            Map<String,String> qcMap = QcUtil.getDefaultQcValues();
+            TableInfo qcValuesTable = CoreSchema.getInstance().getTableInfoQcValues();
+            for(Map.Entry<String,String> qcEntry : qcMap.entrySet())
+            {
+                Map<String,Object> params = new HashMap<String,Object>();
+                params.put("Container", rootContainerId);
+                params.put("QcValue", qcEntry.getKey());
+                params.put("Label", qcEntry.getValue());
+
+                Table.insert(null, qcValuesTable, params);
+            }
+        }
+        catch (SQLException se)
+        {
+            UnexpectedException.rethrow(se);
+        }
     }
 
 

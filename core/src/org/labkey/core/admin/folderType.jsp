@@ -178,7 +178,8 @@ function validate()
     return false;
 }
 </script>
-<form name="folderModules" method=POST action=customize.post onsubmit="return validate();">
+<form name="folderModules" method=POST action=folderSettings.post onsubmit="return validate();">
+    <input type="hidden" name="tabId" value="folderType"> 
     <table width="100%">
         <tr>
             <td valign="top"><%WebPartView.startTitleFrame(out, "Folder Type", null, "100%", null);%>

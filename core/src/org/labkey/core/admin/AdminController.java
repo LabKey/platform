@@ -810,11 +810,13 @@ public class AdminController extends SpringActionController
 
     private static class FolderSettingsTabStrip extends TabStripView
     {
+        private final Container _container;
         private FolderSettingsForm _form;
         private BindException _errors;
 
-        private FolderSettingsTabStrip(FolderSettingsForm form, BindException errors)
+        private FolderSettingsTabStrip(Container c, FolderSettingsForm form, BindException errors)
         {
+            _container = c;
             _form = form;
             _errors = errors;
         }
@@ -824,7 +826,8 @@ public class AdminController extends SpringActionController
             ActionURL url = new AdminUrlsImpl().getFolderSettingsURL(getViewContext().getContainer());
             List<NavTree> tabs = new ArrayList<NavTree>(2);
 
-            tabs.add(new TabInfo("Folder Type", "folderType", url));
+            if (!_container.isRoot())
+                tabs.add(new TabInfo("Folder Type", "folderType", url));
             tabs.add(new TabInfo("QC Values", "qcValues", url));
 
             return tabs;
@@ -834,6 +837,7 @@ public class AdminController extends SpringActionController
         {
             if ("folderType".equals(tabId))
             {
+                assert !_container.isRoot() : "No folder type settings for the root folder";
                 return new JspView<FolderSettingsForm>("/org/labkey/core/admin/folderType.jsp", _form, _errors);
             }
             else if ("qcValues".equals(tabId))
@@ -3749,11 +3753,7 @@ public class AdminController extends SpringActionController
 
         public ModelAndView getView(FolderSettingsForm form, boolean reshow, BindException errors) throws Exception
         {
-            Container c = getContainer();
-            if (c.isRoot())
-                HttpView.throwNotFound();
-
-            return new FolderSettingsTabStrip(form, errors);
+            return new FolderSettingsTabStrip(getContainer(), form, errors);
         }
 
         public boolean handlePost(FolderSettingsForm form, BindException errors) throws Exception
@@ -3764,9 +3764,19 @@ public class AdminController extends SpringActionController
                 return handleFolderTypePost(form, errors);
         }
 
-        private boolean handleQcValuesPost(FolderSettingsForm form, BindException errors)
+        private boolean handleQcValuesPost(FolderSettingsForm form, BindException errors) throws SQLException
         {
-            throw new UnsupportedOperationException("NYI");
+            if(form.isInheritQcValues())
+            {
+                QcUtil.inheritQcValues(getContainer());
+                return true;
+            }
+            else
+            {
+                // Javascript should have enforced any constraints
+                QcUtil.assignQcValues(getContainer(), form.getQcValues(), form.getQcLabels());
+                return true;
+            }
         }
 
         private boolean handleFolderTypePost(FolderSettingsForm form, BindException errors) throws SQLException
@@ -3829,11 +3839,17 @@ public class AdminController extends SpringActionController
 
     public static class FolderSettingsForm
     {
+        // folder type settings
         private String[] activeModules = new String[ModuleLoader.getInstance().getModules().size()];
         private String defaultModule;
         private String folderType;
         private boolean wizard;
         private String tabId;
+
+        // qc settings
+        private boolean inheritQcValues;
+        private String[] qcValues;
+        private String[] qcLabels;
 
         public String[] getActiveModules()
         {
@@ -3893,6 +3909,36 @@ public class AdminController extends SpringActionController
         public boolean isQcValuesTab()
         {
             return "qcValues".equals(getTabId());
+        }
+
+        public boolean isInheritQcValues()
+        {
+            return inheritQcValues;
+        }
+
+        public void setInheritQcValues(boolean inheritQcValues)
+        {
+            this.inheritQcValues = inheritQcValues;
+        }
+
+        public String[] getQcValues()
+        {
+            return qcValues;
+        }
+
+        public void setQcValues(String[] qcValues)
+        {
+            this.qcValues = qcValues;
+        }
+
+        public String[] getQcLabels()
+        {
+            return qcLabels;
+        }
+
+        public void setQcLabels(String[] qcLabels)
+        {
+            this.qcLabels = qcLabels;
         }
     }
 

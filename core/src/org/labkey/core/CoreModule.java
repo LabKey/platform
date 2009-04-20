@@ -204,34 +204,11 @@ public class CoreModule extends SpringModule
 
         if (moduleContext.getInstalledVersion() < 9.11)
         {
-            installDefaultQcValues();
+            getUpgradeCode().installDefaultQcValues();
         }
     }
 
-    private void installDefaultQcValues()
-    {
-        try
-        {
-            // Need to insert standard QC values for the root
-            Container rootContainer = ContainerManager.getRoot();
-            String rootContainerId = rootContainer.getId();
-            Map<String,String> qcMap = QcUtil.getDefaultQcValues();
-            TableInfo qcValuesTable = CoreSchema.getInstance().getTableInfoQcValues();
-            for(Map.Entry<String,String> qcEntry : qcMap.entrySet())
-            {
-                Map<String,Object> params = new HashMap<String,Object>();
-                params.put("Container", rootContainerId);
-                params.put("QcValue", qcEntry.getKey());
-                params.put("Label", qcEntry.getValue());
 
-                Table.insert(null, qcValuesTable, params);
-            }
-        }
-        catch (SQLException se)
-        {
-            UnexpectedException.rethrow(se);
-        }
-    }
 
 
     private void bootstrap()
@@ -250,7 +227,7 @@ public class CoreModule extends SpringModule
 
 
     @Override
-    public UpgradeCode getUpgradeCode()
+    public CoreUpgradeCode getUpgradeCode()
     {
         return new CoreUpgradeCode();
     }
