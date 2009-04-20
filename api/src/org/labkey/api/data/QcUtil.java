@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.labkey.api.util.Cache;
 import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.common.util.Pair;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -32,7 +33,7 @@ public class QcUtil
 
     // Sentinel for the cache: if a container has no qc values set, we use this to indicate,
     // as null means a cache miss.
-    private static final Map<String,String> NO_VALUES = new HashMap<String,String>();
+    private static final Map<String,String> NO_VALUES = Collections.unmodifiableMap(new HashMap<String,String>());
 
     private QcUtil() {}
 
@@ -66,7 +67,24 @@ public class QcUtil
         return "";
     }
 
+    /**
+     * Given a container, this returns the container in which the QC values are defined.
+     * It may be the container itself, or a parent container or project, or the root container.
+     */
+    public static Container getDefiningContainer(Container c)
+    {
+        return getValuesAndLabelsWithContainer(c).getKey();
+    }
+
     public static Map<String,String> getValuesAndLabels(Container c)
+    {
+        return getValuesAndLabelsWithContainer(c).getValue();
+    }
+
+    /**
+     * Return the Container in which these values are defined, along with the qc values.
+     */
+    public static Pair<Container,Map<String,String>> getValuesAndLabelsWithContainer(Container c)
     {
         String cacheKey = getCacheKey(c);
 
@@ -83,17 +101,57 @@ public class QcUtil
             else
             {
                 getCache().put(cacheKey, result);
-                return Collections.unmodifiableMap(Collections.unmodifiableMap(result));
+                return new Pair<Container,Map<String,String>>(c, Collections.unmodifiableMap(Collections.unmodifiableMap(result)));
             }
         }
         if (result == NO_VALUES)
         {
             // recurse
             assert !c.isRoot() : "We have no QC values for the root container. This should never happen";
-            return getValuesAndLabels(c.getParent());
+            return getValuesAndLabelsWithContainer(c.getParent());
         }
 
-        return result;
+        return new Pair<Container,Map<String,String>>(c, result);
+    }
+
+    /**
+     * Sets the container given to inherit qc values from its
+     * parent container, project, or site, whichever
+     * in the hierarchy first has qc values.
+     */
+    public static void inheritQcValues(Container c) throws SQLException
+    {
+        deleteQcValues(c);
+        clearCache(c);
+    }
+
+    private static void deleteQcValues(Container c) throws SQLException
+    {
+        TableInfo qcTable = CoreSchema.getInstance().getTableInfoQcValues();
+        String sql = "DELETE FROM " + qcTable + " WHERE container = ?";
+        Table.execute(CoreSchema.getInstance().getSchema(), sql, new Object[] {c.getId()});
+    }
+
+    /**
+     * Sets the QC values and labels for this container.
+     * Map should be value -> label.
+     */
+    public static void assignQcValues(Container c, String[] qcValues, String[] qcLabels) throws SQLException
+    {
+        assert qcValues.length > 0 : "No QC Values provided";
+        assert qcValues.length == qcLabels.length : "Different number of values and labels provided";
+        deleteQcValues(c);
+        TableInfo qcTable = CoreSchema.getInstance().getTableInfoQcValues();
+        // Need a map to use for each row
+        Map<String,String> toInsert = new HashMap<String,String>();
+        toInsert.put("container", c.getId());
+        for (int i=0; i<qcValues.length; i++)
+        {
+            toInsert.put("qcValue", qcValues[i]);
+            toInsert.put("label", qcLabels[i]);
+            Table.insert(null, qcTable, toInsert);
+        }
+        clearCache(c);
     }
 
     private static Map<String,String> getFromDb(Container c)
