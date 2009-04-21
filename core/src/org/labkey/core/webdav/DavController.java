@@ -29,10 +29,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.*;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.*;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.ViewServlet;
-import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.webdav.WebdavResolver;
@@ -41,6 +38,9 @@ import org.labkey.api.webdav.WebdavService;
 import org.labkey.common.util.Pair;
 import org.labkey.core.webdav.apache.XMLWriter;
 import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 import org.w3c.dom.Document;
@@ -142,7 +142,14 @@ public class DavController extends SpringActionController
     public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws MultipartException
     {
         _webdavresponse = new WebdavResponse(response);
-        WebdavResolver resolver = getResolver();
+
+        String contentType = request.getContentType();
+        if (null != contentType && contentType.startsWith("multipart"))
+            request = (new CommonsMultipartResolver()).resolveMultipart(request);
+
+        ViewContext context = getViewContext();
+        context.setRequest(request);
+        context.setResponse(response);
 
         String method = getViewContext().getActionURL().getAction();
         Controller action = resolveAction(method.toLowerCase());
@@ -535,11 +542,46 @@ public class DavController extends SpringActionController
      * </form>
      */
     @RequiresPermission(ACL.PERM_NONE)
-    public class PostAction extends GetAction
+    public class PostAction extends PutAction
     {
         public PostAction()
         {
             super("POST");
+        }
+
+        @Override
+        public WebdavStatus doMethod() throws DavException, IOException
+        {
+            WebdavResolver.Resource resource = resolvePath();
+            if (null == resource)
+                return notFound();
+            boolean isCollection = resource.isCollection();
+
+            if (isCollection && getRequest() instanceof MultipartHttpServletRequest)
+            {
+                MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest)getRequest();
+                if (multipartRequest.getFileMap().size() > 1)
+                    return WebdavStatus.SC_NOT_IMPLEMENTED;
+
+                for (Object o : multipartRequest.getFileMap().entrySet())
+                {
+                    Map.Entry<String, MultipartFile> entry = (Map.Entry<String, MultipartFile>) o;
+                    MultipartFile file = entry.getValue();
+                    String fileName = file.getOriginalFilename();
+                    if (!file.isEmpty())
+                    {
+                        WebdavResolver.Resource dest = resource.find(fileName);
+                        if (null == file)
+                            return WebdavStatus.SC_METHOD_NOT_ALLOWED;
+                        // CONSIDER: support multi-file POST
+                        setResource(dest);
+                        setInputStream(file.getInputStream());
+                        return super.doMethod();
+                    }
+                }
+            }
+
+            return new GetAction().doMethod();
         }
     }
 
@@ -892,6 +934,7 @@ public class DavController extends SpringActionController
             xml.writeElement(null, "multistatus", XMLWriter.CLOSING);
         }
 
+
         public void writeProperties(WebdavResolver.Resource resource, Find type, List<String> propertiesVector)
         {
             boolean exists = resource.exists();
@@ -918,7 +961,7 @@ public class DavController extends SpringActionController
                         path = path + "/";
                     xml.writeProperty(null, "path", h(path));
 
-                    xml.writeProperty(null, "creationdate", getISOCreationDate(resource.getCreation()));
+                    xml.writeProperty(null, "creationdate", getISOCreationDate(resource.getCreated()));
                     if (null == displayName)
                     {
                         xml.writeElement(null, "displayname", XMLWriter.NO_CONTENT);
@@ -931,7 +974,9 @@ public class DavController extends SpringActionController
                     {
                         if (isFile)
                         {
-                            xml.writeProperty(null, "getlastmodified", getHttpDateFormat(resource.getLastModified()));
+                            long modified = resource.getLastModified();
+                            if (modified != Long.MIN_VALUE)
+                                xml.writeProperty(null, "getlastmodified", getHttpDateFormat(modified));
                             xml.writeProperty(null, "getcontentlength", String.valueOf(_contentLength(resource)));
                             String contentType = resource.getContentType();
                             if (contentType != null)
@@ -948,7 +993,12 @@ public class DavController extends SpringActionController
                             xml.writeElement(null, "resourcetype", XMLWriter.CLOSING);
                         }
                     }
-                    
+
+                    {
+                    StringBuilder methodsAllowed = determineMethodsAllowed(resource);
+                    xml.writeProperty(null, "options", methodsAllowed.toString());
+                    }
+                
                     xml.writeProperty(null, "iconHref", h(resource.getIconHref()));
 
                     xml.writeProperty(null, "source", "");
@@ -993,6 +1043,7 @@ public class DavController extends SpringActionController
 					xml.writeElement(null, "isreadonly", XMLWriter.NO_CONTENT);
                     xml.writeElement(null, "resourcetype", XMLWriter.NO_CONTENT);
                     xml.writeElement(null, "source", XMLWriter.NO_CONTENT);
+                    xml.writeElement(null, "options", XMLWriter.NO_CONTENT);
 //					 generatedXML.writeElement(null, "lockdiscovery", XMLWriter.NO_CONTENT);
 
                     xml.writeElement(null, "prop", XMLWriter.CLOSING);
@@ -1016,7 +1067,7 @@ public class DavController extends SpringActionController
                     {
                         if (property.equals("creationdate"))
                         {
-                            xml.writeProperty(null, "creationdate", getISOCreationDate(resource.getCreation()));
+                            xml.writeProperty(null, "creationdate", getISOCreationDate(resource.getCreated()));
                         }
                         else if (property.equals("displayname"))
                         {
@@ -1083,7 +1134,11 @@ public class DavController extends SpringActionController
                             }
                             else
                             {
-                                xml.writeProperty(null, "getlastmodified", getHttpDateFormat(resource.getLastModified()));
+                                long modified = resource.getLastModified();
+                                if (modified == Long.MIN_VALUE)
+                                    xml.writeProperty(null, "getlastmodified", "");
+                                else
+                                    xml.writeProperty(null, "getlastmodified", getHttpDateFormat(modified));
                             }
                         }
 						else if (property.equals("href"))
@@ -1186,6 +1241,11 @@ public class DavController extends SpringActionController
                                 xml.writeElement(null, "entry", XMLWriter.CLOSING);
                             }
                             xml.writeElement(null, "history", XMLWriter.CLOSING);
+                        }
+                        else if (property.equals("options"))
+                        {
+                            StringBuilder methodsAllowed = determineMethodsAllowed(resource);
+                            xml.writeProperty(null, "options", methodsAllowed.toString());
                         }
                         else
                         {
@@ -1445,7 +1505,7 @@ public class DavController extends SpringActionController
             json.key("href").value(resource.getHref(getViewContext()));
             json.key("text").value(displayName);
 
-            json.key("creationdate").value(new Date(resource.getCreation()));
+            json.key("creationdate").value(new Date(resource.getCreated()));
             if (resource.isFile())
             {
                 json.key("lastmodified").value(new Date(resource.getLastModified()));
@@ -1579,17 +1639,51 @@ public class DavController extends SpringActionController
     @RequiresPermission(ACL.PERM_NONE)
     public class PutAction extends DavAction
     {
+        // this is a member so PostAction() can set it
+        WebdavResolver.Resource _resource;
+        InputStream _is;
+
         public PutAction()
         {
             super("PUT");
         }
+
+        protected PutAction(String method)
+        {
+            super(method);
+        }
+
+        protected void setResource(WebdavResolver.Resource r)
+        {
+            _resource = r;
+        }
+        
+        WebdavResolver.Resource getResource() throws DavException
+        {
+            if (null == _resource)
+                _resource = resolvePath();
+            return _resource;
+        }
+
+        protected void setInputStream(InputStream is)
+        {
+            _is = is;
+        }
+
+        InputStream getInputStream() throws DavException, IOException
+        {
+            if (null != _is)
+                return _is;
+            return getRequest().getInputStream();
+        }
+
 
         WebdavStatus doMethod() throws DavException, IOException
         {
             checkReadOnly();
             checkLocked();
 
-            WebdavResolver.Resource resource = resolvePath();
+            WebdavResolver.Resource resource = getResource();
             if (resource == null)
                 return notFound();
             boolean exists = resource.exists();
@@ -1606,7 +1700,7 @@ public class DavController extends SpringActionController
 
             try
             {
-                is = getRequest().getInputStream();
+                is = getInputStream();
                 if (!resource.exists())
                 {
                     temp = getTemporary();
@@ -2124,7 +2218,9 @@ public class DavController extends SpringActionController
         getResponse().setEntityTag(resource.getETag());
 
         // Last-Modified header
-        getResponse().setLastModified(resource.getLastModified());
+        long modified = resource.getLastModified();
+        if (modified != Long.MIN_VALUE)
+            getResponse().setLastModified(modified);
 
         // Get content length
         long contentLength = resource.getContentLength();
@@ -2320,6 +2416,7 @@ public class DavController extends SpringActionController
     {
         User user = getUser();
         StringBuilder methodsAllowed = new StringBuilder("OPTIONS");
+
         if (!resource.exists())
         {
             if (resource.canCreate(user))
@@ -2331,6 +2428,9 @@ public class DavController extends SpringActionController
         {
             boolean read = resource.canRead(user);
             boolean delete = resource.canDelete(user);
+            boolean createResource = resource.canCreate(user);
+            boolean createCollection = createResource; // UNDONE
+
             if (read)
                 methodsAllowed.append(", GET, HEAD, POST, COPY");
             if (delete)
@@ -2341,8 +2441,15 @@ public class DavController extends SpringActionController
                 methodsAllowed.append(", LOCK, UNLOCK");
             if (_listings)
                 methodsAllowed.append(", PROPFIND");
+
             if (resource.isCollection())
-                methodsAllowed.append(", PUT");
+            {
+                // these options actually apply to _children_ not this resource
+                if (createResource)
+                    methodsAllowed.append(", PUT");
+                if (createCollection)
+                    methodsAllowed.append(", MKCOL");
+            }
         }
         return methodsAllowed;
     }
