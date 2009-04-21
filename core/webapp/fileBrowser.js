@@ -989,7 +989,7 @@ Ext.extend(FileBrowser, Ext.Panel,
                 }.createDelegate(this));
             }
         }
-        if (this.selectedRecord && record && this.selectedRecord.data.path != record.data.path)
+        if (this.selectedRecord && record && this.selectedRecord.data.path == record.data.path)
             return;
         if (!this.selectedRecord && !record)
             return;
@@ -1008,6 +1008,10 @@ Ext.extend(FileBrowser, Ext.Panel,
             this.tree.getSelectionModel().clearSelections();
         if (record)
             this.selectFile(record);
+    },
+
+    Grid_onSelectionChange : function(rowIndex, keepExisting, record)
+    {
     },
 
     Grid_onKeypress : function(e)
@@ -1235,6 +1239,7 @@ Ext.extend(FileBrowser, Ext.Panel,
             ]
         });
         this.grid.getSelectionModel().on(ROWSELECTION_MODEL.rowselect, this.Grid_onRowselect, this);
+        this.grid.getSelectionModel().on(ROWSELECTION_MODEL.selectionchange, this.Grid_onSelectionChange, this);
         this.grid.on(GRIDPANEL_EVENTS.celldblclick, this.Grid_onCelldblclick, this);
         this.grid.on(GRIDPANEL_EVENTS.keypress, this.Grid_onKeypress, this);
         this.grid.on(PANEL_EVENTS.render, function()
@@ -1269,24 +1274,21 @@ Ext.extend(FileBrowser, Ext.Panel,
         // Toolbar
         //
 
-        var tbarConfig;
+        var tbarConfig = [];
         if (!this.tbar)
         {
-            tbarConfig = [];
-            tbarConfig.push(this.actions.deletePath);
-            if (this.allowChangeDirectory)
-                tbarConfig.push(this.actions.createDirectory);
-            tbarConfig.push(this.actions.download);
-            if (this.allowChangeDirectory)
-                tbarConfig.push(this.actions.parentFolder);
-            tbarConfig.push(this.actions.refresh);
-//            tbarConfig.push(this.actions.showHistory);
-            if (this.actions.help)
-                tbarConfig.push(this.actions.help);
+            // UNDONE: need default ordering
+            if (!this.allowChangeDirectory)
+            {
+                delete this.actions.createDirectory;
+                delete this.actions.parentFolder;
+            }
+            for (var a in this.actions)
+                if (this.actions[a] && this.actions[a].isAction)
+                    tbarConfig.push(this.actions[a]);
         }
         else
         {
-            tbarConfig = [];
             for (var i=0 ; i<this.tbar.length ; i++)
             {
                 var item = this.tbar[i];
@@ -1312,27 +1314,30 @@ Ext.extend(FileBrowser, Ext.Panel,
             bodyStyle : 'background-color:#f0f0f0; padding:5px;',
             defaults: {bodyStyle : 'background-color:#f0f0f0'},
             items: [
-                new Ext.form.FileUploadField({
+                new Ext.form.FileUploadField(
+                {
                       buttonText: "Upload File...",
                       buttonOnly: true,
                       buttonCfg: {cls: "labkey-button"},
-                      listeners: {"fileselected": function (fb, v) {
+                      listeners: {"fileselected": function (fb, v)
+                      {
                           me.uploadPanel.getForm().submit();
-                        }
-                      }
+                      }}
                 })
             ],
             listeners: {
-              "actioncomplete" : function (f, action) {
-                console.log("actioncomplete");
-                console.log(action);
-//                handleDataUpload(f, action);
-              },
-              "actionfailed" : function (f, action) {
-                console.log("actionfailed");
-                console.log(action);
-//                handleDataUpload(f, action);
-              }
+                "actioncomplete" : function (f, action)
+                {
+                    console.log("actioncomplete");
+                    console.log(action);
+                    me.getRefreshAction().execute();
+                },
+                "actionfailed" : function (f, action)
+                {
+                    console.log("actionfailed");
+                    console.log(action);
+                    me.getRefreshAction().execute();
+                }
             }
         });
 
@@ -1443,13 +1448,16 @@ Ext.extend(FileBrowser, Ext.Panel,
                 this.uploadPanel.getForm().getEl().dom.action = record.data.uri;
         }, this);
 
-        this.on(BROWSER_EVENTS.directorychange, function(record)
+        if (this.actions.parentFolder)
         {
-            if (record && record.data && record.data.path != this.fileSystem.rootPath)
-                this.actions.parentFolder.enable();
-            else
-                this.actions.parentFolder.disable();
-        }, this);
+            this.on(BROWSER_EVENTS.directorychange, function(record)
+            {
+                if (record && record.data && record.data.path != this.fileSystem.rootPath)
+                    this.actions.parentFolder.enable();
+                else
+                    this.actions.parentFolder.disable();
+            }, this);
+        }
 
         this.on(BROWSER_EVENTS.directorychange,function(record)
         {

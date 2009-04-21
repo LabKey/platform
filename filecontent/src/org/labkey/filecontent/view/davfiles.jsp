@@ -26,6 +26,13 @@
 <%@ page import="org.labkey.api.attachments.AttachmentDirectory" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.ACL" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.labkey.filecontent.FileContentController" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
+<%@ page import="org.labkey.api.attachments.Attachment" %>
+<%@ page import="org.labkey.filecontent.FilesWebPart" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 //FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz", TimeZone.getTimeZone("GMT"), Locale.US);
@@ -34,11 +41,13 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
 <%
     ViewContext context = HttpView.currentContext();
     AttachmentDirectory root = (AttachmentDirectory)HttpView.currentModel();
+    FilesWebPart me = (FilesWebPart) HttpView.currentView();
     Container c = ContainerManager.getForId(root.getContainerId());
     if (null == c)
     {
         return;
     }
+
     // prefix is where we what the tree rooted
     // TODO: applet and fileBrowser could use more consistent configuration parameters
     String rootName = c.getName();
@@ -68,6 +77,11 @@ Ext.BLANK_IMAGE_URL = LABKEY.contextPath + "/_.gif";
 
 Ext.onReady(function()
 {
+    var configureAction = new Ext.Action({text: 'Configure', handler: function()
+    {
+        window.location = <%=PageFlowUtil.jsString(new ActionURL(FileContentController.ShowAdminAction.class, c).getLocalURIString())%>;
+    }});
+            
     Ext.QuickTips.init();
     var fileSystem = new WebdavFileSystem({
         baseUrl:<%=PageFlowUtil.jsString(rootPath)%>,
@@ -80,6 +94,7 @@ Ext.onReady(function()
         ,showProperties:false
         ,showDetails:false
         ,allowChangeDirectory:false
+        ,actions:{configure:configureAction}
     });
     fileBrowser.render('files');
     var resizer = new Ext.Resizable('files', {width:800, height:600, minWidth:640, minHeight:400});
@@ -89,3 +104,37 @@ Ext.onReady(function()
 
 
 </script>
+<%!
+    URLHelper showFileUrl(URLHelper u, Attachment a)
+    {
+        URLHelper url = u.clone();
+        url.setFile(a.getName());
+        FileContentController.RenderStyle render = FileContentController.defaultRenderStyle(a.getName());
+        url.replaceParameter("renderAs", render.name());
+        return url;
+    }
+
+    URLHelper downloadFileUrl(URLHelper u, Attachment a)
+    {
+        URLHelper url = u.clone();
+        url.setFile(a.getName());
+        url.replaceParameter("renderAs", FileContentController.RenderStyle.ATTACHMENT.name());
+        return url;
+    }
+
+    String adminError(ViewContext context)
+    {
+        StringBuilder sb = new StringBuilder();
+        if (context.getUser().isAdministrator())
+        {
+            ActionURL url = new ActionURL("FileContent", "begin.view", context.getContainer().getProject());
+            sb.append("<a href=\"").append(url).append("\">Configure root</a>");
+        }
+        else
+        {
+            sb.append("Contact an adminsistrator");
+
+        }
+        return sb.toString();
+    }
+%>
