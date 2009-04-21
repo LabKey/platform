@@ -35,9 +35,17 @@ public class FilesWebPart extends JspView<AttachmentDirectory>
     private String fileSet;
     private Container container;
 
+    private static final String JSP = "/org/labkey/filecontent/view/files.jsp";
+
+
     public FilesWebPart(Container c)
     {
-        super("/org/labkey/filecontent/view/files.jsp", null);
+        this(JSP, c);
+    }
+
+    protected FilesWebPart(String jsp, Container c)
+    {
+        super(jsp, null);
         container = c;
         setFileSet(null);
         setTitle("Files");
@@ -46,7 +54,12 @@ public class FilesWebPart extends JspView<AttachmentDirectory>
 
     public FilesWebPart(Container c, String fileSet)
     {
-        super("/org/labkey/filecontent/view/files.jsp", AttachmentService.get().getRegisteredDirectory(c, fileSet));
+        this(JSP, c, fileSet);
+    }
+
+    protected FilesWebPart(String jsp, Container c, String fileSet)
+    {
+        super(jsp, AttachmentService.get().getRegisteredDirectory(c, fileSet));
         container = c;
         this.fileSet = fileSet;
         setTitle(fileSet);
@@ -55,7 +68,7 @@ public class FilesWebPart extends JspView<AttachmentDirectory>
 
     public FilesWebPart(ViewContext ctx, Portal.WebPart webPartDescriptor)
     {
-        this(ctx.getContainer());
+        this(JSP, ctx.getContainer());
         setWide(null == webPartDescriptor.getLocation() || HttpView.BODY.equals(webPartDescriptor.getLocation()));
         setShowAdmin(container.hasPermission(ctx.getUser(), ACL.PERM_ADMIN));
         fileSet = StringUtils.trimToNull(webPartDescriptor.getPropertyMap().get("fileSet"));

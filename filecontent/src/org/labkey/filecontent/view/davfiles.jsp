@@ -50,6 +50,7 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
     LABKEY.requiresExtJs(true);
     LABKEY.requiresScript("fileBrowser.js");
     LABKEY.requiresScript("applet.js",true);
+    LABKEY.requiresScript("FileUploadField.js");
 </script>
 
 <div class="extContainer" style="padding:20px;">
@@ -86,34 +87,5 @@ Ext.onReady(function()
     fileBrowser.start.defer(0, fileBrowser);
 });
 
-LABKEY.writeApplet(
-{
-    id:"dropApplet",
-    archive:"<%=request.getContextPath()%>/_applets/applets-9.1.jar?guid=<%=GUID.makeHash()%><%=AppProps.getInstance().getServerSessionGUID()%>",
-    code:"org.labkey.applets.drop.DropApplet",
-    width:200,
-    height:200,
-    params:
-    {
-        url:<%=PageFlowUtil.jsString(baseUrl)%>,
-        webdavPrefix:<%=PageFlowUtil.jsString(webdavPrefix)%>,
-        user:<%=PageFlowUtil.jsString(context.getUser().getEmail())%>,
-        password:<%=PageFlowUtil.jsString(request.getSession(true).getId())%>
-    }
-});
 
-function getDropApplet()
-{
-    try
-    {
-        var el = Ext.get("dropApplet");
-        var applet = el ? el.dom : null;
-        if (applet && 'isActive' in applet && applet.isActive())
-            return applet;
-    }
-    catch (x)
-    {
-    }
-    return null;
-}
 </script>

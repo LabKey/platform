@@ -134,16 +134,6 @@ public class ReportWebdavProvider implements WebdavService.Provider
         {
             return false;
         }
-
-        public long getCreation()
-        {
-            return 0;
-        }
-
-        public long getLastModified()
-        {
-            return 0;
-        }
     }
 
     public static class ViewResource extends AbstractDocumentResource
@@ -233,7 +223,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
             return _folder;
         }
 
-        public long getCreation()
+        public long getCreated()
         {
             return _report.getDescriptor().getCreated().getTime();
         }

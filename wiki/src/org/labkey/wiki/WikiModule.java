@@ -89,7 +89,7 @@ public class WikiModule extends DefaultModule
         ContainerManager.addContainerListener(new WikiContainerListener());
         Search.register(new WikiSearchable());
         ModuleLoader.getInstance().registerFolderType(new CollaborationFolderType());
-//        WebdavService.addProvider(new WikiWebdavProvider());
+        WebdavService.addProvider(new WikiWebdavProvider());
 
         // Ideally, this would be in afterUpdate(), but announcements runs the wiki sql scripts and is dependent on
         // wiki module, so no dice.

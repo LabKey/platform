@@ -99,14 +99,14 @@ public class FileWebdavProvider implements WebdavService.Provider
             return true;
         }
 
-        public long getCreation()
+        public long getCreated()
         {
-            return 0;
+            return Long.MIN_VALUE;
         }
 
         public long getLastModified()
         {
-            return 0;
+            return Long.MIN_VALUE;
         }
 
         @NotNull

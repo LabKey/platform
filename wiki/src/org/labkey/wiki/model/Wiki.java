@@ -83,17 +83,6 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     }
 
 
-    public Wiki(String containerId, String entityId, int rowId, int parent, HString name, Attachment[] attach)
-    {
-        setContainerId(containerId);
-        this.entityId = entityId;
-        this.rowId = rowId;
-        this.name = name;
-        this.parent = parent;
-        this.attachments = null == attach ? null : Arrays.asList(attach);
-    }
-
-
     @Transient
     public synchronized ActionURL getWikiLink(String action, HString name)
     {

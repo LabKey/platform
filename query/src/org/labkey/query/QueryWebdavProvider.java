@@ -103,16 +103,16 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			return _schemaNames;
 		}
 
-		public long getCreation()
+		public long getCreated()
 		{
-			return 0;
+            return Long.MIN_VALUE;
 		}
 
 		public long getLastModified()
 		{
-			return 0;
+            return Long.MIN_VALUE;
 		}
-	}
+    }
 
 
 	class SchemaResource extends AbstractCollectionResource
@@ -151,16 +151,16 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			return list;
 		}
 
-		public long getCreation()
+		public long getCreated()
 		{
-			return 0;
+            return Long.MIN_VALUE;
 		}
 
 		public long getLastModified()
 		{
-			return 0; 
+            return Long.MIN_VALUE;
 		}
-	}
+    }
 
 
 	class SqlResource extends AbstractDocumentResource
@@ -181,7 +181,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			return true;
 		}
 
-		public long getCreation()
+		public long getCreated()
 		{
 			return 0;	// TODO
 		}
@@ -255,5 +255,5 @@ public class QueryWebdavProvider implements WebdavService.Provider
 		{
 			return false;
 		}
-	}
+    }
 }

@@ -131,16 +131,12 @@ function _updateDropUI()
                 var frag = document.createDocumentFragment();
                 for (i=oldTransferCount ; i<transferCount; i++)
                 {
-                    transfers[i] = {};
+                    var sTransfer = dropApplet.transfer_getObject(i);
+                    transfers[i] = eval("var $=" + sTransfer + ";$;");
                     t = transfers[i];
-                    t.path = dropApplet.transfer_getPath(i);
-                    t.name = dropApplet.transfer_getDisplayName(i);
-                    t.length = dropApplet.transfer_getLength(i);
-                    var m = dropApplet.transfer_getLastModified(i);
-                    t.modified = m == -1 ? "-" : (new Date(m)).toLocaleString();
-                    state = dropApplet.transfer_getState(i);
+                    t.modified =  t.lastModified ? (new Date(t.lastModified)).toLocaleString() : "-";
+                    state = t.state;
                     t.state = -100; // let next loop update state/status info to duplicate less code
-                    t.status = dropApplet.transfer_getStatus(i);
                     t.percent = -1;
                     t.transfered = 0;
 
@@ -170,10 +166,13 @@ function _updateDropUI()
                 if (!dropApplet.transfer_getUpdated(i))
                     continue;
                 t = transfers[i];
-                var transfered = Math.max(0,dropApplet.transfer_getTransferred(i));
-                var percent = dropApplet.transfer_getPercent(i);
-                var state = dropApplet.transfer_getState(i);
-                var status = dropApplet.transfer_getStatus(i);
+                var sUpdated = dropApplet.transfer_getObject(i);
+                var updated = eval("var $=" + sUpdated + ";$;");
+
+                var transfered = Math.max(0,updated.transferred);
+                var percent = updated.percent;
+                var state = updated.state;
+                var status = updated.status;
                 if ("tdStatus" in t && t.tdStatus)
                 {
                     var tdStatus = t.tdStatus;

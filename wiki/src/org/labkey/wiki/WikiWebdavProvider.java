@@ -135,14 +135,14 @@ class WikiWebdavProvider implements WebdavService.Provider
             return false;
         }
 
-        public long getCreation()
+        public long getCreated()
         {
-            return 0;
+            return Long.MIN_VALUE;
         }
 
         public long getLastModified()
         {
-            return 0;
+            return Long.MIN_VALUE;
         }
 
         public String getExecuteHref(ViewContext context)
@@ -156,6 +156,7 @@ class WikiWebdavProvider implements WebdavService.Provider
     {
         Container _c;
         Wiki _wiki;
+        List<WebdavResolver.Resource> _attachments;
         
         WikiFolder(WikiProviderResource folder, String name)
         {
@@ -181,41 +182,52 @@ class WikiWebdavProvider implements WebdavService.Provider
         }
 
         @NotNull
-        public List<String> listNames()
+        public synchronized List<String> listNames()
         {
             if (!exists())
                 return Collections.emptyList();
-            Set<String> set = new TreeSet<String>();
-            Collection<Attachment> atts = _wiki.getAttachments();
-            if (null != atts) for (Attachment att : atts)
-                set.add(att.getName());
-            set.add(getDocumentName(_wiki));
-            return new ArrayList<String>(set);
+            _attachments = AttachmentService.get().getAttachmentResources(this, _wiki);
+            List<String> ret = new ArrayList<String>(_attachments.size());
+            for (WebdavResolver.Resource r : _attachments)
+                ret.add(r.getName());
+            return ret;
         }
 
-
-        public WebdavResolver.Resource find(String name)
+        public synchronized WebdavResolver.Resource find(String name)
         {
             String docName = getDocumentName(_wiki);
-            if (docName.equals(name))
+            if (docName.equalsIgnoreCase(name))
             {
                 return new WikiPageResource(this, _wiki, docName);
             }
             else
             {
-                return new AttachmentResource(this, _wiki, name);
+                boolean cached = _attachments != null;
+                if (null == _attachments)
+                    _attachments = AttachmentService.get().getAttachmentResources(this, _wiki);
+                for (WebdavResolver.Resource r : _attachments)
+                    if (r.getName().equalsIgnoreCase(name))
+                        return r;
+                if (cached) // refresh and try again
+                {
+                    _attachments = AttachmentService.get().getAttachmentResources(this, _wiki);
+                    for (WebdavResolver.Resource r : _attachments)
+                        if (r.getName().equalsIgnoreCase(name))
+                            return r;
+                }
             }
+            return null;
         }
 
 
-        public long getCreation()
+        public long getCreated()
         {
-            return 0;
+            return Long.MIN_VALUE;
         }
 
         public long getLastModified()
         {
-            return 0;
+            return Long.MIN_VALUE;
         }
 
         public String getExecuteHref(ViewContext context)
@@ -373,7 +385,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             return _folder;
         }
 
-        public long getCreation()
+        public long getCreated()
         {
             return _wiki.getCreated().getTime();
         }
@@ -435,165 +447,5 @@ class WikiWebdavProvider implements WebdavService.Provider
             return null;
         }
 
-    }
-
-
-    public static class AttachmentResource extends AbstractDocumentResource
-    {
-        WikiFolder _folder = null;
-        AttachmentParent _parent = null;
-        String _name = null;
-
-        AttachmentResource(WikiFolder folder, AttachmentParent parent, String name)
-        {
-            super(folder.getPath(), name);
-            _folder = folder;
-            _acl = _folder._c.getAcl();
-            _name = name;
-            _parent = parent;
-        }
-
-        public boolean exists()
-        {
-            Attachment r = AttachmentService.get().getAttachment(_parent, _name);
-            return null != r;
-        }
-
-        public boolean isCollection()
-        {
-            return false;
-        }
-
-        public boolean isVirtual()
-        {
-            return true;
-        }
-
-        @Override
-        public boolean canRename(User user)
-        {
-            return false;
-        }
-
-        @Override
-        public boolean delete(User user) throws IOException
-        {
-            try
-            {
-                AttachmentService.get().delete(user, _parent, _name);
-                return true;
-            }
-            catch (SQLException x)
-            {
-                IOException io = new IOException();
-                io.initCause(x);
-                throw io;
-            }
-        }
-
-        public InputStream getInputStream(User user) throws IOException
-        {
-            return AttachmentService.get().getInputStream(_parent, _name);
-        }
-
-
-        public long copyFrom(User user, InputStream in) throws IOException
-        {
-            // stream to temp file
-            long length = 0;
-            File tmp = File.createTempFile("attachment",".tmp");
-            tmp.deleteOnExit();
-            try
-            {
-                tmp.createNewFile();
-                FileOutputStream fos = new FileOutputStream(tmp);
-                length = FileUtil.copyData(in, fos);
-                fos.close();
-
-                ArrayList list = new ArrayList();
-                list.add(new FileAttachmentFile(tmp));
-
-                if (exists())
-                    AttachmentService.get().deleteAttachment(_parent, _name);
-                AttachmentService.get().addAttachments(user, _parent, list);
-            }
-            catch (AttachmentService.DuplicateFilenameException x)
-            {
-                IOException io = new IOException();
-                io.initCause(x);
-                throw io;
-            }
-            catch (SQLException x)
-            {
-                IOException io = new IOException();
-                io.initCause(x);
-                throw io;
-            }
-            finally
-            {
-                tmp.delete();
-            }
-            return length;
-        }
-        
-        public WebdavResolver.Resource parent()
-        {
-            return _folder;
-        }
-
-        public long getCreation()
-        {
-            return 0;
-        }
-
-        public long getLastModified()
-        {
-            return 0;
-        }
-
-        public long getContentLength()
-        {
-            // UNDONE how expensive is this
-            InputStream is = null;
-            try
-            {
-                is = getInputStream(null);
-                if (null != is)
-                {
-                    if (is instanceof FileInputStream)
-                        return ((FileInputStream) is).getChannel().size();
-                    else if (is instanceof FilterInputStream)
-                        return is.available();
-                }
-            }
-            catch (IOException x)
-            {
-            }
-            finally
-            {
-                IOUtils.closeQuietly(is);    
-            }
-            return 0;
-        }
-
-		@Override
-        public int getPermissions(User user)
-        {
-            // READ-ONLY for now
-            return super.getPermissions(user) & ACL.PERM_READ;
-        }
-
-		@Override
-        public File getFile()
-        {
-            return null;
-        }
-
-        @NotNull
-        public List<WebdavResolver.History> getHistory()
-        {
-            //noinspection unchecked
-            return Collections.EMPTY_LIST;
-        }
     }
 }

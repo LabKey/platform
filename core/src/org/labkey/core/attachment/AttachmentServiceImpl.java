@@ -19,20 +19,25 @@ package org.labkey.core.attachment;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.log4j.Logger;
+import org.apache.commons.io.IOUtils;
 import org.labkey.api.attachments.*;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
+import org.labkey.api.security.ACL;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.webdav.WebdavResolver;
+import org.labkey.api.webdav.AbstractDocumentResource;
 import org.labkey.core.query.AttachmentAuditViewFactory;
 import org.labkey.core.webdav.FileSystemAuditViewFactory;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
+import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
@@ -670,6 +675,22 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
         return attList.toArray(new Attachment[attList.size()]);
     }
+
+
+    public List<WebdavResolver.Resource> getAttachmentResources(WebdavResolver.Resource folder, AttachmentParent parent)
+    {
+        Attachment[] attachments = getAttachments(parent);
+        ArrayList<WebdavResolver.Resource> resources = new ArrayList<WebdavResolver.Resource>(attachments.length);
+        for (int i=0 ; i<attachments.length ; i++)
+        {
+            Attachment a = attachments[i];
+            if (null != a.getFile() && !a.getFile().exists())
+                continue;
+            resources.add(new AttachmentResource(folder, parent, a));
+        }
+        return resources;
+    }
+
 
     private Attachment attachmentFromFile(AttachmentParent parent, File file)
     {
@@ -1509,6 +1530,193 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             service.deleteAttachment(root, file2.getName());
             attachments = service.getAttachments(root);
             assertTrue(originalCount == attachments.length);
+        }
+    }
+
+
+    private static class AttachmentResource extends AbstractDocumentResource
+    {
+        WebdavResolver.Resource _folder = null;
+        AttachmentParent _parent = null;
+        String _name = null;
+        long _created = Long.MIN_VALUE;
+        String _createdBy = null;
+
+//        AttachmentResource(WebdavResolver.Resource folder, AttachmentParent parent, String name)
+//        {
+//            super(folder.getPath(), name);
+//            _folder = folder;
+//            Container c = ContainerManager.getForId(parent.getContainerId());
+//            _acl = c == null ? new ACL() : c.getAcl();
+//            _name = name;
+//            _parent = parent;
+//        }
+
+        
+        AttachmentResource(WebdavResolver.Resource folder, AttachmentParent parent, Attachment attachment)
+        {
+            super(folder.getPath(), attachment.getName());
+            _folder = folder;
+            Container c = ContainerManager.getForId(parent.getContainerId());
+            _acl = c == null ? new ACL() : c.getAcl();
+            _name = attachment.getName();
+            _parent = parent;
+
+            _created = attachment.getCreated().getTime();
+            _createdBy = attachment.getCreatedByName(HttpView.currentContext());
+        }
+
+        public boolean exists()
+        {
+            Attachment r = AttachmentService.get().getAttachment(_parent, _name);
+            if (r == null)
+                return false;
+            if (null != r.getFile())
+                return r.getFile().exists();
+            return true;
+        }
+
+        public boolean isCollection()
+        {
+            return false;
+        }
+
+        public boolean isVirtual()
+        {
+            return true;
+        }
+
+        @Override
+        public boolean canRename(User user)
+        {
+            return false;
+        }
+
+        @Override
+        public boolean delete(User user) throws IOException
+        {
+            try
+            {
+                AttachmentService.get().delete(user, _parent, _name);
+                return true;
+            }
+            catch (SQLException x)
+            {
+                IOException io = new IOException();
+                io.initCause(x);
+                throw io;
+            }
+        }
+
+        public InputStream getInputStream(User user) throws IOException
+        {
+            return AttachmentService.get().getInputStream(_parent, _name);
+        }
+
+
+        public long copyFrom(User user, InputStream in) throws IOException
+        {
+            // stream to temp file
+            long length = 0;
+            File tmp = File.createTempFile("attachment",".tmp");
+            tmp.deleteOnExit();
+            try
+            {
+                tmp.createNewFile();
+                FileOutputStream fos = new FileOutputStream(tmp);
+                length = FileUtil.copyData(in, fos);
+                fos.close();
+
+                ArrayList list = new ArrayList();
+                list.add(new FileAttachmentFile(tmp));
+
+                if (exists())
+                    AttachmentService.get().deleteAttachment(_parent, _name);
+                AttachmentService.get().addAttachments(user, _parent, list);
+            }
+            catch (AttachmentService.DuplicateFilenameException x)
+            {
+                IOException io = new IOException();
+                io.initCause(x);
+                throw io;
+            }
+            catch (SQLException x)
+            {
+                IOException io = new IOException();
+                io.initCause(x);
+                throw io;
+            }
+            finally
+            {
+                tmp.delete();
+            }
+            return length;
+        }
+
+        public WebdavResolver.Resource parent()
+        {
+            return _folder;
+        }
+
+        public long getCreated()
+        {
+            return _created;
+        }
+
+        public long getLastModified()
+        {
+            return getCreated();
+        }
+
+        @Override
+        public String getModifiedBy()
+        {
+            return _createdBy;
+        }
+
+        public long getContentLength()
+        {
+            // UNDONE how expensive is this
+            InputStream is = null;
+            try
+            {
+                is = getInputStream(null);
+                if (null != is)
+                {
+                    if (is instanceof FileInputStream)
+                        return ((FileInputStream) is).getChannel().size();
+                    else if (is instanceof FilterInputStream)
+                        return is.available();
+                }
+            }
+            catch (IOException x)
+            {
+            }
+            finally
+            {
+                IOUtils.closeQuietly(is);
+            }
+            return 0;
+        }
+
+		@Override
+        public int getPermissions(User user)
+        {
+            // READ-ONLY for now
+            return super.getPermissions(user) & ACL.PERM_READ;
+        }
+
+		@Override
+        public File getFile()
+        {
+            return null;
+        }
+
+        @NotNull
+        public List<WebdavResolver.History> getHistory()
+        {
+            //noinspection unchecked
+            return Collections.EMPTY_LIST;
         }
     }
 }

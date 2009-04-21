@@ -349,7 +349,7 @@ public class SqlParser
         }
         catch (IllegalArgumentException x)
         {
-            _parseErrors.add(new QueryParseException("Unrecogonized constant '" + ((QString)n).getValue() + "'", null, n.getLine(), n.getColumn()));
+            _parseErrors.add(new QueryParseException("Unrecognized constant '" + ((QString)n).getValue() + "'", null, n.getLine(), n.getColumn()));
             return false;
         }
     }
@@ -372,7 +372,7 @@ public class SqlParser
         }
         catch (IllegalArgumentException x)
         {
-            _parseErrors.add(new QueryParseException("Unrecogonized constant '" + ((QString)n).getValue() + "'", null, n.getLine(), n.getColumn()));
+            _parseErrors.add(new QueryParseException("Unrecognized constant '" + ((QString)n).getValue() + "'", null, n.getLine(), n.getColumn()));
             return false;
         }
     }
