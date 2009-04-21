@@ -486,6 +486,12 @@ experiment/gwtsrc/org/labkey/experiment/property/Designer.gwt.xml -text
 experiment/gwtsrc/org/labkey/experiment/property/client/Designer.java -text
 experiment/gwtsrc/org/labkey/experiment/property/client/PropertyService.java -text
 experiment/gwtsrc/org/labkey/experiment/property/client/PropertyServiceAsync.java -text
+experiment/gwtsrc/org/labkey/experiment/samplechooser/SampleChooser.gwt.xml -text
+experiment/gwtsrc/org/labkey/experiment/samplechooser/client/SampleCache.java -text
+experiment/gwtsrc/org/labkey/experiment/samplechooser/client/SampleChooser.java -text
+experiment/gwtsrc/org/labkey/experiment/samplechooser/client/SampleInfo.java -text
+experiment/gwtsrc/org/labkey/experiment/samplechooser/client/SampleSetService.java -text
+experiment/gwtsrc/org/labkey/experiment/samplechooser/client/SampleSetServiceAsync.java -text
 experiment/module.properties -text
 experiment/queries/exp/RunGroups/NameOnly.qview.xml -text
 experiment/queries/exp/SampleSets/NameOnly.qview.xml -text
@@ -773,6 +779,7 @@ experiment/src/org/labkey/experiment/controllers/exp/ProtocolListView.java -text
 experiment/src/org/labkey/experiment/controllers/exp/ProtocolParametersView.java -text
 experiment/src/org/labkey/experiment/controllers/exp/ProtocolSuccessorPredecessorView.java -text
 experiment/src/org/labkey/experiment/controllers/exp/RunInputOutputBean.java -text
+experiment/src/org/labkey/experiment/controllers/exp/SampleSetServiceImpl.java -text
 experiment/src/org/labkey/experiment/controllers/list/AttachmentDisplayColumn.java -text
 experiment/src/org/labkey/experiment/controllers/list/EditListDefinitionForm.java -text
 experiment/src/org/labkey/experiment/controllers/list/ListController.java -text

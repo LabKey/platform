@@ -1,0 +1,7 @@
+<module>
+
+    <inherits name='org.labkey.api.gwt.Internal'/>
+
+    <entry-point class="org.labkey.experiment.samplechooser.client.SampleChooser"/>
+
+</module>

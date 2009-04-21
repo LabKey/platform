@@ -45,6 +45,7 @@ import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
+import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.common.tools.TabLoader;
 import org.labkey.experiment.*;
@@ -4068,6 +4069,15 @@ public class ExperimentController extends SpringActionController
             ActionURL url = new ActionURL(SetFlagAction.class, ContainerManager.getRoot());
             url.addParameter("flagSessionId", request.getSession().getId());
             return url;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class SampleSetServiceAction extends GWTServiceAction
+    {
+        protected BaseRemoteService createService()
+        {
+            return new SampleSetServiceImpl(getViewContext());
         }
     }
 }
