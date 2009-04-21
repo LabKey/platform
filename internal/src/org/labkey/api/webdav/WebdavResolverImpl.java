@@ -331,7 +331,7 @@ public class WebdavResolverImpl implements WebdavResolver
             ArrayList<String> ret = new ArrayList<String>();
             for (String name : _children)
             {
-                Resource r = lookup(c(this,name));
+                Resource r = lookup(WebdavResolverImpl.c(this,name));
                 if (null != r && r.canRead(user))
                     ret.add(name);
             }
@@ -415,7 +415,7 @@ public class WebdavResolverImpl implements WebdavResolver
             }
             if (_file != null)
                 return new FileSystemResource(this,child);
-            return new UnboundResource(c(this,child));
+            return new UnboundResource(WebdavResolverImpl.c(this,child));
         }
 
 
@@ -475,7 +475,7 @@ public class WebdavResolverImpl implements WebdavResolver
 
         public Resource find(String name)
         {
-            return new UnboundResource(c(this,name));
+            return new UnboundResource(WebdavResolverImpl.c(this,name));
         }
 
         public List<String> listNames()
@@ -488,14 +488,14 @@ public class WebdavResolverImpl implements WebdavResolver
             return Collections.emptyList();
         }
 
-        public long getCreation()
+        public long getCreated()
         {
-            return 0;
+            return Long.MIN_VALUE;
         }
 
         public long getLastModified()
         {
-            return 0;
+            return Long.MIN_VALUE;
         }
 
         public InputStream getInputStream(User user) throws IOException

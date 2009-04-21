@@ -52,6 +52,11 @@ public abstract class AbstractCollectionResource extends AbstractResource
         return false;
     }
 
+    public String getModifiedBy()
+    {
+        return null;
+    }
+
     public InputStream getInputStream(User user) throws IOException
     {
         throw new IllegalStateException("Can't read from a collection");

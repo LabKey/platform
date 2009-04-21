@@ -71,9 +71,11 @@ public interface WebdavResolver
 
         Resource parent();
 
-        long getCreation();
+        long getCreated();
 
         long getLastModified();
+
+        String getModifiedBy();
 
         String getContentType();
 

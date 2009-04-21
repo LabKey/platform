@@ -186,7 +186,7 @@ public class FileSystemResource extends AbstractResource
     }
 
     
-    public long getCreation()
+    public long getCreated()
     {
         if (_c != null && _c.getCreated() != null)
             return _c.getCreated().getTime();
@@ -202,7 +202,7 @@ public class FileSystemResource extends AbstractResource
             return _file.lastModified();
         if (_c != null && _c.getCreated() != null)
             return _c.getCreated().getTime();
-        return 0;
+        return Long.MIN_VALUE;
     }
 
 

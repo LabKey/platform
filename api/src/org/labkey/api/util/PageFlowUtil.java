@@ -309,18 +309,26 @@ public class PageFlowUtil
         if (cs == null)
             return "''";
 
-        String s;        
+        String s;
         if (cs instanceof HString)
             s = ((HString)cs).getSource();
         else
             s = cs.toString();
 
-        // UNDONE: what behavior do we want for tainted strings?
+        // UNDONE: what behavior do we want for tainted strings? IllegalArgumentException()?
         if (cs instanceof Taintable && ((Taintable)cs).isTainted())
         {
             if (s.toLowerCase().contains("<script"))
                 return "''";
         }
+        return jsString(s);
+    }
+
+
+    static public String jsString(String s)
+    {
+        if (s == null)
+            return "''";
 
         StringBuilder js = new StringBuilder(s.length() + 10);
         js.append("'");

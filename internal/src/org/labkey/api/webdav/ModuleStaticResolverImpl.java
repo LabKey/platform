@@ -281,14 +281,9 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             return new ArrayList<String>(_children.get().keySet());
         }
 
-        public long getCreation()
-        {
-            return 0;
-        }
-
         public long getLastModified()
         {
-            return exists() ? _files.get(0).lastModified() : 0;
+            return exists() ? _files.get(0).lastModified() : Long.MIN_VALUE;
         }
 
         public InputStream getInputStream(User user) throws IOException
@@ -363,14 +358,14 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             return Collections.EMPTY_LIST;
         }
 
-        public long getCreation()
+        public long getCreated()
         {
-            return 0;
+            return Long.MIN_VALUE;
         }
 
         public long getLastModified()
         {
-            return 0;
+            return Long.MIN_VALUE;
         }
 
         public InputStream getInputStream(User user) throws IOException

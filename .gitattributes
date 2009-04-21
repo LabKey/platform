@@ -1769,7 +1769,6 @@ internal/src/org/labkey/api/view/addWebPart.jsp -text
 internal/src/org/labkey/api/view/customizeClientAPIWebPart.jsp -text
 internal/src/org/labkey/api/webdav/AbstractCollectionResource.java -text
 internal/src/org/labkey/api/webdav/AbstractDocumentResource.java -text
-internal/src/org/labkey/api/webdav/AbstractResource.java -text
 internal/src/org/labkey/api/webdav/FileSystemResource.java -text
 internal/src/org/labkey/api/webdav/ModuleStaticResolverImpl.java -text
 internal/src/org/labkey/api/webdav/WebdavResolverImpl.java -text
