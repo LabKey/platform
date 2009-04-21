@@ -95,6 +95,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Configuration, "authentication", PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL());
         AdminConsole.addLink(SettingsLinkType.Configuration, "email customization", new ActionURL(CustomizeEmailAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Configuration, "project display order", new ActionURL(ReorderFoldersAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Configuration, "qc values", new ActionURL(FolderSettingsAction.class, root));
 
         // Diagnostics
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "running threads", new ActionURL(ShowThreadsAction.class, root));
@@ -3831,6 +3832,11 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            Container c = getViewContext().getContainer();
+
+            if (c.isRoot())
+                return appendAdminNavTrail(root, "Admin Console", ShowAdminAction.class);
+
             root.addChild("Folder Settings: " + getContainer().getPath());
             return root;
         }

@@ -16,8 +16,8 @@
     */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.data.QcUtil" %>
+<%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -27,24 +27,46 @@
 <%
     int rowId = 0;
 %>
+
 <form name="qcValuesForm" method="POST" action=folderSettings.post?tabId=qcValues>
 
     <table>
+        <tr>
+            <td>
+                Data columns that are configured to allow QC can have special values<br>
+                indicating that the original data is missing or suspect. This page allows<br>
+                you to configure what QC values are allowed.
+            </td>
+        </tr>
         <tr>
             <td>
                 <%
                     Container c = HttpView.getContextContainer();
                     Container definingContainer = QcUtil.getDefiningContainer(c);
                     boolean inherited = !c.equals(definingContainer);
+
+                    // Destination for inherited link
+                    Container linkContainer = definingContainer;
+
+                    if (!inherited && !c.isRoot())
+                    {
+                        // Need to point to the first parent that has a definition
+                        linkContainer = linkContainer.getParent();
+                        while (!linkContainer.isRoot() && !linkContainer.equals(QcUtil.getDefiningContainer(linkContainer)))
+                            linkContainer = linkContainer.getParent();
+                    }
+
+                    boolean hasLinkPermission = linkContainer.hasPermission(HttpView.currentContext().getUser(), ACL.PERM_ADMIN);
+
                     ActionURL inheritURL = HttpView.currentContext().cloneActionURL();
-                    inheritURL.setContainer(definingContainer);
+                    inheritURL.setContainer(linkContainer);
                     String containerLabel;
-                    if (definingContainer.isRoot())
+                    if (linkContainer.isRoot())
                         containerLabel = "Site";
-                    else if (definingContainer.isProject())
-                        containerLabel = "Project (" + definingContainer.getName() + ")";
+                    else if (linkContainer.isProject())
+                        containerLabel = "Project (" + linkContainer.getName() + ")";
                     else
-                        containerLabel = "Parent Folder (" + definingContainer.getPath() + ")";
+                        containerLabel = "Parent Folder (" + linkContainer.getPath() + ")";
 
                     if (!c.isRoot())
                     {
@@ -53,10 +75,20 @@
                 <input type="checkbox" id="inherit" name="inheritQcValues" <%=inherited ? "checked='true'" : ""%>
                        onclick="toggleInherited(this);">
                 Inherit QC settings from
-                <a href="<%=inheritURL.getLocalURIString()%>">
-                    <%=containerLabel%>
-                </a>
                 <%
+                        if (hasLinkPermission)
+                        {
+                            out.write("<a href=\"" + inheritURL.getLocalURIString() + "\">");
+                        }
+
+                        // Always write out what we inherit from
+                        out.write(containerLabel);
+
+                        if (hasLinkPermission)
+                        {
+                            out.write("</a>");
+                        }
+
                     }
                 %>
 
