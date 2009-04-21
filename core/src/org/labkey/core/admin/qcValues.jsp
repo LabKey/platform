@@ -85,9 +85,9 @@
 
                         <tr id="rowId<%=++rowId%>">
                             <td><img src="<%=getViewContext().getContextPath()%>/_images/partdelete.gif"
-                                     onclick="removeRow(<%=rowId%>);"></td>
+                                     alt="delete" onclick="removeRow(<%=rowId%>);"></td>
                             <td><input name="qcValues" type="TEXT" size=3
-                                       value="<%=qcValue%>">
+                                       id="qcValues<%=rowId%>" value="<%=qcValue%>">
                             </td>
                             <td><input name="qcLabels" type="TEXT" size=60
                                        value="<%=description%>">
@@ -131,12 +131,14 @@
         var imgNode = document.createElement('img');
         imgNode.src = '<%=getViewContext().getContextPath()%>/_images/partdelete.gif';
         imgNode.setAttribute("onclick", 'removeRow(' + maxRowId + ');');
+        imgNode.setAttribute("alt", "delete");
         cellLeft.appendChild(imgNode);
 
         var cellMiddle = row.insertCell(1);
         var middle = document.createElement('input');
         middle.type = 'text';
         middle.name = "qcValues";
+        middle.id = "qcValues" + maxRowId;
         middle.size = 3;
 
         cellMiddle.appendChild(middle);
@@ -147,6 +149,8 @@
         right.name = 'qcLabels';
         right.size = 60;
         cellRightSel.appendChild(right);
+
+        middle.focus();
 
         return false; // To prevent navigation
     }
