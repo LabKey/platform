@@ -42,29 +42,49 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext> ex
 
     public String getHTML(ContextType context) throws ExperimentException
     {
-        List<Map<String, File>> files = getFileCollection(context);
-        if (files.isEmpty() || files.get(0).isEmpty())
+        Map<String, File> files = getCurrentFilesForDisplay(context);
+        if (files.isEmpty())
         {
             return "<div class=\"labkey-error>No files have been selected.</div>";
         }
 
         StringBuilder sb = new StringBuilder();
-        for (File file : files.get(0).values())
+        for (File file : files.values())
         {
             sb.append("<li>");
             sb.append(PageFlowUtil.filter(file.getName()));
             sb.append("</li>");
         }
         sb.append("</ul>");
-        if (files.size() > 1)
+        int additionalSets = getAdditionalFileSetCount(context);
+        if (additionalSets > 0)
         {
             sb.append(" (");
-            sb.append(files.size() - 1);
+            sb.append(additionalSets);
             sb.append(" more file set");
-            sb.append(files.size() > 2 ? "s" : "");
+            sb.append(additionalSets > 1 ? "s" : "");
             sb.append(" available after this run is complete.)");
         }
         return sb.toString();
+    }
+
+    /**
+     * @return the number of additional files available for uploading
+     */
+    protected int getAdditionalFileSetCount(ContextType context)
+    {
+        return getFileCollection(context).size() - 1;
+    }
+
+    /** @return the files to be processed for the current upload attempt */
+    protected Map<String, File> getCurrentFilesForDisplay(ContextType context)
+    {
+        List<Map<String, File>> files = getFileCollection(context);
+        if (files.isEmpty())
+        {
+            return Collections.emptyMap();
+        }
+        return files.get(0);
     }
 
     public String getShortName()

@@ -1638,8 +1638,10 @@ internal/gwtsrc/org/labkey/api/gwt/client/model/GWTComparisonGroup.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTComparisonMember.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTComparisonResult.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTDomain.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/model/GWTMaterial.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTPropertyDescriptor.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/model/GWTPropertyValidator.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/model/GWTSampleSet.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/BoundListBox.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/BoundTextAreaBox.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/BoundTextBox.java -text

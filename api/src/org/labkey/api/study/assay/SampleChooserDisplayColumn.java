@@ -106,7 +106,7 @@ public class SampleChooserDisplayColumn extends SimpleDisplayColumn
             }
         }
 
-        GWTView view = new GWTView("org.labkey.microarray.sampleset.SampleChooser", props);
+        GWTView view = new GWTView("org.labkey.experiment.samplechooser.SampleChooser", props);
         try
         {
             view.render(ctx.getRequest(), ctx.getViewContext().getResponse());
