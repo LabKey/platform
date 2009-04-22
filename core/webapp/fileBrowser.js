@@ -357,6 +357,7 @@ var WebdavFileSystem = function(config)
     if (prefix.length > 0 && prefix.charAt(prefix.length-1) == this.separator)
         prefix = prefix.substring(0,prefix.length-1);
     this.prefixUrl = prefix;
+    var prefixDecode  = decodeURIComponent(prefix);
     WebdavFileSystem.superclass.constructor.call(this);
 
     var getURI = function(v,rec)
@@ -382,10 +383,10 @@ var WebdavFileSystem = function(config)
                 convert : function (v, rec)
                 {
                     var uri = getURI(v,rec);
-                    var path = uri.pathname;
-                    if (prefix)
-                        path = path.replace(prefix, "");
-                    return decodeURI(path);
+                    var path = decodeURIComponent(uri.pathname);
+                    if (path.length >= prefixDecode.length && path.substring(0,prefixDecode.length) == prefixDecode)
+                        path = path.substring(prefixDecode.length);
+                    return path;
                 }
             },
             {name: 'name', mapping: 'propstat/prop/displayname'},
@@ -399,6 +400,7 @@ var WebdavFileSystem = function(config)
                 }
             },
             {name: 'created', mapping: 'propstat/prop/creationdate', type: 'date', dateFormat : "c"},
+            {name: 'createdby', mapping: 'propstat/prop/createdby'},
             {name: 'modified', mapping: 'propstat/prop/getlastmodified', type: 'date'},
             {name: 'modifiedby', mapping: 'propstat/prop/modifiedby'},
             {name: 'size', mapping: 'propstat/prop/getcontentlength', type: 'int'},
@@ -1171,8 +1173,8 @@ Ext.extend(FileBrowser, Ext.Panel,
                 row("Date Modified", _longDateTime(data.modified));
             if (data.file)
                 row("Size",data.size);
-            if (data.modifiedby)
-                row("Modified By", data.modifiedby);
+            if (data.createdby && data.createdby != 'Guest')
+                row("Created By", data.createdby);
             html.push("</table>");
             el.update(html.join(""));
         }

@@ -972,11 +972,18 @@ public class DavController extends SpringActionController
                     }
                     if (exists)
                     {
+                        String createdby = resource.getCreatedBy();
+                        if (null != createdby)
+                            xml.writeProperty(null, "createdby", createdby);
+
                         if (isFile)
                         {
                             long modified = resource.getLastModified();
                             if (modified != Long.MIN_VALUE)
                                 xml.writeProperty(null, "getlastmodified", getHttpDateFormat(modified));
+                            String modifiedby = resource.getModifiedBy();
+                            if (null != modifiedby)
+                                xml.writeProperty(null, "modifiedby", modifiedby);
                             xml.writeProperty(null, "getcontentlength", String.valueOf(_contentLength(resource)));
                             String contentType = resource.getContentType();
                             if (contentType != null)
@@ -1032,11 +1039,13 @@ public class DavController extends SpringActionController
                     xml.writeElement(null, "displayname", XMLWriter.NO_CONTENT);
                     if (exists)
                     {
+                        xml.writeElement(null, "createdby", XMLWriter.NO_CONTENT);
                         xml.writeElement(null, "getcontentlanguage", XMLWriter.NO_CONTENT);
                         xml.writeElement(null, "getcontentlength", XMLWriter.NO_CONTENT);
                         xml.writeElement(null, "getcontenttype", XMLWriter.NO_CONTENT);
                         xml.writeElement(null, "getetag", XMLWriter.NO_CONTENT);
                         xml.writeElement(null, "getlastmodified", XMLWriter.NO_CONTENT);
+                        xml.writeElement(null, "modifiedby", XMLWriter.NO_CONTENT);
                     }
 					xml.writeElement(null, "href", XMLWriter.NO_CONTENT);
 					xml.writeElement(null, "ishidden", XMLWriter.NO_CONTENT);
@@ -2100,9 +2109,6 @@ public class DavController extends SpringActionController
             if (rmTempFile(src))
             {
                 audit(dest, "created");
-                WebdavResolver.Resource parent = resolvePath(dest.getParentPath());
-                if (null != parent && parent instanceof WebdavResolverImpl.WebFolderResource)
-                    ((WebdavResolverImpl.WebFolderResource)parent).attachmentDirectoryUpate(getUser(), dest);
             }
             else
             {
@@ -2417,10 +2423,15 @@ public class DavController extends SpringActionController
         User user = getUser();
         StringBuilder methodsAllowed = new StringBuilder("OPTIONS");
 
+        boolean createResource = resource.canCreate(user);
+        boolean createCollection = createResource; // UNDONE
+
         if (!resource.exists())
         {
-            if (resource.canCreate(user))
-                methodsAllowed.append(", MKCOL, PUT");
+            if (createResource)
+                methodsAllowed.append(", PUT");
+            if (createCollection)
+                methodsAllowed.append(", MKCOL");
             if (_locking)
                 methodsAllowed.append(", LOCK");
         }
@@ -2428,11 +2439,9 @@ public class DavController extends SpringActionController
         {
             boolean read = resource.canRead(user);
             boolean delete = resource.canDelete(user);
-            boolean createResource = resource.canCreate(user);
-            boolean createCollection = createResource; // UNDONE
 
             if (read)
-                methodsAllowed.append(", GET, HEAD, POST, COPY");
+                methodsAllowed.append(", GET, HEAD, COPY");
             if (delete)
                 methodsAllowed.append(", DELETE");
             if (delete && read)
@@ -2444,7 +2453,9 @@ public class DavController extends SpringActionController
 
             if (resource.isCollection())
             {
-                // these options actually apply to _children_ not this resource
+                if (createResource)
+                    methodsAllowed.append(", POST");
+                // PUT and MKCOL actually apply to _children_ of this resource
                 if (createResource)
                     methodsAllowed.append(", PUT");
                 if (createCollection)

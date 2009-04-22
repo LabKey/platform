@@ -16,19 +16,14 @@
  */
 %>
 <%@ page import="org.apache.commons.lang.time.FastDateFormat" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="java.util.*" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.webdav.WebdavService" %>
 <%@ page import="org.labkey.api.attachments.AttachmentDirectory" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.labkey.filecontent.FileContentController" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
@@ -52,8 +47,14 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
     // TODO: applet and fileBrowser could use more consistent configuration parameters
     String rootName = c.getName();
     String webdavPrefix = context.getContextPath() + "/" + WebdavService.getServletPath();
-    String rootPath = webdavPrefix + c.getPath();
-    String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + rootPath;
+    String rootPath = webdavPrefix + c.getEncodedPath();
+    if (me.getFileSet() != null)
+    {
+        if (!rootPath.endsWith("/"))
+            rootPath += "/";
+        rootPath += PageFlowUtil.encode("@files") + "/" + PageFlowUtil.encode(me.getFileSet());
+    }
+    //String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + rootPath;
 %>
 <script type="text/javascript" language="javascript">
     LABKEY.requiresExtJs(true);
@@ -92,9 +93,10 @@ Ext.onReady(function()
         ,showAddressBar:false
         ,showFolderTree:false
         ,showProperties:false
-        ,showDetails:false
+//        ,showDetails:false
         ,allowChangeDirectory:false
         ,actions:{configure:configureAction}
+        ,tbar:['download','deletePath','refresh','configure']
     });
     fileBrowser.render('files');
     var resizer = new Ext.Resizable('files', {width:800, height:600, minWidth:640, minHeight:400});
@@ -127,7 +129,7 @@ Ext.onReady(function()
         StringBuilder sb = new StringBuilder();
         if (context.getUser().isAdministrator())
         {
-            ActionURL url = new ActionURL("FileContent", "begin.view", context.getContainer().getProject());
+            ActionURL url = new ActionURL(FileContentController.BeginAction.class, context.getContainer().getProject());
             sb.append("<a href=\"").append(url).append("\">Configure root</a>");
         }
         else

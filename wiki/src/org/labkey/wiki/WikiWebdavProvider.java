@@ -156,14 +156,15 @@ class WikiWebdavProvider implements WebdavService.Provider
     {
         Container _c;
         Wiki _wiki;
-        List<WebdavResolver.Resource> _attachments;
-        
+        WebdavResolver.Resource _attachments;
+
         WikiFolder(WikiProviderResource folder, String name)
         {
             super(folder.getPath(), name);
             _c = folder._c;
             _acl = _c.getAcl();
             _wiki = WikiManager.getWiki(_c, new HString(name));
+            _attachments = AttachmentService.get().getAttachmentResource(getPath(), _wiki);               
         }
 
         public boolean canDelete(User user)
@@ -171,25 +172,27 @@ class WikiWebdavProvider implements WebdavService.Provider
             return false;   // NYI
         }
 
+
         public boolean canRename(User user)
         {
             return false;   // NYI
         }
+
 
         public boolean exists()
         {
             return null != _wiki;
         }
 
+
         @NotNull
         public synchronized List<String> listNames()
         {
             if (!exists())
                 return Collections.emptyList();
-            _attachments = AttachmentService.get().getAttachmentResources(this, _wiki);
-            List<String> ret = new ArrayList<String>(_attachments.size());
-            for (WebdavResolver.Resource r : _attachments)
-                ret.add(r.getName());
+            List<String> ret = new ArrayList<String>();
+            ret.addAll(_attachments.listNames());
+            ret.add(getDocumentName(_wiki));
             return ret;
         }
 
@@ -202,23 +205,9 @@ class WikiWebdavProvider implements WebdavService.Provider
             }
             else
             {
-                boolean cached = _attachments != null;
-                if (null == _attachments)
-                    _attachments = AttachmentService.get().getAttachmentResources(this, _wiki);
-                for (WebdavResolver.Resource r : _attachments)
-                    if (r.getName().equalsIgnoreCase(name))
-                        return r;
-                if (cached) // refresh and try again
-                {
-                    _attachments = AttachmentService.get().getAttachmentResources(this, _wiki);
-                    for (WebdavResolver.Resource r : _attachments)
-                        if (r.getName().equalsIgnoreCase(name))
-                            return r;
-                }
+                return _attachments.find(name);
             }
-            return null;
         }
-
 
         public long getCreated()
         {
@@ -446,6 +435,5 @@ class WikiWebdavProvider implements WebdavService.Provider
         {
             return null;
         }
-
     }
 }

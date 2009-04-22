@@ -67,16 +67,17 @@ public class FileWebdavProvider implements WebdavService.Provider
         WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) parent;
         Container c = folder.getContainer();
         
-        return new _FilesetFolder(c, parent.getPath());
+        return new _FilesetsFolder(c, parent.getPath());
     }
 
-    class _FilesetFolder extends AbstractCollectionResource
+
+    class _FilesetsFolder extends AbstractCollectionResource
     {
         Container _c;
         HashMap<String,AttachmentDirectory> _map = new HashMap<String, AttachmentDirectory>();
         ArrayList<String> _names = new ArrayList<String>();
         
-        _FilesetFolder(Container c, String folder)
+        _FilesetsFolder(Container c, String folder)
         {
             super(folder, FILEMODULE_LINK);
             _c = c;
@@ -118,16 +119,10 @@ public class FileWebdavProvider implements WebdavService.Provider
         public WebdavResolver.Resource find(String name)
         {
             AttachmentDirectory dir = _map.get(name);
-            if (null == dir)
-                return null;
-            try
-            {
-                return new FileSystemResource(this, name, dir.getFileSystemDirectory(), _acl);
-            }
-            catch (AttachmentService.MissingRootDirectoryException x)
-            {
-                return null;
-            }
+            String path = c(getPath(),name);
+            WebdavResolver.Resource r;
+            r = AttachmentService.get().getAttachmentResource(path, dir);
+            return r;
         }
     }
 }
