@@ -281,9 +281,11 @@ public class WebdavResolverImpl implements WebdavResolver
 //    }
 
 
-    public class WebFolderResource extends FileSystemResource implements WebFolder
+    public class WebFolderResource extends AbstractCollectionResource implements WebFolder
     {
-        AttachmentDirectory _attachmentDirectory = null;
+        final Container _c;
+        final AttachmentDirectory _attachmentDirectory;
+        final Resource _attachmentResource;
         ArrayList<String> _children = null;
 
         WebFolderResource(Container c, AttachmentDirectory root)
@@ -292,20 +294,25 @@ public class WebdavResolverImpl implements WebdavResolver
             _c = c;
             _acl = c.getAcl();
             _attachmentDirectory = root;
-            _file = null;
-            try
-            {
-                _file = root != null ? root.getFileSystemDirectory() : null;
-            }
-            catch (AttachmentService.MissingRootDirectoryException e)
-            {
-                /* */
-            }
+            if (null != _attachmentDirectory)
+                _attachmentResource = AttachmentService.get().getAttachmentResource(getPath(), _attachmentDirectory);
+            else
+                _attachmentResource = null;
+        }
+
+        public Container getContainer()
+        {
+            return _c;
+        }
+
+        public boolean exists()
+        {
+            return true;
         }
 
         public boolean isCollection()
         {
-            return true;
+            return exists();
         }
 
         public synchronized List<String> getWebFoldersNames(User user)
@@ -339,11 +346,20 @@ public class WebdavResolverImpl implements WebdavResolver
         }
 
 
-        @Override @NotNull
+        // UNDONE : clarify canCreate() canCreateSubfolder(), canCreateFile()
+        @Override
+        public boolean canCreate(User user)
+        {
+            return null != _attachmentResource && _attachmentResource.canWrite(user);
+        }
+
+
+        @NotNull
         public List<String> listNames()
         {
             Set<String> set = new TreeSet<String>();
-            set.addAll(super.listNames());
+            if (null != _attachmentResource)
+            set.addAll(_attachmentResource.listNames());
             set.addAll(getWebFoldersNames(null));
             ArrayList<String> list = new ArrayList<String>(set);
             Collections.sort(list);
@@ -413,29 +429,16 @@ public class WebdavResolverImpl implements WebdavResolver
                     return resource;
                 }
             }
-            if (_file != null)
-                return new FileSystemResource(this,child);
+
+            if (null != _attachmentResource)
+            {
+                Resource r = _attachmentResource.find(child);
+                if (null != r)
+                    return r;
+            }
             return new UnboundResource(WebdavResolverImpl.c(this,child));
         }
 
-
-        // UNDONE quick fix for 8.3  (see 6791)
-        // move save functionality into the Resource interface (out of DavController) so the resource
-        // is responsible for things like this
-        public void attachmentDirectoryUpate(User user, Resource file)
-        {
-            if (_attachmentDirectory == null || _file == null || !(file instanceof FileSystemResource) || !file.exists())
-                return;
-            AttachmentFile attachment = new FileAttachmentFile(file.getFile());
-            try
-            {
-                AttachmentService.get().insertAttachmentRecord(user, _attachmentDirectory, attachment);
-            }
-            catch (SQLException ex)
-            {
-                Category.getInstance(WebdavResolverImpl.class).error("unexpected exception", ex);
-            }
-        }
 
         @NotNull
         public List<History> getHistory()
@@ -578,7 +581,7 @@ public class WebdavResolverImpl implements WebdavResolver
             assertNotNull(root);
             assertTrue(root.isCollection());
             assertTrue(root.canRead(user));
-            assertFalse(root.canWrite(user));
+            assertFalse(root.canCreate(user));
 
             Resource junit = resolver.lookup(c.getPath());
             assertNotNull(junit);

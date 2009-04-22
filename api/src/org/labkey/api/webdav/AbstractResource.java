@@ -106,6 +106,12 @@ public abstract class AbstractResource implements WebdavResolver.Resource
     }
 
 
+    public String getCreatedBy()
+    {
+        return null;
+    }
+
+
     public long getLastModified()
     {
         return Long.MIN_VALUE;

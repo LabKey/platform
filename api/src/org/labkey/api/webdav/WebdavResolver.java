@@ -73,6 +73,8 @@ public interface WebdavResolver
 
         long getCreated();
 
+        String getCreatedBy();
+
         long getLastModified();
 
         String getModifiedBy();
