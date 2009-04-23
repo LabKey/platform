@@ -300,7 +300,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 "lsid", properties, reshow, BatchStepHandler.NAME, runForm, errors);
     }
 
-    private ModelAndView getRunPropertiesView(FormType newRunForm, boolean errorReshow, boolean warnings, BindException errors)
+    protected ModelAndView getRunPropertiesView(FormType newRunForm, boolean errorReshow, boolean warnings, BindException errors)
     {
         if (!errorReshow && !newRunForm.isResetDefaultValues())
         {
