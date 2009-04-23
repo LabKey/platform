@@ -28,6 +28,7 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.query.*;
 import org.labkey.api.data.*;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.VirtualFile;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.apache.commons.lang.StringUtils;
@@ -291,7 +292,7 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
         ResultSetMetaData md = rs.getMetaData();
         ColumnInfo cols[] = new ColumnInfo[md.getColumnCount()];
 
-        List<DisplayColumn> dataColumns = new ArrayList();
+        List<DisplayColumn> dataColumns = new ArrayList<DisplayColumn>();
         for (int i = 0; i < cols.length; i++)
         {
             int sqlColumn = i + 1;
@@ -384,16 +385,17 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
     }
 
     @Override
-    public void serializeToFolder(File directory) throws IOException
+    public void serializeToFolder(VirtualFile directory) throws IOException
     {
         ReportDescriptor descriptor = getDescriptor();
         if (descriptor.getReportId() != null)
         {
             // for script based reports, write the script portion to a separate file to facilitate script modifications
             String scriptFileName = getSerializedScriptFileName();
-            FileWriter writer = null;
-            try {
-                writer = new FileWriter(new File(directory, scriptFileName));
+            PrintWriter writer = null;
+            try
+            {
+                writer = directory.getPrintWriter(scriptFileName);
                 writer.write(descriptor.getProperty(RReportDescriptor.Prop.script));
 
                 super.serializeToFolder(directory);
@@ -401,7 +403,7 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
             finally
             {
                 if (writer != null)
-                    try {writer.close();} catch(IOException ioe) {}
+                    writer.close();
             }
         }
         else

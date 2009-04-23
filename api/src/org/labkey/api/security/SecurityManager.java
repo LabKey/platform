@@ -20,6 +20,7 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
@@ -1013,7 +1014,7 @@ public class SecurityManager
             while (it.hasNext())
             {
                 ValidEmail email = it.next();
-                addString.append("'").append(email.getEmailAddress()).append("'");
+                addString.append("'").append(StringEscapeUtils.escapeSql(email.getEmailAddress())).append("'");
 
                 if (it.hasNext())
                     addString.append(", ");

@@ -17,17 +17,15 @@
 package org.labkey.api.reports;
 
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.util.VirtualFile;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.data.Container;
-import org.labkey.api.exp.api.ExpProtocol;
 
-import java.sql.ResultSet;
 import java.io.File;
-import java.io.Writer;
 import java.io.IOException;
-import java.io.FileNotFoundException;
+import java.io.Writer;
+import java.sql.ResultSet;
 
 /**
  * Created by IntelliJ IDEA.
@@ -100,7 +98,7 @@ public interface Report
      *
      * @param directory - the folder to serialize the report to
      */
-    void serializeToFolder(File directory) throws IOException;
+    void serializeToFolder(VirtualFile directory) throws IOException;
 
     /**
      * Optional method to perform report specific processing after file based deserialization
