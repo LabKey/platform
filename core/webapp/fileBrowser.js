@@ -899,7 +899,8 @@ Ext.extend(DavSubmitAction, Ext.form.Action.Submit, {});
 //
 
 
-var BROWSER_EVENTS = {selectionchange:"selectionchange", directorychange:"directorychange"};
+var BROWSER_EVENTS = {selectionchange:"selectionchange", directorychange:"directorychange", doubleclick:"doubleclick"};
+
 
 // configuration
 //  required
@@ -924,7 +925,7 @@ var FileBrowser = function(config)
         showHistory : this.getShowHistoryAction(),
         deletePath: this.getDeleteAction()
     };
-    this.addEvents( [ BROWSER_EVENTS.selectionchange, BROWSER_EVENTS.directorychange ]);
+    this.addEvents( [ BROWSER_EVENTS.selectionchange, BROWSER_EVENTS.directorychange, BROWSER_EVENTS.doubleclick ]);
 
     config = config || {};                                                                 
     Ext.apply(this.actions, config.actions || {});
@@ -1185,6 +1186,7 @@ Ext.extend(FileBrowser, Ext.Panel,
             }
         }
         this.grid.focus();
+        this.fireEvent(BROWSER_EVENTS.doubleclick, record);
     },
 
     Tree_onSelectionchange : function(sm, node)

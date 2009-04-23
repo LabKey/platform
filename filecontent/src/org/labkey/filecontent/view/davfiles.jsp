@@ -99,6 +99,10 @@ Ext.onReady(function()
         ,tbar:['download','deletePath','refresh','configure']
     });
     fileBrowser.render('files');
+    fileBrowser.on("doubleclick", function(record){
+        var u = LABKEY.ActionURL;
+        window.location = u.getContextPath() + "/files" + u.getContainer() + "/" + record.data.name + "?renderAs=DEFAULT";
+    });
     var resizer = new Ext.Resizable('files', {width:800, height:600, minWidth:640, minHeight:400});
     resizer.on("resize", function(o,width,height){ this.setWidth(width); this.setHeight(height); }.createDelegate(fileBrowser));
     fileBrowser.start.defer(0, fileBrowser);
