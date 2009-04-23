@@ -159,9 +159,9 @@ function startsWith(s, f)
 
 function renderIcon(value, metadata, record, rowIndex, colIndex, store)
 {
+    var file = record.get("file");
     if (!value)
     {
-        var file = record.get("file");
         if (!file)
         {
             value = FileBrowser.prototype.FOLDER_ICON;
@@ -174,7 +174,12 @@ function renderIcon(value, metadata, record, rowIndex, colIndex, store)
             value = LABKEY.contextPath + "/project/icon.view?name=" + ext;
         }
     }
-    return "<img width=16 height=16 src='" + value + "'>";
+    var img = {tag:'img', width:16, height:16, src:value};
+    if (file)
+    {
+        img.onMouseOver = "preview(this,'" + record.data.uri + "','" + record.data.contentType + "');";
+    }
+    return Ext.DomHelper.markup(img);
 }
 
 
@@ -196,12 +201,130 @@ function renderDateTime(value, metadata, record, rowIndex, colIndex, store)
 }
 
 
+var _previewConnection = new Ext.data.Connection({autoAbort:true, method:'GET', disableCaching:false});
+var _previewWindow = null;
+var _previewAsync = null;
+
+
+function preview(el, uri, contentType)
+{
+    el = Ext.get(el);
+    cancelAsyncPreview();
+    closePreviewWindow();
+    var timeout = previewFN.defer(200,null,[el,uri,contentType]);
+    _previewAsync = {timeout:timeout, cancel:function() {clearTimeout(this.timeout);}};
+    el.on("mouseout",cancelAsyncPreview);
+}
+
+
+function previewFN(el, uri, contentType)
+{
+    if (0==contentType.indexOf('image/'))
+    {
+        dynamicToolTip(el, {tag:'img', src:uri});
+    }
+    else if (0 == contentType.indexOf('text/'))
+    {
+        var requestid = _previewConnection.request({
+            autoAbort:true,
+            url:uri,
+            method:'GET',
+            diableCaching:false,
+            success : function(response)
+            {
+                var contentType = response.getResponseHeader["Content-Type"] || "text/plain";
+                var html;
+                if (contentType == "text/html")
+                    html = response.responseText;
+                else
+                    html = "<pre>" + response.responseText + "</pre>";
+                previewWindow(el, html);
+                if (_previewAsync && _previewAsync.requestid == requestid)
+                    _previewAsync = null;
+            }
+        });
+        _previewAsync = {requestid:requestid, cancel:function(){_previewConnection.abort(this.requestid);}};
+    }
+}
+
+
+function dynamicToolTip(el, html)
+{
+    el = Ext.get(el);
+    html = Ext.DomHelper.markup(html);
+    var tt = new Ext.ToolTip({target:el, html:html, trackMouse:true});
+    tt.onTargetOver(Ext.EventObject);
+}
+
+
+function previewWindow(el, html)
+{
+    el = Ext.get(el);
+    if (_previewWindow)
+        _previewWindow.close();
+    var xy = el.getAnchorXY('tr');
+    _previewWindow = new Ext.Window({html:html, target:el, closable:false, constrain:true, width:400, x:xy[0], y:xy[1]});
+    _previewWindow.show();
+    _previewWindow.getEl().on("mouseout",unpreviewWindow);
+    _previewWindow.on("close",function(){el.removeAllListeners()});
+    el.removeAllListeners();
+    el.on("mouseout",unpreviewWindow);
+}
+
+
+function closePreviewWindow(e)
+{
+    if (_previewWindow)
+    {
+        _previewWindow.close();
+        _previewWindow = null;
+    }
+}
+
+
+function cancelAsyncPreview()
+{
+    if (_previewAsync && typeof _previewAsync.cancel == 'function')
+        _previewAsync.cancel.call(_previewAsync);
+    _previewAsync = null;
+}
+
+
+function unpreviewWindow(e)
+{
+    cancelAsyncPreview();
+    if (_previewWindow)
+    {
+        if (e  && _previewWindow.getEl().getRegion().contains(e.getPoint()))
+        {
+            // defer()?
+        }
+        else
+        {
+            closePreviewWindow();
+        }
+    }
+}
+
+
 //
 // FileSystem
 //
 
 // FileRecord should look like
-//      uri (string, urlencoded), path (string, not encoded), name (string), file (bool), created (date), modified (date), size (int), iconHref(string)
+//      uri (string, urlencoded),
+//      path (string, not encoded),
+//      name (string),
+//      file (bool),
+//      created (date),
+//      modified (date),
+//      size (int),
+// optional
+//      createdBy(string)
+//      modifiedBy(string)
+//      iconHref(string)
+//      contentType(string,optional)
+
 
 var FILESYSTEM_EVENTS = {listfiles:"listfiles"};
 
@@ -400,11 +523,12 @@ var WebdavFileSystem = function(config)
                 }
             },
             {name: 'created', mapping: 'propstat/prop/creationdate', type: 'date', dateFormat : "c"},
-            {name: 'createdby', mapping: 'propstat/prop/createdby'},
+            {name: 'createdBy', mapping: 'propstat/prop/createdby'},
             {name: 'modified', mapping: 'propstat/prop/getlastmodified', type: 'date'},
-            {name: 'modifiedby', mapping: 'propstat/prop/modifiedby'},
+            {name: 'modifiedBy', mapping: 'propstat/prop/modifiedby'},
             {name: 'size', mapping: 'propstat/prop/getcontentlength', type: 'int'},
-            {name: 'iconHref'}
+            {name: 'iconHref'},
+            {name: 'contentType', mapping: 'propstat/prop/getcontenttype'}
         ]);
     this.connection = new Ext.data.Connection({method: "GET", headers: {"Method" : "PROPFIND", "Depth" : "1,noroot"}});
     this.proxy = new Ext.data.HttpProxy(this.connection);
@@ -548,7 +672,7 @@ var AppletFileSystem = function(config)
         rootName: "My Computer"
     });
     WebdavFileSystem.superclass.constructor.call(this);
-    this.FileRecord = Ext.data.Record.create(['uri', 'path', 'name', 'file', 'created', 'modified', 'modifiedby', 'size', 'iconHref']);
+    this.FileRecord = Ext.data.Record.create(['uri', 'path', 'name', 'file', 'created', 'modified', 'modifiedBy', 'size', 'iconHref']);
     this.connection = new Ext.data.Connection({method: "GET", headers: {"Method" : "PROPFIND", "Depth" : "1,noroot"}});
     this.proxy = new Ext.data.HttpProxy(this.connection);
     this.reader = new Ext.data.XmlReader({record : "response", id : "path"}, this.FileRecord);
@@ -759,6 +883,15 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
 });
 
 
+//
+// DavSubmitAction
+//
+
+var DavSubmitAction = function(form, options)
+{
+    Ext.form.Action.Submit.superclass.constructor.call(this, form, options);
+};
+Ext.extend(DavSubmitAction, Ext.form.Action.Submit, {});
 
 
 //
@@ -880,15 +1013,7 @@ Ext.extend(FileBrowser, Ext.Panel,
 
     getRefreshAction : function()
     {
-        return new Ext.Action({text: 'Refresh', scope:this, iconCls:'refreshIcon', handler: function()
-        {
-            if (!this.currentDirectory)
-                return;
-            this.fileSystem.reloadFiles(this.currentDirectory.data.path, this.loadRecords.createDelegate(this));
-            var sel = this.tree.getSelectionModel().getSelectedNode();
-            if (sel)
-                sel.reload();
-        }});
+        return new Ext.Action({text: 'Refresh', scope:this, iconCls:'refreshIcon', handler: this.refreshDirectory});
     },
 
 
@@ -916,9 +1041,7 @@ Ext.extend(FileBrowser, Ext.Panel,
         {
             if (!this.helpWindow)
             {
-                var w = new Ext.Window({contentEl:this.helpEl});
-                w.closeAction = 'hide';
-                this.helpWindow = w;
+                this.helpWindow = new Ext.Window({contentEl:this.helpEl, closeAction:'hide'});
             }
             this.helpWindow.show();
         }});
@@ -971,6 +1094,17 @@ Ext.extend(FileBrowser, Ext.Panel,
             this.currentDirectory = record;
             this.fireEvent(BROWSER_EVENTS.directorychange, record);
         }
+    },
+
+
+    refreshDirectory : function()
+    {
+        if (!this.currentDirectory)
+            return;
+        this.fileSystem.reloadFiles(this.currentDirectory.data.path, this.loadRecords.createDelegate(this));
+        var sel = this.tree.getSelectionModel().getSelectedNode();
+        if (sel)
+            sel.reload();
     },
 
 
@@ -1173,8 +1307,8 @@ Ext.extend(FileBrowser, Ext.Panel,
                 row("Date Modified", _longDateTime(data.modified));
             if (data.file)
                 row("Size",data.size);
-            if (data.createdby && data.createdby != 'Guest')
-                row("Created By", data.createdby);
+            if (data.createdBy && data.createdBy != 'Guest')
+                row("Created By", data.createdBy);
             html.push("</table>");
             el.update(html.join(""));
         }
@@ -1305,6 +1439,7 @@ Ext.extend(FileBrowser, Ext.Panel,
         // Upload
         //
 
+        var fileUploadField;
         this.uploadPanel = new Ext.FormPanel({
             id : 'uploadPanel',
             method : 'POST',
@@ -1316,29 +1451,37 @@ Ext.extend(FileBrowser, Ext.Panel,
             bodyStyle : 'background-color:#f0f0f0; padding:5px;',
             defaults: {bodyStyle : 'background-color:#f0f0f0'},
             items: [
-                new Ext.form.FileUploadField(
+                fileUploadField = new Ext.form.FileUploadField(
                 {
                       buttonText: "Upload File...",
                       buttonOnly: true,
                       buttonCfg: {cls: "labkey-button"},
                       listeners: {"fileselected": function (fb, v)
                       {
-                          me.uploadPanel.getForm().submit();
+                          if (me.currentDirectory)
+                          {
+                              var form = me.uploadPanel.getForm();
+                              var options = {url:me.currentDirectory.data.uri, record:me.currentDirectory, name:fileUploadField.getValue()};
+                              var action = new DavSubmitAction(form, options);
+                              form.doAction(action);
+                          }
                       }}
                 })
             ],
             listeners: {
                 "actioncomplete" : function (f, action)
                 {
-                    console.log("actioncomplete");
+                    console.log("upload actioncomplete");
                     console.log(action);
-                    me.getRefreshAction().execute();
+                    var options = action.options;
+                    me.refreshDirectory();
+                    me.selectFile(me.fileSystem.concatPaths(options.record.data.path, options.name));
                 },
                 "actionfailed" : function (f, action)
                 {
-                    console.log("actionfailed");
+                    console.log("upload actionfailed");
                     console.log(action);
-                    me.getRefreshAction().execute();
+                    me.refreshDirectory();
                 }
             }
         });
@@ -1442,12 +1585,6 @@ Ext.extend(FileBrowser, Ext.Panel,
                 this.actions.deletePath.enable();
             else
                 this.actions.deletePath.disable();
-        }, this);
-
-        this.on(BROWSER_EVENTS.directorychange, function(record)
-        {
-            if (record && record.data && record.data.uri)
-                this.uploadPanel.getForm().getEl().dom.action = record.data.uri;
         }, this);
 
         if (this.actions.parentFolder)

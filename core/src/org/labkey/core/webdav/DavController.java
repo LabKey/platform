@@ -23,6 +23,7 @@ import org.apache.log4j.Category;
 import org.apache.log4j.Logger;
 import org.json.JSONWriter;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -443,7 +444,7 @@ public class DavController extends SpringActionController
             return null;
         }
 
-        WebdavStatus doMethod() throws DavException, IOException
+        WebdavStatus doMethod() throws DavException, IOException, RedirectException
         {
             WebdavResolver.Resource resource = resolvePath();
             if (null != resource)
@@ -550,7 +551,7 @@ public class DavController extends SpringActionController
         }
 
         @Override
-        public WebdavStatus doMethod() throws DavException, IOException
+        public WebdavStatus doMethod() throws DavException, IOException, RedirectException
         {
             WebdavResolver.Resource resource = resolvePath();
             if (null == resource)
@@ -576,7 +577,36 @@ public class DavController extends SpringActionController
                         // CONSIDER: support multi-file POST
                         setResource(dest);
                         setInputStream(file.getInputStream());
-                        return super.doMethod();
+                        WebdavStatus status = super.doMethod();
+
+                        // if _returnUrl then redirect, else respond as if PROPFIND
+                        String returnUrl = getRequest().getParameter(ReturnUrlForm.Params.returnUrl.toString());
+                        if (null != StringUtils.trimToNull(returnUrl))
+                        {
+                            HttpView.throwRedirect(returnUrl);
+                            return WebdavStatus.SC_OK;
+                        }
+
+                        if (status == WebdavStatus.SC_CREATED)
+                        {
+                            PropfindAction action = new PropfindAction()
+                            {
+                                @Override
+                                protected InputStream getInputStream() throws IOException
+                                {
+                                    return new ByteArrayInputStream(new byte[0]);
+                                }
+
+                                @Override
+                                protected Pair<Integer, Boolean> getDepthParameter()
+                                {
+                                    return new Pair<Integer,Boolean>(0,Boolean.FALSE);
+                                }
+                            };
+                            action.setResource(dest);
+                            return action.doMethod();
+                        }
+                        return status;
                     }
                 }
             }
@@ -589,6 +619,7 @@ public class DavController extends SpringActionController
     @RequiresPermission(ACL.PERM_NONE)
     public class PropfindAction extends DavAction
     {
+        WebdavResolver.Resource _resource = null;
         boolean defaultListRoot = true; // return root node when depth>0?
         int defaultDepth = 1;
         
@@ -602,12 +633,24 @@ public class DavController extends SpringActionController
             super(method);
         }
 
-        protected WebdavResolver.Resource _resolvePath() throws DavException
+        protected void setResource(WebdavResolver.Resource r)
         {
-            return resolvePath();
+            _resource = r;
         }
 
-        Pair<Integer, Boolean> getDepthParameter()
+        WebdavResolver.Resource getResource() throws DavException
+        {
+            if (null == _resource)
+                _resource = resolvePath();
+            return _resource;
+        }
+
+        protected InputStream getInputStream() throws IOException
+        {
+            return getRequest().getInputStream();
+        }
+
+        protected Pair<Integer, Boolean> getDepthParameter()
         {
             String depthStr = getRequest().getHeader("Depth");
             if (null == depthStr)
@@ -630,7 +673,7 @@ public class DavController extends SpringActionController
 
         public WebdavStatus doMethod() throws DavException, IOException
         {
-            WebdavResolver.Resource root = _resolvePath();
+            WebdavResolver.Resource root = getResource();
             if (root == null || !root.exists())
                 return notFound();
             
@@ -647,7 +690,7 @@ public class DavController extends SpringActionController
 
             if ("PROPFIND".equals(method))
             {
-                ReadAheadInputStream is = new ReadAheadInputStream(getRequest().getInputStream());
+                ReadAheadInputStream is = new ReadAheadInputStream(getInputStream());
                 try
                 {
                     if (is.available() > 0)
@@ -858,12 +901,12 @@ public class DavController extends SpringActionController
         }
 
         @Override
-        protected WebdavResolver.Resource _resolvePath() throws DavException
+        protected WebdavResolver.Resource getResource() throws DavException
         {
             String node = getRequest().getParameter("node");
             if (null != node)
-                setResourcePath(node);
-            return resolvePath();
+                return resolvePath(node);
+            return super.getResource();
         }
 
         @Override
@@ -1687,7 +1730,7 @@ public class DavController extends SpringActionController
         }
 
 
-        WebdavStatus doMethod() throws DavException, IOException
+        WebdavStatus doMethod() throws DavException, IOException, RedirectException
         {
             checkReadOnly();
             checkLocked();

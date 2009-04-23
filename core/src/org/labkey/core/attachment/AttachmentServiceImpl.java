@@ -1470,7 +1470,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
 
-    private static class AttachmentResource extends AbstractDocumentResource
+    private class AttachmentResource extends AbstractDocumentResource
     {
         WebdavResolver.Resource _folder = null;
         AttachmentParent _parent = null;
@@ -1544,25 +1544,55 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             return AttachmentService.get().getInputStream(_parent, _name);
         }
 
-        public long copyFrom(User user, InputStream in) throws IOException
+        public long copyFrom(User user, final InputStream in) throws IOException
         {
-            // stream to temp file
-            long length = 0;
-            File tmp = File.createTempFile("attachment",".tmp");
-            tmp.deleteOnExit();
             try
             {
-                tmp.createNewFile();
-                FileOutputStream fos = new FileOutputStream(tmp);
-                length = FileUtil.copyData(in, fos);
-                fos.close();
+                AttachmentFile file = new AttachmentFile()
+                {
+                    public long getSize()
+                    {
+                        return 0;
+                    }
 
-                ArrayList list = new ArrayList();
-                list.add(new FileAttachmentFile(tmp));
+                    public String getError()
+                    {
+                        return null;
+                    }
 
-                if (exists())
+                    public String getFilename()
+                    {
+                        return getName();
+                    }
+
+                    public void setFilename(String filename)
+                    {
+                        throw new IllegalStateException();
+                    }
+
+                    public String getContentType()
+                    {
+                        return PageFlowUtil.getContentTypeFor(getFilename());                        
+                    }
+
+                    public byte[] getBytes() throws IOException
+                    {
+                        throw new UnsupportedOperationException();
+                    }
+
+                    public InputStream openInputStream() throws IOException
+                    {
+                        return in;
+                    }
+
+                    public void closeInputStream() throws IOException
+                    {
+                    }
+                };
+
+                if (AttachmentServiceImpl.this.exists(_parent,_name))
                     AttachmentService.get().deleteAttachment(_parent, _name);
-                AttachmentService.get().addAttachments(user, _parent, list);
+                AttachmentService.get().addAttachments(user, _parent, Collections.singletonList(file));
             }
             catch (AttachmentService.DuplicateFilenameException x)
             {
@@ -1578,9 +1608,10 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             }
             finally
             {
-                tmp.delete();
+                IOUtils.closeQuietly(in);
             }
-            return length;
+            // UNDONE return real length if anyone cares
+            return 0;
         }
 
         public WebdavResolver.Resource parent()
