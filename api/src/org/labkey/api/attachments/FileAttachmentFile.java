@@ -45,7 +45,7 @@ public class FileAttachmentFile implements AttachmentFile
 
     public String getContentType()
     {
-        return PageFlowUtil.getContentTypeFor(_file.getName());
+        return PageFlowUtil.getContentTypeFor(getFilename());
     }
 
     public String getError()
