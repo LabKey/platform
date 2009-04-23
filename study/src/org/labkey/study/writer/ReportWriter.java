@@ -3,6 +3,7 @@ package org.labkey.study.writer;
 import org.labkey.study.model.Study;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.util.VirtualFile;
 
 /**
  * User: adam
@@ -11,11 +12,14 @@ import org.labkey.api.reports.ReportService;
  */
 public class ReportWriter implements Writer<Study>
 {
-    public void write(Study study, ExportContext ctx) throws Exception
+    public void write(Study study, ExportContext ctx, VirtualFile fs) throws Exception
     {
-        for (Report report : ReportService.get().getReports(ctx.getUser(), study.getContainer()))
+        fs.makeDir("reports");
+        VirtualFile reports = fs.getDir("reports");
+
+        for (Report report : ReportService.get().getReports(ctx.getUser(), ctx.getContainer()))
         {
-            System.out.println("I'm exporting report " + report.getDescriptor().getReportName());
+            report.serializeToFolder(reports);
         }
     }
 }

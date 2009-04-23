@@ -195,7 +195,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     public void deleteReport(ViewContext context, Report report) throws SQLException
     {
         //ensure that descriptor id is a DbReportIdentifier
-        DbReportIdentifier reportId = null;
+        DbReportIdentifier reportId;
         if(report.getDescriptor().getReportId() instanceof DbReportIdentifier)
             reportId = (DbReportIdentifier)(report.getDescriptor().getReportId());
         else
@@ -271,7 +271,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     private ReportDB _saveReport(User user, Container c, String key, ReportDescriptor descriptor) throws SQLException
     {
         //ensure that descriptor id is a DbReportIdentifier
-        DbReportIdentifier reportId = null;
+        DbReportIdentifier reportId;
         if(null == descriptor.getReportId() || descriptor.getReportId() instanceof DbReportIdentifier)
             reportId = (DbReportIdentifier)(descriptor.getReportId());
         else
@@ -354,7 +354,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
             }
             if (descriptors.size() > 0)
                 Collections.sort(descriptors, ReportComparator.getInstance());
-            return descriptors.toArray(new Report[0]);
+            return descriptors.toArray(new Report[descriptors.size()]);
         }
         return EMPTY_REPORT;
     }

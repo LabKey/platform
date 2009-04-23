@@ -16,10 +16,9 @@
 package org.labkey.study.importer;
 
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlException;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.util.DOMUtil;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -31,22 +30,20 @@ import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.Visit;
-import org.labkey.study.visitmanager.VisitManager;
-import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.pipeline.DatasetBatch;
+import org.labkey.study.pipeline.StudyPipeline;
+import org.labkey.study.visitmanager.VisitManager;
+import org.labkey.study.xml.CohortType;
+import org.labkey.study.xml.RepositoryType;
+import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.servlet.ServletException;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -89,140 +86,108 @@ public class StudyImporter
         return study;
     }
 
-    public boolean process() throws SQLException, ServletException, IOException, SAXException, ParserConfigurationException
+    public boolean process() throws SQLException, ServletException, IOException, SAXException, ParserConfigurationException, XmlException
     {
         File file = new File(_root, "study.xml");
 
         _log.info("Loading study: " + file.getAbsolutePath());
 
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setValidating(false);
-        DocumentBuilder db = dbf.newDocumentBuilder();
+        StudyDocument doc = StudyDocument.Factory.parse(file);
+        org.labkey.study.xml.StudyDocument.Study studyXml = doc.getStudy();
 
-        Document doc = db.parse(file);
+        // Create study
+        StudyController.StudyPropertiesForm studyForm = new StudyController.StudyPropertiesForm();
+        studyForm.setLabel(studyXml.getLabel());
+        studyForm.setDateBased(studyXml.getDateBased());
+        studyForm.setStartDate(studyXml.getStartDate().getTime());
+        studyForm.setSecurityType(SecurityType.valueOf(studyXml.getSecurityType().toString()));
+        StudyController.createStudy(getStudy(true), _c, _user, studyForm);
 
-        Node rootNode = doc.getDocumentElement();
+        // Visit map
+        StudyDocument.Study.Visits visits = studyXml.getVisits();
+        File visitMap = new File(_root, visits.getSource());
 
-        if (!rootNode.getNodeName().equalsIgnoreCase("study"))
-            throw new ServletException("Invalid study.xml");
-
+        if (visitMap.exists())
         {
-            StudyController.StudyPropertiesForm form = new StudyController.StudyPropertiesForm();
-            form.setLabel(DOMUtil.getAttributeValue(rootNode, "label"));
-            form.setDateBased(Boolean.parseBoolean(DOMUtil.getAttributeValue(rootNode, "dateBased")));
-            form.setStartDate(new Date(DateUtil.parseDateTime(DOMUtil.getAttributeValue(rootNode, "startDate"))));
-            form.setSecurityType(SecurityType.valueOf(DOMUtil.getAttributeValue(rootNode, "securityType")));
+            String content = PageFlowUtil.getFileContentsAsString(visitMap);
 
-            StudyController.createStudy(getStudy(true), _c, _user, form);
+            VisitMapImporter importer = new VisitMapImporter();
+            List<String> errorMsg = new LinkedList<String>();
+
+            if (!importer.process(_user, getStudy(), content, VisitMapImporter.Format.DataFax, errorMsg))
+            {
+                for (String error : errorMsg)
+                    _errors.reject("uploadVisitMap", error);
+
+                return false;
+            }
         }
 
-        for (Node child : DOMUtil.getChildNodes(rootNode, Node.ELEMENT_NODE))
+        VisitManager visitManager = StudyManager.getInstance().getVisitManager(getStudy());
+
+        for (StudyDocument.Study.Visits.Visit visitXml : visits.getVisitArray())
         {
-            String name = child.getNodeName();
+            // Just a proof of concept -- only works for "show by default".  TODO: Move to visit map or move entire visit map into xml?
+            double sequenceNum = visitXml.getSequenceNum();
+            Visit visit = visitManager.findVisitBySequence(sequenceNum);
+            Visit mutable = visit.createMutable();
+            mutable.setShowByDefault(visitXml.getShowByDefault());
+            StudyManager.getInstance().updateVisit(_user, mutable);
+        }
 
-            if ("visits".equals(name))
+        // Cohorts
+        StudyDocument.Study.Cohorts cohorts = studyXml.getCohorts();
+        CohortType.Enum cohortType = cohorts.getType();
+
+        if (cohortType == CohortType.AUTOMATIC)
+        {
+            Integer dataSetId = cohorts.getDataSetId();
+            String dataSetProperty = cohorts.getDataSetProperty();
+            CohortController.updateAutomaticCohort(getStudy(), _user, dataSetId, dataSetProperty);
+        }
+        else
+            assert false : "Unknown cohort type";
+
+        // QC States
+        // TODO: Generalize to all qc state properties
+        StudyController.ManageQCStatesForm qcForm = new StudyController.ManageQCStatesForm();
+        qcForm.setShowPrivateDataByDefault(studyXml.getQcStates().getShowPrivateDataByDefault());
+        StudyController.updateQcState(getStudy(), _user, qcForm);
+
+        // Datasets
+        StudyDocument.Study.Datasets.Schema schema = studyXml.getDatasets().getSchema();
+        String schemaSource = schema.getSource();
+        String labelColumn = schema.getLabelColumn();
+        String typeNameColumn = schema.getTypeNameColumn();
+        String typeIdColumn = schema.getTypeIdColumn();
+
+        String datasetSource = studyXml.getDatasets().getDefinition().getSource();
+
+        File schemaFile = new File(_root, schemaSource);
+
+        if (schemaFile.exists())
+        {
+            if (!StudyManager.getInstance().bulkImportTypes(getStudy(), schemaFile, _user, labelColumn, typeNameColumn, typeIdColumn, _errors))
+                return false;
+
+            File datasetFile = new File(_root, datasetSource);
+
+            if (datasetFile.exists())
             {
-                String source = DOMUtil.getAttributeValue(child, "source");
-                File visitMap = new File(_root, source);
-
-                if (visitMap.exists())
-                {
-                    String content = PageFlowUtil.getFileContentsAsString(visitMap);
-
-                    VisitMapImporter importer = new VisitMapImporter();
-                    List<String> errorMsg = new LinkedList<String>();
-
-                    if (!importer.process(_user, getStudy(), content, VisitMapImporter.Format.DataFax, errorMsg))
-                    {
-                        for (String error : errorMsg)
-                            _errors.reject("uploadVisitMap", error);
-
-                        return false;
-                    }
-                }
-
-                VisitManager visitManager = StudyManager.getInstance().getVisitManager(getStudy());
-
-                for (Node visitNode : DOMUtil.getChildNodesWithName(child, "visit"))
-                {
-                    // Just a proof of concept -- only works for "show by default".  TODO: Move to visit map or move entire visit map into xml?
-                    double sequenceNum = Double.parseDouble(DOMUtil.getAttributeValue(visitNode, "sequenceNum"));
-                    Visit visit = visitManager.findVisitBySequence(sequenceNum);
-                    Visit mutable = visit.createMutable();
-                    mutable.setShowByDefault(Boolean.parseBoolean(DOMUtil.getAttributeValue(visitNode, "showByDefault")));
-                    StudyManager.getInstance().updateVisit(_user, mutable);
-                }
+                submitStudyBatch(getStudy(), datasetFile, _c, _user, _url);
             }
-            else if ("cohorts".equals(name))
-            {
-                String cohortType = DOMUtil.getAttributeValue(child, "type");
-                assert cohortType.equals("automatic");
-                Integer dataSetId = Integer.parseInt(DOMUtil.getAttributeValue(child, "dataSetId"));
-                String dataSetProperty = DOMUtil.getAttributeValue(child, "dataSetProperty");
+        }
 
-                CohortController.updateAutomaticCohort(getStudy(), _user, dataSetId, dataSetProperty);
-            }
-            else if ("qcStates".equals(name))
-            {
-                // TODO: Generalize to all qc state properties
-                StudyController.ManageQCStatesForm form = new StudyController.ManageQCStatesForm();
-                form.setShowPrivateDataByDefault(Boolean.parseBoolean(DOMUtil.getAttributeValue(child, "showPrivateDataByDefault")));
-                StudyController.updateQcState(getStudy(), _user, form);
-            }
-            else if ("datasets".equals(name))
-            {
-                String schemaSource = null;
-                String labelColumn = null;
-                String typeNameColumn = null;
-                String typeIdColumn = null;
-                String datasetSource = null;
+        // Specimens
+        StudyDocument.Study.Specimens specimens = studyXml.getSpecimens();
 
-                for (Node subElement : DOMUtil.getChildNodes(child, Node.ELEMENT_NODE))
-                {
-                    String subName = subElement.getNodeName();
-
-                    if ("schemas".equals(subName))
-                    {
-                        schemaSource = DOMUtil.getAttributeValue(subElement, "source");
-                        labelColumn = DOMUtil.getAttributeValue(subElement, "labelColumn");
-                        typeNameColumn = DOMUtil.getAttributeValue(subElement, "typeNameColumn");
-                        typeIdColumn = DOMUtil.getAttributeValue(subElement, "typeIdColumn");
-                    }
-                    else if ("definition".equals(subName))
-                    {
-                        datasetSource = DOMUtil.getAttributeValue(subElement, "source");
-                    }
-                }
-
-                File schemas = new File(_root, schemaSource);
-
-                if (schemas.exists())
-                {
-                    if (!StudyManager.getInstance().bulkImportTypes(getStudy(), schemas, _user, labelColumn, typeNameColumn, typeIdColumn, _errors))
-                        return false;
-                }
-
-                File datasetFile = new File(_root, datasetSource);
-
-                if (datasetFile.exists())
-                {
-                    submitStudyBatch(getStudy(), datasetFile, _c, _user, _url);
-                }
-            }
-            else if ("specimens".equals(name))
-            {
-                boolean simple = Boolean.parseBoolean(DOMUtil.getAttributeValue(child, "simpleRepository", "true"));
-                StudyController.updateRepositorySettings(_c, simple);
-
-                String source = DOMUtil.getAttributeValue(child, "source");
-                File specimenFile = new File(_root, source);
-
-                SpringSpecimenController.submitSpecimenBatch(_c, _user, _url, specimenFile);
-            }
-            else
-            {
-                throw new RuntimeException("study.xml format problem: unknown node '" + name + "'");
-            }
+        if (null != specimens)
+        {
+            RepositoryType.Enum repositoryType = specimens.getRepositoryType();
+            StudyController.updateRepositorySettings(_c, RepositoryType.STANDARD == repositoryType);
+            String source = specimens.getSource();
+            File specimenFile = new File(_root, source);
+            SpringSpecimenController.submitSpecimenBatch(_c, _user, _url, specimenFile);
         }
 
         _log.info("Finished loading study: " + file.getAbsolutePath());

@@ -25,6 +25,7 @@ import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
+import org.apache.xmlbeans.XmlException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
@@ -67,7 +68,8 @@ import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.common.util.Pair;
 import org.labkey.study.*;
 import org.labkey.study.writer.StudyWriter;
-import org.labkey.study.writer.FileExportContext;
+import org.labkey.study.writer.FileSystemVirtualFile;
+import org.labkey.study.writer.ExportContext;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
@@ -3626,7 +3628,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    public boolean importStudy(BindException errors) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException
+    public boolean importStudy(BindException errors) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException, XmlException
     {
         Container c = getContainer();
         User user = getUser();
@@ -3648,7 +3650,7 @@ public class StudyController extends BaseStudyController
             File exportDir = new File(rootDir, "export");
 
             StudyWriter writer = new StudyWriter();
-            writer.write(getStudy(), new FileExportContext(exportDir, getUser()));
+            writer.write(getStudy(), new ExportContext(getUser(), getContainer()), new FileSystemVirtualFile(exportDir));
 
             return new HtmlView("Study was successfully exported to " + exportDir.getAbsolutePath() + "<br><br>" + PageFlowUtil.generateButton("Back", new ActionURL(ManageStudyAction.class, getContainer())));
         }
@@ -5747,7 +5749,7 @@ public class StudyController extends BaseStudyController
                         }
                         catch (Exception e)
                         {
-                            _log.error(e);
+                            _log.error("Error loading study", e);
                         }
                     }
                 }, 10 * 1000);

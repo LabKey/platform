@@ -15,6 +15,7 @@
  */
 package org.labkey.study.writer;
 
+import org.labkey.api.util.VirtualFile;
 import org.labkey.study.model.Study;
 
 import java.io.FileNotFoundException;
@@ -25,11 +26,11 @@ import java.io.UnsupportedEncodingException;
  * Date: Apr 15, 2009
  * Time: 10:52:38 AM
  */
-public class VisitMapExporter implements Writer<Study>
+public class VisitMapWriter implements Writer<Study>
 {
-    public void write(Study study, ExportContext ctx) throws FileNotFoundException, UnsupportedEncodingException
+    public void write(Study study, ExportContext ctx, VirtualFile fs) throws FileNotFoundException, UnsupportedEncodingException
     {
         DataFaxVisitMapWriter writer = new DataFaxVisitMapWriter();
-        writer.write(study.getVisits(), ctx);
+        writer.write(study.getVisits(), ctx, fs);
     }
 }

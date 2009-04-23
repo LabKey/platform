@@ -3,6 +3,7 @@ package org.labkey.study.writer;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.util.VirtualFile;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
 import org.labkey.study.model.Study;
@@ -18,18 +19,18 @@ import java.util.List;
  */
 public class QueryWriter implements Writer<Study>
 {
-    public void write(Study study, ExportContext ctx) throws Exception
+    public void write(Study study, ExportContext ctx, VirtualFile fs) throws Exception
     {
         Container c = study.getContainer();
         List<QueryDefinition> queries = QueryService.get().getQueryDefs(c);
 
         for (QueryDefinition query : queries)
         {
-            String path = "queries/" + ctx.makeLegalName(query.getSchemaName());
-            ctx.ensurePath(path);
+            String path = "queries/" + fs.makeLegalName(query.getSchemaName());
+            fs.makeDir(path);
 
-            String baseName = path + "/" + ctx.makeLegalName(query.getName());
-            PrintWriter sql = ctx.getPrintWriter(baseName + ".sql");   // TODO: ModuleQueryDef.FILE_EXTENSION
+            String baseName = path + "/" + fs.makeLegalName(query.getName());
+            PrintWriter sql = fs.getPrintWriter(baseName + ".sql");   // TODO: ModuleQueryDef.FILE_EXTENSION
             sql.println(query.getSql());
             sql.close();
 
@@ -46,7 +47,7 @@ public class QueryWriter implements Writer<Study>
             QueryDocument qDoc = QueryDocument.Factory.newInstance();
             qDoc.setQuery(qtDoc);
 
-            PrintWriter xml = ctx.getPrintWriter(baseName + ".query.xml");    // TODO: ModuleQueryDef.META_FILE_EXTENSION
+            PrintWriter xml = fs.getPrintWriter(baseName + ".query.xml");    // TODO: ModuleQueryDef.META_FILE_EXTENSION
             qDoc.save(xml);               // TODO: Set options for namespace, indenting
             xml.close();
         }

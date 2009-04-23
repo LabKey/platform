@@ -1,7 +1,7 @@
 package org.labkey.study.writer;
 
-import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.VirtualFile;
 
 import java.io.PrintWriter;
 import java.io.File;
@@ -13,15 +13,12 @@ import java.io.UnsupportedEncodingException;
  * Date: Apr 16, 2009
  * Time: 3:30:23 PM
  */
-public class FileExportContext implements ExportContext
+public class FileSystemVirtualFile implements VirtualFile
 {
     private File _root;
-    private User _user;
 
-    public FileExportContext(File root, User user)
+    public FileSystemVirtualFile(File root)
     {
-        _user = user;
-
         if (!root.exists())
             root.mkdir();
 
@@ -41,27 +38,33 @@ public class FileExportContext implements ExportContext
 
     public PrintWriter getPrintWriter(String fileName) throws FileNotFoundException, UnsupportedEncodingException
     {
-        File file = new File(_root, fileName);
+        File file = new File(_root, makeLegalName(fileName));
 
         return new PrintWriter(file);
     }
 
-    public void ensurePath(String path) throws FileNotFoundException, UnsupportedEncodingException
+    public void makeDir(String path) throws FileNotFoundException, UnsupportedEncodingException
     {
-        File dir = new File(_root, path);
+        String[] parts = path.split("/");
 
-        dir.mkdirs();
+        File parent = _root;
 
-        ensureWriteableDirectory(dir);
+        for (String part : parts)
+        {
+            parent = new File(parent, makeLegalName(part));
+            parent.mkdir();
+        }
+
+        ensureWriteableDirectory(parent);
+    }
+
+    public VirtualFile getDir(String name)
+    {
+        return new FileSystemVirtualFile(new File(_root, makeLegalName(name)));
     }
 
     public String makeLegalName(String name)
     {
         return FileUtil.makeLegalName(name);
-    }
-
-    public User getUser()
-    {
-        return _user;
     }
 }
