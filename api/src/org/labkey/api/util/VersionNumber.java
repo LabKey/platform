@@ -42,7 +42,18 @@ public class VersionNumber
 
         _major = Integer.parseInt(versionParts[0]);
         if(versionParts.length > 1)
-            _minor = Integer.parseInt(versionParts[1]);
+        {
+            // Lenient int parser that allows non-digit characters after the number portion.  This fixes PostgreSQL 8.4 Beta 1
+            //  which returns "4beta1" for this. 
+            String minorString = versionParts[1];
+            int i;
+
+            for (i = 0; i < minorString.length(); i++)
+                if (!Character.isDigit(minorString.charAt(i)))
+                    break;
+
+            _minor = Integer.parseInt(versionParts[1].substring(0, i));
+        }
         if(versionParts.length > 2)
         {
             //try to parse as int, otherwise set as string
