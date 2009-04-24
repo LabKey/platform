@@ -202,9 +202,8 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
 
             result.setValidationScripts(scriptNames);
         }
-        // only tsv providers support validation this release (9.1)
-        result.setAllowValidationScript(provider instanceof TsvAssayProvider);
-        
+        result.setAllowValidationScript(provider.getDataExchangeHandler() != null);
+
         return result;
     }
 
@@ -420,7 +419,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
     {
         Container c = getContainer();
         User u = getUser();
-        return c.hasPermission(u, ACL.PERM_UPDATE) || 
+        return c.hasPermission(u, ACL.PERM_UPDATE) ||
                 (c.hasPermission(u, ACL.PERM_UPDATEOWN) && protocol.getCreatedBy().equals(u));
     }
 }
