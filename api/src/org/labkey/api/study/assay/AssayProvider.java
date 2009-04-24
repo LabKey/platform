@@ -35,6 +35,7 @@ import org.labkey.api.study.query.RunListQueryView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -171,4 +172,9 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     /** @return a short description of this assay type - what kinds of data it can be used to analyze, etc */
     String getDescription();
+
+    /**
+     * Return the helper to handle data exchange between the server and external scripts.
+     */
+    DataExchangeHandler getDataExchangeHandler();
 }
