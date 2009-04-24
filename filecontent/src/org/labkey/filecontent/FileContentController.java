@@ -53,6 +53,7 @@ public class FileContentController extends SpringActionController
 {
    public enum RenderStyle
    {
+       DEFAULT,     // call defaultRenderStyle
        FRAME,       // <iframe>                       (*)
        INLINE,      // use INCLUDE (INLINE is confusing, does NOT mean content-disposition:inline)
        INCLUDE,     // include html                   (text/html)
@@ -83,110 +84,118 @@ public class FileContentController extends SpringActionController
        return t;
    }
 
-   @RequiresPermission(ACL.PERM_READ)
-   public class SendFileAction extends SimpleViewAction<SendFileForm>
-   {
-       File file;
+    @RequiresPermission(ACL.PERM_READ)
+    public class SendFileAction extends SimpleViewAction<SendFileForm>
+    {
+        File file;
 
-       public ModelAndView getView(SendFileForm form, BindException errors) throws Exception
-       {
-           if (null == form.getFileName())
-               throw new NotFoundException();
+        public ModelAndView getView(SendFileForm form, BindException errors) throws Exception
+        {
+            if (null == form.getFileName())
+                throw new NotFoundException();
 
-           String fileSet = StringUtils.trimToNull(form.getFileSet());
-           AttachmentDirectory p;
-           if (null == fileSet)
-               p = AttachmentService.get().getMappedAttachmentDirectory(getContainer(), false);
-           else
-               p = AttachmentService.get().getRegisteredDirectory(getContainer(), form.getFileSet());
+            String fileSet = StringUtils.trimToNull(form.getFileSet());
+            AttachmentDirectory p;
+            if (null == fileSet)
+                p = AttachmentService.get().getMappedAttachmentDirectory(getContainer(), false);
+            else
+                p = AttachmentService.get().getRegisteredDirectory(getContainer(), form.getFileSet());
 
-           if (null == p)
-               throw new NotFoundException();
+            if (null == p)
+                throw new NotFoundException();
 
-           File dir = p.getFileSystemDirectory();
-           if (null == dir)
-           {
-               if (getUser().isAdministrator())
-                   return HttpView.redirect("showAdmin.view");
-               else
-                   throw new NotFoundException();
-           }
+            File dir = p.getFileSystemDirectory();
+            if (null == dir)
+            {
+                if (getUser().isAdministrator())
+                    return HttpView.redirect("showAdmin.view");
+                else
+                    throw new NotFoundException();
+            }
 
-           file = new File(dir, form.getFileName());
-           //Double check to make sure file is really a direct child of the parent (no escape from the configured tree...)
-           // Also, check that it's not a directory
-           if (!NetworkDrive.exists(file) || !file.getParentFile().equals(dir) || file.isDirectory())
-               throw new NotFoundException();
+            file = new File(dir, form.getFileName());
+            //Double check to make sure file is really a direct child of the parent (no escape from the configured tree...)
+            // Also, check that it's not a directory
+            if (!NetworkDrive.exists(file) || !file.getParentFile().equals(dir) || file.isDirectory())
+                throw new NotFoundException();
 
-           RenderStyle style = form.getRenderStyle();
+            RenderStyle style = form.getRenderStyle();
+            MimeMap mimeMap = new MimeMap();
+            String mimeType = StringUtils.defaultString(mimeMap.getContentTypeFor(file.getName()), "");
 
-           MimeMap mimeMap = new MimeMap();
-           String mimeType = StringUtils.defaultString(mimeMap.getContentTypeFor(file.getName()), "");
-           boolean canInline = mimeType.startsWith("text/") || mimeMap.isInlineImageFor(file.getName());
-           if (!canInline && !(RenderStyle.ATTACHMENT == style || RenderStyle.PAGE == style))
-               style = RenderStyle.PAGE;
-           if (RenderStyle.IMAGE == style && !mimeType.startsWith("image/"))
-               style = RenderStyle.PAGE;
-           if (RenderStyle.TEXT == style && !mimeType.startsWith("text/"))
-               style = RenderStyle.PAGE;
+            if (style == RenderStyle.DEFAULT)
+            {
+                style = defaultRenderStyle(file.getName());
+            }
+            else
+            {
+                // verify legal RenderStyle
+                boolean canInline = mimeType.startsWith("text/") || mimeMap.isInlineImageFor(file.getName());
+                if (!canInline && !(RenderStyle.ATTACHMENT == style || RenderStyle.PAGE == style))
+                    style = RenderStyle.PAGE;
+                if (RenderStyle.IMAGE == style && !mimeType.startsWith("image/"))
+                    style = RenderStyle.PAGE;
+                if (RenderStyle.TEXT == style && !mimeType.startsWith("text/"))
+                    style = RenderStyle.PAGE;
+            }
 
-           //FIX: 5523 - if renderAs is null and mimetype is HTML, default style to inline
-           if (null == form.getRenderAs())
-           {    
-               if ("text/html".equalsIgnoreCase(mimeType))
+            //FIX: 5523 - if renderAs is null and mimetype is HTML, default style to inline
+            if (null == form.getRenderAs())
+            {
+                if ("text/html".equalsIgnoreCase(mimeType))
                     style = RenderStyle.INCLUDE;
-           }
+            }
 
-           switch (style)
-           {
-               case ATTACHMENT:
-               case PAGE:
-               {
-                   getPageConfig().setTemplate(PageConfig.Template.None);
-                   PageFlowUtil.streamFile(getViewContext().getResponse(), file, RenderStyle.ATTACHMENT==style);
-                   return null;
-               }
-               case FRAME:
-               {
-                   URLHelper url = new URLHelper(HttpView.getContextURL());
-                   url.replaceParameter("renderAs", FileContentController.RenderStyle.PAGE.toString());
-                   HttpView iframeView = new IFrameView(url.getLocalURIString());
-                   return iframeView;
-               }
-               case INCLUDE:
-               case INLINE:
-               {
-                   String fileContents = PageFlowUtil.getFileContentsAsString(file);
-                   HtmlView webPart = new HtmlView(file.getName(), fileContents);
-                   webPart.setFrame(WebPartView.FrameType.DIV);
-                   return webPart;
-               }
-               case TEXT:
-               {
-                   String fileContents = PageFlowUtil.getFileContentsAsString(file);
-                   String html = PageFlowUtil.filter(fileContents, true, true);
-                   HttpView webPart = new HtmlView(file.getName(), html);
-                   return webPart;
-               }
-               case IMAGE:
-               {
-                   URLHelper url = new URLHelper(HttpView.getContextURL()); 
-                   url.replaceParameter("renderAs", FileContentController.RenderStyle.PAGE.toString());
-                   HttpView imgView = new ImgView(url.getLocalURIString());
-                   return imgView;
-               }
-               default:
-                   return null;
-           }
-       }
+            switch (style)
+            {
+                case ATTACHMENT:
+                case PAGE:
+                {
+                    getPageConfig().setTemplate(PageConfig.Template.None);
+                    PageFlowUtil.streamFile(getViewContext().getResponse(), file, RenderStyle.ATTACHMENT==style);
+                    return null;
+                }
+                case FRAME:
+                {
+                    URLHelper url = new URLHelper(HttpView.getContextURL());
+                    url.replaceParameter("renderAs", FileContentController.RenderStyle.PAGE.toString());
+                    HttpView iframeView = new IFrameView(url.getLocalURIString());
+                    return iframeView;
+                }
+                case INCLUDE:
+                case INLINE:
+                {
+                    String fileContents = PageFlowUtil.getFileContentsAsString(file);
+                    HtmlView webPart = new HtmlView(file.getName(), fileContents);
+                    webPart.setFrame(WebPartView.FrameType.DIV);
+                    return webPart;
+                }
+                case TEXT:
+                {
+                    String fileContents = PageFlowUtil.getFileContentsAsString(file);
+                    String html = PageFlowUtil.filter(fileContents, true, true);
+                    HttpView webPart = new HtmlView(file.getName(), html);
+                    return webPart;
+                }
+                case IMAGE:
+                {
+                    URLHelper url = new URLHelper(HttpView.getContextURL());
+                    url.replaceParameter("renderAs", FileContentController.RenderStyle.PAGE.toString());
+                    HttpView imgView = new ImgView(url.getLocalURIString());
+                    return imgView;
+                }
+                default:
+                    return null;
+            }
+        }
 
-       public NavTree appendNavTrail(NavTree root)
-       {
-           String name = file == null ? "<not found>" : file.getName();
-           return (new BeginAction()).appendNavTrail(root)
-                   .addChild(name);
-       }
-   }
+        public NavTree appendNavTrail(NavTree root)
+        {
+            String name = file == null ? "<not found>" : file.getName();
+            return (new BeginAction()).appendNavTrail(root)
+                    .addChild(name);
+        }
+    }
 
 
    public static class SrcForm
@@ -233,14 +242,6 @@ public class FileContentController extends SpringActionController
                part = new FilesWebPart(getContainer(), form.getFileSetName());
            part.setWide(true);
            part.setShowAdmin(true);
-
-           // UNDONE: right view
-
-           //        PageConfig pageConfig = new PageConfig("Manage Files");
-           //        HomeTemplate template = new HomeTemplate(getViewContext(), getContainer(), part, pageConfig, new NavTree[0]);
-           //        template.setView("right", new FileSetsWebPart(getContainer()));
-           //        includeView(template);
-           //        return null;
            return part;
        }
 
