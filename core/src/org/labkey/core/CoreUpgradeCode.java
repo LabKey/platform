@@ -17,15 +17,21 @@ package org.labkey.core;
 
 import org.labkey.api.data.*;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.GroupManager;
+import org.labkey.api.module.Module;
+import org.labkey.api.security.*;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.roles.*;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.ResultSetUtil;
+import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.SQLException;
-import java.util.Map;
-import java.util.HashMap;
+import java.sql.ResultSet;
+import java.util.*;
 
 /**
  * User: adam
@@ -35,6 +41,8 @@ import java.util.HashMap;
 @SuppressWarnings({"UnusedDeclaration"})
 public class CoreUpgradeCode implements UpgradeCode
 {
+    private static final Logger _log = Logger.getLogger(CoreUpgradeCode.class);
+
     // Invoked by core-8.10-8.20.sql
     public void bootstrapDevelopersGroup(ModuleContext moduleContext)
     {
@@ -146,5 +154,142 @@ public class CoreUpgradeCode implements UpgradeCode
     {
         lafProps.put(propertyName, configProps.get(propertyName));
         configProps.remove(propertyName);
+    }
+
+    //Not yet invoked--will call this once we have UI to edit new security policies
+    public void migrateAcls(ModuleContext context)
+    {
+        int numAcls = 0;
+        _log.info("Migrating existing ACLs to RoleAssignments...");
+
+        TableInfo tableAcls = CoreSchema.getInstance().getTableInfoACLs();
+        ResultSet rs = null;
+        try
+        {
+            rs = Table.select(tableAcls, Table.ALL_COLUMNS, null, null);
+            while(rs.next())
+            {
+                String containerId = rs.getString("Container");
+                String objectId = rs.getString("ObjectId");
+                ACL acl = new ACL(rs.getBytes("ACL"));
+                int[] groups = acl.getAllGroups();
+                int[] perms = acl.getAllPermissions();
+
+                Container container = ContainerManager.getForId(containerId);
+                if(null == container)
+                {
+                    _log.warn("Could not resolve ACL container id " + containerId + "! Skipping ACL.");
+                    continue;
+                }
+
+                ACLConversionResource resource = new ACLConversionResource(container, objectId);
+                ResourceSecurityPolicy policy = new ResourceSecurityPolicy(resource);
+                for(int idx = 0; idx < groups.length; ++idx)
+                {
+                    Group group = SecurityManager.getGroup(groups[idx]);
+                    if(null == group)
+                    {
+                        _log.warn("Could not resolve group id " + groups[idx] + " in ACL for object id " + objectId + "! Skipping group permissions.");
+                        continue;
+                    }
+                    Role role = getRoleForPerms(perms[idx]);
+                    if(null == role)
+                    {
+                        _log.warn("Unable to determine a role for permissions bits " + perms[idx] + " in ACL for object id " + objectId + "! Skipping role assignment.");
+                        continue;
+                    }
+
+                    policy.addRoleAssignment(group, role);
+                }
+
+                SecurityManager.savePolicy(policy);
+
+                ++numAcls;
+            }
+        }
+        catch(SQLException e)
+        {
+            _log.error("SQLException while converting ACL to SecurityPolicy!", e);
+            throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
+        }
+
+        _log.info("Finished migrating " + numAcls + " ACLs to RoleAssignments.");
+    }
+
+    private Role getRoleForPerms(int perms)
+    {
+        if(SecurityManager.PermissionSet.ADMIN.getPermissions() == perms)
+            return new SiteAdminRole();
+        else if(SecurityManager.PermissionSet.EDITOR.getPermissions() == perms)
+            return new EditorRole();
+        else if(SecurityManager.PermissionSet.AUTHOR.getPermissions() == perms)
+            return new AuthorRole();
+        else if(SecurityManager.PermissionSet.READER.getPermissions() == perms)
+            return new ReaderRole();
+        else if(SecurityManager.PermissionSet.RESTRICTED_READER.getPermissions() == perms)
+            return null; //NOTE: read-own is now implemented via the Owner contextual role
+        else if(SecurityManager.PermissionSet.SUBMITTER.getPermissions() == perms)
+            return new SubmitterRole();
+        else if(SecurityManager.PermissionSet.NO_PERMISSIONS.getPermissions() == perms)
+            return new NoPermissionsRole();
+        else
+            return null;
+    }
+
+    //used strictly for conversion of ACLs
+    private static class ACLConversionResource implements SecurableResource
+    {
+        private Container _container;
+        private String _resourceId;
+
+        public ACLConversionResource(Container container, String objectId)
+        {
+            _resourceId = objectId;
+            _container = container;
+        }
+
+        @NotNull
+        public String getResourceId()
+        {
+            return _resourceId;
+        }
+
+        @NotNull
+        public String getName()
+        {
+            return "";
+        }
+
+        @NotNull
+        public String getDescription()
+        {
+            return "";
+        }
+
+        @NotNull
+        public Set<Class<? extends Permission>> getRelevantPermissions()
+        {
+            return Collections.emptySet();
+        }
+
+        public Module getSourceModule()
+        {
+            return null;
+        }
+
+        public SecurableResource getParent()
+        {
+            return null;
+        }
+
+        @NotNull
+        public Container getContainer()
+        {
+            return _container;
+        }
     }
 }

@@ -474,6 +474,16 @@
             <ns:column columnName="Label"/>
         </ns:columns>
     </ns:table>
+    
+    <ns:table tableName="RoleAssignments" tableDbType="TABLE">
+      <ns:columns>
+        <ns:column columnName="ResourceId"/>
+        <ns:column columnName="UserId"/>
+        <ns:column columnName="Role"/>
+        <ns:column columnName="Container"/>
+        <ns:column columnName="ResourceClass"/>
+      </ns:columns>
+    </ns:table>
 
 </ns:tables>
 

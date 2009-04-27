@@ -48,7 +48,7 @@ public class CoreQuerySchema extends UserSchema
 
     public Set<String> getTableNames()
     {
-        return PageFlowUtil.set("Users","SiteUsers");
+        return PageFlowUtil.set("Users","SiteUsers","Principals");
     }
 
 
@@ -58,6 +58,8 @@ public class CoreQuerySchema extends UserSchema
             return getUsers();
         if (name.toLowerCase().equals("siteusers"))
             return getSiteUsers();
+        if(name.toLowerCase().equals("principals"))
+            return getPrincipals();
         return null;
     }
 
@@ -73,6 +75,52 @@ public class CoreQuerySchema extends UserSchema
         users.setName("SiteUsers");
 
         return users;
+    }
+
+    public TableInfo getPrincipals()
+    {
+        TableInfo principalsBase = CoreSchema.getInstance().getTableInfoPrincipals();
+        FilteredTable principals = new FilteredTable(principalsBase);
+
+        //we expose userid, name and type via query
+        ColumnInfo col = principals.wrapColumn(principalsBase.getColumn("UserId"));
+        col.setKeyField(true);
+        col.setIsHidden(true);
+        col.setReadOnly(true);
+        principals.addColumn(col);
+
+        col = principals.wrapColumn(principalsBase.getColumn("Name"));
+        col.setReadOnly(true);
+        principals.addColumn(col);
+
+        col = principals.wrapColumn(principalsBase.getColumn("Type"));
+        col.setReadOnly(true);
+        principals.addColumn(col);
+
+        col = principals.wrapColumn(principalsBase.getColumn("Container"));
+        col.setReadOnly(true);
+        principals.addColumn(col);
+
+        List<FieldKey> defCols = new ArrayList<FieldKey>();
+        defCols.add(FieldKey.fromParts("UserId"));
+        defCols.add(FieldKey.fromParts("Name"));
+        defCols.add(FieldKey.fromParts("Type"));
+        defCols.add(FieldKey.fromParts("Container"));
+        principals.setDefaultVisibleColumns(defCols);
+
+        //filter out inactive
+        principals.addCondition(principalsBase.getColumn("Active"), 1);
+
+        //filter for container is null or container = current-container
+        principals.addCondition(new SQLFragment("Container IS NULL or Container=?", getContainer().getProject()));
+
+        //only site admins are allowed to see site principals,
+        //so if the user is not a site admin, add a filter that will
+        //generate an empty set
+        if(!getUser().isAdministrator())
+            addNullSetFilter(principals);
+
+        return principals;
     }
 
     public TableInfo getUsers()
