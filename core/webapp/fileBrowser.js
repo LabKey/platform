@@ -157,6 +157,8 @@ function startsWith(s, f)
     return s.charAt(0) == f.charAt(0) && s.charAt(len-1) == f.charAt(len-1) && s.indexOf(f) == 0;
 }
 
+var imgCounter = 0;
+
 function renderIcon(value, metadata, record, rowIndex, colIndex, store)
 {
     var file = record.get("file");
@@ -174,14 +176,11 @@ function renderIcon(value, metadata, record, rowIndex, colIndex, store)
             value = LABKEY.contextPath + "/project/icon.view?name=" + ext;
         }
     }
-    var img = {tag:'img', width:16, height:16, src:value};
+    var img = {tag:'img', width:16, height:16, src:value, id:'img'+(++imgCounter)};
     if (file)
-    {
-        img.onMouseOver = "preview(this,'" + record.data.uri + "','" + record.data.contentType + "');";
-    }
+        _attachPreview.defer(1,null,[img.id,record]);
     return Ext.DomHelper.markup(img);
 }
-
 
 function renderFileSize(value, metadata, record, rowIndex, colIndex, store)
 {
@@ -201,19 +200,31 @@ function renderDateTime(value, metadata, record, rowIndex, colIndex, store)
 }
 
 
+//
+// PREVIEW
+//
+
 var _previewConnection = new Ext.data.Connection({autoAbort:true, method:'GET', disableCaching:false});
 var _previewWindow = null;
 var _previewAsync = null;
 
 
-function preview(el, uri, contentType)
+function _attachPreview(id,record)
 {
-    el = Ext.get(el);
+    var elImg = Ext.get(id);
+    elImg.on("mouseover",preview.createCallback(elImg,record));
+    elImg.on("mouseout",unpreviewWindow);
+}
+
+
+function preview(el, record)
+{
+    var uri = record.data.uri;
+    var contentType = record.data.contentType;
     cancelAsyncPreview();
     closePreviewWindow();
     var timeout = previewFN.defer(200,null,[el,uri,contentType]);
     _previewAsync = {timeout:timeout, cancel:function() {clearTimeout(this.timeout);}};
-    el.on("mouseout",cancelAsyncPreview);
 }
 
 
@@ -221,9 +232,19 @@ function previewFN(el, uri, contentType)
 {
     if (0==contentType.indexOf('image/'))
     {
-        dynamicToolTip(el, {tag:'img', src:uri});
+        //dynamicToolTip(el, {tag:'img', src:uri});
+        //previewWindow(el, {tag:'img', src:uri});
+        var image = new Image();
+        image.onload = function()
+        {
+            var img = {tag:'img', src:uri, border:'0', width:image.width, height:image.height};
+            constrain(img, 400, 400);
+            previewWindow(el, img);
+        };
+        image.src = uri;
+        _previewAsync = {image:image, cancel:function(){image.onload=null}};
     }
-    else if (0 == contentType.indexOf('text/'))
+    else if (0 == contentType.indexOf('text/') || contentType == 'application/javascript')
     {
         var requestid = _previewConnection.request({
             autoAbort:true,
@@ -237,7 +258,7 @@ function previewFN(el, uri, contentType)
                 if (contentType == "text/html")
                     html = response.responseText;
                 else
-                    html = "<pre>" + response.responseText + "</pre>";
+                    html = "<div style='width:640px;'><pre>" + h(response.responseText) + "</pre></div>";
                 previewWindow(el, html);
                 if (_previewAsync && _previewAsync.requestid == requestid)
                     _previewAsync = null;
@@ -260,19 +281,17 @@ function dynamicToolTip(el, html)
 function previewWindow(el, html)
 {
     el = Ext.get(el);
+    html = Ext.DomHelper.markup(html);
     if (_previewWindow)
         _previewWindow.close();
     var xy = el.getAnchorXY('tr');
-    _previewWindow = new Ext.Window({html:html, target:el, closable:false, constrain:true, width:400, x:xy[0], y:xy[1]});
+    _previewWindow = new Ext.Window({html:html, target:el, closable:false, constrain:true, x:xy[0], y:xy[1]});
     _previewWindow.show();
     _previewWindow.getEl().on("mouseout",unpreviewWindow);
-    _previewWindow.on("close",function(){el.removeAllListeners()});
-    el.removeAllListeners();
-    el.on("mouseout",unpreviewWindow);
 }
 
 
-function closePreviewWindow(e)
+function closePreviewWindow()
 {
     if (_previewWindow)
     {
@@ -303,6 +322,24 @@ function unpreviewWindow(e)
         {
             closePreviewWindow();
         }
+    }
+}
+
+function constrain(img,w,h)
+{
+    var X = img.width;
+    var Y = img.height;
+    if (X > w)
+    {
+        img.width = w;
+        img.height = Math.round(Y * (1.0*w/X));
+    }
+    X = img.width;
+    Y = img.height;
+    if (Y > h)
+    {
+        img.height = h;
+        img.width = Math.round(X * (1.0*h/Y));
     }
 }
 
