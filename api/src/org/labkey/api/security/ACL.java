@@ -337,12 +337,18 @@ public class ACL implements Cloneable
     //To be used strictly by the CoreUpgradeCode
     public int[] getAllGroups()
     {
-        return Arrays.copyOf(_groups, _groups.length);
+        int[] copy = new int[_groups.length];
+        System.arraycopy(_groups, 0, copy, 0,
+                         _groups.length);
+        return copy;
     }
     
     public int[] getAllPermissions()
     {
-        return Arrays.copyOf(_permissions, _permissions.length);
+        int[] copy = new int[_permissions.length];
+        System.arraycopy(_permissions, 0, copy, 0,
+                         _permissions.length);
+        return copy;
     }
 
 }
