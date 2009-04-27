@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.filecontent.FilesWebPart" %>
+<%@ page import="org.labkey.api.security.ACL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 //FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz", TimeZone.getTimeZone("GMT"), Locale.US);
@@ -82,26 +83,25 @@ Ext.onReady(function()
     {
         window.location = <%=PageFlowUtil.jsString(new ActionURL(FileContentController.ShowAdminAction.class, c).getLocalURIString())%>;
     }});
-            
+
     Ext.QuickTips.init();
     var fileSystem = new WebdavFileSystem({
         baseUrl:<%=PageFlowUtil.jsString(rootPath)%>,
         rootName:<%=PageFlowUtil.jsString(rootName)%>});
     var fileBrowser = new FileBrowser({
         fileSystem:fileSystem
-        ,helpEl:'help'
+        ,helpEl:null
         ,showAddressBar:false
         ,showFolderTree:false
         ,showProperties:false
-//        ,showDetails:false
+        ,showDetails:true
         ,allowChangeDirectory:false
         ,actions:{configure:configureAction}
-        ,tbar:['download','deletePath','refresh','configure']
+        ,tbar:['download','deletePath','refresh'<%=c.hasPermission(context.getUser(),ACL.PERM_ADMIN)?",'configure'":""%>]
     });
     fileBrowser.render('files');
     fileBrowser.on("doubleclick", function(record){
-        var u = LABKEY.ActionURL;
-        window.location = u.getContextPath() + "/files" + u.getContainer() + "/" + record.data.name + "?renderAs=DEFAULT";
+        window.location = "<%=PageFlowUtil.encodePath(request.getContextPath())%>/files<%=c.getEncodedPath()%>" + encodeURI(record.data.name) + "?renderAs=DEFAULT<%=me.getFileSet()==null ? "" : "&fileSet=" + PageFlowUtil.encode(me.getFileSet())%>";
     });
     var resizer = new Ext.Resizable('files', {width:800, height:600, minWidth:640, minHeight:400});
     resizer.on("resize", function(o,width,height){ this.setWidth(width); this.setHeight(height); }.createDelegate(fileBrowser));

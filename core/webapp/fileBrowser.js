@@ -3,11 +3,13 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-document.write(
-        "<style>" +
-        ".refreshIcon {background-image: url(" + LABKEY.contextPath + "/_images/reload.png)}"+
-        "</style>");
 
+
+var $ = Ext.get;
+var $h = Ext.util.Format.htmlEncode;
+var $dom = Ext.DomHelper
+
+$dom.append(document.getElementsByTagName("head")[0],"<style>.refreshIcon {background-image: url(" + LABKEY.contextPath + "/_images/reload.png)}</style>");
 
 /*
 	parseUri 1.2.1
@@ -142,7 +144,6 @@ var ROWSELECTION_MODEL =
 };
 
 
-var h = Ext.util.Format.htmlEncode;
 function log(o)
 {
     if ("console" in window)
@@ -159,7 +160,8 @@ function startsWith(s, f)
 
 var imgCounter = 0;
 
-function renderIcon(value, metadata, record, rowIndex, colIndex, store)
+// minor hack call with scope having decorateIcon functions
+function renderIcon(value, metadata, record, rowIndex, colIndex, store, decorateFN)
 {
     var file = record.get("file");
     if (!value)
@@ -177,9 +179,9 @@ function renderIcon(value, metadata, record, rowIndex, colIndex, store)
         }
     }
     var img = {tag:'img', width:16, height:16, src:value, id:'img'+(++imgCounter)};
-    if (file)
-        _attachPreview.defer(1,null,[img.id,record]);
-    return Ext.DomHelper.markup(img);
+    if (decorateFN)
+        decorateFN.defer(1,this,[img.id,record]);
+    return $dom.markup(img);
 }
 
 function renderFileSize(value, metadata, record, rowIndex, colIndex, store)
@@ -196,7 +198,6 @@ function renderDateTime(value, metadata, record, rowIndex, colIndex, store)
     if (!value) return "";
     if (value.getTime() == 0) return "";
     return "<span title='" + _longDateTime(value) + "'>" + _rDateTime(value) + "<span>";
-    //return _rDateTime(value, metadata, record, rowIndex, colIndex, store);
 }
 
 
@@ -211,7 +212,9 @@ var _previewAsync = null;
 
 function _attachPreview(id,record)
 {
-    var elImg = Ext.get(id);
+    if (this && !this.canRead(record))
+        return;
+    var elImg = $(id);
     elImg.on("mouseover",preview.createCallback(elImg,record));
     elImg.on("mouseout",unpreviewWindow);
 }
@@ -230,7 +233,7 @@ function preview(el, record)
 
 function previewFN(el, uri, contentType)
 {
-    if (0==contentType.indexOf('image/'))
+    if (startsWith(contentType,'image/'))
     {
         //dynamicToolTip(el, {tag:'img', src:uri});
         //previewWindow(el, {tag:'img', src:uri});
@@ -244,7 +247,7 @@ function previewFN(el, uri, contentType)
         image.src = uri;
         _previewAsync = {image:image, cancel:function(){image.onload=null}};
     }
-    else if (0 == contentType.indexOf('text/') || contentType == 'application/javascript')
+    else if (startsWith(contentType,'text/') || contentType == 'application/javascript')
     {
         var requestid = _previewConnection.request({
             autoAbort:true,
@@ -258,7 +261,7 @@ function previewFN(el, uri, contentType)
                 if (contentType == "text/html")
                     html = response.responseText;
                 else
-                    html = "<div style='width:640px;'><pre>" + h(response.responseText) + "</pre></div>";
+                    html = "<div style='width:640px;'><pre>" + $h(response.responseText) + "</pre></div>";
                 previewWindow(el, html);
                 if (_previewAsync && _previewAsync.requestid == requestid)
                     _previewAsync = null;
@@ -271,8 +274,8 @@ function previewFN(el, uri, contentType)
 
 function dynamicToolTip(el, html)
 {
-    el = Ext.get(el);
-    html = Ext.DomHelper.markup(html);
+    el = $(el);
+    html = $dom.markup(html);
     var tt = new Ext.ToolTip({target:el, html:html, trackMouse:true});
     tt.onTargetOver(Ext.EventObject);
 }
@@ -280,12 +283,12 @@ function dynamicToolTip(el, html)
 
 function previewWindow(el, html)
 {
-    el = Ext.get(el);
-    html = Ext.DomHelper.markup(html);
+    el = $(el);
+    html = $dom.markup(html);
     if (_previewWindow)
         _previewWindow.close();
     var xy = el.getAnchorXY('tr');
-    _previewWindow = new Ext.Window({html:html, target:el, closable:false, constrain:true, x:xy[0], y:xy[1]});
+    _previewWindow = new Ext.Window({html:html, target:el, closable:false, constrain:true, x:xy[0]+2, y:xy[1]});
     _previewWindow.show();
     _previewWindow.getEl().on("mouseout",unpreviewWindow);
 }
@@ -362,7 +365,6 @@ function constrain(img,w,h)
 //      iconHref(string)
 //      contentType(string,optional)
 
-
 var FILESYSTEM_EVENTS = {listfiles:"listfiles"};
 
 var FileSystem = function(config)
@@ -390,6 +392,11 @@ Ext.extend(FileSystem, Ext.util.Observable,
             if (!ok && typeof callback == "function")
                 callback.defer(1, null, [this, false, path]);
         }
+    },
+
+    canRead : function(record)
+    {
+        return true;
     },
 
     canDelete : function(record)
@@ -565,7 +572,8 @@ var WebdavFileSystem = function(config)
             {name: 'modifiedBy', mapping: 'propstat/prop/modifiedby'},
             {name: 'size', mapping: 'propstat/prop/getcontentlength', type: 'int'},
             {name: 'iconHref'},
-            {name: 'contentType', mapping: 'propstat/prop/getcontenttype'}
+            {name: 'contentType', mapping: 'propstat/prop/getcontenttype'},
+            {name: 'options'}
         ]);
     this.connection = new Ext.data.Connection({method: "GET", headers: {"Method" : "PROPFIND", "Depth" : "1,noroot"}});
     this.proxy = new Ext.data.HttpProxy(this.connection);
@@ -579,6 +587,9 @@ var WebdavFileSystem = function(config)
         uri:this.prefixUrl,
         iconHref: LABKEY.contextPath + "/_images/labkey.png"
     }, "/");
+
+    // load options for root record
+    this.reloadFile("/");
 };
 
 
@@ -592,8 +603,10 @@ Ext.extend(WebdavFileSystem, FileSystem,
             {
                 url: this.concatPaths(this.prefixUrl, path),
                 xmlData : body,
-                method: "GET",
-                headers: {"Method" : "PROPFIND", "Depth" : "0"}
+//                method: "GET",
+//                headers: {"Method" : "PROPFIND", "Depth" : "0"}
+                method: "PROPFIND",
+                headers: {"Depth" : "0"}
             });
         var cb = function(response, args, success)
         {
@@ -602,6 +615,17 @@ Ext.extend(WebdavFileSystem, FileSystem,
         proxy.load({method:"PROPFIND", depth:"0"}, this.historyReader, cb, this, {filesystem:this, path:path});
     },
 
+    canRead : function(record)
+    {
+        var options = record.data.options;
+        return !options || -1 != options.indexOf('GET');
+    },
+
+    canDelete : function(record)
+    {
+        var options = record.data.options;
+        return !options || -1 != options.indexOf('DELETE');
+    },                           
 
     deletePath : function(path, callback)
     {
@@ -665,13 +689,40 @@ Ext.extend(WebdavFileSystem, FileSystem,
     },
 
 
+    reloadFile : function(path, callback)
+    {
+        var url = this.concatPaths(this.prefixUrl, encodeURI(path));
+        this.connection.url = url;
+        var args = {url: url, path: path, callback:callback};
+        this.proxy.load({method:"PROPFIND",depth:"0"}, this.reader, this.processFile, this, args);
+        return true;
+    },
+
+
+    processFile : function(result, args, success)
+    {
+        var path = args.path;
+        var callback = args.callback;
+        var records = [];
+        var record;
+        if (success && result.records.length == 1)
+        {
+            var update = result.records[0];
+            record = this.recordFromCache(path);
+            if (record)
+                Ext.apply(record.data, update.data);
+        }
+        if (typeof callback == "function")
+            callback(this, success && null != record, path, record);
+    },
+
+
     reloadFiles : function(path, callback)
     {
         var url = this.concatPaths(this.prefixUrl, encodeURI(path));
         this.connection.url = url;
 
         var args = {url: url, path: path, callback:callback};
-        //load(params, reader, callback, scope, arg)
         this.proxy.load({method:"PROPFIND",depth:"1,noroot"}, this.reader, this.processFiles, this, args);
         return true;
     },
@@ -768,7 +819,7 @@ Ext.extend(AppletFileSystem, FileSystem,
             var data = datas[i];
             if (data.name.charAt(data.name.length-1) == '\\')
                 data.name = data.name.substring(0,data.name.length-1);
-            data.file = data.isDirectory;
+            data.file = !data.isDirectory;
             data.size = data.length;
             data.id = path;
             data.modified = data.lastModified;
@@ -1057,7 +1108,7 @@ Ext.extend(FileBrowser, Ext.Panel,
 
     getDeleteAction : function()
     {
-        return new Ext.Action({text: 'Delete', scope:this, iconCls:'refreshIcon', handler: function()
+        return new Ext.Action({text: 'Delete', scope:this, iconCls:'refreshIcon', disabled:true, handler: function()
         {
             if (!this.currentDirectory)
                 return;
@@ -1098,11 +1149,11 @@ Ext.extend(FileBrowser, Ext.Panel,
             {
                 var item = items[i];
                 html.push("<b>"); html.push(item.date); html.push("</b><br>");
-                html.push(h(item.user)); html.push("<br>");
-                html.push(h(item.message));
+                html.push($h(item.user)); html.push("<br>");
+                html.push($h(item.message));
                 if (html.href)
                 {
-                    html.push("<a color=green href='"); html.push(h(html.href)); html.push("'>link</a><br>");
+                    html.push("<a color=green href='"); html.push($h(html.href)); html.push("'>link</a><br>");
                 }
             }
         }});
@@ -1260,7 +1311,7 @@ Ext.extend(FileBrowser, Ext.Panel,
 
     updateAddressBar : function(path)
     {
-        var el = Ext.get('addressBar');
+        var el = $('addressBar');
         if (!el)
             return;
         var elStyle = el.dom.style;
@@ -1275,9 +1326,9 @@ Ext.extend(FileBrowser, Ext.Panel,
         }
         var text;
         if (path == this.fileSystem.rootPath)
-            text = h(this.fileSystem.rootRecord.data.name);
+            text = $h(this.fileSystem.rootRecord.data.name);
         else
-            text = h(path);
+            text = $h(path);
         el.update('<table height=100% width=100%><tr><td height=100% width=100% valign=middle align=left>' + text + '</td></tr></table>');
         this.addressBarHandler = this.showFileListMenu.createDelegate(this, [path]);
         el.on("click", this.addressBarHandler);
@@ -1285,7 +1336,7 @@ Ext.extend(FileBrowser, Ext.Panel,
 
     showFileListMenu : function(path)
     {
-        var el = Ext.get('addressBar');
+        var el = $('addressBar');
         var menu = new FileListMenu(this.fileSystem, path, this.changeDirectory.createDelegate(this));
         menu.show(el);
     },
@@ -1316,7 +1367,7 @@ Ext.extend(FileBrowser, Ext.Panel,
     {
         try
         {
-            var el = Ext.get('file-details');
+            var el = $('file-details');
             if (!el)
                 return;
             var elStyle = el.dom.style;
@@ -1339,7 +1390,7 @@ Ext.extend(FileBrowser, Ext.Panel,
                 html.push("</td></tr>");
             };
             html.push("<p style='font-size:133%; padding:8px;'>");
-            html.push(h(data.name));
+            html.push($h(data.name));
             html.push("</p>");
             html.push("<table style='padding-left:30px;'>");
             if (data.modified)
@@ -1396,17 +1447,21 @@ Ext.extend(FileBrowser, Ext.Panel,
     __init__ : function(config)
     {
         var me = this; // for anonymous inner functions
-        
+
         //
         // GRID
         //
+
+        // mild convolution to pass fileSystem to the _attachPreview function
+        var iconRenderer = renderIcon.createDelegate(null,_attachPreview.createDelegate(this.fileSystem,[],true),true);
+
         this.store = new Ext.data.Store({recordType:this.fileSystem.FileRecord});
         this.grid = new Ext.grid.GridPanel(
         {
             store: this.store,
             border:false,
             columns: [
-                {header: "", width:20, dataIndex: 'iconHref', sortable: false, hiddenn:false, renderer:renderIcon},
+                {header: "", width:20, dataIndex: 'iconHref', sortable: false, hiddenn:false, renderer:iconRenderer},
                 {header: "Name", width: 150, dataIndex: 'name', sortable: true, hidden:false, renderer:Ext.util.Format.htmlEncode},
 //                {header: "Created", width: 150, dataIndex: 'created', sortable: true, hidden:false, renderer:renderDateTime},
                 {header: "Modified", width: 150, dataIndex: 'modified', sortable: true, hidden:false, renderer:renderDateTime},
@@ -1696,7 +1751,7 @@ function getDropApplet()
 {
     try
     {
-        var el = Ext.get("dropApplet");
+        var el = $("dropApplet");
         var applet = el ? el.dom : null;
         if (applet && 'isActive' in applet && applet.isActive())
             return applet;
