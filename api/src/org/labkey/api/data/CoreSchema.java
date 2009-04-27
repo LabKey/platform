@@ -73,6 +73,11 @@ public class CoreSchema
         return getSchema().getTable("ACLs");
     }
 
+    public TableInfo getTableInfoRoleAssignments()
+    {
+        return getSchema().getTable("RoleAssignments");
+    }
+
     public TableInfo getTableInfoSqlScripts()
     {
         return getSchema().getTable("SqlScripts");

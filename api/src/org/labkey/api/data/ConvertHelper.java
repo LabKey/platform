@@ -29,6 +29,8 @@ import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.reports.report.ReportIdentifierConverter;
 import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.security.roles.RoleConverter;
+import org.labkey.api.security.roles.Role;
 import org.labkey.common.tools.AbstractConvertHelper;
 import org.springframework.beans.PropertyEditorRegistrar;
 import org.springframework.beans.PropertyEditorRegistry;
@@ -98,6 +100,7 @@ public class ConvertHelper extends AbstractConvertHelper implements PropertyEdit
         _register(new ColorConverter(), Color.class);
         _register(new StringArrayConverter(), String[].class);
         _register(new ReportIdentifierConverter(), ReportIdentifier.class);
+        _register(new RoleConverter(), Role.class);
 
         _register(new HString.Converter(), HString.class);
         _register(new GuidString.Converter(), GuidString.class);

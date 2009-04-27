@@ -17,14 +17,15 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.User;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 
 import java.io.Serializable;
@@ -38,7 +39,7 @@ import java.util.*;
  *
  * CONSIDER: extend org.labkey.api.data.Entity
  */
-public class Container implements Serializable, Comparable<Container>
+public class Container implements Serializable, Comparable<Container>, SecurableResource
 {
     static Logger _log = Logger.getLogger(Container.class);
 
@@ -80,6 +81,7 @@ public class Container implements Serializable, Comparable<Container>
     }
 
 
+    @NotNull
     public String getName()
     {
         return _name;
@@ -208,6 +210,24 @@ public class Container implements Serializable, Comparable<Container>
         return acl.hasPermission(user, perm);
     }
 
+    private Set<Class<? extends Permission>> getPermissionsForIntPerm(int perm)
+    {
+        Set<Class<? extends Permission>> perms = new HashSet<Class<? extends Permission>>();
+        if((perm & ACL.PERM_READ) > 0 || (perm & ACL.PERM_READOWN) > 0)
+            perms.add(ReadPermission.class);
+        if((perm & ACL.PERM_INSERT) > 0)
+            perms.add(InsertPermission.class);
+        if((perm & ACL.PERM_UPDATE) > 0 || (perm & ACL.PERM_UPDATEOWN) > 0)
+            perms.add(UpdatePermission.class);
+        if((perm & ACL.PERM_DELETE) > 0 || (perm & ACL.PERM_DELETE) > 0)
+            perms.add(DeletePermission.class);
+        if((perm & ACL.PERM_ADMIN) > 0)
+        {
+            //TODO: add all relevant admin permissions
+        }
+        
+        return perms;
+    }
 
     public boolean isForbiddenProject(User user)
     {
@@ -703,5 +723,40 @@ public class Container implements Serializable, Comparable<Container>
 
         // They're equal up to the end, but one is longer. E.g. /a/b/c vs /a/b
         return myPath.size() - otherPath.size();
+    }
+
+    @NotNull
+    public String getResourceId()
+    {
+        return _id;
+    }
+
+    @NotNull
+    public String getDescription()
+    {
+        return "The folder " + getPath();
+    }
+
+    private static final Set<Class<? extends Permission>> _relevantPerms = new HashSet<Class<? extends Permission>>();
+    static
+    {
+        _relevantPerms.add(ReadPermission.class);
+    }
+
+    @NotNull
+    public Set<Class<? extends Permission>> getRelevantPermissions()
+    {
+        return _relevantPerms;
+    }
+
+    public Module getSourceModule()
+    {
+        return ModuleLoader.getInstance().getCoreModule();
+    }
+
+    @NotNull
+    public Container getContainer()
+    {
+        return this;
     }
 }

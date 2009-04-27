@@ -23,6 +23,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Filter;
@@ -35,6 +36,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.security.roles.Role;
 import org.labkey.common.util.Pair;
 
 import javax.mail.Address;
@@ -53,6 +55,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 /**
@@ -1675,11 +1678,173 @@ public class SecurityManager
     }
 
 
+
     public static void updateACL(Container c, ACL acl)
     {
         updateACL(c, c.getId(), acl);
     }
 
+    //manage SecurityPolicy
+    private static String _policyPrefix = "Policy/";
+
+    public static ResourceSecurityPolicy getPolicy(@NotNull SecurableResource resource)
+    {
+        return getPolicy(resource, true);
+    }
+
+    public static ResourceSecurityPolicy getPolicy(@NotNull SecurableResource resource, boolean findNearest)
+    {
+        String cacheName = cacheName(resource);
+        ResourceSecurityPolicy policy = (ResourceSecurityPolicy) DbCache.get(core.getTableInfoRoleAssignments(), cacheName);
+        if(null == policy)
+        {
+            try
+            {
+                SimpleFilter filter = new SimpleFilter("ResourceId", resource.getResourceId());
+
+                TableInfo table = core.getTableInfoRoleAssignments();
+                List<ColumnInfo> cols = new ArrayList<ColumnInfo>();
+                cols.add(table.getColumn("UserId"));
+                cols.add(table.getColumn("Role"));
+
+                RoleAssignment[] assignments = Table.select(table, cols, filter,
+                        new Sort("UserId"), RoleAssignment.class);
+
+                //set resource id and container on assignments
+                //saves creating new Container objects
+                for(RoleAssignment assignment : assignments)
+                {
+                    assignment.setResourceId(resource.getResourceId());
+                    assignment.setContainer(resource.getContainer());
+                    assignment.setResourceClass(resource.getClass().getName());
+                }
+
+                policy = new ResourceSecurityPolicy(resource, assignments);
+                DbCache.put(core.getTableInfoRoleAssignments(), cacheName, policy);
+            }
+            catch(SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+        }
+
+        if(findNearest && policy.isEmpty())
+        {
+            //crawl up the tree to find the nearest established policy
+            SecurableResource parent = (resource.getParent() == resource) ? null : resource.getParent();
+            while(policy.isEmpty() && null != parent)
+            {
+                policy = getPolicy(parent, false);
+
+                //NOTE: for some strange reason Container.getParent() returns
+                //itself instead of null when you reach the root
+                parent = (parent.getParent() == parent) ? null : parent.getParent();
+            }
+        }
+
+        return policy;
+    }
+
+    public static UserSecurityPolicy getPolicy(@NotNull UserPrincipal principal)
+    {
+        String cacheName = cacheName(principal);
+        UserSecurityPolicy policy = (UserSecurityPolicy) DbCache.get(core.getTableInfoRoleAssignments(), cacheName);
+        if(null == policy)
+        {
+            ArrayList<Integer> allIds = new ArrayList<Integer>();
+            allIds.add(principal.getUserId());
+            int[] groupIds = GroupManager.getAllGroupsForPrincipal(principal);
+            for(int groupId : groupIds)
+            {
+                allIds.add(groupId);
+            }
+
+            try
+            {
+                SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause("UserId", allIds));
+                RoleAssignment[] assignments = Table.select(core.getTableInfoRoleAssignments(),
+                        Table.ALL_COLUMNS, filter, new Sort("UserId"), RoleAssignment.class);
+
+                policy = new UserSecurityPolicy(principal, assignments);
+                DbCache.put(core.getTableInfoRoleAssignments(), cacheName, policy);
+            }
+            catch(SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+        }
+        return policy;
+    }
+
+    public static void savePolicy(@NotNull ResourceSecurityPolicy policy)
+    {
+        DbScope scope = core.getSchema().getScope();
+        try
+        {
+            //start a transaction
+            scope.beginTransaction();
+            TableInfo table = core.getTableInfoRoleAssignments();
+
+            //delete all rows where resourceid = resource.getId()
+            Table.delete(table, new SimpleFilter("ResourceId", policy.getResource().getResourceId()));
+            
+            //insert rows for the policy entries
+            for(RoleAssignment assignment : policy.getAssignments())
+            {
+                //remove any cached user-oriented policies from for the user id
+                DbCache.remove(table, cacheNameForUserId(assignment.getUserId()));
+                Table.insert(null, table, assignment);
+            }
+
+            //commit transaction
+            scope.commitTransaction();
+
+            //remove the resource-oriented policy from cache
+            DbCache.remove(table, cacheName(policy.getResource()));
+        }
+        catch(SQLException e)
+        {
+            //rollback transaction if started
+            if(scope.isTransactionActive())
+                scope.rollbackTransaction();
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+    public static void savePolicy(@NotNull UserSecurityPolicy policy)
+    {
+        DbScope scope = core.getSchema().getScope();
+        try
+        {
+            //start a transaction
+            scope.beginTransaction();
+            TableInfo table = core.getTableInfoRoleAssignments();
+
+            //delete all rows where user
+            Table.delete(table, new SimpleFilter("UserId", policy.getUser().getUserId()));
+
+            //insert rows for the policy entries
+            for(RoleAssignment assignment : policy.getAssignments())
+            {
+                //remove any cached resource-oriented policies from for the user id
+                DbCache.remove(table, cacheNameForResourceId(assignment.getResourceId()));
+                Table.insert(null, table, assignment);
+            }
+
+            //commit transaction
+            scope.commitTransaction();
+
+            //remove the user-oriented policy from cache
+            DbCache.remove(table, cacheNameForUserId(policy.getUser().getUserId()));
+        }
+        catch(SQLException e)
+        {
+            //rollback transaction if started
+            if(scope.isTransactionActive())
+                scope.rollbackTransaction();
+            throw new RuntimeSQLException(e);
+        }
+    }
 
     // Modules register a factory to add module-specific ui to the permissions page
     public static void addViewFactory(ViewFactory vf)
@@ -1705,6 +1870,25 @@ public class SecurityManager
         return _aclPrefix + c + "/" + objectId;
     }
 
+    private static String cacheName(SecurableResource resource)
+    {
+        return cacheNameForResourceId(resource.getResourceId());
+    }
+
+    private static String cacheNameForResourceId(String resourceId)
+    {
+        return _policyPrefix + "resource/" + resourceId;
+    }
+    
+    private static String cacheName(UserPrincipal principal)
+    {
+        return cacheNameForUserId(principal.getUserId());
+    }
+
+    private static String cacheNameForUserId(int userId)
+    {
+        return _policyPrefix + "principal/" + userId;
+    }
 
     public static void updateACL(Container c, String objectId, ACL acl)
     {
@@ -2156,7 +2340,7 @@ public class SecurityManager
 
     public static void setInheritPermissions(Container c)
     {
-        removeACL(c, c.getId()); //Inherit permissions        
+        removeACL(c, c.getId()); //Inherit permissions
     }
 
     private static final String SUBFOLDERS_INHERIT_PERMISSIONS_NAME = "SubfoldersInheritPermissions";

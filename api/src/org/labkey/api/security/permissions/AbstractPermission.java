@@ -1,0 +1,112 @@
+/*
+ * Copyright (c) 2009 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.labkey.api.security.permissions;
+
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.util.PageFlowUtil;
+
+import java.util.Set;
+import java.util.HashSet;
+
+/*
+* User: Dave
+* Date: Apr 20, 2009
+* Time: 10:16:50 AM
+*/
+
+/**
+ * Abstract base class for permissions.
+ */
+public abstract class AbstractPermission implements Permission
+{
+    private String _name;
+    private String _description;
+    private Module _sourceModule;
+
+    protected AbstractPermission(@NotNull String name, @NotNull String description)
+    {
+        this(name, description, ModuleLoader.getInstance().getCoreModule());
+    }
+
+    protected AbstractPermission(@NotNull String name, @NotNull String description, @NotNull Module sourceModule)
+    {
+        _name = name;
+        _description = description;
+        _sourceModule = sourceModule;
+    }
+
+    @NotNull
+    public String getName()
+    {
+        return _name;
+    }
+
+    @NotNull
+    public String getDescription()
+    {
+        return _description;
+    }
+
+    @NotNull
+    public Module getSourceModule()
+    {
+        return _sourceModule;
+    }
+
+    @NotNull
+    public String getUniqueName()
+    {
+        return this.getClass().getName();
+    }
+
+    @NotNull
+    public Set<Class<? extends Permission>> getPermissions()
+    {
+        HashSet<Class<? extends Permission>> perms = new HashSet<Class<? extends Permission>>();
+        perms.add(this.getClass());
+        return perms;
+    }
+
+    public boolean isAssignable()
+    {
+        //for now, we will not allow admins to grant
+        //users/groups individual permissions.
+        //instead, admins assign users/groups to roles
+        return false;
+    }
+
+    /**
+     * Permissions are essentially singletons. One permission is
+     * equal to another if they are of the same class.
+     * @param obj The object to compare
+     * @return true if equal, false if not
+     */
+    @Override
+    public boolean equals(Object obj)
+    {
+        if(null == obj)
+            return false;
+        return this.getClass().equals(obj.getClass());
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return this.getClass().hashCode();
+    }
+}

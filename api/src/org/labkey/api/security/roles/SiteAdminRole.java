@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2008 LabKey Corporation
+ * Copyright (c) 2009 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,24 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.labkey.api.security.roles;
 
-package org.labkey.api.security;
+import org.labkey.api.security.permissions.*;
 
-import org.labkey.api.security.permissions.Permission;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
+/*
+* User: Dave
+* Date: Apr 23, 2009
+* Time: 12:17:37 PM
+*/
 
 /**
- * Created by IntelliJ IDEA.
- * User: matthewb
- * Date: Jan 11, 2007
- * Time: 11:35:28 AM
+ * The Site Administrator role
  */
-public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target({ElementType.METHOD,ElementType.TYPE})
-@interface RequiresPermission
+public class SiteAdminRole extends AbstractRole
 {
-    int value();
-    Class<? extends Permission> permission() default Permission.class;
+    public SiteAdminRole()
+    {
+        super("Site Administrator", "The Site Administrator has full control over the entire system.",
+                ReadPermission.class, UpdatePermission.class, InsertPermission.class, DeletePermission.class);
+    }
 }

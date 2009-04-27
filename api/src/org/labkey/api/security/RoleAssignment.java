@@ -1,0 +1,147 @@
+/*
+ * Copyright (c) 2009 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.labkey.api.security;
+
+import org.labkey.api.data.Container;
+import org.labkey.api.security.roles.Role;
+
+import java.util.Comparator;
+
+/*
+* User: Dave
+* Date: Apr 22, 2009
+* Time: 10:20:31 AM
+*/
+
+/**
+ * Record of a particular principal assigned a particular role for a particular securable resource
+ */
+public class RoleAssignment implements Comparable<RoleAssignment>, Cloneable
+{
+    private String _resourceId;
+    private Container _container;
+    private int _userId;
+    private Role _role;
+    private String _resourceClass;
+
+    public RoleAssignment()
+    {
+    }
+
+    public RoleAssignment(SecurableResource resource, UserPrincipal user, Role role)
+    {
+        _resourceId = resource.getResourceId();
+        _resourceClass = resource.getClass().getName();
+        _container = resource.getContainer();
+        _role = role;
+        _userId = user.getUserId();
+    }
+
+    public RoleAssignment(RoleAssignment copy)
+    {
+        _resourceId = copy._resourceId;
+        _container = copy._container;
+        _userId = copy._userId;
+        _role = copy._role;
+    }
+
+    public String getResourceId()
+    {
+        return _resourceId;
+    }
+
+    public void setResourceId(String resourceId)
+    {
+        _resourceId = resourceId;
+    }
+
+    public Container getContainer()
+    {
+        return _container;
+    }
+
+    public void setContainer(Container container)
+    {
+        _container = container;
+    }
+
+    public int getUserId()
+    {
+        return _userId;
+    }
+
+    public void setUserId(int userId)
+    {
+        _userId = userId;
+    }
+
+    public Role getRole()
+    {
+        return _role;
+    }
+
+    public void setRole(Role role)
+    {
+        _role = role;
+    }
+
+    public String getResourceClass()
+    {
+        return _resourceClass;
+    }
+
+    public void setResourceClass(String resourceClass)
+    {
+        _resourceClass = resourceClass;
+    }
+
+    public int compareTo(RoleAssignment other)
+    {
+        if(null == other)
+            throw new NullPointerException();
+
+        //sort by resource id, user id
+        int ret = _resourceId.compareTo(other._resourceId);
+        if(0 == ret)
+            ret = _userId - other._userId;
+        return ret;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        RoleAssignment that = (RoleAssignment) o;
+
+        if (_userId != that._userId) return false;
+        if (!_resourceId.equals(that._resourceId)) return false;
+        if (!_role.equals(that._role)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = _resourceId.hashCode();
+        result = 31 * result + _userId;
+        result = 31 * result + _role.hashCode();
+        return result;
+    }
+
+}

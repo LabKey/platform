@@ -30,6 +30,9 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.security.*;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.PermissionManager;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.springframework.beans.*;
@@ -532,14 +535,18 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         RequiresPermission requiresPermission = actionClass.getAnnotation(RequiresPermission.class);
         if (null != requiresPermission)
         {
-            if (!c.hasPermission(user, requiresPermission.value()))
-            {
-                if (c.isForbiddenProject(user))
-                    throw new ForbiddenProjectException();
-                else
-                    HttpView.throwUnauthorized();
+            if (c.isForbiddenProject(user))
+                throw new ForbiddenProjectException();
 
-                return;
+            if (0 != requiresPermission.value() && !c.hasPermission(user, requiresPermission.value()))
+                throw new UnauthorizedException();
+
+            //check permission class
+            if(requiresPermission.permission() != Permission.class)
+            {
+                SecurityPolicy policy = SecurityManager.getPolicy(c);
+                if(!policy.hasPermission(user, requiresPermission.permission()))
+                    throw new UnauthorizedException();
             }
         }
 

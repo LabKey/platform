@@ -80,8 +80,8 @@ public class GroupManager
         UserManager.addUserListener(new GroupUserListener());
     }
 
-    /** this method returns the FLATTENED group list for this user */
-    static int[] getAllGroupsForUser(User user)
+    /** this method returns the FLATTENED group list for this principal */
+    static int[] getAllGroupsForPrincipal(UserPrincipal user)
     {
         int userId = user.getUserId();
         int[] groups = (int[]) Cache.getShared().get(USER_CACHE_PREFIX + userId);
@@ -93,6 +93,11 @@ public class GroupManager
         }
 
         return groups;
+    }
+
+    static int[] getAllGroupsForUser(User user)
+    {
+        return getAllGroupsForPrincipal(user);
     }
 
 

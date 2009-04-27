@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2008 LabKey Corporation
+ * Copyright (c) 2009 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,24 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.labkey.api.security.roles;
 
-package org.labkey.api.security;
-
-import org.labkey.api.security.permissions.Permission;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
+/*
+* User: Dave
+* Date: Apr 22, 2009
+* Time: 10:43:44 AM
+*/
 
 /**
- * Created by IntelliJ IDEA.
- * User: matthewb
- * Date: Jan 11, 2007
- * Time: 11:35:28 AM
+ * Interface for contextual roles.
  */
-public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target({ElementType.METHOD,ElementType.TYPE})
-@interface RequiresPermission
+public interface ContextualRole extends Role
 {
-    int value();
-    Class<? extends Permission> permission() default Permission.class;
 }
