@@ -19,6 +19,7 @@ package org.labkey.study.pipeline;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.ZipUtil;
 import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.*;
@@ -39,9 +40,9 @@ public class SpecimenBatch extends StudyBatch implements Serializable
 {
     public class EntryDescription
     {
-        private String _name;
-        private long _size;
-        private Date _date;
+        private final String _name;
+        private final long _size;
+        private final Date _date;
 
         public EntryDescription(String name, long size, Date date)
         {
@@ -92,12 +93,13 @@ public class SpecimenBatch extends StudyBatch implements Serializable
         File unzipDir = null;
         try
         {
-            info("Unzipping specimen archive  " +  _definitionFile.getPath());
+            info("Unzipping specimen archive " +  _definitionFile.getPath());
             String tempDirName = DateUtil.formatDateTime(new Date(), "yyMMddHHmmssSSS");
             unzipDir = new File(_definitionFile.getParentFile(), tempDirName);
             try
             {
-                File[] files = unzip(unzipDir);
+                setStatus("Unzipping");
+                List<File> files = ZipUtil.unzipToDirectory(_definitionFile, unzipDir, getLogger());
                 info("Archive unzipped to " + unzipDir.getPath());
                 info("Starting import...");
                 setStatus("Processing");
@@ -120,6 +122,7 @@ public class SpecimenBatch extends StudyBatch implements Serializable
         }
     }
 
+    // Move to ZipUtil?
     public List<EntryDescription> getEntryDescriptions() throws IOException
     {
         List<EntryDescription> entryList = new ArrayList<EntryDescription>();
@@ -141,50 +144,6 @@ public class SpecimenBatch extends StudyBatch implements Serializable
             if (zip != null) try { zip.close(); } catch (IOException e) {}
         }
         return entryList;
-    }
-
-    private File[] unzip(File unzipDir) throws IOException
-    {
-        List<File> files = new ArrayList<File>();
-        setStatus("Unzipping");
-        ZipFile zip = null;
-        try
-        {
-            zip = new ZipFile(_definitionFile);
-            Enumeration<? extends ZipEntry> entries = zip.entries();
-            byte[] buffer = new byte[1024];
-            int len;
-            while (entries.hasMoreElements())
-            {
-                ZipEntry entry = entries.nextElement();
-                if (entry.isDirectory())
-                    continue;
-                info("Expanding " + entry.getName());
-                BufferedInputStream is = null;
-                BufferedOutputStream os = null;
-                try
-                {
-                    is = new BufferedInputStream(zip.getInputStream(entry));
-                    File destFile = new File(unzipDir, entry.getName());
-                    destFile.getParentFile().mkdirs();
-                    destFile.createNewFile();
-                    os = new BufferedOutputStream(new FileOutputStream(destFile));
-                    while ((len = is.read(buffer, 0, 1024)) > 0)
-                        os.write(buffer, 0, len);
-                    files.add(destFile);
-                }
-                finally
-                {
-                    if (is != null) is.close();
-                    if (os != null) os.close();
-                }
-            }
-        }
-        finally
-        {
-            if (zip != null) try { zip.close(); } catch (IOException e) {}
-        }
-        return files.toArray(new File[files.size()]);
     }
 
     private void delete(File file)

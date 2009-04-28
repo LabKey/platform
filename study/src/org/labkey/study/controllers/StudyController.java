@@ -94,17 +94,16 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
+import org.springframework.web.multipart.MultipartFile;
 import org.xml.sax.SAXException;
+import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Writer;
+import java.io.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
@@ -3573,71 +3572,148 @@ public class StudyController extends BaseStudyController
         }
     }
 
+
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class ImportStudy extends FormViewAction
+    public class ImportStudyAction extends FormViewAction<ImportForm>
     {
         private ActionURL redirect;
 
-        public void validateCommand(Object target, Errors errors)
+        public void validateCommand(ImportForm form, Errors errors)
         {
         }
 
-        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ImportForm form, boolean reshow, BindException errors) throws Exception
         {
             Study study = StudyManager.getInstance().getStudy(getContainer());
 
-            if (null == study)
-            {
-                return new HtmlView("No study in this folder.<br><form method=\"post\">" + PageFlowUtil.generateSubmitButton("Import Study") + "</form>");
-            }
-            else
+            if (!reshow && null != study)
             {
                 return new HtmlView("Existing study: " + study.getLabel() + "<br><form method=\"post\">" + PageFlowUtil.generateSubmitButton("Delete Study") + "</form>");
             }
-        }
-
-        public boolean handlePost(Object o, BindException errors) throws Exception
-        {
-            Container c = getContainer();
-            User user = getUser();
-
-            if (null != StudyManager.getInstance().getStudy(c))
+            else if (null == getPipelineRoot())
             {
-                StudyManager.getInstance().deleteAllStudyData(c, user, true, false);
-                redirect = new ActionURL(ImportStudy.class, c);
-                return true;
+                return new HtmlView("You must set a pipeline root before importing a study. " + PageFlowUtil.generateSubmitButton("Delete Study"));
             }
             else
             {
-                boolean success = importStudy(errors);
-
-                if (success)
-                    redirect = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
-
-                return success;
+                return new JspView<ImportForm>("/org/labkey/study/view/importStudy.jsp", form, errors);
             }
         }
 
-        public ActionURL getSuccessURL(Object o)
+        public boolean handlePost(ImportForm form, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+
+            // If a study exists they've just asked to delete it  TODO: Remove this after testing
+            if (null != StudyManager.getInstance().getStudy(c))
+            {
+                StudyManager.getInstance().deleteAllStudyData(c, getUser(), true, false);
+                redirect = new ActionURL(ImportStudyAction.class, c);
+                return true;
+            }
+
+            File pipelineRoot = getPipelineRoot();
+
+            if (null == pipelineRoot)
+            {
+                return false;   // getView() will show an appropriate message in this case
+            }
+
+            // Assuming success starting the import process, redirect to pipeline statue
+            redirect = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
+
+            if ("pipeline".equals(form.getSource()))
+            {
+                return importStudy(errors, getPipelineRoot());
+            }
+            else
+            {
+                Map<String, MultipartFile> map = getFileMap();
+
+                if (map.isEmpty())
+                {
+                    errors.reject("studyImport", "You must select a .zip file to import.");
+                }
+                else if (map.size() > 1)
+                {
+                    errors.reject("studyImport", "Only one file is allowed.");
+                }
+                else
+                {
+                    MultipartFile file = map.values().iterator().next();
+                    InputStream is = file.getInputStream();
+
+                    File zipFile = File.createTempFile("study", ".zip");
+                    FileOutputStream fos = new FileOutputStream(zipFile);
+
+                    try
+                    {
+                        FileUtil.copyData(is, fos);
+                    }
+                    finally
+                    {
+                        if (is != null) try { is.close(); } catch (IOException e) {  }
+                        try { fos.close(); } catch (IOException e) {  }
+                    }
+
+                    File importDir = new File(pipelineRoot, "unzip");
+                    FileUtil.deleteDir(importDir);
+                    ZipUtil.unzipToDirectory(zipFile, importDir);
+
+                    importStudy(errors, importDir);
+                }
+
+                return !errors.hasErrors();
+            }
+        }
+
+        public ActionURL getSuccessURL(ImportForm form)
         {
             return redirect;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;
+            return root.addChild("Import Study");
         }
     }
 
 
-    public boolean importStudy(BindException errors) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException, XmlException
+    public static class ImportForm
+    {
+        private String _source;
+
+        public String getSource()
+        {
+            return _source;
+        }
+
+        public void setSource(String source)
+        {
+            _source = source;
+        }
+    }
+
+
+    @Nullable
+    private File getPipelineRoot()
+    {
+        PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+
+        if (null != root)
+            return root.getRootPath();
+        else
+            return null;
+    }
+
+
+    public boolean importStudy(BindException errors, File root) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException, XmlException
     {
         Container c = getContainer();
         User user = getUser();
         ActionURL url = getViewContext().getActionURL();
-        File rootDir = PipelineService.get().findPipelineRoot(c).getRootPath();
 
-        StudyImporter importer = new StudyImporter(c, user, url, rootDir, errors);
+        StudyImporter importer = new StudyImporter(c, user, url, root, errors);
         return importer.process();
     }
 
@@ -3669,7 +3745,7 @@ public class StudyController extends BaseStudyController
             StudyWriter writer = new StudyWriter();
             writer.write(getStudy(), new ExportContext(getUser(), getContainer()), new FileSystemFile(exportDir));
 
-            return true;//new HtmlView("Study \"" + getStudy().getLabel() + "\" was successfully exported to " + exportDir.getAbsolutePath() + " in " + (System.currentTimeMillis() - start)/1000.0 + " seconds." + "<br><br>" + PageFlowUtil.generateButton("Back", new ActionURL(ManageStudyAction.class, getContainer())));
+            return true; //new HtmlView("Study \"" + getStudy().getLabel() + "\" was successfully exported to " + exportDir.getAbsolutePath() + " in " + (System.currentTimeMillis() - start)/1000.0 + " seconds." + "<br><br>" + PageFlowUtil.generateButton("Back", new ActionURL(ManageStudyAction.class, getContainer())));
         }
 
         public ActionURL getSuccessURL(ExportForm form)
@@ -3693,35 +3769,6 @@ public class StudyController extends BaseStudyController
             ZipFile zip = new ZipFile(response, study.getLabel());
             writer.write(study, new ExportContext(getUser(), getContainer()), zip);
             zip.close();
-        }
-    }
-
-
-    @RequiresPermission(ACL.PERM_ADMIN)
-    public class ImportStudyAction extends FormViewAction
-    {
-        public void validateCommand(Object target, Errors errors)
-        {
-        }
-
-        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
-        {
-            return new JspView<Object>("/org/labkey/study/view/exportStudy.jsp", errors);
-        }
-
-        public boolean handlePost(Object o, BindException errors) throws Exception
-        {
-            return false;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public ActionURL getSuccessURL(Object o)
-        {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
     }
 
@@ -5795,7 +5842,7 @@ public class StudyController extends BaseStudyController
                     {
                         try
                         {
-                            if (!importStudy(errors))
+                            if (!importStudy(errors, getPipelineRoot()))
                             {
                                 for (ObjectError error : (List<ObjectError>)errors.getAllErrors())
                                     _log.error(error.getDefaultMessage());

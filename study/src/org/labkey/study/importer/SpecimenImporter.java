@@ -374,7 +374,7 @@ public class SpecimenImporter
 
     private static final int SQL_BATCH_SIZE = 100;
 
-    public void process(User user, Container container, File[] files, Logger logger) throws SQLException, IOException
+    public void process(User user, Container container, List<File> files, Logger logger) throws SQLException, IOException
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         Map<String, File> fileMap = createFilemap(files);
@@ -618,9 +618,9 @@ public class SpecimenImporter
         }
     }
 
-    private Map<String, File> createFilemap(File[] files) throws IOException
+    private Map<String, File> createFilemap(List<File> files) throws IOException
     {
-        Map<String, File> fileMap = new HashMap<String, File>(files.length);
+        Map<String, File> fileMap = new HashMap<String, File>(files.size());
 
         for (File file : files)
         {

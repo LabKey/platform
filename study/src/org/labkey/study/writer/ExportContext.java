@@ -26,9 +26,9 @@ import org.labkey.study.xml.StudyDocument;
  */
 public class ExportContext
 {
-    private User _user;
-    private Container _c;
-    private StudyDocument _studyDoc;
+    private final User _user;
+    private final Container _c;
+    private final StudyDocument _studyDoc;
     private boolean _locked = false;
 
     public ExportContext(User user, Container c)

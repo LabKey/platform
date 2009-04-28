@@ -27,7 +27,7 @@ import java.io.*;
  */
 public class FileSystemFile implements VirtualFile
 {
-    private File _root;
+    private final File _root;
 
     public FileSystemFile(File root)
     {

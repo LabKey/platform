@@ -14,8 +14,9 @@ import java.util.zip.ZipOutputStream;
  */
 public class ZipFile implements VirtualFile
 {
-    private ZipOutputStream _out;
-    private String _path = "";
+    private final ZipOutputStream _out;
+    private final String _path;
+    private final PrintWriter _pw;
 
     public ZipFile(File root, String name) throws FileNotFoundException
     {
@@ -24,6 +25,8 @@ public class ZipFile implements VirtualFile
         File zipFile = new File(root, makeLegalName(name + ".zip"));
         FileOutputStream fos = new FileOutputStream(zipFile);
         _out = new ZipOutputStream(new BufferedOutputStream(fos));
+        _pw = new NonCloseablePrintWriter(_out);
+        _path = "";
     }
 
     public ZipFile(HttpServletResponse response, String name) throws IOException
@@ -31,11 +34,14 @@ public class ZipFile implements VirtualFile
         response.setContentType("application/zip");
         response.setHeader("Content-Disposition", "attachment; filename=\"" + makeLegalName(name + ".zip") + "\";");
         _out = new ZipOutputStream(response.getOutputStream());
+        _pw = new NonCloseablePrintWriter(_out);
+        _path = "";
     }
 
-    private ZipFile(ZipOutputStream out, String path)
+    private ZipFile(ZipOutputStream out, PrintWriter pw, String path)
     {
         _out = out;
+        _pw = pw;
         _path = path + "/";
     }
 
@@ -44,7 +50,7 @@ public class ZipFile implements VirtualFile
         ZipEntry entry = new ZipEntry(_path + makeLegalName(path));
         _out.putNextEntry(entry);
 
-        return new NonCloseablePrintWriter(_out);
+        return _pw;
     }
 
     public void makeDir(String path) throws IOException
@@ -55,7 +61,7 @@ public class ZipFile implements VirtualFile
 
     public VirtualFile getDir(String path)
     {
-        return new ZipFile(_out, _path + path);
+        return new ZipFile(_out, _pw, _path + path);
     }
 
     public String makeLegalName(String name)
@@ -81,7 +87,8 @@ public class ZipFile implements VirtualFile
         {
             try
             {
-                _out.flush();
+                flush();
+                _out.closeEntry();
             }
             catch (IOException e)
             {

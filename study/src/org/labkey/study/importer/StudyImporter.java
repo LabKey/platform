@@ -146,7 +146,7 @@ public class StudyImporter
             CohortController.updateAutomaticCohort(getStudy(), _user, dataSetId, dataSetProperty);
         }
         else
-            assert false : "Unsupported cohort type";
+            assert false : "Unknown cohort type";
 
         // QC States
         // TODO: Generalize to all qc state properties

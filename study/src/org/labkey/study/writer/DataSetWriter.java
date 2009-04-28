@@ -85,8 +85,7 @@ public class DataSetWriter implements Writer<Study>
             List<ColumnInfo> columns = new ArrayList<ColumnInfo>(allColumns.size());
 
             for (ColumnInfo col : allColumns)
-                if (shouldExport(col))
-                    columns.add(col);
+                columns.add(col);  // TODO: Eliminate non-user-editable?
 
             ResultSet rs = Table.select(ti, columns, null, null);
             TSVGridWriter tsvWriter = new TSVGridWriter(rs);

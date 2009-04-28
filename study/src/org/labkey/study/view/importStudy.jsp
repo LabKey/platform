@@ -1,30 +1,24 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-
-<%=formatMissedErrors("form")%>
-<form action="" name="import" type="multipart/form-data" method="post">
-
+<%
+    
+%>
+<form action="" name="import" enctype="multipart/form-data" method="post">
 <table cellpadding=0>
+    <%=formatMissedErrorsInTable("form", 1)%>
 <tr>
-    <td colspan=2>&nbsp;</td>
-</tr>
-
-<tr>
-    <td colspan=2>Import a study.  Select a .zip file.</td>
+    <td><input type="radio" name="source" value="zip" checked>Import from a .zip file</td>
+    <td><input type="file" name="studyZip" size="50"></td>
 </tr>
 <tr>
-    <td colspan=2>&nbsp;</td>
-</tr>
-<tr>
-    <td class="labkey-form-label">Header logo (appears in every page header; 147 x 56 pixels)</td>
-    <td><input type="file" name="logoImage" size="50"></td>
-</tr>
-
-<tr>
-    <td><%=PageFlowUtil.generateSubmitButton("Import Study")%></td>
+    <td><input type="radio" name="source" value="pipeline">Import from the pipeline root</td>
+    <td>&nbsp;</td>
 </tr>
 <tr>
     <td>&nbsp;</td>
+</tr>
+<tr>
+    <td><%=PageFlowUtil.generateSubmitButton("Import Study")%></td>
 </tr>
 
 </table>
