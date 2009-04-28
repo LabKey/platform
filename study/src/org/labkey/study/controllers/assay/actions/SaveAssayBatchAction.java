@@ -115,10 +115,13 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
         handleStandardProperties(runJsonObject, run, provider.getRunDomain(protocol).getProperties());
 
-        if (runJsonObject.has(DATA_ROWS) || runJsonObject.has(ExperimentJSONConverter.DATA_INPUTS))
+        if (runJsonObject.has(DATA_ROWS) ||
+                runJsonObject.has(ExperimentJSONConverter.DATA_INPUTS) ||
+                runJsonObject.has(ExperimentJSONConverter.MATERIAL_INPUTS))
         {
             JSONArray dataRows;
             JSONArray dataInputs;
+            JSONArray materialInputs;
             if (!runJsonObject.has(DATA_ROWS))
             {
                 // Client didn't post the rows so reuse the values that are currently attached to the run
@@ -141,13 +144,22 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
                 dataInputs = runJsonObject.getJSONArray(ExperimentJSONConverter.DATA_INPUTS);
             }
 
-            rewriteProtocolApplications(protocol, provider, run, dataInputs, dataRows);
+            if (!runJsonObject.has(ExperimentJSONConverter.MATERIAL_INPUTS))
+            {
+                materialInputs = serializeRun(run, provider, protocol).getJSONArray(ExperimentJSONConverter.MATERIAL_INPUTS);
+            }
+            else
+            {
+                materialInputs = runJsonObject.getJSONArray(ExperimentJSONConverter.MATERIAL_INPUTS);
+            }
+
+            rewriteProtocolApplications(protocol, provider, run, dataInputs, dataRows, materialInputs);
         }
 
         return run;
     }
 
-    private void rewriteProtocolApplications(ExpProtocol protocol, AssayProvider provider, ExpRun run, JSONArray inputArray, JSONArray dataArray) throws ExperimentException, ValidationException
+    private void rewriteProtocolApplications(ExpProtocol protocol, AssayProvider provider, ExpRun run, JSONArray inputDataArray, JSONArray dataArray, JSONArray inputMaterialArray) throws ExperimentException, ValidationException
     {
         ViewContext context = getViewContext();
 
@@ -158,10 +170,17 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         }
 
         Map<ExpData, String> inputData = new HashMap<ExpData, String>();
-        for (int i = 0; i < inputArray.length(); i++)
+        for (int i = 0; i < inputDataArray.length(); i++)
         {
-            JSONObject dataObject = inputArray.getJSONObject(i);
+            JSONObject dataObject = inputDataArray.getJSONObject(i);
             inputData.put(handleData(dataObject), "Data");
+        }
+
+        Map<ExpMaterial, String> inputMaterial = new HashMap<ExpMaterial, String>();
+        for (int i=0; i < inputMaterialArray.length(); i++)
+        {
+            JSONObject materialObject = inputMaterialArray.getJSONObject(i);
+            inputMaterial.put(handleMaterial(materialObject), null);
         }
 
         // Delete the contents of the run
@@ -174,7 +193,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         List<Map<String, Object>> rawData = dataArray.toMapList();
 
         run = ExperimentService.get().insertSimpleExperimentRun(run,
-            Collections.<ExpMaterial, String>emptyMap(),
+            inputMaterial,
             inputData,
             Collections.<ExpMaterial, String>emptyMap(),
             Collections.singletonMap(newData, "Data"),
@@ -200,6 +219,23 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         }
         saveProperties(data, new DomainProperty[0], dataObject);
         return data;
+    }
+
+    private ExpMaterial handleMaterial(JSONObject materialObject) throws ValidationException
+    {
+        // Unlike with runs and batches, we require that the materials are already created
+        int materialRowId = materialObject.getInt(ExperimentJSONConverter.ROW_ID);
+        ExpMaterial material = ExperimentService.get().getExpMaterial(materialRowId);
+        if (material == null)
+        {
+            throw new NotFoundException("Could not find material with row id: " + materialRowId);
+        }
+        if (!material.getContainer().equals(getViewContext().getContainer()))
+        {
+            throw new NotFoundException("Material with row id " + materialRowId + " is not in folder " + getViewContext().getContainer());
+        }
+        saveProperties(material, new DomainProperty[0], materialObject);
+        return material;
     }
 
     private ExpExperiment handleBatch(JSONObject batchJsonObject, ExpProtocol protocol, AssayProvider provider) throws Exception
