@@ -335,28 +335,43 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             // create the sample run data
             AssayProvider provider = AssayService.get().getProvider(protocol);
             List<Map<String, Object>> dataRows = new ArrayList<Map<String, Object>>();
-            DomainProperty[] properties = provider.getRunDataDomain(protocol).getProperties();
 
-            for (int i=0; i < SAMPLE_DATA_ROWS; i++)
+            Domain runDataDomain = provider.getRunDataDomain(protocol);
+            if (runDataDomain != null)
             {
-                Map<String, Object> row = new HashMap<String, Object>();
-                for (DomainProperty prop : properties)
-                    row.put(prop.getName(), getSampleValue(prop));
+                DomainProperty[] properties = runDataDomain.getProperties();
+                for (int i=0; i < SAMPLE_DATA_ROWS; i++)
+                {
+                    Map<String, Object> row = new HashMap<String, Object>();
+                    for (DomainProperty prop : properties)
+                        row.put(prop.getName(), getSampleValue(prop));
 
-                dataRows.add(row);
+                    dataRows.add(row);
+                }
+                File runData = new File(scriptDir, RUN_DATA_FILE);
+                pw.append(Props.runDataFile.name());
+                pw.append('\t');
+                pw.println(runData.getAbsolutePath());
+
+                writeRunData(new ArrayList<Map<String, Object>>(dataRows), runData);
             }
-            File runData = new File(scriptDir, RUN_DATA_FILE);
-            pw.append(Props.runDataFile.name());
-            pw.append('\t');
-            pw.println(runData.getAbsolutePath());
+
+            // any additional sample property sets
+            for (Map.Entry<String, List<Map<String, Object>>> set : _sampleProperties.entrySet())
+            {
+                File sampleData = new File(scriptDir, set.getKey() + ".tsv");
+                writeRunData(set.getValue(), sampleData);
+
+                pw.append(set.getKey());
+                pw.append('\t');
+                pw.println(sampleData.getAbsolutePath());
+            }
 
             // errors file location
             File errorFile = new File(scriptDir, ERRORS_FILE);
             pw.append(Props.errorsFile.name());
             pw.append('\t');
             pw.println(errorFile.getAbsolutePath());
-
-            writeRunData(new ArrayList<Map<String, Object>>(dataRows), runData);
         }
         finally
         {

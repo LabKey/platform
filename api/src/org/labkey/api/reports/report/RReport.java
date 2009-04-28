@@ -117,7 +117,7 @@ public class RReport extends ExternalScriptEngineReport implements AttachmentPar
                         }
                     });
 
-                    if (files.length > 0)
+                    if (files != null && files.length > 0)
                     {
                         DEFAULT_APP_PATH = files[0].getAbsolutePath().replaceAll("\\\\", "/");
                         break;
