@@ -23,6 +23,8 @@ import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
 import org.springframework.web.servlet.mvc.Controller;
+import org.json.JSONObject;
+import org.json.JSONArray;
 
 import java.io.*;
 import java.net.URI;
@@ -317,6 +319,23 @@ abstract public class PipelineProvider
         String _description;
         NavTree _links;
         File[] _files;
+
+        public JSONObject toJSON()
+        {
+            JSONObject o = new JSONObject();
+
+            o.put("description", _description==null ? "" : _description);
+
+            JSONObject links = _links.toJSON();
+            o.put("links",links);
+
+            JSONArray files = new JSONArray();
+            for (File f : _files)
+                files.put(f.getName());
+            o.put("files",files);
+            
+            return o;
+        }
 
         /** Use NavTree to create a drop-down menu with submenus for the specified files */
         public FileAction(NavTree links, File[] files)

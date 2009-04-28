@@ -21,6 +21,8 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.HString;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
+import org.json.JSONArray;
 
 import java.util.*;
 
@@ -351,6 +353,44 @@ public class NavTree extends Pair<String, String> implements Collapsible
         return toJS(new StringBuilder(), false).toString();
     }
 
+
+    public JSONObject toJSON()
+    {
+        return toJSON(true, "items");
+    }
+
+                                                                                
+    public JSONObject toJSON(boolean recursive, String items)
+    {
+        JSONObject o = new JSONObject();
+        o.put("text",getKey());
+        if (StringUtils.isNotEmpty(getId()))
+            o.put("id", getId());
+        if (isSelected())
+            o.put("checked",true);
+        if (null != getImageSrc())
+            o.put("icon",getImageSrc());
+        if (isDisabled())
+            o.put("disabled", true);
+        if (null != getValue())
+            o.put("href",getValue());
+        if (null != getScript())
+            o.put("handler", "function(){" + getScript() + "}");
+        if (recursive && null != getChildren() && getChildren().length > 0)
+        {
+            JSONArray a = new JSONArray();
+            for (NavTree c : getChildren())
+                a.put(c.toJSON(true, "menu"));
+            o.put(items, a);
+        }
+        else
+        {
+            o.put("leaf",true);
+        }
+        return o;
+    }
+
+    
     StringBuilder toJS(StringBuilder sb, boolean asMenu)
     {
         String title = getKey();

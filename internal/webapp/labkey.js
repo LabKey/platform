@@ -158,13 +158,13 @@ LABKEY.requiresExtJs = function(immediate)
     if (arguments.length < 1) immediate = true;
     LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-all.css');
     LABKEY.requiresScript(LABKEY.extJsRoot + "/adapter/ext/ext-base.js", immediate);
-    if (LABKEY.devMode && window.console && false)
+    if (LABKEY.devMode)
     {
         LABKEY.requiresScript("ext-exploded.js", immediate);
     }
     else
     {
-    LABKEY.requiresScript(LABKEY.extJsRoot + "/ext-all" + (LABKEY.devMode ?  "-debug.js" : ".js"), immediate);
+        LABKEY.requiresScript(LABKEY.extJsRoot + "/ext-all" + (LABKEY.devMode ?  "-debug.js" : ".js"), immediate);
     }
 };
 
@@ -173,7 +173,7 @@ LABKEY.requiresClientAPI = function(immediate)
     if (arguments.length < 1) immediate = true;
     LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-all.css');
     LABKEY.requiresExtJs(immediate);
-    if(LABKEY.devMode)
+    if (LABKEY.devMode)
     {
         //load individual scripts so that they get loaded from source tree
         LABKEY.requiresScript("clientapi/ExtJsConfig.js", immediate);

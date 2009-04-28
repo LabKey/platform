@@ -128,6 +128,7 @@ public class PopupMenu extends DisplayElement
                 "</script>");
     }
 
+    // UNDONE: use NavTree.toJS()
     private String renderMenuModel(NavTree[] trees, String id)
     {
         String sep = "";
