@@ -37,6 +37,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
+import org.json.JSONArray;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
@@ -581,14 +582,100 @@ public class PipelineController extends SpringActionController
         }
     }
 
+
     @RequiresPermission(ACL.PERM_READ)
-    public class FilesAction extends BrowseAction
+    public class FilesAction extends SimpleViewAction<PathForm>
     {
         public FilesAction()
         {
-            setFileView(true);
+        }
+
+        public ModelAndView getView(PathForm pathForm, BindException errors) throws Exception
+        {
+            BrowseWebPart wp = new BrowseWebPart();
+            return wp;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
         }
     }
+
+
+    public class BrowseWebPart extends JspView<BrowseWebPart>
+    {
+        BrowseWebPart()
+        {
+            super(PipelineController.class, "browse.jsp", null, null);
+            setModelBean(this);
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class ActionsAction extends ApiAction<PathForm>
+    {
+        public ApiResponse execute(PathForm form, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+
+            PipeRoot pr = PipelineService.get().findPipelineRoot(c);
+            if (pr == null || !URIUtil.exists(pr.getUri()))
+            {
+                HttpView.throwNotFound("Pipeline root not set or does not exist on disk");
+                return null;
+            }
+
+            URI uriRoot = pr.getUri(c);
+
+            String path = form.getPath();
+            if (null == path || "./".equals(path))
+                path = "";
+            if (path.startsWith("/"))
+                path = path.substring(1);
+
+            URI current = URIUtil.resolve(uriRoot, path);
+            if (current == null)
+            {
+                HttpView.throwNotFound();
+                return null;
+            }
+
+            File fileCurrent = new File(current);
+            if (!fileCurrent.exists())
+                HttpView.throwNotFound("File not found: " + current.getPath());
+
+            URI uriCurrent = URIUtil.resolve(uriRoot, path);
+            ActionURL browseURL = new ActionURL(BrowseAction.class, c);
+            browseURL.replaceParameter("path", toRelativePath(uriRoot, uriCurrent));
+
+            List<PipelineProvider.FileEntry> list = new ArrayList<PipelineProvider.FileEntry>();
+            PipelineProvider.FileEntry entry = new PipelineProvider.FileEntry(uriCurrent, browseURL, true);
+            list.add(entry);
+            entry.setLabel(new File(uriCurrent).getName());
+            List<PipelineProvider> providers = PipelineService.get().getPipelineProviders();
+            for (PipelineProvider provider : providers)
+                provider.updateFileProperties(getViewContext(), pr, list);
+
+            // keep actions in consistent order for display
+            entry.orderActions();
+
+            JSONArray actions = new JSONArray();
+            for (PipelineProvider.FileAction action : entry.getActions())
+            {
+                actions.put(action.toJSON());                
+            }
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
+            resp.put("actions", actions);
+            return resp;
+        }
+    }
+
+
+
+
 
     @RequiresSiteAdmin
     public class UpdateRootPermissionsAction extends RedirectAction<PermissionForm>

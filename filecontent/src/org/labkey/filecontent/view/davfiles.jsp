@@ -85,10 +85,10 @@ Ext.onReady(function()
     }});
 
     Ext.QuickTips.init();
-    var fileSystem = new WebdavFileSystem({
+    var fileSystem = new LABKEY.WebdavFileSystem({
         baseUrl:<%=PageFlowUtil.jsString(rootPath)%>,
         rootName:<%=PageFlowUtil.jsString(rootName)%>});
-    var fileBrowser = new FileBrowser({
+    var fileBrowser = new LABKEY.FileBrowser({
         fileSystem:fileSystem
         ,helpEl:null
         ,showAddressBar:false

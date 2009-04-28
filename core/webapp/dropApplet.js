@@ -501,5 +501,7 @@ function init()
                          '<input id="folderName" name="folderName" value=""/><%=PageFlowUtil.generateButton("create", "")%>>';
     document.getElementsByTagName("BODY")[0].appendChild(mkdirDiv);
 
-    foregroundIntervalId = window.setInterval(pollApplet,1000/20);
+    var task = {run : pollApplet, interval: 1000/20};
+    var runner = new Ext.util.TaskRunner();
+    runner.start(task);
 }

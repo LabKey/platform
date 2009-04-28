@@ -157,6 +157,15 @@ function startsWith(s, f)
         return true;
     return s.charAt(0) == f.charAt(0) && s.charAt(len-1) == f.charAt(len-1) && s.indexOf(f) == 0;
 }
+function endsWith(s, f)
+{
+    var len = f.length;
+    var slen = s.length;
+    if (slen < len) return false;
+    if (len == 0)
+        return true;
+    return s.charAt(slen-len) == f.charAt(0) && s.charAt(slen-1) == f.charAt(len-1) && s.indexOf(f) == slen-len;
+}
 
 var imgCounter = 0;
 
@@ -168,7 +177,7 @@ function renderIcon(value, metadata, record, rowIndex, colIndex, store, decorate
     {
         if (!file)
         {
-            value = FileBrowser.prototype.FOLDER_ICON;
+            value = LABKEY.FileBrowser.prototype.FOLDER_ICON;
         }
         else
         {
@@ -214,6 +223,8 @@ function _attachPreview(id,record)
 {
     if (this && !this.canRead(record))
         return;
+    if (!record.data.file)
+        return;
     var elImg = $(id);
     elImg.on("mouseover",preview.createCallback(elImg,record));
     elImg.on("mouseout",unpreviewWindow);
@@ -222,18 +233,22 @@ function _attachPreview(id,record)
 
 function preview(el, record)
 {
-    var uri = record.data.uri;
-    var contentType = record.data.contentType;
     cancelAsyncPreview();
     closePreviewWindow();
-    var timeout = previewFN.defer(200,null,[el,uri,contentType]);
+    var timeout = previewFN.defer(200,null,[el,record]);
     _previewAsync = {timeout:timeout, cancel:function() {clearTimeout(this.timeout);}};
 }
 
 
-function previewFN(el, uri, contentType)
+function previewFN(el, record)
 {
-    if (startsWith(contentType,'image/'))
+    var uri = record.data.uri;
+    var contentType = record.data.contentType;
+    var size = record.data.size;
+    if (!uri || !contentType || !size)
+        return;
+
+    if (startsWith(contentType,'image/'))                                                                                                        
     {
         //dynamicToolTip(el, {tag:'img', src:uri});
         //previewWindow(el, {tag:'img', src:uri});
@@ -247,20 +262,24 @@ function previewFN(el, uri, contentType)
         image.src = uri;
         _previewAsync = {image:image, cancel:function(){image.onload=null}};
     }
-    else if (startsWith(contentType,'text/') || contentType == 'application/javascript')
+    else if (startsWith(contentType,'text/') || contentType == 'application/javascript' || endsWith(record.data.name,".log"))
     {
+        var headers = {};
+        if (contentType != 'text/html' && size > 10000)
+            headers['Content-Range'] = 'bytes 0-10000/'+size;
         var requestid = _previewConnection.request({
             autoAbort:true,
             url:uri,
+            headers:headers,
             method:'GET',
-            diableCaching:false,
+            disableCaching:false,
             success : function(response)
             {
                 var contentType = response.getResponseHeader["Content-Type"] || "text/plain";
                 var html;
                 if (contentType == "text/html")
                     html = response.responseText;
-                else
+                else if (startsWith(contentType,"text/") || contentType == 'application/javascript')
                     html = "<div style='width:640px;'><pre>" + $h(response.responseText) + "</pre></div>";
                 previewWindow(el, html);
                 if (_previewAsync && _previewAsync.requestid == requestid)
@@ -512,7 +531,7 @@ Ext.extend(FileSystem, Ext.util.Observable,
 // rootPath: root of the tree we want to browse e.g. /home/@pipeline/
 // rootName: display name for the root
 
-var WebdavFileSystem = function(config)
+LABKEY.WebdavFileSystem = function(config)
 {
     config = config || {};
     Ext.apply(this, config, {
@@ -525,7 +544,7 @@ var WebdavFileSystem = function(config)
         prefix = prefix.substring(0,prefix.length-1);
     this.prefixUrl = prefix;
     var prefixDecode  = decodeURIComponent(prefix);
-    WebdavFileSystem.superclass.constructor.call(this);
+    LABKEY.WebdavFileSystem.superclass.constructor.call(this);
 
     var getURI = function(v,rec)
     {
@@ -593,7 +612,7 @@ var WebdavFileSystem = function(config)
 };
 
 
-Ext.extend(WebdavFileSystem, FileSystem,
+Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
 {
     getHistory : function(path, callback) // calback(filesystem, success, path, history[])
     {
@@ -759,7 +778,7 @@ var AppletFileSystem = function(config)
         path: Ext.isWindows ? "\\" : "/",
         rootName: "My Computer"
     });
-    WebdavFileSystem.superclass.constructor.call(this);
+    AppletFileSystem.superclass.constructor.call(this);
     this.FileRecord = Ext.data.Record.create(['uri', 'path', 'name', 'file', 'created', 'modified', 'modifiedBy', 'size', 'iconHref']);
     this.connection = new Ext.data.Connection({method: "GET", headers: {"Method" : "PROPFIND", "Depth" : "1,noroot"}});
     this.proxy = new Ext.data.HttpProxy(this.connection);
@@ -1001,7 +1020,7 @@ var BROWSER_EVENTS = {selectionchange:"selectionchange", directorychange:"direct
 //      showDetails: true,
 //      showProperties: false,
 //
-var FileBrowser = function(config)
+LABKEY.FileBrowser = function(config)
 {
     this.actions =
     {
@@ -1023,7 +1042,7 @@ var FileBrowser = function(config)
 };
 
 
-Ext.extend(FileBrowser, Ext.Panel,
+Ext.extend(LABKEY.FileBrowser, Ext.Panel,
 {
     FOLDER_ICON: LABKEY.contextPath + "/" + LABKEY.extJsRoot + "/resources/images/default/tree/folder.gif",
 
@@ -1034,6 +1053,7 @@ Ext.extend(FileBrowser, Ext.Panel,
     showAddressBar: true,
     showDetails: true,
     showProperties: true,
+    propertiesPanel : null,
 
     grid: null,
     store: null,
@@ -1638,25 +1658,25 @@ Ext.extend(FileBrowser, Ext.Panel,
                         {region:'south', layout:'fit', border:false, height:40, minSize:40, margins:'1 0 0 0', items:[this.uploadPanel]}
                     ]
             });
-        if (this.showProperties)
+        if (this.propertiesPanel)
         {
             layoutItems.push(
-            {
-                title: 'Properties',
+            {                                                                                    
+                title: this.propertiesPanel.title || 'Properties',
                 region:'east',
                 split:true,
                 margins:'5 5 5 0',
-                width: 150,
+                width: this.propertiesPanel.width || 200,
                 minSize: 100,
                 border: false,
                 layout: 'fit',
-                items: [{html:'<iframe id=auditFrame height=100% width=100% border=0 style="border:0px;" src="about:blank"></iframe>'}]
+                items: [this.propertiesPanel]
             });
         }
 
         var renderTo = config.renderTo || null;
         Ext.apply(config, {layout:'border', tbar:tbarConfig, items: layoutItems, renderTo:null}, {id:'fileBrowser', height:600, width:800});
-        FileBrowser.superclass.constructor.call(this, config);
+        LABKEY.FileBrowser.superclass.constructor.call(this, config);
 
         //
         // EVENTS (tie together components)

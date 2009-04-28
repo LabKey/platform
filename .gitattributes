@@ -1117,6 +1117,7 @@ pipeline/src/org/labkey/pipeline/api/properties/ApplicationPropertiesSiteSetting
 pipeline/src/org/labkey/pipeline/api/properties/ConfigPropertiesImpl.java -text
 pipeline/src/org/labkey/pipeline/api/properties/GlobusClientPropertiesImpl.java -text
 pipeline/src/org/labkey/pipeline/api/properties/RemoteServerPropertiesImpl.java -text
+pipeline/src/org/labkey/pipeline/browse.jsp -text
 pipeline/src/org/labkey/pipeline/browse/BrowseViewImpl.java -text
 pipeline/src/org/labkey/pipeline/browse/browse.jsp -text
 pipeline/src/org/labkey/pipeline/cluster/ClusterStartup.java -text
