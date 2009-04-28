@@ -180,7 +180,9 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         for (int i=0; i < inputMaterialArray.length(); i++)
         {
             JSONObject materialObject = inputMaterialArray.getJSONObject(i);
-            inputMaterial.put(handleMaterial(materialObject), null);
+            ExpMaterial material = handleMaterial(materialObject);
+            if (material != null)
+                inputMaterial.put(material, null);
         }
 
         // Delete the contents of the run
@@ -223,19 +225,23 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
     private ExpMaterial handleMaterial(JSONObject materialObject) throws ValidationException
     {
-        // Unlike with runs and batches, we require that the materials are already created
-        int materialRowId = materialObject.getInt(ExperimentJSONConverter.ROW_ID);
-        ExpMaterial material = ExperimentService.get().getExpMaterial(materialRowId);
-        if (material == null)
+        if (materialObject.has(ExperimentJSONConverter.ROW_ID))
         {
-            throw new NotFoundException("Could not find material with row id: " + materialRowId);
+            // Unlike with runs and batches, we require that the materials are already created
+            int materialRowId = materialObject.getInt(ExperimentJSONConverter.ROW_ID);
+            ExpMaterial material = ExperimentService.get().getExpMaterial(materialRowId);
+            if (material == null)
+            {
+                throw new NotFoundException("Could not find material with row id: " + materialRowId);
+            }
+            if (!material.getContainer().equals(getViewContext().getContainer()))
+            {
+                throw new NotFoundException("Material with row id " + materialRowId + " is not in folder " + getViewContext().getContainer());
+            }
+            saveProperties(material, new DomainProperty[0], materialObject);
+            return material;
         }
-        if (!material.getContainer().equals(getViewContext().getContainer()))
-        {
-            throw new NotFoundException("Material with row id " + materialRowId + " is not in folder " + getViewContext().getContainer());
-        }
-        saveProperties(material, new DomainProperty[0], materialObject);
-        return material;
+        return null;
     }
 
     private ExpExperiment handleBatch(JSONObject batchJsonObject, ExpProtocol protocol, AssayProvider provider) throws Exception
