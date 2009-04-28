@@ -30,6 +30,7 @@ public class ExperimentJSONConverter
 {
     // General experiment object properties
     public static final String ID = "id";
+    public static final String ROW_ID = "rowId";
     public static final String CREATED = "created";
     public static final String CREATED_BY = "createdBy";
     public static final String MODIFIED = "modified";
@@ -42,6 +43,7 @@ public class ExperimentJSONConverter
 
     // Run properties
     public static final String DATA_INPUTS = "dataInputs";
+    public static final String MATERIAL_INPUTS = "materialInputs";
 
     public static JSONObject serializeRunGroup(ExpExperiment runGroup, Domain domain) throws SQLException
     {
@@ -61,6 +63,13 @@ public class ExperimentJSONConverter
             inputDataArray.put(ExperimentJSONConverter.serializeData(data));
         }
         jsonObject.put(DATA_INPUTS, inputDataArray);
+
+        JSONArray inputMaterialArray = new JSONArray();
+        for (ExpMaterial material : run.getMaterialInputs().keySet())
+        {
+            inputMaterialArray.put(ExperimentJSONConverter.serializeMaterial(material));
+        }
+        jsonObject.put(MATERIAL_INPUTS, inputMaterialArray);
         return jsonObject;
     }
 
@@ -106,6 +115,12 @@ public class ExperimentJSONConverter
     {
         JSONObject jsonObject = serializeStandardProperties(data, null);
         jsonObject.put(DATA_FILE_URL, data.getDataFileUrl());
+        return jsonObject;
+    }
+
+    public static JSONObject serializeMaterial(ExpMaterial material)
+    {
+        JSONObject jsonObject = serializeStandardProperties(material, null);
         return jsonObject;
     }
 }

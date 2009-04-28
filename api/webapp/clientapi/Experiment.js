@@ -246,6 +246,7 @@ LABKEY.Exp.ExpObject = function (config) {
  *
  * @property {LABKEY.Exp.Data[]} dataInputs Array of {@link LABKEY.Exp.Data} input files.
  * @property {Object[]} dataRows Array of Objects where each Object corresponds to a row in the results domain.
+ * @property {LABKEY.Exp.Material[]} materialInputs Array of {@link LABKEY.Exp.Material} input samples.
  *
  * @see LABKEY.Exp.Data#getContent
  *
@@ -279,7 +280,7 @@ LABKEY.Exp.ExpObject = function (config) {
  *     var batch = // ... the LABKEY.Exp.RunGroup object
  *     batch.runs.push(run);
  *   },
- *   failureCallbac: function (error, format) {
+ *   failureCallback: function (error, format) {
  *     alert("error: " + error);
  *   }
  * });
@@ -422,8 +423,6 @@ Ext.extend(LABKEY.Exp.ProtocolApplication, LABKEY.Exp.ExpObject);
  * @memberOf LABKEY.Exp
  *
  * @param {Object} [config] private constructor argument.
- *
- * @ignore hide from JsDoc for now
  */
 LABKEY.Exp.SampleSet = function (config) {
     LABKEY.Exp.SampleSet.superclass.constructor.call(this, config);
@@ -485,8 +484,6 @@ Ext.extend(LABKEY.Exp.ProtocolOutput, LABKEY.Exp.ExpObject);
  * @memberOf LABKEY.Exp
  *
  * @param {Object} [config] private constructor argument.
- *
- * @ignore hide from JsDoc for now
  */
 LABKEY.Exp.Material = function (config) {
     LABKEY.Exp.Material.superclass.constructor.call(this, config);
