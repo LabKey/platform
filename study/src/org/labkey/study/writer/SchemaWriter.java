@@ -1,15 +1,14 @@
 package org.labkey.study.writer;
 
-import org.labkey.api.util.VirtualFile;
-import org.labkey.api.data.TableInfo;
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.util.VirtualFile;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.xml.StudyDocument.Study.Datasets;
-import org.apache.commons.lang.StringUtils;
 
+import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.FileNotFoundException;
-import java.io.UnsupportedEncodingException;
 
 /**
  * User: adam
@@ -20,7 +19,7 @@ public class SchemaWriter implements Writer<DataSetDefinition[]>
 {
     private static final String SCHEMA_FILENAME = "schema.tsv";
 
-    public void write(DataSetDefinition[] definitions, ExportContext ctx, VirtualFile fs) throws FileNotFoundException, UnsupportedEncodingException
+    public void write(DataSetDefinition[] definitions, ExportContext ctx, VirtualFile fs) throws IOException
     {
         Datasets datasetsXml = ctx.getStudyXml().getDatasets();
         Datasets.Schema schemaXml = datasetsXml.addNewSchema();

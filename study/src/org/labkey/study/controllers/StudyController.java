@@ -3696,6 +3696,36 @@ public class StudyController extends BaseStudyController
         }
     }
 
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class ImportStudyAction extends FormViewAction
+    {
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<Object>("/org/labkey/study/view/exportStudy.jsp", errors);
+        }
+
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            return false;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        public ActionURL getSuccessURL(Object o)
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+    }
+
+
     @RequiresPermission(ACL.PERM_DELETE)
     public class PurgeDatasetAction extends SimpleRedirectAction
     {

@@ -2206,6 +2206,7 @@ study/src/org/labkey/study/view/exportStudy.jsp -text
 study/src/org/labkey/study/view/externalReportDesigner.jsp -text
 study/src/org/labkey/study/view/importDataType.jsp -text
 study/src/org/labkey/study/view/importDataset.jsp -text
+study/src/org/labkey/study/view/importStudy.jsp -text
 study/src/org/labkey/study/view/importStudyBatch.jsp -text
 study/src/org/labkey/study/view/manageCohortsBottom.jsp -text
 study/src/org/labkey/study/view/manageCohortsTop.jsp -text

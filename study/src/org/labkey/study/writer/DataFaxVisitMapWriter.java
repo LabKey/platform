@@ -15,14 +15,13 @@
  */
 package org.labkey.study.writer;
 
+import org.labkey.api.util.VirtualFile;
 import org.labkey.study.model.Visit;
 import org.labkey.study.model.VisitDataSet;
 import org.labkey.study.xml.StudyDocument;
-import org.labkey.api.util.VirtualFile;
 
+import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.FileNotFoundException;
-import java.io.UnsupportedEncodingException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.List;
@@ -36,7 +35,7 @@ public class DataFaxVisitMapWriter implements Writer<Visit[]>
 {
     private static final String FILENAME = "visit_map.txt";
 
-    public void write(Visit[] visits, ExportContext ctx, VirtualFile fs) throws FileNotFoundException, UnsupportedEncodingException
+    public void write(Visit[] visits, ExportContext ctx, VirtualFile fs) throws IOException
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();
         StudyDocument.Study.Visits visitsXml = studyXml.addNewVisits();

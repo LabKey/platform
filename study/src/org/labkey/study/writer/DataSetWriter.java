@@ -15,24 +15,23 @@
  */
 package org.labkey.study.writer;
 
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.TSVGridWriter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.util.VirtualFile;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.xml.StudyDocument.Study.Datasets;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TSVGridWriter;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.util.VirtualFile;
 
 import javax.servlet.ServletException;
+import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.FileNotFoundException;
-import java.io.UnsupportedEncodingException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: adam
@@ -41,7 +40,7 @@ import java.util.ArrayList;
  */
 public class DataSetWriter implements Writer<Study>
 {
-    public void write(Study study, ExportContext ctx, VirtualFile fs) throws SQLException, FileNotFoundException, UnsupportedEncodingException, ServletException
+    public void write(Study study, ExportContext ctx, VirtualFile fs) throws SQLException, IOException, ServletException
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();
         Datasets datasetsXml = studyXml.addNewDatasets();
