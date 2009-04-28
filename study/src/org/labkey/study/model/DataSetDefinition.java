@@ -777,8 +777,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-    static final Set<PropertyDescriptor> standardPropertySet = new HashSet<PropertyDescriptor>();
-    static final Map<String,PropertyDescriptor> standardPropertyMap = new CaseInsensitiveHashMap<PropertyDescriptor>();
+    private static final Set<PropertyDescriptor> standardPropertySet = new HashSet<PropertyDescriptor>();
+    private static final Map<String, PropertyDescriptor> standardPropertyMap = new CaseInsensitiveHashMap<PropertyDescriptor>();
 
     public static Set<PropertyDescriptor> getStandardPropertiesSet()
     {

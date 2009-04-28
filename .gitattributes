@@ -2202,6 +2202,7 @@ study/src/org/labkey/study/view/datasets.jsp -text
 study/src/org/labkey/study/view/editSnapshot.jsp -text
 study/src/org/labkey/study/view/editTimepoint.jsp -text
 study/src/org/labkey/study/view/editVisit.jsp -text
+study/src/org/labkey/study/view/exportStudy.jsp -text
 study/src/org/labkey/study/view/externalReportDesigner.jsp -text
 study/src/org/labkey/study/view/importDataType.jsp -text
 study/src/org/labkey/study/view/importDataset.jsp -text
@@ -2276,16 +2277,18 @@ study/src/org/labkey/study/writer/CohortWriter.java -text
 study/src/org/labkey/study/writer/DataFaxVisitMapWriter.java -text
 study/src/org/labkey/study/writer/DataSetWriter.java -text
 study/src/org/labkey/study/writer/ExportContext.java -text
-study/src/org/labkey/study/writer/FileSystemVirtualFile.java -text
+study/src/org/labkey/study/writer/FileSystemFile.java -text
 study/src/org/labkey/study/writer/QcStateWriter.java -text
 study/src/org/labkey/study/writer/QueryWriter.java -text
 study/src/org/labkey/study/writer/ReportWriter.java -text
+study/src/org/labkey/study/writer/SchemaWriter.java -text
 study/src/org/labkey/study/writer/SpecimenWriter.java -text
 study/src/org/labkey/study/writer/StudyWriter.java -text
 study/src/org/labkey/study/writer/StudyXmlWriter.java -text
 study/src/org/labkey/study/writer/TdmVisitMapWriter.java -text
 study/src/org/labkey/study/writer/VisitMapWriter.java -text
 study/src/org/labkey/study/writer/Writer.java -text
+study/src/org/labkey/study/writer/ZipFile.java -text
 study/webapp/sampleRequest.js -text
 study/webapp/study/assay/SampleLookupTemplate.xls -text
 timeline/Timeline.iml -text

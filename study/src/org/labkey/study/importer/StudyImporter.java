@@ -127,7 +127,7 @@ public class StudyImporter
 
         for (StudyDocument.Study.Visits.Visit visitXml : visits.getVisitArray())
         {
-            // Just a proof of concept -- only works for "show by default".  TODO: Move to visit map or move entire visit map into xml?
+            // Just a proof of concept -- only works for "show by default".  TODO: Move to alternative, xml-based visit map
             double sequenceNum = visitXml.getSequenceNum();
             Visit visit = visitManager.findVisitBySequence(sequenceNum);
             Visit mutable = visit.createMutable();

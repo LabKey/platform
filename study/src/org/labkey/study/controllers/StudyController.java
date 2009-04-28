@@ -68,8 +68,9 @@ import org.labkey.api.view.template.DialogTemplate;
 import org.labkey.common.util.Pair;
 import org.labkey.study.*;
 import org.labkey.study.writer.StudyWriter;
-import org.labkey.study.writer.FileSystemVirtualFile;
+import org.labkey.study.writer.FileSystemFile;
 import org.labkey.study.writer.ExportContext;
+import org.labkey.study.writer.ZipFile;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
@@ -90,6 +91,7 @@ import org.labkey.study.reports.StudyReportUIProvider;
 import org.labkey.study.visitmanager.VisitManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 import org.xml.sax.SAXException;
@@ -3642,17 +3644,11 @@ public class StudyController extends BaseStudyController
 
     // TODO: Read or Admin permissions??
     @RequiresPermission(ACL.PERM_READ)
-    public class ExportStudyAction extends FormViewAction
+    public class ExportStudyAction extends FormViewAction<ExportForm>
     {
-        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ExportForm form, boolean reshow, BindException errors) throws Exception
         {
-            File rootDir = PipelineService.get().findPipelineRoot(getContainer()).getRootPath();
-            File exportDir = new File(rootDir, "export");
-
-            StudyWriter writer = new StudyWriter();
-            writer.write(getStudy(), new ExportContext(getUser(), getContainer()), new FileSystemVirtualFile(exportDir));
-
-            return new HtmlView("Study was successfully exported to " + exportDir.getAbsolutePath() + "<br><br>" + PageFlowUtil.generateButton("Back", new ActionURL(ManageStudyAction.class, getContainer())));
+            return new JspView<ExportForm>("/org/labkey/study/view/exportStudy.jsp", form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -3660,18 +3656,43 @@ public class StudyController extends BaseStudyController
             return null;
         }
 
-        public void validateCommand(Object target, Errors errors)
+        public void validateCommand(ExportForm form, Errors errors)
         {
         }
 
-        public boolean handlePost(Object o, BindException errors) throws Exception
+        public boolean handlePost(ExportForm form, BindException errors) throws Exception
         {
-            return false;  //To change body of implemented methods use File | Settings | File Templates.
+            long start = System.currentTimeMillis();
+            File rootDir = PipelineService.get().findPipelineRoot(getContainer()).getRootPath();
+            File exportDir = new File(rootDir, "export");
+
+            StudyWriter writer = new StudyWriter();
+            writer.write(getStudy(), new ExportContext(getUser(), getContainer()), new FileSystemFile(exportDir));
+
+            return true;//new HtmlView("Study \"" + getStudy().getLabel() + "\" was successfully exported to " + exportDir.getAbsolutePath() + " in " + (System.currentTimeMillis() - start)/1000.0 + " seconds." + "<br><br>" + PageFlowUtil.generateButton("Back", new ActionURL(ManageStudyAction.class, getContainer())));
         }
 
-        public ActionURL getSuccessURL(Object o)
+        public ActionURL getSuccessURL(ExportForm form)
         {
             return new ActionURL(BeginAction.class, getContainer());
+        }
+    }
+
+    public static class ExportForm
+    {
+
+    }
+
+    @RequiresPermission(ACL.PERM_READ)
+    public class ExportZipAction extends ExportAction
+    {
+        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
+        {
+            Study study = getStudy();
+            StudyWriter writer = new StudyWriter();
+            ZipFile zip = new ZipFile(response, study.getLabel());
+            writer.write(study, new ExportContext(getUser(), getContainer()), zip);
+            zip.close();
         }
     }
 
@@ -5717,7 +5738,7 @@ public class StudyController extends BaseStudyController
     }
 
     private static Map<Container, ReloadStatus> _lastReload = new ConcurrentHashMap<Container, ReloadStatus>();
-    private static Timer _timer = new Timer("Study Reload", true);
+    private static Timer _timer = new Timer("Study Load", true);
 
     @RequiresPermission(ACL.PERM_ADMIN)
     public class ManageReloadAction extends FormViewAction<ReloadForm>
@@ -5744,12 +5765,19 @@ public class StudyController extends BaseStudyController
                     {
                         try
                         {
-                            importStudy(errors);
-                            cancel();
+                            if (!importStudy(errors))
+                            {
+                                for (ObjectError error : (List<ObjectError>)errors.getAllErrors())
+                                    _log.error(error.getDefaultMessage());
+                            }
                         }
                         catch (Exception e)
                         {
                             _log.error("Error loading study", e);
+                        }
+                        finally
+                        {
+                            cancel();
                         }
                     }
                 }, 10 * 1000);

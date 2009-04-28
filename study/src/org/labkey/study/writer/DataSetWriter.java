@@ -22,6 +22,7 @@ import org.labkey.study.xml.StudyDocument.Study.Datasets;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TSVGridWriter;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.util.VirtualFile;
 
 import javax.servlet.ServletException;
@@ -30,6 +31,8 @@ import java.io.FileNotFoundException;
 import java.io.UnsupportedEncodingException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * User: adam
@@ -43,13 +46,13 @@ public class DataSetWriter implements Writer<Study>
         StudyDocument.Study studyXml = ctx.getStudyXml();
         Datasets datasetsXml = studyXml.addNewDatasets();
 
-        Datasets.Schema schemaXml = datasetsXml.addNewSchema();
-        String schemaFilename = fs.makeLegalName("schema.tsv");
-        schemaXml.setSource(schemaFilename);
-        schemaXml.setLabelColumn("platelabel");
-        schemaXml.setTypeNameColumn("platename");
-        schemaXml.setTypeIdColumn("plateno");
+        DataSetDefinition[] datasets = study.getDataSets();
 
+        // Write out the schema.tsv file and add reference & attributes to study.xml
+        SchemaWriter schemaWriter = new SchemaWriter();
+        schemaWriter.write(datasets, ctx, fs);
+
+        // Write out the .dataset file and add reference to study.xml
         Datasets.Definition definitionXml = datasetsXml.addNewDefinition();
         String datasetFilename = fs.makeLegalName(study.getLabel().replaceAll("\\s", "") + ".dataset");
         definitionXml.setSource(datasetFilename);
@@ -76,16 +79,32 @@ public class DataSetWriter implements Writer<Study>
                 "default.importAllMatches=TRUE");
         writer.close();
 
-        DataSetDefinition[] datasets = study.getDataSets();
-
         for (DataSetDefinition def : datasets)
         {
             TableInfo ti = def.getTableInfo(ctx.getUser());
-            ResultSet rs = Table.select(ti, ti.getColumns(), null, null);
+            List<ColumnInfo> allColumns = ti.getColumns();
+            List<ColumnInfo> columns = new ArrayList<ColumnInfo>(allColumns.size());
+
+            for (ColumnInfo col : allColumns)
+                if (shouldExport(col))
+                    columns.add(col);
+
+            ResultSet rs = Table.select(ti, columns, null, null);
             TSVGridWriter tsvWriter = new TSVGridWriter(rs);
             tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
             PrintWriter out = fs.getPrintWriter(def.getFileName());
             tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
         }
+    }
+
+    public static boolean shouldExport(ColumnInfo column)
+    {
+        if (!column.isUserEditable())
+            return false;
+
+        String propertyURI = column.getPropertyURI();
+
+        // TODO: Beter check for this?
+        return !(propertyURI.equals(DataSetDefinition.getParticipantIdURI()) || propertyURI.equals(DataSetDefinition.getSequenceNumURI()));
     }
 }

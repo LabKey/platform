@@ -29,12 +29,17 @@ public class ReportWriter implements Writer<Study>
 {
     public void write(Study study, ExportContext ctx, VirtualFile fs) throws Exception
     {
-        fs.makeDir("reports");
-        VirtualFile reports = fs.getDir("reports");
+        Report[] reports = ReportService.get().getReports(ctx.getUser(), ctx.getContainer());
 
-        for (Report report : ReportService.get().getReports(ctx.getUser(), ctx.getContainer()))
+        if (reports.length > 0)
         {
-            report.serializeToFolder(reports);
+            fs.makeDir("reports");
+            VirtualFile reportsDir = fs.getDir("reports");
+
+            for (Report report : reports)
+            {
+                report.serializeToFolder(reportsDir);
+            }
         }
     }
 }
