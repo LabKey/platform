@@ -15,9 +15,8 @@
  */
 package org.labkey.api.util;
 
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 
 /**
  * User: adam
@@ -26,8 +25,8 @@ import java.io.UnsupportedEncodingException;
  */
 public interface VirtualFile
 {
-    public PrintWriter getPrintWriter(String path) throws FileNotFoundException, UnsupportedEncodingException;
-    public void makeDir(String path) throws FileNotFoundException, UnsupportedEncodingException;
+    public PrintWriter getPrintWriter(String path) throws IOException;
+    public void makeDir(String path) throws IOException;
     public VirtualFile getDir(String path);
     public String makeLegalName(String name);
 }

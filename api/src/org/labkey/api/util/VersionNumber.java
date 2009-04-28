@@ -44,7 +44,7 @@ public class VersionNumber
         if(versionParts.length > 1)
         {
             // Lenient int parser that allows non-digit characters after the number portion.  This fixes PostgreSQL 8.4 Beta 1
-            //  which returns "4beta1" for this. 
+            //  which returns "4beta1" for minor version. 
             String minorString = versionParts[1];
             int i;
 
