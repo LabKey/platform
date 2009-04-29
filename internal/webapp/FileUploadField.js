@@ -53,6 +53,20 @@ Ext.form.FileUploadField = Ext.extend(Ext.form.TextField,  {
         );
     },
 
+    enable : function()
+    {
+        Ext.form.FileUploadField.superclass.enable.call(this);
+        if (this.button)
+            this.button.enable();
+    },
+
+    disable : function()
+    {
+        Ext.form.FileUploadField.superclass.disable.call(this);
+        if (this.button)
+            this.button.disable();
+    },
+    
     // private
     onRender : function(ct, position){
         Ext.form.FileUploadField.superclass.onRender.call(this, ct, position);
