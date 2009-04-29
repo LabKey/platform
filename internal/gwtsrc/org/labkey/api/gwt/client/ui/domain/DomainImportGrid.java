@@ -122,6 +122,8 @@ public class DomainImportGrid extends Grid
 
     }
 
+
+    // TODO: Switch to using org.labkey.api.exp.property.Type enum
     public enum Type
     {
         StringType("Text (String)", "xsd:string"),
