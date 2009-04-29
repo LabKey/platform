@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.webdav.WebdavService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 //FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz", TimeZone.getTimeZone("GMT"), Locale.US);
@@ -42,17 +43,17 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
     boolean supportsDavMount = false;
     boolean supportsDavScheme = false;
     boolean supportsWebdavScheme = userAgent.contains("Konqueror");
+    boolean plainHtml = "html".equals(request.getParameter("listing"));
+
+if (plainHtml)
+{
 %>
-<html>
-<head>
-<title><%=h(path)%> -- WebDAV: <%=h(app.getServerName())%></title>
-</head>
-<style type="text/css">
-A {text-decoration:none; behavior: url(#default#AnchorClick);}
-TR {margin-right:3px; margin-left:3px;}
-BODY, TD, TH { font-family: arial sans-serif; color: black; }
-</style>
-<body>
+    <style type="text/css">
+    A {text-decoration:none; behavior: url(#default#AnchorClick);}
+    TR {margin-right:3px; margin-left:3px;}
+    BODY, TD, TH { font-family: arial sans-serif; color: black; }
+    </style>
+
 <table width="100%"><tr><td align="left">
 <b><%
 {
@@ -66,7 +67,7 @@ BODY, TD, TH { font-family: arial sans-serif; color: black; }
     for (int i=dirs.size()-1; i>=0 ; --i)
     {
         dir = dirs.get(i);
-        %><a href="<%=h(dir.getLocalHref(context))%>"><%
+        %><a href="<%=h(dir.getLocalHref(context))%>?listing=html"><%
         if ("/".equals(dir.getPath()))
         {
             %><%=h(dir.getHref(context))%><%
@@ -120,7 +121,7 @@ BODY, TD, TH { font-family: arial sans-serif; color: black; }
         WebdavResolver.Resource info = parent;
         shade = !shade;
         long modified = info.getLastModified();
-        %><tr class="<%=shade?"labkey-alternate-row":"labkey-row"%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>"><%=h(name)%></a></td><%
+        %><tr class="<%=shade?"labkey-alternate-row":"labkey-row"%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>?listing=html"><%=h(name)%></a></td><%
         %><td align="right">&nbsp;</td><%
         %><td align="right" nowrap><%=modified==0?"&nbsp;":dateFormat.format(new Date(modified))%></td></tr><%
         out.println();
@@ -131,7 +132,7 @@ BODY, TD, TH { font-family: arial sans-serif; color: black; }
         WebdavResolver.Resource info = entry.getValue();
         shade = !shade;
         long modified = info.getLastModified();
-        %><tr class="<%=shade?"labkey-alternate-row":"labkey-row"%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>"><%=h(name)%></a></td><%
+        %><tr class="<%=shade?"labkey-alternate-row":"labkey-row"%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>?listing=html"><%=h(name)%></a></td><%
         %><td align="right">&nbsp;</td><%
         %><td align="right" nowrap><%=modified==0?"&nbsp;":dateFormat.format(new Date(modified))%></td></tr><%
         out.println();
@@ -144,7 +145,7 @@ BODY, TD, TH { font-family: arial sans-serif; color: black; }
         long modified = info.getLastModified();
         if (info.canRead(user))
         {
-            %><tr class="<%=shade?"labkey-alternate-row":"labkey-row"%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>"><%=h(name)%></a></td><%
+            %><tr class="<%=shade?"labkey-alternate-row":"labkey-row"%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>?listing=html"><%=h(name)%></a></td><%
         }
         else
         {
@@ -162,10 +163,6 @@ BODY, TD, TH { font-family: arial sans-serif; color: black; }
 %>
 This is a WebDav enabled directory.<br>
 <%
-if (supportsDavMount) {%><%=PageFlowUtil.generateButton("davmount","?davmount")%><br><%}
-if (supportsDavScheme) {%><%=PageFlowUtil.generateButton("dav", href.replace("http:","dav:"))%><br><%}
-if (supportsWebdavScheme) {%><%=PageFlowUtil.generateButton("webdav", href.replace("http:","webdav:"))%><br><%}
-
     ArrayList<String> can = new ArrayList<String>();
     if (resource.canRead(user)) can.add("read");
     if (resource.canWrite(user)) can.add("update");
@@ -180,56 +177,72 @@ if (supportsWebdavScheme) {%><%=PageFlowUtil.generateButton("webdav", href.repla
             %><%=comma%><%=(i==can.size()-1 && i > 1) ? "and ":""%><%=can.get(i)%><%
             comma = ", ";
         }
-        %> files in this directory.<%
+        %> files in this directory.<br><%
     }
-if (resource.canCreate(user))
+%>
+<%
+if (supportsDavMount) {%><%=PageFlowUtil.generateButton("davmount","?davmount")%><br><%}
+if (supportsDavScheme) {%><%=PageFlowUtil.generateButton("dav", href.replace("http:","dav:"))%><br><%}
+if (supportsWebdavScheme) {%><%=PageFlowUtil.generateButton("webdav", href.replace("http:","webdav:"))%><br><%}
+%><%=PageFlowUtil.generateButton("Standard View","?listing=ext")%><br>
+<!--<%=request.getHeader("user-agent")%>-->
+<%
+} // end plainHtml
+else
 {
-    ActionURL dropUrl = (new ActionURL("ftp","drop","/")).addParameter("path",resource.getPath());
-    %>
-    <script type="text/javascript">
-    function form_onSubmit()
+%>
+<script type="text/javascript" src="<%=request.getContextPath()%>/labkey.js"></script>
+<script type="text/javascript">
+    LABKEY.requiresExtJs(true);
+    LABKEY.requiresScript("fileBrowser.js");
+    LABKEY.requiresScript("applet.js",true);
+    LABKEY.requiresScript("FileUploadField.js");
+</script>
+<script type="text/javascript">
+var fileSystem;
+var fileBrowser;
+Ext.onReady(function()
+{
+    Ext.QuickTips.init();
+
+    var htmlAction = new Ext.Action({text:'Load basic HTML', handler: function()
     {
-        try
-        {
-            var el = document.getElementById("folder");
-            if (!el || !el.value)
-                return false;
-            var client = new XMLHttpRequest();
-            client.onreadystatechange = function()
-                {
-                    if (client.readyState == 4)
-                    {
-                        if (200 == client.status || 201 == client.status)   // OK, CREATED
-                            window.location.reload();
-                        else if (405 == client.status) // METHOD_NOT_ALLOWED
-                            window.alert("Cannot create folder: " + el.value);
-                        else
-                            window.alert(client.statusText);
-                    }
-                };
-            var resourcePath = window.location.pathname + el.value;
-            client.open("POST", resourcePath);
-            client.setRequestHeader("method", "MKCOL");
-            client.send(null);
-        }
-        catch (x)
-        {
-            window.alert(x);
-        }
-        return false;
-    }
-    </script>
-    <p /><%
-    // undone: need resource.canCreateFolder
-    boolean canCreateFolder = resource.canCreate(user) && !resource.getPath().contains("/@wiki") && !resource.getPath().contains("/@query");
-    if (canCreateFolder)
-    {%>
-        <form action="" onsubmit="return form_onSubmit();">
-            <input id="folder" name="folder"><input type="submit" value="Create Folder">
-        </form>
-    <%}
-    %><input type="button" onclick="window.open(<%=PageFlowUtil.jsString(dropUrl.getLocalURIString())%>, '_blank', 'height=600,width=1000,resizable=yes');" value="Upload Files"><%
+        var path = '/';
+        if (fileBrowser.currentDirectory && fileBrowser.currentDirectory.data.path)
+            path = fileBrowser.currentDirectory.data.path;
+        window.location = fileSystem.concatPaths(<%=PageFlowUtil.jsString(request.getContextPath()+'/'+WebdavService.getServletPath())%>,path) + '?listing=html';
+    }});
+
+    var loginAction = new Ext.Action({text:'Login', handler:function()
+    {
+        window.location = <%=PageFlowUtil.jsString(listpage.loginURL.getLocalURIString())%>;    
+    }});
+    
+    fileSystem = new LABKEY.WebdavFileSystem({
+        baseUrl:<%=PageFlowUtil.jsString(request.getContextPath()+'/'+WebdavService.getServletPath())%>,
+        rootName:<%=PageFlowUtil.jsString(app.getServerName())%>});
+
+    fileBrowser = new LABKEY.FileBrowser({
+        fileSystem:fileSystem
+        ,helpEl:null
+        ,showAddressBar:true
+        ,showFolderTree:true
+        ,showDetails:true
+        ,allowChangeDirectory:true
+        ,actions:{html:htmlAction, login:loginAction}
+        ,tbar:['download','parentFolder','refresh','createDirectory','deletePath','html'<%=user.isGuest()?",'login'":""%>]
+    });
+
+    var viewport = new Ext.Viewport({
+        layout:'fit',
+        cls:'extContainer',
+        items:[fileBrowser]
+    });
+
+    fileBrowser.start();
+    fileBrowser.changeDirectory(<%=PageFlowUtil.jsString(path)%>);
+});
+</script>
+<%
 }
-%><!--<%=request.getHeader("user-agent")%>-->
-</body>
-</html>
+%>
