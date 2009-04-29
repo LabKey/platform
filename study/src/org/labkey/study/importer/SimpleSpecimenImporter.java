@@ -101,7 +101,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         tl.setThrowOnErrors(true);
         fixupSpecimenColumns(tl);
 
-        process(user, container, tl.load(), logger);
+        _process(user, container, tl.load(), logger);
     }
 
     public void fixupSpecimenColumns(TabLoader tl)
@@ -152,12 +152,13 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         return cols;
     }
 
-    public void process(User user, Container container, List<Map<String,Object>> rows) throws SQLException, IOException
+    public void process(User user, Container container, List<Map<String, Object>> rows) throws SQLException, IOException
     {
-        process(user, container, rows, Logger.getLogger(getClass()));
+        _process(user, container, rows, Logger.getLogger(getClass()));
     }
 
-    public void process(User user, Container container, List<Map<String,Object>> rows, Logger logger) throws SQLException, IOException
+    // Avoid conflict with SpecimenImporter.process() (has similar signature)
+    private void _process(User user, Container container, List<Map<String, Object>> rows, Logger logger) throws SQLException, IOException
     {
         //Map from column name to
         Study study = StudyManager.getInstance().getStudy(container);
