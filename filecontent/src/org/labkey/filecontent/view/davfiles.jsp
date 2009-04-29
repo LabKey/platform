@@ -88,9 +88,6 @@ Ext.onReady(function()
     }});
     var dropAction = new Ext.Action({text: 'Upload multiple files', scope:this, disabled:false, handler: function()
     {
-        if (!fileBrowser.currentDirectory)
-            return;
-        var path = fileBrowser.currentDirectory.data.path;
         var dropUrl = <%=PageFlowUtil.jsString((new ActionURL("ftp","drop",c)).getEncodedLocalURIString() + (null == me.getFileSet() ? "" : "fileSetName=" + PageFlowUtil.encode(root.getLabel())))%>;
         window.open(dropUrl, '_blank', 'height=600,width=1000,resizable=yes');
     }});
@@ -118,6 +115,6 @@ Ext.onReady(function()
     fileBrowser.render('files');
     var resizer = new Ext.Resizable('files', {width:800, height:600, minWidth:640, minHeight:400});
     resizer.on("resize", function(o,width,height){ this.setWidth(width); this.setHeight(height); }.createDelegate(fileBrowser));
-    fileBrowser.start.defer(0, fileBrowser);
+    fileBrowser.start();
 });
 </script>

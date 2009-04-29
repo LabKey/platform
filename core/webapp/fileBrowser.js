@@ -384,12 +384,12 @@ function constrain(img,w,h)
 //      iconHref(string)
 //      contentType(string,optional)
 
-var FILESYSTEM_EVENTS = {listfiles:"listfiles"};
+var FILESYSTEM_EVENTS = {listfiles:"listfiles", ready:"ready"};
 
 var FileSystem = function(config)
 {
     this.directoryMap = {}; //  map<path,(time,[records])>
-    this.addEvents(FILESYSTEM_EVENTS.listfiles);
+    this.addEvents(FILESYSTEM_EVENTS.listfiles, FILESYSTEM_EVENTS.ready);
 };
 
 Ext.extend(FileSystem, Ext.util.Observable,
@@ -485,6 +485,15 @@ Ext.extend(FileSystem, Ext.util.Observable,
         return null;
     },
 
+    ready: true,
+    
+    onReady : function(fn)
+    {
+        if (this.ready)
+            fn.call();
+        else
+            this.on(FILESYSTEM_EVENTS.ready, fn);
+    },
 
     // util
 
@@ -544,6 +553,7 @@ LABKEY.WebdavFileSystem = function(config)
         rootPath: "/",
         rootName : (LABKEY.serverName || "LabKey Server")
     });
+    this.ready = false;
     var prefix = this.concatPaths(this.baseUrl, this.rootPath);
     if (prefix.length > 0 && prefix.charAt(prefix.length-1) == this.separator)
         prefix = prefix.substring(0,prefix.length-1);
@@ -611,9 +621,11 @@ LABKEY.WebdavFileSystem = function(config)
         uri:this.prefixUrl,
         iconHref: LABKEY.contextPath + "/_images/labkey.png"
     }, "/");
-
-    // load options for root record
-    this.reloadFile("/");
+    this.reloadFile("/", (function()
+    {
+        this.ready = true;
+        this.fireEvent(FILESYSTEM_EVENTS.ready);
+    }).createDelegate(this));
 };
 
 
@@ -731,19 +743,22 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
 
     processFile : function(result, args, success)
     {
-        var path = args.path;
-        var callback = args.callback;
-        var records = [];
-        var record;
         if (success && result.records.length == 1)
         {
             var update = result.records[0];
-            record = this.recordFromCache(path);
-            if (record)
-                Ext.apply(record.data, update.data);
+            if (args.path == '/')
+            {
+                Ext.apply(this.rootRecord, update.data);
+            }
+            else
+            {
+                var record = this.recordFromCache(args.path);
+                if (record)
+                    Ext.apply(record.data, update.data);
+            }
         }
-        if (typeof callback == "function")
-            callback(this, success && null != record, path, record);
+        if (typeof args.callback == "function")
+            args.callback(this, success && null != record, args.path, record);
     },
 
 
@@ -1040,7 +1055,7 @@ LABKEY.FileBrowser = function(config)
         refresh: this.getRefreshAction(),
         help: this.getHelpAction(),
         createDirectory: this.getCreateDirectoryAction(),
-        drop : this.getOldDropAction(),
+        //drop : this.getOldDropAction(),
         showHistory : this.getShowHistoryAction(),
         deletePath: this.getDeleteAction()
     };
@@ -1151,17 +1166,17 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
     },
 
 
-    getOldDropAction : function()
-    {
-        return new Ext.Action({text: 'Upload multiple files', scope:this, disabled:true, handler: function()
-        {
-            if (!this.currentDirectory)
-                return;
-            var prefix = this.fileSystem.prefixUrl;
-            var url = this.fileSystem.concatPaths(prefix,this.currentDirectory.data.path);
-            window.open(url, '_blank', 'height=600,width=1000,resizable=yes');
-        }});
-    },
+//    getOldDropAction : function()
+//    {
+//        return new Ext.Action({text: 'Upload multiple files', scope:this, disabled:true, handler: function()
+//        {
+//            if (!this.currentDirectory)
+//                return;
+//            var prefix = this.fileSystem.prefixUrl;
+//            var url = this.fileSystem.concatPaths(prefix,this.currentDirectory.data.path);
+//            window.open(url, '_blank', 'height=600,width=1000,resizable=yes');
+//        }});
+//    },
 
 
     helpEl : null,
@@ -1282,21 +1297,31 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
 
     Grid_onSelectionChange : function(rowIndex, keepExisting, record)
     {
+        console.log(rowIndex);
+        console.log(keepExisting);
+        console.log(record);
     },
 
     Grid_onKeypress : function(e)
     {
         switch (e.keyCode)
         {
-            case e.ENTER:
-                    var record = this.selectedRecord;
-                    if (record && !record.data.file)
-                        this.changeDirectory(record);
-                    this.grid.focus();
-                break;
-            default:
-                break;
+        case e.ENTER:
+            var record = this.selectedRecord;
+            if (record && !record.data.file)
+                this.changeDirectory(record);
+            this.grid.focus();
+            break;
+        case e.ESC:
+            this.grid.getSelectionModel().clearSelections();
+        default:
+            break;
         }
+    },
+
+    Grid_onClick : function(e)
+    {
+        //this.grid.getSelectionModel().clearSelections();
     },
 
     Grid_onCelldblclick : function(grid, rowIndex, columnIndex, e)
@@ -1473,6 +1498,11 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
 
     start : function(wd)
     {
+        if (!this.fileSystem.ready)
+        {
+            this.fileSystem.onReady(this.start.createDelegate(this));
+            return;
+        }
         var root = this.tree.getRootNode();
         if (this.showFolderTree)
             root.expand();
@@ -1517,6 +1547,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
         this.grid.getSelectionModel().on(ROWSELECTION_MODEL.selectionchange, this.Grid_onSelectionChange, this);
         this.grid.on(GRIDPANEL_EVENTS.celldblclick, this.Grid_onCelldblclick, this);
         this.grid.on(GRIDPANEL_EVENTS.keypress, this.Grid_onKeypress, this);
+        this.grid.on(GRIDPANEL_EVENTS.click, this.Grid_onClick, this);
         this.grid.on(PANEL_EVENTS.render, function()
         {
             this.getView().hmenu.getEl().addClass("extContainer");
@@ -1578,7 +1609,23 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
         // Upload
         //
 
-        var fileUploadField;
+        this.fileUploadField = new Ext.form.FileUploadField(
+        {
+              buttonText: "Upload File...",
+              buttonOnly: true,
+              buttonCfg: {cls: "labkey-button"},
+              listeners: {"fileselected": function (fb, v)
+              {
+                  if (me.currentDirectory)
+                  {
+                      var form = me.uploadPanel.getForm();
+                      var options = {url:me.currentDirectory.data.uri, record:me.currentDirectory, name:me.fileUploadField.getValue()};
+                      var action = new DavSubmitAction(form, options);
+                      form.doAction(action);
+                  }
+              }}
+        });
+        
         this.uploadPanel = new Ext.FormPanel({
             id : 'uploadPanel',
             method : 'POST',
@@ -1589,24 +1636,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
             margins:'5 0 0 5',
             bodyStyle : 'background-color:#f0f0f0; padding:5px;',
             defaults: {bodyStyle : 'background-color:#f0f0f0'},
-            items: [
-                fileUploadField = new Ext.form.FileUploadField(
-                {
-                      buttonText: "Upload File...",
-                      buttonOnly: true,
-                      buttonCfg: {cls: "labkey-button"},
-                      listeners: {"fileselected": function (fb, v)
-                      {
-                          if (me.currentDirectory)
-                          {
-                              var form = me.uploadPanel.getForm();
-                              var options = {url:me.currentDirectory.data.uri, record:me.currentDirectory, name:fileUploadField.getValue()};
-                              var action = new DavSubmitAction(form, options);
-                              form.doAction(action);
-                          }
-                      }}
-                })
-            ],
+            items: [this.fileUploadField],
             listeners: {
                 "actioncomplete" : function (f, action)
                 {
@@ -1685,17 +1715,17 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
             });
         if (this.propertiesPanel)
         {
+            var panels = !'length' in this.propertiesPanel ? [this.propertiesPanel] : this.propertiesPanel;
             layoutItems.push(
-            {                                                                                    
-                title: this.propertiesPanel.title || 'Properties',
+            {
                 region:'east',
                 split:true,
                 margins:'5 5 5 0',
-                width: this.propertiesPanel.width || 200,
+                width: 200,
                 minSize: 100,
                 border: false,
-                layout: 'fit',
-                items: [this.propertiesPanel]
+                layout: 'accordion',
+                items: panels
             });
         }
 
@@ -1742,6 +1772,16 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
             this.store.removeAll();
             this.fileSystem.listFiles(record.data.path, this.loadRecords.createDelegate(this));
             this.updateAddressBar(record.data.path);
+            if (this.fileSystem.canWrite(record))
+            {
+                //this.uploadPanel.setVisible(false);
+                this.fileUploadField.enable();
+            }
+            else
+            {
+                //this.uploadPanel.setVisible(true);
+                this.fileUploadField.disable();
+            }
         }, this);
     }
 });

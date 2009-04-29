@@ -78,7 +78,10 @@ var actionDivCounter = 0;
 
 function updatePipelinePanel(record)
 {
-    Ext.get('pipelinePanel').update('<i>loading...</i>');
+    var pipelinePanel = Ext.ComponentMgr.get('pipelinePanel');
+    if (!pipelinePanel)
+        return;
+    pipelinePanel.body.update('<i>loading...</i>');
     activeMenus = {};
     fileMap = {};
     actionDivs = [];
@@ -96,7 +99,7 @@ function updatePipelinePanel(record)
             var o = eval('var $=' + response.responseText + ';$;');
             var actions = o.success ? o.actions : [];
             if (!actions || !actions.length)
-                Ext.get('pipelinePanel').update('<i>no actions</i>');
+                pipelinePanel.body.update('<i>no actions</i>');
             else
                 renderPipelineActions(actions);
         }
@@ -120,7 +123,7 @@ function renderPipelineActions(actions)
     for (var i=0 ; i<actions.length ; i++)
     {
         var action = actions[i];
-        var actionMarkup = {tag:'div', id:'actiondiv' + ++actionDivCounter, style:{margins:'3px'}, children:[]};
+        var actionMarkup = {tag:'div', id:'actiondiv' + ++actionDivCounter, style:styleAction, children:[]};
         actionDivs.push(actionMarkup.id);
         // BUTTONS
         for (var l=0 ; l<action.links.length ; l++)
@@ -137,8 +140,8 @@ function renderPipelineActions(actions)
                 span.id = menuid;
                 span.onClick = "showActionMenu(this)";
             }
-            actionMarkup.children.push('<br>');
             actionMarkup.children.push(span);
+            actionMarkup.children.push('<br>');
         }
         // FILES
         actionMarkup.children.push('<ul style="margin-left:5px;">');
@@ -154,7 +157,8 @@ function renderPipelineActions(actions)
         actionMarkup.children.push("</ul>");
         html.push(actionMarkup);
     }
-    Ext.get('pipelinePanel').update(Ext.DomHelper.markup(html));
+    var pipelinePanel = Ext.ComponentMgr.get('pipelinePanel');
+    pipelinePanel.body.update(Ext.DomHelper.markup(html));
 }
 
 
@@ -188,9 +192,9 @@ function showActionMenu(el)
 }
 
 
-var styleAction = {'background-color':'#ffffff', display:'block'};
-var styleHiddenAction = {'background-color':'#ffffff', display:'none'};
-var styleSelectedAction = {'background-color':'#ffffff', display:'block'};
+var styleAction = {display:'block', width:'', margin:'5px', padding:'3px', 'background-color':'#f8f8e0', border:'solid 1px #c0c0c0' }
+var styleHiddenAction = {display:'none'};
+var styleSelectedAction = {display:'block'};
 
 
 function showAllActions()
@@ -199,10 +203,32 @@ function showAllActions()
     for (i=0 ; i<actionDivs.length ; i++)
     {
         el = Ext.get(actionDivs[i]);
-        el.setStyle(styleAction);
+        showAction(el);
     }
     if (Ext.get('showAll'))
         Ext.get('showAll').setStyle({display:'none'});
+}
+
+function showAction(el)
+{
+    if (!('save' in el) || el.save.showing)
+        return;
+    el.scale(Ext.ComponentMgr.get('pipelinePanel').getEl().getWidth(), el.save.height, {duration:.1, afterStyle:styleAction});
+    //el.slideIn('r');
+    el.fadeIn({duration:.1});
+    el.save.showing = true;
+}
+
+function hideAction(el)
+{
+    if (!('save' in el))
+        el.save = {showing:true, width:el.getWidth(), height:el.getHeight()};
+    if (!el.save.showing)
+        return;
+    //el.slideOut('r');
+    el.fadeOut({duration:.1});
+    el.scale(el.getWidth(), 0, {duration:.1, afterStyle:styleHiddenAction});
+    el.save.showing = false;
 }
 
 function updateSelection(record)
@@ -213,24 +239,22 @@ function updateSelection(record)
         return;
     }
     
-    var i, el, count=0;
+    var i, el;
+    var ids = fileMap[record.data.name] || [];
+    var show = {};
+    for (i=0 ; i<ids.length ; i++)
+        show[ids[i]] = true;
     for (i=0 ; i<actionDivs.length ; i++)
     {
         el = Ext.get(actionDivs[i]);
-        el.setStyle(styleHiddenAction);
-    }
-    var ids = fileMap[record.data.name];
-    if (!ids || !ids.length)
-        ids = [];
-    for (i=0 ; i<ids.length ; i++)
-    {
-        el = Ext.get(ids[i]);
-        el.setStyle(styleSelectedAction);
-        count++;
+        if (show[actionDivs[i]])
+            showAction(el);
+        else
+            hideAction(el);
     }
     if (Ext.get('showAll'))
     {
-        if (actionDivs.length == 0 || count == actionDivs.length)
+        if (actionDivs.length == 0 || ids.length == actionDivs.length)
             Ext.get('showAll').setStyle({display:'none'});
         else
             Ext.get('showAll').setStyle({display:'block'});
@@ -265,7 +289,7 @@ Ext.onReady(function()
         ,showFolderTree:true
         ,showDetails:true
         ,allowChangeDirectory:true
-        ,propertiesPanel:new Ext.Panel({title:'Pipeline', width:200, id:'pipelinePanel', style:{padding:'3px'}, autoScroll:true})
+        ,propertiesPanel:[{title:'Pipeline Actions', id:'pipelinePanel'}]
         ,actions:{drop:dropAction}
         ,tbar:['download','deletePath','refresh','drop']
     });
@@ -284,7 +308,7 @@ Ext.onReady(function()
 
     var resizer = new Ext.Resizable('files', {width:800, height:600, minWidth:640, minHeight:400});
     resizer.on("resize", function(o,width,height){ this.setWidth(width); this.setHeight(height); }.createDelegate(fileBrowser));
-    fileBrowser.start.defer(0, fileBrowser);
+    fileBrowser.start();
 });
 </script>
 

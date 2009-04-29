@@ -239,8 +239,7 @@ Ext.onReady(function()
         items:[fileBrowser]
     });
 
-    fileBrowser.start();
-    fileBrowser.changeDirectory(<%=PageFlowUtil.jsString(path)%>);
+    fileBrowser.start(<%=PageFlowUtil.jsString(path)%>);
 });
 </script>
 <%

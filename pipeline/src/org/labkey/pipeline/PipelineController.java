@@ -653,18 +653,17 @@ public class PipelineController extends SpringActionController
             if (path.startsWith("/"))
                 path = path.substring(1);
 
-            URI current = URIUtil.resolve(uriRoot, path);
-            if (current == null)
+            URI uriCurrent = URIUtil.resolve(uriRoot, PageFlowUtil.encodePath(path));
+            if (uriCurrent == null)
             {
                 HttpView.throwNotFound();
                 return null;
             }
 
-            File fileCurrent = new File(current);
+            File fileCurrent = new File(uriCurrent);
             if (!fileCurrent.exists())
-                HttpView.throwNotFound("File not found: " + current.getPath());
+                HttpView.throwNotFound("File not found: " + uriCurrent.getPath());
 
-            URI uriCurrent = URIUtil.resolve(uriRoot, path);
             ActionURL browseURL = new ActionURL(BrowseAction.class, c);
             browseURL.replaceParameter("path", toRelativePath(uriRoot, uriCurrent));
 
