@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.pipeline.PipelineController" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.pipeline.PipeRoot" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 //FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:ss zzz", TimeZone.getTimeZone("GMT"), Locale.US);
@@ -30,13 +31,9 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
 %>
 <%
     ViewContext context = HttpView.currentContext();
-    PipelineController.BrowseWebPart root = (PipelineController.BrowseWebPart)HttpView.currentModel();
     PipelineController.BrowseWebPart me = (PipelineController.BrowseWebPart) HttpView.currentView();
-    Container c = context.getContainer();
-    if (null == c)
-    {
-        return;
-    }
+    PipeRoot root = me.getPipeRoot();
+    Container c = root.getContainer();
 
     // prefix is where we what the tree rooted
     // TODO: applet and fileBrowser could use more consistent configuration parameters
@@ -252,6 +249,15 @@ Ext.onReady(function()
         baseUrl:<%=PageFlowUtil.jsString(rootPath)%>,
         rootName:<%=PageFlowUtil.jsString(rootName)%>});
 
+    var dropAction = new Ext.Action({text: 'Upload multiple files', scope:this, disabled:true, handler: function()
+    {
+        if (!fileBrowser.currentDirectory)
+            return;
+        var path = fileBrowser.currentDirectory.data.path;
+        var dropUrl = <%=PageFlowUtil.jsString((new ActionURL("ftp","drop",c)).getEncodedLocalURIString() + "pipeline=")%> + encodeURIComponent(path);
+        window.open(dropUrl, '_blank', 'height=600,width=1000,resizable=yes');
+    }});
+
     fileBrowser = new LABKEY.FileBrowser({
         fileSystem:fileSystem
         ,helpEl:null
@@ -260,17 +266,25 @@ Ext.onReady(function()
         ,showDetails:true
         ,allowChangeDirectory:true
         ,propertiesPanel:new Ext.Panel({title:'Pipeline', width:200, id:'pipelinePanel', style:{padding:'3px'}, autoScroll:true})
+        ,actions:{drop:dropAction}
+        ,tbar:['download','deletePath','refresh','drop']
     });
-    fileBrowser.render('files');
 
     fileBrowser.on(BROWSER_EVENTS.directorychange, updatePipelinePanel);
     fileBrowser.on(BROWSER_EVENTS.selectionchange, updateSelection);
+    fileBrowser.on(BROWSER_EVENTS.directorychange, function(record)
+    {
+        if (record && this.fileSystem.canWrite(record))
+            dropAction.enable();
+        else
+            dropAction.disable();
+    });
+
+    fileBrowser.render('files');
 
     var resizer = new Ext.Resizable('files', {width:800, height:600, minWidth:640, minHeight:400});
     resizer.on("resize", function(o,width,height){ this.setWidth(width); this.setHeight(height); }.createDelegate(fileBrowser));
     fileBrowser.start.defer(0, fileBrowser);
 });
-
-
 </script>
 

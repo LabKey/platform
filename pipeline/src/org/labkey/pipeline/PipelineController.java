@@ -592,7 +592,13 @@ public class PipelineController extends SpringActionController
 
         public ModelAndView getView(PathForm pathForm, BindException errors) throws Exception
         {
+            Container c = getContainer();
+            PipeRoot pr = PipelineService.get().findPipelineRoot(c);
+
+            if (pr == null || !URIUtil.exists(pr.getUri()))
+                return HttpView.throwNotFound("Pipeline root not set or does not exist on disk");
             BrowseWebPart wp = new BrowseWebPart();
+            wp.setPipeRoot(pr);
             return wp;
         }
 
@@ -605,10 +611,22 @@ public class PipelineController extends SpringActionController
 
     public class BrowseWebPart extends JspView<BrowseWebPart>
     {
+        PipeRoot _root;
+        
         BrowseWebPart()
         {
             super(PipelineController.class, "browse.jsp", null, null);
             setModelBean(this);
+        }
+
+        void setPipeRoot(PipeRoot root)
+        {
+            _root = root;
+        }
+
+        public PipeRoot getPipeRoot()
+        {
+            return _root;
         }
     }
 

@@ -77,18 +77,29 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
 <script type="text/javascript">
 Ext.BLANK_IMAGE_URL = LABKEY.contextPath + "/_.gif";
 
+var fileBrowser = null;
+var fileSystem = null;
+
 Ext.onReady(function()
 {
     var configureAction = new Ext.Action({text: 'Configure', handler: function()
     {
         window.location = <%=PageFlowUtil.jsString(new ActionURL(FileContentController.ShowAdminAction.class, c).getLocalURIString())%>;
     }});
+    var dropAction = new Ext.Action({text: 'Upload multiple files', scope:this, disabled:false, handler: function()
+    {
+        if (!fileBrowser.currentDirectory)
+            return;
+        var path = fileBrowser.currentDirectory.data.path;
+        var dropUrl = <%=PageFlowUtil.jsString((new ActionURL("ftp","drop",c)).getEncodedLocalURIString() + (null == me.getFileSet() ? "" : "fileSetName=" + PageFlowUtil.encode(root.getLabel())))%>;
+        window.open(dropUrl, '_blank', 'height=600,width=1000,resizable=yes');
+    }});
 
     Ext.QuickTips.init();
-    var fileSystem = new LABKEY.WebdavFileSystem({
+    fileSystem = new LABKEY.WebdavFileSystem({
         baseUrl:<%=PageFlowUtil.jsString(rootPath)%>,
         rootName:<%=PageFlowUtil.jsString(rootName)%>});
-    var fileBrowser = new LABKEY.FileBrowser({
+    fileBrowser = new LABKEY.FileBrowser({
         fileSystem:fileSystem
         ,helpEl:null
         ,showAddressBar:false
@@ -96,51 +107,17 @@ Ext.onReady(function()
         ,showProperties:false
         ,showDetails:true
         ,allowChangeDirectory:false
-        ,actions:{configure:configureAction}
-        ,tbar:['download','deletePath','refresh'<%=c.hasPermission(context.getUser(),ACL.PERM_ADMIN)?",'configure'":""%>]
+        ,actions:{drop:dropAction, configure:configureAction}
+        ,tbar:['download','deletePath','refresh'<%=c.hasPermission(context.getUser(),ACL.PERM_INSERT)?",'drop'":""%><%=c.hasPermission(context.getUser(),ACL.PERM_ADMIN)?",'configure'":""%>]
     });
-    fileBrowser.render('files');
+
     fileBrowser.on("doubleclick", function(record){
         window.location = "<%=PageFlowUtil.encodePath(request.getContextPath())%>/files<%=c.getEncodedPath()%>" + encodeURI(record.data.name) + "?renderAs=DEFAULT<%=me.getFileSet()==null ? "" : "&fileSet=" + PageFlowUtil.encode(me.getFileSet())%>";
     });
+
+    fileBrowser.render('files');
     var resizer = new Ext.Resizable('files', {width:800, height:600, minWidth:640, minHeight:400});
     resizer.on("resize", function(o,width,height){ this.setWidth(width); this.setHeight(height); }.createDelegate(fileBrowser));
     fileBrowser.start.defer(0, fileBrowser);
 });
-
-
 </script>
-<%!
-    URLHelper showFileUrl(URLHelper u, Attachment a)
-    {
-        URLHelper url = u.clone();
-        url.setFile(a.getName());
-        FileContentController.RenderStyle render = FileContentController.defaultRenderStyle(a.getName());
-        url.replaceParameter("renderAs", render.name());
-        return url;
-    }
-
-    URLHelper downloadFileUrl(URLHelper u, Attachment a)
-    {
-        URLHelper url = u.clone();
-        url.setFile(a.getName());
-        url.replaceParameter("renderAs", FileContentController.RenderStyle.ATTACHMENT.name());
-        return url;
-    }
-
-    String adminError(ViewContext context)
-    {
-        StringBuilder sb = new StringBuilder();
-        if (context.getUser().isAdministrator())
-        {
-            ActionURL url = new ActionURL(FileContentController.BeginAction.class, context.getContainer().getProject());
-            sb.append("<a href=\"").append(url).append("\">Configure root</a>");
-        }
-        else
-        {
-            sb.append("Contact an adminsistrator");
-
-        }
-        return sb.toString();
-    }
-%>

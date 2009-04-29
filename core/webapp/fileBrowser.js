@@ -418,6 +418,11 @@ Ext.extend(FileSystem, Ext.util.Observable,
         return true;
     },
 
+    canWrite: function(record)
+    {
+        return true;
+    },
+    
     canDelete : function(record)
     {
         return true;
@@ -640,6 +645,12 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
         return !options || -1 != options.indexOf('GET');
     },
 
+    canWrite : function(record)
+    {
+        var options = record.data.options;
+        return !options || -1 != options.indexOf("PUT");
+    },
+    
     canDelete : function(record)
     {
         var options = record.data.options;
@@ -1029,6 +1040,7 @@ LABKEY.FileBrowser = function(config)
         refresh: this.getRefreshAction(),
         help: this.getHelpAction(),
         createDirectory: this.getCreateDirectoryAction(),
+        drop : this.getOldDropAction(),
         showHistory : this.getShowHistoryAction(),
         deletePath: this.getDeleteAction()
     };
@@ -1128,13 +1140,26 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
 
     getDeleteAction : function()
     {
-        return new Ext.Action({text: 'Delete', scope:this, iconCls:'refreshIcon', disabled:true, handler: function()
+        return new Ext.Action({text: 'Delete', scope:this, iconCls:'deleteIcon', disabled:true, handler: function()
         {
             if (!this.currentDirectory)
                 return;
             if (this.selectedRecord && this.selectedRecord.data.file)
                 this.fileSystem.deletePath(this.selectedRecord.data.path, this._refreshOnCallback.createDelegate(this));
             this.selectFile(null);
+        }});
+    },
+
+
+    getOldDropAction : function()
+    {
+        return new Ext.Action({text: 'Upload multiple files', scope:this, disabled:true, handler: function()
+        {
+            if (!this.currentDirectory)
+                return;
+            var prefix = this.fileSystem.prefixUrl;
+            var url = this.fileSystem.concatPaths(prefix,this.currentDirectory.data.path);
+            window.open(url, '_blank', 'height=600,width=1000,resizable=yes');
         }});
     },
 
@@ -1716,10 +1741,6 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
         {
             this.store.removeAll();
             this.fileSystem.listFiles(record.data.path, this.loadRecords.createDelegate(this));
-        }, this);
-
-        this.on(BROWSER_EVENTS.directorychange, function(record)
-        {
             this.updateAddressBar(record.data.path);
         }, this);
     }
