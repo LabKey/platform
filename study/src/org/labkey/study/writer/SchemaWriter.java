@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.VirtualFile;
+import org.labkey.api.exp.property.Type;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.xml.StudyDocument.Study.Datasets;
 
@@ -31,7 +32,7 @@ public class SchemaWriter implements Writer<DataSetDefinition[]>
 
         PrintWriter writer = fs.getPrintWriter(schemaFilename);
 
-        writer.println("platename\tplatelabel\tplateno\tproperty\tlabel\trangerui\trequired\tformat\tconcepturi\tkey\tautokey");
+        writer.println("platename\tplatelabel\tplateno\tproperty\tlabel\trangeuri\trequired\tformat\tconcepturi\tkey\tautokey");
 
         for (DataSetDefinition def : definitions)
         {
@@ -41,14 +42,22 @@ public class SchemaWriter implements Writer<DataSetDefinition[]>
 
             for (ColumnInfo col : tinfo.getColumns())
             {
-                if (DataSetWriter.shouldExport(col))
+                if (col.getName().equals("autokey") || DataSetWriter.shouldExport(col))
                 {
                     writer.print(prefix);
                     writer.print(col.getColumnName() + '\t');
                     writer.print(col.getCaption() + '\t');
+
+                    Class clazz = col.getJavaClass();
+                    Type t = Type.getTypeByClass(clazz);
+
+                    writer.print(t.getXsdType() + '\t');
                     writer.print('\t');
                     writer.print(col.isNullable() ? "optional\t" : "required\t");
                     writer.print(StringUtils.trimToEmpty(col.getFormatString()) + "\t");
+
+                    if (col.getName().equals("autokey"))
+                        writer.print("1\ttrue");
 
                     writer.println();
                 }

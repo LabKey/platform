@@ -44,6 +44,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
+import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
@@ -3592,7 +3593,7 @@ public class StudyController extends BaseStudyController
             }
             else if (null == getPipelineRoot())
             {
-                return new HtmlView("You must set a pipeline root before importing a study. " + PageFlowUtil.generateSubmitButton("Delete Study"));
+                return new HtmlView("You must set a pipeline root before importing a study.<br>" + PageFlowUtil.generateButton("Pipeline Setup", PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(getContainer())));
             }
             else
             {
