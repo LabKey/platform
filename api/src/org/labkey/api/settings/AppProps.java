@@ -432,6 +432,11 @@ public class AppProps extends AbstractWriteableSettingsGroup
         return Boolean.getBoolean("caching") || !isDevMode();
     }
 
+    public boolean isRecompileJspEnabled()
+    {
+        return isDevMode() && !Boolean.getBoolean("labkey.disableRecompileJsp");
+    }
+
     public void setProjectRoot(String projectRoot)
     {
         _projectRoot = projectRoot;

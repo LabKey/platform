@@ -34,7 +34,7 @@ public class JspLoader
 
     static
     {
-        if (AppProps.getInstance().isDevMode())
+        if (AppProps.getInstance().isRecompileJspEnabled())
         {
             if (AppProps.getInstance().getJavaVersion().startsWith("1.6"))
             {
