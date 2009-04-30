@@ -19,8 +19,11 @@ import org.json.JSONObject;
 import org.json.JSONArray;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Domain;
+import org.apache.commons.beanutils.ConvertUtils;
 
 import java.sql.SQLException;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * User: jeckels
@@ -122,5 +125,23 @@ public class ExperimentJSONConverter
     {
         JSONObject jsonObject = serializeStandardProperties(material, null);
         return jsonObject;
+    }
+
+    public static Map<DomainProperty, Object> convertProperties(JSONObject propertiesJsonObject, DomainProperty[] dps)
+    {
+        Map<DomainProperty, Object> properties = new HashMap<DomainProperty, Object>();
+        for (DomainProperty dp : dps)
+        {
+            if (propertiesJsonObject.has(dp.getName()))
+            {
+                Class javaType = dp.getPropertyDescriptor().getPropertyType().getJavaType();
+                properties.put(dp, ConvertUtils.lookup(javaType).convert(javaType, propertiesJsonObject.get(dp.getName())));
+            }
+            else
+            {
+                properties.put(dp, null);
+            }
+        }
+        return properties;
     }
 }

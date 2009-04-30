@@ -53,7 +53,7 @@ import java.util.*;
 */
 public class TsvDataExchangeHandler implements DataExchangeHandler
 {
-    enum Props {
+    public enum Props {
         assayId,                // the assay id from the run properties field
         runComments,            // run properties comments
         containerPath,
@@ -87,25 +87,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             writeRunProperties(context, scriptDir, pw);
 
             // add the run data entries
-            for (ExpData expData : run.getDataOutputs())
-            {
-                ExperimentDataHandler handler = expData.findDataHandler();
-                if (handler instanceof ValidationDataHandler)
-                {
-                    Domain runDataDomain = context.getProvider().getRunDataDomain(context.getProtocol());
-                    List<Map<String, Object>> data = ((ValidationDataHandler)handler).loadFileData(runDataDomain, expData.getDataFile());
-                    File runData = new File(scriptDir, RUN_DATA_FILE);
-                    writeRunData(data, runData);
-
-                    pw.append(Props.runDataFile.name());
-                    pw.append('\t');
-                    pw.println(runData.getAbsolutePath());
-                }
-                // the original path as well
-                pw.append(Props.runDataUploadedFile.name());
-                pw.append('\t');
-                pw.println(expData.getDataFile().getAbsolutePath());
-            }
+            writeRunData(context, run, scriptDir, pw);
 
             // any additional sample property sets
             for (Map.Entry<String, List<Map<String, Object>>> set : _sampleProperties.entrySet())
@@ -129,6 +111,29 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         finally
         {
             pw.close();
+        }
+    }
+
+    protected void writeRunData(AssayRunUploadContext context, ExpRun run, File scriptDir, PrintWriter pw) throws Exception
+    {
+        for (ExpData expData : run.getDataOutputs())
+        {
+            ExperimentDataHandler handler = expData.findDataHandler();
+            if (handler instanceof ValidationDataHandler)
+            {
+                Domain runDataDomain = context.getProvider().getRunDataDomain(context.getProtocol());
+                List<Map<String, Object>> data = ((ValidationDataHandler)handler).loadFileData(runDataDomain, expData.getDataFile());
+                File runData = new File(scriptDir, RUN_DATA_FILE);
+                writeRunData(data, runData);
+
+                pw.append(Props.runDataFile.name());
+                pw.append('\t');
+                pw.println(runData.getAbsolutePath());
+            }
+            // the original path as well
+            pw.append(Props.runDataUploadedFile.name());
+            pw.append('\t');
+            pw.println(expData.getDataFile().getAbsolutePath());
         }
     }
 
