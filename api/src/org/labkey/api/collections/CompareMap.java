@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package org.labkey.api.data.collections;
+package org.labkey.api.collections;
 
 import java.util.Map;
 import java.util.Comparator;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Matthew
  * Date: Mar 20, 2006
  * Time: 11:26:38 AM

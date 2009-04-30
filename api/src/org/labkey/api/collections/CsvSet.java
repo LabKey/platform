@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.util;
+package org.labkey.api.collections;
 
 import java.util.HashSet;
 import java.util.StringTokenizer;

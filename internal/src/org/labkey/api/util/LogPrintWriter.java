@@ -24,11 +24,9 @@ import java.io.Writer;
 import java.io.IOException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Matthew
  * Date: Feb 9, 2006
  * Time: 4:16:04 PM
- * To change this template use File | Settings | File Templates.
  */
 public class LogPrintWriter extends PrintWriter
 {

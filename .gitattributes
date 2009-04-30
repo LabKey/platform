@@ -101,6 +101,7 @@ api/src/org/labkey/api/collections/CaseInsensitiveArrayListMap.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveHashMap.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveHashSet.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveMapWrapper.java -text
+api/src/org/labkey/api/collections/CompareMap.java -text
 api/src/org/labkey/api/collections/Join.java -text
 api/src/org/labkey/api/collections/LimitedCacheMap.java -text
 api/src/org/labkey/api/collections/NullPreventingSet.java -text
@@ -718,6 +719,12 @@ api/src/org/labkey/api/study/query/ResultsQueryView.java -text
 api/src/org/labkey/api/study/query/RunDataLinkDisplayColumn.java -text
 api/src/org/labkey/api/study/query/RunListQueryView.java -text
 api/src/org/labkey/api/study/query/ValidParticipantVisitDisplayColumn.java -text
+api/src/org/labkey/api/unused/ApplicationContext.java -text
+api/src/org/labkey/api/unused/BasicStatistics.java -text
+api/src/org/labkey/api/unused/PropertyBag.java -text
+api/src/org/labkey/api/unused/Scan.java -text
+api/src/org/labkey/api/unused/TextProvider.java -text
+api/src/org/labkey/api/unused/Tree2D.java -text
 api/src/org/labkey/api/util/BreakpointThread.java -text
 api/src/org/labkey/api/util/CPUTimer.java -text
 api/src/org/labkey/api/util/CloseableIterator.java -text
@@ -835,12 +842,6 @@ api/src/org/labkey/api/wiki/FormattedHtml.java -text
 api/src/org/labkey/api/wiki/MacroProvider.java -text
 api/src/org/labkey/api/wiki/WikiRendererType.java -text
 api/src/org/labkey/api/wiki/WikiService.java -text
-api/src/org/labkey/unused/ApplicationContext.java -text
-api/src/org/labkey/unused/BasicStatistics.java -text
-api/src/org/labkey/unused/PropertyBag.java -text
-api/src/org/labkey/unused/Scan.java -text
-api/src/org/labkey/unused/TextProvider.java -text
-api/src/org/labkey/unused/Tree2D.java -text
 api/src/org/systemsbiology/jrap/DataProcessingInfo.java -text
 api/src/org/systemsbiology/jrap/MSInstrumentInfo.java -text
 api/src/org/systemsbiology/jrap/MSOperator.java -text
@@ -1734,7 +1735,6 @@ internal/src/org/labkey/api/data/TempTableLoader.java -text
 internal/src/org/labkey/api/data/TextAreaInputColumn.java -text
 internal/src/org/labkey/api/data/XMLWriter.java -text
 internal/src/org/labkey/api/data/XMLWriterTest.java -text
-internal/src/org/labkey/api/data/collections/CompareMap.java -text
 internal/src/org/labkey/api/exp/AbstractFileXarSource.java -text
 internal/src/org/labkey/api/exp/CompressedXarSource.java -text
 internal/src/org/labkey/api/exp/FileXarSource.java -text

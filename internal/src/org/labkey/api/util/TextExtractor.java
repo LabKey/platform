@@ -26,6 +26,8 @@ import java.io.IOException;
  * Date: Nov 29, 2008
  * Time: 12:02:50 PM
  */
+
+// Extracts just the readable text from html source
 public class TextExtractor extends HTMLEditorKit.ParserCallback
 {
     private StringBuffer _text;

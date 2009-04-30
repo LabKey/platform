@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.unused;
+package org.labkey.api.unused;
 
 import org.apache.log4j.Logger;
-import org.labkey.unused.PropertyBag;
+import org.labkey.api.unused.PropertyBag;
 
 import javax.swing.*;
 import java.beans.PropertyChangeListener;
