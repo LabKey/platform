@@ -422,7 +422,7 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
     }
 
     private static final Pattern GO_PATTERN = Pattern.compile("^\\s*GO\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
-    private static final Pattern JAVA_CODE_PATTERN = Pattern.compile("^\\s*EXEC(?:UTE)*\\s+core\\.executeJavaUpgradeCode\\s*'(.+)'\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+    private static final Pattern JAVA_CODE_PATTERN = Pattern.compile("^\\s*EXEC(?:UTE)*\\s+core\\.executeJavaUpgradeCode\\s*'(.+)'\\s*;?\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext) throws SQLException
     {
@@ -656,6 +656,10 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
                 "execute core.executeJavaUpgradeCode'upgradeCode'\n" +                     // execute
                 "    EXEC     core.executeJavaUpgradeCode    'upgradeCode'         \n" +   // Lots of whitespace
                 "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode'\n" +                       // Case insensitive
+                "execute core.executeJavaUpgradeCode'upgradeCode';\n" +                    // execute (with ;)
+                "    EXEC     core.executeJavaUpgradeCode    'upgradeCode'    ;     \n" +  // Lots of whitespace with ; in the middle
+                "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode';     \n" +                 // Case insensitive (with ;)
+                "EXEC core.executeJavaUpgradeCode 'upgradeCode'     ;\n" +                 // Lots of whitespace with ; at end
                 "EXEC core.executeJavaUpgradeCode 'upgradeCode'";                          // No line ending
 
             String badSql =
@@ -667,14 +671,14 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
                 "EXEC core. executeJavaUpgradeCode 'upgradeCode'\n" +             // Bad syntax: core. execute...
                 "EXECUT core.executeJavaUpgradeCode 'upgradeCode'\n" +            // Misspell EXECUTE
                 "EXEC core.executeJaavUpgradeCode 'upgradeCode'\n" +              // Misspell executeJavaUpgradeCode
-                "EXEC core.executeJavaUpgradeCode 'upgradeCode';\n" +             // Bad syntax: semicolon
+                "EXEC core.executeJavaUpgradeCode 'upgradeCode';;\n" +            // Bad syntax: two semicolons
                 "EXEC core.executeJavaUpgradeCode('upgradeCode')\n";              // Bad syntax: Parentheses
 
             try
             {
                 TestUpgradeCode good = new TestUpgradeCode();
                 runSql(null, goodSql, good, null);
-                assertEquals(6, good.getCounter());
+                assertEquals(10, good.getCounter());
 
                 TestUpgradeCode bad = new TestUpgradeCode();
                 runSql(null, badSql, bad, null);
