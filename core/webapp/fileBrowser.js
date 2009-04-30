@@ -9,7 +9,7 @@ var $ = Ext.get;
 var $h = Ext.util.Format.htmlEncode;
 var $dom = Ext.DomHelper
 
-$dom.append(document.getElementsByTagName("head")[0],"<style>.refreshIcon {background-image: url(" + LABKEY.contextPath + "/_images/reload.png)}</style>");
+//$dom.append(document.getElementsByTagName("head")[0],"<style>.refreshIcon {background-image: url(" + LABKEY.contextPath + "/_images/reload.png)}</style>");
 
 /*
 	parseUri 1.2.1
