@@ -20,7 +20,7 @@ function parseUri(str)
 {
     var	o   = parseUri.options;
     var m   = o.parser[o.strictMode ? "strict" : "loose"].exec(str);
-    var uri = {};
+    var uri = this || {};
     var i   = 14;
 
     while (i--)
@@ -65,6 +65,19 @@ parseUri.options =
 	}
 };
 /* end parseUri */
+
+var URI = function(u)
+{
+    if (typeof u == "string")
+        this.parse(u);
+    else if (typeof u == "object")
+        Ext.apply(this,u);
+};
+Ext.apply(URI.prototype,
+{
+    parse: parseUri
+});
+
 
 var TREESELECTION_EVENTS =
 {
@@ -563,9 +576,10 @@ LABKEY.WebdavFileSystem = function(config)
 
     var getURI = function(v,rec)
     {
-        if (!rec.uriOBJECT)
-            rec.uriOBJECT = parseUri(v);
-        return rec.uriOBJECT;
+        var uri = rec.uriOBJECT || new URI(v);
+        if (!Ext.isIE && !rec.uriOBJECT)
+            try {rec.uriOBJECT = uri;} catch (e) {};
+        return uri;
     };
 
     this.HistoryRecord = Ext.data.Record.create(['user', 'date', 'message', 'href']);
@@ -1729,7 +1743,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
                 layout: 'accordion',
                 items: panels
             });
-        }
+        }      
 
         var renderTo = config.renderTo || null;
         Ext.apply(config, {layout:'border', tbar:tbarConfig, items: layoutItems, renderTo:null}, {id:'fileBrowser', height:600, width:800});
