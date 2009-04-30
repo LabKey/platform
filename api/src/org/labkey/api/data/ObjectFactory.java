@@ -17,7 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
-import org.labkey.common.util.BoundMap;
+import org.labkey.api.collections.BoundMap;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

@@ -16,7 +16,7 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.util.NamedObjectList;
+import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.query.FieldKey;

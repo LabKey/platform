@@ -17,8 +17,6 @@
 package org.labkey.api.reports.report.view;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.BooleanUtils;
-import org.labkey.api.action.FormArrayList;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.Report;
@@ -26,7 +24,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.actions.ReportForm;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -26,7 +26,7 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.data.*;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.AppBar;
-import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 

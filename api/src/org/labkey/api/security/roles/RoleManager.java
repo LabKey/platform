@@ -15,13 +15,8 @@
  */
 package org.labkey.api.security.roles;
 
-import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.util.CaseInsensitiveHashMap;
 import org.apache.log4j.Logger;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 

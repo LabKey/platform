@@ -24,12 +24,12 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UsageReportingLevel;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
 import org.labkey.api.view.menu.MenuService;
 import org.labkey.api.view.menu.MenuView;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;

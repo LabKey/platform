@@ -27,9 +27,9 @@ import org.labkey.api.security.*;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 

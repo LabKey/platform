@@ -31,7 +31,7 @@ import org.labkey.api.reports.report.ReportIdentifierConverter;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.security.roles.RoleConverter;
 import org.labkey.api.security.roles.Role;
-import org.labkey.common.tools.AbstractConvertHelper;
+import org.labkey.api.data.AbstractConvertHelper;
 import org.springframework.beans.PropertyEditorRegistrar;
 import org.springframework.beans.PropertyEditorRegistry;
 

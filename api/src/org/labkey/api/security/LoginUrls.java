@@ -19,7 +19,7 @@ import org.labkey.api.action.UrlProvider;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import javax.servlet.http.HttpServletRequest;
 

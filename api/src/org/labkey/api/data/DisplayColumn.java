@@ -19,7 +19,7 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.NullPreventingSet;
+import org.labkey.api.collections.NullPreventingSet;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.PopupMenu;

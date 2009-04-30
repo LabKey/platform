@@ -26,6 +26,8 @@ import org.labkey.api.data.CachedRowSetImpl;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.PermissionsMap;
 import org.labkey.api.security.User;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.ArrayListMap;
 
 import java.beans.Introspector;
 import java.io.*;
@@ -208,8 +210,7 @@ public class ResultSetUtil
     {
         _RowMap(_RowMap m)
         {
-            _findMap = m._findMap;
-            _row = new ArrayList<Object>(m._row.size());
+            super(m._findMap, new ArrayList<Object>(m._row.size()));
         }
 
         _RowMap(ResultSet rs) throws SQLException

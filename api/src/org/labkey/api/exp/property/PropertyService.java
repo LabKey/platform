@@ -20,8 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
-import org.labkey.api.security.User;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 import org.jetbrains.annotations.Nullable;
 

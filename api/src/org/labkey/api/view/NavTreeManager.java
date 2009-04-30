@@ -18,7 +18,7 @@ package org.labkey.api.view;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.security.User;
-import org.labkey.api.util.Cache;
+import org.labkey.api.collections.Cache;
 
 import javax.servlet.http.HttpSession;
 import java.util.*;

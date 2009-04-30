@@ -18,7 +18,7 @@ package org.labkey.api.query;
 
 import org.labkey.api.data.StringWrapperDynaClass;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.apache.commons.beanutils.DynaBean;
 
 import java.util.Map;

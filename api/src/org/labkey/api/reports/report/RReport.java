@@ -16,43 +16,23 @@
 
 package org.labkey.api.reports.report;
 
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
-import org.labkey.api.admin.AdminUrls;
-import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.data.*;
-import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.r.ParamReplacement;
-import org.labkey.api.reports.report.r.ParamReplacementSvc;
-import org.labkey.api.reports.report.r.view.*;
-import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunRReportView;
-import org.labkey.api.reports.report.view.RunReportView;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import java.io.*;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class RReport extends ExternalScriptEngineReport implements AttachmentParent
 {

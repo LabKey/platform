@@ -18,8 +18,8 @@ package org.labkey.api.module;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import org.labkey.common.util.Pair;
-import org.labkey.api.util.CaseInsensitiveHashSet;
+import org.labkey.api.util.Pair;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 
 import java.util.*;
 import java.io.File;

@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.util.*;
+import org.labkey.api.collections.Cache;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;

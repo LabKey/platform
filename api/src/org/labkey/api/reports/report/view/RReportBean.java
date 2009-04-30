@@ -20,7 +20,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import java.util.List;
 import java.util.Collections;

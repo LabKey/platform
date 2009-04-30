@@ -24,7 +24,7 @@ import org.apache.struts.action.ActionMessage;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;

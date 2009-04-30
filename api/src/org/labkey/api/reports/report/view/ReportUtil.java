@@ -35,7 +35,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import javax.imageio.ImageIO;
 import java.awt.*;

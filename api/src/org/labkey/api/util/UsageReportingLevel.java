@@ -22,7 +22,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import java.net.MalformedURLException;
 import java.util.*;

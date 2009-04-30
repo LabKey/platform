@@ -25,10 +25,10 @@ import org.labkey.api.gwt.client.ui.domain.InferencedColumn;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reader.ExcelLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.common.tools.ColumnDescriptor;
-import org.labkey.common.tools.DataLoader;
-import org.labkey.common.tools.ExcelLoader;
-import org.labkey.common.tools.TabLoader;
 
 import javax.servlet.http.HttpSession;
 import java.io.File;

@@ -19,17 +19,15 @@ package org.labkey.api.webdav;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Category;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentDirectory;
-import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.*;
+import org.labkey.api.collections.TTLCacheMap;
 
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;

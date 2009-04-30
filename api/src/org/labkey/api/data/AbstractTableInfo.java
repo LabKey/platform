@@ -17,11 +17,11 @@
 package org.labkey.api.data;
 
 import org.apache.beehive.netui.pageflow.Forward;
-import org.labkey.api.data.collections.CaseInsensitiveMap;
+import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.NamedObjectList;
+import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
@@ -79,7 +79,7 @@ abstract public class AbstractTableInfo implements TableInfo
         {
             return new LinkedHashMap<String, ColumnInfo>();
         }
-        return new CaseInsensitiveMap<ColumnInfo>(new LinkedHashMap<String, ColumnInfo>());
+        return new CaseInsensitiveMapWrapper<ColumnInfo>(new LinkedHashMap<String, ColumnInfo>());
     }
 
     protected boolean isCaseSensitive()

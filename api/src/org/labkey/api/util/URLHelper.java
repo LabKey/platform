@@ -19,7 +19,7 @@
     import org.apache.commons.collections15.multimap.MultiHashMap;
     import org.apache.commons.beanutils.ConversionException;
     import org.apache.log4j.Logger;
-    import org.labkey.common.util.Pair;
+    import org.labkey.api.util.Pair;
     import org.springframework.beans.MutablePropertyValues;
     import org.springframework.beans.PropertyValue;
     import org.springframework.beans.PropertyValues;

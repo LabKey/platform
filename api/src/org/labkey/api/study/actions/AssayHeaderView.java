@@ -31,7 +31,7 @@ import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import java.util.LinkedHashMap;
 import java.util.List;

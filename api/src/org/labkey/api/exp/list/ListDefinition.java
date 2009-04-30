@@ -23,7 +23,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.common.tools.DataLoader;
+import org.labkey.api.reader.DataLoader;
 
 import java.io.IOException;
 import java.sql.SQLException;

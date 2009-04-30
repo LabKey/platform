@@ -24,10 +24,8 @@ import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
-import org.labkey.common.util.Pair;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
 
 /**

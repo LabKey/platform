@@ -16,7 +16,7 @@
 
 package org.labkey.api.study;
 
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 /**
  * User: brittp

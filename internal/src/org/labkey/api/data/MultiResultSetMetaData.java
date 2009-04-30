@@ -16,7 +16,7 @@
 
 package org.labkey.api.data;
 
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;

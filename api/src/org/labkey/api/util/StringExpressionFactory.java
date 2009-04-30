@@ -15,7 +15,9 @@
  */
 package org.labkey.api.util;
 
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
+import org.labkey.api.collections.CacheMap;
+import org.labkey.api.collections.LimitedCacheMap;
 
 import java.util.Map;
 import java.util.List;

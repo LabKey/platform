@@ -45,7 +45,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.gwt.client.DefaultValueType;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;

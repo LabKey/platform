@@ -25,7 +25,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.settings.PreferenceService;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.common.util.BoundMap;
+import org.labkey.api.collections.BoundMap;
 import org.springframework.context.MessageSource;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.NoSuchMessageException;

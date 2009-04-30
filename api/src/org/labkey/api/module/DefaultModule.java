@@ -29,12 +29,12 @@ import org.labkey.api.reports.report.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.Cache;
-import org.labkey.api.util.CaseInsensitiveHashSet;
+import org.labkey.api.collections.Cache;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
-import org.labkey.common.util.Pair;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletContext;

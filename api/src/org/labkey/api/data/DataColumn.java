@@ -18,8 +18,8 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.util.NamedObject;
-import org.labkey.api.util.NamedObjectList;
+import org.labkey.api.collections.NamedObject;
+import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.exp.OntologyManager;

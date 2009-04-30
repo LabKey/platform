@@ -21,9 +21,9 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
-import org.labkey.common.util.BoundMap;
-import org.labkey.common.util.Pair;
+import org.labkey.api.collections.BoundMap;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;

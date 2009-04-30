@@ -37,7 +37,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.query.ValidationException;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import java.sql.SQLException;
 import java.util.*;

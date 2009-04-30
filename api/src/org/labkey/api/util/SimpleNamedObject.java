@@ -15,9 +15,9 @@
  */
 package org.labkey.api.util;
 
-import org.labkey.common.util.Pair;
+import org.labkey.api.collections.NamedObject;
 
-public class SimpleNamedObject extends Pair implements NamedObject
+public class SimpleNamedObject extends Pair<String, Object> implements NamedObject
 {
     public SimpleNamedObject(String name, Object object)
     {
@@ -26,7 +26,7 @@ public class SimpleNamedObject extends Pair implements NamedObject
 
     public String getName()
     {
-        return (String) getKey();
+        return getKey();
     }
 
     public Object getObject()

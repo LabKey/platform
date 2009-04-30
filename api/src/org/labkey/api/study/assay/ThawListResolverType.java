@@ -32,7 +32,7 @@ import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.GWTView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
-import org.labkey.common.tools.TabLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.common.tools.ColumnDescriptor;
 
 import java.io.ByteArrayInputStream;

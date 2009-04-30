@@ -16,11 +16,10 @@
 
 package org.labkey.api.reports.report;
 
-import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.labkey.api.view.ViewContext;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import java.util.Arrays;
 import java.util.List;

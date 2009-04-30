@@ -19,7 +19,7 @@ package org.labkey.api.query;
 import org.labkey.api.data.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 
 import java.util.Collections;
 

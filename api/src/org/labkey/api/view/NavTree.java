@@ -15,7 +15,7 @@
  */
 package org.labkey.api.view;
 
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.HString;

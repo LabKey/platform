@@ -18,24 +18,13 @@ package org.labkey.api.module;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.NavTrailAction;
 import org.labkey.api.view.*;
-import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.util.DOMUtil;
-import org.labkey.api.util.Cache;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.Errors;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.DocumentBuilder;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 
 /*

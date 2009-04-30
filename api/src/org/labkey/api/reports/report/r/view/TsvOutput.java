@@ -23,7 +23,7 @@ import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.common.tools.TabLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.common.tools.ColumnDescriptor;
 
 import java.io.File;

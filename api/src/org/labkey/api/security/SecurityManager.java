@@ -23,7 +23,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Filter;
@@ -36,8 +35,8 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.security.roles.Role;
-import org.labkey.common.util.Pair;
+import org.labkey.api.collections.Cache;
+import org.labkey.api.util.Pair;
 
 import javax.mail.Address;
 import javax.mail.Message;
@@ -55,7 +54,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 /**
@@ -1102,7 +1100,7 @@ public class SecurityManager
 
     public static Group getGroup(int groupId)
     {
-        Group group = (Group)Cache.getShared().get(GROUP_CACHE_PREFIX + groupId);
+        Group group = (Group) Cache.getShared().get(GROUP_CACHE_PREFIX + groupId);
 
         if (null == group)
         {

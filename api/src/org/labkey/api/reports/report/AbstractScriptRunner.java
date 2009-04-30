@@ -24,7 +24,7 @@ import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import java.io.File;
 import java.sql.ResultSet;

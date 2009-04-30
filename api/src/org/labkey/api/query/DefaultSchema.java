@@ -18,7 +18,7 @@ package org.labkey.api.query;
 
 import org.labkey.api.security.User;
 import org.labkey.api.data.*;
-import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 
 import java.util.*;
 

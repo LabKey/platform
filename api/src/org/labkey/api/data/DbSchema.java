@@ -24,11 +24,11 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.ms2.MS2Service;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 

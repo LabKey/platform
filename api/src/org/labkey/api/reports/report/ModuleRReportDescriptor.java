@@ -19,7 +19,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.module.Module;
 import org.labkey.api.view.ViewContext;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import java.io.File;
 import java.io.FileReader;

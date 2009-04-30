@@ -21,7 +21,7 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.UnexpectedException;
 
 import java.beans.PropertyDescriptor;

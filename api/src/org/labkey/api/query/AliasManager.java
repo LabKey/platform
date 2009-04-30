@@ -20,7 +20,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SqlDialect;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 
 import java.util.Collection;
 import java.util.Map;

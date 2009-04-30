@@ -21,8 +21,7 @@ import org.apache.log4j.Priority;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import java.io.InputStream;
 import java.io.Reader;

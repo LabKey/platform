@@ -22,8 +22,8 @@ import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.util.CaseInsensitiveHashMap;
-import org.labkey.api.util.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.query.AliasManager;
 

@@ -32,6 +32,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.Cache;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;

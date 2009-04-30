@@ -20,7 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import java.util.List;
 

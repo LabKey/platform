@@ -15,15 +15,11 @@
  */
 package org.labkey.common.tools;
 
-import org.apache.log4j.Logger;
-
-import java.io.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 
-import org.labkey.common.tools.ApplicationContext;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 /**
  * A class with generic methods for basic stats.  Add methods as needed.

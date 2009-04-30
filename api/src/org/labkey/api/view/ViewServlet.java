@@ -27,7 +27,7 @@ import org.labkey.api.module.SpringModule;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.servlet.mvc.Controller;

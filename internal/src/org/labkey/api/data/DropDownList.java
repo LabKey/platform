@@ -16,7 +16,7 @@
 
 package org.labkey.api.data;
 
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.DisplayElement;
 
 import java.io.IOException;

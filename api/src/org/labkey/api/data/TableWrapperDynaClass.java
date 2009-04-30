@@ -17,7 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.DynaBean;
-import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 
 import java.util.Collections;
 import java.util.HashMap;

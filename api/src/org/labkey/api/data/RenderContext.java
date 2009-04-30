@@ -21,10 +21,10 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.NullPreventingSet;
+import org.labkey.api.collections.NullPreventingSet;
+import org.labkey.api.collections.BoundMap;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.common.util.BoundMap;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.BindException;
 

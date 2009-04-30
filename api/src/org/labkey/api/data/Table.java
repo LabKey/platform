@@ -23,12 +23,15 @@ import static org.apache.commons.lang.StringUtils.stripEnd;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
 import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.data.collections.Join;
+import org.labkey.api.collections.Join;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.*;
-import org.labkey.common.util.BoundMap;
-import org.labkey.common.util.Pair;
+import org.labkey.api.collections.BoundMap;
+import org.labkey.api.util.Pair;
 import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletResponse;

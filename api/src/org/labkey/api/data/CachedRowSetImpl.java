@@ -21,7 +21,7 @@ import org.apache.commons.collections.IteratorUtils;
 import org.apache.commons.collections.Predicate;
 import org.apache.log4j.Logger;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.ArrayListMap;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ResultSetUtil;
@@ -40,7 +40,6 @@ import java.util.*;
 
 
 /**
- * Created by IntelliJ IDEA.
  * User: mbellew
  * Date: Nov 29, 2005
  * Time: 12:52:06 PM

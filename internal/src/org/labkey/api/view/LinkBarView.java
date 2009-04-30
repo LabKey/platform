@@ -16,7 +16,7 @@
 
 package org.labkey.api.view;
 
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import java.io.PrintWriter;
 

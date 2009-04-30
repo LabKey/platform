@@ -19,13 +19,12 @@ package org.labkey.api.query;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.Aggregate;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
-import org.labkey.common.util.BoundMap;
+import org.labkey.api.collections.BoundMap;
 import org.springframework.beans.PropertyValues;
 
 import javax.servlet.ServletException;

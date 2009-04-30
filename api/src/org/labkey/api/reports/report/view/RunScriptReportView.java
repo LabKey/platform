@@ -23,9 +23,8 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
-import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.view.*;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 

@@ -19,7 +19,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.services.ServiceRegistry;

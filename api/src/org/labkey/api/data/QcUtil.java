@@ -15,10 +15,10 @@
  */
 package org.labkey.api.data;
 
-import org.labkey.api.util.Cache;
-import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.collections.Cache;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import java.sql.SQLException;
 import java.util.*;

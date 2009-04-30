@@ -22,7 +22,7 @@ import jxl.write.WritableSheet;
 import jxl.write.WriteException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
-import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Stats;
 import org.labkey.common.tools.DoubleArray;

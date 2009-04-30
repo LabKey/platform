@@ -19,7 +19,7 @@ package org.labkey.api.data;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.log4j.Logger;
-import org.labkey.api.util.TTLCacheMap;
+import org.labkey.api.collections.TTLCacheMap;
 
 import java.sql.Connection;
 import java.sql.SQLException;

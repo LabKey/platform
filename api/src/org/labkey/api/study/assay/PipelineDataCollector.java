@@ -19,8 +19,8 @@ package org.labkey.api.study.assay;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.data.Container;
-import org.labkey.common.util.Pair;
 
 import javax.servlet.http.HttpSession;
 import java.io.File;

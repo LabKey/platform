@@ -17,7 +17,7 @@ package org.labkey.api.module;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 

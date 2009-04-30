@@ -18,7 +18,7 @@ package org.labkey.api.data;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
-import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.OntologyType;
 import org.labkey.data.xml.TableType;

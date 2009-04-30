@@ -16,22 +16,11 @@
 package org.labkey.api.module;
 
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.util.DOMUtil;
-import org.labkey.api.util.Cache;
-import org.apache.log4j.Logger;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.io.IOUtils;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
+import org.labkey.api.collections.Cache;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.DocumentBuilder;
 import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 
 /*
 * User: Dave

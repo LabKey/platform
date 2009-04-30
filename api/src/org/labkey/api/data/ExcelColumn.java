@@ -26,7 +26,7 @@ import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Logger;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DateUtil;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import java.io.IOException;
 import java.io.Writer;

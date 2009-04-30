@@ -28,11 +28,11 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.common.util.CPUTimer;
+import org.labkey.api.util.CPUTimer;
 
 import java.io.File;
 import java.sql.ResultSet;
