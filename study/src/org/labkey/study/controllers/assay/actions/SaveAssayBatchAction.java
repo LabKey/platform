@@ -15,34 +15,35 @@
  */
 package org.labkey.study.controllers.assay.actions;
 
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.ACL;
-import org.labkey.api.action.SimpleApiJsonForm;
+import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.log4j.Logger;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiVersion;
-import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AbstractAssayProvider;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.query.ValidationException;
-import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.study.assay.ModuleRunUploadContext;
 import org.labkey.study.assay.TsvDataHandler;
 import org.springframework.validation.BindException;
-import org.json.JSONObject;
-import org.json.JSONException;
-import org.json.JSONArray;
-import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.log4j.Logger;
 
-import java.util.*;
 import java.sql.SQLException;
+import java.util.*;
 
 /**
  * User: jeckels
@@ -153,13 +154,13 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
                 materialInputs = runJsonObject.getJSONArray(ExperimentJSONConverter.MATERIAL_INPUTS);
             }
 
-            rewriteProtocolApplications(protocol, provider, run, dataInputs, dataRows, materialInputs);
+            rewriteProtocolApplications(protocol, provider, run, dataInputs, dataRows, materialInputs, runJsonObject);
         }
 
         return run;
     }
 
-    private void rewriteProtocolApplications(ExpProtocol protocol, AssayProvider provider, ExpRun run, JSONArray inputDataArray, JSONArray dataArray, JSONArray inputMaterialArray) throws ExperimentException, ValidationException
+    private void rewriteProtocolApplications(ExpProtocol protocol, AssayProvider provider, ExpRun run, JSONArray inputDataArray, JSONArray dataArray, JSONArray inputMaterialArray, JSONObject runJsonObject) throws ExperimentException, ValidationException
     {
         ViewContext context = getViewContext();
 
@@ -201,6 +202,9 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             Collections.singletonMap(newData, "Data"),
             new ViewBackgroundInfo(context.getContainer(),
                     context.getUser(), context.getActionURL()), LOG, false);
+
+        // programmatic qc validation
+        provider.validate(new ModuleRunUploadContext(getViewContext(), protocol.getRowId(), runJsonObject, rawData), run);
 
         TsvDataHandler dataHandler = new TsvDataHandler();
         dataHandler.importRows(newData, getViewContext().getUser(), run, protocol, provider, rawData);
@@ -310,17 +314,9 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
     private void saveProperties(ExpObject object, DomainProperty[] dps, JSONObject propertiesJsonObject) throws ValidationException, JSONException
     {
-        for (DomainProperty dp : dps)
+        for (Map.Entry<DomainProperty, Object> entry : ExperimentJSONConverter.convertProperties(propertiesJsonObject, dps).entrySet())
         {
-            if (propertiesJsonObject.has(dp.getName()))
-            {
-                Class javaType = dp.getPropertyDescriptor().getPropertyType().getJavaType();
-                object.setProperty(getViewContext().getUser(), dp.getPropertyDescriptor(), ConvertUtils.lookup(javaType).convert(javaType, propertiesJsonObject.get(dp.getName())));
-            }
-            else
-            {
-                object.setProperty(getViewContext().getUser(), dp.getPropertyDescriptor(), null);
-            }
+            object.setProperty(getViewContext().getUser(), entry.getKey().getPropertyDescriptor(), entry.getValue());
         }
     }
 }
