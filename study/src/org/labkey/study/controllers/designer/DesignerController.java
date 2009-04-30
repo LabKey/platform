@@ -37,7 +37,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.common.tools.ColumnDescriptor;
+import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.study.designer.*;
 import org.labkey.study.designer.client.model.GWTCohort;
 import org.labkey.study.designer.client.model.GWTStudyDefinition;

@@ -25,7 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.CPUTimer;
-import org.labkey.common.tools.ColumnDescriptor;
+import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.QCState;

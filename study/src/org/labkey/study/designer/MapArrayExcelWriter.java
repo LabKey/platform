@@ -18,7 +18,7 @@ package org.labkey.study.designer;
 
 import org.labkey.api.data.*;
 import org.labkey.api.view.HttpView;
-import org.labkey.common.tools.ColumnDescriptor;
+import org.labkey.api.reader.ColumnDescriptor;
 import jxl.write.WritableSheet;
 import jxl.write.WriteException;
 

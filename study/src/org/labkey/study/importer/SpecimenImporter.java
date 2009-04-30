@@ -26,7 +26,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.util.GUID;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.common.tools.ColumnDescriptor;
+import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.CloseableIterator;

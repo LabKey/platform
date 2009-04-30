@@ -23,7 +23,7 @@ import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.common.tools.ColumnDescriptor;
+import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.experiment.list.ListItemImpl;
 
 import java.sql.SQLException;

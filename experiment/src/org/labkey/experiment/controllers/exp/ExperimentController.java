@@ -47,7 +47,7 @@ import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.common.tools.ColumnDescriptor;
+import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.experiment.*;
 import org.labkey.experiment.api.*;
 import org.labkey.experiment.controllers.property.PropertyController;

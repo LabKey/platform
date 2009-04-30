@@ -21,7 +21,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.common.tools.ColumnDescriptor;
+import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.data.*;

@@ -26,7 +26,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.study.assay.AbstractAssayTsvDataHandler;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.common.tools.ColumnDescriptor;
+import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.reader.TabLoader;
