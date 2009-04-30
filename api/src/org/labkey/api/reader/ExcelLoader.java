@@ -30,8 +30,6 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.QcFieldWrapper;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CloseableIterator;
-import org.labkey.api.reader.DataLoader;
-import org.labkey.common.tools.ColumnDescriptor;
 
 import java.io.File;
 import java.io.IOException;

@@ -17,12 +17,15 @@
 package org.labkey.api.reader;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.data.BeanObjectFactory;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import java.io.InputStream;
 import java.util.regex.Pattern;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * User: arauch
@@ -146,9 +149,28 @@ public class SimpleXMLStreamReader extends XMLStreamReaderWrapper
     }
 
 
-    public void skipBlank()
-            throws XMLStreamException
+    public void skipBlank() throws XMLStreamException
     {
         getAllText(_blankPattern);
+    }
+
+
+    // Creates & populates bean of the given class from XML attributes.
+    // Create and register a BeanObjectFactory for this class first, unless the default factory will do.
+    // In particular, you may need to override convertToPropertyName to convert attribute names.
+    public <K> K beanFromAttributes(Class<K> clazz)
+    {
+        Map<String, Object> m = new HashMap<String, Object>();
+        int attributeCount = getAttributeCount();
+        BeanObjectFactory<K> bof = (BeanObjectFactory<K>) BeanObjectFactory.Registry.getFactory(clazz);
+
+        for (int i = 0; i < attributeCount; i++)
+        {
+            String name = bof.convertToPropertyName(getAttributeLocalName(i));
+            String value = getAttributeValue(i);
+            m.put(name, value);
+        }
+
+        return bof.fromMap(m);
     }
 }

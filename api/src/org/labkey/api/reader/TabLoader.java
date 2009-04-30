@@ -23,14 +23,14 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.collections.CaseInsensitiveArrayListMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.QcUtil;
 import org.labkey.api.exp.QcFieldWrapper;
 import org.labkey.api.util.CloseableIterator;
 import org.labkey.api.util.Filter;
 import org.labkey.api.util.FilterIterator;
-import org.labkey.api.reader.DataLoader;
-import org.labkey.common.tools.ColumnDescriptor;
 
 import java.io.*;
 import java.util.*;
@@ -63,7 +63,6 @@ public class TabLoader extends DataLoader
     private Reader _reader;
 
     /* this is a little hokey - it makes some later code work without mods */
-    private Map<String, Integer> _colMap = new HashMap<String, Integer>();
     private Map<String, String> _comments = new HashMap<String, String>();
     private boolean _lowerCaseHeaders;
 
@@ -322,16 +321,6 @@ public class TabLoader extends DataLoader
         return result;
     }
 
-    private void initColNameMap() throws IOException
-    {
-        ColumnDescriptor[] columns = getColumns();
-        for (int i = 0; i < columns.length; i++)
-        {
-            String colName = _lowerCaseHeaders ? columns[i].name.toLowerCase() : columns[i].name;
-            _colMap.put(colName, i);
-        }
-    }
-
     public void parseAsCSV()
     {
         setDelimiterCharacter(',');
@@ -409,11 +398,12 @@ public class TabLoader extends DataLoader
         }
     }
 
-    protected class _RowMap implements Map<String, Object>
+    /*
+    protected class _RowMapOLD implements Map<String, Object>
     {
         protected Object[] _values;
 
-        _RowMap(Object[] values)
+        _RowMapOLD(Object[] values)
         {
             _values = values;
         }
@@ -547,10 +537,34 @@ public class TabLoader extends DataLoader
             }
         }
     }
+*/
+
+    protected static class _RowMap<V> extends CaseInsensitiveArrayListMap<V>
+    {
+        protected V[] _values;
+
+        _RowMap(Map<String, Integer> findMap, V[] values)
+        {
+            super(findMap, Arrays.asList(values));
+            _values = values;
+        }
+
+        public Object[] getArray()
+        {
+            return _values;
+        }
+
+        public boolean isEmpty()
+        {
+            return false;
+        }
+    }
 
 
     public class TabLoaderIterator implements CloseableIterator<Map<String, Object>>
     {
+        private Map<String, Integer> _colMap = new CaseInsensitiveHashMap<Integer>();
+
         public void close()
         {
             try
@@ -571,7 +585,13 @@ public class TabLoader extends DataLoader
 
         protected TabLoaderIterator() throws IOException
         {
-            initColNameMap();
+            ColumnDescriptor[] columns = getColumns();
+
+            for (int i = 0; i < columns.length; i++)
+            {
+                String colName = _lowerCaseHeaders ? columns[i].name.toLowerCase() : columns[i].name;
+                _colMap.put(colName, i);
+            }
 
             // find a converter for each column type
             for (ColumnDescriptor column : _columns)
@@ -753,7 +773,7 @@ public class TabLoader extends DataLoader
                     }
                 }
 
-                return new _RowMap(values);
+                return new _RowMap(_colMap, values);
             }
             catch (Exception e)
             {

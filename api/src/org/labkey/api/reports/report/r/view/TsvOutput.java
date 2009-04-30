@@ -24,7 +24,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.common.tools.ColumnDescriptor;
+import org.labkey.api.reader.ColumnDescriptor;
 
 import java.io.File;
 import java.io.PrintWriter;

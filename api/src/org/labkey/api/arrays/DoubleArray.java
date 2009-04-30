@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.common.tools;
+package org.labkey.api.arrays;
 
 import java.util.ArrayList;
 
@@ -23,63 +23,63 @@ import java.util.ArrayList;
  * Date: May 24, 2004
  * Time: 9:09:24 PM
  */
-// alternative to ArrayList<Integer>
-public class IntegerArray
-    {
+// alternative to ArrayList<Double>
+public class DoubleArray
+{
     private static final int ARRAY_LEN = 1024;
     ArrayList list = new ArrayList();
-    int[] arrayLast;
+    double[] arrayLast;
     int lenLast = 0;
     int size = 0;
 
 
-    public IntegerArray()
-        {
-        list = new ArrayList();
-        arrayLast = new int[ARRAY_LEN];
+    public DoubleArray()
+    {
+        list = new ArrayList<Double>();
+        arrayLast = new double[ARRAY_LEN];
         list.add(arrayLast);
-        }
+    }
 
 
-    public void add(int i)
-        {
+    public void add(double d)
+    {
         if (arrayLast.length <= lenLast)
-            {
-            arrayLast = new int[ARRAY_LEN];
+        {
+            arrayLast = new double[ARRAY_LEN];
             list.add(arrayLast);
             lenLast = 0;
-            }
-        arrayLast[lenLast++] = i;
+        }
+        arrayLast[lenLast++] = d;
         size++;
-        }
+    }
 
 
-    public int get(int i)
-        {
-        return ((int[]) list.get(i / ARRAY_LEN))[i % ARRAY_LEN];
-        }
+    public double get(int i)
+    {
+        return ((double[]) list.get(i / ARRAY_LEN))[i % ARRAY_LEN];
+    }
 
 
     public int size()
-        {
+    {
         return size;
-        }
-
-
-	public int[] toArray(int[] dst)
-		{
-    	if (null == dst || dst.length < size)
-			dst = new int[size];
-		int end=0, i=0;
-		int[] src;
-		for (; i<list.size()-1 ; i++)
-			{
-			src = (int[])list.get(i);
-			System.arraycopy(src, 0, dst, end, src.length);
-			end += src.length;
-			}
-		src = (int[])list.get(i);
-		System.arraycopy(src, 0, dst, end, lenLast);
-		return dst;
-		}
     }
+
+
+    public double[] toArray(double[] dst)
+    {
+        if (null == dst || dst.length < size)
+            dst = new double[size];
+        int end = 0, i = 0;
+        double[] src;
+        for (; i < list.size() - 1; i++)
+        {
+            src = (double[]) list.get(i);
+            System.arraycopy(src, 0, dst, end, src.length);
+            end += src.length;
+        }
+        src = (double[]) list.get(i);
+        System.arraycopy(src, 0, dst, end, lenLast);
+        return dst;
+    }
+}

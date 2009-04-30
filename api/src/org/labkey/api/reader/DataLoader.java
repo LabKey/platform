@@ -20,7 +20,6 @@ import org.apache.commons.collections.Transformer;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.QcColumn;
 import org.labkey.api.util.CloseableIterator;
-import org.labkey.common.tools.ColumnDescriptor;
 
 import java.io.File;
 import java.io.FileNotFoundException;

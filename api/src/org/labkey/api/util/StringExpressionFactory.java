@@ -15,15 +15,14 @@
  */
 package org.labkey.api.util;
 
-import org.labkey.api.util.Pair;
 import org.labkey.api.collections.CacheMap;
 import org.labkey.api.collections.LimitedCacheMap;
 
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
-import java.io.Writer;
 import java.io.IOException;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: migra

@@ -73,6 +73,7 @@ api/src/org/labkey/api/action/simpleErrorView.jsp -text
 api/src/org/labkey/api/admin/AdminUrls.java -text
 api/src/org/labkey/api/admin/CoreUrls.java -text
 api/src/org/labkey/api/analytics/AnalyticsService.java -text
+api/src/org/labkey/api/arrays/DoubleArray.java -text
 api/src/org/labkey/api/attachments/AttachmentCache.java -text
 api/src/org/labkey/api/attachments/AttachmentDirectory.java -text
 api/src/org/labkey/api/attachments/AttachmentFile.java -text
@@ -490,6 +491,7 @@ api/src/org/labkey/api/query/snapshot/AbstractTableMethodInfo.java -text
 api/src/org/labkey/api/query/snapshot/QuerySnapshotDefinition.java -text
 api/src/org/labkey/api/query/snapshot/QuerySnapshotForm.java -text
 api/src/org/labkey/api/query/snapshot/QuerySnapshotService.java -text
+api/src/org/labkey/api/reader/ColumnDescriptor.java -text
 api/src/org/labkey/api/reader/DataLoader.java -text
 api/src/org/labkey/api/reader/ExcelLoader.java -text
 api/src/org/labkey/api/reader/SimpleXMLStreamReader.java -text
@@ -741,6 +743,7 @@ api/src/org/labkey/api/util/IdentifierString.java -text
 api/src/org/labkey/api/util/ImageUtil.java -text
 api/src/org/labkey/api/util/Job.java -text
 api/src/org/labkey/api/util/JobRunner.java -text
+api/src/org/labkey/api/util/MatrixUtil.java -text
 api/src/org/labkey/api/util/MemTracker.java -text
 api/src/org/labkey/api/util/MothershipReport.java -text
 api/src/org/labkey/api/util/NameString.java -text
@@ -832,17 +835,12 @@ api/src/org/labkey/api/wiki/FormattedHtml.java -text
 api/src/org/labkey/api/wiki/MacroProvider.java -text
 api/src/org/labkey/api/wiki/WikiRendererType.java -text
 api/src/org/labkey/api/wiki/WikiService.java -text
-api/src/org/labkey/common/tools/ApplicationContext.java -text
-api/src/org/labkey/common/tools/BasicStatistics.java -text
-api/src/org/labkey/common/tools/ColumnDescriptor.java -text
-api/src/org/labkey/common/tools/DoubleArray.java -text
-api/src/org/labkey/common/tools/IdPattern.java -text
-api/src/org/labkey/common/tools/MatrixUtil.java -text
-api/src/org/labkey/common/tools/PropertyBag.java -text
-api/src/org/labkey/common/tools/Rounder.java -text
-api/src/org/labkey/common/tools/Scan.java -text
-api/src/org/labkey/common/tools/TextProvider.java -text
-api/src/org/labkey/common/tools/Tree2D.java -text
+api/src/org/labkey/unused/ApplicationContext.java -text
+api/src/org/labkey/unused/BasicStatistics.java -text
+api/src/org/labkey/unused/PropertyBag.java -text
+api/src/org/labkey/unused/Scan.java -text
+api/src/org/labkey/unused/TextProvider.java -text
+api/src/org/labkey/unused/Tree2D.java -text
 api/src/org/systemsbiology/jrap/DataProcessingInfo.java -text
 api/src/org/systemsbiology/jrap/MSInstrumentInfo.java -text
 api/src/org/systemsbiology/jrap/MSOperator.java -text

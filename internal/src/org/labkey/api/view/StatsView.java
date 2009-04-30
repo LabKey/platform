@@ -17,7 +17,7 @@ package org.labkey.api.view;
 
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
-import org.labkey.common.tools.DoubleArray;
+import org.labkey.api.arrays.DoubleArray;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.Writer;

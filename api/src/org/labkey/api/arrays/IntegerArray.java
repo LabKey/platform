@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.common.tools;
+package org.labkey.api.arrays;
 
 import java.util.ArrayList;
 
@@ -23,40 +23,40 @@ import java.util.ArrayList;
  * Date: May 24, 2004
  * Time: 9:09:24 PM
  */
-// alternative to ArrayList<Double>
-public class DoubleArray
+// alternative to ArrayList<Integer>
+public class IntegerArray
     {
     private static final int ARRAY_LEN = 1024;
     ArrayList list = new ArrayList();
-    double[] arrayLast;
+    int[] arrayLast;
     int lenLast = 0;
     int size = 0;
 
 
-    public DoubleArray()
+    public IntegerArray()
         {
         list = new ArrayList();
-        arrayLast = new double[ARRAY_LEN];
+        arrayLast = new int[ARRAY_LEN];
         list.add(arrayLast);
         }
 
 
-    public void add(double d)
+    public void add(int i)
         {
         if (arrayLast.length <= lenLast)
             {
-            arrayLast = new double[ARRAY_LEN];
+            arrayLast = new int[ARRAY_LEN];
             list.add(arrayLast);
             lenLast = 0;
             }
-        arrayLast[lenLast++] = d;
+        arrayLast[lenLast++] = i;
         size++;
         }
 
 
-    public double get(int i)
+    public int get(int i)
         {
-        return ((double[]) list.get(i / ARRAY_LEN))[i % ARRAY_LEN];
+        return ((int[]) list.get(i / ARRAY_LEN))[i % ARRAY_LEN];
         }
 
 
@@ -66,19 +66,19 @@ public class DoubleArray
         }
 
 
-	public double[] toArray(double[] dst)
+	public int[] toArray(int[] dst)
 		{
     	if (null == dst || dst.length < size)
-			dst = new double[size];
+			dst = new int[size];
 		int end=0, i=0;
-		double[] src;
+		int[] src;
 		for (; i<list.size()-1 ; i++)
 			{
-			src = (double[])list.get(i);
+			src = (int[])list.get(i);
 			System.arraycopy(src, 0, dst, end, src.length);
 			end += src.length;
 			}
-		src = (double[])list.get(i);
+		src = (int[])list.get(i);
 		System.arraycopy(src, 0, dst, end, lenLast);
 		return dst;
 		}

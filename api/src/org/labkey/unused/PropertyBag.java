@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.common.tools;
+package org.labkey.unused;
 
 import org.apache.log4j.Logger;
 
-import java.util.HashMap;
-import java.beans.PropertyChangeSupport;
 import java.beans.PropertyChangeListener;
-import java.awt.*;
+import java.beans.PropertyChangeSupport;
+import java.util.HashMap;
 
 
 /**

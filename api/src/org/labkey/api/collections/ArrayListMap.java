@@ -26,7 +26,6 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
     protected Map<K, Integer> _findMap;
     protected List<V> _row;
 
-
     public ArrayListMap()
     {
         this(new HashMap<K, Integer>(), new ArrayList<V>());
@@ -41,13 +40,19 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
 
     public ArrayListMap(ArrayListMap<K, V> m, List<V> row)
     {
-        this(m._findMap, row);
+        this(m.getFindMap(), row);
     }
 
 
     public ArrayListMap(Map<K, Integer> findMap)
     {
         this(findMap, new ArrayList<V>());
+    }
+
+
+    public ArrayListMap(Map<K, Integer> findMap, int rowCount)
+    {
+        this(findMap, new ArrayList<V>(rowCount));
     }
 
 
@@ -185,6 +190,16 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
         return buf.toString();
     }
 
+
+    public Map<K, Integer> getFindMap()
+    {
+        return _findMap;
+    }
+
+    public List<V> getRow()
+    {
+        return _row;
+    }
 
     public static void main(String[] args)
     {

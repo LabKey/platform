@@ -36,7 +36,7 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.common.tools.ColumnDescriptor;
+import org.labkey.api.reader.ColumnDescriptor;
 import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;

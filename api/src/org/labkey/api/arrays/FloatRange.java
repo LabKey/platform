@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.common.tools;
+package org.labkey.api.arrays;
 
 import java.io.Serializable;
 
@@ -23,27 +23,27 @@ import java.io.Serializable;
  * Time: 9:10:38 PM
  */
 public class FloatRange implements Serializable
-	{
-	public FloatRange()
-		{
-		min = Float.MAX_VALUE;
-		max = Float.MIN_VALUE;
-		}
+{
+    public FloatRange()
+    {
+        min = Float.MAX_VALUE;
+        max = Float.MIN_VALUE;
+    }
 
 
-	public FloatRange(float n, float x)
-		{
-		min = n;
-		max = x;
-		}
+    public FloatRange(float n, float x)
+    {
+        min = n;
+        max = x;
+    }
 
 
-	public boolean contains(float x)
-		{
-		return x >= min && x <= max;
-		}
+    public boolean contains(float x)
+    {
+        return x >= min && x <= max;
+    }
 
 
-	public float min;
-	public float max;
-	}
+    public float min;
+    public float max;
+}

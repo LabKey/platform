@@ -25,7 +25,7 @@ import org.apache.commons.lang.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Stats;
-import org.labkey.common.tools.DoubleArray;
+import org.labkey.api.arrays.DoubleArray;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

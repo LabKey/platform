@@ -28,7 +28,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.common.tools.ColumnDescriptor;
+import org.labkey.api.reader.ColumnDescriptor;
 
 import javax.servlet.http.HttpSession;
 import java.io.File;

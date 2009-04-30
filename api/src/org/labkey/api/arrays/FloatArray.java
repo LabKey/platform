@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.common.tools;
+package org.labkey.api.arrays;
+
+import org.labkey.api.arrays.FloatRange;
 
 import java.util.ArrayList;
 

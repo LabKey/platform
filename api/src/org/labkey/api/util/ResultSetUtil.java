@@ -15,30 +15,31 @@
  */
 package org.labkey.api.util;
 
+import junit.framework.Test;
+import junit.framework.TestSuite;
 import org.apache.commons.beanutils.ConvertUtils;
 import static org.apache.commons.collections.IteratorUtils.filteredIterator;
 import static org.apache.commons.collections.IteratorUtils.toList;
 import org.apache.commons.collections.Predicate;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.collections.CaseInsensitiveArrayListMap;
 import org.labkey.api.data.*;
-import org.labkey.api.data.CachedRowSetImpl;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.PermissionsMap;
 import org.labkey.api.security.User;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.ArrayListMap;
 
 import java.beans.Introspector;
-import java.io.*;
+import java.io.IOException;
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.math.BigDecimal;
 import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Date;
-import java.math.BigDecimal;
-import java.text.SimpleDateFormat;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
 
 
 public class ResultSetUtil
@@ -206,18 +207,16 @@ public class ResultSetUtil
     }
 
 
-    private static class _RowMap extends ArrayListMap<String, Object> implements Serializable
+    private static class _RowMap extends CaseInsensitiveArrayListMap<Object> implements Serializable
     {
         _RowMap(_RowMap m)
         {
-            super(m._findMap, new ArrayList<Object>(m._row.size()));
+            super(m, m.getRow().size());    // TODO: Get rid of size
         }
 
         _RowMap(ResultSet rs) throws SQLException
         {
-            _row = new ArrayList<Object>(rs.getMetaData().getColumnCount() + 1);
-            //NOTE: This makes row map case insensitive...
-            _findMap = new CaseInsensitiveHashMap<Integer>();
+            super(rs.getMetaData().getColumnCount() + 1);
 
             ResultSetMetaData md = rs.getMetaData();
             int count = md.getColumnCount();
@@ -394,6 +393,7 @@ public class ResultSetUtil
             return true;
         return false;
     }
+
 
     public static String legalNameFromName(String str)
     {

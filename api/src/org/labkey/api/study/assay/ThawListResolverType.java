@@ -33,7 +33,7 @@ import org.labkey.api.view.GWTView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.common.tools.ColumnDescriptor;
+import org.labkey.api.reader.ColumnDescriptor;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
