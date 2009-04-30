@@ -30,6 +30,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HString;
+import org.labkey.api.util.FileStream;
 import org.labkey.api.webdav.*;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.view.ViewContext;
@@ -129,22 +130,45 @@ class WikiWebdavProvider implements WebdavService.Provider
         {
             return true;
         }
+
+        @Override
+        public boolean canCreate(User user)
+        {
+            // create children NYI
+            return false;
+        }
+
+        @Override
+        public boolean canRename(User user)
+        {
+            return false;
+        }
         
+        @Override
+        public boolean canDelete(User user)
+        {
+            return false;
+        }
+        
+        @Override
         public boolean isFile()
         {
             return false;
         }
 
+        @Override
         public long getCreated()
         {
             return Long.MIN_VALUE;
         }
 
+        @Override
         public long getLastModified()
         {
             return Long.MIN_VALUE;
         }
 
+        @Override
         public String getExecuteHref(ViewContext context)
         {
             return null;
@@ -166,6 +190,7 @@ class WikiWebdavProvider implements WebdavService.Provider
             _wiki = WikiManager.getWiki(_c, new HString(name));
             _attachments = AttachmentService.get().getAttachmentResource(getPath(), _wiki);               
         }
+
 
         public boolean canDelete(User user)
         {
@@ -295,10 +320,10 @@ class WikiWebdavProvider implements WebdavService.Provider
             return new ByteArrayInputStream(buf);
         }
 
-        public long copyFrom(User user, InputStream in) throws IOException
+        public long copyFrom(User user, FileStream in) throws IOException
         {
             ByteArrayOutputStream buf = new ByteArrayOutputStream();
-            FileUtil.copyData(in,buf);
+            FileUtil.copyData(in.openInputStream(),buf);
             long len = buf.size();
             WikiVersion version = getWikiVersion();
             version.setBody(buf.toString("UTF-8"));
@@ -365,7 +390,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         // so pretend we deleted it.
         public boolean delete(User user) throws IOException
         {
-            copyFrom(user, new ByteArrayInputStream(new byte[0]));
+            copyFrom(user, FileStream.EMPTY);
             return true;
         }
 

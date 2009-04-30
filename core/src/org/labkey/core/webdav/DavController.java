@@ -35,7 +35,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.api.util.Pair;
+import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.core.webdav.apache.XMLWriter;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -575,7 +575,7 @@ public class DavController extends SpringActionController
                             return WebdavStatus.SC_METHOD_NOT_ALLOWED;
                         // CONSIDER: support multi-file POST
                         setResource(dest);
-                        setInputStream(file.getInputStream());
+                        setFileStream(new SpringAttachmentFile(file));
                         WebdavStatus status = super.doMethod();
 
                         // if _returnUrl then redirect, else respond as if PROPFIND
@@ -609,7 +609,6 @@ public class DavController extends SpringActionController
                     }
                 }
             }
-
             return new GetAction().doMethod();
         }
     }
@@ -1692,7 +1691,7 @@ public class DavController extends SpringActionController
     {
         // this is a member so PostAction() can set it
         WebdavResolver.Resource _resource;
-        InputStream _is;
+        FileStream _fis;
 
         public PutAction()
         {
@@ -1716,18 +1715,35 @@ public class DavController extends SpringActionController
             return _resource;
         }
 
-        protected void setInputStream(InputStream is)
+        protected void setFileStream(FileStream fis)
         {
-            _is = is;
+            _fis = fis;
         }
 
-        InputStream getInputStream() throws DavException, IOException
+        FileStream getFileStream() throws DavException, IOException
         {
-            if (null != _is)
-                return _is;
-            return getRequest().getInputStream();
+            if (null == _fis)
+            {
+                final InputStream is = getRequest().getInputStream();
+                final long _size = Long.parseLong(getRequest().getHeader("Content-Length"));
+                _fis = new FileStream()
+                {
+                    public long getSize()
+                    {
+                        return _size;
+                    }
+                    public InputStream openInputStream() throws IOException
+                    {
+                        return is;
+                    }
+                    public void closeInputStream() throws IOException
+                    {
+                        is.close();
+                    }
+                };
+            }
+            return _fis;
         }
-
 
         WebdavStatus doMethod() throws DavException, IOException, RedirectException
         {
@@ -1745,13 +1761,11 @@ public class DavController extends SpringActionController
                 return unauthorized(resource);
 
             Range range = parseContentRange();
-            InputStream is = null;
             RandomAccessFile raf = null;
             OutputStream os = null;
 
             try
             {
-                is = getInputStream();
                 if (!resource.exists())
                 {
                     temp = getTemporary();
@@ -1774,9 +1788,12 @@ public class DavController extends SpringActionController
                         throw new DavException(WebdavStatus.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
                     // CONSIDER: use temp file
                     _ByteArrayOutputStream bos = new _ByteArrayOutputStream((int)(range.end-range.start));
-                    FileUtil.copyData(is, bos);
+                    FileUtil.copyData(getFileStream().openInputStream(), bos);
                     if (bos.size() != range.end-range.start)
                         throw new DavException(WebdavStatus.SC_BAD_REQUEST);
+                    File f = resource.getFile();
+                    if (null == f)
+                        return WebdavStatus.SC_NOT_IMPLEMENTED;
                     raf = new RandomAccessFile(resource.getFile(),"rw");
                     assert track(raf);
                     raf.seek(range.start);
@@ -1789,7 +1806,7 @@ public class DavController extends SpringActionController
                     if (resource.getContentType().startsWith("text/html") && !UserManager.mayWriteScript(getUser()))
                     {
                         _ByteArrayOutputStream bos = new _ByteArrayOutputStream(4*1025);
-                        FileUtil.copyData(is, bos);
+                        FileUtil.copyData(getFileStream().openInputStream(), bos);
                         byte[] buf = bos.toByteArray();
                         String html = new String(buf, "UTF-8");
                         List<String> errors = new ArrayList<String>();
@@ -1797,10 +1814,13 @@ public class DavController extends SpringActionController
                         PageFlowUtil.validateHtml(html, errors, script);
                         if (!script.isEmpty())
                             throw new DavException(WebdavStatus.SC_FORBIDDEN, "User is not allowed to save script in html files.");
-                        is = new ByteArrayInputStream(buf);
+                        resource.copyFrom(getUser(), new FileStream.ByteArrayFileStream(buf));
+                    }
+                    else
+                    {
+                        resource.copyFrom(getUser(), getFileStream());
                     }
 
-                    resource.copyFrom(getUser(), is);
                     if (!temp)
                     {
                         if (exists)
@@ -1815,7 +1835,7 @@ public class DavController extends SpringActionController
             }
             finally
             {
-                close(is, "put action inputstream");
+                getFileStream().closeInputStream();
                 close(os, "put action outputstream");
                 close(raf, "put action outputdata");
                 if (deleteFileOnFail)

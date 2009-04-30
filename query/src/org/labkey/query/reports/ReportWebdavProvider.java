@@ -21,6 +21,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.FileStream;
 import org.labkey.api.webdav.*;
 
 import java.io.ByteArrayInputStream;
@@ -187,7 +188,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
             return new ByteArrayInputStream(buf);
         }
 
-        public long copyFrom(User user, InputStream in) throws IOException
+        public long copyFrom(User user, FileStream in) throws IOException
         {
 /*
             ByteArrayOutputStream buf = new ByteArrayOutputStream();
@@ -214,7 +215,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
         // so pretend we deleted it.
         public boolean delete(User user) throws IOException
         {
-            copyFrom(user, new ByteArrayInputStream(new byte[0]));
+            copyFrom(user, FileStream.EMPTY);
             return true;
         }
 

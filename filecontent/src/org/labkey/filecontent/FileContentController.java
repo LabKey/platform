@@ -237,9 +237,9 @@ public class FileContentController extends SpringActionController
        {
            FilesWebPart part;
            if (null == form.getFileSetName())
-               part = new FilesWebPart(getContainer());
+               part = new ManageWebPart(getContainer());
            else
-               part = new FilesWebPart(getContainer(), form.getFileSetName());
+               part = new ManageWebPart(getContainer(), form.getFileSetName());
            part.setWide(true);
            part.setShowAdmin(true);
            return part;

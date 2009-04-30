@@ -17,6 +17,7 @@ package org.labkey.query;
 
 import org.labkey.api.webdav.*;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.FileStream;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.query.*;
@@ -205,9 +206,9 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			return new ByteArrayInputStream(sql.getBytes("UTF-8"));
 		}
 
-		public long copyFrom(User user, InputStream in) throws IOException
+		public long copyFrom(User user, FileStream in) throws IOException
 		{
-			String sql = PageFlowUtil.getStreamContentsAsString(in);
+			String sql = PageFlowUtil.getStreamContentsAsString(in.openInputStream());
 			_q.setSql(sql);
 			try
 			{

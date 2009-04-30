@@ -1611,23 +1611,25 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
 
         this.fileUploadField = new Ext.form.FileUploadField(
         {
-              buttonText: "Upload File...",
-              buttonOnly: true,
-              buttonCfg: {cls: "labkey-button"},
-              listeners: {"fileselected": function (fb, v)
+            id: this.id ? this.id + 'Upload' : 'fileUpload',
+            buttonText: "Upload File...",
+            buttonOnly: true,
+            buttonCfg: {cls: "labkey-button"},
+            listeners: {"fileselected": function (fb, v)
+            {
+              if (me.currentDirectory)
               {
-                  if (me.currentDirectory)
-                  {
-                      var form = me.uploadPanel.getForm();
-                      var options = {url:me.currentDirectory.data.uri, record:me.currentDirectory, name:me.fileUploadField.getValue()};
-                      var action = new DavSubmitAction(form, options);
-                      form.doAction(action);
-                  }
-              }}
+                  var form = me.uploadPanel.getForm();
+                  var options = {url:me.currentDirectory.data.uri, record:me.currentDirectory, name:me.fileUploadField.getValue()};
+                  var action = new DavSubmitAction(form, options);
+                  form.doAction(action);
+              }
+            }}
         });
         
         this.uploadPanel = new Ext.FormPanel({
             id : 'uploadPanel',
+            formId : this.id ? this.id + 'Upload-form' : 'fileUpload-form',
             method : 'POST',
             fileUpload: true,
             enctype:'multipart/form-data',
@@ -1704,7 +1706,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
         layoutItems.push(
             {
                 region:'center',
-                margins:'5 0 5 0',
+                margins: this.propertiesPanel ? '5 0 5 0' : '5 5 5 0',
                 minSize: 200,
                 layout:'border',
                 items:
@@ -1796,7 +1798,7 @@ function generateButton(config)
     if (config.id)
         html += ' id="' + config.id + '"';
     if (config.onclick)
-        html += ' onclicl="' + onclick + '"';
+        html += ' onclick="' + onclick + '"';
     html += '>' + config.text + '</span>';
     return html;
 }
