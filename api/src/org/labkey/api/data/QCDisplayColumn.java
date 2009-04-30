@@ -75,7 +75,7 @@ public class QCDisplayColumn extends DataColumn
                 popupText += ("<p>The value as originally entered was: '" + value + "'.");
             }
 
-            out.write(PageFlowUtil.helpPopup("QC Value: " + qcValue, popupText, true, imgHtml, 0));
+            out.write(PageFlowUtil.helpPopup("Missing Value Indicator: " + qcValue, popupText, true, imgHtml, 0));
 
             return;
         }
@@ -172,7 +172,7 @@ public class QCDisplayColumn extends DataColumn
         String formFieldName = ctx.getForm().getFormFieldName(qcValueColumn);
         String selectedQcValue = getQcValue(ctx);
         Set<String> qcValues = QcUtil.getQcValues(ctx.getContainer());
-        out.write("<br>QC Value:");
+        out.write("<br>Missing Value Indicator:");
         out.write("<select");
         outputName(ctx, out, formFieldName);
         if (isDisabledInput())

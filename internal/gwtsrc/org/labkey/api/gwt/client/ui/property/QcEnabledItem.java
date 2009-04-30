@@ -36,14 +36,14 @@ public class QcEnabledItem<DomainType extends GWTDomain<FieldType>, FieldType ex
 
     protected String getCheckboxLabelText()
     {
-        return "Allows QC";
+        return "Missing Value Indicators";
     }
 
     @Override
     protected String getHelpBody()
     {
-        return "A field marked with 'Allows QC' can hold special values to indicate data " +
-                "that has failed QC review.";
+        return "A field marked with 'Missing Value Indicators', can hold special values to indicate data " +
+                "that has failed review or was originally missing";
     }
 
     public boolean copyValuesToPropertyDescriptor(FieldType field)
