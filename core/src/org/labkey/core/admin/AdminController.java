@@ -830,7 +830,7 @@ public class AdminController extends SpringActionController
 
             if (!_container.isRoot())
                 tabs.add(new TabInfo("Folder Type", "folderType", url));
-            tabs.add(new TabInfo("QC Values", "qcValues", url));
+            tabs.add(new TabInfo("Missing Value Indicators", "qcValues", url));
 
             return tabs;
         }

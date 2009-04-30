@@ -33,9 +33,9 @@
     <table>
         <tr>
             <td>
-                Data columns that are configured to allow QC can have special values<br>
-                indicating that the original data is missing or suspect. This page allows<br>
-                you to configure what QC values are allowed.
+                Data columns that are configured to allow missing value indicators can have special values<br>
+                indicating that the original data is missing or suspect. This page allows you to configure<br>
+                what indicators are allowed.
             </td>
         </tr>
         <tr>
@@ -62,11 +62,11 @@
                     inheritURL.setContainer(linkContainer);
                     String containerLabel;
                     if (linkContainer.isRoot())
-                        containerLabel = "Site";
+                        containerLabel = "Server default";
                     else if (linkContainer.isProject())
-                        containerLabel = "Project (" + linkContainer.getName() + ")";
+                        containerLabel = "Project " + linkContainer.getName();
                     else
-                        containerLabel = "Parent Folder (" + linkContainer.getPath() + ")";
+                        containerLabel = "Parent Folder " + linkContainer.getPath();
 
                     if (!c.isRoot())
                     {
@@ -74,7 +74,7 @@
                 %>
                 <input type="checkbox" id="inherit" name="inheritQcValues" <%=inherited ? "checked='true'" : ""%>
                        onclick="toggleInherited(this);">
-                Inherit QC settings from
+                Inherit settings (from
                 <%
                         if (hasLinkPermission)
                         {
@@ -86,7 +86,28 @@
 
                         if (hasLinkPermission)
                         {
-                            out.write("</a>");
+                            out.write("</a>)");
+                        }
+
+                        // Now write out what those settings are
+                        out.write(": ");
+                        boolean needComma = false;
+                        for (Map.Entry<String, String> qcEntry : QcUtil.getValuesAndLabels(linkContainer).entrySet())
+                        {
+                            String qcValue = qcEntry.getKey();
+                            String qcLabel = qcEntry.getValue();
+                            if (needComma)
+                            {
+                                out.write(", ");
+                            }
+                            else
+                            {
+                                needComma = true;
+                            }
+
+                            String popupText = PageFlowUtil.filter(qcLabel);
+
+                            out.write(PageFlowUtil.helpPopup(qcValue, popupText, true, qcValue, 0));
                         }
 
                     }
