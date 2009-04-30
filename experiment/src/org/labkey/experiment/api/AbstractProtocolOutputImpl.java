@@ -18,7 +18,7 @@ package org.labkey.experiment.api;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.security.User;
 import org.labkey.api.data.*;
-import org.labkey.api.util.CsvSet;
+import org.labkey.api.collections.CsvSet;
 
 import java.util.List;
 import java.util.ArrayList;

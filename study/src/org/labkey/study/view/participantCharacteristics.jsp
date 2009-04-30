@@ -46,7 +46,7 @@
 <%@ page import="org.labkey.study.reports.StudyChartQueryReport" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.CsvSet" %>
+<%@ page import="org.labkey.api.collections.CsvSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%

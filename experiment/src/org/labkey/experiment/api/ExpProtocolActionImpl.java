@@ -22,7 +22,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.security.User;
-import org.labkey.api.util.CsvSet;
+import org.labkey.api.collections.CsvSet;
 import org.apache.log4j.Logger;
 
 import java.sql.SQLException;
