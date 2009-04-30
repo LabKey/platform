@@ -115,7 +115,7 @@ public class AttachmentService
         public void deleteAttachment(AttachmentParent parent, String name) throws SQLException;
         public void renameAttachment(AttachmentParent parent, String oldName, String newName) throws SQLException, DuplicateFilenameException;
         public void copyAttachment(User user, AttachmentParent parent, Attachment a, String newName) throws IOException, SQLException, DuplicateFilenameException;
-        public List<AttachmentFile> getAttachmentFiles(Collection<Attachment> attachments) throws IOException, SQLException;
+        public List<AttachmentFile> getAttachmentFiles(Collection<Attachment> attachments) throws IOException;
         public Attachment[] getAttachments(AttachmentParent parent);
         public WebdavResolver.Resource getAttachmentResource(String path, AttachmentParent parent);
         public Attachment getAttachment(AttachmentParent parent, String name);

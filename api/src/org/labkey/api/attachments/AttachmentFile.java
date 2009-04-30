@@ -16,6 +16,8 @@
 
 package org.labkey.api.attachments;
 
+import org.labkey.api.util.FileStream;
+
 import java.io.InputStream;
 import java.io.IOException;
 
@@ -24,9 +26,9 @@ import java.io.IOException;
  * Date: Sep 10, 2007
  * Time: 3:39:23 PM
  */
-public interface AttachmentFile
+public interface AttachmentFile extends FileStream
 {
-    public long getSize();
+    public long getSize() throws IOException;
     public String getError();
     public String getFilename();
     public void setFilename(String filename);

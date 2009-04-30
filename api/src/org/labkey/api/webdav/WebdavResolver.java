@@ -19,6 +19,7 @@ package org.labkey.api.webdav;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.util.FileStream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -81,10 +82,11 @@ public interface WebdavResolver
 
         String getContentType();
 
+        FileStream getFileStream(User user) throws IOException;
+        
         InputStream getInputStream(User user) throws IOException;
 
-//        OutputStream getOutputStream(User user) throws IOException;
-        long copyFrom(User user, InputStream in) throws IOException;
+        long copyFrom(User user, FileStream in) throws IOException;
 
         long copyFrom(User user, Resource r) throws IOException;
 

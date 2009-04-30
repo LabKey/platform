@@ -1,0 +1,126 @@
+package org.labkey.api.util;
+
+import org.apache.commons.io.IOUtils;
+
+import java.io.*;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: Matthew
+ * Date: Apr 29, 2009
+ * Time: 9:29:16 PM
+ *
+ * Useful when we need to communicate the length of the stream (that is not a FileInputStream e.g.)
+ */
+public interface FileStream
+{
+    public long getSize() throws IOException;
+    public InputStream openInputStream() throws IOException;
+    public void closeInputStream() throws IOException;
+
+
+    public static FileStream EMPTY = new FileStream()
+    {
+        public long getSize() throws IOException
+        {
+            return 0;
+        }
+
+        public InputStream openInputStream() throws IOException
+        {
+            return new ByteArrayInputStream(new byte[0]);
+        }
+
+        public void closeInputStream() throws IOException
+        {
+        }
+    };
+
+
+    public static class ByteArrayFileStream implements FileStream
+    {
+        ByteArrayInputStream in;
+
+        public ByteArrayFileStream(ByteArrayInputStream b)
+        {
+            in = b;
+            assert MemTracker.put(in);
+        }
+
+        public ByteArrayFileStream(byte[] buf)
+        {
+            in = new ByteArrayInputStream(buf);
+            assert MemTracker.put(in);
+        }
+
+        public ByteArrayFileStream(ByteArrayOutputStream out)
+        {
+            in = new ByteArrayInputStream(out.toByteArray());
+            assert MemTracker.put(in);
+        }
+
+        public long getSize()
+        {
+            return in.available();
+        }
+
+        public InputStream openInputStream() throws IOException
+        {
+            return in;
+        }
+
+        public void closeInputStream() throws IOException
+        {
+            IOUtils.closeQuietly(in);
+            MemTracker.remove(in);
+            in = null;
+        }
+
+        @Override
+        protected void finalize() throws Throwable
+        {
+            assert in == null;
+        }
+    }
+
+
+    public static class FileFileStream implements FileStream
+    {
+        FileInputStream in;
+
+        public FileFileStream(File f) throws IOException
+        {
+            in = new FileInputStream(f);
+            MemTracker.put(in);
+        }
+
+        public FileFileStream(FileInputStream fin) throws IOException
+        {
+            in = fin;
+            MemTracker.put(in);
+        }
+
+        public long getSize() throws IOException
+        {
+            return in.getChannel().size();
+        }
+
+        public InputStream openInputStream() throws IOException
+        {
+            return in;
+        }
+
+        public void closeInputStream() throws IOException
+        {
+            IOUtils.closeQuietly(in);
+            MemTracker.remove(in);
+            in = null;
+        }
+
+        @Override
+        protected void finalize() throws Throwable
+        {
+            assert in == null;
+        }
+    }
+}

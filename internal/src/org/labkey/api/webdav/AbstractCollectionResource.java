@@ -16,6 +16,7 @@
 package org.labkey.api.webdav;
 
 import org.labkey.api.security.User;
+import org.labkey.api.util.FileStream;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -62,7 +63,7 @@ public abstract class AbstractCollectionResource extends AbstractResource
         throw new IllegalStateException("Can't read from a collection");
     }
 
-    public long copyFrom(User user, InputStream in) throws IOException
+    public long copyFrom(User user, FileStream in) throws IOException
     {
         throw new IllegalStateException("Can't write to a collection");
     }

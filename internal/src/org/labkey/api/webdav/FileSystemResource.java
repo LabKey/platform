@@ -22,6 +22,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.FileStream;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.audit.AuditLogService;
@@ -111,8 +112,21 @@ public class FileSystemResource extends AbstractResource
         return _file;
     }
 
+
+    public FileStream getFileStream(User user) throws IOException
+    {
+        if (!canRead(user))
+            return null;
+        if (null == _file || !_file.exists())
+            return null;
+        return new FileStream.FileFileStream(_file);
+    }
+    
+
     public InputStream getInputStream(User user) throws IOException
     {
+        if (!canRead(user))
+            return null;
         if (null == _file || !_file.exists())
             return null;
         return new FileInputStream(_file);
@@ -127,7 +141,7 @@ public class FileSystemResource extends AbstractResource
     }
 
 
-    public long copyFrom(User user, InputStream is) throws IOException
+    public long copyFrom(User user, FileStream is) throws IOException
     {
         if (null == _file || !_file.exists())
             return -1;
@@ -135,7 +149,7 @@ public class FileSystemResource extends AbstractResource
         try
         {
             fos = new FileOutputStream(_file);
-            long len = FileUtil.copyData(is, fos);
+            long len = FileUtil.copyData(is.openInputStream(), fos);
             fos.getFD().sync();
             return len;
         }

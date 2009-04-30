@@ -19,10 +19,11 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.util.FileStream;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Category;
 
@@ -294,7 +295,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             return null;
         }
 
-        public long copyFrom(User user, InputStream in) throws IOException
+        public long copyFrom(User user, FileStream in) throws IOException
         {
             throw new UnsupportedOperationException(); 
         }
@@ -375,7 +376,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             return null;
         }
 
-        public long copyFrom(User user, InputStream in) throws IOException
+        public long copyFrom(User user, FileStream in) throws IOException
         {
             throw new UnsupportedOperationException();
         }

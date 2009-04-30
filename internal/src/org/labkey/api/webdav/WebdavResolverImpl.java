@@ -504,7 +504,7 @@ public class WebdavResolverImpl implements WebdavResolver
             return null;
         }
 
-        public long copyFrom(User user, InputStream in) throws IOException
+        public long copyFrom(User user, FileStream in) throws IOException
         {
             throw new UnsupportedOperationException();
         }

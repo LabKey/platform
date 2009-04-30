@@ -18,6 +18,7 @@ package org.labkey.api.webdav;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.FileStream;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.NavTree;
@@ -25,9 +26,12 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.attachments.Attachment;
 import org.jetbrains.annotations.NotNull;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.io.IOUtils;
+import org.systemsbiology.jrap.Base64;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Collections;
 
@@ -250,7 +254,7 @@ public abstract class AbstractResource implements WebdavResolver.Resource
 
     public long copyFrom(User user, WebdavResolver.Resource r) throws IOException
     {
-        return copyFrom(user, r.getInputStream(user));
+        return copyFrom(user, r.getFileStream(user));
     }
 
 
@@ -275,4 +279,45 @@ public abstract class AbstractResource implements WebdavResolver.Resource
         return s.toString();
     }
 
+    public FileStream getFileStream(User user) throws IOException
+    {
+        if (!canRead(user))
+            return null;
+        return new _FileStream(user);
+    }
+
+    private class _FileStream implements FileStream
+    {
+        User _user;
+        InputStream _is = null;
+
+        _FileStream(User user)
+        {
+            _user = user;
+        }
+
+        public long getSize()
+        {
+            try
+            {
+                return getContentLength();
+            }
+            catch (IOException x)
+            {
+                throw new RuntimeException(x);
+            }
+        }
+
+        public InputStream openInputStream() throws IOException
+        {
+            if (null == _is)
+                _is = getInputStream(_user);
+            return _is;
+        }
+
+        public void closeInputStream() throws IOException
+        {
+            IOUtils.closeQuietly(_is);
+        }
+    }
 }

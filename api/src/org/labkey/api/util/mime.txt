@@ -586,3 +586,6 @@ wrz	x-world/x-vrml
 xaf	x-world/x-vrml
 xof	x-world/x-vrml
 vrt	x-world/x-vrt
+patch text/plain
+bat text/plain
+cmd text/plain
