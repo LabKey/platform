@@ -25,7 +25,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.study.model.Site;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.StudySchema;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import java.util.List;
 import java.util.Iterator;

@@ -34,6 +34,8 @@ import org.labkey.api.view.menu.ContainerMenu;
 import org.labkey.api.view.menu.ProjectsMenu;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.api.reader.ExcelLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.analytics.AnalyticsController;
@@ -314,10 +316,9 @@ public class CoreModule extends SpringModule
             org.labkey.api.security.SecurityManager.TestCase.class,
             org.labkey.api.data.PropertyManager.TestCase.class,
             org.labkey.api.util.DateUtil.TestCase.class,
-            org.labkey.common.tools.PeptideTestCase.class,
             org.labkey.api.data.ContainerManager.TestCase.class,
-            org.labkey.common.tools.TabLoader.TabLoaderTestCase.class,
-            org.labkey.common.tools.ExcelLoader.ExcelLoaderTestCase.class,
+            TabLoader.TabLoaderTestCase.class,
+            ExcelLoader.ExcelLoaderTestCase.class,
             ModuleDependencySorter.TestCase.class,
             org.labkey.api.security.GroupManager.TestCase.class,
             DateUtil.TestCase.class,

@@ -20,7 +20,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceLoader;
-import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.mule.LoggerUtil;
 import org.springframework.beans.factory.BeanFactory;

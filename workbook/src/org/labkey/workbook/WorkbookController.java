@@ -16,27 +16,26 @@
 
 package org.labkey.workbook;
 
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.view.*;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.RedirectAction;
-import org.labkey.api.data.ContainerManager;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
-import org.labkey.api.wiki.WikiService;
-import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.FolderType;
-import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.api.wiki.WikiService;
 import org.labkey.workbook.view.CreateWorkbookView;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.apache.commons.lang.StringUtils;
+import org.springframework.web.servlet.ModelAndView;
 
 public class WorkbookController extends SpringActionController
 {

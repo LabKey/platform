@@ -24,7 +24,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.PropertyUtil;
-import org.labkey.api.util.ArrayListMap;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.study.StudySchema;
 
 import java.sql.SQLException;

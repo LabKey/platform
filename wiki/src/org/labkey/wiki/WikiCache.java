@@ -16,7 +16,7 @@
 
 package org.labkey.wiki;
 
-import org.labkey.api.util.Cache;
+import org.labkey.api.collections.Cache;
 import org.labkey.api.util.HString;
 import org.labkey.api.data.Container;
 import org.labkey.api.wiki.WikiRenderer;

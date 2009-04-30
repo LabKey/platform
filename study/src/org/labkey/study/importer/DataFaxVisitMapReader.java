@@ -15,7 +15,7 @@
  */
 package org.labkey.study.importer;
 
-import org.labkey.common.tools.TabLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.api.util.Filter;
 

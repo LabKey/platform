@@ -18,7 +18,7 @@ package org.labkey.query.sql;
 
 import org.labkey.query.sql.SqlTokenTypes;
 import org.labkey.api.query.FieldKey;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import java.util.Map;
 import java.util.List;

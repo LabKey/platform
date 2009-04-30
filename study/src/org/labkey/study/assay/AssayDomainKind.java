@@ -33,7 +33,7 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import java.util.Collections;
 import java.util.List;

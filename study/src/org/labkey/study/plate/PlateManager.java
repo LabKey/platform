@@ -27,7 +27,7 @@ import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.*;
-import org.labkey.api.util.Cache;
+import org.labkey.api.collections.Cache;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;

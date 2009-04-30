@@ -32,7 +32,7 @@ import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import java.io.File;
 import java.util.*;

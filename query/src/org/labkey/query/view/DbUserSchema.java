@@ -22,7 +22,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.query.persist.DbUserSchemaDef;
 import org.labkey.query.data.DbUserSchemaTable;
 import org.labkey.data.xml.TablesDocument;

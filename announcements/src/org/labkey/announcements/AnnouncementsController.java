@@ -44,7 +44,7 @@ import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;

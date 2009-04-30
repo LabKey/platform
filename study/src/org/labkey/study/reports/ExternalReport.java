@@ -33,7 +33,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.common.tools.TabLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.common.tools.ColumnDescriptor;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;

@@ -38,7 +38,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.common.tools.TabLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.study.dataset.client.DatasetService;
 import org.labkey.study.dataset.client.model.GWTDataset;
 import org.labkey.study.model.Cohort;

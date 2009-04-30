@@ -31,7 +31,7 @@ import org.labkey.api.reports.chart.ChartRenderer;
 import org.labkey.api.reports.chart.ChartRenderInfo;
 import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.view.ReportQueryView;
-import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.view.DataView;
 import org.apache.commons.lang.BooleanUtils;
 

@@ -38,7 +38,7 @@ import org.labkey.experiment.api.property.DomainImpl;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExpander;
 import org.labkey.experiment.xar.AbstractXarImporter;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import javax.xml.namespace.QName;
 import java.io.File;

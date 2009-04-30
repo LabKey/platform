@@ -33,13 +33,13 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.AbstractDocumentResource;
 import org.labkey.api.webdav.AbstractCollectionResource;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.core.query.AttachmentAuditViewFactory;
 import org.labkey.core.webdav.FileSystemAuditViewFactory;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;

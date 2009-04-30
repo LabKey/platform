@@ -30,7 +30,7 @@ import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
-import org.labkey.api.util.Cache;
+import org.labkey.api.collections.Cache;
 import org.labkey.api.view.*;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.reports.ReportsController;

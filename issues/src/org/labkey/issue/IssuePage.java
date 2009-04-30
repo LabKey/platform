@@ -28,6 +28,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.collections.Cache;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssueManager.*;

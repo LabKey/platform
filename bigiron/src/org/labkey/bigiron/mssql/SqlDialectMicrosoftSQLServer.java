@@ -16,7 +16,7 @@
 
 package org.labkey.bigiron.mssql;
 
-import org.labkey.api.util.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.data.*;

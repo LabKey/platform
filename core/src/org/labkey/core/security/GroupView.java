@@ -18,7 +18,7 @@ package org.labkey.core.security;
 
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.view.JspView;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 import org.springframework.validation.BindException;
 
 import java.util.List;

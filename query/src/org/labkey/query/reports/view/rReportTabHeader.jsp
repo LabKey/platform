@@ -19,7 +19,7 @@
 <%@ page import="org.labkey.api.reports.report.view.RReportBean"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.common.util.Pair" %>
+<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.query.reports.ReportsController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 

@@ -37,7 +37,7 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;

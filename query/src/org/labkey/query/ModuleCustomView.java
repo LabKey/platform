@@ -22,7 +22,7 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;

@@ -20,7 +20,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.pipeline.*;
-import org.labkey.api.util.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.apache.log4j.Logger;
 
 import java.sql.SQLException;

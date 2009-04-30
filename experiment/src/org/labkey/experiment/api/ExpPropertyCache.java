@@ -23,7 +23,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.util.Cache;
+import org.labkey.api.collections.Cache;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;

@@ -20,7 +20,7 @@
 <%@ page import="static org.labkey.api.query.QueryService.*" %>
 <%@ page import="org.labkey.api.query.QueryDefinition" %>
 <%@ page import="org.labkey.api.query.UserSchema" %>
-<%@ page import="org.labkey.api.util.CaseInsensitiveHashMap" %>
+<%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
 <%@ page import="java.util.*" %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page extends="org.labkey.query.view.EditQueryPage" %>

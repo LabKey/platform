@@ -30,7 +30,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.*;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import javax.servlet.ServletException;
 import java.io.IOException;

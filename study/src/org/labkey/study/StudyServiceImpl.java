@@ -27,7 +27,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.CsvSet;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;

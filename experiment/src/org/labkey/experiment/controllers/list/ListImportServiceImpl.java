@@ -23,7 +23,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.common.tools.DataLoader;
+import org.labkey.api.reader.DataLoader;
 
 import java.io.IOException;
 import java.util.List;

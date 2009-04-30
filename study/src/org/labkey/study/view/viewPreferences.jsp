@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page import="org.labkey.api.view.*" %>
-<%@ page import="org.labkey.common.util.Pair" %>
+<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>

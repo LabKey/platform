@@ -15,21 +15,21 @@
  */
 package org.labkey.workbook;
 
-import org.labkey.api.module.DefaultFolderType;
-import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.Module;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.data.Container;
-import org.labkey.api.wiki.WikiService;
-import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.api.module.DefaultFolderType;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.common.util.Pair;
+import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.api.wiki.WikiService;
 
-import java.util.*;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.Set;
 
 /*
 * User: markigra

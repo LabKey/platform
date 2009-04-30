@@ -27,7 +27,8 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.util.*;
-import org.labkey.common.tools.DataLoader;
+import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.reader.DataLoader;
 import org.labkey.query.design.DgQuery;
 import org.labkey.query.design.QueryDocument;
 import org.labkey.query.QueryDefinitionImpl;
@@ -472,7 +473,7 @@ public class Query
 
             public Map<String, Object> next()
             {
-                return new ArrayListMap<String, Object>(templateRow, data[i++]);
+                return new ArrayListMap<String, Object>(templateRow, Arrays.<Object>asList(data[i++]));
             }
 
             public void remove()

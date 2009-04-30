@@ -25,6 +25,8 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.*;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.Cache;
 import org.labkey.issue.IssuesController;
 
 import javax.servlet.ServletException;

@@ -18,7 +18,7 @@ package org.labkey.query;
 import org.apache.log4j.Logger;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 import org.labkey.data.xml.queryCustomView.*;
 
 import java.io.File;

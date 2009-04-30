@@ -30,7 +30,7 @@ import org.labkey.query.sql.antlr.SqlBaseParser;
 import org.labkey.query.sql.antlr.SqlBaseTokenTypes;
 import static org.labkey.query.sql.antlr.SqlBaseTokenTypes.*;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.query.QueryParseException;
 import org.apache.log4j.Logger;

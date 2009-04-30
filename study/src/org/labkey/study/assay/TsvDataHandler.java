@@ -24,12 +24,12 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.study.assay.AbstractAssayTsvDataHandler;
-import org.labkey.api.util.CaseInsensitiveHashMap;
-import org.labkey.api.util.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.common.tools.ColumnDescriptor;
-import org.labkey.common.tools.DataLoader;
-import org.labkey.common.tools.ExcelLoader;
-import org.labkey.common.tools.TabLoader;
+import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reader.ExcelLoader;
+import org.labkey.api.reader.TabLoader;
 
 import java.io.File;
 import java.io.IOException;

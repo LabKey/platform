@@ -22,8 +22,8 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.URIUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.jsp.FormPage;
-import org.labkey.common.util.Pair;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

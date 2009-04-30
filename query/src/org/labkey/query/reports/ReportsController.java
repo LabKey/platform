@@ -16,7 +16,6 @@
 
 package org.labkey.query.reports;
 
-import org.apache.beehive.netui.pageflow.FormData;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
@@ -46,8 +45,8 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.IdentifierString;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
-import org.labkey.common.util.Pair;
 import org.labkey.query.reports.chart.ChartServiceImpl;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;

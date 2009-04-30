@@ -30,11 +30,11 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.CaseInsensitiveHashMap;
-import org.labkey.api.util.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.view.ActionURL;
 import org.labkey.common.tools.ColumnDescriptor;
-import org.labkey.common.tools.DataLoader;
+import org.labkey.api.reader.DataLoader;
 import org.labkey.experiment.controllers.list.ListController;
 import org.labkey.experiment.controllers.list.ListImportHelper;
 

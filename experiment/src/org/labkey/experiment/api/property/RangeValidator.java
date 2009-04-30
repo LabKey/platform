@@ -23,7 +23,7 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.query.ValidationError;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;

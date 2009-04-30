@@ -29,7 +29,7 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 
 import java.util.Collections;
 import java.util.Map;

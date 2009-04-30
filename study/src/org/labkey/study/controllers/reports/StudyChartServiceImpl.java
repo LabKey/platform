@@ -38,9 +38,9 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.common.util.Pair;
 import org.labkey.study.chart.client.StudyChartService;
 import org.labkey.study.chart.client.model.GWTPair;
 import org.labkey.study.controllers.StudyController;
@@ -48,7 +48,6 @@ import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.reports.ChartReportView;
 import org.labkey.study.reports.ReportManager;
 
 import javax.servlet.ServletException;

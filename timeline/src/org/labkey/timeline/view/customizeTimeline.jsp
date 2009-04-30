@@ -23,11 +23,10 @@
 <%@ page import="org.labkey.api.query.DefaultSchema" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ page import="org.json.JSONObject"%>
-<%@ page import="org.labkey.api.query.DefaultSchema"%>
 <%@ page import="static org.labkey.api.query.QueryService.*" %>
 <%@ page import="org.labkey.api.query.QueryDefinition" %>
 <%@ page import="org.labkey.api.query.UserSchema" %>
-<%@ page import="org.labkey.api.util.CaseInsensitiveHashMap" %>
+<%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
 <%@ page import="java.util.*" %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>

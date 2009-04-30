@@ -31,7 +31,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 

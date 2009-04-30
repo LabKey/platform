@@ -17,7 +17,7 @@
 package org.labkey.query.controllers.dbuserschema;
 
 import org.labkey.api.data.*;
-import org.labkey.api.data.collections.CaseInsensitiveMap;
+import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.query.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
@@ -202,7 +202,7 @@ public class DbUserSchemaController extends SpringActionController
                         errors.reject(ERROR_MSG, "The existing row was not found.");
                         return;
                     }
-                    Object oldContainer = new CaseInsensitiveMap(oldValues).get("container");
+                    Object oldContainer = new CaseInsensitiveMapWrapper(oldValues).get("container");
                     if (!table.getContainerId().equals(oldContainer))
                     {
                         errors.reject(ERROR_MSG, "The row is from the wrong container");

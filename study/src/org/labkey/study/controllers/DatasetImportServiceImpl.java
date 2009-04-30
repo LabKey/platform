@@ -21,7 +21,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.common.tools.DataLoader;
+import org.labkey.api.reader.DataLoader;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;

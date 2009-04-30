@@ -21,7 +21,7 @@
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
 <%@ page import="java.util.Iterator" %>
-<%@ page import="org.labkey.common.util.Pair" %>
+<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.study.SampleManager" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>

@@ -17,7 +17,7 @@
 package org.labkey.wiki.renderer;
 
 import org.labkey.api.view.*;
-import org.labkey.api.util.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.wiki.FormattedHtml;
 
 import java.io.StringWriter;

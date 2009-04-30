@@ -26,7 +26,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.common.util.Pair;
+import org.labkey.api.util.Pair;
 import org.labkey.experiment.api.*;
 
 import java.io.File;

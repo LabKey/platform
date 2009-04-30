@@ -18,7 +18,7 @@ package org.labkey.study;
 
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.DbCache;
-import org.labkey.api.util.Cache;
+import org.labkey.api.collections.Cache;
 import org.labkey.study.model.StudyCachable;
 
 /**
