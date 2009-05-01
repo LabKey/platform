@@ -993,7 +993,7 @@ public class DavController extends SpringActionController
             switch (type)
             {
                 case FIND_ALL_PROP:
-
+                {
                     xml.writeElement(null, "propstat", XMLWriter.OPENING);
                     xml.writeElement(null, "prop", XMLWriter.OPENING);
 
@@ -1002,7 +1002,9 @@ public class DavController extends SpringActionController
                         path = path + "/";
                     xml.writeProperty(null, "path", h(path));
 
-                    xml.writeProperty(null, "creationdate", getISOCreationDate(resource.getCreated()));
+                    long created = resource.getCreated();
+                    if (created != Long.MIN_VALUE)
+                        xml.writeProperty(null, "creationdate", getISOCreationDate(created));
                     if (null == displayName)
                     {
                         xml.writeElement(null, "displayname", XMLWriter.NO_CONTENT);
@@ -1070,6 +1072,7 @@ public class DavController extends SpringActionController
                     xml.writeElement(null, "propstat", XMLWriter.CLOSING);
 
                     break;
+                }
 
                 case FIND_PROPERTY_NAMES:
 
@@ -1117,7 +1120,11 @@ public class DavController extends SpringActionController
                     {
                         if (property.equals("creationdate"))
                         {
-                            xml.writeProperty(null, "creationdate", getISOCreationDate(resource.getCreated()));
+                            long created = resource.getCreated();
+                            if (created == Long.MIN_VALUE)
+                                xml.writeElement(null, "creationdate", XMLWriter.NO_CONTENT);
+                            else
+                                xml.writeProperty(null, "creationdate", getISOCreationDate(resource.getCreated()));
                         }
                         else if (property.equals("displayname"))
                         {
