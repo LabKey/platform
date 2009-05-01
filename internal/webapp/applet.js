@@ -14,19 +14,24 @@ LABKEY.Applet = Ext.extend(Ext.BoxComponent,
         this.addEvents("ready");
     },
 
-    setSize : function(size)
+    setSize : function(width,height)
     {
+        if (typeof width == "object")
+        {
+            height = width.height;
+            width = width.width;
+        }
         if (!this.rendered)
         {
-            this.width = size.x;
-            this.height = size.y;
+            this.width = width;;
+            this.height = height;
         }
         else
         {
-            this.el.setSize()
+            this.el.setSize(width, height);
             var app = Ext.get(this.appletId);
-            app.dom.width = size.x;
-            app.dom.height = size.y;
+            app.dom.width = width;
+            app.dom.height = height;
         }
     },
 
@@ -98,5 +103,46 @@ LABKEY.Applet = Ext.extend(Ext.BoxComponent,
         LABKEY.Applet.superclass.onRender.call(this, ct, position);
         var html = this.markup();
         this.el.insertHtml("BeforeEnd", html);
+
+        var task =
+        {
+            interval:100,
+            applet:this,
+            run : function()
+            {
+                if (this.applet.isActive())
+                {
+                    this.applet.fireEvent("ready");
+                    Ext.TaskMgr.stop(this);
+                }
+            }
+        };
+        Ext.TaskMgr.start(task);
+    },
+
+    onReady : function(fn)
+    {
+        if (!this.isActive())
+            this.on("ready", fn);
+        else
+            fn.call();
+    },
+
+    isActive : function()
+    {
+        if (!this.rendered)
+            return false;
+        var applet = Ext.get(this.appletId);
+        return applet && 'isActive' in applet.dom && applet.dom.isActive();
+    },
+
+    getApplet : function()
+    {
+        if (!this.rendered)
+            return false;
+        var applet = Ext.get(this.appletId);
+        if (applet && 'isActive' in applet.dom && applet.dom.isActive())
+            return applet.dom;
+        return null;
     }
 });
