@@ -7,7 +7,7 @@
 
 var $ = Ext.get;
 var $h = Ext.util.Format.htmlEncode;
-var $dom = Ext.DomHelper
+var $dom = Ext.DomHelper;
 
 //$dom.append(document.getElementsByTagName("head")[0],"<style>.refreshIcon {background-image: url(" + LABKEY.contextPath + "/_images/reload.png)}</style>");
 
@@ -270,7 +270,7 @@ function previewFN(el, record)
             previewWindow(el, img);
         };
         image.src = uri;
-        _previewAsync = {image:image, cancel:function(){image.onload=null}};
+        _previewAsync = {image:image, cancel:function(){image.onload=null;}};
     }
     else if (startsWith(contentType,'text/') || contentType == 'application/javascript' || endsWith(record.data.name,".log"))
     {
@@ -658,7 +658,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
         var cb = function(response, args, success)
         {
             callback.call(args.filesystem, success, args.path, response.records);
-        }
+        };
         proxy.load({method:"PROPFIND", depth:"0"}, this.historyReader, cb, this, {filesystem:this, path:path});
     },
 
@@ -1028,6 +1028,42 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
 
 
 //
+// WebdavApplet
+//
+var APPLET_EVENTS =
+{
+    ready : 'ready'
+};
+
+var WebdavApplet;
+if (LABKEY.Applet)
+{
+    WebdavApplet = Ext.extend(LABKEY.Applet,
+    {
+        constructor : function(params)
+        {
+            var config =
+            {
+                id:params.id,
+                archive:LABKEY.contextPath + '/_applets/applets-9.1.jar',
+                code:'org.labkey.applets.drop.DropApplet',
+                width:params.width || 200,
+                height:params.height || 200,
+                params:
+                {
+                    url:params.url,
+                    webdavPrefix:LABKEY.contextPath+'/_webdav/',
+                    user:params.user,
+                    password:params.password
+                }
+            };
+            WebdavApplet.superclass.constructor.call(this, config);
+        }
+    });
+}
+
+
+//
 // DavSubmitAction
 //
 
@@ -1387,7 +1423,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
 
     getHistory : function(path)
     {
-        this.fileSystem.getHistory(path, this._history.createDelegate(this));
+        this.fileSystem.getHistory(path, this.history.createDelegate(this));
     },
 
     updateAddressBar : function(path)
@@ -1748,7 +1784,6 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
             });
         }      
 
-        var renderTo = config.renderTo || null;
         Ext.apply(config, {layout:'border', tbar:tbarConfig, items: layoutItems, renderTo:null}, {id:'fileBrowser', height:600, width:800});
         LABKEY.FileBrowser.superclass.constructor.call(this, config);
 
@@ -1815,7 +1850,7 @@ function generateButton(config)
     if (config.id)
         html += ' id="' + config.id + '"';
     if (config.onclick)
-        html += ' onclick="' + onclick + '"';
+        html += ' onclick="' + config.onclick + '"';
     html += '>' + config.text + '</span>';
     return html;
 }

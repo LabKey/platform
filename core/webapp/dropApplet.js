@@ -7,9 +7,7 @@ function getDropApplet()
 {
     try
     {
-        var applet = _id("dropApplet");
-        if (applet && 'isActive' in applet && applet.isActive())
-            return applet;
+        return applet.getApplet();
     }
     catch (x)
     {
@@ -486,7 +484,7 @@ function showMkdirDialog()
 
 var foregroundIntervalId = null;
 
-function init()
+function startDropApplication()
 {
     window.onbeforeunload = LABKEY.beforeunload(pendingTransfers);
 
@@ -494,14 +492,5 @@ function init()
     appletEvents.dragExit();
     showTransfers();
 
-    var mkdirDiv = _div();
-    mkdirDiv.id = "mkdirDialog";
-    mkdirDiv.style.display = "none";
-    mkdirDiv.innerHTML = '<div class="hd">New Folder</div><div class="bd">' +
-                         '<input id="folderName" name="folderName" value=""/><%=PageFlowUtil.generateButton("create", "")%>>';
-    document.getElementsByTagName("BODY")[0].appendChild(mkdirDiv);
-
-    var task = {run : pollApplet, interval: 1000/20};
-    var runner = new Ext.util.TaskRunner();
-    runner.start(task);
+    Ext.TaskMgr.start({run : pollApplet, interval: 1000/20});
 }

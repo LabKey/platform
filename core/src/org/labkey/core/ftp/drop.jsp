@@ -48,7 +48,7 @@ LABKEY.requiresScript("dropApplet.js",true);
     <td valign="top" width=200 height=100%><div id="appletDiv" class="labkey-nav-bordered" style="padding:2px; margin:1px; width:200px; height:200px;"><script type="text/javascript">
 var applet = new LABKEY.Applet({
     id:"dropApplet",
-    archive:"<%=request.getContextPath()%>/_applets/applets-9.1.jar?guid=<%=GUID.makeHash()%><%=AppProps.getInstance().getServerSessionGUID()%>",
+    archive:"<%=request.getContextPath()%>/_applets/applets-9.1.jar",
     code:"org.labkey.applets.drop.DropApplet",
     width:200,
     height:200,
@@ -68,9 +68,9 @@ Ext.onReady(function()
     viewport = new Ext.Viewport();
     onWindowResize();
     applet.render(Ext.get('appletDiv'));
-    init();
-    (function(){applet.setSize({x:200,y:200})}).defer(1);
+    applet.onReady(startDropApplication);
 });
+
 
 var resizeIntervalId = null;
 function onWindowResize()
@@ -108,8 +108,10 @@ function _resize(windowWidth,windowHeight)
     var dialogBody = Ext.get('dialogBody');
     if (dialogBody)
         bottomMargin = 20 + 60; // Ext.get(document.body).getBottom() - dialogBody.getBottom();
-    var height = "" + Math.max(minHeight, windowHeight-elem.getXY()[1]-bottomMargin) + "px";
-    elem.dom.style.height = height;
+    var height = Math.max(minHeight, windowHeight-elem.getXY()[1]-bottomMargin);
+//    elem.scale(null,height);
+    elem.dom.style.height = "" + height + "px";
+//     elem.dom.parent().scale(null,height);
     elem.dom.parentNode.style.height = elem.dom.style.height; // this makes firefox redraw properly (on shrink)
 }
 

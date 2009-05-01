@@ -60,7 +60,6 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
 <script type="text/javascript" language="javascript">
     LABKEY.requiresExtJs(true);
     LABKEY.requiresScript("fileBrowser.js");
-    LABKEY.requiresScript("applet.js",true);
     LABKEY.requiresScript("FileUploadField.js");
 </script>
 
