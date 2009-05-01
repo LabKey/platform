@@ -65,7 +65,7 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
 </script>
 
 <div class="extContainer" style="padding:20px;">
-<div id="files"/>
+<div id="files"></div>
 </div>
 
 <div style="display:none;">
