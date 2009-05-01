@@ -73,10 +73,7 @@ var URI = function(u)
     else if (typeof u == "object")
         Ext.apply(this,u);
 };
-Ext.apply(URI.prototype,
-{
-    parse: parseUri
-});
+URI.prototype = {parse: parseUri};
 
 
 var TREESELECTION_EVENTS =
@@ -1641,15 +1638,13 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
             }}
         });
         
-        this.uploadPanel = new Ext.FormPanel({
-            id : 'uploadPanel',
+        var formPanel = new Ext.FormPanel({
             formId : this.id ? this.id + 'Upload-form' : 'fileUpload-form',
             method : 'POST',
             fileUpload: true,
             enctype:'multipart/form-data',
             layout:'fit',
             border:false,
-            margins:'5 0 0 5',
             bodyStyle : 'background-color:#f0f0f0; padding:5px;',
             defaults: {bodyStyle : 'background-color:#f0f0f0'},
             items: [this.fileUploadField],
@@ -1671,6 +1666,14 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
             }
         });
 
+        this.uploadPanel = new Ext.Panel({
+            id : 'uploadPanel',
+            border : false,
+            bodyStyle : 'background-color:#f0f0f0; padding:5px;',
+            defaults: {bodyStyle : 'background-color:#f0f0f0', border:false},
+            layout:'column',
+            items:[{columnWidth:.5, id:'appletPanel', html:"[<a href='#' title='requires Java'>enable upload tool</a>]"},{columnWidth:.5, items:[formPanel]}]
+        });
 
         //
         // Layout top panel
