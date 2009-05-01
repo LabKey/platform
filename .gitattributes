@@ -106,7 +106,6 @@ api/src/org/labkey/api/collections/Join.java -text
 api/src/org/labkey/api/collections/LimitedCacheMap.java -text
 api/src/org/labkey/api/collections/NullPreventingSet.java -text
 api/src/org/labkey/api/collections/TTLCacheMap.java -text
-api/src/org/labkey/api/data/AbstractConvertHelper.java -text
 api/src/org/labkey/api/data/AbstractForeignKey.java -text
 api/src/org/labkey/api/data/AbstractTableInfo.java -text
 api/src/org/labkey/api/data/Aggregate.java -text

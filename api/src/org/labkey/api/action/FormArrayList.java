@@ -19,7 +19,6 @@ package org.labkey.api.action;
 import java.util.ArrayList;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: May 29, 2007
  * Time: 5:14:01 PM

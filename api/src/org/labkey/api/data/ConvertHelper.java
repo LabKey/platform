@@ -22,22 +22,18 @@ import org.apache.commons.beanutils.Converter;
 import org.apache.commons.beanutils.converters.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.HString;
-import org.labkey.api.util.GuidString;
-import org.labkey.api.util.IdentifierString;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.reports.report.ReportIdentifierConverter;
 import org.labkey.api.reports.report.ReportIdentifier;
-import org.labkey.api.security.roles.RoleConverter;
+import org.labkey.api.reports.report.ReportIdentifierConverter;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.data.AbstractConvertHelper;
+import org.labkey.api.security.roles.RoleConverter;
+import org.labkey.api.util.*;
 import org.springframework.beans.PropertyEditorRegistrar;
 import org.springframework.beans.PropertyEditorRegistry;
 
 import java.awt.*;
 import java.beans.PropertyEditorSupport;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.SQLException;
@@ -46,7 +42,7 @@ import java.util.Date;
 import java.util.HashSet;
 
 
-public class ConvertHelper extends AbstractConvertHelper implements PropertyEditorRegistrar
+public class ConvertHelper implements PropertyEditorRegistrar
 {
     private static final Logger _log = Logger.getLogger(ConvertHelper.class);
     private static ConvertHelper _myInstance = null;
@@ -78,33 +74,49 @@ public class ConvertHelper extends AbstractConvertHelper implements PropertyEdit
     }
 
 
-    // Register shared converters, then cpas-specific converters
-    // TODO: Merge some or all of the converters with msInspect converters
+    // Replace default registered converters which return default values (e.g. 0) for errors.
     protected void register()
     {
-        super.register();
-
-        _register(new BooleanConverter(), Boolean.TYPE);
+        _register(new NullSafeConverter(new BigDecimalConverter()), BigDecimal.class);
+        _register(new NullSafeConverter(new BigIntegerConverter()), BigInteger.class);
         _register(new NullSafeConverter(new BooleanConverter()), Boolean.class);
+        _register(new BooleanConverter(), Boolean.TYPE);
+        _register(new NullSafeConverter(new BooleanArrayConverter()), boolean[].class);
+        _register(new NullSafeConverter(new ByteConverter()), Byte.class);
+        _register(new ByteConverter(), Byte.TYPE);
         _register(new NullSafeConverter(new SQLByteArrayConverter()), byte[].class);
+        _register(new NullSafeConverter(new CharacterArrayConverter()), char[].class);
+        _register(new NullSafeConverter(new CharacterConverter()), Character.class);
+        _register(new CharacterConverter(), Character.TYPE);
+        _register(new NullSafeConverter(new ClassConverter()), Class.class);
+        _register(new ColorConverter(), Color.class);
+        _register(new ContainerConverter(), Container.class);
         _register(new DoubleConverter(), Double.TYPE);
-        _register(new FloatConverter(), Float.TYPE);
-        _register(new NullSafeConverter(new FloatConverter()), Float.class);
-        _register(new _IntegerConverter(), Integer.TYPE);
-        _register(new NullSafeConverter(new _IntegerConverter()), Integer.class);
-        _register(new ContainerConverter(), org.labkey.api.data.Container.class);
         _register(new NullSafeConverter(new DoubleConverter()), Double.class);
-        _register(new NullSafeConverter(new DateFriendlyStringConverter()), String.class);
+        _register(new NullSafeConverter(new DoubleArrayConverter()), double[].class);
+        _register(new NullSafeConverter(new FloatConverter()), Float.class);
+        _register(new FloatConverter(), Float.TYPE);
+        _register(new FloatArrayConverter(), float[].class);
+        _register(new GuidString.Converter(), GuidString.class);
+        _register(new HString.Converter(), HString.class);
+        _register(new IdentifierString.Converter(), IdentifierString.class);
+        _register(new NullSafeConverter(new IntegerArrayConverter()), int[].class);
+        _register(new NullSafeConverter(new _IntegerConverter()), Integer.class);
+        _register(new _IntegerConverter(), Integer.TYPE);
+        _register(new NullSafeConverter(new SqlDateConverter()), java.sql.Date.class);
+        _register(new NullSafeConverter(new SqlTimestampConverter()), java.sql.Time.class);
         _register(new LenientTimestampConverter(), java.sql.Timestamp.class);
         _register(new LenientDateConverter(), java.util.Date.class);
-        _register(new ColorConverter(), Color.class);
-        _register(new StringArrayConverter(), String[].class);
+        _register(new NullSafeConverter(new LongConverter()), Long.class);
+        _register(new LongConverter(), Long.TYPE);
+        _register(new NullSafeConverter(new LongArrayConverter()), long[].class);
         _register(new ReportIdentifierConverter(), ReportIdentifier.class);
         _register(new RoleConverter(), Role.class);
-
-        _register(new HString.Converter(), HString.class);
-        _register(new GuidString.Converter(), GuidString.class);
-		_register(new IdentifierString.Converter(), IdentifierString.class);
+        _register(new NullSafeConverter(new ShortConverter()), Short.class);
+        _register(new ShortConverter(), Short.TYPE);
+        _register(new NullSafeConverter(new ShortArrayConverter()), short[].class);
+        _register(new NullSafeConverter(new DateFriendlyStringConverter()), String.class);
+        _register(new StringArrayConverter(), String[].class);
         _register(new URLHelper.Converter(), URLHelper.class);
     }
 
@@ -121,6 +133,30 @@ public class ConvertHelper extends AbstractConvertHelper implements PropertyEdit
         for (Class c : _converters)
         {
             registry.registerCustomEditor(c, new ConvertUtilsEditor(c));
+        }
+    }
+
+
+    public static class NullSafeConverter implements Converter
+    {
+        Converter _converter;
+
+        public NullSafeConverter(Converter converter)
+        {
+            _converter = converter;
+        }
+
+        public Object convert(Class clss, Object o)
+        {
+            if (o instanceof String)
+            {
+                // 2956 : AbstractConvertHelper shouldn't trim Strings
+                //o = ((String) o).trim();
+                if (((String) o).length() == 0)
+                    return null;
+            }
+
+            return null == o || "".equals(o) ? null : _converter.convert(clss, o);
         }
     }
 
