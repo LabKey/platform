@@ -178,7 +178,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
                 out.printf("<img src=\"%s/_images/%s\"></a>", context.getContextPath(), image);
             }
             else if (indentForExpansionGifs)
-                out.printf("<div class=\"labkey-nav-tree-indenter\" />");
+                out.printf("<div class=\"labkey-nav-tree-indenter\"></div>");
 
             out.print("</td><td class=\"labkey-nav-tree-text\"");
             if(null != onClickScript)
