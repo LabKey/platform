@@ -1662,19 +1662,19 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
             buttonText: "Upload File...",
             buttonOnly: true,
             buttonCfg: {cls: "labkey-button"},
-            listeners: {"fileselected": function (fb, v)
+            listeners: {scope:this, "fileselected": function (fb, v)
             {
               if (me.currentDirectory)
               {
-                  var form = me.uploadPanel.getForm();
-                  var options = {url:me.currentDirectory.data.uri, record:me.currentDirectory, name:me.fileUploadField.getValue()};
+                  var form = this.formPanel.getForm();
+                  var options = {url:this.currentDirectory.data.uri, record:this.currentDirectory, name:this.fileUploadField.getValue()};
                   var action = new DavSubmitAction(form, options);
                   form.doAction(action);
               }
             }}
         });
         
-        var formPanel = new Ext.FormPanel({
+        this.formPanel = new Ext.FormPanel({
             formId : this.id ? this.id + 'Upload-form' : 'fileUpload-form',
             method : 'POST',
             fileUpload: true,
@@ -1708,7 +1708,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
             bodyStyle : 'background-color:#f0f0f0; padding:5px;',
             defaults: {bodyStyle : 'background-color:#f0f0f0', border:false},
             layout:'column',
-            items:[{columnWidth:.5, id:'appletPanel', html:"[<a href='#' title='requires Java'>enable upload tool</a>]"},{columnWidth:.5, items:[formPanel]}]
+            items:[{columnWidth:.5, id:'appletPanel', html:"[<a href='#' title='requires Java'>enable upload tool</a>]"},{columnWidth:.5, items:[this.formPanel]}]
         });
 
         //
