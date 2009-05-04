@@ -395,6 +395,5 @@ public class StudyModule extends DefaultModule
         StudyUpgradeCode.upgradeExtensibleTables_83(moduleContext);
         StudyUpgradeCode.upgradeRequirementsTables(moduleContext);
         StudyUpgradeCode.updateAllCalculatedSpecimenData(moduleContext);
-        StudyUpgradeCode.upgradeMissingProtocols(moduleContext);
     }
 }

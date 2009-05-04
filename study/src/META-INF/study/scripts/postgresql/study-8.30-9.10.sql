@@ -114,6 +114,8 @@ ALTER TABLE study.Site
 	DROP COLUMN IsSAL,
 	DROP COLUMN IsEndpoint;
 
+SELECT core.executeJavaUpgradeCode('upgradeMissingProtocols');
+
 /* study-8.38-8.39.sql */
 
 /*

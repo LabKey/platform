@@ -150,6 +150,7 @@ public class StudyUpgradeCode implements UpgradeCode
         }
     }
 
+    // Invoked at version 8.38
     public static void upgradeMissingProtocols(ModuleContext moduleContext)
     {
         if (moduleContext.isNewInstall() || moduleContext.getInstalledVersion() >= 8.38)
