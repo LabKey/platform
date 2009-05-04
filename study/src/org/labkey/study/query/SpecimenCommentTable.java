@@ -49,7 +49,7 @@ public class SpecimenCommentTable extends FilteredTable
             else if (!"Container".equalsIgnoreCase(name))
             {
                 ColumnInfo wrappedColumn = addWrapColumn(baseColumn);
-                if ("RowId".equalsIgnoreCase(name))
+                if ("RowId".equalsIgnoreCase(name) || "QualityControlFlagForced".equalsIgnoreCase(name))
                     wrappedColumn.setIsHidden(true);
             }
         }

@@ -522,6 +522,25 @@
       <ns:column columnName="SpecimenNumber"/>
       <ns:column columnName="ShippedFromLab"/>
       <ns:column columnName="ShippedToLab"/>
+      <ns:column columnName="Ptid"/>
+      <ns:column columnName="DrawTimestamp"/>
+      <ns:column columnName="SalReceiptDate"/>
+      <ns:column columnName="ClassId"/>
+      <ns:column columnName="VisitValue"/>
+      <ns:column columnName="ProtocolNumber"/>
+      <ns:column columnName="VisitDescription"/>
+      <ns:column columnName="Volume"/>
+      <ns:column columnName="VolumeUnits"/>
+      <ns:column columnName="SubAdditiveDerivative"/>
+      <ns:column columnName="PrimaryTypeId"/>
+      <ns:column columnName="DerivativeTypeId"/>
+      <ns:column columnName="AdditiveTypeId"/>
+      <ns:column columnName="DerivativeTypeId2"/>
+      <ns:column columnName="OriginatingLocationId"/>
+      <ns:column columnName="FrozenTime"/>
+      <ns:column columnName="ProcessingTime"/>
+      <ns:column columnName="PrimaryVolume"/>
+      <ns:column columnName="PrimaryVolumeUnits"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenPrimaryType" tableDbType="TABLE">
@@ -676,10 +695,35 @@
       <ns:column columnName="SpecimenHash"/>
       <ns:column columnName="GlobalUniqueId"/>
       <ns:column columnName="Created"/>
-      <ns:column columnName="CreatedBy"/>
+      <ns:column columnName="CreatedBy">
+        <ns:datatype>int</ns:datatype>
+        <ns:columnTitle>Modified By</ns:columnTitle>
+        <ns:inputType>text</ns:inputType>
+        <ns:inputLength>10</ns:inputLength>
+        <ns:isReadOnly>true</ns:isReadOnly>
+        <ns:fk>
+          <ns:fkColumnName>UserId</ns:fkColumnName>
+          <ns:fkTable>Users</ns:fkTable>
+          <ns:fkDbSchema>core</ns:fkDbSchema>
+        </ns:fk>
+      </ns:column>
       <ns:column columnName="Modified"/>
-      <ns:column columnName="ModifiedBy"/>
+      <ns:column columnName="ModifiedBy">
+          <ns:datatype>int</ns:datatype>
+          <ns:columnTitle>Modified By</ns:columnTitle>
+          <ns:inputType>text</ns:inputType>
+          <ns:inputLength>10</ns:inputLength>
+          <ns:isReadOnly>true</ns:isReadOnly>
+          <ns:fk>
+            <ns:fkColumnName>UserId</ns:fkColumnName>
+            <ns:fkTable>Users</ns:fkTable>
+            <ns:fkDbSchema>core</ns:fkDbSchema>
+          </ns:fk>
+      </ns:column>
       <ns:column columnName="Comment"/>  
-    </ns:columns>
+      <ns:column columnName="QualityControlFlag"/>
+      <ns:column columnName="QualityControlFlagForced"/>
+      <ns:column columnName="QualityControlComments"/>
+      </ns:columns>
   </ns:table>
 </ns:tables>

@@ -29,11 +29,37 @@
     SpringSpecimenController.UpdateSpecimenCommentsBean bean = me.getModelBean();
     Container container = me.getViewContext().getContainer();
 %>
+<form action="updateComments.post" id="updateCommentForm" method="POST">
 <%
-    WebPartView.startTitleFrame(out, "Vial Comments", null, null, null);
+    WebPartView.startTitleFrame(out, "Quality Control Flags", null, null, null);
+    if (bean.isMixedFlagState())
+    {
+%>
+    <b>Note:</b> A subset of the selected vials have quality control flags.  See vial list below for details.<p>
+<%
+    }
+%>
+    What quality control state should be applied to the selected vials?<br>
+    <input type="radio" name="qualityControlFlag" value="" CHECKED> Do not change quality control state<br>
+<%
+    // allow users to flag if our current state is mixed or unflagged:
+    if (bean.isMixedFlagState() || !bean.isCurrentFlagState())
+    {
+%>
+        <input type="radio" name="qualityControlFlag" value="true"> Add quality control flag<br>
+<%
+    }
+    // allow users to unflag if our current state is mixed or flagged:
+    if (bean.isMixedFlagState() || bean.isCurrentFlagState())
+    {
+%>
+        <input type="radio" name="qualityControlFlag" value="false"> Remove quality control flag<p>
+<%
+    }
+    WebPartView.endTitleFrame(out);
+    WebPartView.startTitleFrame(out, "Comments", null, null, null);
 %>
 <labkey:errors/>
-<form action="updateComments.post" id="updateCommentForm" method="POST">
     <%
         if (bean.isMixedComments())
         {

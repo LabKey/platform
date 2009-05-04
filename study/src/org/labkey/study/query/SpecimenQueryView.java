@@ -45,7 +45,65 @@ import java.util.*;
  */
 public class SpecimenQueryView extends BaseStudyQueryView
 {
-    private static class VialRestrictedDataRegion extends DataRegion
+    private static class SpecimenDataRegion extends DataRegion
+    {
+        private Map<String, ColumnInfo> _requiredColumns = new HashMap<String, ColumnInfo>();
+
+        @Override
+        protected boolean isErrorRow(RenderContext ctx, int rowIndex)
+        {
+            return SpecimenUtils.isFieldTrue(ctx, "QualityControlFlag");
+        }
+
+        protected void addColumnIfMissing(Set<ColumnInfo> currentColumns, String colName)
+        {
+            ColumnInfo col = getTable().getColumn(colName);
+            if (col == null)
+                throw new IllegalStateException("Failed to find expected column " + colName);
+            ColumnInfo foundCol = null;
+            for (Iterator<ColumnInfo> it = currentColumns.iterator(); it.hasNext() && foundCol == null;)
+            {
+                ColumnInfo current = it.next();
+                if (colName.equalsIgnoreCase(current.getName()))
+                    foundCol = current;
+            }
+            if (foundCol == null)
+            {
+                currentColumns.add(col);
+                foundCol = col;
+            }
+            _requiredColumns.put(colName, foundCol);
+        }
+
+        @Override
+        public void addQueryColumns(Set<ColumnInfo> columns)
+        {
+            for (String requiredColumn : getRequiredColumns())
+                addColumnIfMissing(columns, requiredColumn);
+        }
+
+        protected List<String> getRequiredColumns()
+        {
+            List<String> cols = new ArrayList<String>();
+            cols.add("QualityControlFlag");
+            return cols;
+        }
+
+        protected String getRequiredColumnAlias(String columnName)
+        {
+            ColumnInfo col = _requiredColumns.get(columnName);
+            if (col == null)
+                throw new IllegalStateException("Failed to find expected column " + columnName);
+            return col.getAlias();
+        }
+
+        protected Object getRequiredColumnValue(RenderContext ctx, String columnName)
+        {
+            return ctx.getRow().get(getRequiredColumnAlias(columnName));
+        }
+    }
+
+    private static class VialRestrictedDataRegion extends SpecimenDataRegion
     {
         private String _historyLinkBase = null;
 
@@ -55,9 +113,20 @@ public class SpecimenQueryView extends BaseStudyQueryView
         }
 
         @Override
+        protected List<String> getRequiredColumns()
+        {
+            List<String> required = super.getRequiredColumns();
+            required.add("GlobalUniqueId");
+            required.add("AtRepository");
+            required.add("LockedInRequest");
+            required.add("Available");
+            return required;
+        }
+
+        @Override
         protected String getRecordSelectorId(RenderContext ctx)
         {
-            return "check_" + ctx.getRow().get("GlobalUniqueId");
+            return "check_" + getRequiredColumnValue(ctx, "GlobalUniqueId");
         }
 
         protected void renderExtraRecordSelectorContent(RenderContext ctx, Writer out) throws IOException
@@ -88,28 +157,35 @@ public class SpecimenQueryView extends BaseStudyQueryView
         private String getHistoryLink(RenderContext ctx)
         {
             if (_historyLinkBase == null)
-                _historyLinkBase = new ActionURL("Study-Samples", "sampleEvents", ctx.getContainer()).toString() + "?id=";
+                _historyLinkBase = getHistoryLinkBase(ctx.getViewContext());
             Integer specimenId = (Integer) ctx.getRow().get("RowId");
             return _historyLinkBase + specimenId;
         }
 
         private boolean isAtRepository(RenderContext ctx)
         {
-            return SpecimenUtils.isFieldTrue(ctx, "AtRepository");
+            return SpecimenUtils.isFieldTrue(ctx, getRequiredColumnAlias("AtRepository"));
         }
 
         private boolean isInActiveRequest(RenderContext ctx)
         {
-            return SpecimenUtils.isFieldTrue(ctx, "LockedInRequest");
+            return SpecimenUtils.isFieldTrue(ctx, getRequiredColumnAlias("LockedInRequest"));
         }
 
         private boolean isAvailable(RenderContext ctx)
         {
-            return SpecimenUtils.isFieldTrue(ctx, "Available");
+            return SpecimenUtils.isFieldTrue(ctx, getRequiredColumnAlias("Available"));
         }
     }
 
-    private class SpecimenRestrictedDataRegion extends DataRegion
+    protected static String getHistoryLinkBase(ViewContext ctx)
+    {
+        ActionURL historyLink = new ActionURL("Study-Samples", "sampleEvents", ctx.getContainer());
+        historyLink.addParameter("returnUrl", ctx.getActionURL().getLocalURIString());
+        return historyLink.toString() + "&id=";
+    }
+
+    private class SpecimenRestrictedDataRegion extends SpecimenDataRegion
     {
         protected boolean isRecordSelectorEnabled(RenderContext ctx)
         {
@@ -117,9 +193,18 @@ public class SpecimenQueryView extends BaseStudyQueryView
         }
 
         @Override
+        protected List<String> getRequiredColumns()
+        {
+            List<String> required = super.getRequiredColumns();
+            required.add("SpecimenHash");
+            required.add("AvailableCount");
+            return required;
+        }
+
+        @Override
         protected String getRecordSelectorId(RenderContext ctx)
         {
-            return "check_" + ctx.getRow().get("SpecimenHash");
+            return "check_" + getRequiredColumnValue(ctx, "SpecimenHash");
         }
 
         protected void renderExtraRecordSelectorContent(RenderContext ctx, Writer out) throws IOException
@@ -135,13 +220,13 @@ public class SpecimenQueryView extends BaseStudyQueryView
         private boolean isAvailable(RenderContext ctx)
         {
             Integer count;
-            if (ctx.getRow().get("AvailableCount") != null)
+            if (getRequiredColumnValue(ctx, "AvailableCount") != null)
             {
-                count = ((Number)ctx.getRow().get("AvailableCount")).intValue();
+                count = ((Number)getRequiredColumnValue(ctx, "AvailableCount")).intValue();
             }
             else
             {
-                String hash = (String) ctx.getRow().get("SpecimenHash");
+                String hash = (String) getRequiredColumnValue(ctx, "SpecimenHash");
                 count = getSampleCounts(ctx).get(hash);
             }
             return (count != null && count.intValue() > 0);
@@ -457,16 +542,16 @@ public class SpecimenQueryView extends BaseStudyQueryView
             if (_showRecordSelectors && _restrictRecordSelectors)
                 rgn = new VialRestrictedDataRegion();
             else
-                rgn = new DataRegion();
+                rgn = new SpecimenDataRegion();
             rgn.setName(getDataRegionName());
             rgn.setDisplayColumns(getDisplayColumns());
             rgn.setShowRecordSelectors(_showRecordSelectors);
             rgn.setRecordSelectorValueColumns("RowId");
             if (_showHistoryLinks)
             {
-                String eventsBase = new ActionURL("Study-Samples", "sampleEvents", getContainer()).toString();
-                rgn.addDisplayColumn(0, new SimpleDisplayColumn("<a href=\"" + eventsBase + "?selected=" +
-                        Boolean.toString(_participantVisitFiltered) + "&id=${rowid}\">[history]</a>"));
+                String eventsBase = getHistoryLinkBase(getViewContext());
+                rgn.addDisplayColumn(0, new SimpleDisplayColumn("<a href=\"" + eventsBase + "${rowid}&selected=" +
+                        Boolean.toString(_participantVisitFiltered) + "\">[history]</a>"));
             }
             rgn.setAggregates(new Aggregate(getTable().getColumn("Volume"), Aggregate.Type.SUM),
                     new Aggregate(getTable().getColumn("GlobalUniqueId"), Aggregate.Type.COUNT));
@@ -476,7 +561,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
             if (_showRecordSelectors && _restrictRecordSelectors)
                 rgn = new SpecimenRestrictedDataRegion();
             else
-                rgn = new DataRegion();
+                rgn = new SpecimenDataRegion();
             rgn.setName(getDataRegionName());
             rgn.setDisplayColumns(getDisplayColumns());
             rgn.setShowRecordSelectors(_showRecordSelectors);

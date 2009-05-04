@@ -754,6 +754,24 @@ in the table tag.  They are necessary so that the borders take precedence correc
     background: #EEEEEE;
 }
 
+/* Used for the normal rows in data regions, sometimes these rows are not given a class */
+.labkey-error-row td, .labkey-error-row th, tr.labkey-error-row
+{
+    border-top: 1px solid #990000;
+    border-bottom: 1px solid #990000;
+    background: #FFDDDD;
+    border-collapse: separate;
+}
+
+/* Used for the shaded alternate rows */
+.labkey-error-alternate-row td, .labkey-error-alternate-row th, tr.labkey-error-alternate-row, td.labkey-error-alternate-row, th.labkey-error-alternate-row
+{
+    border-top:  1px solid #990000;
+    border-bottom:  1px solid #990000;
+    background: #FFBBBB;
+    border-collapse: separate;
+}
+
 /* This is used for the headers on data regions that highlight on mouseover and give a drop down
 of filter options when clicked */
 th.labkey-col-header-filter, td.labkey-col-header-filter, tr.labkey-col-header-filter th

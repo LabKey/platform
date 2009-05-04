@@ -53,14 +53,16 @@ public class SpecimenRequestDisplayColumn extends SimpleDisplayColumn
     {
         String hash = (String) ctx.getRow().get("SpecimenHash");
         String globalUniqueId = (String) ctx.getRow().get("GlobalUniqueId");
-        int count;
+        int count = -1;
         if (ctx.getRow().get("AvailableCount") != null)
         {
             count = ((Number)ctx.getRow().get("AvailableCount")).intValue();
         }
         else
         {
-            count = _specimenQueryView.getSampleCounts(ctx).get(hash).intValue();
+            Integer c = _specimenQueryView.getSampleCounts(ctx).get(hash);
+            if (c != null)
+                count = c.intValue();
         }
 
 

@@ -29,6 +29,9 @@ public class SpecimenComment extends Entity
     private String _specimenHash;
     private String _comment;
     private Integer _rowId;
+    private boolean _qualityControlFlag;
+    private boolean _qualityControlFlagForced;
+    private String _qualityControlComments;
 
     public String getGlobalUniqueId()
     {
@@ -68,5 +71,35 @@ public class SpecimenComment extends Entity
     public void setSpecimenHash(String specimenHash)
     {
         _specimenHash = specimenHash;
+    }
+
+    public boolean isQualityControlFlag()
+    {
+        return _qualityControlFlag;
+    }
+
+    public void setQualityControlFlag(boolean qualityControlFlag)
+    {
+        _qualityControlFlag = qualityControlFlag;
+    }
+
+    public boolean isQualityControlFlagForced()
+    {
+        return _qualityControlFlagForced;
+    }
+
+    public void setQualityControlFlagForced(boolean qualityControlFlagForced)
+    {
+        _qualityControlFlagForced = qualityControlFlagForced;
+    }
+
+    public String getQualityControlComments()
+    {
+        return _qualityControlComments;
+    }
+
+    public void setQualityControlComments(String qualityControlComments)
+    {
+        _qualityControlComments = qualityControlComments;
     }
 }

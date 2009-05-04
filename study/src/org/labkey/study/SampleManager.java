@@ -2415,22 +2415,27 @@ public class SampleManager
         return summaries;
     }
 
-    public Map<Specimen, String> getSpecimenComments(Specimen[] vials) throws SQLException
+    public Map<Specimen, SpecimenComment> getSpecimenComments(Specimen[] vials) throws SQLException
     {
-        Map<Specimen, String> comments = new HashMap<Specimen, String>();
+        Map<Specimen, SpecimenComment> comments = new HashMap<Specimen, SpecimenComment>();
         for (Specimen vial : vials)
         {
             SpecimenComment comment = getSpecimenCommentForVial(vial);
-            comments.put(vial, comment != null ? comment.getComment() : null);
+            comments.put(vial, comment);
         }
         return comments;
     }
 
+    public SpecimenComment getSpecimenCommentForVial(Container container, String globalUniqueId) throws SQLException
+    {
+        SimpleFilter filter = new SimpleFilter("Container", container.getId());
+        filter.addCondition("GlobalUniqueId", globalUniqueId);
+        return Table.selectObject(StudySchema.getInstance().getTableInfoSpecimenComment(), filter, null, SpecimenComment.class);
+    }
+
     public SpecimenComment getSpecimenCommentForVial(Specimen vial) throws SQLException
     {
-        SimpleFilter filter = new SimpleFilter("Container", vial.getContainer().getId());
-        filter.addCondition("GlobalUniqueId", vial.getGlobalUniqueId());
-        return Table.selectObject(StudySchema.getInstance().getTableInfoSpecimenComment(), filter, null, SpecimenComment.class);
+        return getSpecimenCommentForVial(vial.getContainer(), vial.getGlobalUniqueId());
     }
 
     public SpecimenComment[] getSpecimenCommentForSpecimen(Container container, String specimenHash) throws SQLException
@@ -2456,39 +2461,62 @@ public class SampleManager
                 commentFilter, new Sort("GlobalUniqueId"), SpecimenComment.class);
     }
 
-    private void auditSpecimenComment(User user, Specimen vial, String oldComment, String newComment)
+    private boolean safeComp(Object a, Object b)
+    {
+        if (a == null && b == null)
+            return true;
+        if (a == null || b == null)
+            return false;
+        return a.equals(b);
+    }
+
+    private void auditSpecimenComment(User user, Specimen vial, String oldComment, String newComment, boolean prevConflictState, boolean newConflictState)
     {
         String verb = "updated";
         if (oldComment == null)
             verb = "added";
         else if (newComment == null)
             verb = "deleted";
-        String message = "Comment " + verb + ".\n";
-        if (oldComment != null)
-            message += "Previous value: " + oldComment + "\n";
-        if (newComment != null)
-            message += "New value: " + newComment + "\n";
+        String message = "";
+        if (!safeComp(oldComment, newComment))
+        {
+            message += "Comment " + verb + ".\n";
+            if (oldComment != null)
+                message += "Previous value: " + oldComment + "\n";
+            if (newComment != null)
+                message += "New value: " + newComment + "\n";
+        }
+
+        if (!safeComp(prevConflictState, newConflictState))
+        {
+            message = "QC alert flag changed.\n";
+            if (oldComment != null)
+                message += "Previous value: " + prevConflictState + "\n";
+            if (newComment != null)
+                message += "New value: " + newConflictState + "\n";
+        }
 
         AuditLogService.get().addEvent(user, vial.getContainer(),
                 SpecimenCommentAuditViewFactory.SPECIMEN_COMMENT_EVENT, vial.getGlobalUniqueId(), message);
     }
 
-    public SpecimenComment setSpecimenComment(User user, Specimen vial, String commentText) throws SQLException
+    public SpecimenComment setSpecimenComment(User user, Specimen vial, String commentText, boolean qualityControlFlag, boolean qualityControlFlagForced) throws SQLException
     {
         TableInfo commentTable = StudySchema.getInstance().getTableInfoSpecimenComment();
         DbScope scope = commentTable.getSchema().getScope();
         boolean transactionOwner = !scope.isTransactionActive();
         SpecimenComment comment = getSpecimenCommentForVial(vial);
+        boolean clearComment = commentText == null && !qualityControlFlag && !qualityControlFlagForced;
         try
         {
             if (transactionOwner)
                 scope.beginTransaction();
-            if (commentText == null)
+            if (clearComment)
             {
                 if (comment != null)
                 {
                     Table.delete(commentTable, comment.getRowId(), null);
-                    auditSpecimenComment(user, vial, comment.getComment(), null);
+                    auditSpecimenComment(user, vial, comment.getComment(), null, comment.isQualityControlFlag(), false);
                 }
                 if (transactionOwner)
                     scope.commitTransaction();
@@ -2499,10 +2527,13 @@ public class SampleManager
                 if (comment != null)
                 {
                     String prevComment = comment.getComment();
+                    boolean prevConflictState = comment.isQualityControlFlag();
                     comment.setComment(commentText);
+                    comment.setQualityControlFlag(qualityControlFlag);
+                    comment.setQualityControlFlagForced(qualityControlFlagForced);
                     comment.beforeUpdate(user);
                     SpecimenComment updated = Table.update(user, commentTable, comment, comment.getRowId(), null);
-                    auditSpecimenComment(user, vial, prevComment, updated.getComment());
+                    auditSpecimenComment(user, vial, prevComment, updated.getComment(), prevConflictState, updated.isQualityControlFlag());
                     if (transactionOwner)
                         scope.commitTransaction();
                     return updated;
@@ -2513,9 +2544,11 @@ public class SampleManager
                     comment.setGlobalUniqueId(vial.getGlobalUniqueId());
                     comment.setSpecimenHash(vial.getSpecimenHash());
                     comment.setComment(commentText);
+                    comment.setQualityControlFlag(qualityControlFlag);
+                    comment.setQualityControlFlagForced(qualityControlFlagForced);
                     comment.beforeInsert(user, vial.getContainer().getId());
                     SpecimenComment inserted = Table.insert(user, commentTable, comment);
-                    auditSpecimenComment(user, vial, null, inserted.getComment());
+                    auditSpecimenComment(user, vial, null, inserted.getComment(), false, comment.isQualityControlFlag());
                     if (transactionOwner)
                         scope.commitTransaction();
                     return inserted;
@@ -2567,7 +2600,7 @@ public class SampleManager
                     ptids = new TreeSet<String>();
                     cellToPtidSet.put(key, ptids);
                 }
-                ptids.add(ptid);
+                ptids.add(ptid != null ? ptid : "[unknown]");
             }
 
             for (SummaryByVisitType summary : summaries)

@@ -42,10 +42,15 @@ public class Specimen extends AbstractStudyCachable<Specimen>
     private String _subAdditiveDerivative; // NVARCHAR(20),
     private Integer _primaryTypeId; // INT,
     private Integer _derivativeTypeId; // INT,
+    private Integer _derivativeTypeId2; // INT,
     private Integer _additiveTypeId; // INT,
     private Integer _originatingLocationId;
     private Integer _currentLocation;
     private String _specimenHash;
+    private String _frozenTime;
+    private String _processingTime;
+    private String _primaryVolume;
+    private String _primaryVolumeUnits;
 
     public Integer getAdditiveTypeId()
     {
@@ -265,5 +270,55 @@ public class Specimen extends AbstractStudyCachable<Specimen>
     public void setSpecimenHash(String specimenHash)
     {
         _specimenHash = specimenHash;
+    }
+
+    public Integer getDerivativeTypeId2()
+    {
+        return _derivativeTypeId2;
+    }
+
+    public void setDerivativeTypeId2(Integer derivativeTypeId2)
+    {
+        _derivativeTypeId2 = derivativeTypeId2;
+    }
+
+    public String getFrozenTime()
+    {
+        return _frozenTime;
+    }
+
+    public void setFrozenTime(String frozenTime)
+    {
+        _frozenTime = frozenTime;
+    }
+
+    public String getProcessingTime()
+    {
+        return _processingTime;
+    }
+
+    public void setProcessingTime(String processingTime)
+    {
+        _processingTime = processingTime;
+    }
+
+    public String getPrimaryVolume()
+    {
+        return _primaryVolume;
+    }
+
+    public void setPrimaryVolume(String primaryVolume)
+    {
+        _primaryVolume = primaryVolume;
+    }
+
+    public String getPrimaryVolumeUnits()
+    {
+        return _primaryVolumeUnits;
+    }
+
+    public void setPrimaryVolumeUnits(String primaryVolumeUnits)
+    {
+        _primaryVolumeUnits = primaryVolumeUnits;
     }
 }

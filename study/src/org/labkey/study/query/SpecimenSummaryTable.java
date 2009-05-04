@@ -36,10 +36,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
     public SpecimenSummaryTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimenSummary());
-        ColumnInfo participantColumn = new AliasedColumn(this, "ParticipantId", _rootTable.getColumn("PTID"));
-        participantColumn.setFk(new QueryForeignKey(_schema, "Participant", "ParticipantId", null));
-        participantColumn.setKeyField(true);
-        addColumn(participantColumn);
+        addWrapParticipantColumn("PTID").setKeyField(true);
 
         // Same as in SpecimentDetailTable
         AliasedColumn visitColumn;
@@ -80,44 +77,11 @@ public class SpecimenSummaryTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("TotalVolume"));
         addWrapColumn(_rootTable.getColumn("AvailableVolume"));
         addWrapColumn(_rootTable.getColumn("VolumeUnits"));
-        ColumnInfo primaryTypeColumn = new AliasedColumn(this, "PrimaryType", _rootTable.getColumn("PrimaryTypeId"));
-        primaryTypeColumn.setFk(new LookupForeignKey("RowId")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return new PrimaryTypeTable(_schema);
-            }
-        });
-        addColumn(primaryTypeColumn);
-        ColumnInfo additiveTypeColumn = new AliasedColumn(this, "AdditiveType", _rootTable.getColumn("AdditiveTypeId"));
-        additiveTypeColumn.setFk(new LookupForeignKey("RowId")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return new AdditiveTypeTable(_schema);
-            }
-        });
-        addColumn(additiveTypeColumn);
-        ColumnInfo derivativeTypeColumn = new AliasedColumn(this, "DerivativeType", _rootTable.getColumn("DerivativeTypeId"));
-        derivativeTypeColumn.setFk(new LookupForeignKey("RowId")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return new DerivativeTypeTable(_schema);
-            }
-        });
-        addColumn(derivativeTypeColumn);
-
-        ColumnInfo originatingSiteCol = new AliasedColumn(this, "Clinic", _rootTable.getColumn("OriginatingLocationId"));
-        originatingSiteCol.setFk(new LookupForeignKey("RowId")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return new SiteTable(_schema);
-            }
-        });
-        addColumn(originatingSiteCol);
-
+        addWrapTypeColumn("PrimaryType", "PrimaryTypeId");
+        addWrapTypeColumn("DerivativeType", "DerivativeTypeId");
+        addWrapTypeColumn("AdditiveType", "AdditiveTypeId");
+        addWrapTypeColumn("DerivativeType2", "DerivativeTypeId2");
+        addWrapLocationColumn("Clinic", "OriginatingLocationId");
         addWrapColumn(_rootTable.getColumn("SubAdditiveDerivative"));
         addWrapColumn(_rootTable.getColumn("VialCount"));
         addWrapColumn(_rootTable.getColumn("LockedInRequestCount"));
@@ -131,29 +95,20 @@ public class SpecimenSummaryTable extends BaseStudyTable
 
         addWrapColumn(_rootTable.getColumn("PrimaryVolume"));
         addWrapColumn(_rootTable.getColumn("PrimaryVolumeUnits"));
-        ColumnInfo derivativeType2Column = new AliasedColumn(this, "DerivativeType2", _rootTable.getColumn("DerivativeTypeId2"));
-        derivativeType2Column.setFk(new LookupForeignKey("RowId")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return new DerivativeTypeTable(_schema);
-            }
-        });
-        addColumn(derivativeType2Column);
 
         // Create an ExprColumn to get the max *possible* comments for each specimen.  It's only the possible number
         // (rather than the actual number), because a specimennumber isn't sufficient to identify a row in the specimen
         // summary table; derivative and additive types are required as well.  We use this number so we know if additional
         // (more expensive) queries are required to check for actual comments in the DB for each row.
-        SQLFragment sqlFrag = new SQLFragment("(SELECT CAST(COUNT(*) AS VARCHAR(5)) FROM " +
+        SQLFragment sqlFragComments = new SQLFragment("(SELECT CAST(COUNT(*) AS VARCHAR(5)) FROM " +
                 StudySchema.getInstance().getTableInfoSpecimenComment() +
                 " WHERE SpecimenHash = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenHash" +
                 " AND Container = ?)");
-        sqlFrag.add(getContainer().getId());
+        sqlFragComments.add(getContainer().getId());
         //  Set this column type to string so that exports to excel correctly set the column type as string.
         // (We're using a custom display column to output the text of the comment in this col, even though
         // the SQL expression returns an integer.)
-        ColumnInfo commentsCol = addColumn(new ExprColumn(this, "Comments", sqlFrag, Types.VARCHAR));
+        ColumnInfo commentsCol = addColumn(new ExprColumn(this, "Comments", sqlFragComments, Types.VARCHAR));
         commentsCol.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -161,6 +116,19 @@ public class SpecimenSummaryTable extends BaseStudyTable
                 return new CommentDisplayColumn(colInfo);
             }
         });
+        // use sql aggregates to 'OR' together the conflict bits of the vials associated with this specimen hash:
+        SQLFragment sqlFragConflicts = new SQLFragment("(SELECT CASE WHEN COUNT(QualityControlFlag) = 0 OR " +
+                "SUM(CAST(QualityControlFlag AS INT)) = 0 THEN ? ELSE ? END FROM " +
+                StudySchema.getInstance().getTableInfoSpecimenComment() +
+                " WHERE SpecimenHash = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenHash" +
+                " AND Container = ?)");
+        sqlFragConflicts.add(Boolean.FALSE);
+        sqlFragConflicts.add(Boolean.TRUE);
+        sqlFragConflicts.add(getContainer().getId());
+        //  Set this column type to string so that exports to excel correctly set the column type as string.
+        // (We're using a custom display column to output the text of the comment in this col, even though
+        // the SQL expression returns an integer.)
+        addColumn(new ExprColumn(this, "QualityControlFlag", sqlFragConflicts, Types.BOOLEAN));
     }
 
     public static class CommentDisplayColumn extends DataColumn
@@ -204,13 +172,16 @@ public class SpecimenSummaryTable extends BaseStudyTable
                         Map<String, List<String>> commentToIds = new TreeMap<String, List<String>>();
                         for (SpecimenComment comment : comments)
                         {
-                            List<String> ids = commentToIds.get(comment.getComment());
-                            if (ids == null)
+                            if (comment.getComment() != null)
                             {
-                                ids = new ArrayList<String>();
-                                commentToIds.put(comment.getComment(), ids);
+                                List<String> ids = commentToIds.get(comment.getComment());
+                                if (ids == null)
+                                {
+                                    ids = new ArrayList<String>();
+                                    commentToIds.put(comment.getComment(), ids);
+                                }
+                                ids.add(comment.getGlobalUniqueId());
                             }
-                            ids.add(comment.getGlobalUniqueId());
                         }
                         String tempSep = "";
                         for (Map.Entry<String, List<String>> entry : commentToIds.entrySet())

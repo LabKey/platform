@@ -20,11 +20,19 @@
 <%@ page import="org.labkey.study.model.Specimen"%>
 <%@ page import="org.labkey.study.model.Site" %>
 <%@ page import="org.labkey.study.SampleManager" %>
+<%@ page import="org.labkey.study.model.SpecimenComment" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.study.controllers.samples.SpringSpecimenController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<Specimen> me = (JspView<Specimen>) HttpView.currentView();
-    Specimen sample = me.getModelBean();
+    JspView<SpringSpecimenController.SpecimenEventBean> me = (JspView<SpringSpecimenController.SpecimenEventBean>) HttpView.currentView();
+    SpringSpecimenController.SpecimenEventBean bean = me.getModelBean();
+    Specimen sample = bean.getSpecimen();
     Site originatingLocation = SampleManager.getInstance().getOriginatingSite(sample);
+    SpecimenComment comment = SampleManager.getInstance().getSpecimenCommentForVial(sample);
+    ActionURL commentsLink = new ActionURL(SpringSpecimenController.UpdateCommentsAction.class, sample.getContainer());
+    commentsLink.addParameter("rowId", sample.getRowId());
+    commentsLink.addParameter("referrer", getViewContext().getActionURL().getLocalURIString());
 %>
 <table>
     <tr>
@@ -33,7 +41,7 @@
     </tr>
     <tr>
         <th align="right">Participant</th>
-        <td><%= sample.getPtid() %></td>
+        <td><%= h(sample.getPtid()) %></td>
     </tr>
     <tr>
         <th align="right">Visit</th>
@@ -41,7 +49,7 @@
     </tr>
     <tr>
         <th align="right">Volume</th>
-        <td><%= sample.getVolume() %>&nbsp;<%= h(sample.getVolumeUnits()) %></td>
+        <td><%= h(sample.getVolume()) %>&nbsp;<%= h(sample.getVolumeUnits()) %></td>
     </tr>
     <tr>
         <th align="right">Collection Date</th>
@@ -51,4 +59,39 @@
         <th align="right">Collection Location</th>
         <td><%= h(originatingLocation != null ? originatingLocation.getDisplayName() : "Unknown") %></td>
     </tr>
+    <tr>
+        <th align="right">Comments and QC</th>
+        <td><%= h(comment != null ? comment.getComment() : null) %> <%= textLink("update", commentsLink) %></td>
+    </tr>
 </table>
+<br>
+<%
+if (comment != null)
+{
+    if (comment.isQualityControlFlag())
+    {
+%>
+    <strong><span class="labkey-error">Vial is flagged for quality control.</span></strong>
+<%
+    }
+    if (comment.getQualityControlComments() != null && comment.getQualityControlComments().length() > 0)
+    {
+%>
+     <%= h(comment.getQualityControlComments()) %><br>
+<%
+    }
+    if (comment.isQualityControlFlagForced())
+    {
+%>
+    <br><strong>NOTE</strong>: Quality control state for this vial was set manually; it will remain
+    <%= comment.isQualityControlFlag() ? "flagged" : "unflagged" %> until manually changed.<br>
+<%
+    }
+}
+if (bean.getReturnUrl() != null && bean.getReturnUrl().length() > 0)
+{
+%>
+<br><%= textLink("return to vial view", bean.getReturnUrl() )%>
+<%
+    }
+%>

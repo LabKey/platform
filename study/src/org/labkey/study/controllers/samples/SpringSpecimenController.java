@@ -363,7 +363,7 @@ public class SpringSpecimenController extends BaseStudyController
             String firstVisit = visitIt.next().getValue();
             while (visitIt.hasNext())
             {
-                if (!safeStrEquals(firstVisit, visitIt.next().getValue()))
+                if (!safeEquals(firstVisit, visitIt.next().getValue()))
                     return false;
             }
             return true;
@@ -402,7 +402,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    private static boolean safeStrEquals(String a, String b)
+    private static boolean safeEquals(Object a, Object b)
     {
         if (a == null && b == null)
             return true;
@@ -415,6 +415,7 @@ public class SpringSpecimenController extends BaseStudyController
     {
         private boolean _selected;
         private boolean _vialView;
+        private String _returnUrl;
 
         public boolean isSelected()
         {
@@ -435,6 +436,48 @@ public class SpringSpecimenController extends BaseStudyController
         {
             _vialView = vialView;
         }
+
+        public String getReturnUrl()
+        {
+            return _returnUrl;
+        }
+
+        public void setReturnUrl(String returnUrl)
+        {
+            _returnUrl = returnUrl;
+        }
+    }
+
+    public static class SpecimenEventBean
+    {
+        private Specimen _specimen;
+        private String _returnUrl;
+
+        public SpecimenEventBean(Specimen specimen, String returnUrl)
+        {
+            _specimen = specimen;
+            _returnUrl = returnUrl;
+        }
+
+        public Specimen getSpecimen()
+        {
+            return _specimen;
+        }
+
+        public void setSpecimen(Specimen specimen)
+        {
+            _specimen = specimen;
+        }
+
+        public String getReturnUrl()
+        {
+            return _returnUrl;
+        }
+
+        public void setReturnUrl(String returnUrl)
+        {
+            _returnUrl = returnUrl;
+        }
     }
 
     @RequiresPermission(ACL.PERM_READ)
@@ -448,7 +491,8 @@ public class SpringSpecimenController extends BaseStudyController
             Specimen specimen = SampleManager.getInstance().getSpecimen(getContainer(), viewEventForm.getId());
             if (specimen == null)
                 HttpView.throwNotFound("Specimen " + viewEventForm.getId() + " does not exist.");
-            JspView<Specimen> summaryView = new JspView<Specimen>("/org/labkey/study/view/samples/sample.jsp", specimen);
+            JspView<SpecimenEventBean> summaryView = new JspView<SpecimenEventBean>("/org/labkey/study/view/samples/sample.jsp",
+                    new SpecimenEventBean(specimen, viewEventForm.getReturnUrl()));
             summaryView.setTitle("Vial Summary");
 
             Integer[] requestIds = SampleManager.getInstance().getRequestIdsForSpecimen(specimen);
@@ -471,7 +515,6 @@ public class SpringSpecimenController extends BaseStudyController
             }
             else
                 relevantRequests = new JspView("/org/labkey/study/view/samples/relevantRequests.jsp");
-
             relevantRequests.setTitle("Relevant Vial Requests");
             SpecimenEventQueryView vialHistoryView = SpecimenEventQueryView.createView(getViewContext(), specimen);
             vialHistoryView.setTitle("Vial History");
@@ -2891,6 +2934,7 @@ public class SpringSpecimenController extends BaseStudyController
         private String _referrer;
         private boolean _saveCommentsPost;
         private String _conflictResolve;
+        private Boolean _qualityControlFlag;
 
         public String getComments()
         {
@@ -2956,6 +3000,16 @@ public class SpringSpecimenController extends BaseStudyController
         {
             return _conflictResolve == null ? CommentsConflictResolution.REPLACE : CommentsConflictResolution.valueOf(_conflictResolve);
         }
+
+        public Boolean isQualityControlFlag()
+        {
+            return _qualityControlFlag;
+        }
+
+        public void setQualityControlFlag(Boolean qualityControlFlag)
+        {
+            _qualityControlFlag = qualityControlFlag;
+        }
     }
     
     public static class UpdateSpecimenCommentsBean extends SamplesViewBean
@@ -2963,6 +3017,8 @@ public class SpringSpecimenController extends BaseStudyController
         private String _referrer;
         private String _currentComment;
         private boolean _mixedComments;
+        private boolean _currentFlagState;
+        private boolean _mixedFlagState;
 
         public UpdateSpecimenCommentsBean(ViewContext context, Specimen[] samples, String referrer)
         {
@@ -2970,18 +3026,26 @@ public class SpringSpecimenController extends BaseStudyController
             _referrer = referrer;
             try
             {
-                Map<Specimen, String> currentComments = SampleManager.getInstance().getSpecimenComments(samples);
+                Map<Specimen, SpecimenComment> currentComments = SampleManager.getInstance().getSpecimenComments(samples);
                 _mixedComments = false;
-                Iterator<String> it = currentComments.values().iterator();
-                String prevComment = it.next();
-                while (it.hasNext() && !_mixedComments)
+                _mixedFlagState = false;
+                SpecimenComment prevComment = currentComments.get(samples[0]);
+                for (int i = 1; i < samples.length && (!_mixedFlagState || !_mixedComments); i++)
                 {
-                    String currentComment = it.next();
-                    _mixedComments = !safeStrEquals(prevComment, currentComment);
-                    prevComment = currentComment;
+                    SpecimenComment comment = currentComments.get(samples[i]);
+
+                    // a missing comment indicates a 'false' for history conflict:
+                    boolean currentFlagState = comment != null && comment.isQualityControlFlag();
+                    boolean previousFlagState = prevComment != null && prevComment.isQualityControlFlag();
+                    _mixedFlagState = _mixedFlagState || currentFlagState != previousFlagState;
+                    String currentCommentString = comment != null ? comment.getComment() : null;
+                    String previousCommentString = prevComment != null ? prevComment.getComment() : null;
+                    _mixedComments = _mixedComments || !safeEquals(previousCommentString, currentCommentString);
+                    prevComment = comment;
                 }
-                if (!_mixedComments)
-                    _currentComment = prevComment;
+                if (!_mixedComments && prevComment != null)
+                    _currentComment = prevComment.getComment();
+                _currentFlagState = _mixedFlagState || (prevComment != null && prevComment.isQualityControlFlag());
             }
             catch (SQLException e)
             {
@@ -3003,6 +3067,16 @@ public class SpringSpecimenController extends BaseStudyController
         {
             return _mixedComments;
         }
+
+        public boolean isCurrentFlagState()
+        {
+            return _currentFlagState;
+        }
+
+        public boolean isMixedFlagState()
+        {
+            return _mixedFlagState;
+        }
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
@@ -3019,7 +3093,13 @@ public class SpringSpecimenController extends BaseStudyController
             if (selectedVials != null)
             {
                 for (Specimen specimen : selectedVials)
-                    SampleManager.getInstance().setSpecimenComment(getUser(), specimen, null);
+                {
+                    // use the currently saved history conflict state; if it's been forced before, this will prevent it
+                    // from being cleared.
+                    SpecimenComment comment = SampleManager.getInstance().getSpecimenCommentForVial(specimen);
+                    SampleManager.getInstance().setSpecimenComment(getUser(), specimen, null,
+                            comment.isQualityControlFlag(), comment.isQualityControlFlagForced());
+                }
             }
             return true;
         }
@@ -3047,7 +3127,13 @@ public class SpringSpecimenController extends BaseStudyController
             Specimen[] selectedVials = getUtils().getSpecimensFromPost(specimenCommentsForm.isFromGroupedView(), false);
 
             if (selectedVials == null || selectedVials.length == 0)
-                return new HtmlView("No vials selected.  [<a href=\"javascript:back()\">back</a>]");
+            {
+                // are the vial IDs on the URL?
+                int[] rowId = specimenCommentsForm.getRowId();
+                selectedVials = SampleManager.getInstance().getSpecimens(getContainer(), rowId);
+                if (selectedVials == null || selectedVials.length == 0)
+                    return new HtmlView("No vials selected.  [<a href=\"javascript:back()\">back</a>]");
+            }
 
             return new JspView<UpdateSpecimenCommentsBean>("/org/labkey/study/view/samples/updateComments.jsp",
                     new UpdateSpecimenCommentsBean(getViewContext(), selectedVials, specimenCommentsForm.getReferrer()), errors);
@@ -3061,15 +3147,37 @@ public class SpringSpecimenController extends BaseStudyController
             for (int rowId : commentsForm.getRowId())
                 vials.add(SampleManager.getInstance().getSpecimen(getContainer(), rowId));
 
-            Map<Specimen, String> currentComments = SampleManager.getInstance().getSpecimenComments(vials.toArray(new Specimen[vials.size()]));
+            Map<Specimen, SpecimenComment> currentComments = SampleManager.getInstance().getSpecimenComments(vials.toArray(new Specimen[vials.size()]));
 
             for (Specimen vial : vials)
             {
-                String previousComment = currentComments.get(vial);
+                SpecimenComment previousComment = currentComments.get(vial);
+
+                boolean newConflictState;
+                boolean newForceState;
+                if (commentsForm.isQualityControlFlag() != null)
+                {
+                    // if a state has been specified in the post, we consider this to be 'forcing' the state:
+                    newConflictState = commentsForm.isQualityControlFlag().booleanValue();
+                    newForceState = true;
+                }
+                else
+                {
+                    // if we aren't forcing the state, just re-save whatever was previously saved:
+                    newConflictState = previousComment != null && previousComment.isQualityControlFlag();
+                    newForceState = previousComment != null && previousComment.isQualityControlFlagForced();
+                }
+                
                 if (previousComment == null || commentsForm.getConflictResolveEnum() == CommentsConflictResolution.REPLACE)
-                    SampleManager.getInstance().setSpecimenComment(getUser(), vial, commentsForm.getComments());
+                {
+                    SampleManager.getInstance().setSpecimenComment(getUser(), vial, commentsForm.getComments(),
+                            newConflictState, newForceState);
+                }
                 else if (commentsForm.getConflictResolveEnum() == CommentsConflictResolution.APPEND)
-                    SampleManager.getInstance().setSpecimenComment(getUser(), vial, previousComment + "\n" + commentsForm.getComments());
+                {
+                    SampleManager.getInstance().setSpecimenComment(getUser(), vial, previousComment.getComment() + "\n" + commentsForm.getComments(),
+                            newConflictState, newForceState);
+                }
                 // If we haven't updated by now, our user has selected CommentsConflictResolution.SKIP and previousComments is non-null
                 // so we no-op for this vial.
             }

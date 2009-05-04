@@ -30,46 +30,44 @@ import java.util.ArrayList;
  */
 public class SpecimenEventTable extends BaseStudyTable
 {
-    private static final String[] DEFAULT_VISIBLE_COLS = {
-    "SpecimenNumber",
-    "LabId",
-    "Stored",
-    "StorageFlag",
-    "StorageDate",
-    "ShipFlag",
-    "ShipBatchNumber",
-    "ShipDate",
-    "LabReceiptDate",
-    "SpecimenCondition",
-    "Comments",
-    "fr_container",
-    "fr_level1",
-    "fr_level2",
-    "fr_position",
-    "freezer"
-    };
-
     public SpecimenEventTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimenEvent());
-
-        for (ColumnInfo baseColumn : _rootTable.getColumns())
-        {
-            String name = baseColumn.getName();
-            if ("Container".equalsIgnoreCase(name) ||
-                "RowId".equalsIgnoreCase(name) ||
-                "ExternalId".equalsIgnoreCase(name))
-                continue;
-
-            if (getColumn(name) == null)
-                addWrapColumn(baseColumn);
-        }
-
-        List<FieldKey> defaultVisible = new ArrayList<FieldKey>();
-        for (String col : DEFAULT_VISIBLE_COLS)
-            defaultVisible.add(new FieldKey(null, col));
-        setDefaultVisibleColumns(defaultVisible);
-
-        getColumn("LabId").setCaption("Location");
+        
+        addWrapColumn(_rootTable.getColumn("SpecimenId"));
+        addWrapColumn(_rootTable.getColumn("SpecimenNumber"));
+        addWrapLocationColumn("Location", "LabId");
+        addWrapColumn(_rootTable.getColumn("Stored"));
+        addWrapColumn(_rootTable.getColumn("StorageFlag"));
+        addWrapColumn(_rootTable.getColumn("StorageDate"));
+        addWrapColumn(_rootTable.getColumn("ShipFlag"));
+        addWrapColumn(_rootTable.getColumn("ShipBatchNumber"));
+        addWrapColumn(_rootTable.getColumn("ShipDate"));
+        addWrapColumn(_rootTable.getColumn("LabReceiptDate"));
+        addWrapColumn(_rootTable.getColumn("SpecimenCondition"));
+        addWrapColumn(_rootTable.getColumn("Comments"));
+        addWrapColumn(_rootTable.getColumn("fr_container"));
+        addWrapColumn(_rootTable.getColumn("fr_level1"));
+        addWrapColumn(_rootTable.getColumn("fr_level2"));
+        addWrapColumn(_rootTable.getColumn("fr_position"));
+        addWrapColumn(_rootTable.getColumn("freezer"));
+        addWrapParticipantColumn("PTID").setKeyField(true);
+        addWrapColumn(_rootTable.getColumn("DrawTimestamp"));
+        addWrapColumn(_rootTable.getColumn("SalReceiptDate"));
+        addWrapTypeColumn("PrimaryType", "PrimaryTypeId");
+        addWrapTypeColumn("DerivativeType", "DerivativeTypeId");
+        addWrapTypeColumn("AdditiveType", "AdditiveTypeId");
+        addWrapTypeColumn("DerivativeType2", "DerivativeTypeId2");
+        addWrapColumn(_rootTable.getColumn("VisitValue"));
+        addWrapColumn(_rootTable.getColumn("ClassId"));
+        addWrapColumn(_rootTable.getColumn("ProtocolNumber"));
+        addWrapColumn(_rootTable.getColumn("Volume"));
+        addWrapColumn(_rootTable.getColumn("VolumeUnits"));
+        addWrapColumn(_rootTable.getColumn("SubAdditiveDerivative"));
+        addWrapLocationColumn("Clinic", "OriginatingLocationId");
+        addWrapColumn(_rootTable.getColumn("FrozenTime"));
+        addWrapColumn(_rootTable.getColumn("ProcessingTime"));
+        addWrapColumn(_rootTable.getColumn("PrimaryVolume"));
+        addWrapColumn(_rootTable.getColumn("PrimaryVolumeUnits"));
     }
 }

@@ -54,6 +54,25 @@ public class SpecimenEvent extends AbstractStudyCachable<SpecimenEvent>
     private String _expectedTimeUnit; // NVARCHAR(15),
     private Integer _groupProtocol; // INT,
     private String _specimenNumber; // NVARCHAR(50),
+    private String _ptid;
+    private Date _drawTimestamp;
+    private String _salReceiptDate;
+    private String _classId;
+    private Double _visitValue;
+    private String _protocolNumber;
+    private String _visitDescription;
+    private Float _volume;
+    private String _volumeUnits;
+    private String _subAdditiveDerivative;
+    private Integer _primaryTypeId;
+    private Integer _derivativeTypeId;
+    private Integer _additiveTypeId;
+    private Integer _derivativeTypeId2;
+    private Integer _originatingLocationId;
+    private String _frozenTime;
+    private String _processingTime;
+    private String _primaryVolume;
+    private String _primaryVolumeUnits;
 
     public String getComments()
     {
@@ -359,4 +378,193 @@ public class SpecimenEvent extends AbstractStudyCachable<SpecimenEvent>
         _specimenNumber = specimenNumber;
     }
 
+    public String getPtid()
+    {
+        return _ptid;
+    }
+
+    public void setPtid(String ptid)
+    {
+        _ptid = ptid;
+    }
+
+    public Date getDrawTimestamp()
+    {
+        return _drawTimestamp;
+    }
+
+    public void setDrawTimestamp(Date drawTimestamp)
+    {
+        _drawTimestamp = drawTimestamp;
+    }
+
+    public String getSalReceiptDate()
+    {
+        return _salReceiptDate;
+    }
+
+    public void setSalReceiptDate(String salReceiptDate)
+    {
+        _salReceiptDate = salReceiptDate;
+    }
+
+    public String getClassId()
+    {
+        return _classId;
+    }
+
+    public void setClassId(String classId)
+    {
+        _classId = classId;
+    }
+
+    public Double getVisitValue()
+    {
+        return _visitValue;
+    }
+
+    public void setVisitValue(Double visitValue)
+    {
+        _visitValue = visitValue;
+    }
+
+    public String getProtocolNumber()
+    {
+        return _protocolNumber;
+    }
+
+    public void setProtocolNumber(String protocolNumber)
+    {
+        _protocolNumber = protocolNumber;
+    }
+
+    public String getVisitDescription()
+    {
+        return _visitDescription;
+    }
+
+    public void setVisitDescription(String visitDescription)
+    {
+        _visitDescription = visitDescription;
+    }
+
+    public Float getVolume()
+    {
+        return _volume;
+    }
+
+    public void setVolume(Float volume)
+    {
+        _volume = volume;
+    }
+
+    public String getVolumeUnits()
+    {
+        return _volumeUnits;
+    }
+
+    public void setVolumeUnits(String volumeUnits)
+    {
+        _volumeUnits = volumeUnits;
+    }
+
+    public String getSubAdditiveDerivative()
+    {
+        return _subAdditiveDerivative;
+    }
+
+    public void setSubAdditiveDerivative(String subAdditiveDerivative)
+    {
+        _subAdditiveDerivative = subAdditiveDerivative;
+    }
+
+    public Integer getPrimaryTypeId()
+    {
+        return _primaryTypeId;
+    }
+
+    public void setPrimaryTypeId(Integer primaryTypeId)
+    {
+        _primaryTypeId = primaryTypeId;
+    }
+
+    public Integer getDerivativeTypeId()
+    {
+        return _derivativeTypeId;
+    }
+
+    public void setDerivativeTypeId(Integer derivativeTypeId)
+    {
+        _derivativeTypeId = derivativeTypeId;
+    }
+
+    public Integer getAdditiveTypeId()
+    {
+        return _additiveTypeId;
+    }
+
+    public void setAdditiveTypeId(Integer additiveTypeId)
+    {
+        _additiveTypeId = additiveTypeId;
+    }
+
+    public Integer getDerivativeTypeId2()
+    {
+        return _derivativeTypeId2;
+    }
+
+    public void setDerivativeTypeId2(Integer derivativeTypeId2)
+    {
+        _derivativeTypeId2 = derivativeTypeId2;
+    }
+
+    public Integer getOriginatingLocationId()
+    {
+        return _originatingLocationId;
+    }
+
+    public void setOriginatingLocationId(Integer originatingLocationId)
+    {
+        _originatingLocationId = originatingLocationId;
+    }
+
+    public String getFrozenTime()
+    {
+        return _frozenTime;
+    }
+
+    public void setFrozenTime(String frozenTime)
+    {
+        _frozenTime = frozenTime;
+    }
+
+    public String getProcessingTime()
+    {
+        return _processingTime;
+    }
+
+    public void setProcessingTime(String processingTime)
+    {
+        _processingTime = processingTime;
+    }
+
+    public String getPrimaryVolume()
+    {
+        return _primaryVolume;
+    }
+
+    public void setPrimaryVolume(String primaryVolume)
+    {
+        _primaryVolume = primaryVolume;
+    }
+
+    public String getPrimaryVolumeUnits()
+    {
+        return _primaryVolumeUnits;
+    }
+
+    public void setPrimaryVolumeUnits(String primaryVolumeUnits)
+    {
+        _primaryVolumeUnits = primaryVolumeUnits;
+    }
 }

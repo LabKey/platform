@@ -51,16 +51,7 @@ public class SpecimenRequestTable extends BaseStudyTable
         statusColumn.setKeyField(true);
         addColumn(statusColumn);
 
-        AliasedColumn destinationColumn = new AliasedColumn(this, "Destination", _rootTable.getColumn("DestinationSiteId"));
-        destinationColumn.setFk(new LookupForeignKey(null, (String) null, "RowId", "Label")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return new SiteTable(_schema);
-            }
-        });
-        destinationColumn.setKeyField(true);
-        addColumn(destinationColumn);
+        addWrapLocationColumn("Destination", "DestinationSiteId").setKeyField(true);
         addWrapColumn(_rootTable.getColumn("StatusId")).setIsHidden(true);
         addWrapColumn(_rootTable.getColumn("Comments"));
         // there are links to filter by 'createdby' in the UI; it's necessary that this column always

@@ -23,6 +23,8 @@ import org.labkey.api.query.*;
 import java.io.Writer;
 import java.io.IOException;
 import java.util.Set;
+import java.util.List;
+import java.sql.Types;
 
 public class SpecimenDetailTable extends BaseStudyTable
 {
@@ -35,10 +37,7 @@ public class SpecimenDetailTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("Container"));
         addWrapColumn(_rootTable.getColumn("SpecimenHash")).setIsHidden(true);
         addWrapColumn(_rootTable.getColumn("GlobalUniqueId"));
-        ColumnInfo participantColumn = new AliasedColumn(this, "ParticipantId", _rootTable.getColumn("PTID"));
-        participantColumn.setFk(new QueryForeignKey(_schema, "Participant", "ParticipantId", null));
-        participantColumn.setKeyField(true);
-        addColumn(participantColumn);
+        addWrapParticipantColumn("PTID").setKeyField(true);
 
         ColumnInfo pvColumn = new ParticipantVisitColumn(
                 "ParticipantVisit",
@@ -79,43 +78,10 @@ public class SpecimenDetailTable extends BaseStudyTable
         addColumn(visitColumn);
         addWrapColumn(_rootTable.getColumn("Volume"));
         addWrapColumn(_rootTable.getColumn("VolumeUnits"));
-        ColumnInfo primaryTypeColumn = new AliasedColumn(this, "PrimaryType", _rootTable.getColumn("PrimaryTypeId"));
-        primaryTypeColumn.setFk(new LookupForeignKey("RowId")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return new PrimaryTypeTable(_schema);
-            }
-        });
-        addColumn(primaryTypeColumn);
-        ColumnInfo additiveTypeColumn = new AliasedColumn(this, "AdditiveType", _rootTable.getColumn("AdditiveTypeId"));
-        additiveTypeColumn.setFk(new LookupForeignKey("RowId")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return new AdditiveTypeTable(_schema);
-            }
-        });
-        addColumn(additiveTypeColumn);
-        ColumnInfo derivativeTypeColumn = new AliasedColumn(this, "DerivativeType", _rootTable.getColumn("DerivativeTypeId"));
-        derivativeTypeColumn.setFk(new LookupForeignKey("RowId")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return new DerivativeTypeTable(_schema);
-            }
-        });
-        addColumn(derivativeTypeColumn);
-
-        ColumnInfo derivativeType2Column = new AliasedColumn(this, "DerivativeType2", _rootTable.getColumn("DerivativeTypeId2"));
-        derivativeTypeColumn.setFk(new LookupForeignKey("RowId")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return new DerivativeTypeTable(_schema);
-            }
-        });
-        addColumn(derivativeType2Column);
+        addWrapTypeColumn("PrimaryType", "PrimaryTypeId");
+        addWrapTypeColumn("DerivativeType", "DerivativeTypeId");
+        addWrapTypeColumn("AdditiveType", "AdditiveTypeId");
+        addWrapTypeColumn("DerivativeType2", "DerivativeTypeId2");
         addWrapColumn(_rootTable.getColumn("PrimaryVolume"));
         addWrapColumn(_rootTable.getColumn("PrimaryVolumeUnits"));
         addWrapColumn(_rootTable.getColumn("FrozenTime"));
@@ -130,15 +96,7 @@ public class SpecimenDetailTable extends BaseStudyTable
                 return new SiteNameDisplayColumn(colInfo);
             }
         });
-        ColumnInfo originatingSiteCol = new AliasedColumn(this, "Clinic", _rootTable.getColumn("OriginatingLocationId"));
-        originatingSiteCol.setFk(new LookupForeignKey("RowId")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return new SiteTable(_schema);
-            }
-        });
-        addColumn(originatingSiteCol);
+        addWrapLocationColumn("Clinic", "OriginatingLocationId");
 
         ColumnInfo commentsColumn = new AliasedColumn(this, "Comments", _rootTable.getColumn("GlobalUniqueId"));
         commentsColumn.setFk(new LookupForeignKey("GlobalUniqueId")
@@ -166,12 +124,27 @@ public class SpecimenDetailTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("ClassId"));
         addWrapColumn(_rootTable.getColumn("ProtocolNumber"));
         addWrapColumn(_rootTable.getColumn("SubAdditiveDerivative"));
-/*
-        addWrapColumn(_rootTable.getColumn("fr_container"));
-        addWrapColumn(_rootTable.getColumn("fr_level1"));
-        addWrapColumn(_rootTable.getColumn("fr_level2"));
-        addWrapColumn(_rootTable.getColumn("fr_position"));
-        addWrapColumn(_rootTable.getColumn("freezer"));*/
+
+        String innerSelect = "(SELECT QualityControlFlag FROM " +
+                StudySchema.getInstance().getTableInfoSpecimenComment() +
+                " WHERE GlobalUniqueId = " + ExprColumn.STR_TABLE_ALIAS + ".GlobalUniqueId" +
+                " AND Container = ?)";
+
+        // gross bit of SQL: this case statement ensures that we always get a 'true' or 'false' return from this
+        // subselect, even though the lookup might return null:
+        SQLFragment sqlFragConflicts = new SQLFragment("(CASE WHEN " + innerSelect + " = ? THEN ? ELSE ? END)");
+        sqlFragConflicts.add(getContainer().getId());
+        sqlFragConflicts.add(Boolean.TRUE);
+        sqlFragConflicts.add(Boolean.TRUE);
+        sqlFragConflicts.add(Boolean.FALSE);
+        addColumn(new ExprColumn(this, "QualityControlFlag", sqlFragConflicts, Types.BOOLEAN));
+
+        SQLFragment sqlFragQCComments = new SQLFragment("(SELECT QualityControlComments FROM " +
+                StudySchema.getInstance().getTableInfoSpecimenComment() +
+                " WHERE GlobalUniqueId = " + ExprColumn.STR_TABLE_ALIAS + ".GlobalUniqueId" +
+                " AND Container = ?)");
+        sqlFragQCComments.add(getContainer().getId());
+        addColumn(new ExprColumn(this, "QualityControlComments", sqlFragQCComments, Types.VARCHAR));
     }
 
     public static class CommentDisplayColumn extends DataColumn

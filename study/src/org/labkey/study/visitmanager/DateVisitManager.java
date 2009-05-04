@@ -144,7 +144,7 @@ public class DateVisitManager extends VisitManager
                     "SELECT DISTINCT Container, Ptid AS ParticipantId, VisitValue AS SequenceNum, " +
                     schema.getSqlDialect().getDateTimeToDateCast("DrawTimestamp") + " AS VisitDate\n" +
                     "FROM " + tableSpecimen + " AS Specimen\n" +
-                    "WHERE Container = ? AND NOT EXISTS (" +
+                    "WHERE Container = ?  AND Ptid IS NOT NULL AND VisitValue IS NOT NULL AND NOT EXISTS (" +
                     "  SELECT ParticipantId, SequenceNum FROM " + tableParticipantVisit + " PV\n" +
                     "  WHERE Container = ? AND Specimen.Ptid=PV.ParticipantId AND Specimen.VisitValue=PV.SequenceNum)";
             Table.execute(schema, sqlInsertParticipantVisit,
