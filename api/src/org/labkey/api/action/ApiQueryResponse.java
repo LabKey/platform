@@ -126,13 +126,13 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
     {
         for (DisplayColumn dc : _displayColumns)
         {
-            if (dc instanceof QCDisplayColumn)
+            if (dc instanceof MVDisplayColumn)
             {
                 Map<String,String> qcInfo = new HashMap<String,String>();
-                Set<String> qcValues = QcUtil.getQcValues(_viewContext.getContainer());
+                Set<String> qcValues = MvUtil.getMvIndicators(_viewContext.getContainer());
                 for (String qcValue :qcValues)
                 {
-                    qcInfo.put(qcValue, QcUtil.getQcLabel(qcValue, _viewContext.getContainer()));
+                    qcInfo.put(qcValue, MvUtil.getMvLabel(qcValue, _viewContext.getContainer()));
                 }
                 return qcInfo;
             }
@@ -213,7 +213,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         HashMap<String,Object> fmdata = new HashMap<String,Object>();
         fmdata.put("name", dc.getColumnInfo().getName());
         fmdata.put("type", dc.getJsonTypeName());
-        fmdata.put("allowsQC", dc.getColumnInfo().isQcEnabled());
+        fmdata.put("mvEnabled", dc.getColumnInfo().isMvEnabled());
 
         if(isLookup(dc))
         {

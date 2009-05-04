@@ -76,7 +76,7 @@ public class ExportSchemaWizard extends DialogBox
         sb.append("Format").append("\t");
         sb.append("NotNull").append("\t");
         sb.append("Hidden").append("\t");
-        sb.append("AllowsQC").append("\t");
+        sb.append("MvEnabled").append("\t");
         sb.append("Description").append("\n");
 
         int numProps = propertiesEditor.getPropertyCount();
@@ -90,7 +90,7 @@ public class ExportSchemaWizard extends DialogBox
             sb.append(getStringValue(prop.getFormat())).append("\t");
             sb.append(getStringValue(prop.isRequired())).append("\t");
             sb.append(getStringValue(prop.isHidden())).append("\t");
-            sb.append(getStringValue(prop.isQcEnabled())).append("\t");
+            sb.append(getStringValue(prop.getMvEnabled())).append("\t");
             sb.append(getStringValue(prop.getDescription())).append("\n");
         }
 

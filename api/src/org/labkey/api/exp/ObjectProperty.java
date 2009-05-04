@@ -144,10 +144,10 @@ public class ObjectProperty extends OntologyManager.PropertyRow
         this.typeTag = propertyType.getStorageType();
         //TODO: For resource, need to override with known type
         this.rangeURI = propertyType.getTypeUri();
-        if (value instanceof QcFieldWrapper)
+        if (value instanceof MvFieldWrapper)
         {
-            QcFieldWrapper wrapper = (QcFieldWrapper)value;
-            this.qcValue = wrapper.getQcValue();
+            MvFieldWrapper wrapper = (MvFieldWrapper)value;
+            this.mvIndicator = wrapper.getMvIndicator();
             value = wrapper.getValue();
         }
         switch (propertyType)
@@ -209,12 +209,12 @@ public class ObjectProperty extends OntologyManager.PropertyRow
         }
     }
 
-    public Object getValueQcAware()
+    public Object getValueMvAware()
     {
         Object value = value();
-        if (qcValue == null)
+        if (mvIndicator == null)
             return value;
-        QcFieldWrapper wrapper = new QcFieldWrapper(value, qcValue);
+        MvFieldWrapper wrapper = new MvFieldWrapper(value, mvIndicator);
         return wrapper;
     }
 
@@ -393,7 +393,7 @@ public class ObjectProperty extends OntologyManager.PropertyRow
         return _childProperties;
     }
 
-	public static class ObjectPropertyObjectFactory extends BeanObjectFactory<ObjectProperty>
+    public static class ObjectPropertyObjectFactory extends BeanObjectFactory<ObjectProperty>
 	{
 		public ObjectPropertyObjectFactory()
 		{

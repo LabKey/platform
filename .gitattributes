@@ -153,17 +153,17 @@ api/src/org/labkey/api/data/HtmlWriter.java -text
 api/src/org/labkey/api/data/IconDisplayColumn.java -text
 api/src/org/labkey/api/data/JsonWriter.java -text
 api/src/org/labkey/api/data/LookupColumn.java -text
+api/src/org/labkey/api/data/MVDisplayColumn.java -text
+api/src/org/labkey/api/data/MVDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/MenuButton.java -text
 api/src/org/labkey/api/data/MethodInfo.java -text
+api/src/org/labkey/api/data/MvUtil.java -text
 api/src/org/labkey/api/data/OORDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/OutOfRangeDisplayColumn.java -text
 api/src/org/labkey/api/data/Ownable.java -text
 api/src/org/labkey/api/data/Parameter.java -text
 api/src/org/labkey/api/data/PkFilter.java -text
 api/src/org/labkey/api/data/Project.java -text
-api/src/org/labkey/api/data/QCDisplayColumn.java -text
-api/src/org/labkey/api/data/QCDisplayColumnFactory.java -text
-api/src/org/labkey/api/data/QcUtil.java -text
 api/src/org/labkey/api/data/RenderColumn.java -text
 api/src/org/labkey/api/data/ResultSetMetaDataImpl.java -text
 api/src/org/labkey/api/data/RuntimeSQLException.java -text
@@ -210,6 +210,8 @@ api/src/org/labkey/api/exp/IdentifiableBase.java -text
 api/src/org/labkey/api/exp/Lsid.java -text
 api/src/org/labkey/api/exp/LsidManager.java -text
 api/src/org/labkey/api/exp/LsidType.java -text
+api/src/org/labkey/api/exp/MvColumn.java -text
+api/src/org/labkey/api/exp/MvFieldWrapper.java -text
 api/src/org/labkey/api/exp/ObjectProperty.java -text
 api/src/org/labkey/api/exp/OntologyManager.java -text
 api/src/org/labkey/api/exp/OntologyObject.java -text
@@ -218,8 +220,6 @@ api/src/org/labkey/api/exp/PropertyDescriptor.java -text
 api/src/org/labkey/api/exp/PropertyType.java -text
 api/src/org/labkey/api/exp/ProtocolApplicationParameter.java -text
 api/src/org/labkey/api/exp/ProtocolParameter.java -text
-api/src/org/labkey/api/exp/QcColumn.java -text
-api/src/org/labkey/api/exp/QcFieldWrapper.java -text
 api/src/org/labkey/api/exp/RawValueColumn.java -text
 api/src/org/labkey/api/exp/RunExpansionHandler.java -text
 api/src/org/labkey/api/exp/SamplePropertyHelper.java -text
@@ -1693,8 +1693,8 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/property/DefaultValueItem.java -tex
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/DescriptionItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/FormatItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/HiddenItem.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/property/MvEnabledItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/PropertyPaneItem.java -text
-internal/gwtsrc/org/labkey/api/gwt/client/ui/property/QcEnabledItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/RangeValidatorDialog.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/RegexValidatorDialog.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/RequiredItem.java -text
@@ -1867,6 +1867,7 @@ internal/webapp/_images/go-previous.png -text
 internal/webapp/_images/labkey.png -text
 internal/webapp/_images/leaf.gif -text
 internal/webapp/_images/minus.gif -text
+internal/webapp/_images/mv_indicator.gif -text
 internal/webapp/_images/one.gif -text
 internal/webapp/_images/paperclip.gif -text
 internal/webapp/_images/partadded.gif -text
@@ -1883,7 +1884,6 @@ internal/webapp/_images/partupg.gif -text
 internal/webapp/_images/plus.gif -text
 internal/webapp/_images/private.gif -text
 internal/webapp/_images/public.gif -text
-internal/webapp/_images/qc_indicator.gif -text
 internal/webapp/_images/restricted.gif -text
 internal/webapp/_images/rss.gif -text
 internal/webapp/_images/select_arrow.gif -text

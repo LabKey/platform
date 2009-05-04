@@ -18,7 +18,7 @@ package org.labkey.api.reader;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections.Transformer;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.exp.QcColumn;
+import org.labkey.api.exp.MvColumn;
 import org.labkey.api.util.CloseableIterator;
 
 import java.io.File;
@@ -236,35 +236,35 @@ public abstract class DataLoader   // TODO: implements Iterable<K>
         return "column" + col;
     }
 
-    // Given a qc indicator column, find its matching qc column
-    protected int getQcColumnIndex(ColumnDescriptor qcIndicatorColumn)
+    // Given a mv indicator column, find its matching value column
+    protected int getMvColumnIndex(ColumnDescriptor mvIndicatorColumn)
     {
         // Sometimes names are URIs, sometimes they're names. If they're URIs, the columns
         // share a name. If not, they have different names
-        @Nullable String nonQcIndicatorName = null;
-        if (qcIndicatorColumn.name.toLowerCase().endsWith(QcColumn.QC_INDICATOR_SUFFIX.toLowerCase()))
+        @Nullable String nonMvIndicatorName = null;
+        if (mvIndicatorColumn.name.toLowerCase().endsWith(MvColumn.MV_INDICATOR_SUFFIX.toLowerCase()))
         {
-            nonQcIndicatorName = qcIndicatorColumn.name.substring(0, qcIndicatorColumn.name.length() - QcColumn.QC_INDICATOR_SUFFIX.length());
+            nonMvIndicatorName = mvIndicatorColumn.name.substring(0, mvIndicatorColumn.name.length() - MvColumn.MV_INDICATOR_SUFFIX.length());
         }
         for(int i = 0; i<_columns.length; i++)
         {
             ColumnDescriptor col = _columns[i];
-            if (col.isQcEnabled() && (col.name.equals(qcIndicatorColumn.name) || col.name.equals(nonQcIndicatorName)))
+            if (col.isMvEnabled() && (col.name.equals(mvIndicatorColumn.name) || col.name.equals(nonMvIndicatorName)))
                 return i;
         }
         return -1;
     }
 
-    protected int getQcIndicatorColumnIndex(ColumnDescriptor qcColumn)
+    protected int getMvIndicatorColumnIndex(ColumnDescriptor mvColumn)
     {
         // Sometimes names are URIs, sometimes they're names. If they're URIs, the columns
         // share a name. If not, they have different names
-        String namePlusIndicator = qcColumn.name + QcColumn.QC_INDICATOR_SUFFIX;
+        String namePlusIndicator = mvColumn.name + MvColumn.MV_INDICATOR_SUFFIX;
 
         for(int i = 0; i<_columns.length; i++)
         {
             ColumnDescriptor col = _columns[i];
-            if (col.isQcIndicator() && (col.name.equals(qcColumn.name) || col.name.equals(namePlusIndicator)))
+            if (col.isMvIndicator() && (col.name.equals(mvColumn.name) || col.name.equals(namePlusIndicator)))
                 return i;
         }
         return -1;

@@ -262,12 +262,12 @@ public class Sort
             String columnName = sf.getColumnName();
             requiredColumnNames.add(columnName);
             ColumnInfo col = columns.get(columnName);
-            if (col != null && col.isQcEnabled())
+            if (col != null && col.isMvEnabled())
             {
                 // Note: The columns we're passed won't necessarily contain
-                // our qc column at this point -- we need to let the caller
+                // our mv column at this point -- we need to let the caller
                 // know it should be added
-                requiredColumnNames.add(col.getQcColumnName());
+                requiredColumnNames.add(col.getMvColumnName());
             }
         }
         return requiredColumnNames;
@@ -289,24 +289,24 @@ public class Sort
         {
             sb.append(sep);
             String alias = sf.getColumnName();
-            // If we have a qc indicator column, we need to sort on it secondarily
-            ColumnInfo qcIndicatorCol = null;
+            // If we have an mv indicator column, we need to sort on it secondarily
+            ColumnInfo mvIndicatorColumn = null;
             ColumnInfo colinfo = columns.get(alias);
             if (colinfo != null)
             {
                 alias = colinfo.getAlias();
-                if (colinfo.isQcEnabled())
+                if (colinfo.isMvEnabled())
                 {
-                    qcIndicatorCol = columns.get(colinfo.getQcColumnName());
+                    mvIndicatorColumn = columns.get(colinfo.getMvColumnName());
                 }
             }
 
             sb.append(sf.toOrderByString(dialect, alias));
-            if (qcIndicatorCol != null)
+            if (mvIndicatorColumn != null)
             {
-                SortField qcSortField = new SortField(qcIndicatorCol.getName(), sf.getSortDirection());
+                SortField mvSortField = new SortField(mvIndicatorColumn.getName(), sf.getSortDirection());
                 sb.append(", ");
-                sb.append(qcSortField.toOrderByString(dialect, qcIndicatorCol.getAlias()));
+                sb.append(mvSortField.toOrderByString(dialect, mvIndicatorColumn.getAlias()));
             }
             sep = ", ";
         }

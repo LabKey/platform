@@ -16,23 +16,23 @@
 package org.labkey.api.exp;
 
 /**
- * For fields with associated QC, this wrapper holds both an actual value
- * (which may be null) and a QC value (which also may be null).
+ * For fields with associated missing value indicator, this wrapper holds both an actual value
+ * (which may be null) and an mv indicator (which also may be null).
  *
  * User: jgarms
  * Date: Jan 15, 2009
  */
-public class QcFieldWrapper
+public class MvFieldWrapper
 {
     private Object value;
-    private String qcValue;
+    private String mvIndicator;
 
-    public QcFieldWrapper() {}
+    public MvFieldWrapper() {}
 
-    public QcFieldWrapper(Object value, String qcValue)
+    public MvFieldWrapper(Object value, String mvIndicator)
     {
         this.value = value;
-        this.qcValue = qcValue;
+        this.mvIndicator = mvIndicator;
     }
 
     public Object getValue()
@@ -45,26 +45,26 @@ public class QcFieldWrapper
         this.value = value;
     }
 
-    public String getQcValue()
+    public String getMvIndicator()
     {
-        return qcValue;
+        return mvIndicator;
     }
 
-    public void setQcValue(String qcValue)
+    public void setMvIndicator(String mvIndicator)
     {
-        if ("".equals(qcValue))
-            qcValue = null;
-        this.qcValue = qcValue;
+        if ("".equals(mvIndicator))
+            mvIndicator = null;
+        this.mvIndicator = mvIndicator;
     }
 
     @Override
     public String toString()
     {
-        return "QcFieldWrapper: value=" + value + ", qcValue=" + qcValue;
+        return getClass().getSimpleName() + ": value=" + value + ", mvIndicator=" + mvIndicator;
     }
 
     public boolean isEmpty()
     {
-        return value == null && qcValue == null;
+        return value == null && mvIndicator == null;
     }
 }

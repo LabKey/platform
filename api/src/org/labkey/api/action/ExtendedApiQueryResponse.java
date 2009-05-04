@@ -16,7 +16,7 @@
 package org.labkey.api.action;
 
 import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.QCDisplayColumn;
+import org.labkey.api.data.MVDisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
@@ -42,9 +42,9 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
     {
         value,
         displayValue,
-        qcValue,
-        qcIndicator,
-        qcRawValue,
+        mvValue,
+        mvIndicator,
+        mvRawValue,
         url
     }
 
@@ -66,7 +66,7 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
     protected void putValue(Map<String, Object> row, DisplayColumn dc) throws Exception
     {
         //in the extended response format, each column will have a map of its own
-        //that will contain entries for value, qcValue, qcIndicator, etc.
+        //that will contain entries for value, mvValue, mvIndicator, etc.
         Map<String,Object> colMap = new HashMap<String,Object>();
 
         //column value
@@ -83,13 +83,13 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         if(null != value && null != url)
             colMap.put(ColMapEntry.url.name(), url);
 
-        //qc values
-        if (dc instanceof QCDisplayColumn)
+        //missing values
+        if (dc instanceof MVDisplayColumn)
         {
-            QCDisplayColumn qcColumn = (QCDisplayColumn)dc;
+            MVDisplayColumn mvColumn = (MVDisplayColumn)dc;
             RenderContext ctx = getRenderContext();
-            colMap.put(ColMapEntry.qcValue.name(), qcColumn.getQcValue(ctx));
-            colMap.put(ColMapEntry.qcRawValue.name(), qcColumn.getRawValue(ctx));
+            colMap.put(ColMapEntry.mvValue.name(), mvColumn.getMvIndicator(ctx));
+            colMap.put(ColMapEntry.mvRawValue.name(), mvColumn.getRawValue(ctx));
         }
 
         //put the column map into the row map using the column name as the key

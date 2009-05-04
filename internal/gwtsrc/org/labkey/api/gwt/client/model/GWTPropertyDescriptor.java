@@ -54,7 +54,7 @@ public class GWTPropertyDescriptor implements IsSerializable
     private DefaultValueType defaultValueType = null;
     private StringProperty defaultValue = new StringProperty();
     private StringProperty defaultDisplayValue = new StringProperty("[none]");
-    private BooleanProperty qcEnabled = new BooleanProperty(false);
+    private BooleanProperty mvEnabled = new BooleanProperty(false);
 
     private List<GWTPropertyValidator> validators = new ArrayList<GWTPropertyValidator>();
 
@@ -77,7 +77,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         setFormat(s.getFormat());
         setRequired(s.isRequired());
         setHidden(s.isHidden());
-        setQcEnabled(s.isQcEnabled());
+        setMvEnabled(s.getMvEnabled());
         setLookupContainer(s.getLookupContainer());
         setLookupSchema(s.getLookupSchema());
         setLookupQuery(s.getLookupQuery());
@@ -256,14 +256,14 @@ public class GWTPropertyDescriptor implements IsSerializable
         this.hidden.setBool(hidden);
     }
 
-    public boolean isQcEnabled()
+    public boolean getMvEnabled()
     {
-        return qcEnabled.getBool();
+        return mvEnabled.getBool();
     }
 
-    public void setQcEnabled(boolean qcEnabled)
+    public void setMvEnabled(boolean mvEnabled)
     {
-        this.qcEnabled.setBool(qcEnabled);
+        this.mvEnabled.setBool(mvEnabled);
     }
 
     public DefaultValueType getDefaultValueType()
@@ -314,7 +314,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (getPropertyId() != that.getPropertyId()) return false;
         if (isRequired() != that.isRequired()) return false;
         if (isHidden() != that.isHidden()) return false;
-        if (isQcEnabled() != that.isQcEnabled()) return false;
+        if (getMvEnabled() != that.getMvEnabled()) return false;
         if (getConceptURI() != null ? !getConceptURI().equals(that.getConceptURI()) : that.getConceptURI() != null) return false;
         if (getDescription() != null ? !getDescription().equals(that.getDescription()) : that.getDescription() != null) return false;
         if (getFormat() != null ? !getFormat().equals(that.getFormat()) : that.getFormat() != null) return false;
@@ -360,7 +360,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         result = 31 * result + (format.getString() != null ? format.getString().hashCode() : 0);
         result = 31 * result + (required.getBoolean() != null ? required.getBoolean().hashCode() : 0);
         result = 31 * result + (hidden.getBoolean() != null ? hidden.getBoolean().hashCode() : 0);
-        result = 31 * result + (qcEnabled.getBoolean() != null ? qcEnabled.getBoolean().hashCode() : 0);
+        result = 31 * result + (mvEnabled.getBoolean() != null ? mvEnabled.getBoolean().hashCode() : 0);
         result = 31 * result + (lookupContainer.getString() != null ? lookupContainer.getString().hashCode() : 0);
         result = 31 * result + (lookupSchema.getString() != null ? lookupSchema.getString().hashCode() : 0);
         result = 31 * result + (lookupQuery.getString() != null ? lookupQuery.getString().hashCode() : 0);
@@ -393,7 +393,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         if ("lookupContainer".equals(prop)) return lookupContainer;
         if ("lookupSchema".equals(prop)) return lookupSchema;
         if ("lookupQuery".equals(prop)) return lookupQuery;
-        if ("qcEnabled".equals(prop)) return qcEnabled;
+        if ("mvEnabled".equals(prop)) return mvEnabled;
         if ("defaultValueType".equals(prop)) throw new IllegalStateException("defaultValueType cannot be bound.");
         if ("defaultValue".equals(prop)) throw new IllegalStateException("defaultValue cannot be bound.");
         if ("defaultDisplayValue".equals(prop)) throw new IllegalStateException("defaultDisplayValue cannot be bound.");

@@ -35,7 +35,7 @@ public class RawValueColumn extends AliasedColumn
         setCaption(getName());
         setUserEditable(false);
         setIsHidden(true);
-        setQcColumnName(null); // This column itself does not allow QC
+        setMvColumnName(null); // This column itself does not allow QC
         setNullable(true); // Otherwise we get complaints on import for required fields
     }
 }

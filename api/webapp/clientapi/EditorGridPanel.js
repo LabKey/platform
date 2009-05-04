@@ -394,7 +394,7 @@ LABKEY.ext.EditorGridPanel = Ext.extend(Ext.grid.EditorGridPanel, {
                 if(store.reader.jsonData.qcInfo && store.reader.jsonData.qcInfo[qcValue])
                 {
                     cellMetaData.attr = "ext:qtip=\"" + Ext.util.Format.htmlEncode(store.reader.jsonData.qcInfo[qcValue]) + "\"";
-                    cellMetaData.css = "labkey-qc";
+                    cellMetaData.css = "labkey-mv";
                 }
                 return qcValue;
             }

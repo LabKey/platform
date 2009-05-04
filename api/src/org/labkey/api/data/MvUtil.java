@@ -24,67 +24,69 @@ import java.sql.SQLException;
 import java.util.*;
 
 /**
+ * Utility class for dealing with Missing Value Indicators
+ *
  * User: jgarms
  * Date: Jan 14, 2009
  */
-public class QcUtil
+public class MvUtil
 {
-    private static final String CACHE_PREFIX = QcUtil.class.getName() + "/";
+    private static final String CACHE_PREFIX = MvUtil.class.getName() + "/";
 
-    // Sentinel for the cache: if a container has no qc values set, we use this to indicate,
+    // Sentinel for the cache: if a container has no mv indicators set, we use this to indicate,
     // as null means a cache miss.
     private static final Map<String,String> NO_VALUES = Collections.unmodifiableMap(new HashMap<String,String>());
 
-    private QcUtil() {}
+    private MvUtil() {}
 
-    public static Set<String> getQcValues(Container c)
+    public static Set<String> getMvIndicators(Container c)
     {
-        assert c != null : "Attempt to get QC values without a container";
-        return getValuesAndLabels(c).keySet();
+        assert c != null : "Attempt to get missing value indicators without a container";
+        return getIndicatorsAndLabels(c).keySet();
     }
 
     /**
      * Allows nulls and ""
      */
-    public static boolean isValidQcValue(String value, Container c)
+    public static boolean isValidMvIndicator(String indicator, Container c)
     {
-        if (value == null || "".equals(value))
+        if (indicator == null || "".equals(indicator))
             return true;
-        return isQcValue(value, c);
+        return isMvIndicator(indicator, c);
     }
 
-    public static boolean isQcValue(String value, Container c)
+    public static boolean isMvIndicator(String indicator, Container c)
     {
-        return getQcValues(c).contains(value);
+        return getMvIndicators(c).contains(indicator);
     }
 
-    public static String getQcLabel(String qcValue, Container c)
+    public static String getMvLabel(String mvIndicator, Container c)
     {
-        Map<String,String> map = getValuesAndLabels(c);
-        String label = map.get(qcValue);
+        Map<String,String> map = getIndicatorsAndLabels(c);
+        String label = map.get(mvIndicator);
         if (label != null)
             return label;
         return "";
     }
 
     /**
-     * Given a container, this returns the container in which the QC values are defined.
+     * Given a container, this returns the container in which the MV indicators are defined.
      * It may be the container itself, or a parent container or project, or the root container.
      */
     public static Container getDefiningContainer(Container c)
     {
-        return getValuesAndLabelsWithContainer(c).getKey();
+        return getIndicatorsAndLabelsWithContainer(c).getKey();
     }
 
-    public static Map<String,String> getValuesAndLabels(Container c)
+    public static Map<String,String> getIndicatorsAndLabels(Container c)
     {
-        return getValuesAndLabelsWithContainer(c).getValue();
+        return getIndicatorsAndLabelsWithContainer(c).getValue();
     }
 
     /**
-     * Return the Container in which these values are defined, along with the qc values.
+     * Return the Container in which these indicators are defined, along with the indicators.
      */
-    public static Pair<Container,Map<String,String>> getValuesAndLabelsWithContainer(Container c)
+    public static Pair<Container,Map<String,String>> getIndicatorsAndLabelsWithContainer(Container c)
     {
         String cacheKey = getCacheKey(c);
 
@@ -107,69 +109,69 @@ public class QcUtil
         if (result == NO_VALUES)
         {
             // recurse
-            assert !c.isRoot() : "We have no QC values for the root container. This should never happen";
-            return getValuesAndLabelsWithContainer(c.getParent());
+            assert !c.isRoot() : "We have no MV indicators for the root container. This should never happen";
+            return getIndicatorsAndLabelsWithContainer(c.getParent());
         }
 
         return new Pair<Container,Map<String,String>>(c, result);
     }
 
     /**
-     * Sets the container given to inherit qc values from its
+     * Sets the container given to inherit indicators from its
      * parent container, project, or site, whichever
-     * in the hierarchy first has qc values.
+     * in the hierarchy first has mv indicators.
      */
-    public static void inheritQcValues(Container c) throws SQLException
+    public static void inheritMvIndicators(Container c) throws SQLException
     {
-        deleteQcValues(c);
+        deleteMvIndicators(c);
         clearCache(c);
     }
 
-    private static void deleteQcValues(Container c) throws SQLException
+    private static void deleteMvIndicators(Container c) throws SQLException
     {
-        TableInfo qcTable = CoreSchema.getInstance().getTableInfoQcValues();
-        String sql = "DELETE FROM " + qcTable + " WHERE container = ?";
+        TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
+        String sql = "DELETE FROM " + mvTable + " WHERE container = ?";
         Table.execute(CoreSchema.getInstance().getSchema(), sql, new Object[] {c.getId()});
     }
 
     /**
-     * Sets the QC values and labels for this container.
+     * Sets the indicators and labels for this container.
      * Map should be value -> label.
      */
-    public static void assignQcValues(Container c, String[] qcValues, String[] qcLabels) throws SQLException
+    public static void assignMvIndicators(Container c, String[] indicators, String[] labels) throws SQLException
     {
-        assert qcValues.length > 0 : "No QC Values provided";
-        assert qcValues.length == qcLabels.length : "Different number of values and labels provided";
-        deleteQcValues(c);
-        TableInfo qcTable = CoreSchema.getInstance().getTableInfoQcValues();
+        assert indicators.length > 0 : "No indicators provided";
+        assert indicators.length == labels.length : "Different number of indicators and labels provided";
+        deleteMvIndicators(c);
+        TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
         // Need a map to use for each row
         Map<String,String> toInsert = new HashMap<String,String>();
         toInsert.put("container", c.getId());
-        for (int i=0; i<qcValues.length; i++)
+        for (int i=0; i<indicators.length; i++)
         {
-            toInsert.put("qcValue", qcValues[i]);
-            toInsert.put("label", qcLabels[i]);
-            Table.insert(null, qcTable, toInsert);
+            toInsert.put("mvIndicator", indicators[i]);
+            toInsert.put("label", labels[i]);
+            Table.insert(null, mvTable, toInsert);
         }
         clearCache(c);
     }
 
     private static Map<String,String> getFromDb(Container c)
     {
-        Map<String,String> valuesAndLabels = new CaseInsensitiveHashMap<String>();
+        Map<String,String> indicatorsAndLabels = new CaseInsensitiveHashMap<String>();
         try
         {
-            TableInfo qcTable = CoreSchema.getInstance().getTableInfoQcValues();
+            TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
             Set<String> selectColumns = new HashSet<String>();
-            selectColumns.add("qcvalue");
+            selectColumns.add("mvindicator");
             selectColumns.add("label");
             Filter filter = new SimpleFilter("container", c.getId());
-            Map[] selectResults = Table.select(qcTable, selectColumns, filter, null, Map.class);
+            Map[] selectResults = Table.select(mvTable, selectColumns, filter, null, Map.class);
 
             //noinspection unchecked
             for (Map<String,String> m : selectResults)
             {
-                valuesAndLabels.put(m.get("qcvalue"), m.get("label"));
+                indicatorsAndLabels.put(m.get("mvindicator"), m.get("label"));
             }
         }
         catch (SQLException e)
@@ -177,7 +179,7 @@ public class QcUtil
             throw UnexpectedException.wrap(e);
         }
 
-        return valuesAndLabels;
+        return indicatorsAndLabels;
     }
 
     private static String getCacheKey(Container c)
@@ -201,17 +203,17 @@ public class QcUtil
     }
 
     /**
-     * Returns the default QC values as originally implemented: "Q" and "N",
+     * Returns the default indicators as originally implemented: "Q" and "N",
      * mapped to their labels.
      *
      * This should only be necessary at upgrade time.
      */
-    public static Map<String,String> getDefaultQcValues()
+    public static Map<String,String> getDefaultMvIndicators()
     {
-        Map<String,String> qcMap = new HashMap<String,String>();
-        qcMap.put("Q", "Data currently under quality control review.");
-        qcMap.put("N", "Required field marked by site as 'data not available'.");
+        Map<String,String> mvMap = new HashMap<String,String>();
+        mvMap.put("Q", "Data currently under quality control review.");
+        mvMap.put("N", "Required field marked by site as 'data not available'.");
 
-        return qcMap;
+        return mvMap;
     }
 }

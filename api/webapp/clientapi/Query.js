@@ -253,7 +253,7 @@ LABKEY.Query = new function()
                   instead of the SelectRowsResults format. The main difference is that in the
                   ExtendedSelectRowsResults format each column in each row
                   will be another object (not just a scalar value) with a "value" property as well as other
-                  related properties (url, qcValue, qcIndicator, etc.)
+                  related properties (url, mvValue, mvIndicator, etc.)
         * @example Example: <pre name="code" class="xml">
 &lt;script type="text/javascript"&gt;
 	LABKEY.requiresClientAPI();
@@ -722,9 +722,9 @@ LABKEY.Query = new function()
             object will always contain a property named "value" that is the
             column's value, but it may also contain other properties about
             that column's value. For example, if the column was setup to track
-            QC information, it will also contain a property named qcValue (which
+            missing value information, it will also contain a property named mvValue (which
             is the raw value that is considered suspect), and a property named
-            qcIndicator, which will be the string QC indicator (e.g., ".Q").
+            mvIndicator, which will be the string MV indicator (e.g., "Q").
 * @property {Integer} rowCount Indicates the number of total rows that could be
             returned by the query, which may be more than the number of objects
             in the rows array if the client supplied a value for the query.maxRows

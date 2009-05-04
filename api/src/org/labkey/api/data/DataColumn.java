@@ -245,7 +245,7 @@ public class DataColumn extends DisplayColumn
         out.write("', '");
         out.write(_filterColumn.getSqlDataTypeName());
         out.write("', ");
-        out.write(Boolean.toString(_filterColumn.isQcEnabled()));
+        out.write(Boolean.toString(_filterColumn.isMvEnabled()));
         out.write(")");
     }
 

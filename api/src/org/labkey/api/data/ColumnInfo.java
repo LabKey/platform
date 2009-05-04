@@ -78,8 +78,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     private String propertyURI = null;
     private DefaultValueType _defaultValueType = null;
 
-    // Only set if we have an associated qc column for this column
-    private String qcColumnName = null;
+    // Only set if we have an associated mv column for this column
+    private String mvColumnName = null;
 
     private static Logger _log = Logger.getLogger(ColumnInfo.class);
 
@@ -169,7 +169,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         // Consider: it does not always make sense to preserve the "isKeyField" property.
         setKeyField(col.isKeyField());
 
-        setQcColumnName(col.getQcColumnName());
+        setMvColumnName(col.getMvColumnName());
     }
 
 
@@ -1357,19 +1357,19 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         isHidden = hidden;
     }
 
-    public boolean isQcEnabled()
+    public boolean isMvEnabled()
     {
-        return qcColumnName != null;
+        return mvColumnName != null;
     }
 
-    public String getQcColumnName()
+    public String getMvColumnName()
     {
-        return qcColumnName;
+        return mvColumnName;
     }
 
-    public void setQcColumnName(String qcColumnName)
+    public void setMvColumnName(String mvColumnName)
     {
-        this.qcColumnName = qcColumnName;
+        this.mvColumnName = mvColumnName;
     }
 
     /**

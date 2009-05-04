@@ -19,26 +19,28 @@ import org.labkey.api.data.*;
 
 
 /**
+ * Missing Value Indicator column
+ *
  * User: jgarms
  * Date: Jan 9, 2009
  */
-public class QcColumn extends LookupColumn
+public class MvColumn extends LookupColumn
 {
-    public static final String QC_INDICATOR_SUFFIX = "QCIndicator";
+    public static final String MV_INDICATOR_SUFFIX = "MVIndicator";
 
     private final PropertyDescriptor pd;
 
-    public QcColumn(PropertyDescriptor pd, TableInfo tinfoParent, String parentLsidColumn)
+    public MvColumn(PropertyDescriptor pd, TableInfo tinfoParent, String parentLsidColumn)
     {
         this(pd, tinfoParent.getColumn(parentLsidColumn));
     }
 
-    public QcColumn(PropertyDescriptor pd, ColumnInfo lsidColumn)
+    public MvColumn(PropertyDescriptor pd, ColumnInfo lsidColumn)
     {
-        super(lsidColumn, OntologyManager.getTinfoObject().getColumn("ObjectURI"), OntologyManager.getTinfoObjectProperty().getColumn("QcValue"), false);
+        super(lsidColumn, OntologyManager.getTinfoObject().getColumn("ObjectURI"), OntologyManager.getTinfoObjectProperty().getColumn("MvIndicator"), false);
         this.pd = pd;
 
-        String name = ColumnInfo.legalNameFromName(pd.getName() + QC_INDICATOR_SUFFIX);
+        String name = ColumnInfo.legalNameFromName(pd.getName() + MV_INDICATOR_SUFFIX);
         setName(name);
         setAlias(name);
         setCaption(name);
@@ -49,7 +51,7 @@ public class QcColumn extends LookupColumn
 
     public SQLFragment getValueSql()
     {
-        SQLFragment sql = new SQLFragment("\n(SELECT QcValue");
+        SQLFragment sql = new SQLFragment("\n(SELECT MvIndicator");
 
         sql.append("\nFROM exp.ObjectProperty WHERE exp.ObjectProperty.PropertyId = " + pd.getPropertyId());
         sql.append("\nAND exp.ObjectProperty.ObjectId = " + getTableAlias() + ".ObjectId)");

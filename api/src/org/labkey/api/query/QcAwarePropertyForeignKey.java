@@ -19,7 +19,7 @@ package org.labkey.api.query;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.QcColumn;
+import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.property.DomainProperty;
 
@@ -103,12 +103,12 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
             return inRangeColumn;
         }
 
-        if (pd.isQcEnabled())
+        if (pd.isMvEnabled())
         {
             // Just need to set the display column factory
             ColumnInfo col = super.constructColumnInfo(parent, name, pd);
-            col.setQcColumnName(pd.getName() + QcColumn.QC_INDICATOR_SUFFIX);
-            col.setDisplayColumnFactory(new QCDisplayColumnFactory());
+            col.setMvColumnName(pd.getName() + MvColumn.MV_INDICATOR_SUFFIX);
+            col.setDisplayColumnFactory(new MVDisplayColumnFactory());
             return col;
         }
 
@@ -123,7 +123,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
                 pd.getName(),
                 PropertyForeignKey.getValueSql(
                         parent.getValueSql(ExprColumn.STR_TABLE_ALIAS),
-                        PropertyForeignKey.getQCValueSQL(),
+                        PropertyForeignKey.getMvIndicatorSQL(),
                         pd.getPropertyId(), 
                         false),
                 PropertyType.STRING.getSqlType());
@@ -313,18 +313,18 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
         public void addNonOORPropetyDescriptor(PropertyDescriptor pd)
         {
             // May be a QC PD, but not OOR specifically
-            if (pd.isQcEnabled())
+            if (pd.isMvEnabled())
             {
                 PropertyDescriptor indicatorPd = pd.clone();
-                indicatorPd.setName(pd.getName() + QcColumn.QC_INDICATOR_SUFFIX);
+                indicatorPd.setName(pd.getName() + MvColumn.MV_INDICATOR_SUFFIX);
                 indicatorPd.setLabel(pd.getName() + " QC Indicator");
                 indicatorPd.setRangeURI(PropertyType.STRING.getTypeUri());
-                indicatorPd.setQcEnabled(false);
+                indicatorPd.setMvEnabled(false);
 
                 PropertyDescriptor rawValuePd = pd.clone();
                 rawValuePd.setName(pd.getName() + RawValueColumn.RAW_VALUE_SUFFIX);
                 rawValuePd.setLabel(pd.getName() + " Raw Value");
-                rawValuePd.setQcEnabled(false);
+                rawValuePd.setMvEnabled(false);
 
                 _qcGroups.add(new QcColumnGroup(pd, indicatorPd, rawValuePd));
             }

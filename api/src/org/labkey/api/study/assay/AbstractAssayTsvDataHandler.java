@@ -201,8 +201,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         for (DomainProperty pd : expected)
         {
             checkSet.add(pd.getName().toLowerCase());
-            if (pd.isQcEnabled())
-                checkSet.add((pd.getName() + QcColumn.QC_INDICATOR_SUFFIX).toLowerCase());
+            if (pd.isMvEnabled())
+                checkSet.add((pd.getName() + MvColumn.MV_INDICATOR_SUFFIX).toLowerCase());
         }
         for (String col : actual)
         {
@@ -364,17 +364,17 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 {
                     valueMissing = true;
                 }
-                else if (o instanceof QcFieldWrapper)
+                else if (o instanceof MvFieldWrapper)
                 {
-                    QcFieldWrapper qcWrapper = (QcFieldWrapper)o;
-                    if (qcWrapper.isEmpty())
+                    MvFieldWrapper mvWrapper = (MvFieldWrapper)o;
+                    if (mvWrapper.isEmpty())
                         valueMissing = true;
                     else
                     {
                         valueMissing = false;
-                        if (!QcUtil.isValidQcValue(qcWrapper.getQcValue(), dataDomain.getContainer()))
+                        if (!MvUtil.isValidMvIndicator(mvWrapper.getMvIndicator(), dataDomain.getContainer()))
                         {
-                            String columnName = pd.getName() + QcColumn.QC_INDICATOR_SUFFIX;
+                            String columnName = pd.getName() + MvColumn.MV_INDICATOR_SUFFIX;
                             wrongTypes.add(columnName);
                             errorSB.append(columnName).append(" must be a valid QC Value.");
                         }

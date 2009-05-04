@@ -93,9 +93,9 @@ public class PropertyForeignKey extends AbstractForeignKey
         return new SQLFragment("exp.ObjectProperty.StringValue");
     }
 
-    static public SQLFragment getQCValueSQL()
+    static public SQLFragment getMvIndicatorSQL()
     {
-        return new SQLFragment("exp.ObjectProperty.QcValue");
+        return new SQLFragment("exp.ObjectProperty.MvIndicator");
     }
 
     static public SQLFragment getValueSql(ColumnInfo parent, SQLFragment value, int propertyId, boolean parentIsLSID)

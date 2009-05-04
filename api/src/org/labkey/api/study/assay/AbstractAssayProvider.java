@@ -414,7 +414,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     protected PropertyDescriptor addProperty(PropertyDescriptor pd, ObjectProperty value, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
     {
-        return addProperty(pd, value == null ? null : value.getValueQcAware(), dataMap, types);
+        return addProperty(pd, value == null ? null : value.getValueMvAware(), dataMap, types);
     }
 
     protected PropertyDescriptor addProperty(PropertyDescriptor pd, Object value, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)
@@ -995,7 +995,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 propCopy.setType(propSrc.getType());
                 propCopy.setRequired(propSrc.isRequired());
                 propCopy.setHidden(propSrc.isHidden());
-                propCopy.setQcEnabled(propSrc.isQcEnabled());
+                propCopy.setMvEnabled(propSrc.isMvEnabled());
                 propCopy.setDefaultValueTypeEnum(propSrc.getDefaultValueTypeEnum());
                 // check to see if we're moving a lookup column to another container:
                 Lookup lookup = propSrc.getLookup();

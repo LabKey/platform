@@ -54,7 +54,7 @@ function doChange(obj)
     var index = name.split("_")[1];
     var valueInput = document.getElementById("value_" + index);
     var compare = obj.options[obj.selectedIndex].value;
-    if (compare == "" || compare == "isblank" || compare == "isnonblank" || compare == "noqcvalue" || compare == "hasqcvalue")
+    if (compare == "" || compare == "isblank" || compare == "isnonblank" || compare == "nomvvalue" || compare == "hasmvvalue")
     {
         if (index == "1")
             document.getElementById("compareSpan_2").style.visibility = "hidden";
@@ -80,12 +80,12 @@ if (navigator.userAgent.toLowerCase().indexOf("httpunit") < 0)
     LABKEY.requiresYahoo('dragdrop');
 }
 
-function showFilterPanel(elem, tableName, colName, caption, dataType, allowsQC)
+function showFilterPanel(elem, tableName, colName, caption, dataType, mvEnabled)
 {
     _fieldName = colName;
     _fieldCaption = caption;
     _tableName = tableName;
-    fillOptions(dataType, allowsQC);
+    fillOptions(dataType, mvEnabled);
 
     var paramValPairs = getParamValPairs(null);
     //Fill in existing filters...
@@ -194,7 +194,7 @@ var _typeMap = {
 };
 var _mappedType = "TEXT";
 
-function fillOptions(dataType, allowsQC)
+function fillOptions(dataType, mvEnabled)
 {
     getFilterDiv();
     var mappedType = _typeMap[dataType.toUpperCase()];
@@ -282,16 +282,16 @@ function fillOptions(dataType, allowsQC)
             appendOption(select, opt);
         }
 
-        if (allowsQC)
+        if (mvEnabled)
         {
             opt = document.createElement("OPTION");
-            opt.value = "hasqcvalue";
-            opt.text = "Has a QC Value";
+            opt.value = "hasmvvalue";
+            opt.text = "Has a missing value indicator";
             appendOption(select, opt);
 
             opt = document.createElement("OPTION");
-            opt.value = "noqcvalue";
-            opt.text = "Does not have a QC Value";
+            opt.value = "nomvvalue";
+            opt.text = "Does not have a missing value indicator";
             appendOption(select, opt);
         }
 
@@ -479,7 +479,7 @@ function getValidComparesFromForm(formIndex, newParamValPairs)
     if (comparison != "")
     {
         var pair;
-        if (comparison == "isblank" || comparison == "isnonblank" || comparison == "noqcvalue" || comparison == "hasqcvalue")
+        if (comparison == "isblank" || comparison == "isnonblank" || comparison == "nomvvalue" || comparison == "hasmvvalue")
         {
             pair = [_tableName + "." + _fieldName + "~" + comparison];
         }

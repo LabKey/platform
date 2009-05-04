@@ -54,7 +54,7 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
     private String lookupContainer;
     private String lookupSchema;
     private String lookupQuery;
-    private boolean qcEnabled;
+    private boolean mvEnabled;
     private DefaultValueType _defaultValueType;
 
     public String getLookupContainer()
@@ -329,14 +329,14 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Serial
         this.hidden = hidden;
     }
 
-    public boolean isQcEnabled()
+    public boolean isMvEnabled()
     {
-        return qcEnabled;
+        return mvEnabled;
     }
 
-    public void setQcEnabled(boolean qcEnabled)
+    public void setMvEnabled(boolean mvEnabled)
     {
-        this.qcEnabled = qcEnabled;
+        this.mvEnabled = mvEnabled;
     }
 
     @Override

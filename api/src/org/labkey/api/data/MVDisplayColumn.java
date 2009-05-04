@@ -27,22 +27,22 @@ import java.util.Set;
  * User: jgarms
  * Date: Jan 08, 2009
  */
-public class QCDisplayColumn extends DataColumn
+public class MVDisplayColumn extends DataColumn
 {
-    private final ColumnInfo qcValueColumn;
+    private final ColumnInfo mvIndicatorColumn;
 
-    public QCDisplayColumn(ColumnInfo dataColumn, ColumnInfo qcValueColumn)
+    public MVDisplayColumn(ColumnInfo dataColumn, ColumnInfo mvIndicatorColumn)
     {
         super(dataColumn);
-        this.qcValueColumn = qcValueColumn;
+        this.mvIndicatorColumn = mvIndicatorColumn;
     }
 
-    public String getQcValue(RenderContext ctx)
+    public String getMvIndicator(RenderContext ctx)
     {
-        Object qcValueObject = qcValueColumn.getValue(ctx);
-        if (qcValueObject != null)
+        Object mvIndicatorObject = mvIndicatorColumn.getValue(ctx);
+        if (mvIndicatorObject != null)
         {
-            return qcValueObject.toString();
+            return mvIndicatorObject.toString();
         }
         return null;
     }
@@ -55,18 +55,18 @@ public class QCDisplayColumn extends DataColumn
     @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        String qcValue = getQcValue(ctx);
-        if (qcValue != null)
+        String mvIndicator = getMvIndicator(ctx);
+        if (mvIndicator != null)
         {
-            out.write("<font class=\"labkey-qc\">");
-            out.write(h(qcValue));
+            out.write("<font class=\"labkey-mv\">");
+            out.write(h(mvIndicator));
             out.write("</font>");
 
             String imgHtml = "<img align=\"top\" src=\"" +
                     HttpView.currentContext().getContextPath() +
-                    "/_images/qc_indicator.gif\" class=\"labkey-qc-indicator\">";
+                    "/_images/mv_indicator.gif\" class=\"labkey-mv-indicator\">";
 
-            String popupText = PageFlowUtil.filter(QcUtil.getQcLabel(qcValue, ctx.getContainer()));
+            String popupText = PageFlowUtil.filter(MvUtil.getMvLabel(mvIndicator, ctx.getContainer()));
 
             // If we have a raw value, include it in the popup
             String value = super.getFormattedValue(ctx);
@@ -75,11 +75,11 @@ public class QCDisplayColumn extends DataColumn
                 popupText += ("<p>The value as originally entered was: '" + value + "'.");
             }
 
-            out.write(PageFlowUtil.helpPopup("Missing Value Indicator: " + qcValue, popupText, true, imgHtml, 0));
+            out.write(PageFlowUtil.helpPopup("Missing Value Indicator: " + mvIndicator, popupText, true, imgHtml, 0));
 
             return;
         }
-        // Call super, as we don't want to check twice for the qc value
+        // Call super, as we don't want to check twice for the mv indicator
         String value = super.getFormattedValue(ctx);
 
         if ("".equals(value.trim()))
@@ -96,21 +96,21 @@ public class QCDisplayColumn extends DataColumn
     public void addQueryColumns(Set<ColumnInfo> columns)
     {
         super.addQueryColumns(columns);
-        columns.add(qcValueColumn);
+        columns.add(mvIndicatorColumn);
     }
 
     @Override
     public Object getValue(RenderContext ctx)
     {
-        // For non-qc-aware clients, we need to return null
-        // if we have a qc value
-        if (getQcValue(ctx) != null)
+        // For non-mv-aware clients, we need to return null
+        // if we have an mv indicator
+        if (getMvIndicator(ctx) != null)
         {
             return null;
         }
         else
         {
-            // No QC value, so return the underlying data
+            // No MV indicator, so return the underlying data
             return super.getValue(ctx);
         }
     }
@@ -124,7 +124,7 @@ public class QCDisplayColumn extends DataColumn
     @Override
     public String getFormattedValue(RenderContext ctx)
     {
-        if (getQcValue(ctx) != null)
+        if (getMvIndicator(ctx) != null)
             return "";
         return super.getFormattedValue(ctx);
     }
@@ -132,7 +132,7 @@ public class QCDisplayColumn extends DataColumn
     @Override
     protected Object getInputValue(RenderContext ctx)
     {
-        // bug 7479: QC fields don't preserve value on reshow
+        // bug 7479: MV indicator fields don't preserve value on reshow
         // If we have a form, we need to output what the user entered
         ColumnInfo col = getColumnInfo();
         Object val = null;
@@ -163,15 +163,15 @@ public class QCDisplayColumn extends DataColumn
     {
         out.write("<td colspan=" + span + ">");
         renderInputHtml(ctx, out, getInputValue(ctx));
-        renderQCPicker(ctx, out);
+        renderMVPicker(ctx, out);
         out.write("</td>");
     }
 
-    private void renderQCPicker(RenderContext ctx, Writer out) throws IOException
+    private void renderMVPicker(RenderContext ctx, Writer out) throws IOException
     {
-        String formFieldName = ctx.getForm().getFormFieldName(qcValueColumn);
-        String selectedQcValue = getQcValue(ctx);
-        Set<String> qcValues = QcUtil.getQcValues(ctx.getContainer());
+        String formFieldName = ctx.getForm().getFormFieldName(mvIndicatorColumn);
+        String selectedMvIndicator = getMvIndicator(ctx);
+        Set<String> mvIndicators = MvUtil.getMvIndicators(ctx.getContainer());
         out.write("<br>Missing Value Indicator:");
         out.write("<select");
         outputName(ctx, out, formFieldName);
@@ -179,15 +179,15 @@ public class QCDisplayColumn extends DataColumn
             out.write(" DISABLED");
         out.write(">\n");
         out.write("<option value=\"\"></option>");
-        for (String qcValue : qcValues)
+        for (String mvIndicator : mvIndicators)
         {
             out.write("  <option value=\"");
-            out.write(qcValue);
+            out.write(mvIndicator);
             out.write("\"");
-            if (null != selectedQcValue && qcValue.equals(selectedQcValue))
+            if (null != selectedMvIndicator && mvIndicator.equals(selectedMvIndicator))
                 out.write(" selected ");
             out.write(" >");
-            out.write(qcValue);
+            out.write(mvIndicator);
             out.write("</option>\n");
         }
         out.write("</select>");

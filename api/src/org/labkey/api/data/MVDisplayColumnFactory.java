@@ -17,7 +17,7 @@
 package org.labkey.api.data;
 
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.QcColumn;
+import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.ExprColumn;
@@ -33,15 +33,15 @@ import java.util.Map;
  * User: jgarms
  * Date: Jan 8, 2009
  */
-public class QCDisplayColumnFactory implements DisplayColumnFactory
+public class MVDisplayColumnFactory implements DisplayColumnFactory
 {
     public DisplayColumn createRenderer(ColumnInfo colInfo)
     {
-        String qcColName = colInfo.getQcColumnName();
-        assert qcColName != null : "Attempt to render QC state for a non-qc column";
+        String mvColumnName = colInfo.getMvColumnName();
+        assert mvColumnName != null : "Attempt to render MV state for a non-mv column";
 
         FieldKey key = FieldKey.fromString(colInfo.getName());
-        FieldKey qcKey = new FieldKey(key.getParent(), qcColName);
+        FieldKey qcKey = new FieldKey(key.getParent(), mvColumnName);
 
         Map<FieldKey,ColumnInfo> map = QueryService.get().getColumns(colInfo.getParentTable(), Collections.singletonList(qcKey));
 
@@ -49,53 +49,53 @@ public class QCDisplayColumnFactory implements DisplayColumnFactory
         if (qcColumn == null) // For a custom query, it's possible the user has excluded our QC column
             return new DataColumn(colInfo);
 
-        return new QCDisplayColumn(colInfo, qcColumn);
+        return new MVDisplayColumn(colInfo, qcColumn);
     }
 
-    public static ColumnInfo[] createQcColumns(ColumnInfo valueColumn, PropertyDescriptor pd, TableInfo table, String parentLsidColumn)
+    public static ColumnInfo[] createMvColumns(ColumnInfo valueColumn, PropertyDescriptor pd, TableInfo table, String parentLsidColumn)
     {
-        ColumnInfo qcColumn = new QcColumn(pd, table, parentLsidColumn);
+        ColumnInfo mvColumn = new MvColumn(pd, table, parentLsidColumn);
 
         ColumnInfo rawValueCol = new RawValueColumn(table, valueColumn);
 
-        valueColumn.setDisplayColumnFactory(new QCDisplayColumnFactory());
+        valueColumn.setDisplayColumnFactory(new MVDisplayColumnFactory());
 
         ColumnInfo[] result = new ColumnInfo[2];
-        result[0] = qcColumn;
+        result[0] = mvColumn;
         result[1] = rawValueCol;
 
         return result;
     }
 
-    private static ColumnInfo[] createQCColumns(AbstractTableInfo table, ColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId)
+    private static ColumnInfo[] createMvColumns(AbstractTableInfo table, ColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId)
     {
-        String qcColumnName = property.getName() + QcColumn.QC_INDICATOR_SUFFIX;
-        ColumnInfo qcColumn = new ExprColumn(table,
-                qcColumnName,
-                PropertyForeignKey.getValueSql(colObjectId.getValueSql(ExprColumn.STR_TABLE_ALIAS), property.getQCValueSQL(), property.getPropertyId(), false),
+        String mvColumnName = property.getName() + MvColumn.MV_INDICATOR_SUFFIX;
+        ColumnInfo mvColumn = new ExprColumn(table,
+                mvColumnName,
+                PropertyForeignKey.getValueSql(colObjectId.getValueSql(ExprColumn.STR_TABLE_ALIAS), property.getMvIndicatorSQL(), property.getPropertyId(), false),
                 Types.VARCHAR);
 
-        qcColumn.setCaption(qcColumnName);
-        qcColumn.setNullable(true);
-        qcColumn.setUserEditable(false);
-        qcColumn.setIsHidden(true);
+        mvColumn.setCaption(mvColumnName);
+        mvColumn.setNullable(true);
+        mvColumn.setUserEditable(false);
+        mvColumn.setIsHidden(true);
 
-        valueColumn.setQcColumnName(qcColumn.getName());
+        valueColumn.setMvColumnName(mvColumn.getName());
 
         ColumnInfo rawValueCol = new RawValueColumn(table, valueColumn);
 
-        valueColumn.setDisplayColumnFactory(new QCDisplayColumnFactory());
+        valueColumn.setDisplayColumnFactory(new MVDisplayColumnFactory());
 
         ColumnInfo[] result = new ColumnInfo[2];
-        result[0] = qcColumn;
+        result[0] = mvColumn;
         result[1] = rawValueCol;
 
         return result;
     }
 
-    public static void addQCColumns(AbstractTableInfo table, ColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId)
+    public static void addMvColumns(AbstractTableInfo table, ColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId)
     {
-        ColumnInfo[] newColumns = createQCColumns(table, valueColumn, property, colObjectId);
+        ColumnInfo[] newColumns = createMvColumns(table, valueColumn, property, colObjectId);
         for (ColumnInfo column : newColumns)
         {
             table.addColumn(column);

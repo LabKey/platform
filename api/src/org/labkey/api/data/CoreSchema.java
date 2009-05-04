@@ -133,8 +133,8 @@ public class CoreSchema
         return getSchema().getTable("MappedDirectories");
     }
 
-    public TableInfo getTableInfoQcValues()
+    public TableInfo getTableInfoMvIndicators()
     {
-        return getSchema().getTable("QcValues");
+        return getSchema().getTable("MvIndicators");
     }
 }

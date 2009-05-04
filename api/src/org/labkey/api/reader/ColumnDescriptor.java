@@ -56,14 +56,14 @@ public class ColumnDescriptor
     public Converter converter = null;
     public Method setter = null;
 
-    // This column is a data column, with qc enabled
-    private boolean qcEnabled;
+    // This column is a data column, with mv enabled
+    private boolean mvEnabled;
 
-    // This column is the qc indicator -- that is, .Q or .N, not the actual value.
-    private boolean qcIndicator;
+    // This column is the mv indicator -- that is, .Q or .N, not the actual value.
+    private boolean mvIndicator;
 
-    // If qc is enabled, or this is a qc indicator, need to know which container to look in for possible QC states
-    private Container qcContainer;
+    // If mv is enabled, or this is an mv indicator, need to know which container to look in for possible mv indicators
+    private Container mvContainer;
 
     public String toString()
     {
@@ -80,30 +80,30 @@ public class ColumnDescriptor
         return type.getXsdType();
     }
 
-    public boolean isQcEnabled()
+    public boolean isMvEnabled()
     {
-        return qcEnabled;
+        return mvEnabled;
     }
 
-    public boolean isQcIndicator()
+    public boolean isMvIndicator()
     {
-        return qcIndicator;
+        return mvIndicator;
     }
 
-    public Container getQcContainer()
+    public Container getMvContainer()
     {
-        return qcContainer;
+        return mvContainer;
     }
 
-    public void setQcEnabled(@NotNull Container qcContainer)
+    public void setMvEnabled(@NotNull Container mvContainer)
     {
-        qcEnabled = true;
-        this.qcContainer = qcContainer;
+        mvEnabled = true;
+        this.mvContainer = mvContainer;
     }
 
-    public void setQcIndicator(@NotNull Container qcContainer)
+    public void setMvIndicator(@NotNull Container mvContainer)
     {
-        qcIndicator = true;
-        this.qcContainer = qcContainer;
+        mvIndicator = true;
+        this.mvContainer = mvContainer;
     }
 }

@@ -101,8 +101,8 @@ public class OntologyManager
         HashMap<String,PropertyDescriptor> m = new CaseInsensitiveHashMap<PropertyDescriptor>(descriptors.length * 3);
         for (PropertyDescriptor pd : descriptors)
         {
-            if (pd.isQcEnabled())
-                m.put(pd.getName() + QcColumn.QC_INDICATOR_SUFFIX, pd);
+            if (pd.isMvEnabled())
+                m.put(pd.getName() + MvColumn.MV_INDICATOR_SUFFIX, pd);
         }
         for (PropertyDescriptor pd : descriptors)
         {
@@ -1383,7 +1383,7 @@ public class OntologyManager
 		ArrayList<Object[]> dates = new ArrayList<Object[]>();
 		ArrayList<Object[]> floats = new ArrayList<Object[]>();
 		ArrayList<Object[]> strings = new ArrayList<Object[]>();
-        ArrayList<Object[]> qcValues = new ArrayList<Object[]>();
+        ArrayList<Object[]> mvIndicators = new ArrayList<Object[]>();
 
 		for (PropertyRow property : props)
 		{
@@ -1392,13 +1392,13 @@ public class OntologyManager
 
             int objectId = property.getObjectId();
             int propertyId = property.getPropertyId();
-            String qcValue = property.getQcValue();
-            assert qcValue == null || QcUtil.isQcValue(qcValue, container) : "Attempt to insert an invalid QC Value: " + qcValue;
+            String mvIndicator = property.getMvIndicator();
+            assert mvIndicator == null || MvUtil.isMvIndicator(mvIndicator, container) : "Attempt to insert an invalid missing value indicator: " + mvIndicator;
 
             if (null != property.getFloatValue())
-                floats.add(new Object[] {objectId, propertyId, property.getFloatValue(), qcValue});
+                floats.add(new Object[] {objectId, propertyId, property.getFloatValue(), mvIndicator});
             else if (null != property.getDateTimeValue())
-                dates.add(new Object[] {objectId, propertyId, new java.sql.Timestamp(property.getDateTimeValue().getTime()), qcValue});
+                dates.add(new Object[] {objectId, propertyId, new java.sql.Timestamp(property.getDateTimeValue().getTime()), mvIndicator});
             else if (null != property.getStringValue())
             {
                 String string = property.getStringValue();
@@ -1406,11 +1406,11 @@ public class OntologyManager
                 if (string.length() > ObjectProperty.STRING_LENGTH)
                     ;
                 </UNDONE> */
-                strings.add(new Object[] {objectId, propertyId, string, qcValue});
+                strings.add(new Object[] {objectId, propertyId, string, mvIndicator});
             }
-            else if (null != qcValue)
+            else if (null != mvIndicator)
             {
-                qcValues.add(new Object[] {objectId, propertyId, property.getTypeTag(), qcValue});
+                mvIndicators.add(new Object[] {objectId, propertyId, property.getTypeTag(), mvIndicator});
             }
 		}
 
@@ -1418,26 +1418,26 @@ public class OntologyManager
 
 		if (dates.size() > 0)
 		{
-			String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, DateTimeValue, QcValue) VALUES (?,?,'d',?, ?)";
+			String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, DateTimeValue, MvIndicator) VALUES (?,?,'d',?, ?)";
             Table.batchExecute(getExpSchema(), sql, dates);
 		}
 
 		if (floats.size() > 0)
 		{
-			String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, FloatValue, QcValue) VALUES (?,?,'f',?, ?)";
+			String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, FloatValue, MvIndicator) VALUES (?,?,'f',?, ?)";
             Table.batchExecute(getExpSchema(), sql, floats);
 		}
 
 		if (strings.size() > 0)
 		{
-			String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, StringValue, QcValue) VALUES (?,?,'s',?, ?)";
+			String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, StringValue, MvIndicator) VALUES (?,?,'s',?, ?)";
             Table.batchExecute(getExpSchema(), sql, strings);
 		}
 
-        if (qcValues.size() > 0)
+        if (mvIndicators.size() > 0)
         {
-            String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, QcValue) VALUES (?,?,?,?)";
-            Table.batchExecute(getExpSchema(), sql, qcValues);
+            String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, MvIndicator) VALUES (?,?,?,?)";
+            Table.batchExecute(getExpSchema(), sql, mvIndicators);
         }
 
         clearPropertyCache();
@@ -1810,10 +1810,10 @@ public class OntologyManager
         {
 			ColumnInfo col = new PropertyColumn(prop, parentTable, parentCol, c.getId(), user);
             cols.add(col);
-            if (prop.isQcEnabled())
+            if (prop.isMvEnabled())
             {
-                col.setQcColumnName(col.getName() + QcColumn.QC_INDICATOR_SUFFIX);
-                ColumnInfo[] qcColumns = QCDisplayColumnFactory.createQcColumns(col, prop, parentTable, parentCol);
+                col.setMvColumnName(col.getName() + MvColumn.MV_INDICATOR_SUFFIX);
+                ColumnInfo[] qcColumns = MVDisplayColumnFactory.createMvColumns(col, prop, parentTable, parentCol);
                 cols.addAll(Arrays.asList(qcColumns));
             }
         }
@@ -1988,7 +1988,7 @@ public class OntologyManager
 
             boolean required = ((Boolean)booleanConverter.convert(Boolean.class, m.get("NotNull"))).booleanValue();
             boolean hidden = ((Boolean)booleanConverter.convert(Boolean.class, m.get("Hidden"))).booleanValue();
-            boolean qcEnabled = ((Boolean)booleanConverter.convert(Boolean.class, m.get("AllowsQC"))).booleanValue();
+            boolean mvEnabled = ((Boolean)booleanConverter.convert(Boolean.class, m.get("MvEnabled"))).booleanValue();
 
             String description = (String) m.get("description");
             String format = StringUtils.trimToNull((String)m.get("format"));
@@ -2053,7 +2053,7 @@ public class OntologyManager
             pd.setRequired(required);
             pd.setHidden(hidden);
             pd.setFormat(format);
-            pd.setQcEnabled(qcEnabled);
+            pd.setMvEnabled(mvEnabled);
 
             if (null != allProps.put(pd.getPropertyURI(), pd))
             {
@@ -2658,9 +2658,9 @@ public class OntologyManager
 		protected Double floatValue;
 		protected String stringValue;
 		protected Date dateTimeValue;
-        protected String qcValue;
+        protected String mvIndicator;
 
-		public PropertyRow()
+        public PropertyRow()
 		{
 		}
 
@@ -2671,19 +2671,19 @@ public class OntologyManager
 			this.typeTag = pt.getStorageType();
 
             // Handle field-level QC
-            if (value instanceof QcFieldWrapper)
+            if (value instanceof MvFieldWrapper)
             {
-                QcFieldWrapper qcWrapper = (QcFieldWrapper) value;
-                this.qcValue = qcWrapper.getQcValue();
-                value = qcWrapper.getValue();
+                MvFieldWrapper mvWrapper = (MvFieldWrapper) value;
+                this.mvIndicator = mvWrapper.getMvIndicator();
+                value = mvWrapper.getValue();
             }
-            else if (pd.isQcEnabled())
+            else if (pd.isMvEnabled())
             {
                 // Not all callers will have wrapped a QC value if there isn't also
                 // a real value
-                if (QcUtil.isQcValue(value.toString(), pd.getContainer()))
+                if (MvUtil.isMvIndicator(value.toString(), pd.getContainer()))
                 {
-                    this.qcValue = value.toString();
+                    this.mvIndicator = value.toString();
                     value = null;
                 }
             }
@@ -2809,14 +2809,14 @@ public class OntologyManager
 			this.dateTimeValue = dateTimeValue;
 		}
 
-        public String getQcValue()
+        public String getMvIndicator()
         {
-            return qcValue;
+            return mvIndicator;
         }
 
-        public void setQcValue(String qcValue)
+        public void setMvIndicator(String mvIndicator)
         {
-            this.qcValue = qcValue;
+            this.mvIndicator = mvIndicator;
         }
 
         @Override
@@ -2838,8 +2838,8 @@ public class OntologyManager
             else
                 sb.append("null");
 
-            if (qcValue != null)
-                sb.append(", qcValue=" + qcValue);
+            if (mvIndicator != null)
+                sb.append(", mvIndicator=" + mvIndicator);
 
             return sb.toString();
         }

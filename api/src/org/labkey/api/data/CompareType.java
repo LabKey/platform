@@ -22,7 +22,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.SimpleFilter.ColumnNameFormatter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
-import org.labkey.api.exp.QcColumn;
+import org.labkey.api.exp.MvColumn;
 import org.labkey.api.util.DateUtil;
 
 import java.sql.Types;
@@ -579,14 +579,14 @@ public enum CompareType
         {
             List<String> names = new ArrayList<String>();
             names.add(_colName);
-            names.add(_colName + QcColumn.QC_INDICATOR_SUFFIX);
+            names.add(_colName + MvColumn.MV_INDICATOR_SUFFIX);
             return names;
         }
 
         @Override
         public SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
-            ColumnInfo qcColumn = columnMap.get(_colName + QcColumn.QC_INDICATOR_SUFFIX);
+            ColumnInfo qcColumn = columnMap.get(_colName + MvColumn.MV_INDICATOR_SUFFIX);
             SQLFragment sql = new SQLFragment(qcColumn.getAlias() + " IS " + (isNull ? "" : "NOT ") + "NULL");
             return sql;
         }

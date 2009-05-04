@@ -40,7 +40,7 @@ public interface DomainProperty
     IPropertyType getType();
     boolean isRequired();
     boolean isHidden();
-    boolean isQcEnabled();
+    boolean isMvEnabled();
 
     void delete();
 
@@ -53,7 +53,7 @@ public interface DomainProperty
     void setFormat(String s);
     void setRequired(boolean b);
     void setHidden(boolean hidden);
-    void setQcEnabled(boolean qc);
+    void setMvEnabled(boolean mv);
 
     DefaultValueType getDefaultValueTypeEnum();
 
@@ -62,7 +62,7 @@ public interface DomainProperty
     void initColumn(User user, ColumnInfo column);
 
     SQLFragment getValueSQL();
-    SQLFragment getQCValueSQL();
+    SQLFragment getMvIndicatorSQL();
     int getSqlType();
     int getScale();
     String getInputType();

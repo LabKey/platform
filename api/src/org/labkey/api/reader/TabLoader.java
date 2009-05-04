@@ -26,8 +26,8 @@ import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.data.QcUtil;
-import org.labkey.api.exp.QcFieldWrapper;
+import org.labkey.api.data.MvUtil;
+import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.util.CloseableIterator;
 import org.labkey.api.util.Filter;
 import org.labkey.api.util.FilterIterator;
@@ -680,81 +680,81 @@ public class TabLoader extends DataLoader
                     }
                     try
                     {
-                        if (column.isQcEnabled())
+                        if (column.isMvEnabled())
                         {
                             if (values[i] != null)
                             {
                                 // A QC indicator column must have generated this. Set the value
-                                QcFieldWrapper qcWrapper = (QcFieldWrapper)values[i];
-                                qcWrapper.setValue(("".equals(fld)) ?
+                                MvFieldWrapper mvWrapper = (MvFieldWrapper)values[i];
+                                mvWrapper.setValue(("".equals(fld)) ?
                                     column.missingValues :
                                     column.converter.convert(column.clazz, fld));
                             }
                             else
                             {
                                 // Do we have a QC indicator column?
-                                int qcIndicatorIndex = getQcIndicatorColumnIndex(column);
-                                if (qcIndicatorIndex != -1)
+                                int mvIndicatorIndex = getMvIndicatorColumnIndex(column);
+                                if (mvIndicatorIndex != -1)
                                 {
                                     // There is such a column, so this value had better be good.
-                                    QcFieldWrapper qcWrapper = new QcFieldWrapper();
-                                    qcWrapper.setValue( ("".equals(fld)) ?
+                                    MvFieldWrapper mvWrapper = new MvFieldWrapper();
+                                    mvWrapper.setValue( ("".equals(fld)) ?
                                         column.missingValues :
                                         column.converter.convert(column.clazz, fld));
-                                    values[i] = qcWrapper;
-                                    values[qcIndicatorIndex] = qcWrapper;
+                                    values[i] = mvWrapper;
+                                    values[mvIndicatorIndex] = mvWrapper;
                                 }
                                 else
                                 {
                                     // No such column. Is this a valid qc indicator or a valid value?
-                                    if (QcUtil.isValidQcValue(fld, column.getQcContainer()))
+                                    if (MvUtil.isValidMvIndicator(fld, column.getMvContainer()))
                                     {
-                                        QcFieldWrapper qcWrapper = new QcFieldWrapper();
-                                        qcWrapper.setQcValue("".equals(fld) ? null : fld);
-                                        values[i] = qcWrapper;
+                                        MvFieldWrapper mvWrapper = new MvFieldWrapper();
+                                        mvWrapper.setMvIndicator("".equals(fld) ? null : fld);
+                                        values[i] = mvWrapper;
                                     }
                                     else
                                     {
-                                        QcFieldWrapper qcWrapper = new QcFieldWrapper();
-                                        qcWrapper.setValue( ("".equals(fld)) ?
+                                        MvFieldWrapper mvWrapper = new MvFieldWrapper();
+                                        mvWrapper.setValue( ("".equals(fld)) ?
                                             column.missingValues :
                                             column.converter.convert(column.clazz, fld));
-                                        values[i] = qcWrapper;
+                                        values[i] = mvWrapper;
                                     }
                                 }
                             }
                         }
-                        else if (column.isQcIndicator())
+                        else if (column.isMvIndicator())
                         {
-                            int qcColumnIndex = getQcColumnIndex(column);
+                            int qcColumnIndex = getMvColumnIndex(column);
                             if (qcColumnIndex != -1)
                             {
                                 // There's a qc column that matches
                                 if (values[qcColumnIndex] == null)
                                 {
-                                    QcFieldWrapper qcWrapper = new QcFieldWrapper();
-                                    qcWrapper.setQcValue("".equals(fld) ? null : fld);
-                                    values[qcColumnIndex] = qcWrapper;
-                                    values[i] = qcWrapper;
+                                    MvFieldWrapper mvWrapper = new MvFieldWrapper();
+                                    mvWrapper.setMvIndicator("".equals(fld) ? null : fld);
+                                    values[qcColumnIndex] = mvWrapper;
+                                    values[i] = mvWrapper;
                                 }
                                 else
                                 {
-                                    QcFieldWrapper qcWrapper = (QcFieldWrapper)values[qcColumnIndex];
-                                    qcWrapper.setQcValue("".equals(fld) ? null : fld);
+                                    MvFieldWrapper mvWrapper = (MvFieldWrapper)values[qcColumnIndex];
+                                    mvWrapper.setMvIndicator("".equals(fld) ? null : fld);
                                 }
-                                if (_throwOnErrors && !QcUtil.isValidQcValue(fld, column.getQcContainer()))
+                                if (_throwOnErrors && !MvUtil.isValidMvIndicator(fld, column.getMvContainer()))
                                     throw new ConversionException(fld + " is not a valid QC value");
                             }
                             else
                             {
                                 // No matching qc column, just put in a wrapper
-                                if (!QcUtil.isValidQcValue(fld, column.getQcContainer()))
+                                if (!MvUtil.isValidMvIndicator(fld, column.getMvContainer()))
                                 {
                                     throw new ConversionException(fld + " is not a valid QC value");
                                 }
-                                QcFieldWrapper qcWrapper = new QcFieldWrapper();
-                                qcWrapper.setQcValue("".equals(fld) ? null : fld);
-                                values[i] = qcWrapper;
+                                MvFieldWrapper mvWrapper = new MvFieldWrapper();
+                                mvWrapper.setMvIndicator("".equals(fld) ? null : fld);
+                                values[i] = mvWrapper;
                             }
                         }
                         else

@@ -24,14 +24,14 @@ import org.labkey.api.gwt.client.ui.TypePicker;
  * User: jgarms
  * Date: Jan 7, 2009
  */
-public class QcEnabledItem<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> extends CheckboxItem<DomainType, FieldType>
+public class MvEnabledItem<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> extends CheckboxItem<DomainType, FieldType>
 {
-    private boolean allowsAllowsQc;
+    private boolean allowsMvEnabling;
 
-    public QcEnabledItem(PropertyPane<DomainType, FieldType> propertyPane)
+    public MvEnabledItem(PropertyPane<DomainType, FieldType> propertyPane)
     {
         super(propertyPane);
-        checkbox.setName("allowsQc");
+        checkbox.setName("mvEnabled");
     }
 
     protected String getCheckboxLabelText()
@@ -62,15 +62,15 @@ public class QcEnabledItem<DomainType extends GWTDomain<FieldType>, FieldType ex
 
     protected boolean getFieldValue(FieldType field)
     {
-        return field.isQcEnabled();
+        return field.getMvEnabled();
     }
 
     protected void setFieldValue(FieldType field, boolean b)
     {
-        field.setQcEnabled(b);
+        field.setMvEnabled(b);
     }
 
-    private static boolean allowsAllowsQc(String rangeURI)
+    private static boolean allowsMvEnabling(String rangeURI)
     {
         return !TypePicker.xsdAttachment.equals(rangeURI) &&
                 !TypePicker.xsdFileLink.equals(rangeURI) &&
@@ -79,7 +79,7 @@ public class QcEnabledItem<DomainType extends GWTDomain<FieldType>, FieldType ex
 
     private void updateEnabledState(FieldType field)
     {
-        checkbox.setEnabled(allowsAllowsQc(field.getRangeURI()));
+        checkbox.setEnabled(allowsMvEnabling(field.getRangeURI()));
     }
 
     @Override
@@ -97,14 +97,14 @@ public class QcEnabledItem<DomainType extends GWTDomain<FieldType>, FieldType ex
     @Override
     public boolean isEnabled()
     {
-        return super.isEnabled() && allowsAllowsQc;
+        return super.isEnabled() && allowsMvEnabling;
     }
 
     @Override
     public void showPropertyDescriptor(DomainType domain, FieldType field)
     {
-        allowsAllowsQc = allowsAllowsQc(field.getRangeURI());
-        checkbox.setChecked(field.isQcEnabled() && allowsAllowsQc);
+        allowsMvEnabling = allowsMvEnabling(field.getRangeURI());
+        checkbox.setChecked(field.getMvEnabled() && allowsMvEnabling);
         updateEnabledState(field);
     }
 }
