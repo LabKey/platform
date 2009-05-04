@@ -645,7 +645,7 @@ public class UserManager
         }
         catch (SQLException e)
         {
-            _log.error("Setting LastLogin for " + user + e);
+            throw new RuntimeSQLException(e);
         }
     }
 
@@ -696,24 +696,11 @@ public class UserManager
 
     public static void deleteUser(int userId) throws SecurityManager.UserManagementException
     {
-        deleteUser(getUser(userId));
-    }
-
-
-    public static void deleteUser(ValidEmail email) throws SecurityManager.UserManagementException
-    {
-        deleteUser(getUser(email));
-    }
-
-
-    private static void deleteUser(User user) throws SecurityManager.UserManagementException
-    {
+        User user = getUser(userId);
         if (null == user)
             return;
 
         removeActiveUser(user);
-
-        Integer userId = new Integer(user.getUserId());
 
         List<Throwable> errors = fireDeleteUser(user);
 

@@ -38,12 +38,12 @@ import java.util.Map;
  */
 public abstract class AuditLogQueryView extends QueryView
 {
-    protected List<String> _columns = new ArrayList();
-    protected List<DisplayColumn> _displayColumns = new ArrayList();
+    protected List<String> _columns = new ArrayList<String>();
+    protected List<DisplayColumn> _displayColumns = new ArrayList<DisplayColumn>();
     protected SimpleFilter _filter;
     protected Sort _sort;
     protected String _title;
-    protected Map<String, AuditDisplayColumnFactory> _displayColFactory = new HashMap();
+    protected Map<String, AuditDisplayColumnFactory> _displayColFactory = new HashMap<String, AuditDisplayColumnFactory>();
 
     public AuditLogQueryView(UserSchema schema, QuerySettings settings, SimpleFilter filter)
     {
@@ -89,15 +89,6 @@ public abstract class AuditLogQueryView extends QueryView
     }
 
     public abstract void addDisplayColumn(int index, DisplayColumn dc);
-
-    /**
-     * @deprecated
-     */
-    public void setDisplayColumnFactory(String name, AuditDisplayColumnFactory factory)
-    {
-        //_columns.add(name.toLowerCase());
-        _displayColFactory.put(name, factory);
-    }
 
     public void setTitle(String title)
     {

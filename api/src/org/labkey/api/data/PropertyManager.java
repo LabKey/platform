@@ -149,7 +149,7 @@ public class PropertyManager
                             parameters, Integer.class);
                 }
 
-                PropertyMap m = new PropertyMap(set, userId, objectId, category);
+                PropertyMap m = new PropertyMap(set.intValue(), userId, objectId, category);
                 Table.executeValueMap(prop.getSchema(),
                         "SELECT Name, Value FROM " + prop.getTableInfoProperties() + " WHERE " + setSelectName + "=?",
                         new Object[]{set},

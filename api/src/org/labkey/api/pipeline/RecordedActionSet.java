@@ -35,7 +35,7 @@ public class RecordedActionSet
 
     public RecordedActionSet(Iterable<RecordedAction> actions)
     {
-        _actions = new LinkedHashSet();
+        _actions = new LinkedHashSet<RecordedAction>();
         for (RecordedAction action : actions)
         {
             _actions.add(action);

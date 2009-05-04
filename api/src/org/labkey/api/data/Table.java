@@ -1151,9 +1151,9 @@ public class Table
         try
         {
             K[] values = select(table, Table.ALL_COLUMNS, filter, null, clss);
-            assert (values == null || values.length == 0 || values.length == 1);
+            assert (values.length == 0 || values.length == 1);
 
-            if (values == null || values.length == 0)
+            if (values.length == 0)
                 return null;
 
             return values[0];
@@ -1182,7 +1182,7 @@ public class Table
             throws SQLException
     {
         K[] results = select(table, select, filter, sort, clss);
-        if (null == results || results.length == 0)
+        if (results.length == 0)
             return null;
         return results[0];
     }
@@ -1275,29 +1275,6 @@ public class Table
 
         SQLFragment sql = getSelectSQL(table, columns, filter, sort, queryRowCount, queryOffset);
         return internalExecuteQueryArray(table.getSchema(), sql.getSQL(), sql.getParams().toArray(), clss, scrollOffset);
-    }
-
-
-    public static class TableArray<K>
-    {
-        private K[] _array;
-        private boolean _isComplete;
-
-        private TableArray(K[] array, boolean isComplete)
-        {
-            _array = array;
-            _isComplete = isComplete;
-        }
-
-        public K[] getArray()
-        {
-            return _array;
-        }
-
-        public boolean isComplete()
-        {
-            return _isComplete;
-        }
     }
 
 
@@ -1408,7 +1385,7 @@ public class Table
     public static TableResultSet selectForDisplayAsync(final TableInfo table, final List<ColumnInfo> select, final Filter filter, final Sort sort, final int rowCount, final long offset, final boolean cache, HttpServletResponse response) throws SQLException, IOException
     {
         final Logger log = ConnectionWrapper.getConnectionLogger();
-        final AsyncQueryRequest<TableResultSet> asyncRequest = new AsyncQueryRequest(response);
+        final AsyncQueryRequest<TableResultSet> asyncRequest = new AsyncQueryRequest<TableResultSet>(response);
         return asyncRequest.waitForResult(new Callable<TableResultSet>()
 		{
             public TableResultSet call() throws Exception

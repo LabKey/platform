@@ -2006,7 +2006,7 @@ public class SecurityManager
 
             String password = createTempPassword();
             String verification = createTempPassword();
-            int id;
+            int id = -1;
 
             // Test create login, create user, verify, login, and delete
             try
@@ -2030,7 +2030,7 @@ public class SecurityManager
             }
             finally
             {
-                UserManager.deleteUser(email);
+                UserManager.deleteUser(id);
             }
         }
 
