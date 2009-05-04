@@ -82,8 +82,8 @@ name and type id.  Additional columns will just be ignored.
         <td valign=top><code>false</code></td>
     </tr>
     <tr>
-        <th align=left valign=top nowrap>AllowsQC</th>
-        <td valign=top>Indicates whether this column can contain QC values (e.g. ".Q" or ".N")</td>
+        <th align=left valign=top nowrap>MvEnabled</th>
+        <td valign=top>Indicates whether this column supports missing value indicators (e.g. "Q" or "N")</td>
         <td valign=top><code>false</code></td>
     </tr>
     <tr>

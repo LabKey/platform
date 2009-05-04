@@ -113,9 +113,9 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.isHidden();
     }
 
-    public boolean isQcEnabled()
+    public boolean isMvEnabled()
     {
-        return _pd.isQcEnabled();
+        return _pd.isMvEnabled();
     }
 
     public void delete()
@@ -177,11 +177,11 @@ public class DomainPropertyImpl implements DomainProperty
         edit().setHidden(hidden);
     }
 
-    public void setQcEnabled(boolean qc)
+    public void setMvEnabled(boolean mv)
     {
-        if (qc == isQcEnabled())
+        if (mv == isMvEnabled())
             return;
-        edit().setQcEnabled(qc);
+        edit().setMvEnabled(mv);
     }
 
     private PropertyDescriptor edit()
@@ -201,9 +201,9 @@ public class DomainPropertyImpl implements DomainProperty
         return PropertyForeignKey.getValueSql(_pd.getPropertyType());
     }
 
-    public SQLFragment getQCValueSQL()
+    public SQLFragment getMvIndicatorSQL()
     {
-        return PropertyForeignKey.getQCValueSQL();
+        return PropertyForeignKey.getMvIndicatorSQL();
     }
 
     public int getSqlType()

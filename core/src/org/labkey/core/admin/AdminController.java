@@ -96,7 +96,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Configuration, "authentication", PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL());
         AdminConsole.addLink(SettingsLinkType.Configuration, "email customization", new ActionURL(CustomizeEmailAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Configuration, "project display order", new ActionURL(ReorderFoldersAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Configuration, "qc values", new ActionURL(FolderSettingsAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Configuration, "missing value indicators", new ActionURL(FolderSettingsAction.class, root));
 
         // Diagnostics
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "running threads", new ActionURL(ShowThreadsAction.class, root));
@@ -830,7 +830,7 @@ public class AdminController extends SpringActionController
 
             if (!_container.isRoot())
                 tabs.add(new TabInfo("Folder Type", "folderType", url));
-            tabs.add(new TabInfo("Missing Value Indicators", "qcValues", url));
+            tabs.add(new TabInfo("Missing Value Indicators", "mvIndicators", url));
 
             return tabs;
         }
@@ -842,9 +842,9 @@ public class AdminController extends SpringActionController
                 assert !_container.isRoot() : "No folder type settings for the root folder";
                 return new JspView<FolderSettingsForm>("/org/labkey/core/admin/folderType.jsp", _form, _errors);
             }
-            else if ("qcValues".equals(tabId))
+            else if ("mvIndicators".equals(tabId))
             {
-                return new JspView<FolderSettingsForm>("/org/labkey/core/admin/qcValues.jsp", _form, _errors);
+                return new JspView<FolderSettingsForm>("/org/labkey/core/admin/mvIndicators.jsp", _form, _errors);
             }
             else
             {
@@ -3760,23 +3760,23 @@ public class AdminController extends SpringActionController
 
         public boolean handlePost(FolderSettingsForm form, BindException errors) throws Exception
         {
-            if (form.isQcValuesTab())
-                return handleQcValuesPost(form, errors);
+            if (form.isMvIndicatorsTab())
+                return handleMvIndicatorsPost(form, errors);
             else
                 return handleFolderTypePost(form, errors);
         }
 
-        private boolean handleQcValuesPost(FolderSettingsForm form, BindException errors) throws SQLException
+        private boolean handleMvIndicatorsPost(FolderSettingsForm form, BindException errors) throws SQLException
         {
-            if(form.isInheritQcValues())
+            if(form.isInheritMvIndicators())
             {
-                QcUtil.inheritQcValues(getContainer());
+                MvUtil.inheritMvIndicators(getContainer());
                 return true;
             }
             else
             {
                 // Javascript should have enforced any constraints
-                QcUtil.assignQcValues(getContainer(), form.getQcValues(), form.getQcLabels());
+                MvUtil.assignMvIndicators(getContainer(), form.getMvIndicators(), form.getMvLabels());
                 return true;
             }
         }
@@ -3853,10 +3853,10 @@ public class AdminController extends SpringActionController
         private boolean wizard;
         private String tabId;
 
-        // qc settings
-        private boolean inheritQcValues;
-        private String[] qcValues;
-        private String[] qcLabels;
+        // missing value settings
+        private boolean inheritMvIndicators;
+        private String[] mvIndicators;
+        private String[] mvLabels;
 
         public String[] getActiveModules()
         {
@@ -3913,39 +3913,39 @@ public class AdminController extends SpringActionController
             return "folderType".equals(getTabId());
         }
 
-        public boolean isQcValuesTab()
+        public boolean isMvIndicatorsTab()
         {
-            return "qcValues".equals(getTabId());
+            return "mvIndicators".equals(getTabId());
         }
 
-        public boolean isInheritQcValues()
+        public boolean isInheritMvIndicators()
         {
-            return inheritQcValues;
+            return inheritMvIndicators;
         }
 
-        public void setInheritQcValues(boolean inheritQcValues)
+        public void setInheritMvIndicators(boolean inheritMvIndicators)
         {
-            this.inheritQcValues = inheritQcValues;
+            this.inheritMvIndicators = inheritMvIndicators;
         }
 
-        public String[] getQcValues()
+        public String[] getMvIndicators()
         {
-            return qcValues;
+            return mvIndicators;
         }
 
-        public void setQcValues(String[] qcValues)
+        public void setMvIndicators(String[] mvIndicators)
         {
-            this.qcValues = qcValues;
+            this.mvIndicators = mvIndicators;
         }
 
-        public String[] getQcLabels()
+        public String[] getMvLabels()
         {
-            return qcLabels;
+            return mvLabels;
         }
 
-        public void setQcLabels(String[] qcLabels)
+        public void setMvLabels(String[] mvLabels)
         {
-            this.qcLabels = qcLabels;
+            this.mvLabels = mvLabels;
         }
     }
 

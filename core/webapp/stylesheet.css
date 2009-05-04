@@ -333,9 +333,9 @@ img.labkey-button-arrow
     right: 0.5em;
 }
 
-/* This is the class for the qc indicator icon that can be included in a table cell.
- The image src should be ./_images/qc_indicator.gif */
-img.labkey-qc-indicator
+/* This is the class for the missing value indicator icon that can be included in a table cell.
+ The image src should be ./_images/mv_indicator.gif */
+img.labkey-mv-indicator
 {
     background-color: transparent;
     color: red;
@@ -401,7 +401,7 @@ regions on mouseover */
 }
 
 /* This lightens the text to make it look "grayed out", but still readable, unlike labkey-disabled, above. */
-.labkey-qc
+.labkey-mv
 {
     color: #606060;
 }

@@ -483,7 +483,7 @@ public class XarExporter
         }
 
         xProp.setHidden(domainProp.isHidden());
-        xProp.setQcEnabled(domainProp.isQcEnabled());
+        xProp.setMvEnabled(domainProp.isMvEnabled());
 
         for (IPropertyValidator validator : domainProp.getValidators())
         {

@@ -16,7 +16,7 @@
     */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.data.QcUtil" %>
+<%@ page import="org.labkey.api.data.MvUtil" %>
 <%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -28,7 +28,7 @@
     int rowId = 0;
 %>
 
-<form name="qcValuesForm" method="POST" action=folderSettings.post?tabId=qcValues>
+<form name="mvIndicatorsForm" method="POST" action=folderSettings.post?tabId=mvIndicators>
 
     <table>
         <tr>
@@ -42,7 +42,7 @@
             <td>
                 <%
                     Container c = HttpView.getContextContainer();
-                    Container definingContainer = QcUtil.getDefiningContainer(c);
+                    Container definingContainer = MvUtil.getDefiningContainer(c);
                     boolean inherited = !c.equals(definingContainer);
 
                     // Destination for inherited link
@@ -52,7 +52,7 @@
                     {
                         // Need to point to the first parent that has a definition
                         linkContainer = linkContainer.getParent();
-                        while (!linkContainer.isRoot() && !linkContainer.equals(QcUtil.getDefiningContainer(linkContainer)))
+                        while (!linkContainer.isRoot() && !linkContainer.equals(MvUtil.getDefiningContainer(linkContainer)))
                             linkContainer = linkContainer.getParent();
                     }
 
@@ -72,7 +72,7 @@
                     {
                         // Only show the link to an enclosing container if there is one.
                 %>
-                <input type="checkbox" id="inherit" name="inheritQcValues" <%=inherited ? "checked='true'" : ""%>
+                <input type="checkbox" id="inherit" name="inheritMvIndicators" <%=inherited ? "checked='true'" : ""%>
                        onclick="toggleInherited(this);">
                 Inherit settings (from
                 <%
@@ -92,10 +92,10 @@
                         // Now write out what those settings are
                         out.write(": ");
                         boolean needComma = false;
-                        for (Map.Entry<String, String> qcEntry : QcUtil.getValuesAndLabels(linkContainer).entrySet())
+                        for (Map.Entry<String, String> mvEntry : MvUtil.getIndicatorsAndLabels(linkContainer).entrySet())
                         {
-                            String qcValue = qcEntry.getKey();
-                            String qcLabel = qcEntry.getValue();
+                            String indicator = mvEntry.getKey();
+                            String label = mvEntry.getValue();
                             if (needComma)
                             {
                                 out.write(", ");
@@ -105,9 +105,9 @@
                                 needComma = true;
                             }
 
-                            String popupText = PageFlowUtil.filter(qcLabel);
+                            String popupText = PageFlowUtil.filter(label);
 
-                            out.write(PageFlowUtil.helpPopup(qcValue, popupText, true, qcValue, 0));
+                            out.write(PageFlowUtil.helpPopup(indicator, popupText, true, indicator, 0));
                         }
 
                     }
@@ -117,33 +117,33 @@
         </tr>
         <tr>
             <td>
-                <div id="qcValuesDiv" style="display: <%=inherited ? "none" : "block"%>;">
-                    <table id="qcTable">
+                <div id="mvIndicatorsDiv" style="display: <%=inherited ? "none" : "block"%>;">
+                    <table id="mvTable">
                         <tr>
                             <th>&nbsp;</th>
-                            <th>QC Value</th>
+                            <th>Indicator</th>
                             <th>Description</th>
                         </tr>
 
                         <%
-                            Map<String, String> qcValuesAndLabels = QcUtil.getValuesAndLabels(definingContainer);
-                            for (Map.Entry<String, String> entry : qcValuesAndLabels.entrySet())
+                            Map<String, String> mvIndicatorsAndLabels = MvUtil.getIndicatorsAndLabels(definingContainer);
+                            for (Map.Entry<String, String> entry : mvIndicatorsAndLabels.entrySet())
                             {
-                                String qcValue = entry.getKey();
-                                String description = entry.getValue();
-                                if (description == null)
-                                    description = "";
+                                String indicator = entry.getKey();
+                                String label = entry.getValue();
+                                if (label == null)
+                                    label = "";
 
                         %>
 
                         <tr id="rowId<%=++rowId%>">
                             <td><img src="<%=getViewContext().getContextPath()%>/_images/partdelete.gif"
                                      alt="delete" onclick="removeRow(<%=rowId%>);"></td>
-                            <td><input name="qcValues" type="TEXT" size=3
-                                       id="qcValues<%=rowId%>" value="<%=qcValue%>">
+                            <td><input name="mvIndicators" type="TEXT" size=3
+                                       id="mvIndicators<%=rowId%>" value="<%=indicator%>">
                             </td>
-                            <td><input name="qcLabels" type="TEXT" size=60
-                                       value="<%=description%>">
+                            <td><input name="mvLabels" type="TEXT" size=60
+                                       value="<%=label%>">
                             </td>
                         </tr>
 
@@ -175,7 +175,7 @@
 
     function addRowToTable()
     {
-        var tbl = document.getElementById("qcTable");
+        var tbl = document.getElementById("mvTable");
         var lastRow = tbl.rows.length;
         var row = tbl.insertRow(lastRow - 1);
         row.id = "rowId" + ++maxRowId;
@@ -190,8 +190,8 @@
         var cellMiddle = row.insertCell(1);
         var middle = document.createElement('input');
         middle.type = 'text';
-        middle.name = "qcValues";
-        middle.id = "qcValues" + maxRowId;
+        middle.name = "mvIndicators";
+        middle.id = "mvIndicators" + maxRowId;
         middle.size = 3;
 
         cellMiddle.appendChild(middle);
@@ -199,7 +199,7 @@
         var cellRightSel = row.insertCell(2);
         var right = document.createElement('input');
         right.type = 'text';
-        right.name = 'qcLabels';
+        right.name = 'mvLabels';
         right.size = 60;
         cellRightSel.appendChild(right);
 
@@ -210,7 +210,7 @@
 
     function toggleInherited(checkbox)
     {
-        var div = document.getElementById("qcValuesDiv");
+        var div = document.getElementById("mvIndicatorsDiv");
         if (checkbox.checked)
             div.style.display = "none";
         else
@@ -220,40 +220,40 @@
     function validate()
     {
         // Check that we have at least one value
-        if (document.getElementById("qcValuesDiv").checked)
+        if (document.getElementById("mvIndicatorsDiv").checked)
             return true;
-        var tbl = document.getElementById("qcTable");
+        var tbl = document.getElementById("mvTable");
         var lastRow = tbl.rows.length;
         if (lastRow <= 2) // Labels and add button are the two rows that remain if all others are deleted
         {
-            alert("You must have at least one QC value.");
+            alert("You must have at least one indicator.");
             return false;
         }
 
         // Check that there are no blank values, and no repeats
-        var qcValues = document.getElementsByName("qcValues");
-        var blankValue = qcValues.length == 0;
+        var indicators = document.getElementsByName("mvIndicators");
+        var blankValue = indicators.length == 0;
         var repeatedValue = null;
         var valuesFound = new Object();
-        for (var i = 0; i < qcValues.length; i++)
+        for (var i = 0; i < indicators.length; i++)
         {
-            var qcValue = qcValues[i].value;
-            if (qcValue == "")
+            var indicator = indicators[i].value;
+            if (indicator == "")
             {
                 blankValue = true;
             }
-            if (valuesFound[qcValue])
-                repeatedValue = qcValue;
-            valuesFound[qcValue] = true;
+            if (valuesFound[indicator])
+                repeatedValue = indicator;
+            valuesFound[indicator] = true;
         }
         if (blankValue)
         {
-            alert("QC values cannot be blank.");
+            alert("Indicators cannot be blank.");
             return false;
         }
         if (repeatedValue)
         {
-            alert("Found the QC value '" + repeatedValue + "' more than once.");
+            alert("Found the indicator '" + repeatedValue + "' more than once.");
             return false;
         }
 

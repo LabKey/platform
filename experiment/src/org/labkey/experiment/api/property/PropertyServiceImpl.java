@@ -211,8 +211,8 @@ public class PropertyServiceImpl implements PropertyService.Interface
         prop.getPropertyDescriptor().setSearchTerms(xProp.getSearchTerms());
         prop.getPropertyDescriptor().setSemanticType(xProp.getSemanticType());
         
-        if (xProp.isSetQcEnabled())
-            prop.getPropertyDescriptor().setQcEnabled(xProp.getQcEnabled());
+        if (xProp.isSetMvEnabled())
+            prop.getPropertyDescriptor().setMvEnabled(xProp.getMvEnabled());
 
         if (xProp.isSetHidden())
             prop.getPropertyDescriptor().setHidden(xProp.getHidden());

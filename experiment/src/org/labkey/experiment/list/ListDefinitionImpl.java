@@ -311,12 +311,12 @@ public class ListDefinitionImpl implements ListDefinition
     {
         List<String> errors = new ArrayList<String>();
         ArrayList<PropertyDescriptor> pds = new ArrayList<PropertyDescriptor>();
-        Set<String> qcIndicatorColumnNames = new CaseInsensitiveHashSet();
+        Set<String> mvIndicatorColumnNames = new CaseInsensitiveHashSet();
         for (DomainProperty property : getDomain().getProperties())
         {
             pds.add(property.getPropertyDescriptor());
-            if (property.isQcEnabled())
-                qcIndicatorColumnNames.add(property.getName() + QcColumn.QC_INDICATOR_SUFFIX);
+            if (property.isMvEnabled())
+                mvIndicatorColumnNames.add(property.getName() + MvColumn.MV_INDICATOR_SUFFIX);
         }
         Map<String, PropertyDescriptor> propertiesByName = OntologyManager.createImportPropertyMap(pds.toArray(new PropertyDescriptor[pds.size()]));
         Map<String, PropertyDescriptor> foundProperties = new CaseInsensitiveHashMap<PropertyDescriptor>();
@@ -342,11 +342,11 @@ public class ListDefinitionImpl implements ListDefinition
             if (property != null)
             {
                 // Special handling for qc indicators -- they don't have real property descriptors.
-                if (qcIndicatorColumnNames.contains(cd.name))
+                if (mvIndicatorColumnNames.contains(cd.name))
                 {
                     cd.name = property.getPropertyURI();
                     cd.clazz = String.class;
-                    cd.setQcIndicator(getContainer());
+                    cd.setMvIndicator(getContainer());
                 }
                 else
                 {
@@ -356,15 +356,15 @@ public class ListDefinitionImpl implements ListDefinition
                     {
                         errors.add("The field '" + property.getName() + "' appears more than once.");
                     }
-                    if (foundProperties.containsValue(property) && !property.isQcEnabled())
+                    if (foundProperties.containsValue(property) && !property.isMvEnabled())
                     {
                         errors.add("The fields '" + property.getName() + "' and '" + property.getNonBlankLabel() + "' refer to the same property.");
                     }
                     foundProperties.put(cd.name, property);
                     cd.name = property.getPropertyURI();
-                    if (property.isQcEnabled())
+                    if (property.isMvEnabled())
                     {
-                        cd.setQcEnabled(getContainer());
+                        cd.setMvEnabled(getContainer());
                     }
                 }
             }
@@ -434,17 +434,17 @@ public class ListDefinitionImpl implements ListDefinition
                 {
                     valueMissing = true;
                 }
-                else if (o instanceof QcFieldWrapper)
+                else if (o instanceof MvFieldWrapper)
                 {
-                    QcFieldWrapper qcWrapper = (QcFieldWrapper)o;
-                    if (qcWrapper.isEmpty())
+                    MvFieldWrapper mvWrapper = (MvFieldWrapper)o;
+                    if (mvWrapper.isEmpty())
                         valueMissing = true;
                     else
                     {
                         valueMissing = false;
-                        if (!QcUtil.isValidQcValue(qcWrapper.getQcValue(), getContainer()))
+                        if (!MvUtil.isValidMvIndicator(mvWrapper.getMvIndicator(), getContainer()))
                         {
-                            String columnName = domainProperty.getName() + QcColumn.QC_INDICATOR_SUFFIX;
+                            String columnName = domainProperty.getName() + MvColumn.MV_INDICATOR_SUFFIX;
                             wrongTypes.add(columnName);
                             errors.add(columnName + " must be a valid QC Value.");
                         }

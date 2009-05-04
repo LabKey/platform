@@ -28,7 +28,7 @@ import org.labkey.api.defaults.ClearDefaultValuesAction;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.defaults.SetDefaultValuesAction;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.QcFieldWrapper;
+import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
@@ -455,11 +455,11 @@ public class ListController extends SpringActionController
                     if (!tableForm.hasTypedValue(column))
                         continue;
                     Object formValue = tableForm.getTypedValue(column);
-                    String qcValue = null;
-                    if (column.isQcEnabled())
+                    String mvIndicator = null;
+                    if (column.isMvEnabled())
                     {
-                        ColumnInfo qcColumn = tableForm.getTable().getColumn(column.getQcColumnName());
-                        qcValue = (String)tableForm.getTypedValue(qcColumn);
+                        ColumnInfo mvColumn = tableForm.getTable().getColumn(column.getMvColumnName());
+                        mvIndicator = (String)tableForm.getTypedValue(mvColumn);
                     }
                     DomainProperty property = domain.getPropertyByName(column.getName());
                     if (column.getName().equals(list.getKeyName()))
@@ -467,7 +467,7 @@ public class ListController extends SpringActionController
                         item.setKey(formValue);
                     }
 
-                    if (qcValue == null)
+                    if (mvIndicator == null)
                     {
                         if (property != null)
                         {
@@ -476,8 +476,8 @@ public class ListController extends SpringActionController
                     }
                     else
                     {
-                        QcFieldWrapper qcWrapper = new QcFieldWrapper(formValue, qcValue);
-                        item.setProperty(property, qcWrapper);
+                        MvFieldWrapper mvWrapper = new MvFieldWrapper(formValue, mvIndicator);
+                        item.setProperty(property, mvWrapper);
                     }
                 }
                 if (errors.hasErrors())

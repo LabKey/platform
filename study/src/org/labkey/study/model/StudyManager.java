@@ -1998,7 +1998,7 @@ public class StudyManager
 
             String matchedURI = matchedCol.getPropertyURI();
 
-            if (! (matchedCol instanceof QcColumn))
+            if (! (matchedCol instanceof MvColumn))
             {
                 if (foundProperties.contains(matchedURI))
                 {
@@ -2010,13 +2010,13 @@ public class StudyManager
             col.name = matchedURI;
             col.clazz = matchedCol.getJavaClass();
             col.errorValues = CONVERSION_ERROR;
-            if (matchedCol.isQcEnabled())
+            if (matchedCol.isMvEnabled())
             {
-                col.setQcEnabled(def.getContainer());
+                col.setMvEnabled(def.getContainer());
             }
-            else if (matchedCol instanceof QcColumn)
+            else if (matchedCol instanceof MvColumn)
             {
-                col.setQcIndicator(def.getContainer());
+                col.setMvIndicator(def.getContainer());
             }
         }
 
@@ -2185,17 +2185,17 @@ public class StudyManager
                 {
                     valueMissing = true;
                 }
-                else if (val instanceof QcFieldWrapper)
+                else if (val instanceof MvFieldWrapper)
                 {
-                    QcFieldWrapper qcWrapper = (QcFieldWrapper)val;
-                    if (qcWrapper.isEmpty())
+                    MvFieldWrapper mvWrapper = (MvFieldWrapper)val;
+                    if (mvWrapper.isEmpty())
                         valueMissing = true;
                     else
                     {
                         valueMissing = false;
-                        if (col.isQcEnabled() && !QcUtil.isValidQcValue(qcWrapper.getQcValue(), def.getContainer()))
+                        if (col.isMvEnabled() && !MvUtil.isValidMvIndicator(mvWrapper.getMvIndicator(), def.getContainer()))
                         {
-                            String columnName = col.getName() + QcColumn.QC_INDICATOR_SUFFIX;
+                            String columnName = col.getName() + MvColumn.MV_INDICATOR_SUFFIX;
                             errors.add(columnName + " must be a valid QC Value.");
                             break;
                         }

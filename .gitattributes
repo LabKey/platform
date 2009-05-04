@@ -248,6 +248,7 @@ core/src/META-INF/core/scripts/postgresql/core-8.30-8.31.sql -text
 core/src/META-INF/core/scripts/postgresql/core-8.30-9.10.sql -text
 core/src/META-INF/core/scripts/postgresql/core-9.10-9.11.sql -text
 core/src/META-INF/core/scripts/postgresql/core-9.11-9.12.sql -text
+core/src/META-INF/core/scripts/postgresql/core-9.12-9.13.sql -text
 core/src/META-INF/core/scripts/postgresql/core-create.sql -text
 core/src/META-INF/core/scripts/postgresql/core-drop.sql -text
 core/src/META-INF/core/scripts/postgresql/obsolete/bootstrap.sql -text
@@ -314,6 +315,7 @@ core/src/META-INF/core/scripts/sql[!!-~]server/core-8.30-8.31.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-8.30-9.10.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-9.10-9.11.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-9.11-9.12.sql -text
+core/src/META-INF/core/scripts/sql[!!-~]server/core-9.12-9.13.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-create.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/core-drop.sql -text
 core/src/META-INF/core/scripts/sql[!!-~]server/obsolete/bootstrap.sql -text
@@ -398,8 +400,8 @@ core/src/org/labkey/core/admin/manageFolders.jsp -text
 core/src/org/labkey/core/admin/memTracker.jsp -text
 core/src/org/labkey/core/admin/moduleErrors.jsp -text
 core/src/org/labkey/core/admin/moveFolder.jsp -text
+core/src/org/labkey/core/admin/mvIndicators.jsp -text
 core/src/org/labkey/core/admin/properties.jsp -text
-core/src/org/labkey/core/admin/qcValues.jsp -text
 core/src/org/labkey/core/admin/renameFolder.jsp -text
 core/src/org/labkey/core/admin/reorderFolders.jsp -text
 core/src/org/labkey/core/admin/sql/ShowRunningScriptsPage.java -text
@@ -521,6 +523,7 @@ experiment/src/META-INF/experiment/scripts/postgresql/exp-8.35-8.36.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-8.36-8.37.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-8.37-8.38.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-9.10-9.11.sql -text
+experiment/src/META-INF/experiment/scripts/postgresql/exp-9.11-9.12.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-create.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/exp-drop.sql -text
 experiment/src/META-INF/experiment/scripts/postgresql/obsolete/deleteOrphans.sql -text
@@ -603,6 +606,7 @@ experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.35-8.36.sql -te
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.36-8.37.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-8.37-8.38.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-9.10-9.11.sql -text
+experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-9.11-9.12.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-create.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/exp-drop.sql -text
 experiment/src/META-INF/experiment/scripts/sql[!!-~]server/obsolete/deleteOrphans.sql -text

@@ -262,7 +262,7 @@
       <ns:column columnName="LookupContainer"/>
       <ns:column columnName="LookupSchema"/>
       <ns:column columnName="LookupQuery"/>
-      <ns:column columnName="QcEnabled"/>
+      <ns:column columnName="MvEnabled"/>
       <ns:column columnName="Hidden"/>
       <ns:column columnName="DefaultValueType"/>
   </ns:columns>
@@ -300,7 +300,7 @@
       <ns:column columnName="FloatValue"/>
       <ns:column columnName="DateTimeValue"/>
       <ns:column columnName="StringValue"/>
-      <ns:column columnName="QcValue"/>  
+      <ns:column columnName="MvIndicator"/>  
     </ns:columns>
   </ns:table>
   <ns:table tableName="Protocol" tableDbType="TABLE">
@@ -651,7 +651,7 @@
       <ns:column columnName="FloatValue"/>
       <ns:column columnName="StringValue"/>
       <ns:column columnName="DatetimeValue"/>
-      <ns:column columnName="QcValue"/>
+      <ns:column columnName="MvIndicator"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="ExperimentRunDataInputs" tableDbType="VIEW">

@@ -467,10 +467,10 @@
       </ns:columns>
     </ns:table>
 
-    <ns:table tableName="QcValues" tableDbType="TABLE">
+    <ns:table tableName="MvIndicators" tableDbType="TABLE">
         <ns:columns>
             <ns:column columnName="Container"/>
-            <ns:column columnName="QcValue"/>
+            <ns:column columnName="MvIndicator"/>
             <ns:column columnName="Label"/>
         </ns:columns>
     </ns:table>

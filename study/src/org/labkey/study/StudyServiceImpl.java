@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
-import org.labkey.api.exp.QcFieldWrapper;
+import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
@@ -307,23 +307,23 @@ public class StudyServiceImpl implements StudyService.Service
 
         TableInfo tInfo = def.getTableInfo(user, false, false);
 
-        Set<String> qcColumnNames = new HashSet<String>();
+        Set<String> mvColumnNames = new HashSet<String>();
         for (ColumnInfo col : tInfo.getColumns())
         {
             String name = col.getName();
-            if (qcColumnNames.contains(name))
+            if (mvColumnNames.contains(name))
                 continue; // We've have already processed this field
             Object value = origData.get(name);
 
-            if (col.isQcEnabled())
+            if (col.isMvEnabled())
             {
-                String qcColumnName = col.getQcColumnName();
-                qcColumnNames.add(qcColumnName);
-                String qcValue = (String)origData.get(qcColumnName);
-                if (qcValue != null)
+                String mvColumnName = col.getMvColumnName();
+                mvColumnNames.add(mvColumnName);
+                String mvIndicator = (String)origData.get(mvColumnName);
+                if (mvIndicator != null)
                 {
-                    QcFieldWrapper qcWrapper = new QcFieldWrapper(value, qcValue);
-                    value = qcWrapper;
+                    MvFieldWrapper mvWrapper = new MvFieldWrapper(value, mvIndicator);
+                    value = mvWrapper;
                 }
             }
 

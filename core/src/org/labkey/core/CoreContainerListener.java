@@ -21,7 +21,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.QcUtil;
+import org.labkey.api.data.MvUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.view.HttpView;
@@ -60,7 +60,7 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
         try
         {
             PropertyManager.purgeObjectProperties(c.getId());
-            QcUtil.containerDeleted(c);
+            MvUtil.containerDeleted(c);
             // Let containerManager delete ACLs, we want that to happen last
 
             String message = c.isProject() ? "Project " + c.getName() + " was deleted" :

@@ -108,16 +108,16 @@ public class CoreUpgradeCode implements UpgradeCode
             // Need to insert standard QC values for the root
             Container rootContainer = ContainerManager.getRoot();
             String rootContainerId = rootContainer.getId();
-            Map<String,String> qcMap = QcUtil.getDefaultQcValues();
-            TableInfo qcValuesTable = CoreSchema.getInstance().getTableInfoQcValues();
-            for(Map.Entry<String,String> qcEntry : qcMap.entrySet())
+            Map<String,String> mvMap = MvUtil.getDefaultMvIndicators();
+            TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
+            for(Map.Entry<String,String> qcEntry : mvMap.entrySet())
             {
                 Map<String,Object> params = new HashMap<String,Object>();
                 params.put("Container", rootContainerId);
-                params.put("QcValue", qcEntry.getKey());
+                params.put("MvIndicator", qcEntry.getKey());
                 params.put("Label", qcEntry.getValue());
 
-                Table.insert(null, qcValuesTable, params);
+                Table.insert(null, mvTable, params);
             }
         }
         catch (SQLException se)

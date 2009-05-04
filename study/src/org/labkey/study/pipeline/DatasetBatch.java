@@ -573,17 +573,20 @@ public class DatasetBatch extends StudyBatch implements Serializable
         {
             if (action == null)
                 errors.add("No action specified");
+
             if (datasetDefinition == null)
                 errors.add("Dataset not defined");
-            if (datasetDefinition.getTypeURI() == null)
+            else if (datasetDefinition.getTypeURI() == null)
                 errors.add("Dataset type is not defined");
+
             if (action == Action.DELETE)
                 return;
+            
             if (null == tsv)
                 errors.add("No file specified");
-            if (!tsv.exists())
+            else if (!tsv.exists())
                 errors.add("File does not exist: " + tsv.getName());
-            if (!tsv.canRead())
+            else if (!tsv.canRead())
                 errors.add("Cannot read tsv: " + tsv.getName());
         }
 

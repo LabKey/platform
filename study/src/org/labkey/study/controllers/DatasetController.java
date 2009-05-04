@@ -24,8 +24,8 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.QcColumn;
-import org.labkey.api.exp.QcFieldWrapper;
+import org.labkey.api.exp.MvColumn;
+import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -232,12 +232,12 @@ public class DatasetController extends BaseStudyController
                 {
                     ColumnInfo currentColumn = property.getPropertyDescriptor().createColumnInfo(datasetTable, "LSID", getUser());
                     Object value = requestMap.get(updateForm.getFormFieldName(currentColumn));
-                    if (property.isQcEnabled())
+                    if (property.isMvEnabled())
                     {
-                        ColumnInfo qcColumn = datasetTable.getColumn(property.getName() + QcColumn.QC_INDICATOR_SUFFIX);
-                        String qcValue = (String)requestMap.get(updateForm.getFormFieldName(qcColumn));
-                        QcFieldWrapper qcWrapper = new QcFieldWrapper(value, qcValue);
-                        dataMap.put(property, qcWrapper);
+                        ColumnInfo mvColumn = datasetTable.getColumn(property.getName() + MvColumn.MV_INDICATOR_SUFFIX);
+                        String mvIndicator = (String)requestMap.get(updateForm.getFormFieldName(mvColumn));
+                        MvFieldWrapper mvWrapper = new MvFieldWrapper(value, mvIndicator);
+                        dataMap.put(property, mvWrapper);
                     }
                     else
                     {

@@ -3379,9 +3379,9 @@ public class StudyController extends BaseStudyController
             // Need to ignore field-level qc columns that are generated
             for (ColumnInfo col : tinfo.getColumns())
             {
-                if (col.isQcEnabled())
+                if (col.isMvEnabled())
                 {
-                    ignoreColumns.add(col.getQcColumnName());
+                    ignoreColumns.add(col.getMvColumnName());
                     ignoreColumns.add(col.getName() + RawValueColumn.RAW_VALUE_SUFFIX);
                 }
             }

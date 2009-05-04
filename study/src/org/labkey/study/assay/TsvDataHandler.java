@@ -18,7 +18,7 @@ package org.labkey.study.assay;
 
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.QcColumn;
+import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.property.Domain;
@@ -71,16 +71,16 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler
     {
         DomainProperty[] columns = dataDomain.getProperties();
         Map<String, Class> expectedColumns = new CaseInsensitiveHashMap<Class>(columns.length);
-        Set<String> qcEnabledColumns = new CaseInsensitiveHashSet();
-        Set<String> qcIndicatorColumns = new CaseInsensitiveHashSet();
+        Set<String> mvEnabledColumns = new CaseInsensitiveHashSet();
+        Set<String> mvIndicatorColumns = new CaseInsensitiveHashSet();
 
 
         for (DomainProperty col : columns)
         {
-            if (col.isQcEnabled())
+            if (col.isMvEnabled())
             {
-                qcEnabledColumns.add(col.getName());
-                qcIndicatorColumns.add(col.getName() + QcColumn.QC_INDICATOR_SUFFIX);
+                mvEnabledColumns.add(col.getName());
+                mvIndicatorColumns.add(col.getName() + MvColumn.MV_INDICATOR_SUFFIX);
             }
             if (col.getLabel() != null)
                 expectedColumns.put(col.getLabel(), col.getPropertyDescriptor().getPropertyType().getJavaType());
@@ -101,13 +101,13 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler
             }
             for (ColumnDescriptor column : loader.getColumns())
             {
-                if (qcEnabledColumns.contains(column.name))
+                if (mvEnabledColumns.contains(column.name))
                 {
-                    column.setQcEnabled(dataDomain.getContainer());
+                    column.setMvEnabled(dataDomain.getContainer());
                 }
-                else if (qcIndicatorColumns.contains(column.name))
+                else if (mvIndicatorColumns.contains(column.name))
                 {
-                    column.setQcIndicator(dataDomain.getContainer());
+                    column.setMvIndicator(dataDomain.getContainer());
                     column.clazz = String.class;
                 }
                 Class expectedColumnClass = expectedColumns.get(column.name);
@@ -116,7 +116,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler
                 else
                 {
                     // It's not an expected column. Is it a qc indicator column?
-                    if (!qcIndicatorColumns.contains(column.name))
+                    if (!mvIndicatorColumns.contains(column.name))
                     {
                         column.load = false;
                     }
