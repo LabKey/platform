@@ -15,21 +15,22 @@
  */
 package org.labkey.core.query;
 
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.FilteredTable;
+import org.labkey.api.data.*;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.User;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.security.User;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.ValidEmail;
-import org.labkey.api.data.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.core.user.UserController;
 
-import java.util.Set;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.sql.SQLException;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -41,6 +42,10 @@ public class CoreQuerySchema extends UserSchema
 {
     private Set<Integer> _projectUserIds;
 
+    public static final String USERS_TABLE_NAME = "Users";
+    public static final String SITE_USERS_TABLE_NAME = "SiteUsers";
+    public static final String PRINCIPALS_TABLE_NAME = "Principals";
+
     public CoreQuerySchema(User user, Container c)
     {
         super("core", user, c, CoreSchema.getInstance().getSchema());
@@ -48,17 +53,17 @@ public class CoreQuerySchema extends UserSchema
 
     public Set<String> getTableNames()
     {
-        return PageFlowUtil.set("Users","SiteUsers","Principals");
+        return PageFlowUtil.set(USERS_TABLE_NAME, SITE_USERS_TABLE_NAME, PRINCIPALS_TABLE_NAME);
     }
 
 
     public TableInfo createTable(String name)
     {
-        if (name.toLowerCase().equals("users"))
+        if (USERS_TABLE_NAME.equalsIgnoreCase(name))
             return getUsers();
-        if (name.toLowerCase().equals("siteusers"))
+        if (SITE_USERS_TABLE_NAME.equalsIgnoreCase(name))
             return getSiteUsers();
-        if(name.toLowerCase().equals("principals"))
+        if(PRINCIPALS_TABLE_NAME.equals(name))
             return getPrincipals();
         return null;
     }
@@ -168,20 +173,45 @@ public class CoreQuerySchema extends UserSchema
         TableInfo usersBase = CoreSchema.getInstance().getTableInfoUsers();
         FilteredTable users = new FilteredTable(usersBase);
 
-        //we only expose user id and display name via Query
-        ColumnInfo col = users.wrapColumn(usersBase.getColumn("UserId"));
-        col.setKeyField(true);
-        col.setIsHidden(true);
-        col.setReadOnly(true);
-        users.addColumn(col);
+        ColumnInfo userIdCol = users.addWrapColumn(usersBase.getColumn("UserId"));
+        userIdCol.setKeyField(true);
+        userIdCol.setIsHidden(true);
+        userIdCol.setReadOnly(true);
 
-        col = users.wrapColumn(usersBase.getColumn("DisplayName"));
-        col.setReadOnly(true);
-        users.addColumn(col);
+        ColumnInfo entityIdCol = users.addWrapColumn(usersBase.getColumn("EntityId"));
+        entityIdCol.setIsHidden(true);
+
+        ColumnInfo displayNameCol = users.addWrapColumn(usersBase.getColumn("DisplayName"));
+        displayNameCol.setReadOnly(true);
+        users.addWrapColumn(usersBase.getColumn("FirstName"));
+        users.addWrapColumn(usersBase.getColumn("LastName"));
+        users.addWrapColumn(usersBase.getColumn("Description"));
+        users.addWrapColumn(usersBase.getColumn("Created"));
+        users.addWrapColumn(usersBase.getColumn("Modified"));
+        
+        if (getUser().isAdministrator() || getContainer().hasPermission(getUser(), ACL.PERM_ADMIN))
+        {
+            users.addWrapColumn(usersBase.getColumn("Email"));
+            users.addWrapColumn(usersBase.getColumn("Phone"));
+            users.addWrapColumn(usersBase.getColumn("Mobile"));
+            users.addWrapColumn(usersBase.getColumn("Pager"));
+            users.addWrapColumn(usersBase.getColumn("IM"));
+            users.addWrapColumn(usersBase.getColumn("Active"));
+            users.addWrapColumn(usersBase.getColumn("LastLogin"));
+
+            // The details action requires admin permission so don't offer the link if they can't see it
+            users.setDetailsURL(new DetailsURL(new ActionURL(UserController.DetailsAction.class, getContainer()), Collections.singletonMap("userId", "userId")));
+        }
+
 
         List<FieldKey> defCols = new ArrayList<FieldKey>();
-        defCols.add(FieldKey.fromParts("UserId"));
-        defCols.add(FieldKey.fromParts("DisplayName"));
+        for (ColumnInfo columnInfo : users.getColumns())
+        {
+            if (!columnInfo.isHidden() && !"Created".equalsIgnoreCase(columnInfo.getName()) && !"Modified".equalsIgnoreCase(columnInfo.getName()))
+            {
+                defCols.add(FieldKey.fromParts(columnInfo.getName()));
+            }
+        }
         users.setDefaultVisibleColumns(defCols);
 
         return users;

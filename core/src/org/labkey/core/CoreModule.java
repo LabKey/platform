@@ -135,7 +135,7 @@ public class CoreModule extends SpringModule
 
     protected Collection<? extends WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(new BaseWebPartFactory("Contacts")
+        return Arrays.asList(new AlwaysAvailableWebPartFactory("Contacts")
             {
                 public WebPartView getWebPartView(ViewContext ctx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
                 {

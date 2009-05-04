@@ -17,10 +17,12 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.core.user.UserController" %>
 <%
     String caption;
+    UserController.ShowUsersForm form = (UserController.ShowUsersForm) HttpView.currentModel();
     ActionURL url = HttpView.currentContext().getActionURL().clone();
-    if(null == url.getParameter("inactive"))
+    if(!form.isInactive())
     {
         url.addParameter("inactive", true);
         caption = "include inactive users";

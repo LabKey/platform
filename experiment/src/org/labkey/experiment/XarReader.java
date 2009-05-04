@@ -522,21 +522,22 @@ public class XarReader extends AbstractXarImporter
 
         TableInfo tiExperiment = ExperimentServiceImpl.get().getTinfoExperiment();
 
-        Experiment experiment = ExperimentServiceImpl.get().getExperiment(experimentLSID);
+        ExpExperiment experiment = ExperimentService.get().getExpExperiment(experimentLSID);
         if (null == experiment)
         {
-            experiment = new Experiment();
+            Experiment experimentDataObject = new Experiment();
 
-            experiment.setLSID(experimentLSID);
-            experiment.setHypothesis(trimString(exp.getHypothesis()));
-            experiment.setName(trimString(exp.getName()));
+            experimentDataObject.setLSID(experimentLSID);
+            experimentDataObject.setHypothesis(trimString(exp.getHypothesis()));
+            experimentDataObject.setName(trimString(exp.getName()));
             if (null != exp.getContact())
-                experiment.setContactId(exp.getContact().getContactId());
-            experiment.setExperimentDescriptionURL(trimString(exp.getExperimentDescriptionURL()));
-            experiment.setComments(trimString(exp.getComments()));
-            experiment.setContainer(getContainer());
+                experimentDataObject.setContactId(exp.getContact().getContactId());
+            experimentDataObject.setExperimentDescriptionURL(trimString(exp.getExperimentDescriptionURL()));
+            experimentDataObject.setComments(trimString(exp.getComments()));
+            experimentDataObject.setContainer(getContainer());
 
-            experiment = Table.insert(getUser(), tiExperiment, experiment);
+            experimentDataObject = Table.insert(getUser(), tiExperiment, experimentDataObject);
+            experiment = new ExpExperimentImpl(experimentDataObject);
 
             ObjectProperty contactProperty = null;
             if (null != exp.getContact())

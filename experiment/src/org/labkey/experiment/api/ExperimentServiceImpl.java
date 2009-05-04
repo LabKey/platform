@@ -319,9 +319,15 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public ExpSampleSetImpl getSampleSet(int rowid)
+    public ExpSampleSetImpl getSampleSet(int rowId)
     {
-        MaterialSource ms = getMaterialSource(rowid);
+        MaterialSource ms = getMaterialSourceCache().get(String.valueOf(rowId));
+        if (null == ms)
+        {
+            ms = Table.selectObject(getTinfoMaterialSource(), rowId, MaterialSource.class);
+            getMaterialSourceCache().put(String.valueOf(rowId), ms);
+        }
+
         if (ms == null)
             return null;
         return new ExpSampleSetImpl(ms);
@@ -457,10 +463,23 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpExperiment getExpExperiment(String lsid)
     {
-        Experiment exp = getExperiment(lsid);
-        if (exp == null)
+        if (null==lsid)
             return null;
-        return new ExpExperimentImpl(exp);
+        try
+        {
+            Experiment[] experiments =
+                    Table.select(getTinfoExperiment(), Table.ALL_COLUMNS, new SimpleFilter("LSID", lsid), null, Experiment.class);
+            if (experiments.length != 1)
+                return null;
+            else
+            {
+                return new ExpExperimentImpl(experiments[0]);
+            }
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
     }
 
     public ExpProtocolImpl getExpProtocol(int rowid)
@@ -1036,27 +1055,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public Experiment getExperiment(String lsid)
-    {
-        if (null==lsid)
-            return null;
-        try
-        {
-            Experiment[] experiments =
-                    Table.select(getTinfoExperiment(), Table.ALL_COLUMNS, new SimpleFilter("LSID", lsid), null, Experiment.class);
-            if (null == experiments || experiments.length == 0)
-                return null;
-            else
-            {
-                return experiments[0];
-            }
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-    }
-
     public SimpleFilter createContainerFilter(Container container, User user, boolean includeProjectAndShared)
     {
         List<String> containerIds = new ArrayList<String>();
@@ -1158,45 +1156,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             throw new RuntimeSQLException(e);
         }
-    }
-
-    public List<Data> getRunInputData(String runLSID)
-    {
-        try
-        {
-            final String sql = "SELECT * FROM exp.ExperimentRunDataInputs WHERE RunLsid = ?";
-            Map<String, Object>[] maps = Table.executeQuery(getExpSchema(), sql, new Object[]{runLSID}, Map.class);
-            Map<String, List<Data>> data = getRunInputData(maps);
-            List<Data> result = data.get(runLSID);
-            if (result == null)
-            {
-                result = Collections.emptyList();
-            }
-            return result;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-    }
-
-    private Map<String, List<Data>> getRunInputData(Map<String, Object>[] maps)
-    {
-        Map<String, List<Data>> outputMap = new HashMap<String, List<Data>>();
-        BeanObjectFactory<Data> f = new BeanObjectFactory<Data>(Data.class);
-        for (Map<String, Object> map : maps)
-        {
-            String runLSID = (String) map.get("RunLSID");
-            List<Data> list = outputMap.get(runLSID);
-            if (null == list)
-            {
-                list = new ArrayList<Data>();
-                outputMap.put(runLSID, list);
-            }
-            Data d = f.fromMap(map);
-            list.add(d);
-        }
-        return outputMap;
     }
 
     public List<Material> getRunInputMaterial(String runLSID)
@@ -1884,17 +1843,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             throw UnexpectedException.wrap(e);
         }
-    }
-
-    public MaterialSource getMaterialSource(int rowId)
-    {
-        MaterialSource source = getMaterialSourceCache().get(String.valueOf(rowId));
-        if (null == source)
-        {
-            source = Table.selectObject(getTinfoMaterialSource(), rowId, MaterialSource.class);
-            getMaterialSourceCache().put(String.valueOf(rowId), source);
-        }
-        return source;
     }
 
     public MaterialSource getMaterialSource(String lsid)

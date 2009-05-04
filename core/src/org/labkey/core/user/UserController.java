@@ -18,22 +18,24 @@ package org.labkey.core.user;
 
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionMessage;
 import org.labkey.api.action.*;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.*;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.view.template.TemplateHeaderView;
+import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.GroupAuditViewFactory;
 import org.labkey.core.query.UserAuditViewFactory;
 import org.labkey.core.security.SecurityController;
@@ -41,18 +43,14 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.ServletException;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.*;
 
 public class UserController extends SpringActionController
 {
     private static DefaultActionResolver _actionResolver = new DefaultActionResolver(UserController.class);
-    private static Logger _log = Logger.getLogger(UserController.class);
 
-    public UserController() throws Exception
+    public UserController()
     {
         setActionResolver(_actionResolver);
     }
@@ -132,7 +130,7 @@ public class UserController extends SpringActionController
         {
             int userId = ctx.getViewContext().getUser().getUserId();
             Integer rowId = (Integer) ctx.getRow().get("userId");
-            return  (userId != rowId);
+            return  (userId != rowId.intValue());
         }
     }
 
@@ -178,52 +176,8 @@ public class UserController extends SpringActionController
         if (isSiteAdmin)
         {
             rgn.setShowRecordSelectors(true);
-
-            ActionButton deactivate = new ActionButton("deactivateUsers.post", "Deactivate");
-            deactivate.setRequiresSelection(true);
-            deactivate.setActionType(ActionButton.Action.POST);
-            gridButtonBar.add(deactivate);
-
-            ActionButton activate = new ActionButton("activateUsers.post", "Re-Activate");
-            activate.setRequiresSelection(true);
-            activate.setActionType(ActionButton.Action.POST);
-            gridButtonBar.add(activate);
-
-            ActionButton delete = new ActionButton("deleteUsers.post", "Delete");
-            delete.setRequiresSelection(true);
-            delete.setActionType(ActionButton.Action.POST);
-            gridButtonBar.add(delete);
-
-            // Could allow project admins to do this... but they can already add users when adding to a group
-            ActionButton insert = new ActionButton("showAddUsers", "Add Users");
-            ActionURL actionURL = new ActionURL(SecurityController.AddUsersAction.class, getContainer());
-            insert.setURL(actionURL.getLocalURIString());
-            insert.setActionType(ActionButton.Action.LINK);
-            gridButtonBar.add(insert);
-
-            if (c.isRoot())
-            {
-                ActionButton preferences = new ActionButton("showUserPreferences.view", "Preferences");
-                preferences.setActionType(ActionButton.Action.LINK);
-                gridButtonBar.add(preferences);
-            }
         }
-
-        if (isAnyAdmin)
-        {
-            ActionButton export = new ActionButton("export", "Export to Excel");
-            ActionURL exportURL = getViewContext().cloneActionURL();
-            exportURL.setAction("export");
-            export.setURL(exportURL.getEncodedLocalURIString());
-            export.setActionType(ActionButton.Action.LINK);
-            gridButtonBar.add(export);
-
-            if (AuditLogService.get().isViewable())
-            {
-                gridButtonBar.add(new ActionButton("showUserHistory.view", "History",
-                        DataRegion.MODE_ALL, ActionButton.Action.LINK));
-            }
-        }
+        populateUserGridButtonBar(gridButtonBar, isSiteAdmin, isAnyAdmin);
 
         rgn.setButtonBar(gridButtonBar, DataRegion.MODE_GRID);
 
@@ -251,6 +205,50 @@ public class UserController extends SpringActionController
         rgn.setButtonBar(updateButtonBar, DataRegion.MODE_UPDATE);
 
         return rgn;
+    }
+
+    private void populateUserGridButtonBar(ButtonBar gridButtonBar, boolean siteAdmin, boolean anyAdmin)
+    {
+        if (siteAdmin)
+        {
+            ActionButton deactivate = new ActionButton("deactivateUsers.post", "Deactivate");
+            deactivate.setRequiresSelection(true);
+            deactivate.setActionType(ActionButton.Action.POST);
+            gridButtonBar.add(deactivate);
+
+            ActionButton activate = new ActionButton("activateUsers.post", "Re-Activate");
+            activate.setRequiresSelection(true);
+            activate.setActionType(ActionButton.Action.POST);
+            gridButtonBar.add(activate);
+
+            ActionButton delete = new ActionButton("deleteUsers.post", "Delete");
+            delete.setRequiresSelection(true);
+            delete.setActionType(ActionButton.Action.POST);
+            gridButtonBar.add(delete);
+
+            // Could allow project admins to do this... but they can already add users when adding to a group
+            ActionButton insert = new ActionButton("showAddUsers", "Add Users");
+            ActionURL actionURL = new ActionURL(SecurityController.AddUsersAction.class, getContainer());
+            insert.setURL(actionURL.getLocalURIString());
+            insert.setActionType(ActionButton.Action.LINK);
+            gridButtonBar.add(insert);
+
+            if (getContainer().isRoot())
+            {
+                ActionButton preferences = new ActionButton("showUserPreferences.view", "Preferences");
+                preferences.setActionType(ActionButton.Action.LINK);
+                gridButtonBar.add(preferences);
+            }
+        }
+
+        if (anyAdmin)
+        {
+            if (AuditLogService.get().isViewable())
+            {
+                gridButtonBar.add(new ActionButton("showUserHistory.view", "History",
+                        DataRegion.MODE_ALL, ActionButton.Action.LINK));
+            }
+        }
     }
 
     /**
@@ -341,7 +339,7 @@ public class UserController extends SpringActionController
             User curUser = getViewContext().getUser();
             for(Integer userId : form.getUserId())
             {
-                UserManager.setUserActive(curUser, userId, _active);
+                UserManager.setUserActive(curUser, userId.intValue(), _active);
             }
             return true;
         }
@@ -466,44 +464,89 @@ public class UserController extends SpringActionController
         return false;
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)   // Root requires site admin; any other container requires PERM_ADMIN (see below)
-    public class ShowUsersAction extends SimpleViewAction
+    public static class ShowUsersForm extends QueryViewAction.QueryExportForm
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            SimpleFilter filter = authorizeAndGetProjectMemberFilter();
-            if (null == getViewContext().getRequest().getParameter("inactive"))
-                filter.addCondition("Active", true); //filter out active users by default
-            DataRegion rgn = getGridRegion(false);
-            GridView gridView = new GridView(rgn) {
-                @Override
-                public void renderView(RenderContext model, PrintWriter out) throws IOException, ServletException
-                {
-                    ToggleInactiveView toggle = new ToggleInactiveView();
+        private boolean _inactive;
 
-                    try
-                    {
-                        include(toggle, out);
-                    }
-                    catch (Exception e)
-                    {
-                    }
-                    super.renderView(model, out);
+        public boolean isInactive()
+        {
+            return _inactive;
+        }
+
+        public void setInactive(boolean inactive)
+        {
+            _inactive = inactive;
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)   // Root requires site admin; any other container requires PERM_ADMIN (see below)
+    public class ShowUsersAction extends QueryViewAction<ShowUsersForm, QueryView>
+    {
+        private static final String DATA_REGION_NAME = "Users";
+
+        public ShowUsersAction()
+        {
+            super(ShowUsersForm.class);
+        }
+
+        protected QueryView createQueryView(final ShowUsersForm form, BindException errors, boolean forExport, String dataRegion) throws Exception
+        {
+            QuerySettings settings = new QuerySettings(getViewContext(), DATA_REGION_NAME, getContainer().isRoot() ? CoreQuerySchema.SITE_USERS_TABLE_NAME : CoreQuerySchema.USERS_TABLE_NAME);
+            settings.setAllowChooseQuery(false);
+            settings.setAllowChooseView(true);
+            QueryView queryView = new QueryView(new CoreQuerySchema(getUser(), getContainer()), settings)
+            {
+                @Override
+                protected void setupDataView(DataView ret)
+                {
+                    super.setupDataView(ret);
+
+                    SimpleDisplayColumn securityDetails = new UrlColumn(new UserUrlsImpl().getUserAccessURL(getContainer()) + "userId=${UserId}", "permissions");
+                    ret.getDataRegion().addDisplayColumn(1, securityDetails);
+
+                    ret.getRenderContext().setBaseSort(new Sort("email"));
+                    SimpleFilter filter = authorizeAndGetProjectMemberFilter();
+                    if (!form.isInactive())
+                        filter.addCondition("Active", true); //filter out active users by default
+                    ret.getRenderContext().setBaseFilter(filter);
+                }
+
+                @Override
+                protected void populateButtonBar(DataView view, ButtonBar bar)
+                {
+                    super.populateButtonBar(view, bar);
+                    boolean isSiteAdmin = getUser().isAdministrator();
+                    boolean isAnyAdmin = isSiteAdmin || getContainer().hasPermission(getUser(), ACL.PERM_ADMIN);
+                    populateUserGridButtonBar(bar, isSiteAdmin, isAnyAdmin);
                 }
             };
-            gridView.setSort(new Sort("email"));
-            gridView.getViewContext().setPermissions(ACL.PERM_READ);
-            gridView.setFilter(filter);
-            gridView.setTitle("Users");
+            queryView.setUseQueryViewActionExportURLs(true);
+            queryView.setShadeAlternatingRows(true);
+            queryView.setShowBorders(true);
+            queryView.setShowDetailsColumn(true);
+            queryView.setShowRecordSelectors(getUser().isAdministrator());
+            queryView.setFrame(WebPartView.FrameType.NONE);
+            queryView.setAllowableContainerFilterTypes();
+            return queryView;
+        }
 
+        @Override
+        protected ModelAndView getHtmlView(ShowUsersForm form, BindException errors) throws Exception
+        {
             VBox vbox = new VBox();
-
             ImpersonateView impersonateView = new ImpersonateView(getContainer(), false);
 
+            JspView<ShowUsersForm> toggleInactiveView = new JspView<ShowUsersForm>("/org/labkey/core/user/toggleInactive.jsp", form);
+            toggleInactiveView.setTitle("Users");
+            toggleInactiveView.setFrame(WebPartView.FrameType.PORTAL);
+            
             if (impersonateView.hasUsers())
-                return new VBox(new ImpersonateView(getContainer(), false), gridView);
-            else
-                return gridView;
+            {
+                vbox.addView(impersonateView);
+            }
+            vbox.addView(toggleInactiveView);
+            vbox.addView(createQueryView(form, errors, false, "Users"));
+            return vbox;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -520,15 +563,6 @@ public class UserController extends SpringActionController
             }
         }
     }
-
-    public class ToggleInactiveView extends JspView
-    {
-        public ToggleInactiveView()
-        {
-            super("/org/labkey/core/user/toggleInactive.jsp");
-        }
-    }
-
 
     // Site admins can act on any user
     // Project admins can only act on users who are project members
@@ -614,41 +648,6 @@ public class UserController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
-    public class ExportAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            try
-            {
-                Filter filter = authorizeAndGetProjectMemberFilter();
-                RenderContext ctx = new RenderContext(getViewContext());
-                ctx.setBaseFilter(filter);
-                ctx.setBaseSort(new Sort("email"));
-                DataRegion rgn = getGridRegion(false);
-                ExcelWriter ew = new ExcelWriter(rgn.getResultSet(ctx), rgn.getDisplayColumns());
-                ew.setAutoSize(true);
-                ew.setSheetName("Users");
-                ew.setFooter("Users");
-                ew.write(getViewContext().getResponse());
-            }
-            catch (SQLException e)
-            {
-                _log.error("export: " + e);
-            }
-            catch (IOException e)
-            {
-                _log.error("export: " + e);
-            }
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
     private boolean isValidRequiredField(final String name)
     {
         return (!"Email".equals(name) && !"UserId".equals(name) &&
@@ -674,9 +673,7 @@ public class UserController extends SpringActionController
             }
             List<ColumnInfo> cols = CoreSchema.getInstance().getTableInfoUsers().getColumns(columnNames.toArray(new String[columnNames.size()]));
             UserPreference bean = new UserPreference(cols, UserManager.getRequiredUserFields());
-            JspView<UserPreference> view = new JspView<UserPreference>("/org/labkey/core/user/userPreferences.jsp", bean);
-
-            return view;
+            return new JspView<UserPreference>("/org/labkey/core/user/userPreferences.jsp", bean);
         }
 
         public boolean handlePost(UserPreferenceForm form, BindException errors) throws Exception
@@ -948,7 +945,7 @@ public class UserController extends SpringActionController
         if (null == userId)
             root.addChild("User Details");
         else
-            root.addChild("User Details", new UserUrlsImpl().getUserDetailsURL(c).addParameter("userId", userId));
+            root.addChild("User Details", new UserUrlsImpl().getUserDetailsURL(c).addParameter("userId", userId.intValue()));
     }
 
 
@@ -996,7 +993,7 @@ public class UserController extends SpringActionController
 
                 ActionButton changeEmail = new ActionButton("", "Change Email");
                 changeEmail.setActionType(ActionButton.Action.LINK);
-                ActionURL changeEmailURL = getViewContext().cloneActionURL().setAction("showChangeEmail");
+                ActionURL changeEmailURL = getViewContext().cloneActionURL().setAction(ShowChangeEmail.class);
                 changeEmail.setURL(changeEmailURL.getLocalURIString());
                 bb.add(changeEmail);
 
@@ -1014,7 +1011,7 @@ public class UserController extends SpringActionController
             {
                 ActionButton viewPermissions = new ActionButton("", "View Permissions");
                 viewPermissions.setActionType(ActionButton.Action.LINK);
-                ActionURL viewPermissionsURL = getViewContext().cloneActionURL().setAction("userAccess");
+                ActionURL viewPermissionsURL = getViewContext().cloneActionURL().setAction(UserAccessAction.class);
                 viewPermissions.setURL(viewPermissionsURL.getLocalURIString());
                 bb.add(viewPermissions);
             }
@@ -1031,15 +1028,14 @@ public class UserController extends SpringActionController
                 else
                 {
                     Container doneContainer;
-                    if (null == c || c.isRoot())
+                    if (c.isRoot())
                         doneContainer = ContainerManager.getHomeContainer();
                     else
                         doneContainer = c.getProject();
 
                     doneButton = new ActionButton("", "Go to " + doneContainer.getName());
                     doneButton.setActionType(ActionButton.Action.LINK);
-                    ActionURL doneURL = getViewContext().cloneActionURL();
-                    doneURL.setContainer(doneContainer).setPageFlow("Project").setAction("start.view");
+                    ActionURL doneURL = doneContainer.getStartURL(getViewContext());
                     doneButton.setURL(doneURL.getLocalURIString());
                 }
 
@@ -1260,14 +1256,17 @@ public class UserController extends SpringActionController
             super.validateBind(errors);
             Integer userId = (Integer) getPkVal();
             if (userId == null)
+            {
                 errors.reject(SpringActionController.ERROR_MSG, "User Id cannot be null");
+                return;
+            }
             String displayName = (String) this.getTypedValue("DisplayName");
             if (displayName != null)
             {
                 //ensure that display name is unique
                 User user = UserManager.getUserByDisplayName(displayName);
                 //if there's a user with this display name and it's not the user currently being edited
-                if (user != null && user.getUserId() != userId)
+                if (user != null && user.getUserId() != userId.intValue())
                 {
                     errors.reject(SpringActionController.ERROR_MSG, "The value of the 'Display Name' field conflicts with another value in the database. Please enter a different value");
                 }
@@ -1302,7 +1301,7 @@ public class UserController extends SpringActionController
     }
 
 
-    public static class UserForm extends ViewFormData
+    public static class UserForm
     {
         private int userId;
         private String newEmail;
@@ -1605,7 +1604,7 @@ public class UserController extends SpringActionController
         public ApiResponse execute(ShowWarningMessagesForm form, BindException errors) throws Exception
         {
             getViewContext().getSession().setAttribute(TemplateHeaderView.SHOW_WARNING_MESSAGES_SESSION_PROP,
-                    new Boolean(form.isShowMessages()));
+                    form.isShowMessages());
             return new ApiSimpleResponse("success", true);
         }
     }

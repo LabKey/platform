@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.springframework.web.servlet.mvc.Controller" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!--ANNOUNCEMENTS-->
 <%
@@ -272,7 +273,7 @@ if (!bean.isResponse && !bean.print)
         }
         else
         {
-            ActionURL respond = announcementURL(c, "respond", "parentId", announcement.getEntityId());
+            ActionURL respond = announcementURL(c, AnnouncementsController.RespondAction.class, "parentId", announcement.getEntityId());
             respond.addReturnURL(bean.currentURL);
             %>
         <%=PageFlowUtil.generateButton("Post Response", respond.getLocalURIString())%>&nbsp;<%
@@ -280,7 +281,7 @@ if (!bean.isResponse && !bean.print)
     }
     if (bean.perm.allowDeleteMessage(announcement))
     {
-        ActionURL deleteThread = announcementURL(c, "deleteThread", "entityId", announcement.getEntityId());
+        ActionURL deleteThread = announcementURL(c, AnnouncementsController.DeleteThreadAction.class, "entityId", announcement.getEntityId());
         deleteThread.addParameter("cancelUrl", bean.currentURL.getLocalURIString());
         if (embedded)
         {
@@ -307,9 +308,9 @@ if (bean.isResponse)
 %>
 
 <%!
-    ActionURL announcementURL(Container c, String action, String... params)
+    ActionURL announcementURL(Container c, Class<? extends Controller> action, String... params)
     {
-        ActionURL url = new ActionURL("announcements", action, c);
+        ActionURL url = new ActionURL(action, c);
         for (int i=0 ; i<params.length ; i+=2)
             url.addParameter(params[i], params[i+1]);
         return url;

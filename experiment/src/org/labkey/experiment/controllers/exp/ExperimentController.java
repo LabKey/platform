@@ -2061,16 +2061,13 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(ACL.PERM_UPDATE)
     public class ShowUpdateMaterialSourceAction extends SimpleViewAction<MaterialSourceForm>
     {
-        private MaterialSource _source;
+        private ExpSampleSet _sampleSet;
 
         public ModelAndView getView(MaterialSourceForm form, BindException errors) throws Exception
         {
-            _source = form.getBean();
-            if (null == _source.getName())
-                _source = ExperimentServiceImpl.get().getMaterialSource(_source.getRowId());
+            _sampleSet = ExperimentService.get().getSampleSet(form.getBean().getRowId());
 
-            ExpSampleSet sampleSet = new ExpSampleSetImpl(_source);
-            if (sampleSet.equals(ExperimentService.get().ensureDefaultSampleSet()))
+            if (_sampleSet.equals(ExperimentService.get().ensureDefaultSampleSet()))
             {
                 HttpView.throwUnauthorized("Cannot edit default sample set");
             }
@@ -2080,7 +2077,7 @@ public class ExperimentController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer())).addChild("Sample Set " + _source.getName());
+            return appendRootNavTrail(root).addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer())).addChild("Sample Set " + _sampleSet.getName());
         }
     }
 
@@ -2232,7 +2229,7 @@ public class ExperimentController extends SpringActionController
                 else
                 {
                     String materialSourceLsid = ExperimentService.get().getSampleSetLsid(form.getName(), getContainer()).toString();
-                    MaterialSource sourceExisting = ExperimentServiceImpl.get().getMaterialSource(materialSourceLsid);
+                    ExpSampleSet sourceExisting = ExperimentService.get().getSampleSet(materialSourceLsid);
 
                     if (!form.isImportMoreSamples() && null != sourceExisting)
                     {

@@ -235,7 +235,7 @@
 </table>
 <form method="POST" action="<%=form.urlFor(QueryAction.chooseColumns)%>" onsubmit="return onSubmit();">
     <span title="Some fields may be hidden by default from the list of available fields by default.">
-        <input type="checkbox"<% if (form.getQuerySettings().isShowHiddenFieldsWhenCustomizing()) { %> checked <% } %> onchange="designer.setShowHiddenFields(this.checked)"> Show hidden fields
+        <input type="checkbox"<% if (form.getQuerySettings().isShowHiddenFieldsWhenCustomizing()) { %> checked <% } %> onclick="designer.setShowHiddenFields(this.checked)" onchange="designer.setShowHiddenFields(this.checked)"> Show hidden fields
     </span><br>
     <input type="hidden" name="ff_designXML" id="ff_designXML" value="<%=h(form.ff_designXML)%>">
     <input type="hidden" name="ff_dirty" id="ff_dirty" value="<%=form.ff_dirty%>">

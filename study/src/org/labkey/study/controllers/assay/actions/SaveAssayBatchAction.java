@@ -15,7 +15,6 @@
  */
 package org.labkey.study.controllers.assay.actions;
 
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;

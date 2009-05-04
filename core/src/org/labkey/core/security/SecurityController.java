@@ -502,7 +502,6 @@ public class SecurityController extends SpringActionController
             if (null == _groupName)
                 HttpView.throwNotFound();
             Container container = getContainer();
-            Container project = container.isRoot() ? null : container.getProject();
 
             if (!container.isRoot() && !container.isProject())
                 container = container.getProject();
@@ -756,7 +755,7 @@ public class SecurityController extends SpringActionController
             Integer id = SecurityManager.getGroupId(groupName);
             if (id != null)
             {
-                view.addView(GroupAuditViewFactory.getInstance().createGroupView(getViewContext(), id));
+                view.addView(GroupAuditViewFactory.getInstance().createGroupView(getViewContext(), id.intValue()));
             }
         }
         return view;

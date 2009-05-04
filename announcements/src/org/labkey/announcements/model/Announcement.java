@@ -29,6 +29,7 @@ import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.announcements.AnnouncementsController;
 
 import javax.ejb.*;
 import java.io.Serializable;
@@ -316,13 +317,13 @@ public class Announcement extends AttachmentParentEntity implements Serializable
     @Transient
     public String getThreadUrl(Container container)
     {
-        ActionURL url = new ActionURL("announcements", "thread", container);
+        ActionURL url = new ActionURL(AnnouncementsController.ThreadAction.class, container);
         return url.getLocalURIString();
     }
 
     public String getPostResponseUrl(Container container)
     {
-        ActionURL url = new ActionURL("announcements", "respond", container);
+        ActionURL url = new ActionURL(AnnouncementsController.RespondAction.class, container);
         url.addParameter("rowId", Integer.toString(getRowId()));
         url.addParameter("entityId", getEntityId());
         return url.getLocalURIString();
