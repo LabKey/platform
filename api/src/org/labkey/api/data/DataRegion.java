@@ -589,7 +589,14 @@ public class DataRegion extends DisplayElement
 
     protected ResultSet getResultSet(RenderContext ctx, boolean async) throws SQLException, IOException
     {
-        return ctx.getResultSet(_displayColumns, getTable(), _maxRows, _offset, getName(), async);
+        Set<ColumnInfo> additionalRequiredColumns = new HashSet<ColumnInfo>();
+        addQueryColumns(additionalRequiredColumns);
+        return ctx.getResultSet(_displayColumns, getTable(), _maxRows, _offset, getName(), async, additionalRequiredColumns);
+    }
+
+    public void addQueryColumns(Set<ColumnInfo> columns)
+    {
+        // no query columns added by default
     }
 
     private void getAggregates(RenderContext ctx) throws SQLException, IOException
@@ -1100,19 +1107,29 @@ public class DataRegion extends DisplayElement
         return rowIndex;
     }
 
+    protected String getRowClass(RenderContext ctx, int rowIndex)
+    {
+        boolean isErrorRow = isErrorRow(ctx, rowIndex);
+        if (_shadeAlternatingRows && rowIndex % 2 == 0)
+            return isErrorRow ? "labkey-error-alternate-row" : "labkey-alternate-row";
+        else
+            return isErrorRow ? "labkey-error-row" : "labkey-row";
+    }
+
+    protected boolean isErrorRow(RenderContext ctx, int rowIndex)
+    {
+        return false;
+    }
 
     // Allows subclasses to do pre-row and post-row processing
     // CONSIDER: Separate as renderTableRow and renderTableRowContents?
     protected void renderTableRow(RenderContext ctx, Writer out, List<DisplayColumn> renderers, int rowIndex) throws SQLException, IOException
     {
-        if (_shadeAlternatingRows && rowIndex % 2 == 0)
-        {
-            out.write("<tr class=\"labkey-alternate-row\">");
-        }
-        else
-        {
-            out.write("<tr class=\"labkey-row\">");
-        }
+        out.write("<tr");
+        String rowClass = getRowClass(ctx, rowIndex);
+        if (rowClass != null)
+            out.write(" class=\"" + rowClass + "\"");
+        out.write(">");
 
         if (_showRecordSelectors)
             renderRecordSelector(ctx, out);

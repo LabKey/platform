@@ -209,21 +209,22 @@ public class RenderContext extends BoundMap // extends ViewContext
         return context.cloneActionURL();
     }
 
-
-    public ResultSet getResultSet(List<DisplayColumn> displayColumns, TableInfo tinfo, int maxRows, long offset) throws SQLException, IOException
-    {
-        return getResultSet(displayColumns, tinfo, maxRows, offset, tinfo.getName());
-    }
-
     public ResultSet getResultSet(List<DisplayColumn> displayColumns, TableInfo tinfo, int maxRows, long offset, String name) throws SQLException, IOException
     {
-        return getResultSet(displayColumns, tinfo, maxRows, offset, name, false);
+        return getResultSet(displayColumns, tinfo, maxRows, offset, name, false, Collections.<ColumnInfo>emptySet());
     }
 
-    public ResultSet getResultSet(List<DisplayColumn> displayColumns, TableInfo tinfo, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
+    public ResultSet getResultSet(List<DisplayColumn> displayColumns, TableInfo tinfo, int maxRows, long offset, String name, boolean async, Set<ColumnInfo> additionalRequiredColumns) throws SQLException, IOException
     {
         ActionURL url = getViewContext().cloneActionURL();
         List<ColumnInfo> cols = getSelectColumns(displayColumns, tinfo);
+
+        // this N-squared addition isn't ideal, but there are generally very few columns in one or both lists:
+        for (ColumnInfo required : additionalRequiredColumns)
+        {
+            if (!cols.contains(required))
+                cols.add(required);
+        }
 
         SimpleFilter filter = buildFilter(tinfo, url, name);
         Sort sort = buildSort(tinfo, url, name);
