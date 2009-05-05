@@ -194,6 +194,7 @@ else
 <script type="text/javascript" src="<%=request.getContextPath()%>/labkey.js"></script>
 <script type="text/javascript">
     LABKEY.requiresExtJs(true);
+    LABKEY.requiresScript("applet.js");
     LABKEY.requiresScript("fileBrowser.js");
     LABKEY.requiresScript("applet.js",true);
     LABKEY.requiresScript("FileUploadField.js");
@@ -230,7 +231,7 @@ Ext.onReady(function()
         ,showDetails:true
         ,allowChangeDirectory:true
         ,actions:{html:htmlAction, login:loginAction}
-        ,tbar:['download','parentFolder','refresh','createDirectory','deletePath','html'<%=user.isGuest()?",'login'":""%>]
+        ,tbar:['download','parentFolder','refresh','createDirectory','deletePath','uploadTool','html'<%=user.isGuest()?",'login'":""%>]
     });
 
     var viewport = new Ext.Viewport({

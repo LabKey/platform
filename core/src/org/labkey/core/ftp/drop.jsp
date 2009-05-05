@@ -48,7 +48,7 @@ LABKEY.requiresScript("dropApplet.js",true);
     <td valign="top" width=200 height=100%><div id="appletDiv" class="labkey-nav-bordered" style="padding:2px; margin:1px; width:200px; height:200px;"><script type="text/javascript">
 var applet = new LABKEY.Applet({
     id:"dropApplet",
-    archive:"<%=request.getContextPath()%>/_applets/applets-9.1.jar",
+    archive:"<%=request.getContextPath()%>/_applets/applets-9.2.jar",
     code:"org.labkey.applets.drop.DropApplet",
     width:200,
     height:200,

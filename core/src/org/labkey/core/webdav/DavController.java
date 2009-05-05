@@ -1745,7 +1745,7 @@ public class DavController extends SpringActionController
                     }
                     public void closeInputStream() throws IOException
                     {
-                        is.close();
+                        /* */
                     }
                 };
             }
@@ -2102,7 +2102,7 @@ public class DavController extends SpringActionController
             WebdavResolver.Resource dest = resolvePath(destinationPath);
             WebdavResolver.Resource src = resolvePath();
 
-            if (dest.getFile().getCanonicalPath().equals(src.getFile().getCanonicalPath()))
+            if (dest.getPath().equals(src.getPath()))
                 throw new DavException(WebdavStatus.SC_FORBIDDEN);
 
             boolean overwrite = getOverwriteParameter();
@@ -2181,8 +2181,8 @@ public class DavController extends SpringActionController
             }
             else
             {
-                audit(src, "deleted: moved to " + dest.getFile().getPath());
-                audit(dest, "created: moved from " + src.getFile().getPath());
+                audit(src, null == dest.getFile() ? "deleted" : "deleted: moved to " + dest.getFile().getPath());
+                audit(dest, null == src.getFile() ? "created" : "created: moved from " + src.getFile().getPath());
             }
 
             // Removing any lock-null resource which would be present at

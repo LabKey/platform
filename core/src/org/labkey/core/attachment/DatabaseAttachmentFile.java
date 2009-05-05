@@ -22,6 +22,7 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Table;
 import org.labkey.api.util.ResultSetUtil;
+import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -132,21 +133,14 @@ public class DatabaseAttachmentFile implements AttachmentFile
         finally
         {
             if (null == _is)
-                ResultSetUtil.close(_rs);
+                _rs = ResultSetUtil.close(_rs);
         }
     }
 
     public void closeInputStream() throws IOException
     {
-        _is.close();
-
-        try
-        {
-            _rs.close();
-        }
-        catch (SQLException e)
-        {
-            // ignore
-        }
+        IOUtils.closeQuietly(_is);
+        _is = null;
+        _rs = ResultSetUtil.close(_rs);
     }
 }

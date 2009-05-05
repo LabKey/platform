@@ -227,7 +227,7 @@ function renderDateTime(value, metadata, record, rowIndex, colIndex, store)
 var _previewConnection = new Ext.data.Connection({autoAbort:true, method:'GET', disableCaching:false});
 var _previewWindow = null;
 var _previewAsync = null;
-
+var _previewScope = "previewAncor";
 
 function _attachPreview(id,record)
 {
@@ -235,22 +235,25 @@ function _attachPreview(id,record)
         return;
     if (!record.data.file)
         return;
-    var elImg = $(id);
-    elImg.on("mouseover",preview.createCallback(elImg,record));
-    elImg.on("mouseout",unpreviewWindow);
+//    var elImg = $(id);
+//    elImg.on("mouseover",preview.createCallback(id,record));
+//    elImg.on("mouseout",unpreviewWindow);
+    var img = Ext.fly(id,_previewScope);
+    img.dom.onmouseover = preview.createCallback(id,record);
+    img.dom.mouseout = unpreviewWindow;
 }
 
 
-function preview(el, record)
+function preview(id, record)
 {
     cancelAsyncPreview();
     closePreviewWindow();
-    var timeout = previewFN.defer(200,null,[el,record]);
+    var timeout = previewFN.defer(200,null,[id,record]);
     _previewAsync = {timeout:timeout, cancel:function() {clearTimeout(this.timeout);}};
 }
 
 
-function previewFN(el, record)
+function previewFN(id, record)
 {
     var uri = record.data.uri;
     var contentType = record.data.contentType;
@@ -258,7 +261,7 @@ function previewFN(el, record)
     if (!uri || !contentType || !size)
         return;
 
-    if (startsWith(contentType,'image/'))                                                                                                        
+    if (startsWith(contentType,'image/'))
     {
         //dynamicToolTip(el, {tag:'img', src:uri});
         //previewWindow(el, {tag:'img', src:uri});
@@ -267,7 +270,7 @@ function previewFN(el, record)
         {
             var img = {tag:'img', src:uri, border:'0', width:image.width, height:image.height};
             constrain(img, 400, 400);
-            previewWindow(el, img);
+            previewWindow(id, img);
         };
         image.src = uri;
         _previewAsync = {image:image, cancel:function(){image.onload=null;}};
@@ -291,7 +294,7 @@ function previewFN(el, record)
                     html = response.responseText;
                 else if (startsWith(contentType,"text/") || contentType == 'application/javascript')
                     html = "<div style='width:640px;'><pre>" + $h(response.responseText) + "</pre></div>";
-                previewWindow(el, html);
+                previewWindow(id, html);
                 if (_previewAsync && _previewAsync.requestid == requestid)
                     _previewAsync = null;
             }
@@ -301,18 +304,17 @@ function previewFN(el, record)
 }
 
 
-function dynamicToolTip(el, html)
+function dynamicToolTip(id, html)
 {
-    el = $(el);
     html = $dom.markup(html);
-    var tt = new Ext.ToolTip({target:el, html:html, trackMouse:true});
+    var tt = new Ext.ToolTip({target:Ext.fly(id,_previewScope), html:html, trackMouse:true});
     tt.onTargetOver(Ext.EventObject);
 }
 
 
-function previewWindow(el, html)
+function previewWindow(id, html)
 {
-    el = $(el);
+    var el = Ext.fly(id,_previewScope);
     html = $dom.markup(html);
     if (_previewWindow)
         _previewWindow.close();
@@ -432,7 +434,7 @@ Ext.extend(FileSystem, Ext.util.Observable,
     {
         return true;
     },
-    
+
     canDelete : function(record)
     {
         return true;
@@ -496,7 +498,7 @@ Ext.extend(FileSystem, Ext.util.Observable,
     },
 
     ready: true,
-    
+
     onReady : function(fn)
     {
         if (this.ready)
@@ -581,7 +583,7 @@ LABKEY.WebdavFileSystem = function(config)
 
     this.HistoryRecord = Ext.data.Record.create(['user', 'date', 'message', 'href']);
     this.historyReader = new Ext.data.XmlReader({record : "entry"}, this.HistoryRecord);
-    
+
     this.FileRecord = Ext.data.Record.create(
         [
             {name: 'uri', mapping: 'href',
@@ -673,12 +675,12 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
         var options = record.data.options;
         return !options || -1 != options.indexOf("PUT");
     },
-    
+
     canDelete : function(record)
     {
         var options = record.data.options;
         return !options || -1 != options.indexOf('DELETE');
-    },                           
+    },
 
     deletePath : function(path, callback)
     {
@@ -1045,19 +1047,20 @@ if (LABKEY.Applet)
             var config =
             {
                 id:params.id,
-                archive:LABKEY.contextPath + '/_applets/applets-9.1.jar',
+                archive:LABKEY.contextPath + '/_applets/applets-9.2.jar',
                 code:'org.labkey.applets.drop.DropApplet',
                 width:params.width || 200,
                 height:params.height || 200,
                 params:
                 {
-                    url:params.url,
-                    webdavPrefix:LABKEY.contextPath+'/_webdav/',
-                    user:params.user,
-                    password:params.password
+                    url :params.url || (window.location.protocol + "//" + window.location.host + LABKEY.contextPath + '/_webdav/'),
+                    webdavPrefix: LABKEY.contextPath+'/_webdav/',
+                    user: LABKEY.user.email,
+                    password: LABKEY.user.sessionid
                 }
             };
             WebdavApplet.superclass.constructor.call(this, config);
+            console.log("WebdavApplet.url: " + config.params.url);
         }
     });
 }
@@ -1104,11 +1107,12 @@ LABKEY.FileBrowser = function(config)
         createDirectory: this.getCreateDirectoryAction(),
         //drop : this.getOldDropAction(),
         showHistory : this.getShowHistoryAction(),
-        deletePath: this.getDeleteAction()
+        deletePath: this.getDeleteAction(),
+        uploadTool: this.getUploadToolAction()
     };
     this.addEvents( [ BROWSER_EVENTS.selectionchange, BROWSER_EVENTS.directorychange, BROWSER_EVENTS.doubleclick ]);
 
-    config = config || {};                                                                 
+    config = config || {};
     Ext.apply(this.actions, config.actions || {});
     delete config.actions;
     Ext.apply(this, config);
@@ -1266,6 +1270,28 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
         }});
     },
 
+    getUploadToolAction : function()
+    {
+        return new Ext.Action({text: 'Upload Tool', scope:this, disabled:true, handler: function()
+        {
+            if (this.applet && this.appletWindow)
+            {
+                this.appletWindow.show();
+                return;
+            }
+            this.applet = new WebdavApplet({height:200, width:200, directory:this.currentDirectory.data.path});
+            this.appletWindow = new Ext.Window({
+                closable:true, animateTarget:true,
+                closeAction :'hide',
+                plain: true,
+                items:this.applet});
+            this.applet.onReady((function()
+            {
+                this.applet.getApplet().changeWorkingDirectory(this.currentDirectory.data.path);
+            }).createDelegate(this));
+            this.appletWindow.show();
+        }});
+    },
 
     changeDirectory : function(record)
     {
@@ -1410,7 +1436,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
 
 
     history : null,
-    
+
     _historyCallback : function(filesystem, path, success, records)
     {
         if (path == this.selectedRecord.data.path)
@@ -1432,10 +1458,10 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
         if (!el)
             return;
         var elStyle = el.dom.style;
-        elStyle.backgroundColor = "#f0f0f0";                                           
+        elStyle.backgroundColor = "#f0f0f0";
         elStyle.height = "100%";
         elStyle.width = "100%";
-        
+
         if (this.addressBarHandler)
         {
             el.un("click", this.addressBarHandler);
@@ -1570,6 +1596,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
     {
         var me = this; // for anonymous inner functions
 
+
         //
         // GRID
         //
@@ -1624,7 +1651,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
         this.tree.getSelectionModel().on(TREESELECTION_EVENTS.selectionchange, this.Tree_onSelectionchange, this);
 
         //
-        // Toolbar
+        // Toolbar and Actions
         //
 
         var tbarConfig = [];
@@ -1670,10 +1697,11 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
                   var options = {url:this.currentDirectory.data.uri, record:this.currentDirectory, name:this.fileUploadField.getValue()};
                   var action = new DavSubmitAction(form, options);
                   form.doAction(action);
+                  document.body.dom.style.cursor = "wait"
               }
             }}
         });
-        
+
         this.formPanel = new Ext.FormPanel({
             formId : this.id ? this.id + 'Upload-form' : 'fileUpload-form',
             method : 'POST',
@@ -1687,14 +1715,17 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
             listeners: {
                 "actioncomplete" : function (f, action)
                 {
+                    Ext.getBody().dom.style.cursor = "pointer";
                     console.log("upload actioncomplete");
                     console.log(action);
                     var options = action.options;
+                    // UNDONE: update data store directly
                     me.refreshDirectory();
                     me.selectFile(me.fileSystem.concatPaths(options.record.data.path, options.name));
                 },
                 "actionfailed" : function (f, action)
                 {
+                    Ext.getBody().dom.style.cursor = "pointer";
                     console.log("upload actionfailed");
                     console.log(action);
                     me.refreshDirectory();
@@ -1707,8 +1738,8 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
             border : false,
             bodyStyle : 'background-color:#f0f0f0; padding:5px;',
             defaults: {bodyStyle : 'background-color:#f0f0f0', border:false},
-            layout:'column',
-            items:[{columnWidth:.5, id:'appletPanel', html:"[<a href='#' title='requires Java'>enable upload tool</a>]"},{columnWidth:.5, items:[this.formPanel]}]
+            layout:'fit',
+            items:this.formPanel
         });
 
         //
@@ -1782,7 +1813,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
                 layout: 'accordion',
                 items: panels
             });
-        }      
+        }
 
         Ext.apply(config, {layout:'border', tbar:tbarConfig, items: layoutItems, renderTo:null}, {id:'fileBrowser', height:600, width:800});
         LABKEY.FileBrowser.superclass.constructor.call(this, config);
@@ -1826,15 +1857,32 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
             this.store.removeAll();
             this.fileSystem.listFiles(record.data.path, this.loadRecords.createDelegate(this));
             this.updateAddressBar(record.data.path);
-            if (this.fileSystem.canWrite(record))
+
+            var canWrite = this.fileSystem.ready && this.fileSystem.canWrite(record);
+            if (this.applet && this.applet.getApplet())
             {
-                //this.uploadPanel.setVisible(false);
-                this.fileUploadField.enable();
+                try
+                {
+                    this.applet.getApplet().changeWorkingDirectory(record.data.path);
+                }
+                catch (e)
+                {
+                    console.error(e);
+                    canWrite = false;
+                }
+            }
+            if (canWrite)
+            {
+                if (this.fileSystem.prefixUrl)
+                    this.fileUploadField.enable();
+                this.actions.uploadTool.enable();
             }
             else
             {
-                //this.uploadPanel.setVisible(true);
                 this.fileUploadField.disable();
+                this.actions.uploadTool.disable();
+                if (this.appletWindow)
+                    this.appletWindow.hide();
             }
         }, this);
     }
@@ -1868,7 +1916,7 @@ var appletEvents =
 LABKEY.writeApplet(
 {
     id:"dropApplet",
-    archive:"<%=request.getContextPath()%>/_applets/applets-9.1.jar?guid=<%=GUID.makeHash()%><%=AppProps.getInstance().getServerSessionGUID()%>",
+    archive:"<%=request.getContextPath()%>/_applets/applets-9.2.jar?guid=<%=GUID.makeHash()%><%=AppProps.getInstance().getServerSessionGUID()%>",
     code:"org.labkey.applets.drop.DropApplet",
     width:200,
     height:200,

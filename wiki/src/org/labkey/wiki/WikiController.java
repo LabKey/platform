@@ -868,7 +868,7 @@ public class WikiController extends SpringActionController
         //get attachments
         Wiki wikiWithAttachments = WikiManager.getWiki(cSrc, srcName);
         Collection<Attachment> attachments = wikiWithAttachments.getAttachments();
-        List<AttachmentFile> files = AttachmentService.get().getAttachmentFiles(attachments);
+        List<AttachmentFile> files = AttachmentService.get().getAttachmentFiles(wikiWithAttachments, attachments);
 
         if (fOverwrite)
         {

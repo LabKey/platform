@@ -410,7 +410,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 finally
                 {
                     IOUtils.closeQuietly(fos);
-                    IOUtils.closeQuietly(is);
+                    file.closeInputStream();
                 }
             }
             hm.put("DocumentName", file.getFilename());
@@ -609,15 +609,24 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
 
-    public List<AttachmentFile> getAttachmentFiles(Collection<Attachment> attachments) throws IOException
+    public List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException
     {
         try
         {
             List<AttachmentFile> files = new ArrayList<AttachmentFile>(attachments.size());
 
             for (Attachment attachment : attachments)
-                files.add(new DatabaseAttachmentFile(attachment));
-
+            {
+                if (parent instanceof AttachmentDirectory)
+                {
+                    File f = new File(((AttachmentDirectory)parent).getFileSystemDirectory(), attachment.getName()); 
+                    files.add(new FileAttachmentFile(f));
+                }
+                else
+                {
+                    files.add(new DatabaseAttachmentFile(attachment));
+                }
+            }
             return files;
         }
         catch (SQLException x)
@@ -1561,7 +1570,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             Attachment r = getAttachment(_parent, _name);
             if (null == r)
                 return null;
-            List<AttachmentFile> files = getAttachmentFiles(Collections.singletonList(r));
+            List<AttachmentFile> files = getAttachmentFiles(_parent, Collections.singletonList(r));
             return files.get(0);
         }
 
@@ -1570,62 +1579,63 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             return AttachmentService.get().getInputStream(_parent, _name);
         }
 
+        @Override
+        public long copyFrom(User user, WebdavResolver.Resource r) throws IOException
+        {
+            // UNDONE: handle special case of rename attachment with same parent
+            return super.copyFrom(user, r);
+        }
+
         public long copyFrom(User user, final FileStream in) throws IOException
         {
             try
             {
-                AttachmentFile file;
-                if (in instanceof AttachmentFile)
-                    file = (AttachmentFile)in;
-                else
+                AttachmentFile file =  new AttachmentFile()
                 {
-                    file = new AttachmentFile()
+                    public long getSize() throws IOException
                     {
-                        public long getSize() throws IOException
-                        {
-                            return in.getSize();
-                        }
+                        return in.getSize();
+                    }
 
-                        public String getError()
-                        {
-                            return null;
-                        }
+                    public String getError()
+                    {
+                        return null;
+                    }
 
-                        public String getFilename()
-                        {
-                            return getName();
-                        }
+                    public String getFilename()
+                    {
+                        return getName();
+                    }
 
-                        public void setFilename(String filename)
-                        {
-                            throw new IllegalStateException();
-                        }
+                    public void setFilename(String filename)
+                    {
+                        throw new IllegalStateException();
+                    }
 
-                        public String getContentType()
-                        {
-                            return PageFlowUtil.getContentTypeFor(getFilename());
-                        }
+                    public String getContentType()
+                    {
+                        return PageFlowUtil.getContentTypeFor(getFilename());
+                    }
 
-                        public byte[] getBytes() throws IOException
-                        {
-                            throw new UnsupportedOperationException();
-                        }
+                    public byte[] getBytes() throws IOException
+                    {
+                        throw new UnsupportedOperationException();
+                    }
 
-                        public InputStream openInputStream() throws IOException
-                        {
-                            return in.openInputStream();
-                        }
+                    public InputStream openInputStream() throws IOException
+                    {
+                        return in.openInputStream();
+                    }
 
-                        public void closeInputStream() throws IOException
-                        {
-                            in.closeInputStream();
-                        }
-                    };
-                }
+                    public void closeInputStream() throws IOException
+                    {
+                        in.closeInputStream();
+                    }
+                };
 
                 if (AttachmentServiceImpl.this.exists(_parent,_name))
-                    AttachmentService.get().deleteAttachment(_parent, _name);
-                AttachmentService.get().addAttachments(user, _parent, Collections.singletonList(file));
+                    deleteAttachment(_parent, _name);
+                addAttachments(user, _parent, Collections.singletonList(file));
             }
             catch (AttachmentService.DuplicateFilenameException x)
             {
