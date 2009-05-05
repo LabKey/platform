@@ -6,10 +6,12 @@
 
 LABKEY.Applet = Ext.extend(Ext.BoxComponent,
 {
+    applet : null,
+
     initComponent : function()
     {
         Ext.BoxComponent.superclass.initComponent.call(this);
-        this.autoEl = true;
+        this.autoEl = 'div';
         this.appletId = this.appletId || this.id + 'APPLET';
         this.addEvents("ready");
     },

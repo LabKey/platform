@@ -1764,8 +1764,9 @@ public class PageFlowUtil
         Container container = context.getContainer();
         User user = HttpView.currentView().getViewContext().getUser();
         sb.append("user:{id:").append(user.getUserId());
-        sb.append(",displayName:").append(PageFlowUtil.jsString(user.getDisplayName(context)));
+        sb.append(",displayName:").append(jsString(user.getDisplayName(context)));
         sb.append(",email:").append(PageFlowUtil.jsString(user.getEmail()));
+        sb.append(",sessionid:").append(jsString(getSessionId(context.getRequest())));
         sb.append(",canInsert:").append(container.hasPermission(user, ACL.PERM_INSERT) ? "true" : "false");
         sb.append(",canUpdate:").append(container.hasPermission(user, ACL.PERM_UPDATE) ? "true" : "false");
         sb.append(",canUpdateOwn:").append(container.hasPermission(user, ACL.PERM_UPDATEOWN) ? "true" : "false");
