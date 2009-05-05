@@ -22,6 +22,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
@@ -714,6 +715,9 @@ public class SpecimenQueryView extends BaseStudyQueryView
             builder.append("  </tr>\n");
             Map<String, Object> rowMap = null;
             int row = 0;
+
+            ResultSetRowMapFactory factory = new ResultSetRowMapFactory(rs);
+
             while (rs.next())
             {
                 renderContext.setRow(ResultSetUtil.mapRow(rs, rowMap));

@@ -211,8 +211,6 @@ public class CoreModule extends SpringModule
     }
 
 
-
-
     private void bootstrap()
     {
         // Other containers inherit permissions from root; admins get all permisssions, users & guests none

@@ -31,7 +31,6 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.view.template.TemplateHeaderView;
@@ -1167,11 +1166,7 @@ public class UserController extends SpringActionController
 			{
                 // this should really only return one row
                 if (trs.next())
-                {
-                    Map<String, Object> rowMap = null;
-                    rowMap = ResultSetUtil.mapRow(trs, rowMap);
-                    return !validateRequiredColumns(rowMap, info, new ActionMessage[0]);
-                }
+                    return !validateRequiredColumns(trs.getRowMap(), info, new ActionMessage[0]);
             }
             finally
             {

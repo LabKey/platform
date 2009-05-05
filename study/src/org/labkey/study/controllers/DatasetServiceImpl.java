@@ -271,7 +271,6 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             if (null != tsv && tsv.length() > 0)
             {
                 TabLoader loader = new TabLoader(tsv, true);
-                loader.setLowerCaseHeaders(true);
                 maps = loader.load();
             }
 

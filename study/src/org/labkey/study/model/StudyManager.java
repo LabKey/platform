@@ -2443,7 +2443,6 @@ public class StudyManager
     private boolean bulkImportTypes(Study study, TabLoader loader, User user, String labelColumn, String typeNameColumn, String typeIdColumn, BindException errors) throws IOException, SQLException
     {
         loader.setHasColumnHeaders(true);
-        loader.setLowerCaseHeaders(true);
         loader.setParseQuotes(true);
         List<Map<String, Object>> mapsLoad = loader.load();
 

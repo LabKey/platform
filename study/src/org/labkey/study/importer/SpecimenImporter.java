@@ -736,8 +736,8 @@ public class SpecimenImporter
                 logger.info("Calculating hashes and current locations for vials " + (offset + 1) + " through " + (offset + CURRENT_SITE_UPDATE_SIZE) + ".");
             specimens = Table.select(StudySchema.getInstance().getTableInfoSpecimen(), Table.ALL_COLUMNS,
                     containerFilter, null, Specimen.class, CURRENT_SITE_UPDATE_SIZE, offset);
-            List<Object[]> currentLocationParams = new ArrayList<Object[]>();
-            List<Object[]> commentParams = new ArrayList<Object[]>();
+            List<List<?>> currentLocationParams = new ArrayList<List<?>>();
+            List<List<?>> commentParams = new ArrayList<List<?>>();
             for (Specimen specimen : specimens)
             {
                 Integer currentLocation = SampleManager.getInstance().getCurrentSiteId(specimen);
@@ -745,7 +745,7 @@ public class SpecimenImporter
                 if (!safeIntegerEqual(currentLocation, specimen.getCurrentLocation()) ||
                     !specimenHash.equals(specimen.getSpecimenHash()))
                 {
-                    currentLocationParams.add(new Object[] { currentLocation, specimenHash, specimen.getRowId() });
+                    currentLocationParams.add(Arrays.asList(currentLocation, specimenHash, specimen.getRowId()));
                 }
 
                 SpecimenComment comment = SampleManager.getInstance().getSpecimenCommentForVial(specimen);
@@ -769,7 +769,7 @@ public class SpecimenImporter
                             }
                         }
                     }
-                    commentParams.add(new Object[] { specimenHash, message, specimen.getGlobalUniqueId() });
+                    commentParams.add(Arrays.asList(specimenHash, message, specimen.getGlobalUniqueId()));
                 }
             }
             if (!currentLocationParams.isEmpty())
@@ -1274,7 +1274,7 @@ public class SpecimenImporter
         List<ImportableColumn> availableColumns = new ArrayList<ImportableColumn>();
         StringBuilder insertSql = new StringBuilder();
 
-        List<Object[]> rows = new ArrayList<Object[]>();
+        List<List<Object>> rows = new ArrayList<List<Object>>();
         int rowCount = 0;
 
         while (iter.hasNext())
@@ -1302,13 +1302,12 @@ public class SpecimenImporter
                 insertSql.append(")");
             }
 
-            Object[] params = new Object[availableColumns.size() + 1 + (addEntityId ? 1 : 0)];
-            int colIndex = 0;
-            params[colIndex++] = container.getId();
+            List<Object> params = new ArrayList<Object>(availableColumns.size() + 1 + (addEntityId ? 1 : 0));
+            params.add(container.getId());
             if (addEntityId)
-                params[colIndex++] = GUID.makeGUID();
+                params.add(GUID.makeGUID());
             for (ImportableColumn col : availableColumns)
-                params[colIndex++] = getValue(col, row);
+                params.add(getValue(col, row));
             rows.add(params);
         }
 
@@ -1364,7 +1363,7 @@ public class SpecimenImporter
             sqlBuilder.append(StringUtils.repeat(", ?", SPECIMEN_COLUMNS.length));
             sqlBuilder.append(")");
 
-            List<Object[]> rows = new ArrayList<Object[]>(SQL_BATCH_SIZE);
+            List<List<Object>> rows = new ArrayList<List<Object>>(SQL_BATCH_SIZE);
             String sql = sqlBuilder.toString();
             if (DEBUG)
             {
@@ -1384,17 +1383,17 @@ public class SpecimenImporter
                     id = (String) properties.get(SPEC_NUMBER_TSV_COL);
                 Lsid lsid = SpecimenService.get().getSpecimenMaterialLsid(container, id);
 
-                Object[] params = new Object[SPECIMEN_COLUMNS.length + 2];
-                int idx = 0;
-                params[idx++] = container.getId();
-                params[idx++] = lsid.toString();
+                List<Object> params = new ArrayList<Object>(SPECIMEN_COLUMNS.length + 2);
+
+                params.add(container.getId());
+                params.add(lsid.toString());
                 for (ImportableColumn col : SPECIMEN_COLUMNS)
-                    params[idx++] = getValue(col, properties);
+                    params.add(getValue(col, properties));
                 rows.add(params);
                 if (rows.size() == SQL_BATCH_SIZE)
                 {
                     Table.batchExecute(schema, sql, rows);
-                    rows = new ArrayList<Object[]>(SQL_BATCH_SIZE);
+                    rows = new ArrayList<List<Object>>(SQL_BATCH_SIZE);
                 }
             }
             if (!rows.isEmpty())
