@@ -21,14 +21,13 @@ package org.labkey.api.data;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.collections.ResultSetRowMapFactory;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 public class JsonWriter
 {
@@ -132,14 +131,15 @@ public class JsonWriter
 
     protected void writeRows() throws Exception
     {
-        Map<String, Object> rowMap = null;
         _out.write(",\n\"rowset\":[\n");
 
+        ResultSetRowMapFactory factory = new ResultSetRowMapFactory(_rs);
         String rowSep = "";
+
         while(_rs.next())
         {
             _out.write(rowSep);
-            _ctx.setRow(ResultSetUtil.mapRow(_rs, rowMap));
+            _ctx.setRow(factory.getRowMap(_rs));
             _out.write(getRow().toString(INDENT_FACTOR));
             rowSep = ",\n";
         }

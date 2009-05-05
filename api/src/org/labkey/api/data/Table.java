@@ -793,7 +793,8 @@ public class Table
                 throw OptimisticConflictException.create(ERROR_DELETED);
 
             ColumnInfo columnVersion = table.getColumn(table.getVersionColumnName());
-            Map previous = ResultSetUtil.mapRow(rs, null);
+            Map previous = ResultSetUtil.mapRow(rs);
+
             if (null != version && null != columnVersion)
             {
                 if (!_versionEquals(version, previous.get(columnVersion.getName())))

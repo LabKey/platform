@@ -24,6 +24,8 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
 import org.labkey.api.collections.BoundMap;
+import org.labkey.api.collections.ResultSetRowMapFactory;
+import org.labkey.api.collections.RowMap;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -1092,14 +1094,13 @@ public class DataRegion extends DisplayElement
      */
     protected int renderTableContents(RenderContext ctx, Writer out, List<DisplayColumn> renderers) throws SQLException, IOException
     {
-        Map<String, Object> rowMap = null;
         ResultSet rs = ctx.getResultSet();
-
+        ResultSetRowMapFactory factory = new ResultSetRowMapFactory(rs);
         int rowIndex = 0;
+
         while (rs.next())
         {
-            rowMap = ResultSetUtil.mapRow(rs, rowMap);
-            ctx.setRow(rowMap);
+            ctx.setRow(factory.getRowMap(rs));
             renderTableRow(ctx, out, renderers, rowIndex++);
         }
 
@@ -1296,12 +1297,15 @@ public class DataRegion extends DisplayElement
 
             renderFormHeader(out, MODE_DETAILS);
 
-            Map<String, Object> rowMap = null;
+            ResultSetRowMapFactory factory = new ResultSetRowMapFactory(rs);
+            RowMap rowMap = null;
+
             while (rs.next())
             {
-                rowMap = ResultSetUtil.mapRow(rs, rowMap);
+                rowMap = factory.getRowMap(rs);
                 ctx.setRow(rowMap);
                 out.write("<table>");
+
                 for (DisplayColumn renderer : renderers)
                 {
                     if (!renderer.isVisible(ctx) || (renderer.getDisplayModes() & MODE_DETAILS) == 0)
@@ -1311,9 +1315,11 @@ public class DataRegion extends DisplayElement
                     renderer.renderDetailsData(ctx, out, 1);
                     out.write("  </tr>\n");
                 }
+
                 out.write("<tr><td style='font-size:1'>&nbsp;</td></tr>");
                 out.write("</table>");
             }
+
             renderDetailsHiddenFields(out, rowMap);
             _detailsButtonBar.render(ctx, out);
             out.write("</form>");

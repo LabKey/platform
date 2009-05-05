@@ -25,6 +25,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveArrayListMap;
+import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.PermissionsMap;
@@ -207,100 +208,11 @@ public class ResultSetUtil
     }
 
 
-    private static class _RowMap extends CaseInsensitiveArrayListMap<Object> implements Serializable
+    // Convenience method to convert the current row in a ResultSet to a map.  Do not call this in a loop -- new up a ResultSetRowMap instead
+    public static Map<String, Object> mapRow(ResultSet rs) throws SQLException
     {
-        _RowMap(_RowMap m)
-        {
-            super(m, m.getRow().size());
-        }
-
-        _RowMap(ResultSet rs) throws SQLException
-        {
-            super(rs.getMetaData().getColumnCount() + 1);
-
-            ResultSetMetaData md = rs.getMetaData();
-            int count = md.getColumnCount();
-            put("_row", null);  // We're going to stuff the current row index at index 0
-            for (int i = 1; i <= count; i++)
-            {
-                String propName = md.getColumnName(i);
-
-                if (propName.length() > 0 && Character.isUpperCase(propName.charAt(0)))
-                    propName = Introspector.decapitalize(propName);
-
-                put(propName, null);
-            }
-        }
-
-
-        void load(ResultSet rs) throws SQLException
-        {
-            int len = rs.getMetaData().getColumnCount();
-
-            // Stuff current row into rowMap
-            int row;
-
-            try
-            {
-                row = rs.getRow();
-            }
-            catch (SQLException e)
-            {
-                row = 1;   // TODO: Implement a counter for SAS
-            }
-
-            List<Object> list = getRow();
-
-            if (0 == list.size())
-                list.add(row);
-            else
-                list.set(0, row);
-
-            for (int i = 1; i <= len; i++)
-            {
-                Object o = rs.getObject(i);
-                // Note: When using getObject() on a SQL column of type Text, the Microsoft SQL Server jdbc driver returns
-                // a String, while the jTDS driver returns a Clob.  For consistency we map here.
-                // Could map at lower level, but don't want to preclude ever using Clob as Clob
-                if (o instanceof Clob)
-                {
-                    Clob clob = (Clob) o;
-
-                    try
-                    {
-                        o = clob.getSubString(1, (int) clob.length());
-                    }
-                    catch (SQLException e)
-                    {
-                        _log.error(e);
-                    }
-                }
-
-                // BigDecimal objects are rare, and almost always are converted immediately
-                // to doubles for ease of use in Java code; we can take care of this centrally here.
-                if (o instanceof BigDecimal)
-                {
-                    BigDecimal dec = (BigDecimal) o;
-                    o = dec.doubleValue();
-                }
-
-                if (i == list.size())
-                    list.add(o);
-                else
-                    list.set(i, o);
-            }
-        }
-    }
-
-
-    public static ArrayListMap<String, Object> mapRow(ResultSet rs, Map<String, Object> m) throws SQLException
-    {
-        _RowMap in = (_RowMap) m;
-        _RowMap map = in;
-        if (null == in)
-            map = new _RowMap(rs);
-        map.load(rs);
-        return map;
+        ResultSetRowMapFactory factory = new ResultSetRowMapFactory(rs);
+        return factory.getRowMap(rs);
     }
 
 

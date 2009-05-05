@@ -195,7 +195,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
 
     public K handle(ResultSet rs) throws SQLException
     {
-        Map<String, Object> map = ResultSetUtil.mapRow(rs, null);
+        Map<String, Object> map = ResultSetUtil.mapRow(rs);
         return fromMap(map);
     }
 

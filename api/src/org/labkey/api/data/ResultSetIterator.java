@@ -16,19 +16,17 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.collections.ResultSetRowMapFactory;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
-import org.labkey.api.util.ResultSetUtil;
-
 public class ResultSetIterator implements Iterator<Map>
 {
-    private ResultSet _rs;
-    private Map<String,Object> _map = null;
-    static Logger _log = Logger.getLogger(ResultSetIterator.class);
+    private final ResultSet _rs;
+    private ResultSetRowMapFactory _factory;
 
     public static ResultSetIterator get(ResultSet rs)
     {
@@ -38,6 +36,18 @@ public class ResultSetIterator implements Iterator<Map>
     public ResultSetIterator(ResultSet rs)
     {
         _rs = rs;
+
+        if (!(_rs instanceof CachedRowSetImpl))
+        {
+            try
+            {
+                _factory = new ResultSetRowMapFactory(_rs);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+        }
     }
 
     public boolean hasNext()
@@ -48,8 +58,7 @@ public class ResultSetIterator implements Iterator<Map>
         }
         catch (SQLException e)
         {
-            _log.error("isLast", e);
-            return true;
+            throw new RuntimeSQLException(e);
         }
     }
 
@@ -58,15 +67,15 @@ public class ResultSetIterator implements Iterator<Map>
         try
         {
             _rs.next();
+
             if (_rs instanceof CachedRowSetImpl)
-                return _map = ((CachedRowSetImpl)_rs).getRowMap();
+                return ((CachedRowSetImpl)_rs).getRowMap();
             else
-                return _map = ResultSetUtil.mapRow(_rs, _map);
+                return _factory.getRowMap(_rs);
         }
         catch (SQLException e)
         {
-            _log.error("ResultSetIterator.next()", e);
-            return null;
+            throw new RuntimeSQLException(e);
         }
     }
 
