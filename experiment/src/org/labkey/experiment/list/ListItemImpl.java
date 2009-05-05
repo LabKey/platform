@@ -398,26 +398,32 @@ public class ListItemImpl implements ListItem
 
     private String _formatItemRecord(User user, Map<String, Object> props, Map<String, DomainProperty> dps, Object keyValue)
     {
-        try {
+        try
+        {
             Map<String, String> recordChangedMap = new HashMap<String, String>();
+
             if (props != null)
             {
                 if (dps == null)
                 {
                     dps = new HashMap<String, DomainProperty>();
+
                     for (DomainProperty dp : _list.getDomain().getProperties())
                     {
                         dps.put(dp.getPropertyURI(), dp);
                     }
                 }
+
                 Map<String, Object> rowMap = null;
 
                 for (Map.Entry<String, Object> entry : props.entrySet())
                 {
                     DomainProperty prop = dps.get(entry.getKey());
+
                     if (prop != null)
                     {
                         String value;
+
                         if (prop.getLookup() == null)
                         {
                             PropertyType type = prop.getPropertyDescriptor().getPropertyType();
@@ -439,11 +445,13 @@ public class ListItemImpl implements ListItem
 
                                 ResultSet rs = Table.selectForDisplay(table, table.getColumns(), ctx.getBaseFilter(), ctx.getBaseSort(), 0, 0);
                                 rs.next();
-                                rowMap = ResultSetUtil.mapRow(rs, rowMap);
+                                rowMap = ResultSetUtil.mapRow(rs);
                                 rs.close();
                             }
+
                             value = getFieldValue(user, prop, rowMap);
                         }
+
                         if (value != null)
                             recordChangedMap.put(prop.getName(), value);
                     }

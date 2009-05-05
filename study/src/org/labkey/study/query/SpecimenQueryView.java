@@ -17,12 +17,11 @@
 package org.labkey.study.query;
 
 import org.apache.commons.lang.StringUtils;
+import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
@@ -713,14 +712,13 @@ public class SpecimenQueryView extends BaseStudyQueryView
                 builder.append("    <td style=\"font-weight:bold;border: 1px solid #BBBBBB\">").append(header).append("</td>\n");
             }
             builder.append("  </tr>\n");
-            Map<String, Object> rowMap = null;
             int row = 0;
 
             ResultSetRowMapFactory factory = new ResultSetRowMapFactory(rs);
 
             while (rs.next())
             {
-                renderContext.setRow(ResultSetUtil.mapRow(rs, rowMap));
+                renderContext.setRow(factory.getRowMap(rs));
                 builder.append("  <tr style=\"background-color:").append(row++ % 2 == 0 ? "#FFFFFF" : "#DDDDDD").append("\">\n");
                 builder.append("    <td style=\"border: 1px solid #BBBBBB\">").append(row).append("</td>\n");
                 for (DisplayColumn col : columns)

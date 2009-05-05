@@ -20,22 +20,25 @@ import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jfree.chart.axis.Axis;
 import org.jfree.chart.axis.ValueAxis;
-import org.jfree.chart.plot.*;
+import org.jfree.chart.plot.CombinedDomainXYPlot;
+import org.jfree.chart.plot.CombinedRangeXYPlot;
+import org.jfree.chart.plot.Plot;
+import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
-import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.data.xy.XYDataItem;
 import org.jfree.data.xy.XYDataset;
-import org.labkey.api.reports.chart.ChartRenderer;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
+import org.labkey.api.collections.ResultSetRowMapFactory;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.reports.chart.ChartRenderInfo;
+import org.labkey.api.reports.chart.ChartRenderer;
 import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.view.ReportQueryView;
-import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.query.QueryView;
 
+import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.Map;
-import java.sql.ResultSet;
 
 /**
  * Created by IntelliJ IDEA.
@@ -68,7 +71,8 @@ public class XYChartRenderer extends AbstractChartRenderer implements ChartRende
         ResultSet rs = generateResultSet(view);
         if (rs != null)
         {
-            try {
+            try
+            {
                 Map<String, String> labels = getLabelMap(view);
                 Map<String, XYSeries> datasets = new HashMap<String, XYSeries>();
                 for (String columnName : descriptor.getColumnYName())
@@ -76,13 +80,14 @@ public class XYChartRenderer extends AbstractChartRenderer implements ChartRende
                     if (!StringUtils.isEmpty(columnName))
                         datasets.put(columnName, new XYSeries(getLabel(labels, columnName)));
                 }
-                Map<String, Object> rowMap = null;
+
                 String columnX = descriptor.getProperty(ChartReportDescriptor.Prop.columnXName);
+                ResultSetRowMapFactory factory = new ResultSetRowMapFactory(rs);
 
                 // create a jfreechart dataset
                 while (rs.next())
                 {
-                    rowMap = ResultSetUtil.mapRow(rs, rowMap);
+                    Map<String, Object> rowMap = factory.getRowMap(rs);
 
                     for (Map.Entry<String, XYSeries> series : datasets.entrySet())
                     {

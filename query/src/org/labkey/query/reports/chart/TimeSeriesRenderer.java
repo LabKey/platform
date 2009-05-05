@@ -38,6 +38,7 @@ import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.collections.ResultSetRowMapFactory;
 
 import java.sql.ResultSet;
 import java.util.Date;
@@ -83,13 +84,14 @@ public class TimeSeriesRenderer extends AbstractChartRenderer implements ChartRe
                     if (!StringUtils.isEmpty(columnName))
                         datasets.put(columnName, new TimePeriodValues(getLabel(labels, columnName)));//, Day.class));
                 }
-                Map<String, Object> rowMap = null;
+
                 String columnX = descriptor.getProperty(ChartReportDescriptor.Prop.columnXName);
+                ResultSetRowMapFactory factory = new ResultSetRowMapFactory(rs);
 
                 // create a jfreechart dataset
                 while (rs.next())
                 {
-                    rowMap = ResultSetUtil.mapRow(rs, rowMap);
+                    Map<String, Object> rowMap = factory.getRowMap(rs);
 
                     for (Map.Entry<String, TimePeriodValues> series : datasets.entrySet())
                     {
