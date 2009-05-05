@@ -1380,10 +1380,10 @@ public class OntologyManager
 
 	private static void insertPropertiesBulk(Container container, List<PropertyRow> props) throws SQLException
 	{
-		ArrayList<Object[]> dates = new ArrayList<Object[]>();
-		ArrayList<Object[]> floats = new ArrayList<Object[]>();
-		ArrayList<Object[]> strings = new ArrayList<Object[]>();
-        ArrayList<Object[]> mvIndicators = new ArrayList<Object[]>();
+        List<List<?>> floats = new ArrayList<List<?>>();
+		List<List<?>> dates = new ArrayList<List<?>>();
+		List<List<?>> strings = new ArrayList<List<?>>();
+		List<List<?>> mvIndicators = new ArrayList<List<?>>();
 
 		for (PropertyRow property : props)
 		{
@@ -1396,9 +1396,9 @@ public class OntologyManager
             assert mvIndicator == null || MvUtil.isMvIndicator(mvIndicator, container) : "Attempt to insert an invalid missing value indicator: " + mvIndicator;
 
             if (null != property.getFloatValue())
-                floats.add(new Object[] {objectId, propertyId, property.getFloatValue(), mvIndicator});
+                floats.add(Arrays.asList(objectId, propertyId, property.getFloatValue(), mvIndicator));
             else if (null != property.getDateTimeValue())
-                dates.add(new Object[] {objectId, propertyId, new java.sql.Timestamp(property.getDateTimeValue().getTime()), mvIndicator});
+                dates.add(Arrays.asList(objectId, propertyId, new java.sql.Timestamp(property.getDateTimeValue().getTime()), mvIndicator));
             else if (null != property.getStringValue())
             {
                 String string = property.getStringValue();
@@ -1406,11 +1406,11 @@ public class OntologyManager
                 if (string.length() > ObjectProperty.STRING_LENGTH)
                     ;
                 </UNDONE> */
-                strings.add(new Object[] {objectId, propertyId, string, mvIndicator});
+                strings.add(Arrays.asList(objectId, propertyId, string, mvIndicator));
             }
             else if (null != mvIndicator)
             {
-                mvIndicators.add(new Object[] {objectId, propertyId, property.getTypeTag(), mvIndicator});
+                mvIndicators.add(Arrays.<Object>asList(objectId, propertyId, property.getTypeTag(), mvIndicator));
             }
 		}
 

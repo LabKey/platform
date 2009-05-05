@@ -105,6 +105,9 @@ api/src/org/labkey/api/collections/CompareMap.java -text
 api/src/org/labkey/api/collections/Join.java -text
 api/src/org/labkey/api/collections/LimitedCacheMap.java -text
 api/src/org/labkey/api/collections/NullPreventingSet.java -text
+api/src/org/labkey/api/collections/ResultSetRowMapFactory.java -text
+api/src/org/labkey/api/collections/RowMap.java -text
+api/src/org/labkey/api/collections/RowMapFactory.java -text
 api/src/org/labkey/api/collections/TTLCacheMap.java -text
 api/src/org/labkey/api/data/AbstractForeignKey.java -text
 api/src/org/labkey/api/data/AbstractTableInfo.java -text

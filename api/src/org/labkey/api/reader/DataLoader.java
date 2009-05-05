@@ -305,6 +305,7 @@ public abstract class DataLoader   // TODO: implements Iterable<K>
 
         List<Map<String, Object>> rowList = new ArrayList<Map<String, Object>>();
         Iterator<Map<String, Object>> it = iterator();
+
         while (it.hasNext())
             rowList.add(it.next());
 

@@ -425,35 +425,34 @@ public abstract class SpringActionController implements Controller, HasViewConte
     {
         switch (page.getTemplate())
         {
-        case None:
-        {
-            return null;
-        }
-        case Framed:
-        case Print:
-        {
-            PrintTemplate template = new PrintTemplate(mv, page);
-            return template;
-        }
-        case Dialog:
-        {
-            DialogTemplate template = new DialogTemplate(mv, page);
-            return template;
-        }
-        case Home:
-        case Fast:
-        default:
-        {
-            NavTree root = new NavTree();
-            appendNavTrail(action, root);
-            NavTree[] children = root.getChildren();
-            if (children.length > 0 && page.getTitle() == null)
-                page.setTitle(children[children.length-1].getKey());
-            if(LookAndFeelProperties.getInstance(getContainer()).isAppBarUIEnabled())
-                page.setAppBar(getAppBar(action));
-            HomeTemplate template = new HomeTemplate(context, context.getContainer(), mv, page, root.getChildren());
-            return template;
-        }
+            case None:
+            {
+                return null;
+            }
+            case Framed:
+            case Print:
+            {
+                PrintTemplate template = new PrintTemplate(mv, page);
+                return template;
+            }
+            case Dialog:
+            {
+                DialogTemplate template = new DialogTemplate(mv, page);
+                return template;
+            }
+            case Home:
+            default:
+            {
+                NavTree root = new NavTree();
+                appendNavTrail(action, root);
+                NavTree[] children = root.getChildren();
+                if (children.length > 0 && page.getTitle() == null)
+                    page.setTitle(children[children.length-1].getKey());
+                if(LookAndFeelProperties.getInstance(getContainer()).isAppBarUIEnabled())
+                    page.setAppBar(getAppBar(action));
+                HomeTemplate template = new HomeTemplate(context, context.getContainer(), mv, page, root.getChildren());
+                return template;
+            }
         }
     }
 

@@ -22,6 +22,7 @@ import java.util.Date;
 * Date: Apr 29, 2009
 * Time: 9:44:07 AM
 */
+// TODO: Consider getting rid of this, using PropertyType instead
 public enum Type
 {
     StringType("Text (String)", "xsd:string", String.class),

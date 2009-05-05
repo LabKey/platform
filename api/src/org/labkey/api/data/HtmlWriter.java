@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.collections.ResultSetRowMapFactory;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -24,7 +25,6 @@ import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Writes a ResultSet as an HTML table.
@@ -131,10 +131,11 @@ public class HtmlWriter
             openResults();
             writeHeaders();
 
+            ResultSetRowMapFactory factory = new ResultSetRowMapFactory(rs);
+
             while(rs.next())
             {
-                Map<String, Object> rowMap = null;
-                ctx.setRow(ResultSetUtil.mapRow(rs, rowMap));
+                ctx.setRow(factory.getRowMap(rs));
                 writeRow();
             }
 

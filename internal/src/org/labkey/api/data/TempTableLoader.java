@@ -18,11 +18,9 @@ package org.labkey.api.data;
 
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.collections.RowMap;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Map;
-import java.util.List;
+import java.util.*;
 import java.io.IOException;
 import java.io.File;
 import java.sql.Types;
@@ -97,8 +95,8 @@ public class TempTableLoader extends TabLoader
                 int length = -1;
                 for (Map m : maps)
                 {
-                    _RowMap map = (_RowMap)m;
-                    Object v = map.getArray()[i];
+                    RowMap map = (RowMap)m;
+                    Object v = map.get(i);
                     if (v instanceof String)
                         length = Math.max(((String)v).length(), length);
                 }
@@ -140,9 +138,9 @@ public class TempTableLoader extends TabLoader
         sqlInsert.append(sqlValues);
         sqlInsert.append(")");
 
-        ArrayList<Object[]> paramList = new ArrayList<Object[]>(maps.size());
-        for (Map m : maps)
-            paramList.add(((_RowMap)m).getArray());
+        List<Collection<?>> paramList = new ArrayList<Collection<?>>(maps.size());
+        for (Map<String, Object> m : maps)
+            paramList.add(m.values());
 
         Table.batchExecute(schema, sqlInsert.toString(), paramList);
 

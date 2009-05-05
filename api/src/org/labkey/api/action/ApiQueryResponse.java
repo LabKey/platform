@@ -19,8 +19,8 @@ import org.json.JSONObject;
 import org.labkey.api.data.*;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.collections.ResultSetRowMapFactory;
 
 import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
@@ -285,13 +285,14 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 
     protected void writeRowset(ApiResponseWriter writer) throws Exception
     {
-        Map<String, Object> rowMap = null;
         writer.startList("rows");
-        if(!_metaDataOnly)
+        if (!_metaDataOnly)
         {
+            ResultSetRowMapFactory factory = new ResultSetRowMapFactory(_rs);
+
             while(_rs.next())
             {
-                _ctx.setRow(ResultSetUtil.mapRow(_rs, rowMap));
+                _ctx.setRow(factory.getRowMap(_rs));
                 writer.writeListEntry(getRow());
                 ++_numRespRows;
             }

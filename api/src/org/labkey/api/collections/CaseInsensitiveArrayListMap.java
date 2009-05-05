@@ -30,23 +30,13 @@ public class CaseInsensitiveArrayListMap<V> extends ArrayListMap<String, V>
         super(new CaseInsensitiveHashMap<Integer>());
     }
 
-    public CaseInsensitiveArrayListMap(int rowCount)
+    public CaseInsensitiveArrayListMap(int columnCount)
     {
-        super(new CaseInsensitiveHashMap<Integer>(), rowCount);
+        super(new CaseInsensitiveHashMap<Integer>(), columnCount);
     }
 
-    public CaseInsensitiveArrayListMap(CaseInsensitiveArrayListMap<V> cialm, int rowCount)
+    public CaseInsensitiveArrayListMap(CaseInsensitiveArrayListMap<V> cialm, int columnCount)
     {
-        super(cialm.getFindMap(), rowCount);
-    }
-
-    public CaseInsensitiveArrayListMap(CaseInsensitiveArrayListMap<V> cialm, List<V> row)
-    {
-        super(cialm.getFindMap(), row);
-    }
-
-    public CaseInsensitiveArrayListMap(Map<String, Integer> findMap, List<V> row)
-    {
-        super(findMap, row);
+        super(cialm.getFindMap(), columnCount);
     }
 }

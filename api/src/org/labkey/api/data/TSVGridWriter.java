@@ -17,9 +17,9 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.collections.ResultSetRowMapFactory;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -29,7 +29,6 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class TSVGridWriter extends TSVWriter
 {
@@ -188,13 +187,13 @@ public class TSVGridWriter extends TSVWriter
 
     public void writeResultSet(RenderContext ctx, ResultSet rs) throws SQLException
     {
-        Map<String, Object> rowMap = null;
-
         // Output all the data cells
         boolean first = true;
+        ResultSetRowMapFactory factory = new ResultSetRowMapFactory(rs);
+
         while (rs.next())
         {
-            ctx.setRow(ResultSetUtil.mapRow(rs, rowMap));
+            ctx.setRow(factory.getRowMap(rs));
             if (!first)
                 _pw.print(getRowSeparator());
             else

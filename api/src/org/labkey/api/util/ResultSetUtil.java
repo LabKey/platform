@@ -211,7 +211,7 @@ public class ResultSetUtil
     {
         _RowMap(_RowMap m)
         {
-            super(m, m.getRow().size());    // TODO: Get rid of size
+            super(m, m.getRow().size());
         }
 
         _RowMap(ResultSet rs) throws SQLException
@@ -249,10 +249,12 @@ public class ResultSetUtil
                 row = 1;   // TODO: Implement a counter for SAS
             }
 
-            if (0 == _row.size())
-                _row.add(row);
+            List<Object> list = getRow();
+
+            if (0 == list.size())
+                list.add(row);
             else
-                _row.set(0, row);
+                list.set(0, row);
 
             for (int i = 1; i <= len; i++)
             {
@@ -282,31 +284,23 @@ public class ResultSetUtil
                     o = dec.doubleValue();
                 }
 
-                if (i == _row.size())
-                    _row.add(o);
+                if (i == list.size())
+                    list.add(o);
                 else
-                    _row.set(i, o);
+                    list.set(i, o);
             }
         }
     }
 
 
-    public static ArrayListMap<String, Object> mapRow(ResultSet rs, Map<String, Object> m, boolean clone) throws SQLException
+    public static ArrayListMap<String, Object> mapRow(ResultSet rs, Map<String, Object> m) throws SQLException
     {
         _RowMap in = (_RowMap) m;
         _RowMap map = in;
         if (null == in)
             map = new _RowMap(rs);
-        else if (clone)
-            map = new _RowMap(in);
         map.load(rs);
         return map;
-    }
-
-
-    public static ArrayListMap<String, Object> mapRow(ResultSet rs, Map<String, Object> m) throws SQLException
-    {
-        return mapRow(rs, m, false);
     }
 
 
@@ -574,7 +568,7 @@ public class ResultSetUtil
                 writeObject(o);
         }
         
-        /** CONSIER: wrap TSV and CSV as well? */
+        /** CONSIDER: wrap TSV and CSV as well? */
         void write(Writer out, ResultSet rs, String startRow, String endRow, String connector, ExportCol[] cols)
                 throws SQLException, IOException
         {

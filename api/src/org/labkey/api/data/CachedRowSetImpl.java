@@ -20,8 +20,9 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections.IteratorUtils;
 import org.apache.commons.collections.Predicate;
 import org.apache.log4j.Logger;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.collections.ResultSetRowMapFactory;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ResultSetUtil;
@@ -46,7 +47,7 @@ import java.util.*;
  */
 public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
 {
-    static Logger _log = Logger.getLogger(CachedRowSetImpl.class);
+    private static final Logger _log = Logger.getLogger(CachedRowSetImpl.class);
 
     // metadata
     ResultSetMetaData _md;
@@ -86,17 +87,21 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
     {
         this();
         List<Map<String,Object>> list = new ArrayList<Map<String,Object>>();
-        ArrayListMap<String, Object> m = null;
+
         if (maxRows == 0)
             maxRows = Integer.MAX_VALUE;
 
+        ResultSetRowMapFactory factory = new ResultSetRowMapFactory(rs);
+
         while (rs.next() && list.size() < maxRows)
         {
-            m = ResultSetUtil.mapRow(rs, m, true);
+            Map<String, Object> m = factory.getRowMap(rs);
             if (null == pred || pred.evaluate(m))
                 list.add(m);
         }
+
         boolean isComplete;
+
         try
         {
             // TODO: make this work for SAS 
@@ -107,6 +112,7 @@ public class CachedRowSetImpl implements ResultSet, Table.TableResultSet
         {
             isComplete = true;
         }
+
         init(rs.getMetaData(), list, isComplete);
     }
 

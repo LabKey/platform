@@ -167,17 +167,20 @@ public class Table
         }
     }
 
-    public static void setParameters(PreparedStatement stmt, Object[] parameters)
-            throws SQLException
+    public static void setParameters(PreparedStatement stmt, Object[] parameters) throws SQLException
+    {
+        setParameters(stmt, Arrays.asList(parameters));
+    }
 
+    public static void setParameters(PreparedStatement stmt, Collection<?> parameters) throws SQLException
     {
         if (null == parameters)
             return;
 
-        for (int i = 0; i < parameters.length; i++)
-        {
-            Object p = parameters[i];
+        int i = 0;
 
+        for (Object p : parameters)
+        {
             // UNDONE: this code belongs in Parameter._bind()
             //Parameter validation
             //Bug 1996 - rossb:  Generally, we let JDBC validate the
@@ -199,11 +202,12 @@ public class Table
 
                 if (isInvalid)
                 {
-                    throw new SQLException("Illegal argument ("+Integer.toString(i)+") to SQL Statement:  "+p.toString()+" is not a valid parameter");
+                    throw new SQLException("Illegal argument (" + Integer.toString(i) + ") to SQL Statement:  " + p.toString() + " is not a valid parameter");
                 }
             }
 
-            Parameter.bindObject(stmt, i+1, p);
+            Parameter.bindObject(stmt, i + 1, p);
+            i++;
         }
     }
 
@@ -379,7 +383,7 @@ public class Table
 
 
     // Cafeful: Caller must track and clean up parameters (e.g., close InputStreams) after execution is complete
-    public static void batchExecute(DbSchema schema, String sql, Collection<Object[]> paramList)
+    public static void batchExecute(DbSchema schema, String sql, Collection<? extends Collection<?>> paramList)
             throws SQLException
     {
         Connection conn = schema.getScope().getConnection();
@@ -391,12 +395,12 @@ public class Table
 
             stmt = conn.prepareStatement(sql);
             int paramCounter = 0;
-            for (Object[] params : paramList)
+            for (Collection<?> params : paramList)
             {
                 setParameters(stmt, params);
                 stmt.addBatch();
 
-                paramCounter += params.length;
+                paramCounter += params.size();
                 if (paramCounter > 1000)
                 {
                     paramCounter = 0;
@@ -1630,7 +1634,7 @@ public class Table
     {
         public boolean isComplete();
 
-        public Map<String,Object> getRowMap() throws SQLException;
+        public Map<String, Object> getRowMap() throws SQLException;
 
         public Iterator<Map> iterator();
 

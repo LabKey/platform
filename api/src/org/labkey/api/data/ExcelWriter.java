@@ -23,8 +23,8 @@ import jxl.format.VerticalAlignment;
 import jxl.write.*;
 import org.apache.log4j.Logger;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.collections.ResultSetRowMapFactory;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
@@ -668,14 +668,14 @@ public class ExcelWriter
 
         try
         {
-            Map<String, Object> rowMap = null;
+            ResultSetRowMapFactory factory = new ResultSetRowMapFactory(rs);
             RenderContext ctx = new RenderContext(HttpView.currentContext());
             ctx.setResultSet(rs);
 
             // Output all the rows
             while (rs.next())
             {
-                ctx.setRow(ResultSetUtil.mapRow(rs, rowMap));
+                ctx.setRow(factory.getRowMap(rs));
                 renderGridRow(sheet, ctx, visibleColumns);
             }
         }

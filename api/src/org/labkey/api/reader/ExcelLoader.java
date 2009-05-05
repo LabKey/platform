@@ -121,7 +121,7 @@ public class ExcelLoader extends DataLoader
         return cells.toArray(new String[cells.size()][]);
     }
 
-    public CloseableIterator<Map<String,Object>> iterator() throws IOException
+    public CloseableIterator<Map<String, Object>> iterator() throws IOException
     {
         return new ExcelIterator();
     }
@@ -139,10 +139,11 @@ public class ExcelLoader extends DataLoader
 
     private class ExcelIterator implements CloseableIterator<Map<String,Object>>
     {
-        private int rowIndex;
-        private Sheet sheet;
+        private final Sheet sheet;
         private final int numRows;
         private final int numCols;
+
+        private int rowIndex;
 
         private Map<String, Object> nextRow;
 
@@ -183,10 +184,12 @@ public class ExcelLoader extends DataLoader
             // If this row is blank, keep going until we either find a row or hit the end
             boolean foundData = false;
             Map<String, Object> row = new HashMap<String, Object>();
+
             for (int columnIndex = 0; columnIndex < _columns.length; columnIndex++)
             {
                 ColumnDescriptor column = _columns[columnIndex];
                 Object contents;
+
                 if (columnIndex < numCols) // We can get asked for more data than we contain, as extra columns can exist
                 {
                     Cell cell = sheet.getCell(columnIndex, rowIndex);
@@ -203,7 +206,9 @@ public class ExcelLoader extends DataLoader
                 {
                     contents = "";
                 }
+
                 Object value = column.missingValues;
+
                 try
                 {
                     if (column.isMvEnabled())
@@ -289,12 +294,13 @@ public class ExcelLoader extends DataLoader
 
                 row.put(column.name, value);
             }
+
             rowIndex++;
 
             if (foundData)
                 return row;
             else
-                return getNextRow(); // keep going until a valid row or the end of the file
+                return getNextRow();  // keep going until a valid row or the end of the file
         }
 
         public void remove()

@@ -23,8 +23,8 @@ import java.util.*;
 
 public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializable
 {
-    protected Map<K, Integer> _findMap;
-    protected List<V> _row;
+    private final Map<K, Integer> _findMap;
+    private final List<V> _row;
 
     public ArrayListMap()
     {
@@ -32,9 +32,9 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
     }
 
 
-    public ArrayListMap(int rowCount)
+    public ArrayListMap(int columnCount)
     {
-        this(new HashMap<K, Integer>(), new ArrayList<V>(rowCount));
+        this(new HashMap<K, Integer>(columnCount * 2), new ArrayList<V>(columnCount));
     }
 
 
@@ -46,13 +46,13 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
 
     public ArrayListMap(Map<K, Integer> findMap)
     {
-        this(findMap, new ArrayList<V>());
+        this(findMap, new ArrayList<V>(findMap.size()));
     }
 
 
-    public ArrayListMap(Map<K, Integer> findMap, int rowCount)
+    public ArrayListMap(Map<K, Integer> findMap, int columnCount)
     {
-        this(findMap, new ArrayList<V>(rowCount));
+        this(findMap, new ArrayList<V>(columnCount));
     }
 
 

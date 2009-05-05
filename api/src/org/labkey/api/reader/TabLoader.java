@@ -23,8 +23,8 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.collections.CaseInsensitiveArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.exp.MvFieldWrapper;
@@ -62,9 +62,7 @@ public class TabLoader extends DataLoader
     private String _stringData = null;
     private Reader _reader;
 
-    /* this is a little hokey - it makes some later code work without mods */
     private Map<String, String> _comments = new HashMap<String, String>();
-    private boolean _lowerCaseHeaders;
 
     protected char _chDelimiter = '\t';
     protected String _strDelimiter = null;
@@ -172,11 +170,6 @@ public class TabLoader extends DataLoader
         return new BufferedReader(new FileReader(_file));
     }
 
-    public void setLowerCaseHeaders(boolean lowerCaseHeaders)
-    {
-        _lowerCaseHeaders = lowerCaseHeaders;
-    }
-
     public Map getComments()
     {
         //noinspection unchecked
@@ -274,6 +267,7 @@ public class TabLoader extends DataLoader
                 end++;
             start = end;
         }
+
         return listParse.toArray(new String[listParse.size()]);
     }
 
@@ -370,6 +364,7 @@ public class TabLoader extends DataLoader
         {
             String[] lines = new String[n];
             int i;
+
             for (i = 0; i < lines.length;)
             {
                 String line = reader.readLine();
@@ -379,17 +374,21 @@ public class TabLoader extends DataLoader
                     continue;
                 lines[i++] = line;
             }
+
             int nLines = i;
+
             if (nLines == 0)
             {
                 return new String[0][];
             }
 
             String[][] lineFields = new String[nLines][];
+
             for (i = 0; i < nLines; i++)
             {
                 lineFields[i] = parseLine(lines[i]);
             }
+
             return lineFields;
         }
         finally
@@ -398,206 +397,32 @@ public class TabLoader extends DataLoader
         }
     }
 
-    /*
-    protected class _RowMapOLD implements Map<String, Object>
-    {
-        protected Object[] _values;
-
-        _RowMapOLD(Object[] values)
-        {
-            _values = values;
-        }
-
-        public Object[] getArray()
-        {
-            return _values;
-        }
-
-        public int size()
-        {
-            return _values.length;
-        }
-
-        public boolean isEmpty()
-        {
-            return false;
-        }
-
-        public boolean containsKey(Object o)
-        {
-            if (!(o instanceof String))
-                throw new IllegalStateException();
-
-            String key = _lowerCaseHeaders ? ((String)o).toLowerCase() : (String)o;
-            Integer index = _colMap.get(key);
-            return null != index && index < _values.length;
-        }
-
-        public boolean containsValue(Object o)
-        {
-            return false;
-        }
-
-        public Object get(Object o)
-        {
-            if (o instanceof String && _lowerCaseHeaders)
-                o = ((String) o).toLowerCase();
-            Integer col = _colMap.get(o);
-            if (null == col)
-                return null;
-            int icol = col.intValue();
-            if (icol < 0 || icol >= _values.length)
-                return null;
-
-            return _values[icol];
-        }
-
-        public Object put(String o, Object o1)
-        {
-            if (_lowerCaseHeaders)
-                o = o.toLowerCase();
-            Integer colInteger = _colMap.get(o);
-            if (null == colInteger)
-                throw new IllegalArgumentException("Can't find col: " + o);
-
-            int col = colInteger.intValue();
-            //This generally won't happen
-            if (null == _values || _values.length <= col)
-            {
-                Object[] newValues = new Object[col + 1];
-                if (null != _values)
-                    System.arraycopy(_values, 0, newValues, 0, _values.length);
-
-                _values = newValues;
-            }
-
-            Object oldValue = _values[col];
-            _values[col] = o1;
-            return oldValue;
-        }
-
-        public Object remove(Object o)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        public void putAll(Map<? extends String, ?> map)
-        {
-            for (String o : map.keySet())
-                put(o, map.get(o));
-        }
-
-        public void clear()
-        {
-            _values = new Object[_columns.length];
-        }
-
-        public Set<String> keySet()
-        {
-            return _colMap.keySet();
-        }
-
-        public Collection<Object> values()
-        {
-            return Collections.unmodifiableCollection(Arrays.asList(_values));
-        }
-
-        public Set<Map.Entry<String, Object>> entrySet()
-        {
-            Set<Map.Entry<String, Object>> s = new HashSet<Map.Entry<String, Object>>();
-            for (int i = 0; i < _columns.length; i++)
-                s.add(new RowMapEntry(i));
-            return s;
-        }
-
-        private class RowMapEntry implements Entry<String, Object>
-        {
-            int col;
-
-            RowMapEntry(int col)
-            {
-                this.col = col;
-            }
-
-            public String getKey()
-            {
-                return _columns[col].name;
-            }
-
-            public Object getValue()
-            {
-                return _values[col];
-            }
-
-            public Object setValue(Object o)
-            {
-                Object oldVal = _values[col];
-                _values[col] = o;
-                return oldVal;
-            }
-        }
-    }
-*/
-
-    protected static class _RowMap<V> extends CaseInsensitiveArrayListMap<V>
-    {
-        protected V[] _values;
-
-        _RowMap(Map<String, Integer> findMap, V[] values)
-        {
-            super(findMap, Arrays.asList(values));
-            _values = values;
-        }
-
-        public Object[] getArray()
-        {
-            return _values;
-        }
-
-        public boolean isEmpty()
-        {
-            return false;
-        }
-    }
-
 
     public class TabLoaderIterator implements CloseableIterator<Map<String, Object>>
     {
-        private Map<String, Integer> _colMap = new CaseInsensitiveHashMap<Integer>();
+        private final RowMapFactory<Object> factory;
+        private final BufferedReader reader;
 
-        public void close()
-        {
-            try
-            {
-                if (null != reader)
-                    reader.close();
-                reader = null;
-            }
-            catch (IOException x)
-            {
-                _log.error("Unexpected exception", x);
-            }
-        }
-
-        BufferedReader reader = null;
-        String line = null;
-        int lineNo = 0;
+        private String line = null;
+        private int lineNo = 0;
 
         protected TabLoaderIterator() throws IOException
         {
+            Map<String, Integer> colMap = new CaseInsensitiveHashMap<Integer>();
             ColumnDescriptor[] columns = getColumns();
 
             for (int i = 0; i < columns.length; i++)
             {
-                String colName = _lowerCaseHeaders ? columns[i].name.toLowerCase() : columns[i].name;
-                _colMap.put(colName, i);
+                colMap.put(columns[i].name, i);
             }
+
+            factory = new RowMapFactory<Object>(colMap);
 
             // find a converter for each column type
             for (ColumnDescriptor column : _columns)
                 column.converter = ConvertUtils.lookup(column.clazz);
 
-            reader = TabLoader.this.getReader();
+            reader = getReader();
             String s;
             for (int skip = 0; skip < _skipLines;)
             {
@@ -621,6 +446,19 @@ public class TabLoader extends DataLoader
             }
         }
 
+
+        public void close()
+        {
+            try
+            {
+                if (null != reader)
+                    reader.close();
+            }
+            catch (IOException x)
+            {
+                _log.error("Unexpected exception", x);
+            }
+        }
 
         public boolean hasNext()
         {
@@ -773,7 +611,7 @@ public class TabLoader extends DataLoader
                     }
                 }
 
-                return new _RowMap(_colMap, values);
+                return factory.getRowMap(values);
             }
             catch (Exception e)
             {
