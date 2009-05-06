@@ -18,6 +18,7 @@ package org.labkey.api.security.roles;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.ReadSomePermission;
 
 /*
 * User: Dave
@@ -29,6 +30,7 @@ public class OwnerRole extends AbstractContextualRole
     public OwnerRole()
     {
         super("Owner Role", "A role automatically assigned if the current user 'owns' the resource being accessed.",
-                ReadPermission.class, UpdatePermission.class, DeletePermission.class);
+                ReadPermission.class, ReadSomePermission.class,
+                UpdatePermission.class, DeletePermission.class);
     }
 }

@@ -16,6 +16,7 @@
 package org.labkey.api.security.roles;
 
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.ReadSomePermission;
 
 /*
 * User: Dave
@@ -27,6 +28,6 @@ public class ReaderRole extends AbstractRole
     public ReaderRole()
     {
         super("Reader", "May read information but not change anything.",
-                ReadPermission.class);
+                ReadPermission.class, ReadSomePermission.class);
     }
 }

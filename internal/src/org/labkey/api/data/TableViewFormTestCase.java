@@ -20,9 +20,11 @@ import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.struts.action.ActionErrors;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.roles.ProjectAdminRole;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.JunitUtil;
 
@@ -104,9 +106,9 @@ public class TableViewFormTestCase extends junit.framework.TestCase
         tf.reset(null, ctx.getRequest());
 
         Container test = JunitUtil.getTestContainer();
-        ACL acl = new ACL();
-        acl.setPermission(Group.groupAdministrators, ACL.PERM_ALLOWALL);
-        SecurityManager.updateACL(test, acl);
+        SecurityPolicy policy = new SecurityPolicy(test);
+        policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), RoleManager.getRole(ProjectAdminRole.class));
+        SecurityManager.savePolicy(policy);
         tf.setContainer(test);
 
         tf.set("datetimeNotNull", "6/20/2004");

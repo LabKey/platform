@@ -19,6 +19,7 @@ package org.labkey.api.pipeline;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.SecurableResource;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -29,7 +30,7 @@ import java.net.URI;
  * Date: Jul 7, 2007
  * Time: 8:09:14 PM
  */
-public interface PipeRoot
+public interface PipeRoot extends SecurableResource
 {
     Container getContainer();
 
@@ -58,8 +59,6 @@ public interface PipeRoot
     File ensureSystemDirectory();
 
     String getEntityId();
-
-    ACL getACL();
 
     /**
      * @return true if Perl Pipeline is enabled for this pipeline root

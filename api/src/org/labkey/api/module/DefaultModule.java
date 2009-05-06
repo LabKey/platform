@@ -111,6 +111,12 @@ public abstract class DefaultModule implements Module
     {
     }
 
+    public int compareTo(Module m)
+    {
+        //sort by name--core module will override to ensure first in sort
+        return getName().compareTo(m.getName());
+    }
+
     final public void initialize()
     {
         synchronized (INSTANTIATED_MODULES)

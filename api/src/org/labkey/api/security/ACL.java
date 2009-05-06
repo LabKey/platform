@@ -29,6 +29,9 @@ import java.util.Arrays;
  * hasPermissions() will always return false.
  */
 
+/**
+ * @deprecated Use SecurityPolicy
+ */
 public class ACL implements Cloneable
 {
     public static final int PERM_NONE = 0x00000000;

@@ -13,31 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.security.roles;
+package org.labkey.api.security;
 
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.module.Module;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+import java.lang.annotation.ElementType;
 
 /*
 * User: Dave
-* Date: Apr 22, 2009
-* Time: 10:56:17 AM
+* Date: Apr 28, 2009
+* Time: 3:49:17 PM
 */
-public abstract class AbstractContextualRole extends AbstractRole implements ContextualRole
+
+/**
+ * Use to require one of the new permission classes. The old RequiresPermission is being
+ * kept around for backwards compatibility.
+ */
+@Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target({ElementType.METHOD,ElementType.TYPE})
+public @interface RequiresPermissionClass
 {
-    protected AbstractContextualRole(String name, String description, Class<? extends Permission>... perms)
-    {
-        super(name, description, perms);
-    }
-
-    protected AbstractContextualRole(String name, String description, Module sourceModule, Class<? extends Permission>... perms)
-    {
-        super(name, description, sourceModule, perms);
-    }
-
-    @Override
-    public boolean isAssignable()
-    {
-        return false;
-    }
+    Class<? extends Permission> value();
 }

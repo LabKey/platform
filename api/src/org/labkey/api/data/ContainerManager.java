@@ -25,10 +25,10 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.Group;
+import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.User;
+import org.labkey.api.security.roles.*;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.portal.ProjectUrls;
@@ -238,7 +238,7 @@ public class ContainerManager
         }
         return c;
     }
-    
+
 
     private static final String SHARED_CONTAINER_PATH = "/Shared";
 
@@ -246,10 +246,13 @@ public class ContainerManager
     {
         Container c = getForPath(SHARED_CONTAINER_PATH);
         if (null == c)
-            c = bootstrapContainer(SHARED_CONTAINER_PATH, ACL.PERM_ALLOWALL, ACL.PERM_READ, ACL.PERM_NONE);
+            c = bootstrapContainer(SHARED_CONTAINER_PATH,
+                    RoleManager.getRole(SiteAdminRole.class),
+                    RoleManager.getRole(ReaderRole.class),
+                    RoleManager.getRole(NoPermissionsRole.class));
         return c;
     }
-    
+
 
     private static final String LOSTANDFOUND_CONTAINER_NAME = "_LostAndFound";
 
@@ -352,7 +355,7 @@ public class ContainerManager
         }
     }
 
-    
+
     public static Container getForId(String id)
     {
         Container d = _getFromCacheId(id);
@@ -612,7 +615,7 @@ public class ContainerManager
             ResultSetUtil.close(rs);
         }
     }
-    
+
 
     private static NavTree getProjectListForUser(ViewContext context)
     {
@@ -751,8 +754,8 @@ public class ContainerManager
         Map<String, NavTree> m = new HashMap<String, NavTree>();
         for (Container f : folders)
         {
-            int permissions = f.getAcl().getPermissions(user);
-            boolean skip = (permissions == 0 || (!f.shouldDisplay()));
+            Set<Class<? extends Permission>> perms = f.getPolicy().getPermissions(user);
+            boolean skip = (perms.size() == 0 || (!f.shouldDisplay()));
             //Always put the project and current container in...
             if (skip && !f.equals(project) && !f.equals(c))
                 continue;
@@ -763,7 +766,7 @@ public class ContainerManager
                 name = "Home";
 
             NavTree t = new NavTree(name);
-            if (permissions != 0)
+            if (perms.size() > 0)
             {
                 url = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(f);
                 t.second = (url.getEncodedLocalURIString());
@@ -1409,9 +1412,9 @@ public class ContainerManager
         // create a "support" container. Admins can do anything,
         // Users can read/write, Guests can read.
         return bootstrapContainer(Container.DEFAULT_SUPPORT_PROJECT_PATH,
-                ACL.PERM_ALLOWALL,
-                ACL.PERM_READ | ACL.PERM_INSERT | ACL.PERM_UPDATEOWN | ACL.PERM_DELETEOWN,
-                ACL.PERM_READ);
+                RoleManager.getRole(SiteAdminRole.class),
+                RoleManager.getRole(AuthorRole.class),
+                RoleManager.getRole(ReaderRole.class));
     }
 
     public static String[] getAliasesForContainer(Container c)
@@ -1451,9 +1454,9 @@ public class ContainerManager
      * are dropped.
      */
     public static Container bootstrapContainer(String path,
-                                               int adminPerm,
-                                               int userPerm,
-                                               int guestPerm)
+                                               Role adminRole,
+                                               Role userRole,
+                                               Role guestRole)
     {
         Container c = null;
 
@@ -1484,22 +1487,22 @@ public class ContainerManager
 
             // Only set permissions if there are no explicit permissions
             // set for this object or we just created it
-            Integer aclCount = null;
+            Integer policyCount = null;
             if (!newContainer)
             {
-                aclCount = Table.executeSingleton(core.getSchema(),
-                    "SELECT COUNT(*) FROM " + core.getTableInfoACLs() + " WHERE ObjectId = ?",
+                policyCount = Table.executeSingleton(core.getSchema(),
+                    "SELECT COUNT(*) FROM " + core.getTableInfoPolicies() + " WHERE ResourceId = ?",
                     new Object[]{c.getId()}, Integer.class);
             }
 
-            if (newContainer || 0 == aclCount)
+            if (newContainer || 0 == policyCount)
             {
                 _log.debug("Setting permissions for '" + path + "'");
-                ACL acl = new ACL();
-                acl.setPermission(Group.groupAdministrators, adminPerm);
-                acl.setPermission(Group.groupUsers, userPerm);
-                acl.setPermission(Group.groupGuests, guestPerm);
-                SecurityManager.updateACL(c, acl);
+                SecurityPolicy policy = new SecurityPolicy(c);
+                policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), adminRole);
+                policy.addRoleAssignment(SecurityManager.getGroup(Group.groupUsers), userRole);
+                policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), guestRole);
+                SecurityManager.savePolicy(policy);
             }
         }
         catch (SQLException e)

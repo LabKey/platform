@@ -31,6 +31,11 @@ public class SiteAdminRole extends AbstractRole
     public SiteAdminRole()
     {
         super("Site Administrator", "The Site Administrator has full control over the entire system.",
-                ReadPermission.class, UpdatePermission.class, InsertPermission.class, DeletePermission.class);
+                ReadPermission.class,
+                ReadSomePermission.class,
+                UpdatePermission.class,
+                InsertPermission.class, 
+                DeletePermission.class,
+                AdminPermission.class);
     }
 }

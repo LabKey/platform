@@ -68,9 +68,19 @@ public class CoreSchema
         return getSchema().getTable("Members");
     }
 
+    /**
+     * Returns ACLs table info
+     * @return ACLs table
+     * @deprecated ACL have been replaced by SecurityPolicy. Use getTableInfoRoleAssignments()
+     */
     public TableInfo getTableInfoACLs()
     {
         return getSchema().getTable("ACLs");
+    }
+
+    public TableInfo getTableInfoPolicies()
+    {
+        return getSchema().getTable("Policies");
     }
 
     public TableInfo getTableInfoRoleAssignments()

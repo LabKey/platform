@@ -19,12 +19,9 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.User;
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.FileStream;
-import org.labkey.api.attachments.Attachment;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditLogEvent;
 import org.apache.commons.io.IOUtils;
@@ -58,12 +55,12 @@ public class FileSystemResource extends AbstractResource
         this(WebdavResolverImpl.c(folder,name));
     }
 
-    public FileSystemResource(WebdavResolver.Resource folder, String name, File file, ACL acl)
+    public FileSystemResource(WebdavResolver.Resource folder, String name, File file, SecurityPolicy policy)
     {
         super(folder.getPath(), name);
         _folder = folder;
         _name = name;
-        _acl = acl;
+        _policy = policy;
         _file = FileUtil.canonicalFile(file);
     }
 
@@ -71,7 +68,7 @@ public class FileSystemResource extends AbstractResource
     {
         super(folder, relativePath);
         _folder = folder;
-        _acl = folder._acl;
+        _policy = folder._policy;
         _file = FileUtil.canonicalFile(new File(folder._file, relativePath));
     }
 
@@ -79,7 +76,7 @@ public class FileSystemResource extends AbstractResource
     {
         return null == _name ? super.getName() : _name;
     }
-    
+
     public boolean exists()
     {
         return _file == null || _file.exists();
@@ -121,7 +118,7 @@ public class FileSystemResource extends AbstractResource
             return null;
         return new FileStream.FileFileStream(_file);
     }
-    
+
 
     public InputStream getInputStream(User user) throws IOException
     {

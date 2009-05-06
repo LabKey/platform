@@ -56,12 +56,18 @@ public interface Role
     public String getDescription();
 
     /**
-     * Returns the set of permission classes the role grants. This set may be adjusted
-     * by other modules that wish to add their own permissions to this role.
+     * Returns the set of permission classes the role grants.
      * @return The permissions granted by the role.
      */
     @NotNull
     public Set<Class<? extends Permission>> getPermissions();
+
+    /**
+     * Adds a new permission to this role. Modules may use this method
+     * to add permissions defined by the module to system-defined roles
+     * @param perm The new permission
+     */
+    public void addPermission(@NotNull Class<? extends Permission> perm);
 
     /**
      * Returns a reference to the module in which this role was defined.

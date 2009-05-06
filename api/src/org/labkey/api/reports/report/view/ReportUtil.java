@@ -28,6 +28,7 @@ import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.DateUtil;
@@ -406,7 +407,7 @@ public class ReportUtil
                 String security;
                 if (descriptor.getOwner() != null)
                     security = "private";
-                else if (r.getDescriptor().getACL() != null && !r.getDescriptor().getACL().isEmpty())
+                else if (!SecurityManager.getPolicy(r.getDescriptor(), false).isEmpty())
                     security = "explicit";
                 else
                     security = "public";

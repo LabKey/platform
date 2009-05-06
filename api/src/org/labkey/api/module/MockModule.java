@@ -69,6 +69,11 @@ public class MockModule implements Module
         _dependencies = dependencies;
     }
 
+    public int compareTo(Module m)
+    {
+        return (m instanceof MockModule) ? 0 : 1;
+    }
+
     public void initialize()
     {
     }

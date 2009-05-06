@@ -23,6 +23,7 @@ import org.labkey.api.security.permissions.Permission;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Collections;
 
 /*
 * User: Dave
@@ -38,7 +39,7 @@ public abstract class AbstractRole implements Role
     private String _name;
     private String _description;
     private Module _sourceModule;
-    private Set<Class<? extends Permission>> _permissions = new HashSet<Class<? extends Permission>>();
+    private final Set<Class<? extends Permission>> _permissions = new HashSet<Class<? extends Permission>>();
 
     protected AbstractRole(String name, String description, Class<? extends Permission>... perms)
     {
@@ -75,7 +76,17 @@ public abstract class AbstractRole implements Role
     @NotNull
     public Set<Class<? extends Permission>> getPermissions()
     {
-        return _permissions;
+        return Collections.unmodifiableSet(_permissions);
+    }
+
+    public void addPermission(@NotNull Class<? extends Permission> perm)
+    {
+        //although this is unlikley to be called from multiple threads
+        //at once, it is conceivable, so lock the set before adding
+        synchronized (_permissions)
+        {
+            _permissions.add(perm);
+        }
     }
 
     @NotNull
@@ -98,6 +109,15 @@ public abstract class AbstractRole implements Role
     @Override
     public boolean equals(Object obj)
     {
+        if(null == obj)
+            return false;
         return this.getClass().equals(obj.getClass());
-    }   
+    }
+
+    @Override
+    public String toString()
+    {
+        return getUniqueName();
+    }
+
 }

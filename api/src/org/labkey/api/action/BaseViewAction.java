@@ -31,8 +31,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.PermissionManager;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.springframework.beans.*;
@@ -532,22 +531,19 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
             return;
         }
 
-        RequiresPermission requiresPermission = actionClass.getAnnotation(RequiresPermission.class);
-        if (null != requiresPermission)
+        if (c.isForbiddenProject(user))
+            throw new ForbiddenProjectException();
+
+        RequiresPermission oldReqPerm = actionClass.getAnnotation(RequiresPermission.class);
+        RequiresPermissionClass requiresPerm = actionClass.getAnnotation(RequiresPermissionClass.class);
+        Class<? extends Permission> permissionRequired = null != requiresPerm ? requiresPerm.value()
+                : translatePermission(oldReqPerm);
+
+        if(null != permissionRequired)
         {
-            if (c.isForbiddenProject(user))
-                throw new ForbiddenProjectException();
-
-            if (0 != requiresPermission.value() && !c.hasPermission(user, requiresPermission.value()))
+            SecurityPolicy policy = SecurityManager.getPolicy(c);
+            if(!policy.hasPermission(user, permissionRequired))
                 throw new UnauthorizedException();
-
-            //check permission class
-            if(requiresPermission.permission() != Permission.class)
-            {
-                SecurityPolicy policy = SecurityManager.getPolicy(c);
-                if(!policy.hasPermission(user, requiresPermission.permission()))
-                    throw new UnauthorizedException();
-            }
         }
 
         boolean requiresSiteAdmin = actionClass.isAnnotationPresent(RequiresSiteAdmin.class);
@@ -558,8 +554,32 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         if (requiresLogin && user.isGuest())
             HttpView.throwUnauthorized();
 
-        if (null == requiresPermission && !requiresSiteAdmin && !requiresLogin)
-            throw new IllegalStateException("@RequiresPermission, @RequiresSiteAdmin, or @RequiresLogin annotation is required on class " + actionClass.getName());
+        if (null == oldReqPerm && null == requiresPerm && !requiresSiteAdmin && !requiresLogin)
+            throw new IllegalStateException("@RequiresPermission, @RequiresPermissionClass, @RequiresSiteAdmin, or @RequiresLogin annotation is required on class " + actionClass.getName());
+    }
+
+    private static Class<? extends Permission> translatePermission(RequiresPermission requiresPerm)
+    {
+        if(null == requiresPerm)
+            return null;
+        switch(requiresPerm.value())
+        {
+            case ACL.PERM_ADMIN:
+                return AdminPermission.class;
+            case ACL.PERM_DELETE:
+            case ACL.PERM_DELETEOWN:
+                return DeletePermission.class;
+            case ACL.PERM_INSERT:
+                return InsertPermission.class;
+            case ACL.PERM_READ:
+            case ACL.PERM_READOWN:
+                return ReadPermission.class;
+            case ACL.PERM_UPDATE:
+            case ACL.PERM_UPDATEOWN:
+                return UpdatePermission.class;
+            default:
+                return null;
+        }
     }
 
     public static void checkPermissionsAndTermsOfUse(Class<? extends Controller> actionClass, ViewContext context)

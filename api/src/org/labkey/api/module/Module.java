@@ -47,7 +47,7 @@ import java.util.List;
  * Date: Jul 14, 2005
  * Time: 11:43:45 AM
  */
-public interface Module
+public interface Module extends Comparable<Module>
 {
     public enum TabDisplayMode
     {

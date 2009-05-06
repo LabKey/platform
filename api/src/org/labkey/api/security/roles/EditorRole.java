@@ -15,10 +15,7 @@
  */
 package org.labkey.api.security.roles;
 
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.*;
 
 /*
 * User: Dave
@@ -30,7 +27,8 @@ public class EditorRole extends AbstractRole
     public EditorRole()
     {
         super("Editor", "May read, add, update and delete information.",
-                ReadPermission.class, InsertPermission.class, UpdatePermission.class,
+                ReadPermission.class, ReadSomePermission.class, 
+                InsertPermission.class, UpdatePermission.class,
                 DeletePermission.class);
     }
 }

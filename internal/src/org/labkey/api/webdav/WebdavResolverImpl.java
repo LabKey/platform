@@ -26,6 +26,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.roles.NoPermissionsRole;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.*;
 import org.labkey.api.collections.TTLCacheMap;
 
@@ -278,7 +281,6 @@ public class WebdavResolverImpl implements WebdavResolver
 //        return resource;
 //    }
 
-
     public class WebFolderResource extends AbstractCollectionResource implements WebFolder
     {
         final Container _c;
@@ -290,12 +292,17 @@ public class WebdavResolverImpl implements WebdavResolver
         {
             super(c.getPath());
             _c = c;
-            _acl = c.getAcl();
+            _policy = c.getPolicy();
             _attachmentDirectory = root;
             if (null != _attachmentDirectory)
                 _attachmentResource = AttachmentService.get().getAttachmentResource(getPath(), _attachmentDirectory);
             else
                 _attachmentResource = null;
+        }
+
+        public int getIntPermissions(User user)
+        {
+            return _policy.getPermsAsOldBitMask(user);
         }
 
         public Container getContainer()
@@ -487,10 +494,12 @@ public class WebdavResolverImpl implements WebdavResolver
         }
 
         @Override
-        public int getPermissions(User user)
+        public Set<Class<? extends Permission>> getPermissions(User user)
         {
-            return 0;
+            return Collections.emptySet();
         }
+
+
 
         public Resource find(String name)
         {
@@ -605,10 +614,12 @@ public class WebdavResolverImpl implements WebdavResolver
 
             String pathTest = junit.getPath() + "/dav";
             Container cTest = ContainerManager.ensureContainer(pathTest);
-            ACL aclNone = new ACL();
-            aclNone.setPermission(Group.groupGuests, 0);
-            aclNone.setPermission(user, ACL.PERM_READ);
-            SecurityManager.updateACL(cTest, aclNone);
+
+            SecurityPolicy policyNone = new SecurityPolicy(cTest);
+            policyNone.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), NoPermissionsRole.class);
+            policyNone.addRoleAssignment(user, ReaderRole.class);
+            SecurityManager.savePolicy(policyNone);
+
             Resource rTest = resolver.lookup(pathTest);
             assertNotNull(rTest);
             assertTrue(rTest.canRead(user));
@@ -620,9 +631,9 @@ public class WebdavResolverImpl implements WebdavResolver
             assertFalse(names.contains("webdav"));
             assertTrue(names.contains("dav"));
 
-            ACL aclRead = new ACL();
-            aclRead.setPermission(Group.groupGuests,ACL.PERM_READ);
-            SecurityManager.updateACL(cTest, aclRead);
+            SecurityPolicy policyRead = new SecurityPolicy(cTest);
+            policyRead.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), ReaderRole.class);
+            SecurityManager.savePolicy(policyRead);
             rTest = resolver.lookup(pathTest);
             assertTrue(rTest.canRead(guest));
 

@@ -21,6 +21,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.settings.PreferenceService;
@@ -162,12 +163,12 @@ public class ViewContext extends BoundMap implements MessageSource
     {
         if (_perm == -1)
         {
-            ACL acl = getACL();
+            SecurityPolicy policy = getContainer().getPolicy();
             User user = getUser();
-            if (null == acl || null == user)
+            if (null == policy || null == user)
                 _perm = 0;
             else
-                _perm = acl.getPermissions(user);
+                _perm = policy.getPermsAsOldBitMask(user);
         }
         return _perm;
     }
@@ -186,26 +187,6 @@ public class ViewContext extends BoundMap implements MessageSource
     {
         return !SecurityManager.isTermsOfUseRequired(this);
     }
-
-
-    public ACL getACL() throws NotFoundException
-    {
-        if (null == _acl)
-        {
-            Container c = getContainer();
-            if (c == null)
-            {
-                // Disable this exception for now: DownloadURLHelper depends on URLs that
-                // specify a non-existent container.
-                HttpView.throwNotFound("No matching container");
-            }
-            if (null != c)
-                _acl = c.getAcl();
-        }
-
-        return _acl;
-    }
-
 
     public HttpServletResponse getResponse()
     {

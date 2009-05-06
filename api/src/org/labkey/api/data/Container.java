@@ -94,22 +94,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
     }
 
 
-    synchronized ACL computeAcl()
-    {
-        ACL acl = SecurityManager.getACL(this);
-        _inheritedAcl = false;
-        if (null == acl || acl.isEmpty())
-        {
-            _inheritedAcl = true;
-            Container parent = getParent();
-            acl = (null == parent || this == parent) ? ACL.EMPTY : parent.getAcl();
-        }
-        return acl;
-    }
-
     public boolean isInheritedAcl()
     {
-        return _inheritedAcl;
+        return !(getPolicy().getResource().getResourceId().equals(getId()));
     }
 
     /** If someone holds onto a container too long (e.g. in a cache, or across requests), it may become invalidated */
@@ -194,20 +181,23 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return project;
     }
 
-
-    public ACL getAcl()
+    public SecurityPolicy getPolicy()
     {
-        return computeAcl();
+        return SecurityManager.getPolicy(this);
     }
 
+    public boolean hasPermission(User user, Class<? extends Permission> perm)
+    {
+        return getPolicy().hasPermission(user, perm);
+    }
 
     public boolean hasPermission(User user, int perm)
     {
         if (isForbiddenProject(user))
             return false;
 
-        ACL acl = getAcl();
-        return acl.hasPermission(user, perm);
+        SecurityPolicy policy = getPolicy();
+        return policy.hasPermissions(user, getPermissionsForIntPerm(perm));
     }
 
     private Set<Class<? extends Permission>> getPermissionsForIntPerm(int perm)
@@ -219,13 +209,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
             perms.add(InsertPermission.class);
         if((perm & ACL.PERM_UPDATE) > 0 || (perm & ACL.PERM_UPDATEOWN) > 0)
             perms.add(UpdatePermission.class);
-        if((perm & ACL.PERM_DELETE) > 0 || (perm & ACL.PERM_DELETE) > 0)
+        if((perm & ACL.PERM_DELETE) > 0 || (perm & ACL.PERM_DELETEOWN) > 0)
             perms.add(DeletePermission.class);
         if((perm & ACL.PERM_ADMIN) > 0)
-        {
-            //TODO: add all relevant admin permissions
-        }
-        
+            perms.add(AdminPermission.class);
+
         return perms;
     }
 

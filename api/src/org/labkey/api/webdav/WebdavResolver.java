@@ -17,6 +17,7 @@
 package org.labkey.api.webdav;
 
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.util.FileStream;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Date;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -141,7 +143,7 @@ public interface WebdavResolver
     // marker interfaces for web folder, see FtpConnectorImpl
     public static interface WebFolder
     {
-        int getPermissions(User user);
+        int getIntPermissions(User user);
         List<String> getWebFoldersNames(User user);
     }
     

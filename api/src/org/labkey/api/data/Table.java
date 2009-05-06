@@ -1143,7 +1143,7 @@ public class Table
         List<ColumnInfo> pkColumns = table.getPkColumns();
         Object[] pks;
 
-        if (pk.getClass().isArray())
+        if (null != pk && pk.getClass().isArray())
             pks = (Object[]) pk;
         else
             pks = new Object[]{pk};

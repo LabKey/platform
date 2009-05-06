@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.security.roles;
+package org.labkey.api.security.permissions;
 
 /*
 * User: Dave
-* Date: Apr 27, 2009
-* Time: 1:32:29 PM
+* Date: Apr 30, 2009
+* Time: 6:08:48 PM
 */
-public class NoPermissionsRole extends AbstractRole
+public class ReadSomePermission extends AbstractPermission
 {
-    public NoPermissionsRole()
+    public ReadSomePermission()
     {
-        super("No Permissions", "Granted no access whatsoever.");
+        super("Read Some", "Users may read some information but not all.");
     }
 }

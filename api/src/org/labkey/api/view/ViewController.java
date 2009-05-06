@@ -113,11 +113,12 @@ public class ViewController extends PageFlowControllerFIXED implements Controlle
             // emulate requiresAdmin() behavior, SiteAdministrators always have Admin permission
             if (perm != ACL.PERM_NONE)
             {
-                int granted = c.getAcl().getPermissions(user);
-                if (isAdmin)
-                    granted |= ACL.PERM_ADMIN;
-                if (granted != (granted | perm))
-                    HttpView.throwUnauthorized();
+                if(!c.hasPermission(user, perm))
+                {
+                    //if user is admin and required perm is admin then it's OK
+                    if(!(isAdmin && (perm & ACL.PERM_ADMIN) != 0))
+                        HttpView.throwUnauthorized();
+                }
             }
         }
     }

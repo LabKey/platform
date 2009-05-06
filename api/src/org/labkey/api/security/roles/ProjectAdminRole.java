@@ -15,29 +15,23 @@
  */
 package org.labkey.api.security.roles;
 
-import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.module.Module;
+import org.labkey.api.security.permissions.*;
 
 /*
 * User: Dave
-* Date: Apr 22, 2009
-* Time: 10:56:17 AM
+* Date: Apr 28, 2009
+* Time: 10:13:55 AM
 */
-public abstract class AbstractContextualRole extends AbstractRole implements ContextualRole
+public class ProjectAdminRole extends AbstractRole
 {
-    protected AbstractContextualRole(String name, String description, Class<? extends Permission>... perms)
+    public ProjectAdminRole()
     {
-        super(name, description, perms);
-    }
-
-    protected AbstractContextualRole(String name, String description, Module sourceModule, Class<? extends Permission>... perms)
-    {
-        super(name, description, sourceModule, perms);
-    }
-
-    @Override
-    public boolean isAssignable()
-    {
-        return false;
+        super("Project Administrator", "Project Administrators have full control over the project, but not the entire system.",
+                ReadPermission.class,
+                ReadSomePermission.class,
+                InsertPermission.class,
+                UpdatePermission.class,
+                DeletePermission.class,
+                AdminPermission.class);
     }
 }

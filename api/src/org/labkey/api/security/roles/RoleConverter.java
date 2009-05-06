@@ -16,6 +16,7 @@
 package org.labkey.api.security.roles;
 
 import org.apache.commons.beanutils.Converter;
+import org.apache.log4j.Logger;
 
 /*
 * User: Dave
@@ -24,11 +25,19 @@ import org.apache.commons.beanutils.Converter;
 */
 public class RoleConverter implements Converter
 {
+    private static final Logger _log = Logger.getLogger(RoleConverter.class);
+
     public Object convert(Class type, Object value)
     {
         if(null == value || !type.equals(Role.class) || !(value instanceof String))
             return null;
         else
-            return RoleManager.getRole((String)value);
+        {
+            Role role = RoleManager.getRole((String) value);
+            if(null == role)
+                _log.warn("Unable to resolve role name '" + value + "'! This role may no longer exist, or has not been registered with RoleManger.register().");
+            
+            return role;
+        }
     }
 }

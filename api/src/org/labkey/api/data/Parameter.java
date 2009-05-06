@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.struts.upload.FormFile;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.util.HString;
+import org.labkey.api.security.roles.Role;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -148,6 +149,8 @@ public class Parameter
             value = ((Container) value).getId();
         else if (value instanceof Enum)
             value = ((Enum)value).name();
+        else if (value instanceof Role)
+            value = ((Role)value).getUniqueName();
 
         if (sqlType == Types.VARCHAR && null != charset)
         {

@@ -21,12 +21,17 @@ import org.apache.log4j.Logger;
 import org.apache.xerces.util.DOMUtil;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.User;
+import org.labkey.api.security.*;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
@@ -47,7 +52,7 @@ import java.util.*;
  * User: Karl Lum
  * Date: Oct 4, 2006
  */
-public class ReportDescriptor extends Entity
+public class ReportDescriptor extends Entity implements SecurableResource
 {
     private static final Logger _log = Logger.getLogger(ReportDescriptor.class);
     public static final String TYPE = "reportDescriptor";
@@ -424,36 +429,15 @@ public class ReportDescriptor extends Entity
         return null;
     }
 
-    public ACL getACL()
+    public void updatePolicy(ViewContext context, SecurityPolicy policy)
     {
-        String entityId = getEntityId();
-        if (null == entityId)
-            return null;
-
-        final Container c = ContainerManager.getForId(getContainerId());
-        return org.labkey.api.security.SecurityManager.getACL(c, entityId);
-    }
-
-    public void updateACL(ViewContext context, ACL acl)
-    {
-        final Container c = ContainerManager.getForId(getContainerId());
-        org.labkey.api.security.SecurityManager.updateACL(c, getEntityId(), acl);
-    }
-
-    public int getPermissions(User u)
-    {
-        final Container c = ContainerManager.getForId(getContainerId());
-        if (!c.hasPermission(u, ACL.PERM_READ))
-            return 0;
-        ACL acl = getACL();
-        if (acl == null || acl.isEmpty())
-            return ACL.PERM_READ;
-        return acl.getPermissions(u);
+        assert policy.getResource() == this;
+        SecurityManager.savePolicy(policy);
     }
 
     public boolean canRead(User u)
     {
-        return (getPermissions(u) & ACL.PERM_READ) != 0;
+        return org.labkey.api.security.SecurityManager.getPolicy(this).hasPermission(u, ReadPermission.class);
     }
 
     public boolean canEdit(ViewContext context)
@@ -479,5 +463,45 @@ public class ReportDescriptor extends Entity
             }
         }
         return false;
+    }
+
+    @NotNull
+    public String getResourceId()
+    {
+        return getEntityId();
+    }
+
+    @NotNull
+    public String getName()
+    {
+        return getReportName();
+    }
+
+    @NotNull
+    public String getDescription()
+    {
+        return getReportDescription();
+    }
+
+    @NotNull
+    public Set<Class<? extends Permission>> getRelevantPermissions()
+    {
+        return RoleManager.BasicPermissions;
+    }
+
+    public Module getSourceModule()
+    {
+        return ModuleLoader.getInstance().getCoreModule();
+    }
+
+    public SecurableResource getParent()
+    {
+        return getContainer();
+    }
+
+    @NotNull
+    public Container getContainer()
+    {
+        return lookupContainer();
     }
 }

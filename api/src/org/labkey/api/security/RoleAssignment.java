@@ -32,10 +32,8 @@ import java.util.Comparator;
 public class RoleAssignment implements Comparable<RoleAssignment>, Cloneable
 {
     private String _resourceId;
-    private Container _container;
     private int _userId;
     private Role _role;
-    private String _resourceClass;
 
     public RoleAssignment()
     {
@@ -44,8 +42,6 @@ public class RoleAssignment implements Comparable<RoleAssignment>, Cloneable
     public RoleAssignment(SecurableResource resource, UserPrincipal user, Role role)
     {
         _resourceId = resource.getResourceId();
-        _resourceClass = resource.getClass().getName();
-        _container = resource.getContainer();
         _role = role;
         _userId = user.getUserId();
     }
@@ -53,7 +49,6 @@ public class RoleAssignment implements Comparable<RoleAssignment>, Cloneable
     public RoleAssignment(RoleAssignment copy)
     {
         _resourceId = copy._resourceId;
-        _container = copy._container;
         _userId = copy._userId;
         _role = copy._role;
     }
@@ -66,16 +61,6 @@ public class RoleAssignment implements Comparable<RoleAssignment>, Cloneable
     public void setResourceId(String resourceId)
     {
         _resourceId = resourceId;
-    }
-
-    public Container getContainer()
-    {
-        return _container;
-    }
-
-    public void setContainer(Container container)
-    {
-        _container = container;
     }
 
     public int getUserId()
@@ -96,16 +81,6 @@ public class RoleAssignment implements Comparable<RoleAssignment>, Cloneable
     public void setRole(Role role)
     {
         _role = role;
-    }
-
-    public String getResourceClass()
-    {
-        return _resourceClass;
-    }
-
-    public void setResourceClass(String resourceClass)
-    {
-        _resourceClass = resourceClass;
     }
 
     public int compareTo(RoleAssignment other)

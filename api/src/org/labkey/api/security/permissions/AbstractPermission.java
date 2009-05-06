@@ -82,12 +82,22 @@ public abstract class AbstractPermission implements Permission
         return perms;
     }
 
+    public void addPermission(@NotNull Class<? extends Permission> perm)
+    {
+        throw new UnsupportedOperationException();
+    }
+
     public boolean isAssignable()
     {
         //for now, we will not allow admins to grant
         //users/groups individual permissions.
         //instead, admins assign users/groups to roles
         return false;
+    }
+
+    public int getSortOrder()
+    {
+        return 0;
     }
 
     /**

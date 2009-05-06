@@ -32,5 +32,4 @@ public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target({Element
 @interface RequiresPermission
 {
     int value();
-    Class<? extends Permission> permission() default Permission.class;
 }

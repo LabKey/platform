@@ -715,6 +715,7 @@ public class UserManager
 
         try
         {
+            Table.execute(_core.getSchema(), "DELETE FROM " + _core.getTableInfoRoleAssignments() + " WHERE UserId=?", new Object[]{userId});            
             Table.execute(_core.getSchema(), "DELETE FROM " + _core.getTableInfoMembers() + " WHERE UserId=?", new Object[]{userId});
             Table.execute(_core.getSchema(), "DELETE FROM " + _core.getTableInfoUserHistory() + " WHERE UserId=?", new Object[]{userId});
             // TODO: now that user history is managed by the audit service, should we allow audit records to be deleted?

@@ -15,29 +15,18 @@
  */
 package org.labkey.api.security.roles;
 
-import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.module.Module;
+import org.labkey.api.security.permissions.ReadSomePermission;
 
 /*
 * User: Dave
-* Date: Apr 22, 2009
-* Time: 10:56:17 AM
+* Date: Apr 30, 2009
+* Time: 6:09:41 PM
 */
-public abstract class AbstractContextualRole extends AbstractRole implements ContextualRole
+public class RestrictedReaderRole extends AbstractRole
 {
-    protected AbstractContextualRole(String name, String description, Class<? extends Permission>... perms)
+    public RestrictedReaderRole()
     {
-        super(name, description, perms);
-    }
-
-    protected AbstractContextualRole(String name, String description, Module sourceModule, Class<? extends Permission>... perms)
-    {
-        super(name, description, sourceModule, perms);
-    }
-
-    @Override
-    public boolean isAssignable()
-    {
-        return false;
+        super("Restricted Reader", "Users may read some information, but not all.",
+                ReadSomePermission.class);
     }
 }

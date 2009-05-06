@@ -17,6 +17,7 @@ package org.labkey.api.security.roles;
 
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadSomePermission;
 
 /*
 * User: Dave
@@ -28,6 +29,8 @@ public class AuthorRole extends AbstractRole
     public AuthorRole()
     {
         super("Author", "May read and add information, but may update and delete only information they added.",
-                ReadPermission.class, InsertPermission.class);
+                ReadPermission.class,
+                ReadSomePermission.class,
+                InsertPermission.class);
     }
 }

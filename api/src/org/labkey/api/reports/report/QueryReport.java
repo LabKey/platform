@@ -20,6 +20,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.*;
 
@@ -144,7 +145,7 @@ public class QueryReport extends AbstractReport
 
         public boolean showCustomizeLink()
         {
-            return _viewContext.getACL().hasPermission(_viewContext.getUser(), ACL.PERM_ADMIN);
+            return _viewContext.getContainer().hasPermission(_viewContext.getUser(), AdminPermission.class);
         }
 
         public ActionURL getCustomizeURL()

@@ -15,8 +15,9 @@
  */
 package org.labkey.api.webdav;
 
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.view.ActionURL;
@@ -27,13 +28,13 @@ import org.labkey.api.attachments.Attachment;
 import org.jetbrains.annotations.NotNull;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.io.IOUtils;
-import org.systemsbiology.jrap.Base64;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Collections;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -45,7 +46,7 @@ public abstract class AbstractResource implements WebdavResolver.Resource
 {
     protected long _ts = System.currentTimeMillis();
     private String _path;
-    protected ACL _acl;
+    protected SecurityPolicy _policy;
     protected String _etag = null;
 
     protected AbstractResource(String path)
@@ -207,25 +208,26 @@ public abstract class AbstractResource implements WebdavResolver.Resource
     {
         if ("/".equals(_path))
             return true;
-        return hasAccess(user) && (getPermissions(user) & ACL.PERM_READ) != 0;
+        return hasAccess(user) && getPermissions(user).contains(ReadPermission.class);
     }
 
 
     public boolean canWrite(User user)
     {
-        return hasAccess(user) && (getPermissions(user) & ACL.PERM_UPDATE) != 0;
+        return hasAccess(user) && getPermissions(user).contains(UpdatePermission.class);
     }
 
 
     public boolean canCreate(User user)
     {
-        return hasAccess(user) && (getPermissions(user) & ACL.PERM_INSERT) != 0;
+        return hasAccess(user) && getPermissions(user).contains(InsertPermission.class);
     }
 
 
     public boolean canDelete(User user)
     {
-        return hasAccess(user) && (getPermissions(user) & ACL.PERM_UPDATE) != 0;
+        Set<Class<? extends Permission>> perms = getPermissions(user);
+        return hasAccess(user) && (perms.contains(UpdatePermission.class) || perms.contains(DeletePermission.class));
     }
 
 
@@ -235,9 +237,9 @@ public abstract class AbstractResource implements WebdavResolver.Resource
     }
 
 
-    public int getPermissions(User user)
+    public Set<Class<? extends Permission>> getPermissions(User user)
     {
-        return _acl.getPermissions(user);
+        return _policy.getPermissions(user);
     }
 
 
