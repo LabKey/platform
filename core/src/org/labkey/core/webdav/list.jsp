@@ -214,7 +214,7 @@ Ext.onReady(function()
         window.location = fileSystem.concatPaths(<%=PageFlowUtil.jsString(request.getContextPath()+'/'+WebdavService.getServletPath())%>,path) + '?listing=html';
     }});
 
-    var loginAction = new Ext.Action({text:'Login', handler:function()
+    var loginAction = new Ext.Action({text:'Sign In', handler:function()
     {
         window.location = <%=PageFlowUtil.jsString(listpage.loginURL.getLocalURIString())%>;    
     }});

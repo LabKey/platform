@@ -145,7 +145,7 @@ var GRIDPANEL_EVENTS =
 };
 Ext.apply(GRIDPANEL_EVENTS,PANEL_EVENTS);
 
-var ROWSELECTION_MODEL =
+var ROWSELETION_EVENTS =
 {
     selectionchange:"selectionchange",
     beforerowselect:"beforerowselect",
@@ -153,6 +153,18 @@ var ROWSELECTION_MODEL =
     rowdeselect:"rowdeselect"
 };
 
+var STORE_EVENTS =
+{
+    datachanged:'datachanged',
+    metachange:'metachange',
+    add:'add',
+    remove:'remove',
+    update:'update',
+    clear:'clear',
+    beforeload:'beforeload',
+    load:'load',
+    loadexception:'loadexception'
+};
 
 function log(o)
 {
@@ -239,6 +251,7 @@ function _attachPreview(id,record)
 //    elImg.on("mouseover",preview.createCallback(id,record));
 //    elImg.on("mouseout",unpreviewWindow);
     var img = Ext.fly(id,_previewScope);
+    if (!img) return;
     img.dom.onmouseover = preview.createCallback(id,record);
     img.dom.mouseout = unpreviewWindow;
 }
@@ -315,6 +328,7 @@ function dynamicToolTip(id, html)
 function previewWindow(id, html)
 {
     var el = Ext.fly(id,_previewScope);
+    if (!el) return;
     html = $dom.markup(html);
     if (_previewWindow)
         _previewWindow.close();
@@ -686,28 +700,23 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
     {
         try
         {
-            var fileSystem = this;
-            var client = new XMLHttpRequest();
-            client.onreadystatechange = function()
-                {
-                    if (client.readyState == 4)
-                    {
-                        if (204 == client.status)   // NO_CONTENT
-                            callback(fileSystem, true, path);
-                        else if (405 == client.status) // METHOD_NOT_ALLOWED
-                            callback(fileSystem, false, path);
-                        else
-                            window.alert(client.statusText);
-                    }
-                };
             var resourcePath = this.concatPaths(this.prefixUrl, path);
-            client.open("POST", resourcePath);
-            client.setRequestHeader("method", "DELETE");
-            client.send(null);
+            var fileSystem = this;
+            var connection = new Ext.data.Connection();
+            connection.handleResponse = function(response)
+            {
+                if (204 == response.status)
+                    callback(fileSystem, true, path, response);
+                else if (405 == response.status) // METHOD_NOT_ALLOWED
+                    callback(fileSystem, false, path, response);
+                else
+                    window.alert(response.statusText);
+            }
+            connection.request({method:"DELETE", url:resourcePath});
         }
         catch (x)
         {
-            window.alert(x);
+            window.alert(x);                                
         }
         return true;
     },
@@ -818,10 +827,9 @@ var AppletFileSystem = function(config)
         rootName: "My Computer"
     });
     AppletFileSystem.superclass.constructor.call(this);
-    this.FileRecord = Ext.data.Record.create(['uri', 'path', 'name', 'file', 'created', 'modified', 'modifiedBy', 'size', 'iconHref']);
     this.connection = new Ext.data.Connection({method: "GET", headers: {"Method" : "PROPFIND", "Depth" : "1,noroot"}});
     this.proxy = new Ext.data.HttpProxy(this.connection);
-    this.reader = new Ext.data.XmlReader({record : "response", id : "path"}, this.FileRecord);
+    this.reader = new Ext.data.JsonReader({totalProperty:'recordCount', root:'records', id:'uri'}, this.AppletRecord),
 
     this.rootRecord = new this.FileRecord(
     {
@@ -838,6 +846,18 @@ Ext.extend(AppletFileSystem, FileSystem,
     rootPath : "/",
     separator : Ext.isWindows ? "\\" : "/",
     retry : 0,
+
+    AppletRecord : Ext.data.Record.create(
+    [
+        {name:'uri'},
+        {name:'path'},
+        {name:'name'},
+        {name:'file', mapping:'isFile'},
+        {name:'size', mapping:'length'},
+        {name:'modified', mapping:'lastModified'}
+    ]),
+
+    reader : null,
 
     createDirectory : function(path, callback)
     {
@@ -870,7 +890,7 @@ Ext.extend(AppletFileSystem, FileSystem,
         }
         var count = applet.local_getFileCount();
         var js = applet.local_getObjects();
-        var datas = eval("var $=" + js + ";$;");
+        var json = eval("var $=" + js + ";$;");
         var records = [];
         for (var i=0 ; i<datas.length ; i++)
         {
@@ -1030,20 +1050,20 @@ Ext.extend(FileSystemTreeLoader, Ext.tree.TreeLoader,
 
 
 //
-// WebdavApplet
+// TransferApplet
 //
-var APPLET_EVENTS =
-{
-    ready : 'ready'
-};
 
-var WebdavApplet;
+TRANSFER_EVENTS = {update:'update'};
+
+var TransferApplet;
 if (LABKEY.Applet)
 {
-    WebdavApplet = Ext.extend(LABKEY.Applet,
+    TransferApplet = Ext.extend(LABKEY.Applet,
     {
         constructor : function(params)
         {
+            this.addEvents([TRANSFER_EVENTS.update]);
+            
             var config =
             {
                 id:params.id,
@@ -1059,8 +1079,112 @@ if (LABKEY.Applet)
                     password: LABKEY.user.sessionid
                 }
             };
-            WebdavApplet.superclass.constructor.call(this, config);
-            console.log("WebdavApplet.url: " + config.params.url);
+            this.reader = new Ext.data.JsonReader({successProperty:'success', totalProperty:'recordCount', root:'records', id:'target'}, this.TransferRecord);
+            this.transfers = new Ext.data.Store();
+
+            this.transfers.on("add", function(store, records)
+            {
+                for (var i=0 ; i<records.length ; i++)
+                    console.log('add: ' + records[i].get('uri') + ' ' + records[i].get('status'));
+            });
+            this.transfers.on("update", function(store, record, action)
+            {
+                console.log(action + ': ' + record.get('uri') + ' ' + record.get('status'));
+            });
+
+            TransferApplet.superclass.constructor.call(this, config);
+            console.log("TransferApplet.url: " + config.params.url);
+        },
+
+        onRender : function(ct, position)
+        {
+            TransferApplet.superclass.onRender.call(this, ct, position);
+            // callbacks work terribly on some browsers, just poll for updates
+            Ext.TaskMgr.start({interval:100, scope:this, run:this._poll});
+        },
+
+        reader : null,
+        transfers : null,
+
+        /* private */
+        _poll : function()
+        {
+            var a = this.getApplet();
+            if (null == a)
+                return;
+            if (!a.transfer_hasUpdates())
+                return;
+
+            // merge updates into data store
+            var r = a.transfer_getObjects();
+            var result = eval("(" + r + ")");
+            if (!result.success)
+                console.error(r);
+            var records = this.reader.readRecords(result);
+            this._merge(this.transfers,records.records);
+            this.fireEvent(TRANSFER_EVENTS.update);
+        },
+
+        /* private */
+        _merge : function(store,records)
+        {
+            var adds = [];
+            for (var i = 0 ; i<records.length ; i++)
+            {
+                var update = records[i];
+                var id = update.id;
+                var record = store.getById(id);
+                if (null == record)
+                {
+                    adds.push(update);
+                }
+                else //if (update.get('updated'))
+                {
+                    Ext.apply(record.data,update.data);
+                    store.afterEdit(record);
+                }
+            }
+            store.add(adds);
+        },
+
+        TransferRecord : Ext.data.Record.create([
+            {name:'src'},
+            {name:'uri', mapping:'target'},
+            {name:'name'},
+            {name:'state'},
+            {name:'status'},
+            {name:'size', mapping:'length'},
+            {name:'transferred'},
+            {name:'percent'},
+            {name:'updated'},
+            {name:'md5', mapping:'digest'}
+        ]),
+
+        getTransfers : function()
+        {
+            return this.transfers;
+        },
+
+        getSummary : function()
+        {
+            var success=0, info=0, failed=0, retryable=0;
+            var transfers = this.transfers;
+            var count = transfers.getCount();
+            //var records = transfers.getRecords();
+            for (var i = 0 ; i<count ; i++)
+            {
+                var record = transfers.getAt(i);
+                var state = record.data.state;
+                switch (state)
+                {
+                case 1: success++; break;
+                case 0: info++; break;
+                case -1: failed++; break;
+                case -2: retryable++; break;
+                }
+            }
+            return {success:success, info:info, failed:failed, retryable:retryable,
+                total:count, totalActive:success+info+failed};
         }
     });
 }
@@ -1204,6 +1328,16 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
     },
 
 
+    // UNDONE: use uri or path as id
+    _deleteOnCallback : function(fs, success, path, response, record)
+    {
+        //this.store.remove(record);
+        var id = record.id;
+        var rem = this.store.getById(id);
+        if (rem)
+            this.store.remove(rem);
+    },
+
     getDeleteAction : function()
     {
         return new Ext.Action({text: 'Delete', scope:this, iconCls:'deleteIcon', disabled:true, handler: function()
@@ -1211,7 +1345,9 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
             if (!this.currentDirectory)
                 return;
             if (this.selectedRecord && this.selectedRecord.data.file)
-                this.fileSystem.deletePath(this.selectedRecord.data.path, this._refreshOnCallback.createDelegate(this));
+            {
+                this.fileSystem.deletePath(this.selectedRecord.data.path, this._deleteOnCallback.createDelegate(this,[this.selectedRecord],true));
+            }
             this.selectFile(null);
         }});
     },
@@ -1270,21 +1406,50 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
         }});
     },
 
+
+    progressRecord : null,
+
+    updateProgressBarRecord : function(store,record)
+    {
+        var state = record.get('state');
+        var progress = (record.get('percent')||0)/100;
+
+        if (state == 0 && 0 < progress && progress < 1.0)
+            this.progressRecord = record;
+        else if (state != 0 && this.progressRecord == record)
+            this.progressRecord = null;
+    },
+
+    updateProgressBar : function()
+    {
+        var p = this.progressRecord ? this.progressRecord.get('percent')/100 : 0;
+        var summary = this.applet.getSummary();
+        var text = summary.success + "/" + summary.totalActive;
+        if (summary.failed)
+            text = text + " (" + summary.failed + " failed)";
+        this.progressBar.updateProgress(p, text);
+    },
+
     getUploadToolAction : function()
     {
         return new Ext.Action({text: 'Upload Tool', scope:this, disabled:true, handler: function()
         {
+
             if (this.applet && this.appletWindow)
             {
                 this.appletWindow.show();
                 return;
             }
-            this.applet = new WebdavApplet({height:200, width:200, directory:this.currentDirectory.data.path});
+            this.applet = new TransferApplet({height:200, width:200, directory:this.currentDirectory.data.path});
+            this.progressBar = new Ext.ProgressBar();
             this.appletWindow = new Ext.Window({
                 closable:true, animateTarget:true,
                 closeAction :'hide',
                 plain: true,
-                items:this.applet});
+                items:[this.applet, this.progressBar]});
+            this.applet.on(TRANSFER_EVENTS.update, this.updateProgressBar, this);
+            this.applet.getTransfers().on(STORE_EVENTS.update, this.updateProgressBarRecord, this);
+//            this.applet.getTransfers().on(STORE_EVENTS.add, this.addProgressBar, this);
             this.applet.onReady((function()
             {
                 this.applet.getApplet().changeWorkingDirectory(this.currentDirectory.data.path);
@@ -1370,9 +1535,6 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
 
     Grid_onSelectionChange : function(rowIndex, keepExisting, record)
     {
-        console.log(rowIndex);
-        console.log(keepExisting);
-        console.log(record);
     },
 
     Grid_onKeypress : function(e)
@@ -1617,8 +1779,8 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
                 {header: "Size", width: 80, dataIndex: 'size', sortable: true, hidden:false, align:'right', renderer:renderFileSize}
             ]
         });
-        this.grid.getSelectionModel().on(ROWSELECTION_MODEL.rowselect, this.Grid_onRowselect, this);
-        this.grid.getSelectionModel().on(ROWSELECTION_MODEL.selectionchange, this.Grid_onSelectionChange, this);
+        this.grid.getSelectionModel().on(ROWSELETION_EVENTS.rowselect, this.Grid_onRowselect, this);
+        this.grid.getSelectionModel().on(ROWSELETION_EVENTS.selectionchange, this.Grid_onSelectionChange, this);
         this.grid.on(GRIDPANEL_EVENTS.celldblclick, this.Grid_onCelldblclick, this);
         this.grid.on(GRIDPANEL_EVENTS.keypress, this.Grid_onKeypress, this);
         this.grid.on(GRIDPANEL_EVENTS.click, this.Grid_onClick, this);

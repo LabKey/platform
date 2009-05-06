@@ -1503,11 +1503,15 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         long _created = Long.MIN_VALUE;
         String _createdBy = null;
 
+        Attachment _cached = null;
+
+        
         AttachmentResource(@NotNull WebdavResolver.Resource folder, @NotNull AttachmentParent parent, @NotNull Attachment attachment)
         {
             this(folder, parent, attachment.getName());
             _created = attachment.getCreated().getTime();
             _createdBy = attachment.getCreatedByName(HttpView.currentContext());
+            _cached = attachment;
         }
 
 
@@ -1521,10 +1525,16 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             _parent = parent;
         }
 
-        
+        Attachment getAttachment()
+        {
+            if (null != _cached)
+                return _cached;
+            return AttachmentService.get().getAttachment(_parent, _name);
+        }
+
         public boolean exists()
         {
-            Attachment r = AttachmentService.get().getAttachment(_parent, _name);
+            Attachment r = getAttachment();
             if (r == null)
                 return false;
             if (null != r.getFile())
@@ -1535,11 +1545,6 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         public boolean isCollection()
         {
             return false;
-        }
-
-        public boolean isVirtual()
-        {
-            return true;
         }
 
         @Override
@@ -1567,7 +1572,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         @Override
         public FileStream getFileStream(User user) throws IOException
         {
-            Attachment r = getAttachment(_parent, _name);
+            Attachment r = getAttachment();
             if (null == r)
                 return null;
             List<AttachmentFile> files = getAttachmentFiles(_parent, Collections.singletonList(r));
@@ -1686,7 +1691,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
         public long getContentLength()
         {
-            Attachment a = AttachmentService.get().getAttachment(_parent, _name);
+            Attachment a = getAttachment();
             if (null == a)
                 return 0;
 
