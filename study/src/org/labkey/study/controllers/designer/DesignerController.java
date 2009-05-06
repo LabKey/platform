@@ -36,7 +36,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.api.reader.TabLoader;
+import org.labkey.api.reader.NewTabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.study.designer.*;
 import org.labkey.study.designer.client.model.GWTCohort;
@@ -469,7 +469,7 @@ public class DesignerController extends SpringActionController
     {
         if (null != form.getParticipantTSV())
         {
-            TabLoader tl = new TabLoader(form.getParticipantTSV(), true);
+            NewTabLoader tl = new NewTabLoader(form.getParticipantTSV(), true);
             setParticipants(tl.load());
         }
         if (form.isUploadParticipants())
@@ -486,7 +486,7 @@ public class DesignerController extends SpringActionController
             form.setMessage("Please provide participant information.");
             return;
         }
-        TabLoader loader = new TabLoader(form.getParticipantTSV(), true);
+        NewTabLoader loader = new NewTabLoader(form.getParticipantTSV(), true);
         fixupParticipantCols(loader);
         List<String> errors = new ArrayList<String>();
         Set<String> participants = new HashSet<String>();
@@ -495,7 +495,7 @@ public class DesignerController extends SpringActionController
         for (GWTCohort group : def.getGroups())
             cohortCounts.put(group.getName(), 0);
 
-        List<Map<String,Object>> rows = loader.load();
+        List<Map<String, Object>> rows = loader.load();
         setParticipants(rows);
         int rowNum = 1;
         for (Map<String, Object> row : rows)
@@ -555,7 +555,7 @@ public class DesignerController extends SpringActionController
         }
     }
 
-    private static void fixupParticipantCols(TabLoader loader) throws IOException
+    private static void fixupParticipantCols(NewTabLoader loader) throws IOException
     {
         ColumnDescriptor[] loaderCols = loader.getColumns();
         Map<String, ColumnDescriptor> colMap = new CaseInsensitiveHashMap<ColumnDescriptor>();
@@ -594,7 +594,7 @@ public class DesignerController extends SpringActionController
             if (null != form.getSpecimenTSV())
             {
                 //Handle back->forward case by reloading
-                TabLoader tl = new TabLoader(form.getSpecimenTSV(), true);
+                NewTabLoader tl = new NewTabLoader(form.getSpecimenTSV(), true);
                 setSpecimens(tl.load());
             }
             handleUploadSamples(form);
@@ -618,7 +618,7 @@ public class DesignerController extends SpringActionController
             form.setMessage("Please provide specimen information.");
             return;
         }
-        TabLoader loader = new TabLoader(specimenTSV, true);
+        NewTabLoader loader = new NewTabLoader(specimenTSV, true);
         Map<String, String> columnAliases = new HashMap();
         //Make sure we accept the labels
         SimpleSpecimenImporter importer = new SimpleSpecimenImporter();

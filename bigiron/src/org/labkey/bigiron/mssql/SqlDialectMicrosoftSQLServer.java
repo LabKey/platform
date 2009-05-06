@@ -66,15 +66,14 @@ public class SqlDialectMicrosoftSQLServer extends SqlDialect
 
     protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
     {
-        //Added for SQL Server SBEAMS. Not official type in jdbc
-        sqlTypeNameMap.put("INT", Types.INTEGER);
+        sqlTypeNameMap.put("FLOAT", Types.DOUBLE);
         sqlTypeNameMap.put("INT IDENTITY", Types.INTEGER);
         sqlTypeNameMap.put("DATETIME", Types.TIMESTAMP);
         sqlTypeNameMap.put("TEXT", Types.LONGVARCHAR);
         sqlTypeNameMap.put("NTEXT", Types.LONGVARCHAR);
         sqlTypeNameMap.put("NVARCHAR", Types.VARCHAR);
         sqlTypeNameMap.put("UNIQUEIDENTIFIER", Types.VARCHAR);
-        sqlTypeNameMap.put("TIMESTAMP", Types.BINARY); // SQL SERVER type
+        sqlTypeNameMap.put("TIMESTAMP", Types.BINARY);
     }
 
     protected void addSqlTypeInts(Map<Integer, String> sqlTypeIntMap)

@@ -54,7 +54,7 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
             throw new IllegalArgumentException("List definition not found");
 
         List<String> errors;
-        DataLoader loader = getDataLoader();
+        DataLoader<Map<String, Object>> loader = getDataLoader();
         try
         {
             errors = def.insertListItems(getUser(), loader);

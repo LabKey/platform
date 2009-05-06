@@ -307,7 +307,7 @@ public class ListDefinitionImpl implements ListDefinition
         }
     }
 
-    public List<String> insertListItems(User user, DataLoader loader) throws IOException
+    public List<String> insertListItems(User user, DataLoader<Map<String, Object>> loader) throws IOException
     {
         List<String> errors = new ArrayList<String>();
         ArrayList<PropertyDescriptor> pds = new ArrayList<PropertyDescriptor>();

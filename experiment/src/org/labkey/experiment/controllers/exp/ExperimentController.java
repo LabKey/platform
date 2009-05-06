@@ -46,7 +46,7 @@ import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.gwt.server.BaseRemoteService;
-import org.labkey.api.reader.TabLoader;
+import org.labkey.api.reader.NewTabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.experiment.*;
 import org.labkey.experiment.api.*;
@@ -1226,7 +1226,7 @@ public class ExperimentController extends SpringActionController
                     }
                     else if (lowerCaseFileName.endsWith(".tsv") || lowerCaseFileName.endsWith(".txt") || lowerCaseFileName.endsWith(".tsv") || lowerCaseFileName.endsWith(".csv"))
                     {
-                        TabLoader tabLoader = new TabLoader(realContent);
+                        NewTabLoader tabLoader = new NewTabLoader(realContent);
                         if (lowerCaseFileName.endsWith(".csv"))
                         {
                             tabLoader.parseAsCSV();

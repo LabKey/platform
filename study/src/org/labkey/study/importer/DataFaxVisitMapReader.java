@@ -15,13 +15,13 @@
  */
 package org.labkey.study.importer;
 
-import org.labkey.api.reader.TabLoader;
+import org.labkey.api.reader.BeanTabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.util.Filter;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.io.IOException;
 
 /**
  * User: adam
@@ -36,7 +36,7 @@ public class DataFaxVisitMapReader implements VisitMapReader
 
         try
         {
-            TabLoader loader = new TabLoader(tsv, false);
+            BeanTabLoader<VisitMapRecord> loader = new BeanTabLoader<VisitMapRecord>(VisitMapRecord.class, tsv, false);
             loader.setColumns(new ColumnDescriptor[]
             {
                 new ColumnDescriptor("sequenceRange", String.class),
@@ -59,7 +59,7 @@ public class DataFaxVisitMapReader implements VisitMapReader
                 }
             });
 
-            return loader.load(VisitMapRecord.class);
+            return loader.load();
         }
         catch (IOException x)
         {

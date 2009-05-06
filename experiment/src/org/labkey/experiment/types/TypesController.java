@@ -16,34 +16,34 @@
 
 package org.labkey.experiment.types;
 
+import org.apache.commons.lang.StringUtils;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
+import org.labkey.api.collections.Cache;
+import org.labkey.api.data.*;
+import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.reader.TabLoader;
+import org.labkey.api.reader.BeanTabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
-import org.labkey.api.view.*;
-import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.data.*;
-import org.labkey.api.collections.Cache;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.action.SpringActionController;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.FormViewAction;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.view.*;
+import org.labkey.api.view.template.PageConfig;
 import org.labkey.experiment.controllers.exp.ExperimentController;
-import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.apache.commons.lang.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.io.BufferedReader;
 import java.io.StringReader;
-import java.sql.SQLException;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
 
@@ -432,8 +432,8 @@ public class TypesController extends SpringActionController
             throws Exception
     {
         BufferedReader r = new BufferedReader(new StringReader(tsv));
-        TabLoader loader = new TabLoader(r, true);
-        return loader.load(Concept.class);
+        BeanTabLoader<Concept> loader = new BeanTabLoader<Concept>(Concept.class, r, true);
+        return loader.load();
     }
 
 

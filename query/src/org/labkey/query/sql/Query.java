@@ -413,7 +413,7 @@ public class Query
 
 
 
-    private static class TestDataLoader extends DataLoader
+    private static class TestDataLoader extends DataLoader<Map<String,Object>>
     {
         static final String[] COLUMNS = new String[] {"d", "seven", "twelve", "day", "month", "date", "duration", "guid", "createdby", "created"};
         static final String[] TYPES = new String[] {"double", "int", "int", "string", "string", "date", "string", "string", "int", "date"};
@@ -459,7 +459,7 @@ public class Query
 
         int i=1;
 
-        public CloseableIterator<Map<String, Object>> iterator() throws IOException
+        public CloseableIterator<Map<String, Object>> iterator()
         {
             return new _Iterator();
         }
@@ -484,6 +484,10 @@ public class Query
             public void close() throws IOException
             {
             }
+        }
+
+        public void close()
+        {
         }
     }
 

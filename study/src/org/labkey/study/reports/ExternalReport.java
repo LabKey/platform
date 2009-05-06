@@ -33,7 +33,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.reader.TabLoader;
+import org.labkey.api.reader.NewTabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
@@ -492,7 +492,7 @@ public class ExternalReport extends AbstractReport
         @Override
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
-            TabLoader tabLoader = new TabLoader(file);
+            NewTabLoader tabLoader = new NewTabLoader(file);
             ColumnDescriptor[] cols = tabLoader.getColumns();
             List<Map<String, Object>> data = tabLoader.load();
             out.write("<table><tr>");

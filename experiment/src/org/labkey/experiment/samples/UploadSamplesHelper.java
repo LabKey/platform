@@ -26,7 +26,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.reader.TabLoader;
+import org.labkey.api.reader.NewTabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
@@ -56,7 +56,7 @@ public class UploadSamplesHelper
         {
             try
             {
-                TabLoader tl = new TabLoader(_form.getData(), true);
+                NewTabLoader tl = new NewTabLoader(_form.getData(), true);
                 Map<Integer, String> ret = new LinkedHashMap<Integer, String>();
                 if (allowBlank)
                 {
@@ -88,7 +88,7 @@ public class UploadSamplesHelper
         try
         {
             String input = _form.getData();
-            TabLoader tl = new TabLoader(input, true);
+            NewTabLoader tl = new NewTabLoader(input, true);
             tl.setScanAheadLineCount(200);
             String materialSourceLsid = ExperimentService.get().getSampleSetLsid(_form.getName(), _form.getContainer()).toString();
             source = ExperimentServiceImpl.get().getMaterialSource(materialSourceLsid);
