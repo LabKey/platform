@@ -175,7 +175,7 @@ LABKEY.Experiment = new function()
         {
             if (!config.successCallback) {
                 Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Exp.saveBatch()!");
-                return
+                return;
             }
 
             function createExp(json)
@@ -191,6 +191,34 @@ LABKEY.Experiment = new function()
                     batch: config.batch
                 },
                 success: getSuccessCallbackWrapper(createExp, config.successCallback, config.scope),
+                failure: getErrorCallbackWrapper(config.failureCallback, config.scope),
+                scope: config.scope,
+                headers: {
+                    'Content-Type' : 'application/json'
+                }
+            });
+        },
+
+        saveMaterial : function (config)
+        {
+            if (!config.successCallback) {
+                Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Exp.saveBatch()!");
+                return;
+            }
+
+            function createReturnedObject(json)
+            {
+                return null;
+            }
+
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("experiment", "saveMaterials", LABKEY.ActionURL.getContainer()),
+                method: 'POST',
+                jsonData: {
+                    name: config.name,
+                    materials: config.materials
+                },
+                success: getSuccessCallbackWrapper(createReturnedObject, config.successCallback, config.scope),
                 failure: getErrorCallbackWrapper(config.failureCallback, config.scope),
                 scope: config.scope,
                 headers: {
@@ -417,12 +445,11 @@ LABKEY.Exp.ProtocolApplication = function (config) {
 Ext.extend(LABKEY.Exp.ProtocolApplication, LABKEY.Exp.ExpObject);
 
 /**
- * The SampleSet constructor is private.
  * @class Experiment Sample Set
  * @extends LABKEY.Exp.ExpObject
  * @memberOf LABKEY.Exp
  *
- * @param {Object} [config] private constructor argument.
+ * @param {Object} [config] config.
  */
 LABKEY.Exp.SampleSet = function (config) {
     LABKEY.Exp.SampleSet.superclass.constructor.call(this, config);
@@ -478,12 +505,11 @@ LABKEY.Exp.ProtocolOutput = function (config) {
 Ext.extend(LABKEY.Exp.ProtocolOutput, LABKEY.Exp.ExpObject);
 
 /**
- * The Material constructor is private.
  * @class Experiment Material.
  * @extends LABKEY.Exp.ProtocolOutput
  * @memberOf LABKEY.Exp
  *
- * @param {Object} [config] private constructor argument.
+ * @param {Object} [config] config.
  */
 LABKEY.Exp.Material = function (config) {
     LABKEY.Exp.Material.superclass.constructor.call(this, config);
