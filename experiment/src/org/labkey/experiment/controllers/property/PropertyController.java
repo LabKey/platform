@@ -42,7 +42,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.ExcelLoader;
-import org.labkey.api.reader.NewTabLoader;
+import org.labkey.api.reader.TabLoader;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -200,7 +200,7 @@ public class PropertyController extends SpringActionController
             }
             else // tsv
             {
-                NewTabLoader dataLoader = new NewTabLoader(inferForm.getTsvText(), true);
+                TabLoader dataLoader = new TabLoader(inferForm.getTsvText(), true);
                 data = getData(dataLoader);
             }
 
@@ -315,11 +315,11 @@ public class PropertyController extends SpringActionController
             }
             else if (suffix.equals("tsv") || suffix.equals("txt"))
             {
-                dataLoader = new NewTabLoader(tempFile, true);
+                dataLoader = new TabLoader(tempFile, true);
             }
             else if (suffix.equals("csv"))
             {
-                NewTabLoader loader = new NewTabLoader(tempFile, true);
+                TabLoader loader = new TabLoader(tempFile, true);
                 loader.parseAsCSV();
                 dataLoader = loader;
             }

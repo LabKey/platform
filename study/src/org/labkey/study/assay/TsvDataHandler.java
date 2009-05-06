@@ -29,7 +29,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.ExcelLoader;
-import org.labkey.api.reader.NewTabLoader;
+import org.labkey.api.reader.TabLoader;
 
 import java.io.File;
 import java.io.IOException;
@@ -97,7 +97,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler
             }
             else
             {
-                loader = new NewTabLoader(inputFile, true);
+                loader = new TabLoader(inputFile, true);
             }
             for (ColumnDescriptor column : loader.getColumns())
             {

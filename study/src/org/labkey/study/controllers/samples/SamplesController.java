@@ -40,7 +40,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.reader.ColumnDescriptor;
-import org.labkey.api.reader.NewTabLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.util.Pair;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
@@ -1103,7 +1103,7 @@ public class SamplesController extends ViewController
         requiresAdmin();
         SimpleSpecimenImporter importer = new SimpleSpecimenImporter();
 
-        NewTabLoader loader = new NewTabLoader(form.getTsv(), true);
+        TabLoader loader = new TabLoader(form.getTsv(), true);
         Map<String,String> columnAliases = new CaseInsensitiveHashMap<String>();
         //Make sure we accept the labels
         for (Map.Entry<String,String> entry : importer.getColumnLabels().entrySet())

@@ -53,7 +53,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.Cache;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
-import org.labkey.api.reader.NewTabLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.study.QueryHelper;
 import org.labkey.study.SampleManager;
@@ -2121,7 +2121,7 @@ public class StudyManager
                                      Map<String, String> columnMap, List<String> errors, boolean checkDuplicates, QCState defaultQCState)
             throws IOException, ServletException, SQLException
     {
-        NewTabLoader loader = new NewTabLoader(tsv, true);
+        TabLoader loader = new TabLoader(tsv, true);
         return importDatasetData(study, user, def, loader, lastModified, columnMap, errors, checkDuplicates, defaultQCState);
     }
 
@@ -2382,7 +2382,7 @@ public class StudyManager
                 if (def.isKeyPropertyManaged())
                 {
                     int currentKey = getMaxKeyValue(def, user);
-                    // Sadly, may have to create new maps, since NewTabLoader's aren't modifyable
+                    // Sadly, may have to create new maps, since TabLoader's aren't modifyable
                     for (int i=0;i<dataMaps.size();i++)
                     {
                         // Only insert if there isn't already a value
@@ -2430,17 +2430,17 @@ public class StudyManager
 
     public boolean bulkImportTypes(Study study, String tsv, User user, String labelColumn, String typeNameColumn, String typeIdColumn, BindException errors) throws IOException, SQLException
     {
-        return bulkImportTypes(study, new NewTabLoader(tsv), user, labelColumn, typeNameColumn, typeIdColumn, errors);
+        return bulkImportTypes(study, new TabLoader(tsv), user, labelColumn, typeNameColumn, typeIdColumn, errors);
     }
 
 
     public boolean bulkImportTypes(Study study, File tsvFile, User user, String labelColumn, String typeNameColumn, String typeIdColumn, BindException errors) throws IOException, SQLException
     {
-        return bulkImportTypes(study, new NewTabLoader(tsvFile), user, labelColumn, typeNameColumn, typeIdColumn, errors);
+        return bulkImportTypes(study, new TabLoader(tsvFile), user, labelColumn, typeNameColumn, typeIdColumn, errors);
     }
 
 
-    private boolean bulkImportTypes(Study study, NewTabLoader loader, User user, String labelColumn, String typeNameColumn, String typeIdColumn, BindException errors) throws IOException, SQLException
+    private boolean bulkImportTypes(Study study, TabLoader loader, User user, String labelColumn, String typeNameColumn, String typeIdColumn, BindException errors) throws IOException, SQLException
     {
         loader.setHasColumnHeaders(true);
         loader.setParseQuotes(true);

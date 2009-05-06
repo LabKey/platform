@@ -46,7 +46,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.reader.NewTabLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.experiment.list.ListAuditViewFactory;
 import org.labkey.experiment.list.ListManager;
 import org.labkey.experiment.list.client.ListImporter;
@@ -817,7 +817,7 @@ public class ListController extends SpringActionController
                 return false;
             }
 
-            NewTabLoader tl = new NewTabLoader(form.ff_data, true);
+            TabLoader tl = new TabLoader(form.ff_data, true);
             _list = form.getList();
             if (_list == null)
                 HttpView.throwNotFound();

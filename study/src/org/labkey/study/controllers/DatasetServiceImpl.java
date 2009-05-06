@@ -38,7 +38,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.reader.NewTabLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.study.dataset.client.DatasetService;
 import org.labkey.study.dataset.client.model.GWTDataset;
 import org.labkey.study.model.Cohort;
@@ -270,7 +270,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             List<Map<String, Object>> maps = null;
             if (null != tsv && tsv.length() > 0)
             {
-                NewTabLoader loader = new NewTabLoader(tsv, true);
+                TabLoader loader = new TabLoader(tsv, true);
                 maps = loader.load();
             }
 

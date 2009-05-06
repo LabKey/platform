@@ -26,7 +26,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.util.GUID;
-import org.labkey.api.reader.NewTabLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.NetworkDrive;
@@ -1326,7 +1326,7 @@ public class SpecimenImporter
         for (ImportableColumn col : columns)
             expectedColumns.put(col.getTsvColumnName().toLowerCase(), col.getColumnDescriptor());
 
-        NewTabLoader loader = new NewTabLoader(tsvFile);
+        TabLoader loader = new TabLoader(tsvFile);
         for (ColumnDescriptor column : loader.getColumns())
         {
             ColumnDescriptor expectedColumnDescriptor = expectedColumns.get(column.name.toLowerCase());

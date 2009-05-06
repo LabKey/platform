@@ -21,7 +21,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.CloseableIterator;
-import org.labkey.api.reader.NewTabLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
@@ -97,14 +97,14 @@ public class SimpleSpecimenImporter extends SpecimenImporter
 
     public void process(User user, Container container, File tsvFile, Logger logger) throws SQLException, IOException, ConversionException
     {
-        NewTabLoader tl = new NewTabLoader(tsvFile);
+        TabLoader tl = new TabLoader(tsvFile);
         tl.setThrowOnErrors(true);
         fixupSpecimenColumns(tl);
 
         _process(user, container, tl.load(), logger);
     }
 
-    public void fixupSpecimenColumns(NewTabLoader tl)
+    public void fixupSpecimenColumns(TabLoader tl)
             throws IOException
     {
         ColumnDescriptor[] cols = tl.getColumns();
