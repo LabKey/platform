@@ -73,7 +73,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 		{
 			super(parent.getPath(), QUERY_NAME);
 			_c = parent.getContainer();
-			_acl = _c.getAcl();
+			_policy = _c.getPolicy();
 		}
 		
 		public boolean exists()
@@ -124,7 +124,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 		{
 			super(parent.getPath(), schemaName);
 			_parent = parent;
-			_acl = _parent._c.getAcl();
+			_policy = _parent._c.getPolicy();
 		}
 		
 		public boolean exists()
@@ -173,7 +173,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 		{
 			super(parent.getPath(), query.getName() + ".sql");
 			_parent = parent;
-			_acl = _parent._parent._c.getAcl();
+			_policy = _parent._parent._c.getPolicy();
 			_q = query;
 		}
 

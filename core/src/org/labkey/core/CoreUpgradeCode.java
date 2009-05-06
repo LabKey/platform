@@ -17,17 +17,14 @@ package org.labkey.core;
 
 import org.labkey.api.data.*;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.Module;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.*;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.ResultSetUtil;
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 
 import java.sql.SQLException;
 import java.sql.ResultSet;
@@ -156,55 +153,91 @@ public class CoreUpgradeCode implements UpgradeCode
         configProps.remove(propertyName);
     }
 
-    //Not yet invoked--will call this once we have UI to edit new security policies
+    //invoked by core-9.13-9.14.sql
     public void migrateAcls(ModuleContext context)
     {
         int numAcls = 0;
         _log.info("Migrating existing ACLs to RoleAssignments...");
 
-        TableInfo tableAcls = CoreSchema.getInstance().getTableInfoACLs();
         ResultSet rs = null;
+        String insertPolicySql = "insert into core.Policies(ResourceId,ResourceClass,Container,Modified) values(?,?,?,?)";
+        String insertAssignmentSql = "insert into core.RoleAssignments(ResourceId,UserId,Role) values (?,?,?)";
+        Role siteAdminRole = new SiteAdminRole();
+        Date now = new Date();
+
         try
         {
-            rs = Table.select(tableAcls, Table.ALL_COLUMNS, null, null);
+            DbSchema coreSchema = CoreSchema.getInstance().getSchema();
+
+            //delete any previously-migrated data in case we failed part way through
+            Table.execute(coreSchema, "delete from core.RoleAssignments", null);
+            Table.execute(coreSchema, "delete from core.Policies", null);
+
+            //get all the user ids so that we can verify if a particular group id
+            //still exists and ignore if not--returned array is sorted so we can
+            //use Arrays.binarySearch()
+            int[] userIds = getAllUserIds();
+
+            rs = Table.executeQuery(coreSchema, "select * from core.ACLs", null);
             while(rs.next())
             {
+                //NOTE: container id may be null in some old databases!
+                //not sure exactly what this means, but we need to handle that case
                 String containerId = rs.getString("Container");
                 String objectId = rs.getString("ObjectId");
+                String resourceClass = objectId.equals(containerId) ? Container.class.getName() : null;
+
                 ACL acl = new ACL(rs.getBytes("ACL"));
                 int[] groups = acl.getAllGroups();
                 int[] perms = acl.getAllPermissions();
+                boolean empty = true; //will be set to true if ACL contains a valid group id
 
-                Container container = ContainerManager.getForId(containerId);
-                if(null == container)
-                {
-                    _log.warn("Could not resolve ACL container id " + containerId + "! Skipping ACL.");
-                    continue;
-                }
+                //get the container in order to determine if it's a project or folder
+                Container container = null == containerId ? null : ContainerManager.getForId(containerId);
 
-                ACLConversionResource resource = new ACLConversionResource(container, objectId);
-                ResourceSecurityPolicy policy = new ResourceSecurityPolicy(resource);
+                //insert into policies
+                Table.execute(coreSchema, insertPolicySql,
+                        new Object[]{objectId, resourceClass, containerId, now});
+
+                //iterate over all groups in the ACL, mapping the store perms to a role
+                //and saving that role assignment to the new table
                 for(int idx = 0; idx < groups.length; ++idx)
                 {
-                    Group group = SecurityManager.getGroup(groups[idx]);
-                    if(null == group)
+                    //note that the old ACLs might contain groups that no longer exist
+                    //the old binary format made it difficult to scrub when a group was deleted
+                    //so check the group against the full list in memory and skip if not found
+                    if(Arrays.binarySearch(userIds, groups[idx]) > 0)
                     {
-                        _log.warn("Could not resolve group id " + groups[idx] + " in ACL for object id " + objectId + "! Skipping group permissions.");
-                        continue;
-                    }
-                    Role role = getRoleForPerms(perms[idx]);
-                    if(null == role)
-                    {
-                        _log.warn("Unable to determine a role for permissions bits " + perms[idx] + " in ACL for object id " + objectId + "! Skipping role assignment.");
-                        continue;
-                    }
+                        Role role = getRoleForPerms(perms[idx], container, objectId);
+                        if(null == role)
+                        {
+                            _log.warn("Unable to determine a role for permissions bits 0x" + Integer.toHexString(perms[idx])
+                                    + " in ACL for object id " + objectId + " and group id " + groups[idx]
+                                    + "! Skipping role assignment.");
+                            continue;
+                        }
 
-                    policy.addRoleAssignment(group, role);
+                        Table.execute(coreSchema, insertAssignmentSql,
+                                new Object[]{objectId, groups[idx], role.getUniqueName()});
+                        empty = false;
+                    }
                 }
 
-                SecurityManager.savePolicy(policy);
+                if(empty)
+                {
+                    //if the acl is empty, that means no group still in existence has permissions to this object
+                    //but parts of our code generally check explicitly for user.isAdmin() to
+                    //allow admins access to the object. The real equivallent is to assign
+                    //the administrators group to the site admin role for this object
+                    //and that's all.
+                    Table.execute(CoreSchema.getInstance().getSchema(), insertAssignmentSql,
+                            new Object[]{objectId, Group.groupAdministrators, siteAdminRole.getUniqueName(),
+                                    containerId, resourceClass});
+                }
 
                 ++numAcls;
+                if((numAcls % 100) == 0)
+                    _log.info("Migrated " + numAcls + " ACLs...");
             }
         }
         catch(SQLException e)
@@ -220,76 +253,49 @@ public class CoreUpgradeCode implements UpgradeCode
         _log.info("Finished migrating " + numAcls + " ACLs to RoleAssignments.");
     }
 
-    private Role getRoleForPerms(int perms)
+    private int[] getAllUserIds() throws SQLException
+    {
+        Integer[] principalIds = Table.executeArray(CoreSchema.getInstance().getSchema(), "select UserId from core.Principals order by UserId", null, Integer.class);
+        int[] ret = new int[principalIds.length];
+        for(int idx = 0; idx < principalIds.length; ++idx)
+        {
+            ret[idx] = principalIds[idx].intValue();
+        }
+        return ret;
+    }
+
+    private Role getRoleForPerms(int perms, Container container, String objectId)
     {
         if(SecurityManager.PermissionSet.ADMIN.getPermissions() == perms)
-            return new SiteAdminRole();
+        {
+            if(null == container || container.isRoot())
+                return new SiteAdminRole();
+            else if(container.isProject())
+                return new ProjectAdminRole();
+            else
+                return new FolderAdminRole();
+        }
         else if(SecurityManager.PermissionSet.EDITOR.getPermissions() == perms)
             return new EditorRole();
-        else if(SecurityManager.PermissionSet.AUTHOR.getPermissions() == perms)
+        else if(SecurityManager.PermissionSet.AUTHOR.getPermissions() == perms || (ACL.PERM_READ | ACL.PERM_INSERT) == perms)
             return new AuthorRole();
         else if(SecurityManager.PermissionSet.READER.getPermissions() == perms)
             return new ReaderRole();
         else if(SecurityManager.PermissionSet.RESTRICTED_READER.getPermissions() == perms)
-            return null; //NOTE: read-own is now implemented via the Owner contextual role
+        {
+            //HACK: this was never really implemented on the container itself,
+            //but study used this to distinguish between "read-some" and "read-all"
+            //In either case, we should migrate to a normal reader role.
+            return new RestrictedReaderRole();
+        }
         else if(SecurityManager.PermissionSet.SUBMITTER.getPermissions() == perms)
             return new SubmitterRole();
         else if(SecurityManager.PermissionSet.NO_PERMISSIONS.getPermissions() == perms)
             return new NoPermissionsRole();
+        else if((ACL.PERM_UPDATE | ACL.PERM_READ) == perms) //special case for editable datasets
+            return new EditorRole();
         else
             return null;
     }
-
-    //used strictly for conversion of ACLs
-    private static class ACLConversionResource implements SecurableResource
-    {
-        private Container _container;
-        private String _resourceId;
-
-        public ACLConversionResource(Container container, String objectId)
-        {
-            _resourceId = objectId;
-            _container = container;
-        }
-
-        @NotNull
-        public String getResourceId()
-        {
-            return _resourceId;
-        }
-
-        @NotNull
-        public String getName()
-        {
-            return "";
-        }
-
-        @NotNull
-        public String getDescription()
-        {
-            return "";
-        }
-
-        @NotNull
-        public Set<Class<? extends Permission>> getRelevantPermissions()
-        {
-            return Collections.emptySet();
-        }
-
-        public Module getSourceModule()
-        {
-            return null;
-        }
-
-        public SecurableResource getParent()
-        {
-            return null;
-        }
-
-        @NotNull
-        public Container getContainer()
-        {
-            return _container;
-        }
-    }
+    
 }

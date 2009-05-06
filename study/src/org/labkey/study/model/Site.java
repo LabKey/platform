@@ -209,7 +209,7 @@ public class Site extends AbstractStudyEntity<Site>
     }
 
     @Override
-    protected boolean supportsACLUpdate()
+    protected boolean supportsPolicyUpdate()
     {
         return true;
     }

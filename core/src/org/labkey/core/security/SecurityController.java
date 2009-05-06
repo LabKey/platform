@@ -18,13 +18,13 @@ package org.labkey.core.security;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
 import org.labkey.api.action.*;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.roles.*;
 import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
@@ -884,17 +884,18 @@ public class SecurityController extends SpringActionController
             {
                 if (child != null)
                 {
-                    ACL acl = child.getAcl();
-                    int permissions = acl.getPermissions(requestedGroup);
-                    SecurityManager.PermissionSet set = SecurityManager.PermissionSet.findPermissionSet(permissions);
-                    assert set != null : "Unknown permission set: " + permissions;
-                    String access;
-                    if (set == null)
-                        access = "Unknown: " + permissions;
-                    else
-                        access = set.getLabel();
+                    SecurityPolicy policy = child.getPolicy();
+                    String sep = "";
+                    StringBuilder access = new StringBuilder();
+                    Collection<Role> roles = policy.getEffectiveRoles(requestedGroup);
+                    for(Role role : roles)
+                    {
+                        access.append(sep);
+                        access.append(role.getName());
+                        sep = ", ";
+                    }
 
-                    rows.add(new UserController.AccessDetailRow(child, access, null, depth));
+                    rows.add(new UserController.AccessDetailRow(child, access.toString(), null, depth));
                     buildAccessDetailList(child.getChildren(), rows, requestedGroup, depth + 1);
                 }
             }
@@ -996,36 +997,35 @@ public class SecurityController extends SpringActionController
             {
                 addAuditEvent(getUser(), String.format("Container %s was updated to inherit security permissions", c.getName()), 0);
 
-                Container container = c.getParent();
-                ACL old = SecurityManager.getACL(c);
-                ACL cur = SecurityManager.getACL(container);
-                changeType = AuditChangeType.toInherited;
+                //get any existing policy specifically for this container (may return null)
+                SecurityPolicy oldPolicy = SecurityManager.getPolicy(c, false);
 
-                while (cur.isEmpty() && container.getParent() != null)
-                {
-                    // find the acl that applies
-                    container = container.getParent();
-                    cur = SecurityManager.getACL(container);
-                }
+                //delete if we found one
+                if(null != oldPolicy)
+                    SecurityManager.deletePolicy(c);
+
+                //now get the nearest policy for this container so we can write to the
+                //audit log how the permissions have changed
+                SecurityPolicy newPolicy = SecurityManager.getPolicy(c);
+
+                changeType = AuditChangeType.toInherited;
 
                 for (Group g : SecurityManager.getGroups(c.getProject(), true))
                 {
-                    addAuditEvent(g.getUserId(), cur.getPermissions(g), old, changeType);
+                    //addAuditEvent(g.getUserId(), newPolicy, oldPolicy, changeType);
                 }
-                SecurityManager.removeACL(c, c.getId());
             }
             else
             {
-                ACL acl = new ACL(false); // not empty
-                Container container = c;
-                ACL old = SecurityManager.getACL(container);
+                SecurityPolicy newPolicy = new SecurityPolicy(c);
 
-                while (old.isEmpty() && container.getParent() != null)
-                {
-                    container = container.getParent();
-                    old = SecurityManager.getACL(container);
+                //get the current nearest policy for this container
+                SecurityPolicy oldPolicy = SecurityManager.getPolicy(c);
+
+                //if resource id is not the same as the current container
+                //set chagne type to indicate we're moving from inhereted
+                if(!oldPolicy.getResource().getResourceId().equals(c.getResourceId()))
                     changeType = AuditChangeType.fromInherited;
-                }
 
                 HttpServletRequest request = getViewContext().getRequest();
                 Enumeration e = request.getParameterNames();
@@ -1036,13 +1036,18 @@ public class SecurityController extends SpringActionController
                         String key = (String) e.nextElement();
                         if (!key.startsWith("group."))
                             continue;
-                        String value = request.getParameter(key);
                         int groupid = (int) Long.parseLong(key.substring(6), 16);
-                        int perm = NumberUtils.toInt(value, 0);
+                        Group group = SecurityManager.getGroup(groupid);
+                        if(null == group)
+                            continue; //invalid group id
 
-                        addAuditEvent(groupid, perm, old, changeType);
-                        if (perm != 0)
-                            acl.setPermission(groupid, perm);
+                        String roleName = request.getParameter(key);
+                        Role role = RoleManager.getRole(roleName);
+                        if(null == role)
+                            continue; //invalid role name
+
+                        //addAuditEvent(groupid, role, oldPolicy, changeType);
+                        newPolicy.addRoleAssignment(group, role);
                     }
                     catch (NumberFormatException x)
                     {
@@ -1050,7 +1055,7 @@ public class SecurityController extends SpringActionController
                     }
                 }
 
-                SecurityManager.updateACL(c, acl);
+                SecurityManager.savePolicy(newPolicy);
             }
             return true;
         }
@@ -1416,13 +1421,13 @@ public class SecurityController extends SpringActionController
 
         protected Map<String,Object> getContainerPerms(Container container, Group[] groups, boolean recurse)
         {
-            ACL acl = container.getAcl();
+            SecurityPolicy policy = container.getPolicy();
             Map<String,Object> containerPerms = new HashMap<String,Object>();
             containerPerms.put("path", container.getPath());
             containerPerms.put("id", container.getId());
             containerPerms.put("name", container.getName());
             containerPerms.put("isInheritingPerms", container.isInheritedAcl());
-            containerPerms.put("groups", getGroupPerms(container, acl, groups));
+            containerPerms.put("groups", getGroupPerms(container, policy, groups));
 
             if(recurse && container.hasChildren())
             {
@@ -1438,10 +1443,10 @@ public class SecurityController extends SpringActionController
             return containerPerms;
         }
 
-        protected List<Map<String,Object>> getGroupPerms(Container container, ACL acl, Group[] groups)
+        protected List<Map<String,Object>> getGroupPerms(Container container, SecurityPolicy policy, Group[] groups)
         {
-            if(null == acl)
-                acl = container.getAcl();
+            if(null == policy)
+                policy = container.getPolicy();
 
             if(null == groups)
                 return null;
@@ -1456,7 +1461,7 @@ public class SecurityController extends SpringActionController
                 groupPerms.put("isSystemGroup", group.isSystemGroup());
                 groupPerms.put("isProjectGroup", group.isProjectGroup());
 
-                int perms = acl.getPermissions(group);
+                int perms = policy.getPermsAsOldBitMask(group);
                 groupPerms.put("permissions", perms);
 
                 SecurityManager.PermissionSet role = SecurityManager.PermissionSet.findPermissionSet(perms);
@@ -1549,8 +1554,8 @@ public class SecurityController extends SpringActionController
             permsInfo.put("path", container.getPath());
 
             //add user's effective permissions
-            ACL acl = container.getAcl();
-            int perms = acl.getPermissions(user);
+            SecurityPolicy policy = container.getPolicy();
+            int perms = policy.getPermsAsOldBitMask(user);
             permsInfo.put("permissions", perms);
 
             //see if those match a given role name
@@ -1575,7 +1580,7 @@ public class SecurityController extends SpringActionController
                 groupInfo.put("id", group.getUserId());
                 groupInfo.put("name", SecurityManager.getDisambiguatedGroupName(group));
 
-                int groupPerms = acl.getPermissions(group);
+                int groupPerms = policy.getPermsAsOldBitMask(group);
                 groupInfo.put("permissions", groupPerms);
 
                 SecurityManager.PermissionSet groupRole = SecurityManager.PermissionSet.findPermissionSet(groupPerms);
@@ -1672,15 +1677,24 @@ public class SecurityController extends SpringActionController
 
             User site = TestContext.get().getUser();
             assertTrue(site.isAdministrator());
-            User guest = new TestUser("guest", 0, Group.groupGuests);
-            User user = new TestUser("user", 1, Group.groupGuests, Group.groupUsers);
-            User admin = new TestUser("admin", 2, Group.groupGuests, Group.groupUsers);
 
-            ACL acl = c.getAcl();
-            acl.setPermission(admin, ACL.PERM_ALLOWALL);
-            acl.setPermission(guest, ACL.PERM_READ);
-            acl.setPermission(user, ACL.PERM_UPDATE);
-            SecurityManager.updateACL(c, acl);            
+            User guest = SecurityManager.addUser(new ValidEmail("guest@scjutc.com")).getUser();
+            Group guestsGroup = SecurityManager.getGroup(Group.groupGuests);
+            SecurityManager.addMember(guestsGroup, guest);
+
+            User user = SecurityManager.addUser(new ValidEmail("user@scjutc.com")).getUser();
+            Group usersGroup = SecurityManager.getGroup(Group.groupUsers);
+            SecurityManager.addMember(usersGroup, user);
+
+            User admin = SecurityManager.addUser(new ValidEmail("admin@scjutc.com")).getUser();
+            SecurityManager.addMember(usersGroup, admin);
+            SecurityManager.addMember(guestsGroup, admin);
+
+            SecurityPolicy policy = c.getPolicy();
+            policy.addRoleAssignment(admin, RoleManager.getRole(SiteAdminRole.class));
+            policy.addRoleAssignment(guest, RoleManager.getRole(ReaderRole.class));
+            policy.addRoleAssignment(user, RoleManager.getRole(EditorRole.class));
+            SecurityManager.savePolicy(policy);
 
             // @RequiresPermission(ACL.PERM_NONE)
             assertPermission(guest, BeginAction.class);
@@ -1701,6 +1715,9 @@ public class SecurityController extends SpringActionController
             assertPermission(site, AddUsersAction.class);
 
             assertTrue(ContainerManager.delete(c, null));
+            UserManager.deleteUser(admin.getUserId());
+            UserManager.deleteUser(user.getUserId());
+            UserManager.deleteUser(guest.getUserId());
         }
 
 

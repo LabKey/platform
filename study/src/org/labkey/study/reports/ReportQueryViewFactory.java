@@ -21,14 +21,15 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.MenuButton;
@@ -92,11 +93,11 @@ public class ReportQueryViewFactory
      */
     private boolean mustCheckDatasetPermissions(User user, ReportDescriptor descriptor) throws ServletException
     {
-        ACL acl = descriptor.getACL();
-        if (acl == null || acl.isEmpty())
+        SecurityPolicy policy = SecurityManager.getPolicy(descriptor, false);
+        if (policy.isEmpty())
             return true;    // normal permission checking
 
-        if ((descriptor.getPermissions(user) & ACL.PERM_READ) == 0)
+        if (!policy.hasPermission(user, ReadPermission.class))
             HttpView.throwUnauthorized();
 
         return false;   // user is OK, don't check permissions

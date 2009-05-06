@@ -173,7 +173,7 @@ public class FtpController extends SpringActionController
             info.path = resource.getPath();
             info.created = resource.getCreated();
             info.fsRoot = resource.getFile() == null ? null : initFileSystemRoot(resource.getFile());
-            info.perm = ((WebdavResolver.WebFolder)resource).getPermissions(user);
+            info.perm = ((WebdavResolver.WebFolder)resource).getIntPermissions(user);
             List<String> webFoldersNames = ((WebdavResolver.WebFolder)resource).getWebFoldersNames(user);
             info.subfolders = webFoldersNames.toArray(new String[webFoldersNames.size()]);
             return info;

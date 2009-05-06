@@ -77,7 +77,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
             URI uriRoot = (root != null) ? root.getUri(c) : null;
             if (uriRoot != null)
             {
-                _acl = org.labkey.api.security.SecurityManager.getACL(c, root.getEntityId());
+                _policy = org.labkey.api.security.SecurityManager.getPolicy(root);
                 _file = FileUtil.canonicalFile(uriRoot);
             }
         }
@@ -85,7 +85,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
         @Override
         protected boolean hasAccess(User user)
         {
-            return user.isAdministrator() || c.getAcl().getPermissions(user) != 0;
+            return user.isAdministrator() || c.getPolicy().getPermissions(user).size() > 0;
         }
 
         @Override

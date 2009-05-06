@@ -16,7 +16,6 @@
 
 package org.labkey.wiki;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.*;
@@ -27,6 +26,9 @@ import org.labkey.api.module.Module;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HString;
@@ -94,7 +96,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         {
             super(c.getPath(), WIKI_NAME);
             _c = c;
-            _acl = c.getAcl();
+            _policy = c.getPolicy();
         }
 
         @Override
@@ -186,7 +188,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         {
             super(folder.getPath(), name);
             _c = folder._c;
-            _acl = _c.getAcl();
+            _policy = _c.getPolicy();
             _wiki = WikiManager.getWiki(_c, new HString(name));
             _attachments = AttachmentService.get().getAttachmentResource(getPath(), _wiki);               
         }
@@ -281,7 +283,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         {
             super(folder.getPath(), docName);
             _folder = folder;
-            _acl = _folder._c.getAcl();
+            _policy = _folder._c.getPolicy();
             _wiki = wiki;
         }
 
@@ -449,10 +451,13 @@ class WikiWebdavProvider implements WebdavService.Provider
         }
 
         @Override
-        public int getPermissions(User user)
+        public Set<Class<? extends Permission>> getPermissions(User user)
         {
             // READ-WRITE for now
-            return super.getPermissions(user) & (ACL.PERM_READ|ACL.PERM_UPDATE);
+            Set<Class<? extends Permission>> perms = super.getPermissions(user);
+            perms.add(ReadPermission.class);
+            perms.add(UpdatePermission.class);
+            return perms;
         }
 
         @Override

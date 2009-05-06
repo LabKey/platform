@@ -22,6 +22,10 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.study.model.SecurityType"%>
 <%@ page import="org.labkey.study.model.Study" %>
+<%@ page import="org.labkey.api.security.SecurityPolicy" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
+<%@ page import="org.labkey.api.security.permissions.ReadSomePermission" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     HttpView<Study> me = (HttpView<Study>) HttpView.currentView();
@@ -49,8 +53,8 @@ Any user with READ access to this folder may view some summary data.  However, a
             <th width=100>PER&nbsp;DATASET<%=PageFlowUtil.helpPopup("PER DATASET","user/group may view and/or edit rows in some datasets, configured per dataset")%></th>
             <th width=100>NONE<%=PageFlowUtil.helpPopup("NONE","user/group may not view or edit any detail data")%></th></tr>
     <%
-    ACL folderACL = me.getViewContext().getContainer().getAcl();
-    ACL studyACL = study.getACL();
+    SecurityPolicy folderPolicy = me.getViewContext().getContainer().getPolicy();
+    SecurityPolicy studyPolicy = SecurityManager.getPolicy(study);
     Group[] groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
     for (Group group : groups)
     {
@@ -59,10 +63,9 @@ Any user with READ access to this folder may view some summary data.  However, a
         String name = group.getName();
         if (group.getUserId() == Group.groupUsers)
             name = "All site users";
-        int perm = studyACL.getPermissions(group.getUserId()) & (ACL.PERM_UPDATE | ACL.PERM_READ | ACL.PERM_READOWN);
-        boolean hasFolderRead = folderACL.hasPermission(group, ACL.PERM_READ);
-        boolean hasUpdatePerm = 0 != (perm & ACL.PERM_UPDATE);
-        boolean hasReadAllPerm = (!hasUpdatePerm) && 0 != (perm & ACL.PERM_READ);
+        boolean hasFolderRead = folderPolicy.hasPermission(group, ReadPermission.class);
+        boolean hasUpdatePerm = studyPolicy.hasPermission(group, UpdatePermission.class);
+        boolean hasReadAllPerm = (!hasUpdatePerm) && studyPolicy.hasPermission(group, ReadPermission.class);
         if (!includeEditOption && hasUpdatePerm)
             hasReadAllPerm = true;
         String inputName = "group." + group.getUserId();
@@ -73,8 +76,8 @@ Any user with READ access to this folder may view some summary data.  However, a
         }
         %>
         <th><input type=radio name="<%=inputName%>" value="READ" <%=hasReadAllPerm?"checked":""%>></th>
-        <th><input type=radio name="<%=inputName%>" value="READOWN" <%=perm==ACL.PERM_READOWN?"checked":""%>></th>
-        <th><input type=radio name="<%=inputName%>" value="NONE" <%=perm==0?"checked":""%>></th><%
+        <th><input type=radio name="<%=inputName%>" value="READOWN" <%=!hasReadAllPerm && !hasUpdatePerm && studyPolicy.hasPermission(group, ReadSomePermission.class)?"checked":""%>></th>
+        <th><input type=radio name="<%=inputName%>" value="NONE" <%=!hasReadAllPerm && !studyPolicy.hasPermission(group, ReadSomePermission.class)?"checked":""%>></th><%
         if (!hasFolderRead)
         {
             %><td><img src="<%=contextPath%>/_images/exclaim.gif" alt="group does not have folder read permissions" title="group does not have folder read permissions"></td><%

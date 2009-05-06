@@ -28,6 +28,9 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -813,41 +816,36 @@ public class UserController extends SpringActionController
             return;
         for (Container child : children)
         {
-            ACL acl = child.getAcl();
-            int permissions = acl.getPermissions(requestedUser);
-            SecurityManager.PermissionSet set = SecurityManager.PermissionSet.findPermissionSet(permissions);
-            //assert set != null : "Unknown permission set: " + permissions;
-            String access;
-            if (set == null)
-                access = SecurityManager.PermissionSet.getLabel(permissions);
-            else
+            String sep = "";
+            StringBuilder access = new StringBuilder();
+            SecurityPolicy policy = SecurityManager.getPolicy(child);
+            Set<Role> effectiveRoles = policy.getEffectiveRoles(requestedUser);
+            effectiveRoles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
+            for(Role role : effectiveRoles)
             {
-                access = set.getLabel();
-                // use set.getPermissions because this is guaranteed to be minimal: only READ or READ_OWN will be
-                // set, but not both.  This is important because otherwise we might ask the acl if we have both
-                // permission bits set, which may not be the case.  We only care if the greater of the two is set,
-                // which the PermissionSet object guarantees.
-                permissions = set.getPermissions();
+                access.append(sep);
+                access.append(role.getName());
+                sep = ", ";
             }
+
             List<Group> relevantGroups = new ArrayList<Group>();
-            if (set == null || set != SecurityManager.PermissionSet.NO_PERMISSIONS)
+            if (effectiveRoles.size() > 0)
             {
                 Group[] groups = SecurityManager.getGroups(child.getProject(), true);
                 for (Group group : groups)
                 {
                     if (requestedUser.isInGroup(group.getUserId()))
                     {
-                        if (set != null && acl.hasPermission(group, permissions))
-                            relevantGroups.add(group);
-                        // Issue #5645, if the held permission does not correspond to a standard role,
-                        // it also means that a single group does not hold the entire permission set, instead
-                        // we need to check whether the group has any part of the aggregate permission.
-                        else if (set == null && (acl.getPermissions(group) & permissions) != 0)
-                            relevantGroups.add(group);
+                        Collection<Role> groupRoles = policy.getAssignedRoles(group);
+                        for(Role role : effectiveRoles)
+                        {
+                            if (groupRoles.contains(role))
+                                relevantGroups.add(group);
+                        }
                     }
                 }
             }
-            rows.add(new AccessDetailRow(child, access, relevantGroups, depth));
+            rows.add(new AccessDetailRow(child, access.toString(), relevantGroups, depth));
             buildAccessDetailList(containerTree, child, rows, requestedUser, depth + 1);
         }
     }

@@ -25,8 +25,10 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -365,8 +367,8 @@ public class ReportManager implements StudyManager.UnmaterializeListener
      */
     public boolean canReadReport(User user, Container c, Report report)
     {
-        ACL acl = report.getDescriptor().getACL();
-        if (acl == null || acl.isEmpty())
+        SecurityPolicy policy = SecurityManager.getPolicy(report.getDescriptor(), false);
+        if (policy.isEmpty())
         {
             Study study = StudyManager.getInstance().getStudy(c);
 
@@ -393,11 +395,11 @@ public class ReportManager implements StudyManager.UnmaterializeListener
                 return true;
             }
             else
-                return c.getAcl().hasPermission(user, ACL.PERM_READ);
+                return c.getPolicy().hasPermission(user, ReadPermission.class);
         }
         else
             // explicit permissions
-            return acl.hasPermission(user, ACL.PERM_READ);
+            return policy.hasPermission(user, ReadPermission.class);
     }
 
     private Report createReport(StudyReport report)

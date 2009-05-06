@@ -24,10 +24,9 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportIdentifier;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.roles.*;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
@@ -37,7 +36,6 @@ import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.reports.ReportManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -97,12 +95,14 @@ public class SecurityController extends SpringActionController
             for (Group g : groups)
                 set.add(g.getUserId());
 
-            ACL acl = aclFromPost(request, set);
+            SecurityPolicy policy = policyFromPost(request, set, study);
 
             // Explicitly give site admins read permission, so they can never be locked out
-            acl.setPermission(Group.groupAdministrators, ACL.PERM_READ);
-
-            study.updateACL(acl);
+            Group siteAdminGroup = SecurityManager.getGroup(Group.groupAdministrators);
+            policy.clearAssignedRoles(siteAdminGroup);
+            policy.addRoleAssignment(siteAdminGroup, ReaderRole.class);
+            
+            study.savePolicy(policy);
             return true;
         }
 
@@ -115,9 +115,9 @@ public class SecurityController extends SpringActionController
             return new ActionURL(SecurityController.BeginAction.class, getContainer());
         }
 
-        private ACL aclFromPost(HttpServletRequest request, HashSet<Integer> set)
+        private SecurityPolicy policyFromPost(HttpServletRequest request, HashSet<Integer> set, Study study)
         {
-            ACL acl = new ACL();
+            SecurityPolicy policy = new SecurityPolicy(study);
             Enumeration i = request.getParameterNames();
             while (i.hasMoreElements())
             {
@@ -136,18 +136,21 @@ public class SecurityController extends SpringActionController
                 }
                 if (!set.contains(groupid))
                     continue;
-                int perm = 0;
+                Group group = SecurityManager.getGroup(groupid);
+                if(null == group)
+                    continue;
+
                 s = request.getParameter(name);
                 if (s.equals("UPDATE"))
-                    perm = ACL.PERM_UPDATE | ACL.PERM_READ; // Write should include read
+                    policy.addRoleAssignment(group, EditorRole.class);
                 else if (s.equals("READ"))
-                    perm = ACL.PERM_READ;
+                    policy.addRoleAssignment(group, ReaderRole.class);
                 else if (s.equals("READOWN"))
-                    perm = ACL.PERM_READOWN;
-                if (perm != 0)
-                    acl.setPermission(groupid, perm);
+                    policy.addRoleAssignment(group, RestrictedReaderRole.class);
+                else
+                    policy.addRoleAssignment(group, NoPermissionsRole.class);
             }
-            return acl;
+            return policy;
         }
     }
 
@@ -173,9 +176,9 @@ public class SecurityController extends SpringActionController
                 List<String> permsAndGroups = getViewContext().getList("dataset." + dsDef.getDataSetId());
                 Map<Integer,String> group2Perm = convertToGroupsAndPermissions(permsAndGroups);
 
-                if (group2Perm != null || !dsDef.getACL().isEmpty())
+                if (group2Perm != null)
                 {
-                    dsDef.updateACL(aclFromPost(group2Perm, groupsInProject));
+                    SecurityManager.savePolicy(policyFromPost(group2Perm, groupsInProject, dsDef));
                 }
             }
             return true;
@@ -214,27 +217,31 @@ public class SecurityController extends SpringActionController
             return groupToPermission;
         }
 
-        private ACL aclFromPost(Map<Integer,String> group2Perm, HashSet<Integer> groupsInProject)
+        private SecurityPolicy policyFromPost(Map<Integer,String> group2Perm, HashSet<Integer> groupsInProject, DataSetDefinition dsDef)
         {
-            ACL acl = new ACL();
+            SecurityPolicy policy = new SecurityPolicy(dsDef);
 
             for (Map.Entry<Integer,String> entry : group2Perm.entrySet())
             {
                 int gid = entry.getKey().intValue();
                 if (groupsInProject.contains(gid))
                 {
+                    Group group = SecurityManager.getGroup(gid);
+                    if(null == group)
+                        continue;
+
                     String perm = entry.getValue();
                     if ("READ".equals(perm))
                     {
-                        acl.setPermission(gid, ACL.PERM_READ);
+                        policy.addRoleAssignment(group, ReaderRole.class);
                     }
                     else if ("WRITE".equals(perm))
                     {
-                        acl.setPermission(gid, ACL.PERM_UPDATE | ACL.PERM_READ);
+                        policy.addRoleAssignment(group, EditorRole.class);
                     }
                 }
             }
-            return acl;
+            return policy;
         }
 
         public ActionURL getSuccessURL(Object o)
@@ -301,17 +308,17 @@ public class SecurityController extends SpringActionController
                 return false;
             }
 
-            ACL acl = report.getDescriptor().getACL();
+            SecurityPolicy policy = SecurityManager.getPolicy(report.getDescriptor());
             Integer owner = null;
 
             if (form.getPermissionType().equals(PermissionType.privatePermission.toString()))
             {
-                acl = new ACL(true);
+                policy = new SecurityPolicy(report.getDescriptor());
                 owner = getUser().getUserId();
             }
             else if (form.getPermissionType().equals(PermissionType.defaultPermission.toString()))
             {
-                acl = new ACL(true);    // empty ACL
+                policy = new SecurityPolicy(report.getDescriptor());
             }
             else
             {
@@ -319,20 +326,32 @@ public class SecurityController extends SpringActionController
                 if (form.getRemove() != 0 || form.getAdd() != 0)
                 {
                     if (form.getRemove() != 0)
-                        acl.setPermission(form.getRemove(), 0);
+                    {
+                        Group group = SecurityManager.getGroup(form.getRemove());
+                        if(null != group)
+                            policy.addRoleAssignment(group, RoleManager.getRole(NoPermissionsRole.class));
+                    }
                     if (form.getAdd() != 0)
-                        acl.setPermission(form.getAdd(), ACL.PERM_READ);
+                    {
+                        Group group = SecurityManager.getGroup(form.getAdd());
+                        if(null != group)
+                            policy.addRoleAssignment(group, RoleManager.getRole(ReaderRole.class));
+                    }
                 }
                 // set all at once
                 else
                 {
-                    acl = new ACL(false);
+                    policy = new SecurityPolicy(report.getDescriptor());
                     if (form.getGroups() != null)
                         for (int gid : form.getGroups())
-                            acl.setPermission(gid, ACL.PERM_READ);
+                        {
+                            Group group = SecurityManager.getGroup(gid);
+                            if(null != group)
+                                policy.addRoleAssignment(group, RoleManager.getRole(ReaderRole.class));
+                        }
                 }
             }
-            report.getDescriptor().updateACL(getViewContext(), acl);
+            SecurityManager.savePolicy(policy);
             report.getDescriptor().setOwner(owner);
             ReportService.get().saveReport(getViewContext(), report.getDescriptor().getReportKey(), report);
             return true;

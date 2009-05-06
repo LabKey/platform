@@ -25,7 +25,8 @@ import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.DialogTemplate;
@@ -712,9 +713,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         Container c = ContainerManager.getForId(parent.getContainerId());
         if (null == c)
             return null;
-        ACL acl = c.getAcl();
 
-        return new AttachmentCollection(path, parent, acl);
+        return new AttachmentCollection(path, parent, c.getPolicy());
     }
 
 
@@ -1421,11 +1421,11 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     {
         AttachmentParent _parent;
 
-        AttachmentCollection(String path, AttachmentParent parent, ACL acl)
+        AttachmentCollection(String path, AttachmentParent parent, SecurityPolicy policy)
         {
             super(path);
             _parent = parent;
-            _acl = acl;
+            _policy = policy;
         }
 
 
@@ -1520,7 +1520,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             super(folder.getPath(), name);
             _folder = folder;
             Container c = ContainerManager.getForId(parent.getContainerId());
-            _acl = c == null ? new ACL() : c.getAcl();
+            _policy = c == null ? null : c.getPolicy();
             _name = name;
             _parent = parent;
         }
@@ -1740,7 +1740,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
 
 		@Override
-        public int getPermissions(User user)
+        public Set<Class<? extends Permission>> getPermissions(User user)
         {
             return super.getPermissions(user);
         }

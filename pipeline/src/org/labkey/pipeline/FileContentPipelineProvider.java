@@ -15,16 +15,22 @@
  */
 package org.labkey.pipeline;
 
-import org.labkey.api.pipeline.PipelineProvider;
-import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.security.ACL;
 import org.apache.log4j.Logger;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineProvider;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 
-import java.util.List;
 import java.io.File;
+import java.util.List;
 
 /**
  * <code>FileContentPipelineProvider</code>
@@ -43,11 +49,15 @@ public class FileContentPipelineProvider extends PipelineProvider
         try
         {
             PipeRoot root = PipelineService.get().findPipelineRoot(context.getContainer());
-            ACL acl = root.getACL();
-            int perm = acl == null || acl.isEmpty() ? 0 : acl.getPermissions(context.getUser());
-            boolean canRead = 0 != (perm & (ACL.PERM_READ|ACL.PERM_ADMIN));
-            boolean canDelete = 0 != (perm & (ACL.PERM_DELETE|ACL.PERM_ADMIN));
-            boolean canInsert = 0 != (perm & (ACL.PERM_INSERT|ACL.PERM_ADMIN));
+            SecurityPolicy policy = SecurityManager.getPolicy(root);
+
+            User user = context.getUser();
+            //NOTE: the original code tested for ACL.PERM_READ | ACL.PERM_ADMIN, which would require both perms
+            //but should this only require ReadPermission? If the user can read, shouldn't the user be able
+            //to download the file?
+            boolean canRead = policy.hasPermissions(user, ReadPermission.class, AdminPermission.class);
+            boolean canDelete = policy.hasPermissions(user, DeletePermission.class, AdminPermission.class);
+            boolean canInsert = policy.hasPermissions(user, InsertPermission.class, AdminPermission.class);
 
             for (FileEntry entry : entries)
             {

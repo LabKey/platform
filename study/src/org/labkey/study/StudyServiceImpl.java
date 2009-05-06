@@ -26,6 +26,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CsvSet;
@@ -496,14 +497,14 @@ public class StudyServiceImpl implements StudyService.Service
     {
         if ("Cohort".equals(queryName))
         {
-            if (container.getAcl().hasPermission(user, ACL.PERM_ADMIN))
+            if (container.getPolicy().hasPermission(user, AdminPermission.class))
                 return new CohortUpdateService();
             else
                 throw new RuntimeException("User is not allowed to update cohorts");
         }
         else if ("StudyProperties".equals(queryName))
         {
-            if (container.getAcl().hasPermission(user, ACL.PERM_ADMIN))
+            if (container.getPolicy().hasPermission(user, AdminPermission.class))
                 return new StudyPropertiesUpdateService();
             else
                 throw new RuntimeException("User is not allowed to update study properties");

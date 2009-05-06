@@ -18,10 +18,17 @@ package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.User;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.study.StudyModule;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -64,6 +71,12 @@ public abstract class AbstractStudyEntity<T>
         _containerId = container == null ? null : container.getId();
     }
 
+    @NotNull
+    public String getName()
+    {
+        return _label;
+    }
+
     public String getLabel()
     {
         return _label;
@@ -97,6 +110,12 @@ public abstract class AbstractStudyEntity<T>
         _showByDefault = showByDefault;
     }
 
+    @NotNull
+    public String getDescription()
+    {
+        return getDisplayString();
+    }
+
     public String getDisplayString()
     {
         StringBuilder builder = new StringBuilder();
@@ -104,6 +123,12 @@ public abstract class AbstractStudyEntity<T>
         if (getLabel() != null)
             builder.append(": ").append(getLabel());
         return builder.toString();
+    }
+
+    @NotNull
+    public String getResourceId()
+    {
+        return _entityId;
     }
 
     public String getEntityId()
@@ -116,35 +141,49 @@ public abstract class AbstractStudyEntity<T>
         _entityId = entityId;
     }
 
-    public ACL getACL()
+    public SecurityPolicy getPolicy()
     {
         final Study study = StudyManager.getInstance().getStudy(getContainer());
         if (study != null &&
             (study.getSecurityType() == SecurityType.ADVANCED_READ ||
              study.getSecurityType() == SecurityType.ADVANCED_WRITE))
         {
-            return org.labkey.api.security.SecurityManager.getACL(getContainer(), _entityId);
+            return org.labkey.api.security.SecurityManager.getPolicy(this);
         }
         else
         {
-            return getContainer().getAcl();
+            return org.labkey.api.security.SecurityManager.getPolicy(getContainer());
         }
+
     }
 
-    public void updateACL(ACL acl)
+    public void savePolicy(SecurityPolicy policy)
     {
-        if (!supportsACLUpdate())
+        if (!supportsPolicyUpdate())
             throw new IllegalArgumentException("unexpected class " + this.getClass().getName());
-        org.labkey.api.security.SecurityManager.updateACL(getContainer(), getEntityId(), acl);
+        org.labkey.api.security.SecurityManager.savePolicy(policy);
     }
 
-    protected boolean supportsACLUpdate()
+    protected boolean supportsPolicyUpdate()
     {
         return false;
     }
 
-    public int getPermissions(User u)
+    public Module getSourceModule()
     {
-        return getACL().getPermissions(u);
+        return ModuleLoader.getInstance().getModule(StudyModule.MODULE_NAME);
+    }
+
+    public SecurableResource getParent()
+    {
+        //by default all study entities are children of the study
+        //will override in Study to return the container as parent
+        return StudyManager.getInstance().getStudy(getContainer());
+    }
+
+    @NotNull
+    public Set<Class<? extends Permission>> getRelevantPermissions()
+    {
+        return RoleManager.BasicPermissions;
     }
 }

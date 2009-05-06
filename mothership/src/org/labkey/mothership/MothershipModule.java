@@ -23,6 +23,7 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.roles.*;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.mothership.query.MothershipSchema;
 
@@ -81,13 +82,16 @@ public class MothershipModule extends DefaultModule
         try
         {
             Container c = ContainerManager.ensureContainer("/_mothership");
-            ACL acl = org.labkey.api.security.SecurityManager.getACL(c);
             Group mothershipGroup = SecurityManager.createGroup(c, "Mothership");
-            acl.setPermission(Group.groupGuests, 0);
-            acl.setPermission(Group.groupUsers, 0);
-            acl.setPermission(Group.groupAdministrators, ACL.PERM_ALLOWALL);
-            acl.setPermission(mothershipGroup, ACL.PERM_ALLOWALL);
-            SecurityManager.updateACL(c, acl);
+            SecurityPolicy policy = SecurityManager.getPolicy(c);
+            Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
+            Role projAdminRole = RoleManager.getRole(ProjectAdminRole.class);
+            policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), noPermsRole);
+            policy.addRoleAssignment(SecurityManager.getGroup(Group.groupUsers), noPermsRole);
+            policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), projAdminRole);
+            policy.addRoleAssignment(mothershipGroup, projAdminRole);
+            SecurityManager.savePolicy(policy);
+
             SecurityManager.addMember(mothershipGroup, moduleContext.getUpgradeUser());
 
             Set<Module> modules = new HashSet<Module>(c.getActiveModules());

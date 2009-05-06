@@ -24,13 +24,15 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.GlobusKeyPair;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.ServletException;
@@ -39,6 +41,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 
 public class PipeRootImpl implements PipeRoot
 {
@@ -245,11 +249,6 @@ public class PipeRootImpl implements PipeRoot
         _entityId = entityId;
     }
 
-    public ACL getACL()
-    {
-        return SecurityManager.getACL(getContainer(), getEntityId());
-    }
-
     public boolean isPerlPipeline()
     {
         return _perlPipeline;
@@ -258,5 +257,45 @@ public class PipeRootImpl implements PipeRoot
     public GlobusKeyPair getGlobusKeyPair()
     {
         return _keyPair;
+    }
+
+    @NotNull
+    public String getResourceId()
+    {
+        return _entityId;
+    }
+
+    @NotNull
+    public String getName()
+    {
+        return getRootPath().getName();
+    }
+
+    @NotNull
+    public String getDescription()
+    {
+        return "The pipeline root directory " + getName();
+    }
+
+    @NotNull
+    public Set<Class<? extends Permission>> getRelevantPermissions()
+    {
+        //TODO: review this--what are the relevant permissions for a pipeline root?
+        Set<Class<? extends Permission>> perms = new HashSet<Class<? extends Permission>>();
+        perms.add(ReadPermission.class);
+        perms.add(InsertPermission.class);
+        perms.add(UpdatePermission.class);
+        perms.add(DeletePermission.class);
+        return perms;
+    }
+
+    public Module getSourceModule()
+    {
+        return ModuleLoader.getInstance().getModule(PipelineService.MODULE_NAME);
+    }
+
+    public SecurableResource getParent()
+    {
+        return getContainer();
     }
 }

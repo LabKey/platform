@@ -17,8 +17,8 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.User;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurableResource;
 
 /**
  * Created by IntelliJ IDEA.
@@ -26,7 +26,7 @@ import org.labkey.api.security.User;
  * Date: Jun 6, 2006
  * Time: 2:57:59 PM
  */
-public interface StudyEntity
+public interface StudyEntity extends SecurableResource
 {
     Container getContainer();
 
@@ -50,11 +50,8 @@ public interface StudyEntity
 
     void setEntityId(String entityId);
 
-    ACL getACL();
+    SecurityPolicy getPolicy();
 
-    /** it's a little odd that updateACL is separate feom save(), however it does seem to
-     * fit the actual usage pattern. */
-    void updateACL(ACL acl);
+    void savePolicy(SecurityPolicy policy);
 
-    int getPermissions(User u);
 }

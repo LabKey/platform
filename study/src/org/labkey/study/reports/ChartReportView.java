@@ -25,7 +25,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.security.ACL;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -292,16 +292,17 @@ public class ChartReportView extends AbstractReportView
         }
 
 
-        public void updateACL(ViewContext context, ACL acl)
+        public void updatePolicy(ViewContext context, SecurityPolicy policy)
         {
-            super.updateACL(context, acl);
-            if (_parent != null)
+            super.updatePolicy(context, policy);
+            if(null != _parent)
             {
-                for (Report child : _parent.getChildReports(context))
+                for(Report child : _parent.getChildReports(context))
                 {
-                    child.getDescriptor().updateACL(context, acl);
+                    child.getDescriptor().updatePolicy(context, policy);
                 }
             }
+
         }
     }
 

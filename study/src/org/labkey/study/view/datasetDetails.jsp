@@ -26,13 +26,17 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.study.visitmanager.VisitManager" %>
+<%@ page import="org.labkey.api.security.permissions.Permission" %>
+<%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>) HttpView.currentView();
     DataSetDefinition dataset = me.getModelBean();
 
     ViewContext context = HttpView.currentContext();
-    int permissions = context.getContainer().getAcl().getPermissions(context.getUser());
+    Set<Class<? extends Permission>> permissions = context.getContainer().getPolicy().getPermissions(context.getUser());
     Study study = StudyManager.getInstance().getStudy(context.getContainer());
     VisitManager visitManager = StudyManager.getInstance().getVisitManager(study);
     String contextPath = AppProps.getInstance().getContextPath();
@@ -49,7 +53,7 @@
     <tr><td class=labkey-form-label>Show By Default</td><td><%= dataset.isShowByDefault() ? "true" : "false" %></td></tr>
     <tr><td class=labkey-form-label>Description</td><td><%= h(dataset.getDescription()) %></td></tr>
 </table>
-<% if (0 != (permissions & ACL.PERM_ADMIN))
+<% if (permissions.contains(AdminPermission.class))
 {
     ActionURL viewDatasetURL = new ActionURL(StudyController.DatasetAction.class, context.getContainer());
     viewDatasetURL.addParameter("datasetId", dataset.getDataSetId());
@@ -68,7 +72,7 @@
     %>&nbsp;<%=generateButton("Delete Dataset", deleteDatasetURL,
         "return confirm('Are you sure you want to delete this dataset?  All related data and visitmap entries will also be deleted.')")%><%
 }
-if (0 != (permissions & ACL.PERM_UPDATE))
+if (permissions.contains(UpdatePermission.class))
 {
     ActionURL showHistoryURL = new ActionURL(StudyController.ShowUploadHistoryAction.class, context.getContainer());
     showHistoryURL.addParameter("id", dataset.getDataSetId());

@@ -24,7 +24,10 @@ import org.labkey.api.data.*;
 import org.labkey.api.module.*;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.reader.ExcelLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.*;
+import org.labkey.api.security.roles.*;
 import org.labkey.api.security.AuthenticationManager.Priority;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
@@ -34,8 +37,6 @@ import org.labkey.api.view.menu.ContainerMenu;
 import org.labkey.api.view.menu.ProjectsMenu;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.api.reader.ExcelLoader;
-import org.labkey.api.reader.TabLoader;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.analytics.AnalyticsController;
@@ -73,7 +74,14 @@ public class CoreModule extends SpringModule
 
     public double getVersion()
     {
-        return 9.13;
+        return 9.14;
+    }
+
+    @Override
+    public int compareTo(Module m)
+    {
+        //core module always sorts first
+        return (m instanceof CoreModule) ? 0 : -1;
     }
 
     @Override
@@ -135,7 +143,7 @@ public class CoreModule extends SpringModule
 
     protected Collection<? extends WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(new AlwaysAvailableWebPartFactory("Contacts")
+        return Arrays.asList(new BaseWebPartFactory("Contacts")
             {
                 public WebPartView getWebPartView(ViewContext ctx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
                 {
@@ -196,7 +204,7 @@ public class CoreModule extends SpringModule
 
         try
         {
-            // Increment on every core module upgrade to defeat browser caching of static resources. 
+            // Increment on every core module upgrade to defeat browser caching of static resources.
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
         }
         catch (SQLException e)
@@ -213,16 +221,21 @@ public class CoreModule extends SpringModule
 
     private void bootstrap()
     {
-        // Other containers inherit permissions from root; admins get all permisssions, users & guests none
-        ContainerManager.bootstrapContainer("/", ACL.PERM_ALLOWALL, 0, 0);
-
-        // Users & guests can read from /home
-        ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, ACL.PERM_ALLOWALL, ACL.PERM_READ, ACL.PERM_READ);
-
         // Create the initial groups
         GroupManager.bootstrapGroup(Group.groupAdministrators, "Administrators");
         GroupManager.bootstrapGroup(Group.groupUsers, "Users");
         GroupManager.bootstrapGroup(Group.groupGuests, "Guests");
+
+        // Other containers inherit permissions from root; admins get all permisssions, users & guests none
+        Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
+        Role siteAdminRole = RoleManager.getRole(SiteAdminRole.class);
+        Role readerRole = RoleManager.getRole(ReaderRole.class);
+
+        ContainerManager.bootstrapContainer("/",
+                siteAdminRole, noPermsRole, noPermsRole);
+
+        // Users & guests can read from /home
+        ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, siteAdminRole, readerRole, readerRole);
     }
 
 

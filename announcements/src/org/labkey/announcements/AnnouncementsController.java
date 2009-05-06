@@ -33,6 +33,12 @@ import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.SecurityManager.PermissionSet;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -945,11 +951,9 @@ public class AnnouncementsController extends SpringActionController
 
     private boolean hasEditorPerm(int groupId) throws ServletException
     {
-        ACL acl = getContainer().getAcl();
-        int editorPerm = PermissionSet.EDITOR.getPermissions();
-        int groupPerm = acl.getPermissions(groupId);
-
-        return groupPerm == (groupPerm | editorPerm);
+        Role editorRole = RoleManager.getRole(EditorRole.class);
+        Group group = SecurityManager.getGroup(groupId);
+        return null != group && getContainer().getPolicy().hasPermissions(group, editorRole.getPermissions());
     }
 
 
@@ -1222,7 +1226,9 @@ public class AnnouncementsController extends SpringActionController
 
         try
         {
-            possibleAssignedTo = SecurityManager.getUsersWithPermissions(c, ACL.PERM_INSERT);
+            Set<Class<? extends Permission>> perms = new TreeSet<Class<? extends Permission>>();
+            perms.add(InsertPermission.class);
+            possibleAssignedTo = SecurityManager.getUsersWithPermissions(c, perms);
         }
         catch (SQLException e)
         {
@@ -1273,7 +1279,9 @@ public class AnnouncementsController extends SpringActionController
         public List<AjaxCompletion> getCompletions(AjaxCompletionForm form, BindException errors) throws Exception
         {
             // Limit member list lookup to those with read permissions in this container.
-            List<User> completionUsers = SecurityManager.getUsersWithPermissions(getContainer(), ACL.PERM_READ);
+            Set<Class<? extends Permission>> perms = new TreeSet<Class<? extends Permission>>();
+            perms.add(ReadPermission.class);
+            List<User> completionUsers = SecurityManager.getUsersWithPermissions(getContainer(), perms);
             return UserManager.getAjaxCompletions(form.getPrefix(), completionUsers.toArray(new User[completionUsers.size()]), getViewContext());
         }
     }

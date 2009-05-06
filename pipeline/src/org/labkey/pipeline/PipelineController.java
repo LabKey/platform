@@ -24,6 +24,9 @@ import org.labkey.api.pipeline.*;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
@@ -394,8 +397,7 @@ public class PipelineController extends SpringActionController
 
                 if (pipeRoot != null && root != null) // && StringUtils.trimToNull(AppProps.getInstance().getPipelineFTPHost()) != null)
                 {
-                    ACL acl = pipeRoot.getACL();
-                    main.addView(new PermissionView(acl));
+                    main.addView(new PermissionView(SecurityManager.getPolicy(pipeRoot)));
                 }
                 main.setTitle("Data Pipeline Setup");
                 main.setFrame(WebPartView.FrameType.PORTAL);
@@ -710,10 +712,9 @@ public class PipelineController extends SpringActionController
 
             if (null != pipeRoot && null != pipeRoot.getUri())
             {
-                ACL acl = new ACL();
+                SecurityPolicy policy = new SecurityPolicy(pipeRoot);
                 if (form.isEnable())
                 {
-                    acl.setPermission(Group.groupGuests, 0); // force isEmpty() == false
                     Group[] groupsAll = SecurityManager.getGroups(c.getProject(), true);
                     Map<Integer,Group> map = new HashMap<Integer,Group>(groupsAll.length * 2);
                     for (Group g : groupsAll)
@@ -726,15 +727,18 @@ public class PipelineController extends SpringActionController
                         Group g = map.get(groupId);
                         if (null == g)
                             continue;
-                        Integer perm = form.getPerms().get(i);
-                        if (perm == null || perm.intValue() == 0)
+                        String roleName = form.getPerms().get(i);
+                        if (roleName == null)
                             continue;
-                        acl.setPermission(groupId.intValue(), perm.intValue());
+                        Role role = RoleManager.getRole(roleName);
+                        if(null == role)
+                            continue;
+                        policy.addRoleAssignment(g, role);
                     }
                 }
 
                 // UNDONE: move setACL() to PipelineManager
-                SecurityManager.updateACL(c, pipeRoot.getEntityId(), acl);
+                SecurityManager.savePolicy(policy);
                 ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
                         c, ContainerManager.Property.PipelineRoot, pipeRoot, pipeRoot);
                 ContainerManager.firePropertyChangeEvent(evt);
@@ -757,13 +761,8 @@ public class PipelineController extends SpringActionController
                 return Integer.valueOf(Integer.MIN_VALUE);
             }
         };
-        private ArrayList<Integer> perms = new FormArrayList<Integer>(Integer.class)
-        {
-            protected Integer newInstance() throws IllegalAccessException, InstantiationException
-            {
-                return Integer.valueOf(0);
-            }
-        };
+        private ArrayList<String> perms = new FormArrayList<String>(String.class);
+
         private boolean enable = false;
 
         public int getSize()
@@ -791,12 +790,12 @@ public class PipelineController extends SpringActionController
             this.groups = groups;
         }
 
-        public ArrayList<Integer> getPerms()
+        public ArrayList<String> getPerms()
         {
             return perms;
         }
 
-        public void setPerms(ArrayList<Integer> perms)
+        public void setPerms(ArrayList<String> perms)
         {
             this.perms = perms;
         }
@@ -805,11 +804,11 @@ public class PipelineController extends SpringActionController
     /////////////////////////////////////////////////////////////////////////
     //  FTP support
 
-    public class PermissionView extends JspView<ACL>
+    public class PermissionView extends JspView<SecurityPolicy>
     {
-        PermissionView(ACL acl)
+        PermissionView(SecurityPolicy policy)
         {
-            super(PipelineController.class, "permission.jsp", acl);
+            super(PipelineController.class, "permission.jsp", policy);
         }
     }
 
@@ -857,7 +856,7 @@ public class PipelineController extends SpringActionController
             {
                 User u = AuthenticationManager.authenticate(form.getUser(), form.getPassword());
 
-                if ((getViewContext().getACL().getPermissions(u) & ACL.PERM_READ) != ACL.PERM_READ)
+                if (!(getViewContext().getContainer().hasPermission(u, ReadPermission.class)))
                 {
                     HttpView.throwUnauthorized();
                     return;
@@ -1333,8 +1332,7 @@ public class PipelineController extends SpringActionController
                 return HttpView.throwNotFound();
 
             // check pipeline ACL
-            ACL acl = pipeRoot.getACL();
-            if (!acl.hasPermission(getUser(), ACL.PERM_READ))
+            if (!org.labkey.api.security.SecurityManager.getPolicy(pipeRoot).hasPermission(getUser(), ReadPermission.class))
                 return HttpView.throwUnauthorized();
 
             File file = new File(pipeRoot.getRootPath(),form.getPath());

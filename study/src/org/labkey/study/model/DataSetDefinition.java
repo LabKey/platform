@@ -28,7 +28,10 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.*;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.UnauthorizedException;
@@ -540,18 +543,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     public boolean canRead(User user)
     {
-        int perm = getStudy().getACL().getPermissions(user);
-        if (0 != (perm & ACL.PERM_READ))
-            return true;
-        if (0 == (perm & ACL.PERM_READOWN))
-            return false;
-
-        // Only look at groups that have per dataset security set,
-        // so we don't see defunct permissions on groups that
-        // have NONE set at the study level.
-        int[] groups = getStudy().getACL().getGroups(ACL.PERM_READOWN, user);
-        int dsPerm = getACL().getPermissions(groups);
-        return 0 != (dsPerm & ACL.PERM_READ);
+        return SecurityManager.getPolicy(this).hasPermission(user, ReadPermission.class);
     }
 
     public boolean canWrite(User user)
@@ -559,7 +551,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (!canRead(user))
             return false;
 
-        if (!getStudy().getContainer().getAcl().hasPermission(user, ACL.PERM_UPDATE))
+        if (!getStudy().getContainer().getPolicy().hasPermission(user, UpdatePermission.class))
             return false;
 
         SecurityType securityType = getStudy().getSecurityType();
@@ -571,19 +563,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         {
             return true;
         }
-        // Do they have EDIT_ALL permissions?
-        int perm = getStudy().getACL().getPermissions(user);
-        if (0 != (perm & ACL.PERM_UPDATE))
-            return true;
-
-        // Do they have per-dataset permission set?
-        if (0 == (perm & ACL.PERM_READOWN))
-            return false;
-
-        // Advanced per-dataset study security
-        int[] groups = getStudy().getACL().getGroups(ACL.PERM_READOWN, user);
-        int dsPerm = getACL().getPermissions(groups);
-        return 0 != (dsPerm & ACL.PERM_UPDATE);
+        
+        return SecurityManager.getPolicy(this).hasPermission(user, UpdatePermission.class);
     }
 
     public String getVisitDatePropertyName()
@@ -878,7 +859,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
     @Override
-    protected boolean supportsACLUpdate()
+    protected boolean supportsPolicyUpdate()
     {
         return true;
     }

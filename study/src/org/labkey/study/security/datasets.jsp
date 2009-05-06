@@ -24,6 +24,10 @@
 <%@ page import="org.labkey.study.model.SecurityType"%>
 <%@ page import="org.labkey.study.model.Study"%>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="org.labkey.api.security.SecurityPolicy" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.security.permissions.ReadSomePermission" %>
+<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
     String groupName(Group g)
@@ -37,7 +41,7 @@
 <%
     HttpView<Study> me = (HttpView<Study>) HttpView.currentView();
     Study study = me.getModelBean();
-    ACL studyAcl = study.getACL();
+    SecurityPolicy studyPolicy = SecurityManager.getPolicy(study);
 
     Group[] groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
 
@@ -48,13 +52,12 @@
     {
         if (g.getUserId() == Group.groupAdministrators)
             continue;
-        int perm = studyAcl.getPermissions(g) & (ACL.PERM_READ | ACL.PERM_READOWN);
-        if (perm == 0)
-            noReadGroups.add(g);
-        else if (perm == ACL.PERM_READOWN)
+        if (studyPolicy.hasPermission(g, ReadPermission.class))
+            readGroups.add(g);
+        else if (studyPolicy.hasPermission(g, ReadSomePermission.class))
             restrictedGroups.add(g);
         else
-            readGroups.add(g);
+            noReadGroups.add(g);
     }
 %>
 These groups can read ALL datasets.
@@ -145,13 +148,14 @@ else
     DataSetDefinition[] datasets = study.getDataSets();
     for (DataSetDefinition ds : datasets)
     {
-        ACL acl = ds.getACL();
+        SecurityPolicy dsPolicy = SecurityManager.getPolicy(ds);
+
         String inputName = "dataset." + ds.getDataSetId();
         %><tr class="<%=row++%2==0?"labkey-alternate-row":"labkey-row"%>"><td><%=h(ds.getLabel())%></td><%
         for (Group g : restrictedGroups)
         {
-            boolean writePerm = acl.hasPermission(g, ACL.PERM_UPDATE);
-            boolean readPerm = !writePerm && acl.hasPermission(g, ACL.PERM_READ);
+            boolean writePerm = dsPolicy.hasPermission(g, UpdatePermission.class);
+            boolean readPerm = !writePerm && dsPolicy.hasPermission(g, ReadPermission.class);
 
             if (study.getSecurityType() == SecurityType.ADVANCED_READ && writePerm)
                 readPerm = true;

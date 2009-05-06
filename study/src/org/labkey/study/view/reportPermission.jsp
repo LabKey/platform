@@ -17,10 +17,6 @@
 %>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.reports.Report"%>
-<%@ page import="org.labkey.api.security.ACL"%>
-<%@ page import="org.labkey.api.security.Group"%>
-<%@ page import="org.labkey.api.security.SecurityManager"%>
-<%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.util.HelpTopic"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
@@ -33,6 +29,9 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.security.*" %>
+<%@ page import="org.labkey.api.security.SecurityManager" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 
 
@@ -46,8 +45,8 @@
     ViewContext context = HttpView.currentContext();
     Study study = StudyManager.getInstance().getStudy(context.getContainer());
     Container c = study.getContainer();
-    ACL containerAcl = c.getAcl();
-    ACL acl = bean.getDescriptor().getACL();
+    SecurityPolicy containerPolicy = c.getPolicy();
+    SecurityPolicy reportPolicy = SecurityManager.getPolicy(bean.getDescriptor());
 
     boolean isAttachmentReport = bean.getDescriptor().getReportType().equals(AttachmentReport.TYPE);
 
@@ -122,8 +121,8 @@
             <%
             }
             //if (g.isAdministrators()) continue;
-            boolean checked = acl.hasPermission(g, ACL.PERM_READ) || g.isAdministrators();
-            boolean disabled = !containerAcl.hasPermission(g, ACL.PERM_READ) || g.isAdministrators();
+            boolean checked = reportPolicy.hasPermission(g, ReadPermission.class) || g.isAdministrators();
+            boolean disabled = !containerPolicy.hasPermission(g, ReadPermission.class) || g.isAdministrators();
             %><tr><td><font color=<%=disabled?"gray":"black"%>><%=g.getName()%></font></td><td height="22" width=20><input name=group value="<%=g.getUserId()%>" type=checkbox <%=checked?"checked":""%> <%=disabled?"disabled":""%>></td></tr><%
         }
 
@@ -133,8 +132,8 @@
         }
         for (Group g : projectGroups)
         {
-            boolean checked = acl.hasPermission(g, ACL.PERM_READ);
-            boolean disabled = !containerAcl.hasPermission(g, ACL.PERM_READ);
+            boolean checked = reportPolicy.hasPermission(g, ReadPermission.class);
+            boolean disabled = !containerPolicy.hasPermission(g, ReadPermission.class);
             %><tr><td><font color=<%=disabled?"gray":"black"%>><%=g.getName()%></font></td><td height=22 width=20><input name=group value="<%=g.getUserId()%>" type=checkbox <%=checked?"checked":""%> <%=disabled?"disabled":""%>></td></tr><%
         }
         %>
@@ -161,7 +160,7 @@
     {
         if (report.getDescriptor().getOwner() != null)
             return SecurityController.PermissionType.privatePermission;
-        if (report.getDescriptor().getACL() != null && !report.getDescriptor().getACL().isEmpty())
+        if (!SecurityManager.getPolicy(report.getDescriptor(), false).isEmpty())
             return SecurityController.PermissionType.explicitPermission;
         return SecurityController.PermissionType.defaultPermission;
     }

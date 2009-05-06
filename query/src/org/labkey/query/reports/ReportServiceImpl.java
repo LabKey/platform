@@ -211,8 +211,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
             final ReportDescriptor descriptor = report.getDescriptor();
             _deleteReport(context.getContainer(), reportId.getRowId());
-            final Container c =ContainerManager.getForId(descriptor.getContainerId());
-            org.labkey.api.security.SecurityManager.removeACL(c, descriptor.getEntityId());
+            org.labkey.api.security.SecurityManager.deletePolicy(descriptor);
             if (ownsTransaction)
                 scope.commitTransaction();
         }

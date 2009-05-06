@@ -28,6 +28,7 @@ import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.PageFlowUtil;
@@ -146,7 +147,7 @@ public class DataSetQueryView extends QueryView
         // Only show link to edit if permission allows it
         if (_showEditLinks && !_forExport &&
                 getDefinition().canWrite(user) &&
-                c.getAcl().hasPermission(user, ACL.PERM_UPDATE)
+                c.getPolicy().hasPermission(user, UpdatePermission.class)
             )
         {
             TableInfo tableInfo = view.getDataRegion().getTable();

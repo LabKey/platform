@@ -39,10 +39,9 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.Group;
+import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.*;
@@ -257,7 +256,10 @@ public class StudyManager
         Integer groupId = SecurityManager.getGroupId(c.getProject(), "Users", false);
         if (null != groupId)
             acl.setPermission(groupId.intValue(), ACL.PERM_READ);
-        SecurityManager.updateACL(study.getContainer(), study.getEntityId(), c.getAcl());
+        //create a new policy for the study which is a copy of the container's policy
+        SecurityPolicy containerPolicy = SecurityManager.getPolicy(c);
+        SecurityPolicy studyPolicy = new SecurityPolicy(study, containerPolicy);
+        SecurityManager.savePolicy(studyPolicy);
 
         return study;
     }
@@ -838,7 +840,7 @@ public class StudyManager
         {
             // If we're not reading from a dataset for cohort definition,
             // we use the container's permission
-            return SecurityManager.getACL(container).hasPermission(user, ACL.PERM_READ);
+            return SecurityManager.getPolicy(container).hasPermission(user, ReadPermission.class);
         }
 
         // Automatic cohort assignment -- can the user read the source dataset?
@@ -860,7 +862,7 @@ public class StudyManager
 
             if (study.isManualCohortAssignment())
             {
-                if (!SecurityManager.getACL(container).hasPermission(user, ACL.PERM_READ))
+                if (!SecurityManager.getPolicy(container).hasPermission(user, ReadPermission.class))
                     throw new UnauthorizedException("User does not have permission to view cohort information");
             }
 
@@ -1355,7 +1357,7 @@ public class StudyManager
 
         _dataSetHelper.clearCache(ds);
 
-        SecurityManager.removeACL(study.getContainer(), ds.getEntityId());
+        SecurityManager.deletePolicy(ds);
     }
 
 
@@ -1587,17 +1589,26 @@ public class StudyManager
      */
     protected void scrubDatasetAcls(Study study)
     {
-        ACL acl = study.getACL();
-        int[] restrictedGroups = acl.getGroups(ACL.PERM_READOWN, null);
+        //NOTE: old code is below in comments. I'm not entirely sure
+        //if this new code is exactly the same. It seems that we should
+        //delete policies for all the datasets at this point.
         DataSetDefinition[] defs = getDataSetDefinitions(study);
         for (DataSetDefinition def : defs)
         {
-            ACL aclOld = def.getACL();
-            ACL aclScrubbed = aclOld.scrub(restrictedGroups);
-            if (aclOld == aclScrubbed)
-                continue;
-            def.updateACL(aclScrubbed);
+            SecurityManager.deletePolicy(def);
         }
+        
+//        ACL acl = study.getACL();
+//        int[] restrictedGroups = acl.getGroups(ACL.PERM_READOWN, null);
+//        DataSetDefinition[] defs = getDataSetDefinitions(study);
+//        for (DataSetDefinition def : defs)
+//        {
+//            ACL aclOld = def.getACL();
+//            ACL aclScrubbed = aclOld.scrub(restrictedGroups);
+//            if (aclOld == aclScrubbed)
+//                continue;
+//            def.updateACL(aclScrubbed);
+//        }
     }
 
 

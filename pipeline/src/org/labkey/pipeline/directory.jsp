@@ -20,13 +20,15 @@
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.pipeline.PipeRoot" %>
 <%@ page import="org.labkey.api.pipeline.PipelineProvider" %>
-<%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.pipeline.PipelineController" %>
 <%@ page import="java.io.File" %>
 <%@ page import="java.net.URI" %>
 <%@ page import="java.util.*" %>
+<%@ page import="org.labkey.api.security.SecurityManager" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%
     JspView<PipelineController.PathForm> me = (JspView<PipelineController.PathForm>)HttpView.currentView();
@@ -224,12 +226,12 @@
     {
         %><%=PageFlowUtil.generateButton("Process and Import Files", actionToggle.getLocalURIString())%>&nbsp;<%
     }
-    else if (pipeRoot.getACL().hasPermission(context.getUser(), ACL.PERM_READ))
+    else if (SecurityManager.getPolicy(pipeRoot).hasPermission(context.getUser(), ReadPermission.class))
     {
         %><%=PageFlowUtil.generateButton("Browse All Files", actionToggle.getLocalURIString())%>&nbsp;<%
     }
 
-    if (pipeRoot.getACL().hasPermission(context.getUser(), ACL.PERM_INSERT))
+    if (SecurityManager.getPolicy(pipeRoot).hasPermission(context.getUser(), InsertPermission.class))
     {
         ActionURL dropUrl = (new ActionURL("ftp","drop",pipeRoot.getContainer())).addParameter("pipeline",StringUtils.defaultString(form.getPath(),"/"));
         %><%=PageFlowUtil.generateButton("Upload Multiple Files", "#uploadFiles", "window.open(" + PageFlowUtil.jsString(dropUrl.getLocalURIString()) + ", '_blank', 'height=600,width=1000,resizable=yes');")

@@ -18,10 +18,13 @@ package org.labkey.core.security;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityUrls;
+import org.labkey.api.security.roles.NoPermissionsRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.VBox;
@@ -31,6 +34,7 @@ import org.labkey.api.view.WebPartView;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -70,18 +74,16 @@ public class PermissionsDetailsView extends WebPartView
             setTitle("Permissions for " + _c.getPath());
     }
 
-    private String getPermissionsOption(SecurityManager.PermissionSet permission, int selectedPerm)
+    private String getPermissionsOption(Role role, Role assignedRole)
     {
-        return "<option value=\"" + permission.getPermissions() + "\"" +
-                    (selectedPerm == permission.getPermissions() ? " SELECTED" : "") +
-                    ">" + permission.getLabel() + "</option>\n";
+        return "<option value=\"" + role.getUniqueName() + "\"" +
+                    (role.equals(assignedRole) ? " SELECTED" : "") +
+                    ">" + role.getName() + "</option>\n";
     }
 
-    private void renderGroupTableRow(Group group, ACL acl, PrintWriter out, String displayName)
+    private void renderGroupTableRow(Group group, SecurityPolicy policy, PrintWriter out, String displayName)
     {
         int id = group.getUserId();
-        int perm = acl.getPermissions(id);
-        if (perm == -1) perm = ACL.PERM_ALLOWALL; // HACK
         String htmlId = "group." + Integer.toHexString(id);
         out.print("<tr><td class='labkey-form-label'>");
         out.print(PageFlowUtil.filter(displayName));
@@ -90,19 +92,18 @@ public class PermissionsDetailsView extends WebPartView
         out.print(" name=");
         out.print(htmlId);
         out.print(">");
-        if (!group.isGuests() || perm == ACL.PERM_ALLOWALL)
-            out.print(getPermissionsOption(SecurityManager.PermissionSet.ADMIN, perm));
 
-        out.print(getPermissionsOption(SecurityManager.PermissionSet.EDITOR, perm));
-        out.print(getPermissionsOption(SecurityManager.PermissionSet.AUTHOR, perm));
-        out.print(getPermissionsOption(SecurityManager.PermissionSet.READER, perm));
-        out.print(getPermissionsOption(SecurityManager.PermissionSet.RESTRICTED_READER, perm));
-        out.print(getPermissionsOption(SecurityManager.PermissionSet.SUBMITTER, perm));
-        out.print(getPermissionsOption(SecurityManager.PermissionSet.NO_PERMISSIONS, perm));
-        
-        SecurityManager.PermissionSet permSet = SecurityManager.PermissionSet.findPermissionSet(perm);
-        if (permSet == null)
-            out.print("<option value=" + perm + ">" + perm + "</option>");
+        List<Role> assignedRoles = policy.getAssignedRoles(group);
+        Role assignedRole = assignedRoles.size() > 0 ? assignedRoles.get(0) : new NoPermissionsRole();
+        Collection<Role> allRoles = RoleManager.getAllRoles(); 
+        for(Role role : allRoles)
+        {
+            if(role.isAssignable())
+                out.print(getPermissionsOption(role, assignedRole));
+        }
+
+        if(!allRoles.contains(assignedRole))
+            out.print("<option value=" + assignedRole.getUniqueName() + ">" + assignedRole.getName() + "</option>");
         out.print("</select>");
         out.print("</td>");
         out.print("<td>");
@@ -122,7 +123,7 @@ public class PermissionsDetailsView extends WebPartView
     @Override
     public void renderView(Object model, PrintWriter out) throws IOException, ServletException
     {
-        ACL acl = _c.getAcl();
+        SecurityPolicy policy = _c.getPolicy();
 
         if (SecurityManager.isAdminOnlyPermissions(_c))
         {
@@ -163,7 +164,7 @@ public class PermissionsDetailsView extends WebPartView
 
         out.println("<table><tr><td colspan='2' class='labkey-strong'>Project Groups</td></tr>");
         for (Group group : projGroups)
-            renderGroupTableRow(group, acl, out, group.getName());
+            renderGroupTableRow(group, policy, out, group.getName());
 
         out.println("<tr><td colspan='2' class='labkey-strong'>Site Groups</td></tr>");
         
@@ -183,20 +184,21 @@ public class PermissionsDetailsView extends WebPartView
                 // for the ACL value; otherwise, a submit with 'inherit' turned off will result in the
                 // hidden groups having all permissions set to no-access.
                 int id = group.getUserId();
-                int perm = acl.getPermissions(id);
-                if (perm == -1) perm = ACL.PERM_ALLOWALL; // HACK
                 String htmlId = "group." + Integer.toHexString(id);
-                out.println("<input type=\"hidden\" name=\"" + htmlId + "\" value=\"" + perm + "\">");
+                List<Role> assignedRoles = policy.getAssignedRoles(group);
+                out.println("<input type=\"hidden\" name=\"" + htmlId + "\" value=\""
+                        + (assignedRoles.size() > 0 ? assignedRoles.get(0).getUniqueName() : new NoPermissionsRole().getUniqueName())
+                        + "\">");
             }
             else
-                renderGroupTableRow(group, acl, out, group.getName());
+                renderGroupTableRow(group, policy, out, group.getName());
         }
 
         //always render all site users and groups last
         if (usersGroup != null)
-            renderGroupTableRow(usersGroup, acl, out, "All site users");
+            renderGroupTableRow(usersGroup, policy, out, "All site users");
         if (guestsGroup != null)
-            renderGroupTableRow(guestsGroup, acl, out, "Guests");
+            renderGroupTableRow(guestsGroup, policy, out, "Guests");
 
         out.println("</table>");
         out.println(PageFlowUtil.generateSubmitButton("Update"));

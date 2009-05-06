@@ -18,6 +18,7 @@ package org.labkey.study.controllers.reports;
 
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.query.*;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.QueryReport;
@@ -124,7 +125,7 @@ public class StudyManageReportsBean extends ManageReportsBean
     {
         if (r.getDescriptor().getOwner() != null)
             return PageFlowUtil.helpPopup("Private View", String.format(PRIVATE_REPORT, permissionURL), true, _privateImg);
-        else if (r.getDescriptor().getACL() != null && !r.getDescriptor().getACL().isEmpty())
+        else if (!SecurityManager.getPolicy(r.getDescriptor()).isEmpty())
             return PageFlowUtil.helpPopup("Explicit Permissions", String.format(RESTRICTED_REPORT, permissionURL), true, _restrictedImg);
         else
             return PageFlowUtil.helpPopup("Shared View", String.format(PUBLIC_REPORT, permissionURL), true, _publicImg);

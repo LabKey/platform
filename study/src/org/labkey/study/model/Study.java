@@ -17,8 +17,9 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.util.GUID;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
@@ -59,7 +60,15 @@ public class Study extends ExtensibleStudyEntity<Study>
         _entityId = GUID.makeGUID();
     }
 
-    
+    @Override
+    public SecurableResource getParent()
+    {
+        //overriden to return the container
+        //all other study entities return the study,
+        //but the study's parent is the container
+        return getContainer();
+    }
+
     public String getLabel()
     {
         return _label;
@@ -140,14 +149,15 @@ public class Study extends ExtensibleStudyEntity<Study>
         return -1;
     }
 
-    public void updateACL(ACL acl)
+    @Override
+    public void savePolicy(SecurityPolicy policy)
     {
-        super.updateACL(acl);
+        super.savePolicy(policy);
         StudyManager.getInstance().scrubDatasetAcls(this);
     }
 
     @Override
-    protected boolean supportsACLUpdate()
+    protected boolean supportsPolicyUpdate()
     {
         return true;
     }

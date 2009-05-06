@@ -81,7 +81,7 @@ public class FileWebdavProvider implements WebdavService.Provider
         {
             super(folder, FILEMODULE_LINK);
             _c = c;
-            _acl = _c.getAcl();
+            _policy = _c.getPolicy();
             
             AttachmentDirectory[] dirs = AttachmentService.get().getRegisteredDirectories(_c);
             if (dirs != null)

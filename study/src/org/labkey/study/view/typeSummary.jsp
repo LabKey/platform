@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.study.model.Study" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<DataSetDefinition> me = (JspView<DataSetDefinition>) HttpView.currentView();
@@ -32,7 +33,6 @@
     Study study = dataset.getStudy();
 
     ViewContext context = HttpView.currentContext();
-    int permissions = context.getContainer().getAcl().getPermissions(context.getUser());
     List<ColumnInfo> allCols = dataset.getTableInfo(context.getUser(), true, false).getColumns();
 
     List<ColumnInfo> systemColumns = new ArrayList<ColumnInfo>();
@@ -98,7 +98,7 @@
 </table>
 
 <%
-    if (0 != (permissions & ACL.PERM_ADMIN))
+    if (context.getContainer().getPolicy().hasPermission(context.getUser(), AdminPermission.class))
     {
         if (dataset.getTypeURI() == null)
         {

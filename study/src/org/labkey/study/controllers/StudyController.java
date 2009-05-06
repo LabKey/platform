@@ -57,6 +57,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
@@ -664,7 +665,7 @@ public class StudyController extends BaseStudyController
             buttonBar.add(queryView.createPageSizeMenuButton());
 
             User user = getUser();
-            boolean canWrite = def.canWrite(user) && def.getContainer().getAcl().hasPermission(user, ACL.PERM_UPDATE);
+            boolean canWrite = def.canWrite(user) && def.getContainer().getPolicy().hasPermission(user, UpdatePermission.class);
             boolean isSnapshot = QueryService.get().isQuerySnapshot(getContainer(), StudyManager.getSchemaName(), def.getLabel());
             boolean isAssayDataset = def.getProtocolId() != null;
             ExpProtocol protocol = null;
