@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 public interface ListDefinition
 {
@@ -169,7 +170,7 @@ public interface ListDefinition
     ListItem getListItemForEntityId(String entityId);
 
     int getRowCount();
-    List<String> insertListItems(User user, DataLoader loader) throws IOException;
+    List<String> insertListItems(User user, DataLoader<Map<String,Object>> loader) throws IOException;
 
     TableInfo getTable(User user);
 

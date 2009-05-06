@@ -32,7 +32,7 @@ import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.GWTView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
-import org.labkey.api.reader.TabLoader;
+import org.labkey.api.reader.NewTabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 
 import java.io.ByteArrayInputStream;
@@ -113,11 +113,11 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
             }
 
             Map<String, ParticipantVisit> values = new HashMap<String, ParticipantVisit>();
-            TabLoader tabLoader = new TabLoader(file);
+            NewTabLoader tabLoader = new NewTabLoader(file);
             ColumnDescriptor[] cols = tabLoader.getColumns();
             if (tabLoader.getSkipLines() == 0)
             {
-                tabLoader = new TabLoader(file);
+                tabLoader = new NewTabLoader(file);
                 tabLoader.setSkipLines(1);
                 cols = tabLoader.getColumns();
             }

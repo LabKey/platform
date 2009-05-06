@@ -148,8 +148,8 @@ public abstract class SqlDialect
         sqlTypeNameMap.put("DISTINCT", Types.DISTINCT);
         sqlTypeNameMap.put("DOUBLE", Types.DOUBLE);
         sqlTypeNameMap.put("DOUBLE PRECISION", Types.DOUBLE);
-        sqlTypeNameMap.put("FLOAT", Types.FLOAT);
         sqlTypeNameMap.put("INTEGER", Types.INTEGER);
+        sqlTypeNameMap.put("INT", Types.INTEGER);
         sqlTypeNameMap.put("JAVA_OBJECT", Types.JAVA_OBJECT);
         sqlTypeNameMap.put("LONGVARBINARY", Types.LONGVARBINARY);
         sqlTypeNameMap.put("LONGVARCHAR", Types.LONGVARCHAR);

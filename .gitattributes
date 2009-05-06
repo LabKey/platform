@@ -494,10 +494,14 @@ api/src/org/labkey/api/query/snapshot/AbstractTableMethodInfo.java -text
 api/src/org/labkey/api/query/snapshot/QuerySnapshotDefinition.java -text
 api/src/org/labkey/api/query/snapshot/QuerySnapshotForm.java -text
 api/src/org/labkey/api/query/snapshot/QuerySnapshotService.java -text
+api/src/org/labkey/api/reader/BeanIterator.java -text
+api/src/org/labkey/api/reader/BeanTabLoader.java -text
 api/src/org/labkey/api/reader/ColumnDescriptor.java -text
 api/src/org/labkey/api/reader/DataLoader.java -text
 api/src/org/labkey/api/reader/ExcelLoader.java -text
+api/src/org/labkey/api/reader/NewTabLoader.java -text
 api/src/org/labkey/api/reader/SimpleXMLStreamReader.java -text
+api/src/org/labkey/api/reader/TestRow.java -text
 api/src/org/labkey/api/reader/XMLStreamReaderWrapper.java -text
 api/src/org/labkey/api/reports/ExternalScriptEngine.java -text
 api/src/org/labkey/api/reports/ExternalScriptEngineDefinition.java -text

@@ -16,7 +16,7 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.reader.TabLoader;
+import org.labkey.api.reader.NewTabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.collections.RowMap;
 
@@ -35,7 +35,7 @@ import java.sql.SQLException;
  * NOTE: I would have put loadTempTable() on TabLoader, but it is
  * in the tools project.  That wouldn't work, so here's a subclass instead.
  */
-public class TempTableLoader extends TabLoader
+public class TempTableLoader extends NewTabLoader
 {
     public TempTableLoader(File src) throws IOException
     {
@@ -62,8 +62,8 @@ public class TempTableLoader extends TabLoader
         //
 
         SqlDialect dialect = schema.getSqlDialect();
-
         ArrayList<ColumnInfo> cols = new ArrayList<ColumnInfo>();
+
         for (ColumnDescriptor col : getColumns())
         {
             String sqlType = getSqlType(dialect, col.clazz);
@@ -84,6 +84,7 @@ public class TempTableLoader extends TabLoader
         StringBuilder sql = new StringBuilder();
         sql.append("CREATE TABLE ").append(tempTableName).append(" (");
         String comma = "";
+
         for (int i=0 ; i<cols.size() ; i++)
         {
             ColumnInfo col = cols.get(i);

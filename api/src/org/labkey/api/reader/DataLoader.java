@@ -20,6 +20,8 @@ import org.apache.commons.collections.Transformer;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.util.CloseableIterator;
+import org.labkey.api.util.Filter;
+import org.labkey.api.util.FilterIterator;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -33,7 +35,7 @@ import java.util.*;
  * Date: Oct 22, 2008
  * Time: 11:26:37 AM
  */
-public abstract class DataLoader   // TODO: implements Iterable<K>
+public abstract class DataLoader<T> implements Iterable<T>
 {
     /**
      * Defines order of column type preferences. 
@@ -292,19 +294,36 @@ public abstract class DataLoader   // TODO: implements Iterable<K>
     }
 
     /**
-     * Returns a map iterator over the data in this file
+     * Returns an iterator over the data
      */
-    public abstract CloseableIterator<Map<String, Object>> iterator() throws IOException;
+    public abstract CloseableIterator<T> iterator();
+
+    public static class CloseableFilterIterator<T> extends FilterIterator<T> implements CloseableIterator<T>
+    {
+        protected CloseableIterator<T> _iter;
+
+        public CloseableFilterIterator(CloseableIterator<T> iter, Filter<T> filter)
+        {
+            super(iter, filter);
+            _iter = iter;
+        }
+
+        public void close() throws IOException
+        {
+            _iter.close();
+        }
+    }
+
 
     /**
-     * Returns a list of maps, one for each non-header row of the file.
+     * Returns a list of T records, one for each non-header row of the file.
      */
-    public List<Map<String, Object>> load() throws IOException
+    public List<T> load() throws IOException
     {
         getColumns();
 
-        List<Map<String, Object>> rowList = new ArrayList<Map<String, Object>>();
-        Iterator<Map<String, Object>> it = iterator();
+        List<T> rowList = new ArrayList<T>();
+        Iterator<T> it = iterator();
 
         while (it.hasNext())
             rowList.add(it.next());
@@ -312,187 +331,5 @@ public abstract class DataLoader   // TODO: implements Iterable<K>
         return rowList;
     }
 
-    public void close() {}
-
-
-    /** Test class for JUnit tests **/
-    public static class TestRow
-    {
-        private Date date;
-        private int scan;
-        private double time;
-        private double mz;
-        private boolean accurateMZ;
-        private double mass;
-        private double intensity;
-        private int chargeStates;
-        private double kl;
-        private double background;
-        private double median;
-        private int peaks;
-        private int scanFirst;
-        private int scanLast;
-        private int scanCount;
-        private String description;
-
-        public boolean isAccurateMZ()
-        {
-            return accurateMZ;
-        }
-
-        public void setAccurateMZ(boolean accurateMZ)
-        {
-            this.accurateMZ = accurateMZ;
-        }
-
-        public double getBackground()
-        {
-            return background;
-        }
-
-        public void setBackground(double background)
-        {
-            this.background = background;
-        }
-
-        public int getChargeStates()
-        {
-            return chargeStates;
-        }
-
-        public void setChargeStates(int chargeStates)
-        {
-            this.chargeStates = chargeStates;
-        }
-
-        public Date getDate()
-        {
-            return date;
-        }
-
-        public void setDate(Date date)
-        {
-            this.date = date;
-        }
-
-        public String getDescription()
-        {
-            return description;
-        }
-
-        public void setDescription(String description)
-        {
-            this.description = description;
-        }
-
-        public double getIntensity()
-        {
-            return intensity;
-        }
-
-        public void setIntensity(double intensity)
-        {
-            this.intensity = intensity;
-        }
-
-        public double getKl()
-        {
-            return kl;
-        }
-
-        public void setKl(double kl)
-        {
-            this.kl = kl;
-        }
-
-        public double getMass()
-        {
-            return mass;
-        }
-
-        public void setMass(double mass)
-        {
-            this.mass = mass;
-        }
-
-        public double getMedian()
-        {
-            return median;
-        }
-
-        public void setMedian(double median)
-        {
-            this.median = median;
-        }
-
-        public double getMz()
-        {
-            return mz;
-        }
-
-        public void setMz(double mz)
-        {
-            this.mz = mz;
-        }
-
-        public int getPeaks()
-        {
-            return peaks;
-        }
-
-        public void setPeaks(int peaks)
-        {
-            this.peaks = peaks;
-        }
-
-        public int getScan()
-        {
-            return scan;
-        }
-
-        public void setScan(int scan)
-        {
-            this.scan = scan;
-        }
-
-        public int getScanCount()
-        {
-            return scanCount;
-        }
-
-        public void setScanCount(int scanCount)
-        {
-            this.scanCount = scanCount;
-        }
-
-        public int getScanFirst()
-        {
-            return scanFirst;
-        }
-
-        public void setScanFirst(int scanFirst)
-        {
-            this.scanFirst = scanFirst;
-        }
-
-        public int getScanLast()
-        {
-            return scanLast;
-        }
-
-        public void setScanLast(int scanLast)
-        {
-            this.scanLast = scanLast;
-        }
-
-        public double getTime()
-        {
-            return time;
-        }
-
-        public void setTime(double time)
-        {
-            this.time = time;
-        }
-    }
+    public abstract void close();
 }

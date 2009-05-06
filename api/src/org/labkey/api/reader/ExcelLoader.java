@@ -41,7 +41,7 @@ import java.util.*;
  * User: jgarms
  * Date: Oct 22, 2008
  */
-public class ExcelLoader extends DataLoader
+public class ExcelLoader extends DataLoader<Map<String, Object>>
 {
     private final Workbook workbook;
 
@@ -121,7 +121,7 @@ public class ExcelLoader extends DataLoader
         return cells.toArray(new String[cells.size()][]);
     }
 
-    public CloseableIterator<Map<String, Object>> iterator() throws IOException
+    public CloseableIterator<Map<String, Object>> iterator()
     {
         return new ExcelIterator();
     }
@@ -147,13 +147,21 @@ public class ExcelLoader extends DataLoader
 
         private Map<String, Object> nextRow;
 
-        public ExcelIterator() throws IOException
+        public ExcelIterator()
         {
             // find a converter for each column type
             for (ColumnDescriptor column : _columns)
                 column.converter = ConvertUtils.lookup(column.clazz);
 
-            sheet = getSheet();
+            try
+            {
+                sheet = getSheet();
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+
             numRows = sheet.getRows();
             numCols = sheet.getColumns();
 

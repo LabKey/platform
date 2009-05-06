@@ -15,8 +15,6 @@
  */
 package org.labkey.api.reader;
 
-// UNDONE: should probably be in package org.labkey.common.util
-
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.beanutils.ConversionException;
@@ -25,12 +23,10 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMapFactory;
-import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.util.CloseableIterator;
 import org.labkey.api.util.Filter;
-import org.labkey.api.util.FilterIterator;
 
 import java.io.*;
 import java.util.*;
@@ -54,9 +50,9 @@ import java.util.regex.Pattern;
  * Date: Jun 28, 2004
  * Time: 2:25:19 PM
  */
-public class TabLoader extends DataLoader
+public abstract class AbstractTabLoader<T> extends DataLoader<T>
 {
-    private static final Logger _log = Logger.getLogger(TabLoader.class);
+    private static final Logger _log = Logger.getLogger(NewTabLoader.class);
 
     // source data
     private String _stringData = null;
@@ -69,55 +65,6 @@ public class TabLoader extends DataLoader
     protected boolean _parseQuotes = false;
     protected boolean _throwOnErrors = false;
     private Filter<Map<String, Object>> _mapFilter;
-    private Filter _beanFilter = null;
-
-
-    public TabLoader(File inputFile) throws IOException
-    {
-        setSource(inputFile);
-    }
-
-    public TabLoader(File inputFile, boolean hasColumnHeaders) throws IOException
-    {
-        setSource(inputFile);
-        setHasColumnHeaders(hasColumnHeaders);
-    }
-
-    public TabLoader(Reader reader, boolean hasColumnHeaders)
-    {
-        setSource(reader);
-        setHasColumnHeaders(hasColumnHeaders);
-    }
-
-    // infer whether there are columnHeaders
-    public TabLoader(Reader reader)
-    {
-        this(reader, false);
-    }
-
-
-    public TabLoader(String src, boolean hasColumnHeaders)
-    {
-        if (src == null)
-            throw new IllegalArgumentException("src cannot be null");
-        setHasColumnHeaders(hasColumnHeaders);
-        setSource(src);
-    }
-
-
-    public TabLoader(String src)
-    {
-        setSource(src);
-    }
-
-
-    public TabLoader(File inputFile, int skipLines)
-            throws IOException
-    {
-        setSource(inputFile);
-        _skipLines = skipLines;
-    }
-
 
     public void setHasColumnHeaders(boolean hasColumnHeaders)
     {
@@ -218,6 +165,7 @@ public class TabLoader extends DataLoader
         int length = s.length();
         int start = 0;
         listParse.clear();
+
         while (start < length)
         {
             int end;
@@ -277,14 +225,17 @@ public class TabLoader extends DataLoader
         _mapFilter = mapFilter;
     }
 
-    public void setBeanFilter(Filter beanFilter)
+    protected CloseableIterator<Map<String, Object>> mapIterator()
     {
-        _beanFilter = beanFilter;
-    }
-
-    public CloseableIterator<Map<String, Object>> iterator() throws IOException
-    {
-        TabLoaderIterator iter = new TabLoaderIterator();
+        TabLoaderIterator iter = null;
+        try
+        {
+            iter = new TabLoaderIterator();
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
 
         if (null == _mapFilter)
             return iter;
@@ -292,28 +243,6 @@ public class TabLoader extends DataLoader
             return new CloseableFilterIterator<Map<String, Object>>(iter, _mapFilter);
     }
 
-    public <T> CloseableIterator<T> iterator(Class<T> clazz) throws IOException
-    {
-        if (null == _beanFilter)
-            return new BeanIterator<T>(iterator(), clazz);
-        else
-            return new CloseableFilterIterator<T>(new BeanIterator<T>(iterator(), clazz), (Filter<T>)_beanFilter);
-    }
-
-    public <T> List<T> load(Class<T> clazz) throws IOException
-    {
-        return load(iterator(clazz));
-    }
-
-    private <T> List<T> load(CloseableIterator<T> iter) throws IOException
-    {
-        List<T> result = new ArrayList<T>();
-
-        while (iter.hasNext())
-            result.add(iter.next());
-
-        return result;
-    }
 
     public void parseAsCSV()
     {
@@ -424,12 +353,14 @@ public class TabLoader extends DataLoader
 
             reader = getReader();
             String s;
+
             for (int skip = 0; skip < _skipLines;)
             {
                 s = reader.readLine();
                 if (null == s)
                     break;
                 lineNo++;
+
                 if (s.length() == 0 || s.charAt(0) == '#')
                 {
                     int eq = s.indexOf('=');
@@ -442,6 +373,7 @@ public class TabLoader extends DataLoader
                     }
                     continue;
                 }
+
                 skip++;
             }
         }
@@ -500,8 +432,8 @@ public class TabLoader extends DataLoader
                 line = null;
 
                 String[] fields = parseLine(s);
-
                 Object[] values = new Object[_columns.length];
+
                 for (int i = 0; i < _columns.length; i++)
                 {
                     ColumnDescriptor column = _columns[i];
@@ -635,57 +567,6 @@ public class TabLoader extends DataLoader
         }
     }
 
-    public static class CloseableFilterIterator<T> extends FilterIterator<T> implements CloseableIterator<T>
-    {
-        protected CloseableIterator<T> _iter;
-
-        public CloseableFilterIterator(CloseableIterator<T> iter, Filter<T> filter)
-        {
-            super(iter, filter);
-            _iter = iter;
-        }
-
-        public void close() throws IOException
-        {
-            _iter.close();
-        }
-    }
-
-    // Iterator that transforms Map<String, Object> to bean using ObjectFactory
-    public static class BeanIterator<T> implements CloseableIterator<T>
-    {
-        private CloseableIterator<Map<String, Object>> _mapIter;
-        private ObjectFactory<T> _factory;
-
-        public BeanIterator(CloseableIterator<Map<String, Object>> mapIter, Class<T> clazz) throws IOException
-        {
-            _mapIter = mapIter;
-            _factory = ObjectFactory.Registry.getFactory(clazz);
-        }
-
-        public void close() throws IOException
-        {
-            _mapIter.close();
-        }
-
-        public boolean hasNext()
-        {
-            return _mapIter.hasNext();
-        }
-
-        public T next()
-        {
-            Map<String, Object> row = _mapIter.next();
-            return _factory.fromMap(row);
-        }
-
-        public void remove()
-        {
-            _mapIter.remove();
-        }
-    }
-
-
     public static class TabLoaderTestCase extends junit.framework.TestCase
     {
         String csvData =
@@ -739,7 +620,7 @@ public class TabLoader extends DataLoader
 
         public TabLoaderTestCase()
         {
-            this("TabLoader Test");
+            this("NewTabLoader Test");
         }
 
 
@@ -757,7 +638,7 @@ public class TabLoader extends DataLoader
         {
             File tsv = _createTempFile(tsvData, ".tsv");
 
-            TabLoader l = new TabLoader(tsv);
+            NewTabLoader l = new NewTabLoader(tsv);
             List<Map<String, Object>> maps = l.load();
             assertEquals(l.getColumns().length, 18);
             assertEquals(l.getColumns()[0].clazz, Date.class);
@@ -779,7 +660,7 @@ public class TabLoader extends DataLoader
         {
             File csv = _createTempFile(tsvData, ".tsv");
             Reader r = new FileReader(csv);
-            TabLoader l = new TabLoader(r, true);
+            NewTabLoader l = new NewTabLoader(r, true);
             List<Map<String, Object>> maps = l.load();
             assertEquals(l.getColumns().length, 18);
             assertEquals(maps.size(), 7);
@@ -792,7 +673,7 @@ public class TabLoader extends DataLoader
         {
             File csv = _createTempFile(csvData, ".csv");
 
-            TabLoader l = new TabLoader(csv);
+            NewTabLoader l = new NewTabLoader(csv);
             l.parseAsCSV();
             List<Map<String, Object>> maps = l.load();
             assertEquals(l.getColumns().length, 18);
@@ -815,7 +696,7 @@ public class TabLoader extends DataLoader
         {
             File csv = _createTempFile(csvData, ".csv");
             Reader r = new FileReader(csv);
-            TabLoader l = new TabLoader(r, true);
+            NewTabLoader l = new NewTabLoader(r, true);
             l.parseAsCSV();
             List<Map<String, Object>> maps = l.load();
             assertEquals(l.getColumns().length, 18);
@@ -827,11 +708,11 @@ public class TabLoader extends DataLoader
 
         public void compareTSVtoCSV() throws IOException
         {
-            TabLoader lCSV = new TabLoader(csvData, true);
+            NewTabLoader lCSV = new NewTabLoader(csvData, true);
             lCSV.parseAsCSV();
             List<Map<String, Object>> mapsCSV = lCSV.load();
 
-            TabLoader lTSV = new TabLoader(tsvData, true);
+            NewTabLoader lTSV = new NewTabLoader(tsvData, true);
             List<Map<String, Object>> mapsTSV = lTSV.load();
 
             assertEquals(lCSV.getColumns().length, lTSV.getColumns().length);
@@ -844,9 +725,9 @@ public class TabLoader extends DataLoader
         public void testObject() throws Exception
         {
             File tsv = _createTempFile(tsvData, ".tsv");
-            TabLoader loader = new TabLoader(tsv);
+            BeanTabLoader<TestRow> loader = new BeanTabLoader<TestRow>(TestRow.class, tsv);
 
-            List<TestRow> rows = loader.load(TestRow.class);
+            List<TestRow> rows = loader.load();
 
             assertTrue(rows.size() == 7);
 

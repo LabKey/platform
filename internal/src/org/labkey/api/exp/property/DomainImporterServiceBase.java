@@ -27,7 +27,7 @@ import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.ExcelLoader;
-import org.labkey.api.reader.TabLoader;
+import org.labkey.api.reader.NewTabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 
 import javax.servlet.http.HttpSession;
@@ -54,7 +54,7 @@ public abstract class DomainImporterServiceBase extends BaseRemoteService implem
 
     public List<InferencedColumn> inferenceColumns() throws ImportException
     {
-        DataLoader loader = getDataLoader();
+        DataLoader<Map<String, Object>> loader = getDataLoader();
 
         try
         {
@@ -94,7 +94,7 @@ public abstract class DomainImporterServiceBase extends BaseRemoteService implem
     }
 
     @NotNull
-    protected DataLoader getDataLoader() throws ImportException
+    protected DataLoader<Map<String, Object>> getDataLoader() throws ImportException
     {
         File file = getImportFile();
         String filename = file.getName();
@@ -106,11 +106,11 @@ public abstract class DomainImporterServiceBase extends BaseRemoteService implem
             }
             else if (filename.endsWith("txt") || filename.endsWith("tsv"))
             {
-                return new TabLoader(file, true);
+                return new NewTabLoader(file, true);
             }
             else if (filename.endsWith("csv"))
             {
-                TabLoader loader = new TabLoader(file, true);
+                NewTabLoader loader = new NewTabLoader(file, true);
                 loader.parseAsCSV();
                 return loader;
             }
@@ -126,7 +126,7 @@ public abstract class DomainImporterServiceBase extends BaseRemoteService implem
 
     }
 
-    private List<InferencedColumn> getColumns(DataLoader loader) throws ImportException
+    private List<InferencedColumn> getColumns(DataLoader<Map<String, Object>> loader) throws ImportException
     {
         List<InferencedColumn> result = new ArrayList<InferencedColumn>();
 
