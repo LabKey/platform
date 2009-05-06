@@ -348,7 +348,25 @@ public class WebdavResolverImpl implements WebdavResolver
         @Override
         public boolean canCreate(User user)
         {
-            return null != _attachmentResource && _attachmentResource.canWrite(user);
+            return null != _attachmentResource && _attachmentResource.canCreate(user);
+        }
+
+        @Override
+        public boolean canRename(User user)
+        {
+            return false;
+        }
+
+        @Override
+        public boolean canDelete(User user)
+        {
+            return false;
+        }
+
+        @Override
+        public boolean canWrite(User user)
+        {
+            return false;
         }
 
 
