@@ -32,22 +32,23 @@ import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
-import org.labkey.api.gwt.server.BaseRemoteService;
-import org.labkey.api.reader.TabLoader;
-import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.experiment.*;
 import org.labkey.experiment.api.*;
 import org.labkey.experiment.controllers.property.PropertyController;
@@ -485,6 +486,88 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ACL.PERM_INSERT)
+    @ApiVersion(9.2)
+    @RequiresLogin
+    public class SaveMaterialsAction extends ApiAction<SaveMaterialsForm>
+    {
+        public ApiResponse execute(SaveMaterialsForm form, BindException errors) throws Exception
+        {
+            UploadMaterialSetForm uploadForm = new UploadMaterialSetForm();
+            uploadForm.setContainer(getContainer());
+            uploadForm.setUser(getUser());
+            uploadForm.setName(form.getName());
+            uploadForm.setImportMoreSamples(true);
+            uploadForm.setParentColumn(-1);
+            uploadForm.setOverwriteChoice(UploadMaterialSetForm.OverwriteChoice.replace.name());
+            
+
+            // Okay, this is lame: we're going to create a tsv in order to reuse the existing
+            // material creation code, which uses good old tabloader
+            StringBuilder sb = new StringBuilder();
+
+            boolean needsTab = false;
+            List<Map<String,String>> allProperties = form.getMaterials();
+            // first the header
+            for (Map.Entry<String,String> entry : allProperties.get(0).entrySet())
+            {
+                if (needsTab)
+                    sb.append("\t");
+                else
+                    needsTab = true;
+                sb.append(entry.getKey());
+            }
+            sb.append("\n");
+
+            for (Map<String,String> properties : allProperties)
+            {
+                needsTab = false;
+                for (Map.Entry<String,String> entry : properties.entrySet())
+                {
+                    if (needsTab)
+                        sb.append("\t");
+                    else
+                        needsTab = true;
+                    sb.append(entry.getValue());
+                }
+                sb.append("\n");
+            }
+
+            uploadForm.setData(sb.toString());
+
+            UploadSamplesHelper helper = new UploadSamplesHelper(uploadForm);
+            helper.uploadMaterials();
+
+            return new ApiSimpleResponse();
+        }
+    }
+
+    public static final class SaveMaterialsForm implements ApiJsonForm
+    {
+        private JSONObject jsonObj;
+
+        public void setJsonObject(JSONObject jsonObj)
+        {
+            this.jsonObj = jsonObj;
+        }
+
+        public String getName()
+        {
+            return jsonObj.getString("name");
+        }
+
+        public List<Map<String,String>> getMaterials()
+        {
+            JSONArray materials = jsonObj.getJSONArray("materials");
+            List<Map<String,String>> result = new ArrayList<Map<String,String>>();
+            for (int i=0; i<materials.length(); i++)
+            {
+                Map props = materials.getJSONObject(i).getJSONObject("properties");
+                result.add(props);
+            }
+            return result;
+        }
+    }
 
 
     @RequiresPermission(ACL.PERM_READ)

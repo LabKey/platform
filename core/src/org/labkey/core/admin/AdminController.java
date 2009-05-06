@@ -803,7 +803,7 @@ public class AdminController extends SpringActionController
             Container c = getViewContext().getContainer();
 
             if (c.isRoot())
-                return appendAdminNavTrail(root, "Project Settings", this.getClass());
+                return appendAdminNavTrail(root, "Look and Feel Settings", this.getClass());
 
             root.addChild("Project Settings");
             return root;
