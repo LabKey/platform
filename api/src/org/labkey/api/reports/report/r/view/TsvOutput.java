@@ -23,7 +23,7 @@ import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.reader.NewTabLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 
 import java.io.File;
@@ -75,7 +75,7 @@ public class TsvOutput extends AbstractParamReplacement
         {
             if (getFile() != null && getFile().exists() && (getFile().length() > 0))
             {
-                NewTabLoader tabLoader = new NewTabLoader(getFile(), 1) {
+                TabLoader tabLoader = new TabLoader(getFile(), 1) {
                     protected String getDefaultColumnName(int col)
                     {
                         // a blank column name is okay...

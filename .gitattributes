@@ -499,8 +499,8 @@ api/src/org/labkey/api/reader/BeanTabLoader.java -text
 api/src/org/labkey/api/reader/ColumnDescriptor.java -text
 api/src/org/labkey/api/reader/DataLoader.java -text
 api/src/org/labkey/api/reader/ExcelLoader.java -text
-api/src/org/labkey/api/reader/NewTabLoader.java -text
 api/src/org/labkey/api/reader/SimpleXMLStreamReader.java -text
+api/src/org/labkey/api/reader/TabLoader.java -text
 api/src/org/labkey/api/reader/TestRow.java -text
 api/src/org/labkey/api/reader/XMLStreamReaderWrapper.java -text
 api/src/org/labkey/api/reports/ExternalScriptEngine.java -text

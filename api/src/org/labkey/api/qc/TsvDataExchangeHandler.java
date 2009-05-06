@@ -35,7 +35,7 @@ import org.labkey.api.study.assay.AssayRunUploadContext;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.reader.NewTabLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.jetbrains.annotations.NotNull;
 
@@ -220,7 +220,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             List<ValidationError> errors = new ArrayList<ValidationError>();
 
             try {
-                NewTabLoader loader = new NewTabLoader(runInfo, false);
+                TabLoader loader = new TabLoader(runInfo, false);
                 loader.setColumns(new ColumnDescriptor[]{
                         new ColumnDescriptor("name", String.class),
                         new ColumnDescriptor("value", String.class),
@@ -240,7 +240,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
                 if (errorFile != null && errorFile.exists())
                 {
-                    NewTabLoader errorLoader = new NewTabLoader(errorFile, false);
+                    TabLoader errorLoader = new TabLoader(errorFile, false);
                     errorLoader.setColumns(new ColumnDescriptor[]{
                             new ColumnDescriptor("type", String.class),
                             new ColumnDescriptor("property", String.class),

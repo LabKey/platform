@@ -27,7 +27,7 @@ import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.ExcelLoader;
-import org.labkey.api.reader.NewTabLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 
 import javax.servlet.http.HttpSession;
@@ -106,11 +106,11 @@ public abstract class DomainImporterServiceBase extends BaseRemoteService implem
             }
             else if (filename.endsWith("txt") || filename.endsWith("tsv"))
             {
-                return new NewTabLoader(file, true);
+                return new TabLoader(file, true);
             }
             else if (filename.endsWith("csv"))
             {
-                NewTabLoader loader = new NewTabLoader(file, true);
+                TabLoader loader = new TabLoader(file, true);
                 loader.parseAsCSV();
                 return loader;
             }

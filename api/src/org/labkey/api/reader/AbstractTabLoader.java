@@ -52,7 +52,7 @@ import java.util.regex.Pattern;
  */
 public abstract class AbstractTabLoader<T> extends DataLoader<T>
 {
-    private static final Logger _log = Logger.getLogger(NewTabLoader.class);
+    private static final Logger _log = Logger.getLogger(TabLoader.class);
 
     // source data
     private String _stringData = null;
@@ -620,7 +620,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
 
         public TabLoaderTestCase()
         {
-            this("NewTabLoader Test");
+            this("TabLoader Test");
         }
 
 
@@ -638,7 +638,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
         {
             File tsv = _createTempFile(tsvData, ".tsv");
 
-            NewTabLoader l = new NewTabLoader(tsv);
+            TabLoader l = new TabLoader(tsv);
             List<Map<String, Object>> maps = l.load();
             assertEquals(l.getColumns().length, 18);
             assertEquals(l.getColumns()[0].clazz, Date.class);
@@ -660,7 +660,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
         {
             File csv = _createTempFile(tsvData, ".tsv");
             Reader r = new FileReader(csv);
-            NewTabLoader l = new NewTabLoader(r, true);
+            TabLoader l = new TabLoader(r, true);
             List<Map<String, Object>> maps = l.load();
             assertEquals(l.getColumns().length, 18);
             assertEquals(maps.size(), 7);
@@ -673,7 +673,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
         {
             File csv = _createTempFile(csvData, ".csv");
 
-            NewTabLoader l = new NewTabLoader(csv);
+            TabLoader l = new TabLoader(csv);
             l.parseAsCSV();
             List<Map<String, Object>> maps = l.load();
             assertEquals(l.getColumns().length, 18);
@@ -696,7 +696,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
         {
             File csv = _createTempFile(csvData, ".csv");
             Reader r = new FileReader(csv);
-            NewTabLoader l = new NewTabLoader(r, true);
+            TabLoader l = new TabLoader(r, true);
             l.parseAsCSV();
             List<Map<String, Object>> maps = l.load();
             assertEquals(l.getColumns().length, 18);
@@ -708,11 +708,11 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
 
         public void compareTSVtoCSV() throws IOException
         {
-            NewTabLoader lCSV = new NewTabLoader(csvData, true);
+            TabLoader lCSV = new TabLoader(csvData, true);
             lCSV.parseAsCSV();
             List<Map<String, Object>> mapsCSV = lCSV.load();
 
-            NewTabLoader lTSV = new NewTabLoader(tsvData, true);
+            TabLoader lTSV = new TabLoader(tsvData, true);
             List<Map<String, Object>> mapsTSV = lTSV.load();
 
             assertEquals(lCSV.getColumns().length, lTSV.getColumns().length);

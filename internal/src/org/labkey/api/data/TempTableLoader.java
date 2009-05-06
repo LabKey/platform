@@ -16,7 +16,7 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.reader.NewTabLoader;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.collections.RowMap;
 
@@ -35,7 +35,7 @@ import java.sql.SQLException;
  * NOTE: I would have put loadTempTable() on TabLoader, but it is
  * in the tools project.  That wouldn't work, so here's a subclass instead.
  */
-public class TempTableLoader extends NewTabLoader
+public class TempTableLoader extends TabLoader
 {
     public TempTableLoader(File src) throws IOException
     {
