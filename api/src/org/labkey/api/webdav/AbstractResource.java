@@ -260,11 +260,19 @@ public abstract class AbstractResource implements WebdavResolver.Resource
     }
 
 
+    public void moveFrom(User user, WebdavResolver.Resource src) throws IOException
+    {
+        copyFrom(user, src);
+        src.delete(user);
+    }
+
+
     @NotNull
     public List<WebdavResolver.History> getHistory()
     {
         return Collections.EMPTY_LIST;
     }
+    
 
     @NotNull
     public List<NavTree> getActions()

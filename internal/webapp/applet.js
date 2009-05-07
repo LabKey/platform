@@ -12,7 +12,6 @@ LABKEY.Applet = Ext.extend(Ext.BoxComponent,
     {
         Ext.BoxComponent.superclass.initComponent.call(this);
         this.autoEl = 'div';
-        this.appletId = this.appletId || this.id + 'APPLET';
         this.addEvents("ready");
     },
 
@@ -25,21 +24,21 @@ LABKEY.Applet = Ext.extend(Ext.BoxComponent,
         }
         if (!this.rendered)
         {
-            this.width = width;;
+            this.width = width;
             this.height = height;
         }
         else
         {
-            this.el.setSize(width, height);
-            var app = Ext.get(this.appletId);
-            app.dom.width = width;
-            app.dom.height = height;
+            this.el.dom.width = width;
+            this.el.dom.height = height;
+            //this.el.setSize(width, height);
         }
     },
 
     markup : function(config)
     {
         var applet = config || this;
+
         var tag = 'applet';
         var p;
         var html = '';
@@ -57,8 +56,8 @@ LABKEY.Applet = Ext.extend(Ext.BoxComponent,
                 '<EMBED id="'+ applet.appletId + '"' +
                 ' code="' + applet.code + '"' +
                 ' archive="' + archive + '"' +
-                ' width=' + (applet.width || 200) +
-                ' height=' + (applet.height || 200) +
+                ' width=' + applet.width +
+                ' height=' + applet.height +
                 ' type="application/x-java-applet;version=1.5.0"';
 //		    ' pluginspage="http://java.sun.com/j2se/1.5.0/download.html">');
             for (p in applet.params)
@@ -70,8 +69,8 @@ LABKEY.Applet = Ext.extend(Ext.BoxComponent,
             html +=
                 '<OBJECT id="' + applet.appletId + '"' +
                 ' classid="clsid:8AD9C840-044E-11D1-B3E9-00805F499D93"' +
-                ' width=' + (applet.width ? applet.width : 200) +
-                ' height=' + (applet.height ? applet.height : 200) +
+                ' width=' + applet.width +
+                ' height=' + applet.height +
                 ' codebase="http://java.sun.com/products/plugin/autodl/jinstall-1_5_0-windows-i586.cab#Version=1,5,0,0">' +
                 '<PARAM name="code" value="' + applet.code + '">' +
                 '<PARAM name="arhive" value="' + archive + '">';
@@ -85,8 +84,8 @@ LABKEY.Applet = Ext.extend(Ext.BoxComponent,
                 '<APPLET id="' + applet.appletId + '"' +
                 ' code="' + applet.code + '"' +
                 ' archive="' + archive + '"' +
-                ' width=' + (applet.width ? applet.width : 200) +
-                ' height=' + (applet.height ? applet.height : 200) +
+                ' width=' + applet.width +
+                ' height=' + applet.height +
                 ' MAYSCRIPT="true" SCRIPTABLE="true">\n';
             for (p in applet.params)
                 html += '<PARAM name="' + p + '" value="' + applet.params[p] + '">\n';
@@ -102,10 +101,15 @@ LABKEY.Applet = Ext.extend(Ext.BoxComponent,
 
     onRender : function(ct, position)
     {
-        LABKEY.Applet.superclass.onRender.call(this, ct, position);
-        var html = this.markup();
-        this.el.insertHtml("BeforeEnd", html);
+        if (!this.width)
+            this.width = ct.getWidth();
+         if (!this.height)
+            this.height = ct.getHeight();
 
+        var html = this.markup();
+        var d = Ext.DomHelper.insertHtml(position||'beforeEnd',ct.dom,html);
+        this.el = Ext.get(d);
+        
         var task =
         {
             interval:100,
@@ -122,29 +126,23 @@ LABKEY.Applet = Ext.extend(Ext.BoxComponent,
         Ext.TaskMgr.start(task);
     },
 
-    onReady : function(fn)
+    onReady : function(fn, scope)
     {
         if (!this.isActive())
-            this.on("ready", fn);
+            this.on("ready", fn, scope);
         else
-            fn.call();
+            fn.call(scope);
     },
 
     isActive : function()
     {
         if (!this.rendered)
             return false;
-        var applet = Ext.get(this.appletId);
-        return applet && 'isActive' in applet.dom && applet.dom.isActive();
+        return this.el && 'isActive' in this.el.dom && this.el.dom.isActive();
     },
 
     getApplet : function()
     {
-        if (!this.rendered)
-            return false;
-        var applet = Ext.get(this.appletId);
-        if (applet && 'isActive' in applet.dom && applet.dom.isActive())
-            return applet.dom;
-        return null;
+        return this.isActive() ? this.el.dom : null;
     }
 });

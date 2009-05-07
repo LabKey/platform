@@ -109,12 +109,12 @@ public class AttachmentService
          */
         public void unregisterDirectory(Container c, String label);
 
-        public void addAttachments(User user, AttachmentParent parent, List<AttachmentFile> files) throws IOException, SQLException, DuplicateFilenameException;
+        public void addAttachments(User user, AttachmentParent parent, List<AttachmentFile> files) throws IOException;
         public void insertAttachmentRecord(User user, AttachmentDirectory parent, AttachmentFile file) throws SQLException;
         public void deleteAttachments(AttachmentParent parent) throws SQLException;
-        public void deleteAttachment(AttachmentParent parent, String name) throws SQLException;
-        public void renameAttachment(AttachmentParent parent, String oldName, String newName) throws SQLException, DuplicateFilenameException;
-        public void copyAttachment(User user, AttachmentParent parent, Attachment a, String newName) throws IOException, SQLException, DuplicateFilenameException;
+        public void deleteAttachment(AttachmentParent parent, String name);
+        public void renameAttachment(AttachmentParent parent, String oldName, String newName) throws IOException;
+        public void copyAttachment(User user, AttachmentParent parent, Attachment a, String newName) throws IOException;
         public List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException;
         public Attachment[] getAttachments(AttachmentParent parent);
         public WebdavResolver.Resource getAttachmentResource(String path, AttachmentParent parent);
@@ -192,7 +192,7 @@ public class AttachmentService
         }
     }
 
-    public static class DuplicateFilenameException extends Exception
+    public static class DuplicateFilenameException extends IOException
     {
         private List<String> _errors = new ArrayList<String>();
 

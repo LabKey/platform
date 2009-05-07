@@ -92,6 +92,8 @@ public interface WebdavResolver
 
         long copyFrom(User user, Resource r) throws IOException;
 
+        void moveFrom(User user, Resource r) throws IOException;
+        
         long getContentLength() throws IOException;
 
         @NotNull
