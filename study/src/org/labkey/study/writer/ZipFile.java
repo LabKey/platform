@@ -33,39 +33,47 @@ public class ZipFile implements Archive
     private final ZipOutputStream _out;
     private final String _path;
     private final PrintWriter _pw;
+    private final boolean _shouldCloseOutputStream;
 
     public ZipFile(File root, String name) throws FileNotFoundException
     {
-        // Make sure directory exists, is writeable
-        FileSystemFile.ensureWriteableDirectory(root);
-        File zipFile = new File(root, makeLegalName(name));
-        FileOutputStream fos = new FileOutputStream(zipFile);
-        _out = new ZipOutputStream(new BufferedOutputStream(fos));
-        _pw = new NonCloseablePrintWriter(_out);
-        _path = "";
+        this(getOutputStream(root, name), true);
     }
 
     public ZipFile(HttpServletResponse response, String name) throws IOException
     {
-        response.setContentType("application/zip");
-        response.setHeader("Content-Disposition", "attachment; filename=\"" + makeLegalName(name) + "\";");
-        _out = new ZipOutputStream(response.getOutputStream());
-        _pw = new NonCloseablePrintWriter(_out);
-        _path = "";
+        this(getOutputStream(response, name), true);
     }
 
-    private ZipFile(ZipOutputStream out) throws IOException
+    private ZipFile(OutputStream out, boolean shouldCloseOutputStream)
     {
-        _out = new ZipOutputStream(out);
-        _pw = new NonCloseablePrintWriter(_out);
-        _path = "";
+        this(new ZipOutputStream(out), null, "", shouldCloseOutputStream);
     }
 
-    private ZipFile(ZipOutputStream out, PrintWriter pw, String path)
+    private ZipFile(ZipOutputStream out, PrintWriter pw, String path, boolean shouldCloseOutputStream)
     {
         _out = out;
-        _pw = pw;
-        _path = path + "/";
+        _pw = null != pw ? pw : new NonCloseablePrintWriter(out);
+        _path = path;
+        _shouldCloseOutputStream = shouldCloseOutputStream;
+    }
+
+    private static OutputStream getOutputStream(File root, String name) throws FileNotFoundException
+    {
+        // Make sure directory exists, is writeable
+        FileSystemFile.ensureWriteableDirectory(root);
+        File zipFile = new File(root, _makeLegalName(name));
+        FileOutputStream fos = new FileOutputStream(zipFile);
+
+        return new BufferedOutputStream(fos);
+    }
+
+    private static OutputStream getOutputStream(HttpServletResponse response, String name) throws IOException
+    {
+        response.setContentType("application/zip");
+        response.setHeader("Content-Disposition", "attachment; filename=\"" + _makeLegalName(name) + "\";");
+
+        return response.getOutputStream();
     }
 
     public String getLocation()
@@ -89,7 +97,7 @@ public class ZipFile implements Archive
 
     public VirtualFile getDir(String path)
     {
-        return new ZipFile(_out, _pw, _path + path);
+        return new ZipFile(_out, _pw, _path + path + "/", false);
     }
 
     public Archive createZipArchive(String name) throws IOException
@@ -97,25 +105,37 @@ public class ZipFile implements Archive
         ZipEntry entry = new ZipEntry(_path + makeLegalName(name));
         _out.putNextEntry(entry);
 
-        return new ZipFile(_out);
+        return new ZipFile(_out, false);
     }
 
     public String makeLegalName(String name)
+    {
+        return _makeLegalName(name);
+    }
+
+    public static String _makeLegalName(String name)
     {
         return FileSystemFile.makeLegal(name);
     }
 
     public void close() throws IOException
     {
-        _out.flush();
-        _out.close();
+        _out.finish();            
+
+        if (_shouldCloseOutputStream)
+        {
+            _out.close();
+        }
     }
 
-    private class NonCloseablePrintWriter extends PrintWriter
+    private static class NonCloseablePrintWriter extends PrintWriter
     {
-        private NonCloseablePrintWriter(OutputStream out)
+        private final ZipOutputStream _out;
+
+        private NonCloseablePrintWriter(ZipOutputStream out)
         {
             super(out);
+            _out = out;
         }
 
         @Override

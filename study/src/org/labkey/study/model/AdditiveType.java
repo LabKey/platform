@@ -28,6 +28,7 @@ public class AdditiveType extends AbstractStudyCachable<AdditiveType>
     private String _ldmsAdditiveCode; // character varying(5),
     private String _labwareAdditiveCode; // character varying(5),
     private String _additive; // character varying(100),
+    private int _externalId; // integer NOT NULL default 0
 
     public Object getPrimaryKey()
     {
@@ -42,6 +43,16 @@ public class AdditiveType extends AbstractStudyCachable<AdditiveType>
     public void setRowId(long rowId)
     {
         _rowId = rowId;
+    }
+
+    public int getExternalId()
+    {
+        return _externalId;
+    }
+
+    public void setExternalId(int externalId)
+    {
+        _externalId = externalId;
     }
 
     public Container getContainer()

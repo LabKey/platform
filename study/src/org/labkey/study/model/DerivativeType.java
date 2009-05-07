@@ -28,6 +28,8 @@ public class DerivativeType extends AbstractStudyCachable<DerivativeType>
     private String _ldmsDerivativeCode; // character varying(5),
     private String _labwareDerivativeCode; // character varying(5),
     private String _derivative; // character varying(100),
+    private int _externalId; // integer NOT NULL default 0
+
 
     public Object getPrimaryKey()
     {
@@ -42,6 +44,16 @@ public class DerivativeType extends AbstractStudyCachable<DerivativeType>
     public void setRowId(long rowId)
     {
         _rowId = rowId;
+    }
+
+    public int getExternalId()
+    {
+        return _externalId;
+    }
+
+    public void setExternalId(int externalId)
+    {
+        _externalId = externalId;
     }
 
     public Container getContainer()

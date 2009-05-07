@@ -388,15 +388,31 @@ public class SampleManager
         return _additiveHelper.get(c, rowId);
     }
 
+    public AdditiveType[] getAdditiveTypes(Container c) throws SQLException
+    {
+        return _additiveHelper.get(c, "ExternalId");
+    }
+
     public DerivativeType getDerivativeType(Container c, int rowId) throws SQLException
     {
         return _derivativeHelper.get(c, rowId);
     }
+
+    public DerivativeType[] getDerivativeTypes(Container c) throws SQLException
+    {
+        return _derivativeHelper.get(c, "ExternalId");
+    }
+
     public PrimaryType getPrimaryType(Container c, int rowId) throws SQLException
     {
         return _primaryTypeHelper.get(c, rowId);
     }
     
+    public PrimaryType[] getPrimaryTypes(Container c) throws SQLException
+    {
+        return _primaryTypeHelper.get(c, "ExternalId");
+    }
+
     public SampleRequestStatus[] getRequestStatuses(Container c, User user) throws SQLException
     {
         SampleRequestStatus[] statuses = _requestStatusHelper.get(c, "SortOrder");

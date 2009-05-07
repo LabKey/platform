@@ -15,11 +15,11 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.study.model.Study;
-import org.labkey.api.util.VirtualFile;
+import org.labkey.api.data.Container;
 import org.labkey.api.util.Archive;
-
-import java.io.PrintWriter;
+import org.labkey.api.util.VirtualFile;
+import org.labkey.study.SampleManager;
+import org.labkey.study.model.Study;
 
 /**
  * User: adam
@@ -30,19 +30,17 @@ public class SpecimenArchiveWriter implements Writer<Study>
 {
     public void write(Study study, ExportContext ctx, VirtualFile fs) throws Exception
     {
+        Container c = ctx.getContainer();
+        SampleManager manager = SampleManager.getInstance();
         Archive zip = fs.createZipArchive("sample.zip");
 
-        PrintWriter pw = zip.getPrintWriter("foo.txt");
-        pw.println("This is a foo test");
-        pw.println("This is another foo test");
-        pw.println("This is a third foo test");
-        pw.close();
+        SiteWriter siteWriter = new SiteWriter();
+        siteWriter.write(study.getSites(), ctx, zip);
 
-        pw = zip.getPrintWriter("bar.txt");
-        pw.println("This is a bar test");
-        pw.println("This is another bar test");
-        pw.println("This is a third bar test");
-        pw.close();
+        new PrimaryTypeWriter().write(manager.getPrimaryTypes(c), ctx, zip);
+        new AdditiveTypeWriter().write(manager.getAdditiveTypes(c), ctx, zip);
+        new DerivativeTypeWriter().write(manager.getDerivativeTypes(c), ctx, zip);
+        new SpecimenWriter().write(study, ctx, zip);
 
         zip.close();
     }

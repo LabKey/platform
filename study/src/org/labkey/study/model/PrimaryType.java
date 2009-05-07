@@ -28,6 +28,7 @@ public class PrimaryType extends AbstractStudyCachable<PrimaryType>
     private String _primaryTypeLDMSCode; // character varying(5),
     private String _primaryTypeLabwareCode; // character varying(5),
     private String _primaryType; // character varying(100),
+    private int _externalId; // integer NOT NULL default 0
 
     public Object getPrimaryKey()
     {
@@ -42,6 +43,16 @@ public class PrimaryType extends AbstractStudyCachable<PrimaryType>
     public void setRowId(long rowId)
     {
         _rowId = rowId;
+    }
+
+    public int getExternalId()
+    {
+        return _externalId;
+    }
+
+    public void setExternalId(int externalId)
+    {
+        _externalId = externalId;
     }
 
     public Container getContainer()
