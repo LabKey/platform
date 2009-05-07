@@ -91,10 +91,6 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 addAttachments(user, parent, files);
                 message = getErrorHtml(files);
             }
-            catch (SQLException x)
-            {
-                message = x.getMessage() + "<br><br>";
-            }
             catch (AttachmentService.DuplicateFilenameException e)
             {
                 message = e.getMessage() + "<br><br>";
@@ -378,56 +374,63 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
 
-    public synchronized void addAttachments(User user, AttachmentParent parent, List<AttachmentFile> files) throws IOException, SQLException, AttachmentService.DuplicateFilenameException
+    public synchronized void addAttachments(User user, AttachmentParent parent, List<AttachmentFile> files) throws IOException
     {
-        if (null == files || files.isEmpty())
-            return;
-
-        Set<String> filesToSkip = new TreeSet<String>();
-        File fileLocation = parent instanceof AttachmentDirectory ? ((AttachmentDirectory) parent).getFileSystemDirectory() : null;
-
-        for (AttachmentFile file : files)
+        try
         {
-            if (exists(parent, file.getFilename()))
+            if (null == files || files.isEmpty())
+                return;
+
+            Set<String> filesToSkip = new TreeSet<String>();
+            File fileLocation = parent instanceof AttachmentDirectory ? ((AttachmentDirectory) parent).getFileSystemDirectory() : null;
+
+            for (AttachmentFile file : files)
             {
-                filesToSkip.add(file.getFilename());
-                continue;
+                if (exists(parent, file.getFilename()))
+                {
+                    filesToSkip.add(file.getFilename());
+                    continue;
+                }
+
+                HashMap<String, Object> hm = new HashMap<String, Object>();
+                if (null == fileLocation)
+                    hm.put("Document", file);
+                else
+                {
+                    FileOutputStream fos = null;
+                    InputStream is = file.openInputStream();
+                    try
+                    {
+                        File saveFile = new File(fileLocation, file.getFilename());
+                        fos = new FileOutputStream(saveFile);
+                        FileUtil.copyData(is, fos);
+                        logFileAction(fileLocation, file.getFilename(), FileAction.UPLOAD, user);
+                    }
+                    finally
+                    {
+                        IOUtils.closeQuietly(fos);
+                        file.closeInputStream();
+                    }
+                }
+                hm.put("DocumentName", file.getFilename());
+                hm.put("DocumentSize", file.getSize());
+                hm.put("DocumentType", file.getContentType());
+                hm.put("Parent", parent.getEntityId());
+                hm.put("Container", parent.getContainerId());
+                Table.insert(user, coreTables().getTableInfoDocuments(), hm);
+
+                addAuditEvent(user, parent, file.getFilename(), "The attachment: " + file.getFilename() + " was added");
             }
 
-            HashMap<String, Object> hm = new HashMap<String, Object>();
-            if (null == fileLocation)
-                hm.put("Document", file);
-            else
-            {
-                FileOutputStream fos = null;
-                InputStream is = file.openInputStream();
-                try
-                {
-                    File saveFile = new File(fileLocation, file.getFilename());
-                    fos = new FileOutputStream(saveFile);
-                    FileUtil.copyData(is, fos);
-                    logFileAction(fileLocation, file.getFilename(), FileAction.UPLOAD, user);
-                }
-                finally
-                {
-                    IOUtils.closeQuietly(fos);
-                    file.closeInputStream();
-                }
-            }
-            hm.put("DocumentName", file.getFilename());
-            hm.put("DocumentSize", file.getSize());
-            hm.put("DocumentType", file.getContentType());
-            hm.put("Parent", parent.getEntityId());
-            hm.put("Container", parent.getContainerId());
-            Table.insert(user, coreTables().getTableInfoDocuments(), hm);
+            setAttachments(Collections.singletonList(parent));
 
-            addAuditEvent(user, parent, file.getFilename(), "The attachment: " + file.getFilename() + " was added");
+            if (!filesToSkip.isEmpty())
+                throw new AttachmentService.DuplicateFilenameException(filesToSkip);
         }
-
-        setAttachments(Collections.singletonList(parent));
-
-        if (!filesToSkip.isEmpty())
-            throw new AttachmentService.DuplicateFilenameException(filesToSkip);
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
     }
 
 
@@ -534,9 +537,17 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
 
-    public void deleteAttachment(AttachmentParent parent, String name) throws SQLException
+    public void deleteAttachment(AttachmentParent parent, String name)
     {
-        Table.execute(coreTables().getSchema(), sqlDelete(), new Object[]{parent.getEntityId(), name});
+        try
+        {
+            Table.execute(coreTables().getSchema(), sqlDelete(), new Object[]{parent.getEntityId(), name});
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+
         File parentDir = null;
         try
         {
@@ -589,20 +600,45 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
 
-    public void renameAttachment(AttachmentParent parent, String oldName, String newName) throws SQLException, AttachmentService.DuplicateFilenameException
+    public void renameAttachment(AttachmentParent parent, String oldName, String newName) throws IOException
     {
+        File dir = null;
+        File dest = null;
+        File src = null;
+
         if (parent instanceof AttachmentDirectory)
-            throw new UnsupportedOperationException("Not yet implemented for file system attachments");
+        {
+            dir = ((AttachmentDirectory)parent).getFileSystemDirectory();
+            src = new File(dir,oldName);
+            dest = new File(dir,newName);
+            if (!src.exists())
+                throw new FileNotFoundException(oldName);
+            if (dest.exists())
+                throw new AttachmentService.DuplicateFilenameException(newName);
+
+            // make sure newName attachment doesn't exist. if it does exist, it's already orphaned
+            deleteAttachment(parent, newName);
+        }
 
         if (exists(parent, newName))
             throw new AttachmentService.DuplicateFilenameException(newName);
 
-        Table.execute(coreTables().getSchema(), sqlRename(parent, oldName, newName));
+        try
+        {
+            Table.execute(coreTables().getSchema(), sqlRename(parent, oldName, newName));
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+
+        if (null != dir)
+            src.renameTo(dest);
     }
 
 
     // Copies an attachment -- same container, same parent, but new name.  
-    public void copyAttachment(User user, AttachmentParent parent, Attachment a, String newName) throws IOException, SQLException, AttachmentService.DuplicateFilenameException
+    public void copyAttachment(User user, AttachmentParent parent, Attachment a, String newName) throws IOException
     {
         DatabaseAttachmentFile file = new DatabaseAttachmentFile(a);
         file.setFilename(newName);
@@ -612,36 +648,35 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
     public List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException
     {
+        List<AttachmentFile> files = new ArrayList<AttachmentFile>(attachments.size());
+
+        for (Attachment attachment : attachments)
+        {
+            if (parent instanceof AttachmentDirectory)
+            {
+                File f = new File(((AttachmentDirectory)parent).getFileSystemDirectory(), attachment.getName());
+                files.add(new FileAttachmentFile(f));
+            }
+            else
+            {
+                files.add(new DatabaseAttachmentFile(attachment));
+            }
+        }
+        return files;
+    }
+
+
+    private boolean exists(AttachmentParent parent, String filename)
+    {
         try
         {
-            List<AttachmentFile> files = new ArrayList<AttachmentFile>(attachments.size());
-
-            for (Attachment attachment : attachments)
-            {
-                if (parent instanceof AttachmentDirectory)
-                {
-                    File f = new File(((AttachmentDirectory)parent).getFileSystemDirectory(), attachment.getName()); 
-                    files.add(new FileAttachmentFile(f));
-                }
-                else
-                {
-                    files.add(new DatabaseAttachmentFile(attachment));
-                }
-            }
-            return files;
+            Integer count = Table.executeSingleton(coreTables().getSchema(), sqlExists(), new Object[]{parent.getEntityId(), filename}, Integer.class);
+            return count.intValue() > 0;
         }
         catch (SQLException x)
         {
             throw new RuntimeSQLException(x);
         }
-    }
-
-
-    private boolean exists(AttachmentParent parent, String filename) throws SQLException
-    {
-        Integer count = Table.executeSingleton(coreTables().getSchema(), sqlExists(), new Object[]{parent.getEntityId(), filename}, Integer.class);
-
-        return count.intValue() > 0;
     }
 
 
@@ -1585,10 +1620,18 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
 
         @Override
-        public long copyFrom(User user, WebdavResolver.Resource r) throws IOException
+        public void moveFrom(User user, WebdavResolver.Resource r) throws IOException
         {
-            // UNDONE: handle special case of rename attachment with same parent
-            return super.copyFrom(user, r);
+            if (r instanceof AttachmentResource)
+            {
+                AttachmentResource from = (AttachmentResource) r;
+                if (from._parent == this._parent)
+                {
+                    renameAttachment(this._parent, from.getName(), getName());
+                    return;
+                }
+            }
+            super.moveFrom(user, r);
         }
 
         public long copyFrom(User user, final FileStream in) throws IOException
@@ -1643,12 +1686,6 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 addAttachments(user, _parent, Collections.singletonList(file));
             }
             catch (AttachmentService.DuplicateFilenameException x)
-            {
-                IOException io = new IOException();
-                io.initCause(x);
-                throw io;
-            }
-            catch (SQLException x)
             {
                 IOException io = new IOException();
                 io.initCause(x);

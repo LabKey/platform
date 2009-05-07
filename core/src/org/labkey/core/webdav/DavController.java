@@ -808,6 +808,9 @@ public class DavController extends SpringActionController
                         if (null == resource || !resource.canList(getUser()))
                             continue;
 
+                        if (isTempFile(resource))
+                            continue;
+
                         if (skipFirst)
                             skipFirst = false;
                         else
@@ -1776,15 +1779,8 @@ public class DavController extends SpringActionController
                 if (!resource.exists())
                 {
                     temp = getTemporary();
-                    File f = resource.getFile();
-                    if (null != f)
-                    {
-                        if (!f.createNewFile())
-                            throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR, "could not create file");
-                        deleteFileOnFail = true;
-                        if (temp)
-                            markTempFile(f);
-                    }
+                    markTempFile(resource);
+                    deleteFileOnFail = true;
                 }
 
                 if (range != null)
@@ -2137,8 +2133,7 @@ public class DavController extends SpringActionController
             }
 
 
-            // UNDONE: move into Resource method e.g. Resource.rename() and Resource.move()
-            // FILE BASED
+            // File based
             if (src.getFile() != null || dest.getFile() != null)
             {
                 File tmp = null;
@@ -2171,9 +2166,8 @@ public class DavController extends SpringActionController
             // Stream based
             else
             {
-                dest.copyFrom(getUser(),src);
+                dest.moveFrom(getUser(),src);
             }
-
 
             if (rmTempFile(src))
             {
@@ -3944,9 +3938,11 @@ public class DavController extends SpringActionController
 
 
     static Set<String> _tempFiles = Collections.synchronizedSet(new TreeSet<String>());
+    static Set<String> _tempResources = Collections.synchronizedSet(new TreeSet<String>());
 
     private void markTempFile(WebdavResolver.Resource r)
     {
+        _tempResources.add(r.getPath());
         markTempFile(r.getFile());
     }
 
@@ -3958,7 +3954,8 @@ public class DavController extends SpringActionController
     
     public static boolean rmTempFile(WebdavResolver.Resource r)
     {
-        return rmTempFile(r.getFile());
+        rmTempFile(r.getFile());
+        return _tempResources.remove(r.getPath());
     }
 
     public static boolean rmTempFile(File f)
@@ -3977,7 +3974,7 @@ public class DavController extends SpringActionController
 
     private boolean isTempFile(WebdavResolver.Resource r)
     {
-        return isTempFile(r.getFile());
+        return _tempResources.contains(r.getPath());
     }
 
     public static ShutdownListener getShutdownListener()

@@ -539,16 +539,16 @@ public class SampleManager
         {
             AttachmentService.get().addAttachments(user, event, attachments);
         }
-        catch (IOException e)
-        {
-            // this is unexpected, and indicative of a larger system problem; we'll convert to a runtime
-            // exception, rather than requiring all event loggers to handle this unlikely scenario:
-            throw new RuntimeException(e);
-        }
         catch (AttachmentService.DuplicateFilenameException e)
         {
             // UI should (minimally) catch and display these errors nicely or (better) validate to prevent them in the first place
             // But for now, just display the exception
+            throw new RuntimeException(e);
+        }
+        catch (IOException e)
+        {
+            // this is unexpected, and indicative of a larger system problem; we'll convert to a runtime
+            // exception, rather than requiring all event loggers to handle this unlikely scenario:
             throw new RuntimeException(e);
         }
         return event;

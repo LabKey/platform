@@ -179,11 +179,11 @@ public class WikiModule extends DefaultModule
         {
             _log.error(e);
         }
-        catch (IOException e)
+        catch (AttachmentService.DuplicateFilenameException e)
         {
             _log.error(e);
         }
-        catch (AttachmentService.DuplicateFilenameException e)
+        catch (IOException e)
         {
             _log.error(e);
         }

@@ -211,7 +211,6 @@ class WikiWebdavProvider implements WebdavService.Provider
             return null != _wiki;
         }
 
-
         @NotNull
         public synchronized List<String> listNames()
         {
@@ -273,6 +272,7 @@ class WikiWebdavProvider implements WebdavService.Provider
         }
     }
 
+
     public static class WikiPageResource extends AbstractDocumentResource
     {
         WikiFolder _folder = null;
@@ -305,14 +305,16 @@ class WikiWebdavProvider implements WebdavService.Provider
             return false;
         }
 
-        public boolean isVirtual()
+        @Override
+        public String getCreatedBy()
         {
-            return true;
+            return UserManager.getDisplayName(_wiki.getCreatedBy(), null);
         }
 
-        public boolean canRename()
+        @Override
+        public String getModifiedBy()
         {
-            return false; // NYI
+            return UserManager.getDisplayName(_wiki.getModifiedBy(), null);
         }
 
         public InputStream getInputStream(User user) throws IOException

@@ -115,6 +115,9 @@ var PANEL_EVENTS =
 	statesave:'statesave',
 	titlechange:'titlechange'
 };
+var WINDOW_EVENTS = Ext.apply({
+    resize:'resize', maximize:'maximize', minimize:'minimize', restore:'restore'
+},PANEL_EVENTS);
 var GRIDPANEL_EVENTS =
 {
     click:"click",
@@ -1066,11 +1069,11 @@ if (LABKEY.Applet)
             
             var config =
             {
-                id:params.id,
-                archive:LABKEY.contextPath + '/_applets/applets-9.2.jar',
-                code:'org.labkey.applets.drop.DropApplet',
-                width:params.width || 200,
-                height:params.height || 200,
+                id: params.id,
+                archive: LABKEY.contextPath + '/_applets/applets-9.2.jar',
+                code: 'org.labkey.applets.drop.DropApplet',
+                width: params.width,
+                height: params.height,
                 params:
                 {
                     url :params.url || (window.location.protocol + "//" + window.location.host + LABKEY.contextPath + '/_webdav/'),
@@ -1085,13 +1088,8 @@ if (LABKEY.Applet)
             this.transfers.on("add", function(store, records)
             {
                 for (var i=0 ; i<records.length ; i++)
-                    console.log('add: ' + records[i].get('uri') + ' ' + records[i].get('status'));
+                    console.debug('add: ' + records[i].get('uri') + ' ' + records[i].get('status'));
             });
-            this.transfers.on("update", function(store, record, action)
-            {
-                console.log(action + ': ' + record.get('uri') + ' ' + record.get('status'));
-            });
-
             TransferApplet.superclass.constructor.call(this, config);
             console.log("TransferApplet.url: " + config.params.url);
         },
@@ -1147,6 +1145,7 @@ if (LABKEY.Applet)
             store.add(adds);
         },
 
+
         TransferRecord : Ext.data.Record.create([
             {name:'src'},
             {name:'uri', mapping:'target'},
@@ -1160,10 +1159,37 @@ if (LABKEY.Applet)
             {name:'md5', mapping:'digest'}
         ]),
 
+
+        changeWorkingDirectory : function(path)
+        {
+
+            var applet = this.getApplet();
+            if (applet)
+                applet.changeWorkingDirectory(path);
+            else if (!this.rendered)
+                this.params.directory = path;
+            else
+                console.error("NYI: Do not call before isReady()!");
+        },
+
+
+        setEnabled : function(b)
+        {
+            var applet = this.getApplet();
+            if (applet)
+                applet.setEnabled(b ? true : false);
+            else if (!this.rendered)
+                this.params.enabled = b ? 'true' : 'false';
+            else
+                console.error("NYI: Do not call before isReady()!");
+        },
+        
+
         getTransfers : function()
         {
             return this.transfers;
         },
+
 
         getSummary : function()
         {
@@ -1190,15 +1216,59 @@ if (LABKEY.Applet)
 }
 
 
-//
-// DavSubmitAction
+///
+// TOOLBAR
 //
 
-var DavSubmitAction = function(form, options)
+// ToolBar.TextItem is sort of broken
+var _TextItem = function(config)
 {
-    Ext.form.Action.Submit.superclass.constructor.call(this, form, options);
+    if (typeof config == 'string')
+        config = {text:config};
+    Ext.apply(this,config);
+    if (config.id)
+        Ext.ComponentMgr.register(this);
 };
-Ext.extend(DavSubmitAction, Ext.form.Action.Submit, {});
+Ext.extend(_TextItem, Ext.Toolbar.Item,
+{
+    hidden:false,
+    enable:Ext.emptyFn,
+    disable:Ext.emptyFn,
+    focus:Ext.emptyFn,
+    setText : function(text)
+    {
+        this.text = text;
+        this._update();
+    },
+    last : {width:0, text:null},
+    _update : function()
+    {
+        if (!this.dom)
+            return;
+        if (this.last.width == this.width && this.last.text == this.text)
+            return;
+        var w = Ext.Element.addUnits(this.width,"px");
+        var html = [{tag:'img', src:(LABKEY.contextPath + '/_.gif'), width:w, height:1}, "<br>", this.text ? Ext.util.Format.htmlEncode(this.text) : '&nbsp;'];
+        Ext.fly(this.dom).setSize(w).update(Ext.DomHelper.markup(html));
+        Ext.fly(this.td).setSize(w);
+        this.last.width = this.width;
+        this.last.text = this.text;
+    },
+    render:function(td)
+    {
+        this.dom = Ext.DomHelper.append(td, {id:this.id, className:'ytb-text'});
+        this.td = td;
+        Ext.fly(this.td).addClass('x-status-text-panel');
+        this._update();
+    },
+    setSize:function(w,h)
+    {
+        if (typeof w == 'object')
+            w = w.width;
+        this.width = w;
+        this._update();
+    }
+});
 
 
 //
@@ -1420,40 +1490,49 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
             this.progressRecord = null;
     },
 
+
+    lastSummary: {info:0, success:0, file:'', pct:0},
+    
     updateProgressBar : function()
     {
-        var p = this.progressRecord ? this.progressRecord.get('percent')/100 : 0;
+        var record = this.progressRecord && this.progressRecord.get('state') == 0 ? this.progressRecord : null;
+        var pct = record ? record.get('percent')/100 : 0;
+        var file = record ? record.get('name') : '';
+        
         var summary = this.applet.getSummary();
-        var text = summary.success + "/" + summary.totalActive;
-        if (summary.failed)
-            text = text + " (" + summary.failed + " failed)";
-        this.progressBar.updateProgress(p, text);
+
+        if (summary.info != this.lastSummary.info)
+        {
+            if (summary.info == 0)
+            {
+                this.appletStatusBar.clearStatus();
+                this.appletStatusBar.setText('Ready');
+//                Ext.getCmp('appletStatusFiles').setText('');
+            }
+            else
+            {
+                this.appletStatusBar.busyText = 'Copying... ' + summary.info + ' file' + (summary.info>1?'s':'');
+                this.appletStatusBar.showBusy();
+//                Ext.getCmp('appletStatusFiles').setText('' + summary.info);
+            }
+        }
+
+        if (pct != this.lastSummary.pct || file != this.lastSummary.file)
+            this.progressBar.updateProgress(pct, file);
+        
+        // UNDONE: failed transfers
+        this.lastSummary = summary;
+        this.lastSummary.pct = pct;
+        this.lastSummary.file = file;
     },
+    
 
     getUploadToolAction : function()
     {
         return new Ext.Action({text: 'Upload Tool', scope:this, disabled:true, handler: function()
         {
-
-            if (this.applet && this.appletWindow)
-            {
-                this.appletWindow.show();
-                return;
-            }
-            this.applet = new TransferApplet({height:200, width:200, directory:this.currentDirectory.data.path});
-            this.progressBar = new Ext.ProgressBar();
-            this.appletWindow = new Ext.Window({
-                closable:true, animateTarget:true,
-                closeAction :'hide',
-                plain: true,
-                items:[this.applet, this.progressBar]});
-            this.applet.on(TRANSFER_EVENTS.update, this.updateProgressBar, this);
-            this.applet.getTransfers().on(STORE_EVENTS.update, this.updateProgressBarRecord, this);
-//            this.applet.getTransfers().on(STORE_EVENTS.add, this.addProgressBar, this);
-            this.applet.onReady((function()
-            {
-                this.applet.getApplet().changeWorkingDirectory(this.currentDirectory.data.path);
-            }).createDelegate(this));
+            if (!this.applet || !this.appletWindow)
+                this.layoutAppletWindow();
             this.appletWindow.show();
         }});
     },
@@ -1746,11 +1825,60 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
             this.changeDirectory(wd);
             this.selectFile(wd);
         }
-        else
         {
             this.selectFile(root.record);
             this.changeDirectory(root.record);
         }
+    },
+
+
+    layoutAppletWindow : function()
+    {
+        this.applet = new TransferApplet({directory:this.currentDirectory.data.path});
+        this.progressBar = new Ext.ProgressBar({id:'appletStatusProgressBar'});
+
+        var fileAction = new Ext.Action({text:'Choose File...', scope:this, disabled:false, handler:function()
+        {
+            var a = this.applet.getApplet();
+            if (a) a.showFileChooser();
+        }});
+        var dirAction = new Ext.Action({text:'(NYI) Choose Folder...', scope:this, disabled:false, handler:function()
+        {
+            var a = this.applet.getApplet();
+            if (a) a.showDirectoryChooser();
+        }});
+
+        var toolbar = new Ext.Toolbar({buttons:[
+            fileAction, dirAction
+        ]});
+        this.appletStatusBar = new Ext.StatusBar({id:'appletStatusBar', defaultText:'Ready', busyText:'Copying...', items:[
+            {xtype:'panel', layout:'fit', border:false, items:this.progressBar, width:120, minWidth:120}
+        ]});
+
+        this.appletWindow = new Ext.Window(
+        {
+            title: "Upload Tool",
+            closable:true, animateTarget:true,
+            closeAction :'hide',
+            constrain:true,
+            height: 300, width:240, minHeight:200, minWidth:240,
+            plain: true,
+            layout:'fit',
+            tbar: toolbar,
+            items: this.applet,
+            //items:{layout:'fit', margins:'1 1 1 1', items:this.applet},
+            bbar: this.appletStatusBar
+        });
+
+
+        this.applet.on(TRANSFER_EVENTS.update, this.updateProgressBar, this);
+        this.applet.getTransfers().on(STORE_EVENTS.update, this.updateProgressBarRecord, this);
+
+        // make sure that the applet still matches the current directory when it appears
+        this.applet.onReady(function()
+        {
+            this.applet.changeWorkingDirectory(this.currentDirectory.data.path);
+        }, this);
     },
 
 
@@ -1857,9 +1985,8 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
               {
                   var form = this.formPanel.getForm();
                   var options = {url:this.currentDirectory.data.uri, record:this.currentDirectory, name:this.fileUploadField.getValue()};
-                  var action = new DavSubmitAction(form, options);
-                  form.doAction(action);
-                  document.body.dom.style.cursor = "wait"
+                  form.doAction(new Ext.form.Action.Submit(form, options));
+                  Ext.getBody().dom.style.cursor = "wait"
               }
             }}
         });
@@ -2025,7 +2152,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
             {
                 try
                 {
-                    this.applet.getApplet().changeWorkingDirectory(record.data.path);
+                    this.applet.changeWorkingDirectory(record.data.path);
                 }
                 catch (e)
                 {
@@ -2052,58 +2179,15 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
 
 
 
-function generateButton(config)
-{
-    if (typeof config == "text")
-        config = {text:config};
-    var html = '<span';
-    if (config.id)
-        html += ' id="' + config.id + '"';
-    if (config.onclick)
-        html += ' onclick="' + config.onclick + '"';
-    html += '>' + config.text + '</span>';
-    return html;
-}
-
-
-/*
-var appletEvents =
-{
-    ready: function() {},
-    update: function() {},
-    dragEnter : function() {},
-    dragExit : function() {}
-};
-
-LABKEY.writeApplet(
-{
-    id:"dropApplet",
-    archive:"<%=request.getContextPath()%>/_applets/applets-9.2.jar?guid=<%=GUID.makeHash()%><%=AppProps.getInstance().getServerSessionGUID()%>",
-    code:"org.labkey.applets.drop.DropApplet",
-    width:200,
-    height:200,
-    params:
-    {
-        url:<%=PageFlowUtil.jsString(baseUrl)%>,
-        webdavPrefix:<%=PageFlowUtil.jsString(webdavPrefix)%>,
-        user:<%=PageFlowUtil.jsString(context.getUser().getEmail())%>,
-        password:<%=PageFlowUtil.jsString(request.getSession(true).getId())%>,
-        events:'appletEvents'
-    }
-});
-
-function getDropApplet()
-{
-    try
-    {
-        var el = $("dropApplet");
-        var applet = el ? el.dom : null;
-        if (applet && 'isActive' in applet && applet.isActive())
-            return applet;
-    }
-    catch (x)
-    {
-    }
-    return null;
-}
-*/
+//function generateLabkeyButton(config)
+//{
+//    if (typeof config == "text")
+//        config = {text:config};
+//    var html = '<span';
+//    if (config.id)
+//        html += ' id="' + config.id + '"';
+//    if (config.onclick)
+//        html += ' onclick="' + config.onclick + '"';
+//    html += '>' + config.text + '</span>';
+//    return html;
+//}

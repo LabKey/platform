@@ -46,7 +46,7 @@ public class DatabaseAttachmentFile implements AttachmentFile
     private static final String _sqlDocumentTypeAndSize = "SELECT DocumentType, DocumentSize FROM " + core.getTableInfoDocuments() + " WHERE Parent = ? AND DocumentName = ?";
     private static final String _sqlDocument = "SELECT Document FROM " + core.getTableInfoDocuments() + " WHERE Parent = ? AND DocumentName = ?";
 
-    public DatabaseAttachmentFile(Attachment attachment) throws SQLException, IOException
+    public DatabaseAttachmentFile(Attachment attachment) throws IOException
     {
         _attachment = attachment;
         ResultSet rs = null;
@@ -63,6 +63,10 @@ public class DatabaseAttachmentFile implements AttachmentFile
             int size = rs.getInt("DocumentSize");
             if (size > 0)
                 setSize(size);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
         }
         finally
         {
