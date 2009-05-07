@@ -19,6 +19,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.util.Archive;
 import org.labkey.api.util.VirtualFile;
 import org.labkey.study.SampleManager;
+import org.labkey.study.xml.StudyDocument;
+import org.labkey.study.xml.RepositoryType;
 import org.labkey.study.model.Study;
 
 /**
@@ -28,11 +30,18 @@ import org.labkey.study.model.Study;
  */
 public class SpecimenArchiveWriter implements Writer<Study>
 {
+    private static final String FILE_NAME = "sample.specimens";
+
     public void write(Study study, ExportContext ctx, VirtualFile fs) throws Exception
     {
+        StudyDocument.Study studyXml = ctx.getStudyXml();
+        StudyDocument.Study.Specimens specimens = studyXml.addNewSpecimens();
+        specimens.setRepositoryType(RepositoryType.STANDARD);
+        specimens.setSource(FILE_NAME);
+
         Container c = ctx.getContainer();
         SampleManager manager = SampleManager.getInstance();
-        Archive zip = fs.createZipArchive("sample.zip");
+        Archive zip = fs.createZipArchive(FILE_NAME);
 
         SiteWriter siteWriter = new SiteWriter();
         siteWriter.write(study.getSites(), ctx, zip);

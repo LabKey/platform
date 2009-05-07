@@ -18,7 +18,8 @@ public class SiteWriter implements Writer<Site[]>
     public void write(Site[] sites, ExportContext ctx, VirtualFile fs) throws Exception
     {
         // Make a copy so we can modify the array
-        Site[] copy = Arrays.copyOf(sites, sites.length);
+        Site[] copy = new Site[sites.length];
+        System.arraycopy(sites, 0, copy, 0, sites.length);
         Arrays.sort(copy, new Comparator<Site>(){
             public int compare(Site s1, Site s2)
             {
