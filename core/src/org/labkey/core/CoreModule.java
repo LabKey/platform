@@ -118,27 +118,37 @@ public class CoreModule extends SpringModule
             }
         });
 
+        List<String> possibleRoots = new ArrayList<String>();
         if (null != getSourcePath())
+            possibleRoots.add(getSourcePath() + "/../../..");
+        if (null != System.getProperty("project.root"))
+            possibleRoots.add(System.getProperty("project.root"));
+
+        for (String root : possibleRoots)
         {
-            File projectRoot = new File(getSourcePath(), "../../..");
+            File projectRoot = new File(root);
             if (projectRoot.exists())
             {
                 try
                 {
                     AppProps.getInstance().setProjectRoot(projectRoot.getCanonicalPath());
 
-                    String root = AppProps.getInstance().getProjectRoot();
+                    root = AppProps.getInstance().getProjectRoot();
                     ResourceFinder api = new ResourceFinder("API", root + "/server/api", root + "/build/modules/api");
                     ModuleLoader.getInstance().registerResourcePrefix("/org/labkey/api", api);
                     ResourceFinder internal = new ResourceFinder("Internal", root + "/server/internal", root + "/build/modules/internal");
                     ModuleLoader.getInstance().registerResourcePrefix("/org/labkey/api", internal);
+
+                    // set the root only once
+                    break;
                 }
-                catch(IOException e)
+                catch (IOException e)
                 {
-                    // Do nothing -- leave project root null
+                    // ignore
                 }
             }
         }
+
     }
 
     protected Collection<? extends WebPartFactory> createWebPartFactories()
