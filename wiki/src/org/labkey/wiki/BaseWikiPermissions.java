@@ -17,9 +17,17 @@
 package org.labkey.wiki;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.OwnerRole;
+import org.labkey.api.security.roles.DeveloperRole;
 import org.labkey.wiki.model.Wiki;
+
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Enacapsulates permission testing for wikis, handling the UPDATEOWN and DELETEOWN cases
@@ -34,41 +42,48 @@ import org.labkey.wiki.model.Wiki;
 public class BaseWikiPermissions
 {
     private User _user;
-    private Container _container;
+    private SecurityPolicy _policy;
 
     public BaseWikiPermissions(User user, Container container)
     {
         assert(null != user && null != container);
         _user = user;
-        _container = container;
+        _policy = org.labkey.api.security.SecurityManager.getPolicy(container);
+    }
+
+    protected Set<Role> getContextualRoles(Wiki wiki)
+    {
+        Set<Role> roles = new TreeSet<Role>();
+        if(userIsCreator(wiki))
+            roles.add(RoleManager.getRole(OwnerRole.class));
+        if(_user.isDeveloper())
+            roles.add(RoleManager.getRole(DeveloperRole.class));
+        return roles;
     }
 
     public boolean allowRead(Wiki wiki)
     {
-        return _container.hasPermission(_user, ACL.PERM_READ) ||
-                (_container.hasPermission(_user, ACL.PERM_READOWN) && userIsCreator(wiki));
+        return _policy.hasPermission(_user, ReadPermission.class, getContextualRoles(wiki));
     }
 
     public boolean allowInsert()
     {
-        return _container.hasPermission(_user, ACL.PERM_INSERT);
+        return _policy.hasPermission(_user, InsertPermission.class);
     }
 
     public boolean allowUpdate(Wiki wiki)
     {
-        return _container.hasPermission(_user, ACL.PERM_UPDATE) ||
-                (_container.hasPermission(_user, ACL.PERM_UPDATEOWN) && userIsCreator(wiki));
+        return _policy.hasPermission(_user, UpdatePermission.class, getContextualRoles(wiki));
     }
 
     public boolean allowDelete(Wiki wiki)
     {
-        return _container.hasPermission(_user, ACL.PERM_DELETE) ||
-                (_container.hasPermission(_user, ACL.PERM_DELETEOWN) && userIsCreator(wiki));
+        return _policy.hasPermission(_user, DeletePermission.class, getContextualRoles(wiki));
     }
 
     public boolean allowAdmin()
     {
-        return _container.hasPermission(_user, ACL.PERM_ADMIN);
+        return _policy.hasPermission(_user, AdminPermission.class);
     }
 
     public boolean userIsCreator(Wiki wiki)

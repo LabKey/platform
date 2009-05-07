@@ -19,7 +19,9 @@ package org.labkey.study.model;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.GUID;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
@@ -62,7 +64,7 @@ public class Study extends ExtensibleStudyEntity<Study>
     }
 
     @Override
-    public SecurableResource getParent()
+    public SecurableResource getParentResource()
     {
         //overriden to return the container
         //all other study entities return the study,
@@ -75,10 +77,22 @@ public class Study extends ExtensibleStudyEntity<Study>
     {
         List<SecurableResource> ret = new ArrayList<SecurableResource>();
 
-        //add all datasets
-        ret.addAll(Arrays.asList(getDataSets()));
-        
+        //add all datasets the user has admin perms on
+        for(DataSetDefinition dsDef : getDataSets())
+        {
+            SecurityPolicy policy = SecurityManager.getPolicy(dsDef);
+            if(policy.hasPermission(user, AdminPermission.class))
+                ret.add(dsDef);
+        }
+
         return ret;
+    }
+
+    @NotNull
+    @Override
+    public String getResourceDescription()
+    {
+        return "The study " + _label;
     }
 
     public String getLabel()

@@ -264,15 +264,15 @@ public class PipeRootImpl implements PipeRoot
     }
 
     @NotNull
-    public String getName()
+    public String getResourceName()
     {
         return getRootPath().getName();
     }
 
     @NotNull
-    public String getDescription()
+    public String getResourceDescription()
     {
-        return "The pipeline root directory " + getName();
+        return "The pipeline root directory " + getResourceName();
     }
 
     @NotNull
@@ -287,12 +287,13 @@ public class PipeRootImpl implements PipeRoot
         return perms;
     }
 
+    @NotNull
     public Module getSourceModule()
     {
         return ModuleLoader.getInstance().getModule(PipelineService.MODULE_NAME);
     }
 
-    public SecurableResource getParent()
+    public SecurableResource getParentResource()
     {
         return getContainer();
     }
@@ -301,5 +302,11 @@ public class PipeRootImpl implements PipeRoot
     public List<SecurableResource> getChildResources(User user)
     {
         return Collections.emptyList();
+    }
+
+    @NotNull
+    public Container getResourceContainer()
+    {
+        return getContainer();
     }
 }

@@ -25,6 +25,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.*;
 import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.util.*;
@@ -1660,6 +1661,48 @@ public class SecurityController extends SpringActionController
             userInfo.put("isAdmin", container.hasPermission(user, ACL.PERM_ADMIN) ? "true" : "false");
 
             return new ApiSimpleResponse("currentUser", userInfo);
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class GetSecurableResourcesAction extends ApiAction
+    {
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            Container container = getViewContext().getContainer();
+            return new ApiSimpleResponse("resources", getResourceProps(container));
+        }
+
+        protected Map<String,Object> getResourceProps(SecurableResource resource)
+        {
+            Map<String,Object> props = new HashMap<String,Object>();
+            props.put("id", resource.getResourceId());
+            props.put("name", resource.getResourceName());
+            props.put("description", resource.getResourceDescription());
+            props.put("sourceModule", resource.getSourceModule().getName());
+            props.put("relevantPermissions", getRelevantPermsList(resource));
+            props.put("children", getChildrenProps(resource));
+            return props;
+        }
+
+        protected List<String> getRelevantPermsList(SecurableResource resource)
+        {
+            List<String> perms = new ArrayList<String>();
+            for(Class<? extends Permission> perm : resource.getRelevantPermissions())
+            {
+                perms.add(perm.getName());
+            }
+            return perms;
+        }
+
+        protected List<Map<String,Object>> getChildrenProps(SecurableResource resource)
+        {
+            List<Map<String,Object>> childProps = new ArrayList<Map<String,Object>>();
+            for(SecurableResource child : resource.getChildResources(getViewContext().getUser()))
+            {
+                childProps.add(getResourceProps(child));
+            }
+            return childProps;
         }
     }
 

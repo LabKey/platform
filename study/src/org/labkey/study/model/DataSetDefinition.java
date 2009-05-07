@@ -617,9 +617,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         _keyPropertyManaged = keyPropertyManaged;
     }
 
+    @NotNull
     public String getDescription()
     {
-        return _description;
+        return null == _description ? "The study dataset " + getName() : _description;
     }
 
     public void setDescription(String description)

@@ -19,18 +19,19 @@ package org.labkey.study;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.User;
 import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CsvSet;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -587,10 +588,12 @@ public class StudyServiceImpl implements StudyService.Service
         return containers;
     }
 
-    public List<SecurableResource> getSecurableResources(Container container)
+    public List<SecurableResource> getSecurableResources(Container container, User user)
     {
         Study study = StudyManager.getInstance().getStudy(container);
-        if(null == study)
+        SecurityPolicy policy = (null != study) ? SecurityManager.getPolicy(study) : null;
+
+        if(null == study || !policy.hasPermission(user, AdminPermission.class))
             return Collections.emptyList();
         else
             return Collections.singletonList((SecurableResource)study);

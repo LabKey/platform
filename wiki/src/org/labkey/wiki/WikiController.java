@@ -35,6 +35,13 @@ import org.labkey.api.data.*;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.*;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.DeveloperRole;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
@@ -45,6 +52,7 @@ import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.util.Pair;
 import org.labkey.wiki.model.*;
+import org.labkey.wiki.permissions.IncludeScriptPermission;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -2688,7 +2696,7 @@ public class WikiController extends SpringActionController
             if(null == wiki)
             {
                 //if no wiki, this is an insert, so user must have insert perms
-                if(!container.hasPermission(user, ACL.PERM_INSERT))
+                if(!perms.allowInsert())
                     throw new UnauthorizedException("You do not have permissions to create new wiki pages in this folder!");
             }
             else
@@ -2860,6 +2868,7 @@ public class WikiController extends SpringActionController
 
         public void validateForm(SaveWikiForm form, Errors errors)
         {
+            User user = getViewContext().getUser();
             Container container = getViewContext().getContainer();
             HString name = form.getName();
 
@@ -2877,6 +2886,9 @@ public class WikiController extends SpringActionController
             if (null != existingWiki && !(HString.eq(existingWiki.getEntityId().toLowerCase(),form.getEntityId().toLowerCase())))
                 errors.rejectValue("name", ERROR_MSG, "Page '" + name + "' already exists within this folder.");
 
+            SecurityPolicy policy = SecurityManager.getPolicy(getContainer());
+            Set<Role> contextualRoles = new HashSet<Role>();
+
             //must have a body, and if HTML, must be valid according to tidy
             if (null == form.getBody() || form.getBody().trim().length() <= 0)
                 errors.rejectValue("body", ERROR_MSG, "The body text may not be blank.");
@@ -2884,10 +2896,12 @@ public class WikiController extends SpringActionController
             {
                 String body = form.getBody();
                 ArrayList<String> tidyErrors = new ArrayList<String>();
-                User user = getViewContext().getUser();
 
-                boolean allowMaliciousContent = UserManager.mayWriteScript(user);
-                PageFlowUtil.validateHtml(body, tidyErrors, allowMaliciousContent);
+                if(UserManager.mayWriteScript(user))
+                    contextualRoles.add(RoleManager.getRole(DeveloperRole.class));
+
+                PageFlowUtil.validateHtml(body, tidyErrors,
+                        policy.hasPermission(user, IncludeScriptPermission.class, contextualRoles));
 
                 for(String err : tidyErrors)
                     errors.rejectValue("body", ERROR_MSG, err);
@@ -2898,7 +2912,8 @@ public class WikiController extends SpringActionController
         {
             Container c = getViewContext().getContainer();
             User user = getViewContext().getUser();
-            if (!c.hasPermission(user, ACL.PERM_INSERT))
+            SecurityPolicy policy = SecurityManager.getPolicy(c);
+            if (!policy.hasPermission(user, InsertPermission.class))
                 throw new UnauthorizedException("You do not have permissions to create a new wiki page in this folder!");
 
             HString wikiname = form.getName();
@@ -2960,6 +2975,7 @@ public class WikiController extends SpringActionController
 
         protected ApiResponse updateWiki(SaveWikiForm form, BindException errors) throws Exception
         {
+            User user = getViewContext().getUser();
             if (null == form.getEntityId() || form.getEntityId().length() <= 0)
                 throw new IllegalArgumentException("The entityId parameter must be supplied.");
 
@@ -2967,8 +2983,12 @@ public class WikiController extends SpringActionController
             if (wikiUpdate == null)
                 HttpView.throwNotFound("Could not find the wiki page matching the passed id; if it was a valid page, it may have been deleted by another user.");
 
-            BaseWikiPermissions perms = getPermissions();
-            if (!perms.allowUpdate(wikiUpdate))
+            SecurityPolicy policy = SecurityManager.getPolicy(getViewContext().getContainer());
+            Set<Role> contextualRoles = new HashSet<Role>();
+            if(wikiUpdate.getCreatedBy() == user.getUserId())
+                contextualRoles.add(RoleManager.getRole(OwnerRole.class));
+
+            if (!policy.hasPermission(user, UpdatePermission.class, contextualRoles))
                 HttpView.throwUnauthorized("You are not allowed to edit this wiki page.");
 
             WikiVersion wikiversion = wikiUpdate.latestVersion();

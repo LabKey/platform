@@ -74,12 +74,6 @@ public abstract class AbstractStudyEntity<T>
         _containerId = container == null ? null : container.getId();
     }
 
-    @NotNull
-    public String getName()
-    {
-        return _label;
-    }
-
     public String getLabel()
     {
         return _label;
@@ -172,16 +166,10 @@ public abstract class AbstractStudyEntity<T>
         return false;
     }
 
+    @NotNull
     public Module getSourceModule()
     {
         return ModuleLoader.getInstance().getModule(StudyModule.MODULE_NAME);
-    }
-
-    public SecurableResource getParent()
-    {
-        //by default all study entities are children of the study
-        //will override in Study to return the container as parent
-        return StudyManager.getInstance().getStudy(getContainer());
     }
 
     @NotNull
@@ -196,5 +184,30 @@ public abstract class AbstractStudyEntity<T>
     public Set<Class<? extends Permission>> getRelevantPermissions()
     {
         return RoleManager.BasicPermissions;
+    }
+
+    @NotNull
+    public String getResourceName()
+    {
+        return getLabel();
+    }
+
+    @NotNull
+    public String getResourceDescription()
+    {
+        return getDisplayString();
+    }
+
+    public SecurableResource getParentResource()
+    {
+        //by default all study entities are children of the study
+        //will override in Study to return the container as parent
+        return StudyManager.getInstance().getStudy(getContainer());
+    }
+
+    @NotNull
+    public Container getResourceContainer()
+    {
+        return getContainer();
     }
 }
