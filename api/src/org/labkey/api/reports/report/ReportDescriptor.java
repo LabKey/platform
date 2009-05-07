@@ -500,6 +500,12 @@ public class ReportDescriptor extends Entity implements SecurableResource
     }
 
     @NotNull
+    public List<SecurableResource> getChildResources(User user)
+    {
+        return Collections.emptyList();
+    }
+
+    @NotNull
     public Container getContainer()
     {
         return lookupContainer();
