@@ -24,6 +24,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.*;
 import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.util.*;
@@ -942,34 +943,40 @@ public class SecurityController extends SpringActionController
             }
         }
 
-        private void addAuditEvent(int groupId, int perm, ACL acl, AuditChangeType changeType)
+        private void addAuditEvent(Group group, SecurityPolicy newPolicy, SecurityPolicy oldPolicy, AuditChangeType changeType)
         {
-            int prevPerm = acl.getPermissions(groupId);
-            if (prevPerm != perm)
+            Role oldRole = RoleManager.getRole(NoPermissionsRole.class);
+            if(null != oldPolicy)
             {
-                Group g = SecurityManager.getGroup(groupId);
-                if (g != null)
-                {
-                    SecurityManager.PermissionSet newSet = SecurityManager.PermissionSet.findPermissionSet(perm);
-                    SecurityManager.PermissionSet oldSet = SecurityManager.PermissionSet.findPermissionSet(prevPerm);
-
-                    switch (changeType)
-                    {
-                        case explicit:
-                            addAuditEvent(getUser(), String.format("The permissions for group %s were changed from %s to %s",
-                                    g.getName(), oldSet.getLabel(), newSet.getLabel()), groupId);
-                            break;
-                        case fromInherited:
-                            addAuditEvent(getUser(), String.format("The permissions for group %s were changed from %s (inherited) to %s",
-                                    g.getName(), oldSet.getLabel(), newSet.getLabel()), groupId);
-                            break;
-                        case toInherited:
-                            addAuditEvent(getUser(), String.format("The permissions for group %s were changed from %s to %s (inherited)",
-                                    g.getName(), oldSet.getLabel(), newSet.getLabel()), groupId);
-                            break;
-                    }
-                }
+                List<Role> oldRoles = oldPolicy.getAssignedRoles(group);
+                if(oldRoles.size() > 0)
+                    oldRole = oldRoles.get(0);
             }
+
+            Role newRole = RoleManager.getRole(NoPermissionsRole.class);
+            if(null != newPolicy)
+            {
+                List<Role> newRoles = newPolicy.getAssignedRoles(group);
+                if(newRoles.size() > 0)
+                    newRole = newRoles.get(0);
+            }
+
+            switch (changeType)
+            {
+                case explicit:
+                    addAuditEvent(getUser(), String.format("The permissions for group %s were changed from %s to %s",
+                            group.getName(), oldRole.getName(), newRole.getName()), group.getUserId());
+                    break;
+                case fromInherited:
+                    addAuditEvent(getUser(), String.format("The permissions for group %s were changed from %s (inherited) to %s",
+                            group.getName(), oldRole.getName(), newRole.getName()), group.getUserId());
+                    break;
+                case toInherited:
+                    addAuditEvent(getUser(), String.format("The permissions for group %s were changed from %s to %s (inherited)",
+                            group.getName(), oldRole.getName(), newRole.getName()), group.getUserId());
+                    break;
+            }
+
         }
 
         public boolean handlePost(Object o, BindException errors) throws Exception
@@ -1012,7 +1019,7 @@ public class SecurityController extends SpringActionController
 
                 for (Group g : SecurityManager.getGroups(c.getProject(), true))
                 {
-                    //addAuditEvent(g.getUserId(), newPolicy, oldPolicy, changeType);
+                    addAuditEvent(g, newPolicy, oldPolicy, changeType);
                 }
             }
             else
@@ -1046,8 +1053,8 @@ public class SecurityController extends SpringActionController
                         if(null == role)
                             continue; //invalid role name
 
-                        //addAuditEvent(groupid, role, oldPolicy, changeType);
                         newPolicy.addRoleAssignment(group, role);
+                        addAuditEvent(group, newPolicy, oldPolicy, changeType);
                     }
                     catch (NumberFormatException x)
                     {

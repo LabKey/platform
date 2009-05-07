@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.User;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.module.Module;
@@ -29,6 +30,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 import java.util.Set;
+import java.util.List;
+import java.util.Collections;
 
 /**
  * User: brittp
@@ -179,6 +182,14 @@ public abstract class AbstractStudyEntity<T>
         //by default all study entities are children of the study
         //will override in Study to return the container as parent
         return StudyManager.getInstance().getStudy(getContainer());
+    }
+
+    @NotNull
+    public List<SecurableResource> getChildResources(User user)
+    {
+        //study will override to return the set of securable entities
+        //for all other entities, there are no children
+        return Collections.emptyList();
     }
 
     @NotNull

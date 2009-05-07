@@ -26,6 +26,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -584,5 +585,14 @@ public class StudyServiceImpl implements StudyService.Service
             if (rs != null) try {rs.close();} catch (SQLException se) {}
         }
         return containers;
+    }
+
+    public List<SecurableResource> getSecurableResources(Container container)
+    {
+        Study study = StudyManager.getInstance().getStudy(container);
+        if(null == study)
+            return Collections.emptyList();
+        else
+            return Collections.singletonList((SecurableResource)study);
     }
 }

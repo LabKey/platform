@@ -25,6 +25,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.study.SampleManager;
 import org.labkey.study.query.StudyQuerySchema;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -67,6 +68,17 @@ public class Study extends ExtensibleStudyEntity<Study>
         //all other study entities return the study,
         //but the study's parent is the container
         return getContainer();
+    }
+
+    @NotNull
+    public List<SecurableResource> getChildResources(User user)
+    {
+        List<SecurableResource> ret = new ArrayList<SecurableResource>();
+
+        //add all datasets
+        ret.addAll(Arrays.asList(getDataSets()));
+        
+        return ret;
     }
 
     public String getLabel()
