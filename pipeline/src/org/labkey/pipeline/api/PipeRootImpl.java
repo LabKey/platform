@@ -40,9 +40,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
 
 public class PipeRootImpl implements PipeRoot
 {
@@ -297,5 +295,11 @@ public class PipeRootImpl implements PipeRoot
     public SecurableResource getParent()
     {
         return getContainer();
+    }
+
+    @NotNull
+    public List<SecurableResource> getChildResources(User user)
+    {
+        return Collections.emptyList();
     }
 }
