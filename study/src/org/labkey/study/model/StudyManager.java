@@ -2441,19 +2441,18 @@ public class StudyManager
 
     public boolean bulkImportTypes(Study study, String tsv, User user, String labelColumn, String typeNameColumn, String typeIdColumn, BindException errors) throws IOException, SQLException
     {
-        return bulkImportTypes(study, new TabLoader(tsv), user, labelColumn, typeNameColumn, typeIdColumn, errors);
+        return bulkImportTypes(study, new TabLoader(tsv, true), user, labelColumn, typeNameColumn, typeIdColumn, errors);
     }
 
 
     public boolean bulkImportTypes(Study study, File tsvFile, User user, String labelColumn, String typeNameColumn, String typeIdColumn, BindException errors) throws IOException, SQLException
     {
-        return bulkImportTypes(study, new TabLoader(tsvFile), user, labelColumn, typeNameColumn, typeIdColumn, errors);
+        return bulkImportTypes(study, new TabLoader(tsvFile, true), user, labelColumn, typeNameColumn, typeIdColumn, errors);
     }
 
 
     private boolean bulkImportTypes(Study study, TabLoader loader, User user, String labelColumn, String typeNameColumn, String typeIdColumn, BindException errors) throws IOException, SQLException
     {
-        loader.setHasColumnHeaders(true);
         loader.setParseQuotes(true);
         List<Map<String, Object>> mapsLoad = loader.load();
 

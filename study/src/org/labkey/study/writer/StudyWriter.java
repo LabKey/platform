@@ -17,6 +17,7 @@ package org.labkey.study.writer;
 
 import org.labkey.study.model.Study;
 import org.labkey.api.util.VirtualFile;
+import org.apache.log4j.Logger;
 
 import java.util.Arrays;
 import java.util.List;
@@ -28,20 +29,27 @@ import java.util.List;
  */
 public class StudyWriter implements Writer<Study>
 {
-    private final List<Writer<Study>> _writers = Arrays.asList(
+    private static final Logger LOG = Logger.getLogger(StudyWriter.class);
+
+    private static final List<Writer<Study>> WRITERS = Arrays.asList(
         new VisitMapWriter(),
         new CohortWriter(),
         new QcStateWriter(),
         new DataSetWriter(),
         new ReportWriter(),
         new QueryWriter(),
+        new SpecimenArchiveWriter(),
         new StudyXmlWriter());  // Note: Needs to be last since it writes out the study.xml file (to which other writers contribute)
 
     public void write(Study study, ExportContext ctx, VirtualFile fs) throws Exception
     {
-        for (Writer<Study> writer : _writers)
+        LOG.info("Exporting study to " + fs.getLocation());
+
+        for (Writer<Study> writer : WRITERS)
         {
             writer.write(study, ctx, fs);
         }
+
+        LOG.info("Done exporting study to " + fs.getLocation());
     }
 }

@@ -16,6 +16,7 @@
 package org.labkey.study.writer;
 
 import org.labkey.api.util.VirtualFile;
+import org.labkey.api.util.Archive;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
@@ -27,7 +28,7 @@ import java.util.zip.ZipOutputStream;
  * Date: Apr 27, 2009
  * Time: 5:29:58 PM
  */
-public class ZipFile implements VirtualFile
+public class ZipFile implements Archive
 {
     private final ZipOutputStream _out;
     private final String _path;
@@ -37,7 +38,7 @@ public class ZipFile implements VirtualFile
     {
         // Make sure directory exists, is writeable
         FileSystemFile.ensureWriteableDirectory(root);
-        File zipFile = new File(root, makeLegalName(name + ".zip"));
+        File zipFile = new File(root, makeLegalName(name));
         FileOutputStream fos = new FileOutputStream(zipFile);
         _out = new ZipOutputStream(new BufferedOutputStream(fos));
         _pw = new NonCloseablePrintWriter(_out);
@@ -47,8 +48,15 @@ public class ZipFile implements VirtualFile
     public ZipFile(HttpServletResponse response, String name) throws IOException
     {
         response.setContentType("application/zip");
-        response.setHeader("Content-Disposition", "attachment; filename=\"" + makeLegalName(name + ".zip") + "\";");
+        response.setHeader("Content-Disposition", "attachment; filename=\"" + makeLegalName(name) + "\";");
         _out = new ZipOutputStream(response.getOutputStream());
+        _pw = new NonCloseablePrintWriter(_out);
+        _path = "";
+    }
+
+    private ZipFile(ZipOutputStream out) throws IOException
+    {
+        _out = new ZipOutputStream(out);
         _pw = new NonCloseablePrintWriter(_out);
         _path = "";
     }
@@ -58,6 +66,11 @@ public class ZipFile implements VirtualFile
         _out = out;
         _pw = pw;
         _path = path + "/";
+    }
+
+    public String getLocation()
+    {
+        return "ZipFile stream.";
     }
 
     public PrintWriter getPrintWriter(String path) throws IOException
@@ -77,6 +90,14 @@ public class ZipFile implements VirtualFile
     public VirtualFile getDir(String path)
     {
         return new ZipFile(_out, _pw, _path + path);
+    }
+
+    public Archive createZipArchive(String name) throws IOException
+    {
+        ZipEntry entry = new ZipEntry(_path + makeLegalName(name));
+        _out.putNextEntry(entry);
+
+        return new ZipFile(_out);
     }
 
     public String makeLegalName(String name)

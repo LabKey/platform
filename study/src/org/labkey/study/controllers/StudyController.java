@@ -1311,7 +1311,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(BulkEditForm bulkEditForm, boolean reshow, BindException errors) throws Exception
         {
-            ModelAndView view = new StudyJspView<Study>(getStudy(),  "manageSites.jsp", getStudy(), errors);
+            ModelAndView view = new StudyJspView<Study>(getStudy(), "manageSites.jsp", getStudy(), errors);
             view.addObject("errors", errors);
             return view;
         }
@@ -3722,7 +3722,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    // TODO: Read or Admin permissions??
+    // TODO: Change to "Study Data Administrator" role?
     @RequiresPermission(ACL.PERM_READ)
     public class ExportStudyAction extends FormViewAction<ExportForm>
     {
@@ -3763,6 +3763,7 @@ public class StudyController extends BaseStudyController
 
     }
 
+    // TODO: Change to "Study Data Administrator" role?
     @RequiresPermission(ACL.PERM_READ)
     public class ExportZipAction extends ExportAction
     {
@@ -3770,7 +3771,7 @@ public class StudyController extends BaseStudyController
         {
             Study study = getStudy();
             StudyWriter writer = new StudyWriter();
-            ZipFile zip = new ZipFile(response, study.getLabel());
+            ZipFile zip = new ZipFile(response, study.getLabel() + ".zip");
             writer.write(study, new ExportContext(getUser(), getContainer()), zip);
             zip.close();
         }

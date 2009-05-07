@@ -2287,11 +2287,12 @@ study/src/org/labkey/study/writer/DataFaxVisitMapWriter.java -text
 study/src/org/labkey/study/writer/DataSetWriter.java -text
 study/src/org/labkey/study/writer/ExportContext.java -text
 study/src/org/labkey/study/writer/FileSystemFile.java -text
+study/src/org/labkey/study/writer/LabsWriter.java -text
 study/src/org/labkey/study/writer/QcStateWriter.java -text
 study/src/org/labkey/study/writer/QueryWriter.java -text
 study/src/org/labkey/study/writer/ReportWriter.java -text
 study/src/org/labkey/study/writer/SchemaWriter.java -text
-study/src/org/labkey/study/writer/SpecimenWriter.java -text
+study/src/org/labkey/study/writer/SpecimenArchiveWriter.java -text
 study/src/org/labkey/study/writer/StudyWriter.java -text
 study/src/org/labkey/study/writer/StudyXmlWriter.java -text
 study/src/org/labkey/study/writer/TdmVisitMapWriter.java -text

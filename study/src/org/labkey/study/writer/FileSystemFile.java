@@ -17,6 +17,7 @@ package org.labkey.study.writer;
 
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.VirtualFile;
+import org.labkey.api.util.Archive;
 
 import java.io.*;
 
@@ -34,6 +35,11 @@ public class FileSystemFile implements VirtualFile
         ensureWriteableDirectory(root);
 
         _root = root;
+    }
+
+    public String getLocation()
+    {
+        return _root.getAbsolutePath();
     }
 
     public PrintWriter getPrintWriter(String fileName) throws IOException
@@ -59,6 +65,11 @@ public class FileSystemFile implements VirtualFile
     public VirtualFile getDir(String name)
     {
         return new FileSystemFile(new File(_root, makeLegalName(name)));
+    }
+
+    public Archive createZipArchive(String name) throws FileNotFoundException
+    {
+        return new ZipFile(_root, name);
     }
 
     public String makeLegalName(String name)

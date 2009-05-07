@@ -608,13 +608,13 @@ public class DatasetBatch extends StudyBatch implements Serializable
 
             List<String> errors = new ArrayList<String>();
             validate(errors);
+
             if (!errors.isEmpty())
             {
                 for (String e : errors)
                     _logError(tsv.getName() + " -- " + e);
                 return;
             }
-
 
             try
             {
