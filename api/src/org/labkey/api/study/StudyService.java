@@ -135,7 +135,7 @@ public class StudyService
          */
         public Set<Container> getStudyContainersForAssayProtocol(int protocolId);
 
-        public List<SecurableResource> getSecurableResources(Container container);
+        public List<SecurableResource> getSecurableResources(Container container, User user);
     }
 
     public static void register(Service serviceImpl)

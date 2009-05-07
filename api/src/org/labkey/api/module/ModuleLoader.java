@@ -117,6 +117,7 @@ public class ModuleLoader implements Filter
 
     private Map<String, ModuleContext> contextMap = new HashMap<String, ModuleContext>();
     private Map<String, Module> moduleMap = new HashMap<String, Module>();
+    private Map<Class<? extends Module>, Module> moduleClassMap = new HashMap<Class<? extends Module>, Module>();
 
     private List<Module> _modules;
     private final SortedMap<String, FolderType> _folderTypes = new TreeMap<String, FolderType>(new FolderTypeComparator());
@@ -226,6 +227,7 @@ public class ModuleLoader implements Filter
             {
                 module.initialize();
                 moduleMap.put(module.getName(), module);
+                moduleClassMap.put(module.getClass(), module);
             }
             catch(Throwable t)
             {
@@ -853,6 +855,11 @@ public class ModuleLoader implements Filter
     public Module getModule(String name)
     {
         return moduleMap.get(name);
+    }
+
+    public Module getModule(Class<? extends Module> moduleClass)
+    {
+        return moduleClassMap.get(moduleClass);
     }
 
     public Module getCoreModule()

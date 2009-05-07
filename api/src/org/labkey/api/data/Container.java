@@ -23,6 +23,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -92,6 +93,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return _name;
     }
 
+    @NotNull
+    public String getResourceName()
+    {
+        return _name;
+    }
 
     public Date getCreated()
     {
@@ -310,11 +316,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public List<SecurableResource> getChildResources(User user)
     {
         List<SecurableResource> ret = new ArrayList<SecurableResource>();
-        //add all sub-containers
-        ret.addAll(ContainerManager.getChildren(this));
+
+        //add all sub-containers the user is allowed to admin
+        ret.addAll(ContainerManager.getChildren(this, user, AdminPermission.class));
 
         //add resources from study
-        ret.addAll(StudyService.get().getSecurableResources(this));
+        ret.addAll(StudyService.get().getSecurableResources(this, user));
 
         //add report descriptors
         //this seems much more cumbersome that it should be
@@ -323,9 +330,10 @@ public class Container implements Serializable, Comparable<Container>, Securable
             Report[] reports = ReportService.get().getReports(user, this);
             for(Report report : reports)
             {
-                ret.add(report.getDescriptor());
+                SecurityPolicy policy = SecurityManager.getPolicy(report.getDescriptor());
+                if(policy.hasPermission(user, AdminPermission.class))
+                    ret.add(report.getDescriptor());
             }
-
         }
         catch(SQLException e)
         {
@@ -333,9 +341,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
 
         //add pipeline root
-        PipeRoot root = PipelineService.get().getPipelineRootSetting(this);
+        PipeRoot root = PipelineService.get().findPipelineRoot(this);
         if(null != root)
-            ret.add(root);
+        {
+            SecurityPolicy policy = SecurityManager.getPolicy(root);
+            if(policy.hasPermission(user, AdminPermission.class))
+                ret.add(root);
+        }
 
         return ret;
     }
@@ -766,31 +778,32 @@ public class Container implements Serializable, Comparable<Container>, Securable
     }
 
     @NotNull
-    public String getDescription()
+    public String getResourceDescription()
     {
         return "The folder " + getPath();
-    }
-
-    private static final Set<Class<? extends Permission>> _relevantPerms = new HashSet<Class<? extends Permission>>();
-    static
-    {
-        _relevantPerms.add(ReadPermission.class);
     }
 
     @NotNull
     public Set<Class<? extends Permission>> getRelevantPermissions()
     {
-        return _relevantPerms;
+        return RoleManager.BasicPermissions;
     }
 
+    @NotNull
     public Module getSourceModule()
     {
         return ModuleLoader.getInstance().getCoreModule();
     }
 
     @NotNull
-    public Container getContainer()
+    public Container getResourceContainer()
     {
         return this;
+    }
+
+    public SecurableResource getParentResource()
+    {
+        SecurableResource parent = getParent();
+        return getParent().equals(this) ? null : parent;
     }
 }

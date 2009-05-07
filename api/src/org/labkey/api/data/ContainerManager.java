@@ -29,6 +29,7 @@ import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.roles.*;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.portal.ProjectUrls;
@@ -263,7 +264,7 @@ public class ContainerManager
     }
 
 
-    public static List<Container> getChildren(Container parent, User u, int perm)
+    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm)
     {
         List<Container> allChildren = getChildren(parent);
         List<Container> children = new ArrayList<Container>();
@@ -717,7 +718,7 @@ public class ContainerManager
 
             //Now find children of the current container and add them
             Container c = context.getContainer();
-            List<Container> children = getChildren(c, user, ACL.PERM_READ);
+            List<Container> children = getChildren(c, user, ReadPermission.class);
             List<NavTree> childNavTrees = new ArrayList<NavTree>();
             for (Container child : children)
             {

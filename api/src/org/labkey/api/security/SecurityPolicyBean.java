@@ -41,14 +41,14 @@ public class SecurityPolicyBean
     {
         _resourceId = resource.getResourceId();
         _resourceClass = resource.getClass().getName();
-        _container = resource.getContainer();
+        _container = resource.getResourceContainer();
     }
 
     public SecurityPolicyBean(SecurableResource resource, Date modified)
     {
         _resourceId = resource.getResourceId();
         _resourceClass = resource.getClass().getName();
-        _container = resource.getContainer();
+        _container = resource.getResourceContainer();
         _modified = modified;
     }
 

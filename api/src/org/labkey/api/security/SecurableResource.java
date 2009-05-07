@@ -40,22 +40,22 @@ public interface SecurableResource
     String getResourceId();
 
     @NotNull
-    public String getName();
+    public String getResourceName();
 
     @NotNull
-    public String getDescription();
+    public String getResourceDescription();
 
     @NotNull
     public Set<Class<? extends Permission>> getRelevantPermissions();
 
-    @Nullable
+    @NotNull
     public Module getSourceModule();
 
     @Nullable
-    public SecurableResource getParent();
+    public SecurableResource getParentResource();
 
     @NotNull
-    public Container getContainer();
+    public Container getResourceContainer();
 
     @NotNull
     public List<SecurableResource> getChildResources(User user);

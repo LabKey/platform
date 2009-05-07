@@ -1686,14 +1686,14 @@ public class SecurityManager
         if(findNearest && policy.isEmpty())
         {
             //crawl up the tree to find the nearest established policy
-            SecurableResource parent = (resource.getParent() == resource) ? null : resource.getParent();
+            SecurableResource parent = (resource.getParentResource() == resource) ? null : resource.getParentResource();
             while(policy.isEmpty() && null != parent)
             {
                 policy = getPolicy(parent, false);
 
                 //NOTE: for some strange reason Container.getParent() returns
                 //itself instead of null when you reach the root
-                parent = (parent.getParent() == parent) ? null : parent.getParent();
+                parent = (parent.getParentResource() == parent) ? null : parent.getParentResource();
             }
         }
 

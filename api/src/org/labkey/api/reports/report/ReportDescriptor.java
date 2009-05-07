@@ -472,13 +472,13 @@ public class ReportDescriptor extends Entity implements SecurableResource
     }
 
     @NotNull
-    public String getName()
+    public String getResourceName()
     {
         return getReportName();
     }
 
     @NotNull
-    public String getDescription()
+    public String getResourceDescription()
     {
         return getReportDescription();
     }
@@ -489,14 +489,15 @@ public class ReportDescriptor extends Entity implements SecurableResource
         return RoleManager.BasicPermissions;
     }
 
+    @NotNull
     public Module getSourceModule()
     {
         return ModuleLoader.getInstance().getCoreModule();
     }
 
-    public SecurableResource getParent()
+    public SecurableResource getParentResource()
     {
-        return getContainer();
+        return getResourceContainer();
     }
 
     @NotNull
@@ -506,7 +507,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
     }
 
     @NotNull
-    public Container getContainer()
+    public Container getResourceContainer()
     {
         return lookupContainer();
     }
