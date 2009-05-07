@@ -27,6 +27,11 @@ import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.Report;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipeRoot;
 
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
@@ -191,6 +196,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return getPolicy().hasPermission(user, perm);
     }
 
+    /**
+     * Don't use this anymore
+     * @param user the user
+     * @param perm the old nasty integer permission
+     * @return something you don't want anymore
+     * @deprecated Use hasPermission(User user, Class&lt;? extends Permission&gt; perm) instead
+     */
     public boolean hasPermission(User user, int perm)
     {
         if (isForbiddenProject(user))
@@ -292,6 +304,40 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public List<Container> getChildren()
     {
         return ContainerManager.getChildren(this);
+    }
+
+    @NotNull
+    public List<SecurableResource> getChildResources(User user)
+    {
+        List<SecurableResource> ret = new ArrayList<SecurableResource>();
+        //add all sub-containers
+        ret.addAll(ContainerManager.getChildren(this));
+
+        //add resources from study
+        ret.addAll(StudyService.get().getSecurableResources(this));
+
+        //add report descriptors
+        //this seems much more cumbersome that it should be
+        try
+        {
+            Report[] reports = ReportService.get().getReports(user, this);
+            for(Report report : reports)
+            {
+                ret.add(report.getDescriptor());
+            }
+
+        }
+        catch(SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
+        //add pipeline root
+        PipeRoot root = PipelineService.get().getPipelineRootSetting(this);
+        if(null != root)
+            ret.add(root);
+
+        return ret;
     }
 
     public String toString()

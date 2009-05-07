@@ -111,11 +111,4 @@ public class RoleManager
         }
     }
 
-    public static void addPermissionToAllRoles(Class<? extends Permission> perm)
-    {
-        for(Role role : _roles)
-        {
-            role.addPermission(perm);
-        }
-    }
 }

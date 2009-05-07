@@ -103,6 +103,7 @@ public class SecurityPolicy
      * @param principal The principal
      * @return The roles this principal is directly assigned
      */
+    @NotNull
     public List<Role> getAssignedRoles(UserPrincipal principal)
     {
         List<Role> roles = new ArrayList<Role>();

@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.query.SchemaUpdateService;
 import org.labkey.api.query.SchemaUpdateServiceRegistry;
 import org.labkey.api.security.User;
+import org.labkey.api.security.SecurableResource;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 
@@ -133,6 +134,8 @@ public class StudyService
          * Returns the set of containers which have ever had data copied from the provided protocol
          */
         public Set<Container> getStudyContainersForAssayProtocol(int protocolId);
+
+        public List<SecurableResource> getSecurableResources(Container container);
     }
 
     public static void register(Service serviceImpl)

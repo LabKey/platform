@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
+import java.util.List;
 
 /*
 * User: Dave
@@ -55,4 +56,7 @@ public interface SecurableResource
 
     @NotNull
     public Container getContainer();
+
+    @NotNull
+    public List<SecurableResource> getChildResources(User user);
 }
