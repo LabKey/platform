@@ -641,7 +641,7 @@ LABKEY.WebdavFileSystem = function(config)
         ]);
     this.connection = new Ext.data.Connection({method: "GET", headers: {"Method" : "PROPFIND", "Depth" : "1,noroot"}});
     this.proxy = new Ext.data.HttpProxy(this.connection);
-    this.reader = new Ext.data.XmlReader({record : "response", id : "href"}, this.FileRecord);
+    this.transferReader = new Ext.data.XmlReader({record : "response", id : "href"}, this.FileRecord);
 
     this.rootRecord = new this.FileRecord({
         id:"/",
@@ -761,7 +761,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
         var url = this.concatPaths(this.prefixUrl, encodeURI(path));
         this.connection.url = url;
         var args = {url: url, path: path, callback:callback};
-        this.proxy.load({method:"PROPFIND",depth:"0"}, this.reader, this.processFile, this, args);
+        this.proxy.load({method:"PROPFIND",depth:"0"}, this.transferReader, this.processFile, this, args);
         return true;
     },
 
@@ -793,7 +793,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
         this.connection.url = url;
 
         var args = {url: url, path: path, callback:callback};
-        this.proxy.load({method:"PROPFIND",depth:"1,noroot"}, this.reader, this.processFiles, this, args);
+        this.proxy.load({method:"PROPFIND",depth:"1,noroot"}, this.transferReader, this.processFiles, this, args);
         return true;
     },
 
@@ -832,7 +832,7 @@ var AppletFileSystem = function(config)
     AppletFileSystem.superclass.constructor.call(this);
     this.connection = new Ext.data.Connection({method: "GET", headers: {"Method" : "PROPFIND", "Depth" : "1,noroot"}});
     this.proxy = new Ext.data.HttpProxy(this.connection);
-    this.reader = new Ext.data.JsonReader({totalProperty:'recordCount', root:'records', id:'uri'}, this.AppletRecord),
+    this.transferReader = new Ext.data.JsonReader({totalProperty:'recordCount', root:'records', id:'uri'}, this.AppletRecord),
 
     this.rootRecord = new this.FileRecord(
     {
@@ -860,7 +860,7 @@ Ext.extend(AppletFileSystem, FileSystem,
         {name:'modified', mapping:'lastModified'}
     ]),
 
-    reader : null,
+    transferReader : null,
 
     createDirectory : function(path, callback)
     {
@@ -1082,8 +1082,12 @@ if (LABKEY.Applet)
                     password: LABKEY.user.sessionid
                 }
             };
-            this.reader = new Ext.data.JsonReader({successProperty:'success', totalProperty:'recordCount', root:'records', id:'target'}, this.TransferRecord);
+            this.transferReader = new Ext.data.JsonReader({successProperty:'success', totalProperty:'recordCount', root:'records', id:'target'}, this.TransferRecord);
             this.transfers = new Ext.data.Store();
+            this.consoleReader = new Ext.data.JsonReader({successProperty:'success', totalProperty:'recordCount', root:'records'}, this.ConsoleRecord);
+            var consoleCounter = 0;
+            this.consoleReader.getId = function(){return ++consoleCounter;};
+            this.console = new Ext.data.Store();
 
             this.transfers.on("add", function(store, records)
             {
@@ -1101,26 +1105,41 @@ if (LABKEY.Applet)
             Ext.TaskMgr.start({interval:100, scope:this, run:this._poll});
         },
 
-        reader : null,
+        transferReader : null,
         transfers : null,
 
         /* private */
         _poll : function()
         {
             var a = this.getApplet();
+            var r,result,records;
             if (null == a)
                 return;
-            if (!a.transfer_hasUpdates())
-                return;
 
-            // merge updates into data store
-            var r = a.transfer_getObjects();
-            var result = eval("(" + r + ")");
-            if (!result.success)
-                console.error(r);
-            var records = this.reader.readRecords(result);
-            this._merge(this.transfers,records.records);
-            this.fireEvent(TRANSFER_EVENTS.update);
+            var updated = false;
+            if (a.transfer_hasUpdates())
+            {
+                // merge updates into data store
+                r = a.transfer_getObjects();
+                result = eval("(" + r + ")");
+                if (!result.success)
+                    console.error(r);
+                records = this.transferReader.readRecords(result);
+                this._merge(this.transfers,records.records);
+                updated = true;
+            }
+
+            var consoleLineCount = a.console_getLineCount();
+            if (consoleLineCount > this.console.getCount())
+            {
+                r = a.console_getRange(this.console.getCount(), consoleLineCount);
+                result = eval("(" + r + ")");
+                records = this.consoleReader.readRecords(result);
+                this.console.add(records.records);
+            }
+
+            if (updated)
+                this.fireEvent(TRANSFER_EVENTS.update);
         },
 
         /* private */
@@ -1158,6 +1177,9 @@ if (LABKEY.Applet)
             {name:'updated'},
             {name:'md5', mapping:'digest'}
         ]),
+
+
+        ConsoleRecord : Ext.data.Record.create(['level', 'text']),
 
 
         changeWorkingDirectory : function(path)
