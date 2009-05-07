@@ -736,6 +736,7 @@ api/src/org/labkey/api/unused/PropertyBag.java -text
 api/src/org/labkey/api/unused/Scan.java -text
 api/src/org/labkey/api/unused/TextProvider.java -text
 api/src/org/labkey/api/unused/Tree2D.java -text
+api/src/org/labkey/api/util/Archive.java -text
 api/src/org/labkey/api/util/BreakpointThread.java -text
 api/src/org/labkey/api/util/CPUTimer.java -text
 api/src/org/labkey/api/util/CloseableIterator.java -text

@@ -57,6 +57,7 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
     // source data
     private String _stringData = null;
     private Reader _reader;
+    private int _commentLines = 0;
 
     private Map<String, String> _comments = new HashMap<String, String>();
 
@@ -66,13 +67,22 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
     protected boolean _throwOnErrors = false;
     private Filter<Map<String, Object>> _mapFilter;
 
-    public void setHasColumnHeaders(boolean hasColumnHeaders)
+    protected AbstractTabLoader(File inputFile, Boolean hasColumnHeaders) throws IOException
     {
-        _skipLines = hasColumnHeaders ? 1 : 0;
+        setSource(inputFile);
+        init(hasColumnHeaders);
     }
 
+    protected AbstractTabLoader(String src, Boolean hasColumnHeaders) throws IOException
+    {
+        if (src == null)
+            throw new IllegalArgumentException("src cannot be null");
 
-    protected void setSource(Reader reader)
+        _stringData = src;
+        init(hasColumnHeaders);
+    }
+
+    protected AbstractTabLoader(Reader reader, Boolean hasColumnHeaders) throws IOException
     {
         if (reader.markSupported())
             _reader = reader;
@@ -88,12 +98,15 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
         {
             throw new RuntimeException(x);
         }
+
+        init(hasColumnHeaders);
     }
 
 
-    protected void setSource(String src)
+    private void init(Boolean hasColumnHeaders) throws IOException
     {
-        _stringData = src;
+        if (null != hasColumnHeaders)
+            setHasColumnHeaders(hasColumnHeaders.booleanValue());
     }
 
 
@@ -117,8 +130,10 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
         return new BufferedReader(new FileReader(_file));
     }
 
-    public Map getComments()
+    public Map getComments() throws IOException
     {
+        ensureInitialized();
+
         //noinspection unchecked
         return Collections.unmodifiableMap(_comments);
     }
@@ -227,6 +242,8 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
 
     protected CloseableIterator<Map<String, Object>> mapIterator()
     {
+        ensureInitialized();
+
         TabLoaderIterator iter = null;
         try
         {
@@ -286,9 +303,46 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
         }
     }
 
+    @Override
+    protected void initialize() throws IOException
+    {
+        super.initialize();
+        initializeComments();
+    }
+
+    private void initializeComments() throws IOException
+    {
+        String s;
+        BufferedReader reader = getReader();
+
+        for (int skip = 0; skip < _skipLines;)
+        {
+            s = reader.readLine();
+            if (null == s)
+                break;
+            _commentLines++;
+
+            if (s.length() == 0 || s.charAt(0) == '#')
+            {
+                int eq = s.indexOf('=');
+                if (eq != -1)
+                {
+                    String key = s.substring(1, eq).trim();
+                    String value = s.substring(eq + 1).trim();
+                    if (key.length() > 0 || value.length() > 0)
+                        _comments.put(key, value);
+                }
+                continue;
+            }
+
+            skip++;
+        }
+    }
+
     public String[][] getFirstNLines(int n) throws IOException
     {
         BufferedReader reader = getReader();
+
         try
         {
             String[] lines = new String[n];
@@ -337,6 +391,13 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
 
         protected TabLoaderIterator() throws IOException
         {
+            reader = getReader();
+
+            for (int i = 0; i < _commentLines; i++)
+                reader.readLine();
+
+            lineNo = _commentLines;
+
             Map<String, Integer> colMap = new CaseInsensitiveHashMap<Integer>();
             ColumnDescriptor[] columns = getColumns();
 
@@ -350,32 +411,6 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
             // find a converter for each column type
             for (ColumnDescriptor column : _columns)
                 column.converter = ConvertUtils.lookup(column.clazz);
-
-            reader = getReader();
-            String s;
-
-            for (int skip = 0; skip < _skipLines;)
-            {
-                s = reader.readLine();
-                if (null == s)
-                    break;
-                lineNo++;
-
-                if (s.length() == 0 || s.charAt(0) == '#')
-                {
-                    int eq = s.indexOf('=');
-                    if (eq != -1)
-                    {
-                        String key = s.substring(1, eq).trim();
-                        String value = s.substring(eq + 1).trim();
-                        if (key.length() > 0 || value.length() > 0)
-                            _comments.put(key, value);
-                    }
-                    continue;
-                }
-
-                skip++;
-            }
         }
 
 
@@ -555,7 +590,8 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
                         throw new RuntimeException(e);
                 }
                 
-                _log.error("failed loading file " + _file.getName() + " at line: " + lineNo + " " + e, e);
+                if (null != _file)
+                    _log.error("failed loading file " + _file.getName() + " at line: " + lineNo + " " + e, e);
             }
             return null;
         }

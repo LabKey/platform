@@ -20,29 +20,26 @@ public class BeanTabLoader<T> extends AbstractTabLoader<T>
     // Infer whether there are headers
     public BeanTabLoader(Class<T> clazz, File inputFile) throws IOException
     {
+        super(inputFile, null);
         _clazz = clazz;
-        setSource(inputFile);
     }
 
     public BeanTabLoader(Class<T> clazz, File inputFile, boolean hasColumnHeaders) throws IOException
     {
+        super(inputFile, hasColumnHeaders);
         _clazz = clazz;
-        setSource(inputFile);
-        setHasColumnHeaders(hasColumnHeaders);
     }
 
-    public BeanTabLoader(Class<T> clazz, Reader reader, boolean hasColumnHeaders)
+    public BeanTabLoader(Class<T> clazz, Reader reader, boolean hasColumnHeaders) throws IOException
     {
+        super(reader, hasColumnHeaders);
         _clazz = clazz;
-        setSource(reader);
-        setHasColumnHeaders(hasColumnHeaders);
     }
 
     public BeanTabLoader(Class<T> clazz, String src, boolean hasColumnHeaders) throws IOException
     {
+        super(src, hasColumnHeaders);
         _clazz = clazz;
-        setSource(src);
-        setHasColumnHeaders(hasColumnHeaders);
     }
 
     public void setBeanFilter(Filter<T> beanFilter)

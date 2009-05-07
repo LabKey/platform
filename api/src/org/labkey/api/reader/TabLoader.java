@@ -17,40 +17,28 @@ public class TabLoader extends AbstractTabLoader<Map<String, Object>>
     // Infer whether there are headers
     public TabLoader(File inputFile) throws IOException
     {
-        setSource(inputFile);
+        super(inputFile, null);
     }
 
     public TabLoader(File inputFile, boolean hasColumnHeaders) throws IOException
     {
-        setSource(inputFile);
-        setHasColumnHeaders(hasColumnHeaders);
+        super(inputFile, hasColumnHeaders);
     }
 
-    public TabLoader(Reader reader, boolean hasColumnHeaders)
+    public TabLoader(Reader reader, boolean hasColumnHeaders) throws IOException
     {
-        setSource(reader);
-        setHasColumnHeaders(hasColumnHeaders);
+        super(reader, hasColumnHeaders);
     }
 
     // Infer whether there are headers
-    public TabLoader(String src)
+    public TabLoader(String src) throws IOException
     {
-        setSource(src);
+        super(src, null);
     }
 
-    public TabLoader(String src, boolean hasColumnHeaders)
+    public TabLoader(String src, boolean hasColumnHeaders) throws IOException
     {
-        if (src == null)
-            throw new IllegalArgumentException("src cannot be null");
-        setHasColumnHeaders(hasColumnHeaders);
-        setSource(src);
-    }
-
-    public TabLoader(File inputFile, int skipLines)
-            throws IOException
-    {
-        setSource(inputFile);
-        _skipLines = skipLines;
+        super(src, hasColumnHeaders);
     }
 
     public CloseableIterator<Map<String, Object>> iterator()

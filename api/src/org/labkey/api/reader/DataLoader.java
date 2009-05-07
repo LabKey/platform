@@ -62,12 +62,31 @@ public abstract class DataLoader<T> implements Iterable<T>
 
     public final ColumnDescriptor[] getColumns() throws IOException
     {
+        ensureInitialized();
+
+        return _columns;
+    }
+
+    protected void ensureInitialized()
+    {
         if (!columnsInitialized)
         {
-            initializeColumns();
+            try
+            {
+                initialize();
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+
+            columnsInitialized = true;
         }
-        columnsInitialized = true;
-        return _columns;
+    }
+
+    protected void initialize() throws IOException
+    {
+        initializeColumns();
     }
 
     public void setColumns(ColumnDescriptor[] columns)
@@ -89,11 +108,16 @@ public abstract class DataLoader<T> implements Iterable<T>
         setColumns(newColumns);
     }
 
-    private void initializeColumns() throws IOException
+    protected void initializeColumns() throws IOException
     {
         //Take our best guess since some columns won't map
         if (null == _columns)
             inferColumnInfo();
+    }
+
+    protected void setHasColumnHeaders(boolean hasColumnHeaders)
+    {
+        _skipLines = hasColumnHeaders ? 1 : 0;
     }
 
     protected void setSource(File inputFile) throws IOException
@@ -278,19 +302,6 @@ public abstract class DataLoader<T> implements Iterable<T>
     public void setScanAheadLineCount(int count)
     {
         _scanAheadLineCount = count;
-    }
-
-    public int getSkipLines()
-    {
-        return _skipLines;
-    }
-
-    /**
-     * @param skipLines -1 means infer headers, 0 means no headers, and 1 means there is one header line
-     */
-    public void setSkipLines(int skipLines)
-    {
-        _skipLines = skipLines;
     }
 
     /**

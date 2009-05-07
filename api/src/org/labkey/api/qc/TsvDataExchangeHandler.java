@@ -227,9 +227,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         new ColumnDescriptor("type", String.class)
                 });
 
-                List<Map<String, Object>> maps = loader.load();
                 File errorFile = null;
-                for (Map<String, Object> row : maps)
+                for (Map<String, Object> row : loader)
                 {
                     if (row.get("name").equals(Props.errorsFile.name()))
                     {
@@ -247,7 +246,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                             new ColumnDescriptor("message", String.class)
                     });
 
-                    for (Map<String, Object> row : errorLoader.load())
+                    for (Map<String, Object> row : errorLoader)
                     {
                         if ("error".equalsIgnoreCase(row.get("type").toString()))
                         {

@@ -54,7 +54,9 @@ public class ExcelLoader extends DataLoader<Map<String, Object>>
 
     public ExcelLoader(File file, boolean hasColumnHeaders) throws IOException
     {
+        setHasColumnHeaders(hasColumnHeaders);
         setSource(file);
+
         try
         {
             WorkbookSettings ws = new WorkbookSettings();
@@ -65,7 +67,6 @@ public class ExcelLoader extends DataLoader<Map<String, Object>>
         {
             throw new IOException(e.getMessage());
         }
-        _skipLines = hasColumnHeaders ? 1 : 0;
     }
 
     public List<String> getSheetNames()

@@ -27,6 +27,8 @@ public interface VirtualFile
 {
     public PrintWriter getPrintWriter(String path) throws IOException;
     public void makeDir(String path) throws IOException;
+    public Archive createZipArchive(String name) throws IOException;
     public VirtualFile getDir(String path);
     public String makeLegalName(String name);
+    public String getLocation();
 }

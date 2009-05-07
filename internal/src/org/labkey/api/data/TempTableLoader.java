@@ -44,8 +44,7 @@ public class TempTableLoader extends TabLoader
 
     public TempTableLoader(File src, boolean hasColumnHeaders) throws IOException
     {
-        super(src);
-        setHasColumnHeaders(hasColumnHeaders);
+        super(src, hasColumnHeaders);
     }
 
     public Table.TempTableInfo loadTempTable(DbSchema schema) throws IOException, SQLException

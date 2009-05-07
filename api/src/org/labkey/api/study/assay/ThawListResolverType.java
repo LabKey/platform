@@ -25,6 +25,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
@@ -32,8 +33,6 @@ import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.GWTView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
-import org.labkey.api.reader.TabLoader;
-import org.labkey.api.reader.ColumnDescriptor;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -113,14 +112,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
             }
 
             Map<String, ParticipantVisit> values = new HashMap<String, ParticipantVisit>();
-            TabLoader tabLoader = new TabLoader(file);
-            ColumnDescriptor[] cols = tabLoader.getColumns();
-            if (tabLoader.getSkipLines() == 0)
-            {
-                tabLoader = new TabLoader(file);
-                tabLoader.setSkipLines(1);
-                cols = tabLoader.getColumns();
-            }
+            TabLoader tabLoader = new TabLoader(file, true);
 
             for (Map<String, Object> data : tabLoader.load())
             {
