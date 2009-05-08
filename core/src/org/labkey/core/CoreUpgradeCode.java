@@ -231,8 +231,7 @@ public class CoreUpgradeCode implements UpgradeCode
                     //the administrators group to the site admin role for this object
                     //and that's all.
                     Table.execute(CoreSchema.getInstance().getSchema(), insertAssignmentSql,
-                            new Object[]{objectId, Group.groupAdministrators, siteAdminRole.getUniqueName(),
-                                    containerId, resourceClass});
+                            new Object[]{objectId, Group.groupAdministrators, siteAdminRole.getUniqueName() });
                 }
 
                 ++numAcls;

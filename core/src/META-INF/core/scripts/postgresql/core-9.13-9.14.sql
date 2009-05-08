@@ -24,6 +24,9 @@ delete from core.ACLs where Container is null;
 -- create Policies and RoleAssignments tables
 select core.fn_dropifexists('RoleAssignments', 'core', 'TABLE', null);
 
+-- create Policies and RoleAssignments tables
+select core.fn_dropifexists('Policies', 'core', 'TABLE', null);
+
 create table core.Policies
 (
     ResourceId entityid not null,
