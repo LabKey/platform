@@ -28,6 +28,7 @@ import org.labkey.wiki.model.Wiki;
 
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.HashSet;
 
 /**
  * Enacapsulates permission testing for wikis, handling the UPDATEOWN and DELETEOWN cases
@@ -53,7 +54,7 @@ public class BaseWikiPermissions
 
     protected Set<Role> getContextualRoles(Wiki wiki)
     {
-        Set<Role> roles = new TreeSet<Role>();
+        Set<Role> roles = new HashSet<Role>();
         if(userIsCreator(wiki))
             roles.add(RoleManager.getRole(OwnerRole.class));
         if(_user.isDeveloper())

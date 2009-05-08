@@ -16,14 +16,11 @@
 package org.labkey.core.query;
 
 import org.labkey.api.data.*;
-import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.ACL;
+import org.labkey.api.query.*;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
@@ -45,6 +42,7 @@ public class CoreQuerySchema extends UserSchema
     public static final String USERS_TABLE_NAME = "Users";
     public static final String SITE_USERS_TABLE_NAME = "SiteUsers";
     public static final String PRINCIPALS_TABLE_NAME = "Principals";
+    public static final String MEMBERS_TABLE_NAME = "Members";
 
     public CoreQuerySchema(User user, Container c)
     {
@@ -53,7 +51,7 @@ public class CoreQuerySchema extends UserSchema
 
     public Set<String> getTableNames()
     {
-        return PageFlowUtil.set(USERS_TABLE_NAME, SITE_USERS_TABLE_NAME, PRINCIPALS_TABLE_NAME);
+        return PageFlowUtil.set(USERS_TABLE_NAME, SITE_USERS_TABLE_NAME, PRINCIPALS_TABLE_NAME, MEMBERS_TABLE_NAME);
     }
 
 
@@ -65,6 +63,8 @@ public class CoreQuerySchema extends UserSchema
             return getSiteUsers();
         if(PRINCIPALS_TABLE_NAME.equals(name))
             return getPrincipals();
+        if(MEMBERS_TABLE_NAME.equals(name))
+            return getMembers();
         return null;
     }
 
@@ -114,7 +114,7 @@ public class CoreQuerySchema extends UserSchema
         principals.setDefaultVisibleColumns(defCols);
 
         //filter out inactive
-        principals.addCondition(principalsBase.getColumn("Active"), 1);
+        principals.addCondition(new SQLFragment("Active=?", true));
 
         //filter for container is null or container = current-container
         principals.addCondition(new SQLFragment("Container IS NULL or Container=?", getContainer().getProject()));
@@ -126,6 +126,51 @@ public class CoreQuerySchema extends UserSchema
             addNullSetFilter(principals);
 
         return principals;
+    }
+
+    public TableInfo getMembers()
+    {
+        TableInfo membersBase = CoreSchema.getInstance().getTableInfoMembers();
+        FilteredTable members = new FilteredTable(membersBase);
+
+        ColumnInfo col = members.wrapColumn(membersBase.getColumn("UserId"));
+        col.setKeyField(true);
+        col.setFk(new LookupForeignKey("UserId", "Name")
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return getPrincipals();
+            }
+        });
+        members.addColumn(col);
+
+        col = members.wrapColumn(membersBase.getColumn("GroupId"));
+        col.setKeyField(true);
+        col.setFk(new LookupForeignKey("UserId", "Name")
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return getPrincipals();
+            }
+        });
+        members.addColumn(col);
+
+        //if user doesn't have admin perms, add a null-set filter
+        if(!getContainer().hasPermission(getUser(), AdminPermission.class))
+            addNullSetFilter(members);
+        else
+        {
+            //filter for groups defined in this container or null container
+            members.addCondition(new SQLFragment("GroupId IN (SELECT UserId FROM " + CoreSchema.getInstance().getTableInfoPrincipals()
+                    + " WHERE Container=? OR Container IS NULL)", getContainer().getProject().getId()));
+        }
+
+        List<FieldKey> defCols = new ArrayList<FieldKey>();
+        defCols.add(FieldKey.fromParts("UserId"));
+        defCols.add(FieldKey.fromParts("GroupId"));
+        members.setDefaultVisibleColumns(defCols);
+
+        return members;
     }
 
     public TableInfo getUsers()
@@ -189,7 +234,7 @@ public class CoreQuerySchema extends UserSchema
         users.addWrapColumn(usersBase.getColumn("Created"));
         users.addWrapColumn(usersBase.getColumn("Modified"));
         
-        if (getUser().isAdministrator() || getContainer().hasPermission(getUser(), ACL.PERM_ADMIN))
+        if (getUser().isAdministrator() || getContainer().hasPermission(getUser(), AdminPermission.class))
         {
             users.addWrapColumn(usersBase.getColumn("Email"));
             users.addWrapColumn(usersBase.getColumn("Phone"));
