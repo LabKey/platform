@@ -31,6 +31,10 @@ import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.SiteAdminRole;
+import org.labkey.api.security.roles.DeveloperRole;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.SpringAttachmentFile;
@@ -520,10 +524,29 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
     public void checkPermissions() throws TermsOfUseException, UnauthorizedException
     {
-        checkPermissionsAndTermsOfUse(getClass(), getViewContext());
+        //ideally, we should pass the bound FORM to getContextualRoles so that
+        //actions can determine if the OwnerRole should apply, but this would require
+        //a large amount of rework that is too much to consider now.
+        checkPermissionsAndTermsOfUse(getClass(), getViewContext(), getContextualRoles());
+    }
+
+    public Set<Role> getContextualRoles()
+    {
+        Set<Role> roles = new HashSet<Role>();
+        User user = getViewContext().getUser();
+        if(user.isAdministrator())
+            roles.add(RoleManager.getRole(SiteAdminRole.class));
+        if(user.isDeveloper())
+            roles.add(RoleManager.getRole(DeveloperRole.class));
+        return roles;
     }
 
     public static void checkActionPermissions(Class<? extends Controller> actionClass, Container c, User user) throws UnauthorizedException
+    {
+        checkActionPermissions(actionClass, c, user, null);
+    }
+
+    public static void checkActionPermissions(Class<? extends Controller> actionClass, Container c, User user, Set<Role> contextualRoles) throws UnauthorizedException
     {
         if (null == c)
         {
@@ -542,7 +565,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         if(null != permissionRequired)
         {
             SecurityPolicy policy = SecurityManager.getPolicy(c);
-            if(!policy.hasPermission(user, permissionRequired))
+            if(!policy.hasPermission(user, permissionRequired, contextualRoles))
                 throw new UnauthorizedException();
         }
 
@@ -581,8 +604,13 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
                 return null;
         }
     }
-
     public static void checkPermissionsAndTermsOfUse(Class<? extends Controller> actionClass, ViewContext context)
+            throws TermsOfUseException, UnauthorizedException
+    {
+        checkPermissionsAndTermsOfUse(actionClass, context, null);
+    }
+
+    public static void checkPermissionsAndTermsOfUse(Class<? extends Controller> actionClass, ViewContext context, Set<Role> contextualRoles)
             throws TermsOfUseException, UnauthorizedException 
     {
         checkActionPermissions(actionClass, context.getContainer(), context.getUser());
