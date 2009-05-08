@@ -1779,7 +1779,8 @@ public class DavController extends SpringActionController
                 if (!resource.exists())
                 {
                     temp = getTemporary();
-                    markTempFile(resource);
+                    if (temp)
+                        markTempFile(resource);
                     deleteFileOnFail = true;
                 }
 
@@ -2915,7 +2916,7 @@ public class DavController extends SpringActionController
     boolean getTemporary()
     {
         String overwriteHeader = getRequest().getHeader("Temporary");
-        return overwriteHeader == null || overwriteHeader.equalsIgnoreCase("T");
+        return overwriteHeader != null && overwriteHeader.equalsIgnoreCase("T");
     }
 
 
