@@ -47,6 +47,12 @@ public interface GlobusSettings
     public Integer getMaxMemory();
 
     /**
+     * @return Explicitly set the termination time, the time at which Globus will kill the job. The units is in minutes,
+     * relative to when the Globus job is submitted, not when it runs.
+     */
+    public Integer getTerminationTime();
+
+    /**
      * Takes all the non-null values from the overrides object and uses them to replace the values on this object.
      * @param overrides the set of properties to override
      * @return a new ClusterSettings object with the merged properties

@@ -143,9 +143,17 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
         return getAppBar(null);
     }
 
-    protected List<Integer> getCheckboxIds(boolean clear)
+    /**
+     * Use the POST that was sent as the new selection in the session,
+     * over-writing anything currently stored there.
+     */
+    protected List<Integer> getCheckboxIds()
     {
-        Set<String> idStrings =  DataRegionSelection.getSelected(getViewContext(), null, true, clear);
+        Set<String> idStrings =  DataRegionSelection.getSelected(getViewContext(), null, false, false);
+
+        DataRegionSelection.clearAll(getViewContext(), null);
+        DataRegionSelection.setSelected(getViewContext(), null, idStrings, true);
+
         List<Integer> ids = new ArrayList<Integer>();
         if (idStrings == null)
             return ids;

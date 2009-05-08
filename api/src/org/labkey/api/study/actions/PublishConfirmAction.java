@@ -169,7 +169,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         ViewContext context = getViewContext();
         _protocol = getProtocol(publishConfirmForm);
         AssayProvider provider = AssayService.get().getProvider(_protocol);
-        Set<Integer> selectedObjects = new HashSet<Integer>(getCheckboxIds(false));
+        Set<Integer> selectedObjects = new HashSet<Integer>(getCheckboxIds());
         Integer[] allObjectsArray = publishConfirmForm.getObjectId();
 
         List<Integer> allObjects;

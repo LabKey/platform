@@ -26,6 +26,7 @@ public class GlobusSettingsImpl extends AbstractGlobusSettings
     private Long _maxTime;
     private Long _maxCPUTime;
     private Long _maxWallTime;
+    private Integer _terminationTime;
 
     public String getQueue()
     {
@@ -50,6 +51,16 @@ public class GlobusSettingsImpl extends AbstractGlobusSettings
     public Integer getMaxMemory()
     {
         return _maxMemory;
+    }
+
+    public Integer getTerminationTime()
+    {
+        return _terminationTime;
+    }
+
+    public void setTerminationTime(Integer terminationTime)
+    {
+        _terminationTime = terminationTime;
     }
 
     public void setMaxMemory(Integer maxMemory)

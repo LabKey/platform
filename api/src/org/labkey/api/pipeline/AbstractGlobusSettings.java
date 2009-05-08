@@ -33,6 +33,7 @@ public abstract class AbstractGlobusSettings implements GlobusSettings
         result.setMaxTime(overrides.getMaxTime() == null ? getMaxTime() : overrides.getMaxTime());
         result.setMaxWallTime(overrides.getMaxWallTime() == null ? getMaxWallTime() : overrides.getMaxWallTime());
         result.setQueue(overrides.getQueue() == null ? getQueue() : overrides.getQueue());
+        result.setTerminationTime(overrides.getTerminationTime() == null ? getTerminationTime() : overrides.getTerminationTime());
         return result;
     }
 }

@@ -181,7 +181,8 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         if (publishForm.isRunIds())
         {
             // Need to convert the run ids into data row ids
-            List<Integer> runIds = getCheckboxIds(true);
+            List<Integer> runIds = getCheckboxIds();
+            DataRegionSelection.clearAll(getViewContext(), null);
             // Get the assay results table
             UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getContainer(), AssayService.ASSAY_SCHEMA_NAME);
             TableInfo table = schema.getTable(AssayService.get().getResultsTableName(_protocol));
@@ -215,7 +216,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         }
         else
         {
-            ids = getCheckboxIds(false);
+            ids = getCheckboxIds();
         }
 
         Set<Container> containers = new HashSet<Container>();
