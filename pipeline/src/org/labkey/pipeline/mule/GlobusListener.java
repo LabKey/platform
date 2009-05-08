@@ -103,7 +103,7 @@ public class GlobusListener implements GramJobListener
                     }
                     catch (Throwable e)
                     {
-                        _job.warn("Exception trying to clean up GRAM", e);
+                        _job.warn("Exception trying to unbind GRAM job", e);
                     }
                     gramJob.removeListener(this);
                     gramJob.destroy();

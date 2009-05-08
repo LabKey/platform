@@ -66,7 +66,7 @@ function toggleGlobusVisible()
         if (PipelineService.get().isEnterprisePipeline() &&
                 PipelineJobService.get().getGlobusClientProperties() != null)
         {
-            List<String> warnings = PipelineJobRunnerGlobus.checkGlobusConfiguration();
+            List<String> warnings = PipelineJobRunnerGlobus.checkGlobusConfiguration(bean.getGlobusKeyPair());
             for (String warning : warnings)
             { %>
                 <tr>

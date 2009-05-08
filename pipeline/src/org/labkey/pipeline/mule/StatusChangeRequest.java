@@ -45,7 +45,7 @@ public class StatusChangeRequest implements Serializable, StatusRequest
     {
         PipelineStatusFileImpl file = PipelineStatusManager.getJobStatusFile(_jobId);
         // Make sure that the job hasn't moved on to another task already
-        if (file.getActiveTaskId().equals(_activeTaskId.toString()))
+        if (file != null && _activeTaskId.toString().equals(file.getActiveTaskId()))
         {
             file.setStatus(_status);
             file.setInfo(_statusInfo);

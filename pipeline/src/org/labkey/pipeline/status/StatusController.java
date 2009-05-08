@@ -940,7 +940,7 @@ public class StatusController extends SpringActionController
             bb.add(button);
         }
 
-        ActionButton retryStatus = new ActionButton("runAction.view?action=\" + PipelineProvider.CAPTION_RETRY_BUTTON + \"", PipelineProvider.CAPTION_RETRY_BUTTON);
+        ActionButton retryStatus = new ActionButton("runAction.view?action=" + PipelineProvider.CAPTION_RETRY_BUTTON, PipelineProvider.CAPTION_RETRY_BUTTON);
         retryStatus.setRequiresSelection(true);
         retryStatus.setActionType(ActionButton.Action.POST);
         if (!user.isAdministrator())

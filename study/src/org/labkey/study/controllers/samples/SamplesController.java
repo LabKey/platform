@@ -337,22 +337,6 @@ public class SamplesController extends ViewController
         }
     }
 
-
-    @Jpf.Action
-    protected Forward download(AttachmentForm form) throws IOException, ServletException, SQLException
-    {
-        requiresPermission(ACL.PERM_READ);
-
-        SampleRequestEvent event = new SampleRequestEvent();  // TODO: Need to verify that entityId represents a valid SampleRequestEvent
-        event.setContainer(getContainer());
-        event.setEntityId(form.getEntityId());
-
-        AttachmentService.get().download(getResponse(), event, form.getName());
-
-        return null;
-    }
-
-
     public static class ManageRepositorySettingsForm extends FormData
     {
         private boolean _simple;

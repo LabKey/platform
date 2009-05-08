@@ -20,6 +20,7 @@ import org.labkey.api.action.*;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.data.*;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -3353,4 +3354,22 @@ public class SpringSpecimenController extends BaseStudyController
 
 
 
+    @RequiresPermission(ACL.PERM_READ)
+    public class DownloadAction extends SimpleViewAction<AttachmentForm>
+    {
+        public ModelAndView getView(AttachmentForm form, BindException errors) throws Exception
+        {
+            SampleRequestEvent event = new SampleRequestEvent();  // TODO: Need to verify that entityId represents a valid SampleRequestEvent
+            event.setContainer(getContainer());
+            event.setEntityId(form.getEntityId());
+
+            AttachmentService.get().download(getViewContext().getResponse(), event, form.getName());
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
 }

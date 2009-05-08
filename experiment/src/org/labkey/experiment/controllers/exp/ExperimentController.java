@@ -1478,7 +1478,8 @@ public class ExperimentController extends SpringActionController
 
             response.setContentType("application/vnd.ms-excel");
             response.setHeader("Content-disposition", "attachment; filename=\"" + filename +"\"");
-
+            response.setHeader("Pragma", "private");
+            response.setHeader("Cache-Control", "private");
             workbook.write();
             workbook.close();
         }

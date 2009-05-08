@@ -17,6 +17,7 @@
 package org.labkey.pipeline.api;
 
 import org.labkey.api.data.Entity;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineStatusFile;
@@ -26,6 +27,7 @@ import org.labkey.api.view.ActionURL;
 import java.io.*;
 import java.util.HashSet;
 import java.util.Arrays;
+import java.sql.SQLException;
 
 /**
  * @author B. MacLean
@@ -129,6 +131,28 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         if (_dataUrl == null || _dataUrl.length() == 0)
             _dataUrl = curSF._dataUrl;
         // _hadError?
+
+        if (curSF.getJobParent() != null && !curSF.getJobParent().equals(getJobParent()))
+        {
+            // If the job's parent has changed, check to make sure that the parent we're trying to point to
+            // is still in the database. The "new" value may have been persisted through XML files for submitting
+            // to the cluster. If the parent was reset, its GUID will have changed and we don't want to use the one
+            // from the XML file anymore.
+            try
+            {
+                PipelineStatusFileImpl parentStatusFile = PipelineStatusManager.getJobStatusFile(getJobParent());
+                if (parentStatusFile == null)
+                {
+                    // Can't find that parent anymore, so revert the parent GUID that's currently in the database
+                    setJobParent(curSF.getJobParent());
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+        }
+
 
         // Clear any stored job, if the status is complete.
         if (PipelineJob.COMPLETE_STATUS.equals(_status))

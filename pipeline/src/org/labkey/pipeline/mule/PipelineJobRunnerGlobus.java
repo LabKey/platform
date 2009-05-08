@@ -45,6 +45,8 @@ import org.labkey.api.pipeline.*;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.JobRunner;
+import org.labkey.api.util.DateUtil;
 import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
@@ -64,8 +66,13 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.InvalidKeyException;
 import java.security.Security;
+import java.security.GeneralSecurityException;
+import java.security.cert.X509Certificate;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.CertificateExpiredException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Calendar;
 
 public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
 {
@@ -116,48 +123,59 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
             if (endpoint.getFilter() instanceof TaskJmsSelectorFilter)
             {
                 TaskJmsSelectorFilter filter = (TaskJmsSelectorFilter) endpoint.getFilter();
-                String location = filter.getLocation();
-                checkStatus(location);
-            }
-        }
-    }
-
-    private void checkStatus(String location)
-    {
-        for (PipelineStatusFileImpl sf : PipelineStatusManager.getStatusFilesForLocation(location, false))
-        {
-            if (sf.getJobStore() != null && sf.isActive())
-            {
-                PipelineJob job = null;
-                try
+                final String location = filter.getLocation();
+                // Grab the list of jobs to check synchronously, but don't block waiting to ping them all
+                final List<PipelineStatusFileImpl> filesToCheck = PipelineStatusManager.getStatusFilesForLocation(location, false);
+                JobRunner.getDefault().execute(new Runnable()
                 {
-                    job = PipelineJobService.get().getJobStore().fromXML(sf.getJobStore());
-
-                    final File serializedJobFile = PipelineJob.getSerializedFile(job.getStatusFile());
-                    if (!NetworkDrive.exists(serializedJobFile))
+                    public void run()
                     {
-                        // If the file doesn't exist, the web server must have died after it pulled the job from the queue
-                        // but before it could write the file to disk
-                        job.writeToFile(serializedJobFile);
-                    }
+                        _log.info("Starting to check status for " + filesToCheck.size() + " jobs on Globus location '" + location + "'");
+                        int count = 0;
+                        for (PipelineStatusFileImpl sf : filesToCheck)
+                        {
+                            if (sf.getJobStore() != null && sf.isActive())
+                            {
+                                PipelineJob job = null;
+                                try
+                                {
+                                    job = PipelineJobService.get().getJobStore().fromXML(sf.getJobStore());
 
-                    // Create the job object and try to submit it. If it was already submitted Globus will remember
-                    // the previous submission because they'll have the same URI and it won't resubmit
-                    GramJob gramJob = createGramJob(job, serializedJobFile);
-                    gramJob.submit(gramJob.getEndpoint(), false, false, getJobURI(job));
+                                    final File serializedJobFile = PipelineJob.getSerializedFile(job.getStatusFile());
+                                    if (!NetworkDrive.exists(serializedJobFile))
+                                    {
+                                        // If the file doesn't exist, the web server must have died after it pulled the job from the queue
+                                        // but before it could write the file to disk
+                                        job.writeToFile(serializedJobFile);
+                                    }
 
-                    // Refresh to see what state Globus thinks the job is in. If the job is running or is finished,
-                    // the GlobusListener will be notified just like normal, so it can handle the updates or release
-                    // the associated resources
-                    gramJob.refreshStatus();
-                }
-                catch (Exception e)
-                {
-                    if (job != null)
-                    {
-                        job.error("Failed to update status", e);
+                                    // Create the job object and try to submit it. If it was already submitted Globus will remember
+                                    // the previous submission because they'll have the same URI and it won't resubmit
+                                    GramJob gramJob = createGramJob(job, serializedJobFile);
+                                    gramJob.submit(gramJob.getEndpoint(), false, false, getJobURI(job));
+
+                                    // Refresh to see what state Globus thinks the job is in. If the job is running or is finished,
+                                    // the GlobusListener will be notified just like normal, so it can handle the updates or release
+                                    // the associated resources
+                                    gramJob.refreshStatus();
+                                }
+                                catch (Exception e)
+                                {
+                                    if (job != null)
+                                    {
+                                        job.error("Failed to update status", e);
+                                    }
+                                }
+                            }
+                            count++;
+                            if (count % 10 == 0)
+                            {
+                                _log.info("Checked status for " + count + " of " + filesToCheck.size() + " jobs on Globus location '" + location + "'");
+                            }
+                        }
+                        _log.info("Finished checking status jobs on Globus location '" + location + "'");
                     }
-                }
+                });
             }
         }
     }
@@ -202,7 +220,9 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
             }
             job.getLogger().info(sb.toString());
 
-            for (String warning : checkGlobusConfiguration())
+            PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(job.getContainer());
+            GlobusKeyPair keyPair = pipeRoot.getGlobusKeyPair();
+            for (String warning : checkGlobusConfiguration(keyPair))
             {
                 job.getLogger().warn(warning);
             }
@@ -232,7 +252,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
         return null;
     }
 
-    public static List<String> checkGlobusConfiguration()
+    public static List<String> checkGlobusConfiguration(GlobusKeyPair keyPair)
     {
         List<String> result = new ArrayList<String>();
         if (AppProps.getInstance().getBaseServerUrl().indexOf("//localhost") != -1)
@@ -257,6 +277,33 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
             result.add("Your LabKey Server does not have the required Globus CA certificates in " + certsDir +
                     ". Please see " + new HelpTopic("configureEnterprisePipeline", HelpTopic.Area.SERVER) +
                     " for instructions.");
+        }
+        if (keyPair != null)
+        {
+            try
+            {
+                for (X509Certificate x509Certificate : keyPair.getCertificates())
+                {
+                    try
+                    {
+                        x509Certificate.checkValidity();
+                    }
+                    catch (CertificateNotYetValidException e)
+                    {
+                        result.add("Certificate is not valid until " + DateUtil.formatDate(x509Certificate.getNotBefore()) + ": " + x509Certificate.getSubjectX500Principal().getName());
+                    }
+                    catch (CertificateExpiredException e)
+                    {
+                        result.add("Certificate expired " + DateUtil.formatDate(x509Certificate.getNotAfter()) + ": " + x509Certificate.getSubjectX500Principal().getName());
+                    }
+
+                }
+            }
+            catch (GeneralSecurityException e)
+            {
+                result.add("Problem getting key pair: " + e);
+            }
+
         }
 
         try
@@ -325,7 +372,11 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
 
     private GramJob createGramJob(PipelineJob job, File serializedJobFile) throws Exception
     {
-        JobDescriptionType jobDescription = createJobDescription(job, serializedJobFile);
+        GlobusSettings settings = PipelineJobService.get().getGlobusClientProperties();
+        settings = settings.mergeOverrides(job.getActiveTaskFactory().getGlobusSettings());
+        settings = settings.mergeOverrides(new JobGlobusSettings(job.getActiveTaskFactory().getGroupParameterName(), job.getParameters()));
+
+        JobDescriptionType jobDescription = createJobDescription(job, serializedJobFile, settings);
 
         NotificationConsumerManager notifConsumerManager = new ServerNotificationConsumerManager()
         {
@@ -409,6 +460,13 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
 
         GlobusGSSCredentialImpl credentials = new GlobusGSSCredentialImpl(cred, GSSCredential.INITIATE_AND_ACCEPT);
 
+        if (settings.getTerminationTime() != null)
+        {
+            Calendar cal = Calendar.getInstance();
+            cal.add(Calendar.MINUTE, settings.getTerminationTime().intValue());
+            gramJob.setTerminationTime(cal.getTime());
+        }
+        
         gramJob.setCredentials(credentials);
 
         gramJob.setNotificationConsumerEPR(notificationConsumerEndpoint);
@@ -548,13 +606,9 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
         return new File(statusFile.getParentFile(), name + ".cluster." + outputType);
     }
 
-    private JobDescriptionType createJobDescription(PipelineJob job, File serializedJobFile)
+    private JobDescriptionType createJobDescription(PipelineJob job, File serializedJobFile, GlobusSettings settings)
         throws Exception
     {
-        GlobusSettings settings = PipelineJobService.get().getGlobusClientProperties();
-        settings = settings.mergeOverrides(job.getActiveTaskFactory().getGlobusSettings());
-        settings = settings.mergeOverrides(new JobGlobusSettings(job.getActiveTaskFactory().getGroupParameterName(), job.getParameters()));
-
         // Set up the job description
         JobDescriptionType jobDescription = new JobDescriptionType();
         jobDescription.setJobType(JobTypeEnumeration.single);

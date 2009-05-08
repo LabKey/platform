@@ -160,23 +160,27 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
                 setCompleteSplit(job);
 
                 PipelineJob jobJoin = getJoinJob(job.getParentGUID());
-                jobJoin.mergeSplitJob(job);
-                if (count == 1)
+                if (jobJoin != null)
                 {
-                    // All split jobs are complete
-                    if (tid == null)
-                        jobJoin.setActiveTaskId(null);  // Complete the parent
+                    // If the parent job hasn't mysteriously disappeared
+                    jobJoin.mergeSplitJob(job);
+                    if (count == 1)
+                    {
+                        // All split jobs are complete
+                        if (tid == null)
+                            jobJoin.setActiveTaskId(null);  // Complete the parent
+                        else
+                        {
+                            // begin running the joined job again
+                            jobJoin.setActiveTaskId(tid, false);
+                            PipelineService.get().queueJob(jobJoin);
+                        }
+                    }
                     else
                     {
-                        // begin running the joined job again
-                        jobJoin.setActiveTaskId(tid, false);
-                        PipelineService.get().queueJob(jobJoin);
+                        // More split jobs left; store the join job until they complete
+                        storeJoinJob(jobJoin);
                     }
-                }
-                else
-                {
-                    // More split jobs left; store the join job until they complete
-                    storeJoinJob(jobJoin);
                 }
                 commitTransaction(scope, active);
             }

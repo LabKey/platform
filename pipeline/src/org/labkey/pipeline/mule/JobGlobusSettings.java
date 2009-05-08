@@ -71,6 +71,11 @@ public class JobGlobusSettings extends AbstractGlobusSettings
         return getLongParam("max wall-time");
     }
 
+    public Integer getTerminationTime()
+    {
+        return getIntegerParam("termination time");
+    }
+
     public Integer getMaxMemory()
     {
         return getIntegerParam("max memory");
