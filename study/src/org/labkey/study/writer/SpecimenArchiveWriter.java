@@ -15,13 +15,14 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.api.data.Container;
 import org.labkey.api.util.Archive;
 import org.labkey.api.util.VirtualFile;
-import org.labkey.study.SampleManager;
-import org.labkey.study.xml.StudyDocument;
-import org.labkey.study.xml.RepositoryType;
+import org.labkey.study.StudySchema;
+import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.model.Study;
+import org.labkey.study.writer.StandardSpecimenWriter.QueryInfo;
+import org.labkey.study.xml.RepositoryType;
+import org.labkey.study.xml.StudyDocument;
 
 /**
  * User: adam
@@ -39,16 +40,15 @@ public class SpecimenArchiveWriter implements Writer<Study>
         specimens.setRepositoryType(RepositoryType.STANDARD);
         specimens.setSource(FILE_NAME);
 
-        Container c = ctx.getContainer();
-        SampleManager manager = SampleManager.getInstance();
         Archive zip = fs.createZipArchive(FILE_NAME);
 
-        SiteWriter siteWriter = new SiteWriter();
-        siteWriter.write(study.getSites(), ctx, zip);
+        StudySchema schema = StudySchema.getInstance();
 
-        new PrimaryTypeWriter().write(manager.getPrimaryTypes(c), ctx, zip);
-        new AdditiveTypeWriter().write(manager.getAdditiveTypes(c), ctx, zip);
-        new DerivativeTypeWriter().write(manager.getDerivativeTypes(c), ctx, zip);
+        new StandardSpecimenWriter().write(new QueryInfo(schema.getTableInfoSite(), "labs", SpecimenImporter.SITE_COLUMNS), ctx, zip);
+        new StandardSpecimenWriter().write(new QueryInfo(schema.getTableInfoPrimaryType(), "primary_types", SpecimenImporter.PRIMARYTYPE_COLUMNS), ctx, zip);
+        new StandardSpecimenWriter().write(new QueryInfo(schema.getTableInfoAdditiveType(), "additives", SpecimenImporter.ADDITIVE_COLUMNS), ctx, zip);
+        new StandardSpecimenWriter().write(new QueryInfo(schema.getTableInfoDerivativeType(), "derivatives", SpecimenImporter.DERIVATIVE_COLUMNS), ctx, zip);
+
         new SpecimenWriter().write(study, ctx, zip);
 
         zip.close();

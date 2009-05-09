@@ -64,7 +64,7 @@ public class SpecimenImporter
     CPUTimer cpuCurrentLocations = new CPUTimer("updateCurrentLocations");
 
 
-    private static class ImportableColumn
+    public static class ImportableColumn
     {
         private String _tsvColumnName;
         protected String _dbType;
@@ -328,7 +328,7 @@ public class SpecimenImporter
     private static final String SPEC_NUMBER_TSV_COL = "specimen_number";
     private static final String EVENT_ID_COL = "record_id";
 
-    protected static final SpecimenColumn[] SPECIMEN_COLUMNS = {
+    public static final SpecimenColumn[] SPECIMEN_COLUMNS = {
             new SpecimenColumn(EVENT_ID_COL, "ExternalId", "INT NOT NULL", TargetTable.SPECIMEN_EVENTS, true),
             new SpecimenColumn("record_source", "RecordSource", "VARCHAR(10)", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn(GLOBAL_UNIQUE_ID_TSV_COL, "GlobalUniqueId", "VARCHAR(20)", TargetTable.SPECIMENS),
@@ -383,7 +383,7 @@ public class SpecimenImporter
             new SpecimenColumn("processing_time", "ProcessingTime", DATETIME_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS)
         };
 
-    private final ImportableColumn[] ADDITIVE_COLUMNS = new ImportableColumn[]
+    public static final ImportableColumn[] ADDITIVE_COLUMNS = new ImportableColumn[]
         {
             new ImportableColumn("additive_id", "ExternalId", "INT NOT NULL", true),
             new ImportableColumn("ldms_additive_code", "LdmsAdditiveCode", "VARCHAR(3)"),
@@ -391,7 +391,7 @@ public class SpecimenImporter
             new ImportableColumn("additive", "Additive", "VARCHAR(100)")
         };
 
-    private final ImportableColumn[] DERIVATIVE_COLUMNS = new ImportableColumn[]
+    public static final ImportableColumn[] DERIVATIVE_COLUMNS = new ImportableColumn[]
         {
             new ImportableColumn("derivative_id", "ExternalId", "INT NOT NULL", true),
             new ImportableColumn("ldms_derivative_code", "LdmsDerivativeCode", "VARCHAR(3)"),
@@ -399,7 +399,7 @@ public class SpecimenImporter
             new ImportableColumn("derivative", "Derivative", "VARCHAR(100)")
         };
 
-    private final ImportableColumn[] SITE_COLUMNS = new ImportableColumn[]
+    public static final ImportableColumn[] SITE_COLUMNS = new ImportableColumn[]
         {
             new ImportableColumn("lab_id", "ExternalId", "INT NOT NULL", true),
             new ImportableColumn("ldms_lab_code", "LdmsLabCode", "INT"),
@@ -412,7 +412,7 @@ public class SpecimenImporter
             new ImportableColumn("is_endpoint", "Endpoint", BOOLEAN_TYPE)
         };
 
-    private final ImportableColumn[] PRIMARYTYPE_COLUMNS = new ImportableColumn[]
+    public static final ImportableColumn[] PRIMARYTYPE_COLUMNS = new ImportableColumn[]
         {
             new ImportableColumn("primary_type_id", "ExternalId", "INT NOT NULL", true),
             new ImportableColumn("primary_type_ldms_code", "PrimaryTypeLdmsCode", "VARCHAR(5)"),
@@ -441,15 +441,12 @@ public class SpecimenImporter
 
             SpecimenLoadInfo loadInfo = populateTempSpecimensTable(user, schema, container, fileMap.get("specimens"));
 
-            mergeTable(schema, container, "Site", SITE_COLUMNS,
-                    fileMap.get("labs"), true);
+            mergeTable(schema, container, "Site", SITE_COLUMNS, fileMap.get("labs"), true);
 
-            replaceTable(schema, container, "SpecimenAdditive", ADDITIVE_COLUMNS,
-                    fileMap.get("additives"), false);
-            replaceTable(schema, container, "SpecimenDerivative", DERIVATIVE_COLUMNS,
-                    fileMap.get("derivatives"), false);
-            replaceTable(schema, container, "SpecimenPrimaryType", PRIMARYTYPE_COLUMNS,
-                    fileMap.get("primary_types"), false);
+            replaceTable(schema, container, "SpecimenAdditive", ADDITIVE_COLUMNS, fileMap.get("additives"), false);
+            replaceTable(schema, container, "SpecimenDerivative", DERIVATIVE_COLUMNS, fileMap.get("derivatives"), false);
+            replaceTable(schema, container, "SpecimenPrimaryType", PRIMARYTYPE_COLUMNS, fileMap.get("primary_types"), false);
+
             populateSpecimenTables(loadInfo);
 
             cpuCurrentLocations.start();
@@ -546,10 +543,10 @@ public class SpecimenImporter
         return new SpecimenLoadInfo(user, container, schema, availableColumns, tempTable);
     }
 
-    private SpecimenLoadInfo populateTempSpecimensTable(User user, DbSchema schema, Container container, CloseableIterator<Map<String, Object>> rows) throws SQLException, IOException
+    private SpecimenLoadInfo populateTempSpecimensTable(User user, DbSchema schema, Container container, CloseableIterator<Map<String, Object>> iter) throws SQLException, IOException
     {
         String tempTable = createTempTable(schema);
-        List<SpecimenColumn> availableColumns = populateTempTable(schema, container, tempTable, rows);
+        List<SpecimenColumn> availableColumns = populateTempTable(schema, container, tempTable, iter);
         return new SpecimenLoadInfo(user, container, schema, availableColumns, tempTable);
     }
 
@@ -1365,6 +1362,7 @@ public class SpecimenImporter
 
             List<List<Object>> rows = new ArrayList<List<Object>>(SQL_BATCH_SIZE);
             String sql = sqlBuilder.toString();
+
             if (DEBUG)
             {
                 info(sql);
@@ -1379,23 +1377,27 @@ public class SpecimenImporter
                     firstRow = properties;
 
                 String id = (String) properties.get(GLOBAL_UNIQUE_ID_TSV_COL);
+
                 if (id == null)
                     id = (String) properties.get(SPEC_NUMBER_TSV_COL);
+
                 Lsid lsid = SpecimenService.get().getSpecimenMaterialLsid(container, id);
-
                 List<Object> params = new ArrayList<Object>(SPECIMEN_COLUMNS.length + 2);
-
                 params.add(container.getId());
                 params.add(lsid.toString());
+
                 for (ImportableColumn col : SPECIMEN_COLUMNS)
                     params.add(getValue(col, properties));
+
                 rows.add(params);
+
                 if (rows.size() == SQL_BATCH_SIZE)
                 {
                     Table.batchExecute(schema, sql, rows);
                     rows = new ArrayList<List<Object>>(SQL_BATCH_SIZE);
                 }
             }
+
             if (!rows.isEmpty())
                 Table.batchExecute(schema, sql, rows);
         }
@@ -1405,6 +1407,7 @@ public class SpecimenImporter
         }
 
         List<SpecimenColumn> loadedColumns = new ArrayList<SpecimenColumn>();
+
         if (rowCount > 0)
         {
             for (SpecimenColumn column : SPECIMEN_COLUMNS)
@@ -1413,6 +1416,7 @@ public class SpecimenImporter
                     loadedColumns.add(column);
             }
         }
+
         info("Temp table populated.");
         return loadedColumns;
     }

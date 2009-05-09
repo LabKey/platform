@@ -16,29 +16,24 @@
 
 package org.labkey.biotrue.query;
 
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.DataView;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.ActionButton;
 import org.labkey.api.security.ACL;
+import org.labkey.api.view.DataView;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Apr 3, 2007
  */
 public class BtServerView extends QueryView
 {
-    private ViewContext _context;
-
-    public BtServerView(ViewContext context, UserSchema schema, QuerySettings settings)
+    public BtServerView(UserSchema schema, QuerySettings settings)
     {
         super(schema, settings);
-        _context = context;
     }
 
     public DataView createDataView()

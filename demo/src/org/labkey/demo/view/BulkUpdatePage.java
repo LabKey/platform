@@ -23,7 +23,6 @@ import java.util.Collections;
 import org.labkey.demo.model.Person;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Jan 10, 2007
  * Time: 10:20:38 AM

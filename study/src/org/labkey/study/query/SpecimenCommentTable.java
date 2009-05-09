@@ -8,7 +8,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.study.StudySchema;
 
 /**
- * Copyright (c) 2008 LabKey Corporation
+ * Copyright (c) 2008-2009 LabKey Corporation
  * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

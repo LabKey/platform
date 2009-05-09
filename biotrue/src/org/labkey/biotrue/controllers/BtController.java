@@ -72,6 +72,7 @@ public class BtController extends SpringActionController
         scheduledSync,
         configurePassword,
         cancelSynchronization;
+
         public ActionURL url(Container container)
         {
             return new ActionURL("biotrue", toString(), container);
@@ -98,7 +99,7 @@ public class BtController extends SpringActionController
                 settings.setSchemaName(schema.getSchemaName());
                 settings.setQueryName("Servers");
                 settings.setAllowChooseQuery(false);
-                view.addView(new BtServerView(getViewContext(), schema, settings));
+                view.addView(new BtServerView(schema, settings));
             }
             return view;
         }
