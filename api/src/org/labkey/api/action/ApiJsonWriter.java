@@ -31,7 +31,6 @@ import java.util.Stack;
 /**
  * Writes various objects returned by API actions in JSON format.
  *
- * Created by IntelliJ IDEA.
  * User: Dave
  * Date: Feb 8, 2008
  * Time: 1:50:11 PM

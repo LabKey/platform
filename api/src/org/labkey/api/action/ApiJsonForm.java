@@ -21,7 +21,6 @@ import org.json.JSONObject;
  * Implement this interface on your form class if you want to handle
  * the JSONObject that was posted to your form.
  *
- * Created by IntelliJ IDEA.
  * User: Dave
  * Date: Feb 12, 2008
  * Time: 4:22:24 PM

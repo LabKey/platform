@@ -32,7 +32,6 @@ import java.sql.Types;
 import java.util.GregorianCalendar;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Feb 13, 2007
  * Time: 9:01:58 AM

@@ -20,7 +20,6 @@ import java.io.Serializable;
 import java.io.File;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Oct 3, 2007
  * Time: 3:56:16 PM

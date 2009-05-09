@@ -35,7 +35,6 @@ import java.util.Iterator;
 /**
  * Base class for API actions.
  *
- * Created by IntelliJ IDEA.
  * User: Dave
  * Date: Feb 8, 2008
  * Time: 1:14:43 PM

@@ -29,7 +29,6 @@ import java.io.Writer;
 import java.util.Enumeration;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Feb 10, 2009
  * Time: 1:02:46 PM

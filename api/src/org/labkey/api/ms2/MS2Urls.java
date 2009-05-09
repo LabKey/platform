@@ -21,7 +21,7 @@ import org.labkey.api.data.Container;
 
 /**
  * UrlProvider interface for the MS2 module
- * Created by IntelliJ IDEA.
+ *
  * User: Dave
  * Date: Jan 21, 2008
  * Time: 9:58:15 AM

@@ -306,24 +306,25 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
     @Override
     protected void initialize() throws IOException
     {
+        readComments();
         super.initialize();
-        initializeComments();
     }
 
-    private void initializeComments() throws IOException
+    private void readComments() throws IOException
     {
-        String s;
         BufferedReader reader = getReader();
 
-        for (int skip = 0; skip < _skipLines;)
+        while(true)
         {
-            s = reader.readLine();
+            String s = reader.readLine();
+
             if (null == s)
                 break;
-            _commentLines++;
 
             if (s.length() == 0 || s.charAt(0) == '#')
             {
+                _commentLines++;
+
                 int eq = s.indexOf('=');
                 if (eq != -1)
                 {
@@ -332,10 +333,11 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
                     if (key.length() > 0 || value.length() > 0)
                         _comments.put(key, value);
                 }
-                continue;
             }
-
-            skip++;
+            else
+            {
+                break;
+            }
         }
     }
 
@@ -393,10 +395,12 @@ public abstract class AbstractTabLoader<T> extends DataLoader<T>
         {
             reader = getReader();
 
-            for (int i = 0; i < _commentLines; i++)
+            assert _skipLines != -1;
+
+            for (int i = 0; i < (_commentLines + _skipLines); i++)
                 reader.readLine();
 
-            lineNo = _commentLines;
+            lineNo = _commentLines + _skipLines;
 
             Map<String, Integer> colMap = new CaseInsensitiveHashMap<Integer>();
             ColumnDescriptor[] columns = getColumns();

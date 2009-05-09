@@ -18,9 +18,9 @@ package org.labkey.api.attachments;
 
 /**
  * User: adam
-* Date: Jan 3, 2007
-* Time: 3:41:22 PM
-*/
+ * Date: Jan 3, 2007
+ * Time: 3:41:22 PM
+ */
 public class AttachmentForm
 {
     private String _entityId = null;

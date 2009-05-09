@@ -436,6 +436,7 @@ public abstract class DisplayColumn extends RenderColumn
         if (isFilterable() && rgn.getShowFilters())
         {
             Set<String> filteredColSet = (Set<String>) ctx.get(rgn.getName() + ".filteredCols");
+
             if (null == filteredColSet)
             {
                 TableInfo tinfo = rgn.getTable();

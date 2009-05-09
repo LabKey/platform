@@ -54,7 +54,7 @@ public abstract class DataLoader<T> implements Iterable<T>
     protected File _file = new File("Resource");
 
     protected ColumnDescriptor[] _columns;
-    private boolean columnsInitialized = false;
+    private boolean _initialized = false;
     protected int _scanAheadLineCount = 100; // number of lines to scan trying to infer data types
     // CONSIDER: explicit flags for hasHeaders, inferHeaders, skipLines etc.
     protected int _skipLines = -1;      // -1 means infer headers
@@ -69,7 +69,7 @@ public abstract class DataLoader<T> implements Iterable<T>
 
     protected void ensureInitialized()
     {
-        if (!columnsInitialized)
+        if (!_initialized)
         {
             try
             {
@@ -80,7 +80,7 @@ public abstract class DataLoader<T> implements Iterable<T>
                 throw new RuntimeException(e);
             }
 
-            columnsInitialized = true;
+            _initialized = true;
         }
     }
 

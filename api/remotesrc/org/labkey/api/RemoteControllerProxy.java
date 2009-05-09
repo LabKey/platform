@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Sep 24, 2007
  * Time: 4:14:47 PM
