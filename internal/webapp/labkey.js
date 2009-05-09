@@ -158,7 +158,7 @@ LABKEY.requiresExtJs = function(immediate)
     if (arguments.length < 1) immediate = true;
     LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-all.css');
     LABKEY.requiresScript(LABKEY.extJsRoot + "/adapter/ext/ext-base.js", immediate);
-    if (LABKEY.devMode && false)
+    if (LABKEY.devMode)
     {
         LABKEY.requiresScript("ext-exploded.js", immediate);
     }

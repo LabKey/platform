@@ -1810,6 +1810,8 @@ internal/webapp/_icons/docx.gif -text
 internal/webapp/_icons/dotm.gif -text
 internal/webapp/_icons/dotx.gif -text
 internal/webapp/_icons/exe.png -text
+internal/webapp/_icons/file_temporary.png -text
+internal/webapp/_icons/folder.gif -text
 internal/webapp/_icons/gz.gif -text
 internal/webapp/_icons/html.png -text
 internal/webapp/_icons/image.png -text
@@ -1858,17 +1860,23 @@ internal/webapp/_images/computer.png -text
 internal/webapp/_images/defaultlogo.gif -text
 internal/webapp/_images/defaultlogosmall.gif -text
 internal/webapp/_images/delete.gif -text
+internal/webapp/_images/delete.png -text
 internal/webapp/_images/dot.gif -text
 internal/webapp/_images/downarrow.gif -text
 internal/webapp/_images/downarrow_disabled.gif -text
+internal/webapp/_images/download.png -text
+internal/webapp/_images/download_manager.png -text
 internal/webapp/_images/elipsis.gif -text
 internal/webapp/_images/exclaim.gif -text
 internal/webapp/_images/expand_folders.gif -text svneol=unset#unset
 internal/webapp/_images/favicon.ico -text
+internal/webapp/_images/filenew.png -text
+internal/webapp/_images/fileopen.png -text
 internal/webapp/_images/filter.gif -text
 internal/webapp/_images/filter.png -text
 internal/webapp/_images/filter_on.gif -text
 internal/webapp/_images/filter_on.png -text
+internal/webapp/_images/folder_new.png -text
 internal/webapp/_images/folder_open.gif -text svneol=unset#unset
 internal/webapp/_images/go-first-disabled.png -text
 internal/webapp/_images/go-first.png -text
@@ -1878,8 +1886,11 @@ internal/webapp/_images/go-next-disabled.png -text
 internal/webapp/_images/go-next.png -text
 internal/webapp/_images/go-previous-disabled.png -text
 internal/webapp/_images/go-previous.png -text
+internal/webapp/_images/icons.css -text
 internal/webapp/_images/labkey.png -text
 internal/webapp/_images/leaf.gif -text
+internal/webapp/_images/lockoverlay.png -text
+internal/webapp/_images/message.png -text
 internal/webapp/_images/minus.gif -text
 internal/webapp/_images/mv_indicator.gif -text
 internal/webapp/_images/one.gif -text
@@ -1898,6 +1909,7 @@ internal/webapp/_images/partupg.gif -text
 internal/webapp/_images/plus.gif -text
 internal/webapp/_images/private.gif -text
 internal/webapp/_images/public.gif -text
+internal/webapp/_images/reload.png -text
 internal/webapp/_images/restricted.gif -text
 internal/webapp/_images/rss.gif -text
 internal/webapp/_images/select_arrow.gif -text
@@ -1914,6 +1926,7 @@ internal/webapp/_images/tab_right_inactive.gif -text
 internal/webapp/_images/text_link_arrow.gif -text
 internal/webapp/_images/toolgrad.gif -text
 internal/webapp/_images/topgrad.gif -text
+internal/webapp/_images/up.png -text
 internal/webapp/_images/uparrow.gif -text
 internal/webapp/_images/uparrow_disabled.gif -text
 internal/webapp/_images/warning-small.png -text
