@@ -61,9 +61,9 @@ public class CoreQuerySchema extends UserSchema
             return getUsers();
         if (SITE_USERS_TABLE_NAME.equalsIgnoreCase(name))
             return getSiteUsers();
-        if(PRINCIPALS_TABLE_NAME.equals(name))
+        if(PRINCIPALS_TABLE_NAME.equalsIgnoreCase(name))
             return getPrincipals();
-        if(MEMBERS_TABLE_NAME.equals(name))
+        if(MEMBERS_TABLE_NAME.equalsIgnoreCase(name))
             return getMembers();
         return null;
     }

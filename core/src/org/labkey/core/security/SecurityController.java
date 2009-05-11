@@ -1680,19 +1680,8 @@ public class SecurityController extends SpringActionController
             props.put("name", resource.getResourceName());
             props.put("description", resource.getResourceDescription());
             props.put("sourceModule", resource.getSourceModule().getName());
-            props.put("relevantPermissions", getRelevantPermsList(resource));
             props.put("children", getChildrenProps(resource));
             return props;
-        }
-
-        protected List<String> getRelevantPermsList(SecurableResource resource)
-        {
-            List<String> perms = new ArrayList<String>();
-            for(Class<? extends Permission> perm : resource.getRelevantPermissions())
-            {
-                perms.add(perm.getName());
-            }
-            return perms;
         }
 
         protected List<Map<String,Object>> getChildrenProps(SecurableResource resource)
@@ -1703,6 +1692,65 @@ public class SecurityController extends SpringActionController
                 childProps.add(getResourceProps(child));
             }
             return childProps;
+        }
+    }
+
+    public static class GetPolicyForm
+    {
+        private String _resourceId;
+
+        public String getResourceId()
+        {
+            return _resourceId;
+        }
+
+        public void setResourceId(String resourceId)
+        {
+            _resourceId = resourceId;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class GetPolicyAction extends ApiAction<GetPolicyForm>
+    {
+        public ApiResponse execute(GetPolicyForm form, BindException errors) throws Exception
+        {
+            if(null == form.getResourceId())
+                throw new IllegalArgumentException("You must supply a resourceId parameter!");
+
+            Container container = getViewContext().getContainer();
+            User user = getViewContext().getUser();
+
+            //resolve the resource
+            SecurableResource resource = container.findSecurableResource(form.getResourceId(), user);
+            if(null == resource)
+                throw new IllegalArgumentException("The requested resource does not exist within this container!");
+
+            //get the policy
+            SecurityPolicy policy = SecurityManager.getPolicy(resource);
+            
+            ApiSimpleResponse resp = new ApiSimpleResponse("policy", policy.toMap());
+
+            //add the relevant roles
+            List<String> relevantRoles = new ArrayList<String>();
+            Set<Class<? extends Permission>> resourcePerms = resource.getRelevantPermissions();
+            for(Role role : RoleManager.getAllRoles())
+            {
+                if(!role.isAssignable())
+                    continue;
+
+                for(Class<? extends Permission> perm : role.getPermissions())
+                {
+                    if(resourcePerms.contains(perm))
+                    {
+                        relevantRoles.add(role.getUniqueName());
+                        break;
+                    }
+                }
+            }
+
+            resp.put("relevantRoles", relevantRoles);
+            return resp;
         }
     }
 
