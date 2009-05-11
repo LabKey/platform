@@ -1695,7 +1695,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    public static class GetPolicyForm
+    public static class PolicyIdForm
     {
         private String _resourceId;
 
@@ -1711,9 +1711,9 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class GetPolicyAction extends ApiAction<GetPolicyForm>
+    public class GetPolicyAction extends ApiAction<PolicyIdForm>
     {
-        public ApiResponse execute(GetPolicyForm form, BindException errors) throws Exception
+        public ApiResponse execute(PolicyIdForm form, BindException errors) throws Exception
         {
             if(null == form.getResourceId())
                 throw new IllegalArgumentException("You must supply a resourceId parameter!");
@@ -1751,6 +1751,70 @@ public class SecurityController extends SpringActionController
 
             resp.put("relevantRoles", relevantRoles);
             return resp;
+        }
+    }
+
+    public static class SavePolicyForm implements CustomApiForm
+    {
+        private Map<String,Object> _props;
+
+        public void bindProperties(Map<String, Object> props)
+        {
+            _props = props;
+        }
+
+        public Map<String,Object> getProps()
+        {
+            return _props;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class SavePolicyAction extends ApiAction<SavePolicyForm>
+    {
+        public ApiResponse execute(SavePolicyForm form, BindException errors) throws Exception
+        {
+            Container container = getViewContext().getContainer();
+            User user = getViewContext().getUser();
+
+            //resolve the resource
+            String resourceId = (String)form.getProps().get("resourceId");
+            if(null == resourceId || resourceId.length() == 0)
+                throw new IllegalArgumentException("You must include a resourceId as a top-level property!");
+
+            SecurableResource resource = container.findSecurableResource(resourceId, user);
+            if(null == resource)
+                throw new IllegalArgumentException("No resource with the id '" + resourceId + "' was found in this container!");
+
+            //create the policy from the props (will throw if invalid)
+            SecurityPolicy policy = SecurityPolicy.fromMap(form.getProps(), resource);
+
+            //save it
+            SecurityManager.savePolicy(policy);
+
+            return new ApiSimpleResponse("success", true);
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class DeletePolicyAction extends ApiAction<PolicyIdForm>
+    {
+        public ApiResponse execute(PolicyIdForm form, BindException errors) throws Exception
+        {
+            Container container = getViewContext().getContainer();
+            User user = getViewContext().getUser();
+
+            //resolve the resource
+            String resourceId = form.getResourceId();
+            if(null == resourceId || resourceId.length() == 0)
+                throw new IllegalArgumentException("You must include a resourceId as a top-level property!");
+
+            SecurableResource resource = container.findSecurableResource(resourceId, user);
+            if(null == resource)
+                throw new IllegalArgumentException("No resource with the id '" + resourceId + "' was found in this container!");
+
+            SecurityManager.deletePolicy(resource);
+            return new ApiSimpleResponse("success", true);
         }
     }
 
