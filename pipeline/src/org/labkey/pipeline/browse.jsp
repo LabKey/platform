@@ -261,6 +261,8 @@ function updateSelection(record)
     }
 }
 
+Ext.state.Manager.setProvider(new Ext.state.CookieProvider());
+var pipelineStateKey = window.location.pathname + "#pipelineDirectory";
 
 var fileSystem = null;
 var fileBrowser = null;
@@ -284,6 +286,7 @@ Ext.onReady(function()
 
     fileBrowser = new LABKEY.FileBrowser({
         fileSystem:fileSystem
+        ,statePrefix:window.location.pathname + '#pipeline'
         ,helpEl:null
         ,showAddressBar:true
         ,showFolderTree:true

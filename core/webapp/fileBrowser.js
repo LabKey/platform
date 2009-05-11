@@ -4,6 +4,8 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
+LABKEY.requiresCss("_images/icons.css");
+
 
 var $ = Ext.get;
 var $h = Ext.util.Format.htmlEncode;
@@ -1348,6 +1350,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
     showDetails: true,
     showProperties: true,
     propertiesPanel : null,
+    statePrefix : null,
 
     grid: null,
     store: null,
@@ -1364,7 +1367,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
 
     getDownloadAction : function()
     {
-        return new Ext.Action({text: 'Download', scope: this, handler: function()
+        return new Ext.Action({text: 'Download', iconCls:'iconDownload', scope: this, handler: function()
             {
                 if (this.selectedRecord && this.selectedRecord.data.file && this.selectedRecord.data.uri)
                     window.location = this.selectedRecord.data.uri + "?contentDisposition=attachment";
@@ -1374,7 +1377,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
 
     getCreateDirectoryAction : function()
     {
-        return new Ext.Action({text: 'Create Folder', scope: this, handler: function()
+        return new Ext.Action({text: 'Create Folder', iconCls:'iconFolderNew', scope: this, handler: function()
         {
             var p = this.currentDirectory.data.path;
             var folder = prompt( "Folder Name", "New Folder");
@@ -1404,7 +1407,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
 
     getParentFolderAction : function()
     {
-        return new Ext.Action({text: 'Up', scope: this, handler: function()
+        return new Ext.Action({text: 'Up', iconCls:'iconUp', scope: this, handler: function()
         {
             // CONSIDER: PROPFIND to ensure this link is still good?
             var p = this.currentDirectory.data.path;
@@ -1416,7 +1419,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
 
     getRefreshAction : function()
     {
-        return new Ext.Action({text: 'Refresh', scope:this, iconCls:'refreshIcon', handler: this.refreshDirectory});
+        return new Ext.Action({text: 'Refresh', iconCls:'iconReload', scope:this, handler: this.refreshDirectory});
     },
 
 
@@ -1432,7 +1435,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
 
     getDeleteAction : function()
     {
-        return new Ext.Action({text: 'Delete', scope:this, iconCls:'deleteIcon', disabled:true, handler: function()
+        return new Ext.Action({text: 'Delete', iconCls:'iconDelete', scope:this, disabled:true, handler: function()
         {
             if (!this.currentDirectory)
                 return;
@@ -1551,7 +1554,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
 
     getUploadToolAction : function()
     {
-        return new Ext.Action({text: 'Upload Tool', scope:this, disabled:true, handler: function()
+        return new Ext.Action({text: 'Upload Tool', iconCls:'iconDownloadManager', scope:this, disabled:true, handler: function()
         {
             if (!this.applet || !this.appletWindow)
                 this.layoutAppletWindow();
@@ -1580,8 +1583,10 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
         if (record && !record.data.file && this.currentDirectory != record)
         {
             this.currentDirectory = record;
+            if (this.statePrefix)
+                Ext.state.Manager.set(this.statePrefix+'.currentDirectory', record.data.path);
             this.fireEvent(BROWSER_EVENTS.directorychange, record);
-        }
+       }
     },
 
 
@@ -1667,17 +1672,6 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
         if (!record.data.file)
         {
             this.changeDirectory(record);
-            if (this.tree)
-            {
-                var treePath = this.treePathFromId(record.id);
-                this.tree.expandPath(treePath);
-                var node = this.tree.getNodeById(record.id);
-                if (node)
-                {
-                    node.ensureVisible();
-                    node.select();
-                }
-            }
         }
         this.grid.focus();
         this.fireEvent(BROWSER_EVENTS.doubleclick, record);
@@ -1747,7 +1741,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
         menu.show(el);
     },
 
-    ancestry : function(id)
+    ancestry : function(id, root)
     {
         var path = id;
         var a = [path];
@@ -1757,16 +1751,18 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
             if (!parent || parent == path)
                 break;
             a.push(parent);
+            if (root && parent == root)
+                break;
             path = parent;
         }
         a.reverse();
         return a;
     },
 
-    treePathFromId : function(id)
+    treePathFromPath : function(path, root)
     {
-        var a = this.ancestry(id);
-        return a.join(";");
+        var a = this.ancestry(path, root);
+        return ";" + a.join(";");
     },
 
     updateFileDetails : function(record)
@@ -1842,15 +1838,25 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
         var root = this.tree.getRootNode();
         if (this.showFolderTree)
             root.expand();
+
+
         if (typeof wd == "string")
         {
             this.changeDirectory(wd);
             this.selectFile(wd);
+            return;
         }
+        if (this.statePrefix)
         {
-            this.selectFile(root.record);
-            this.changeDirectory(root.record);
+            var path = Ext.state.Manager.get(this.statePrefix + ".currentDirectory");
+            if (path)
+            {
+                this.changeDirectory(path);
+                return;
+            }
         }
+        this.selectFile(root.record);
+        this.changeDirectory(root.record);
     },
 
 
@@ -1859,12 +1865,12 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
         this.applet = new TransferApplet({directory:this.currentDirectory.data.path});
         this.progressBar = new Ext.ProgressBar({id:'appletStatusProgressBar'});
 
-        var fileAction = new Ext.Action({text:'Choose File...', scope:this, disabled:false, handler:function()
+        var fileAction = new Ext.Action({text:'Choose File...', scope:this, disabled:false, iconCls:'iconFileNew', handler:function()
         {
             var a = this.applet.getApplet();
             if (a) a.showFileChooser();
         }});
-        var dirAction = new Ext.Action({text:'(NYI) Choose Folder...', scope:this, disabled:false, handler:function()
+        var dirAction = new Ext.Action({text:'(NYI) Choose Folder...', scope:this, disabled:false,  iconCls:'iconFileOpen', handler:function()
         {
             var a = this.applet.getApplet();
             if (a) a.showDirectoryChooser();
@@ -1995,22 +2001,24 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
         // Upload
         //
 
+        var submitFileUploadForm = function(fb, v)
+        {
+            if (this.currentDirectory)
+            {
+                var form = this.formPanel.getForm();
+                var options = {url:this.currentDirectory.data.uri, record:this.currentDirectory, name:this.fileUploadField.getValue()};
+                form.doAction(new Ext.form.Action.Submit(form, options));
+                Ext.getBody().dom.style.cursor = "wait"
+            }
+        };
+
         this.fileUploadField = new Ext.form.FileUploadField(
         {
             id: this.id ? this.id + 'Upload' : 'fileUpload',
             buttonText: "Upload File...",
             buttonOnly: true,
             buttonCfg: {cls: "labkey-button"},
-            listeners: {scope:this, "fileselected": function (fb, v)
-            {
-              if (me.currentDirectory)
-              {
-                  var form = this.formPanel.getForm();
-                  var options = {url:this.currentDirectory.data.uri, record:this.currentDirectory, name:this.fileUploadField.getValue()};
-                  form.doAction(new Ext.form.Action.Submit(form, options));
-                  Ext.getBody().dom.style.cursor = "wait"
-              }
-            }}
+            listeners: {scope:this, "fileselected":submitFileUploadForm}
         });
 
         this.formPanel = new Ext.FormPanel({
@@ -2022,7 +2030,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
             border:false,
             bodyStyle : 'background-color:#f0f0f0; padding:5px;',
             defaults: {bodyStyle : 'background-color:#f0f0f0'},
-            items: [this.fileUploadField],
+            items: [this.fileUploadField], //new Ext.Button({type:'submit', text:'Submit', id:'fileUpload-submit', handler:submitFileUploadForm, score:this})],
             listeners: {
                 "actioncomplete" : function (f, action)
                 {
@@ -2165,10 +2173,27 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
 
         this.on(BROWSER_EVENTS.directorychange,function(record)
         {
+            // data store
             this.store.removeAll();
             this.fileSystem.listFiles(record.data.path, this.loadRecords.createDelegate(this));
+
+            // address bar                                                                             
             this.updateAddressBar(record.data.path);
 
+            // expand tree
+            if (this.tree)
+            {
+                var treePath = this.treePathFromPath(record.data.path, this.tree.getRootNode().id);
+                this.tree.expandPath(treePath);
+                var node = this.tree.getNodeById(record.id);
+                if (node)
+                {
+                    node.ensureVisible();
+                    node.select();
+                }
+            }
+
+            // actions
             var canWrite = this.fileSystem.ready && this.fileSystem.canWrite(record);
             if (this.applet && this.applet.getApplet())
             {

@@ -25,7 +25,6 @@
 <%@ page import="org.labkey.core.webdav.DavController" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.webdav.WebdavService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -191,9 +190,7 @@ if (supportsWebdavScheme) {%><%=PageFlowUtil.generateButton("webdav", href.repla
 else
 {
 %>
-<script type="text/javascript" src="<%=request.getContextPath()%>/labkey.js"></script>
 <script type="text/javascript">
-    LABKEY.requiresExtJs(true);
     LABKEY.requiresScript("applet.js");
     LABKEY.requiresScript("fileBrowser.js");
     LABKEY.requiresScript("applet.js",true);
@@ -206,7 +203,7 @@ Ext.onReady(function()
 {
     Ext.QuickTips.init();
 
-    var htmlAction = new Ext.Action({text:'Load basic HTML', handler: function()
+    var htmlAction = new Ext.Action({text:'Load basic HTML', iconCls:'iconMessage', handler: function()
     {
         var path = '/';
         if (fileBrowser.currentDirectory && fileBrowser.currentDirectory.data.path)
@@ -231,7 +228,7 @@ Ext.onReady(function()
         ,showDetails:true
         ,allowChangeDirectory:true
         ,actions:{html:htmlAction, login:loginAction}
-        ,tbar:['download','parentFolder','refresh','createDirectory','deletePath','uploadTool','html'<%=user.isGuest()?",'login'":""%>]
+        ,tbar:['download','parentFolder','refresh','createDirectory','deletePath','uploadTool','->','html'<%=user.isGuest()?",'login'":""%>]
     });
 
     var viewport = new Ext.Viewport({
