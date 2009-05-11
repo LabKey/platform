@@ -635,7 +635,7 @@ public class AnalysisController extends SpringActionController
 
         public void setFileInputNames(String[] fileInputNames)
         {
-            this.fileInputNames = fileInputNames;
+            this.fileInputNames = fileInputNames==null ? new String[0] : fileInputNames;
         }
 
         public String[] getFileInputStatus()
