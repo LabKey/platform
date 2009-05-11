@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -350,6 +351,40 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
 
         return ret;
+    }
+
+    /**
+     * Finds a securable resource within this container or child containers with the same id
+     * as the given resource id. Note that the user must have admin permission on the
+     * resource in order to find it.
+     * @param resourceId The resource id to find
+     * @param user The current user (searches only reousrces that user can see)
+     * @return The resource or null if not found
+     */
+    @Nullable
+    public SecurableResource findSecurableResource(String resourceId, User user)
+    {
+        if(null == resourceId)
+            return null;
+
+        if(this.getResourceId().equals(resourceId))
+            return this;
+
+        for(SecurableResource child : getChildResources(user))
+        {
+            if(child.getResourceId().equals(resourceId))
+                return child;
+        }
+
+        //recurse down child containers
+        for(Container child : getChildren())
+        {
+            SecurableResource resource = child.findSecurableResource(resourceId, user);
+            if(null != resource)
+                return resource;
+        }
+
+        return null;
     }
 
     public String toString()

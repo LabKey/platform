@@ -504,6 +504,22 @@ LABKEY.Security = new function()
             {
                 config.successCallback.call(config.scope || this, {currentUser: LABKEY.Security.currentUser});
             }
+        },
+
+        getPolicy : function(config)
+        {
+            var params = {resourceId: config.resourceId};
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("security", "getPolicy"),
+                method: "GET",
+                params: params,
+                success: LABKEY.Utils.getCallbackWrapper(function(data, req){
+                    data.policy.requestedResourceId = config.resourceId;
+                    var policy = new LABKEY.SecurityPolicy(data.policy);
+                    config.successCallback.call(config.scope || this, policy, data.relevantRoles, req);
+                }, this),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+            });
         }
 
     };

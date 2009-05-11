@@ -890,6 +890,7 @@ api/webapp/clientapi/NavTrail.js -text
 api/webapp/clientapi/Query.js -text
 api/webapp/clientapi/QueryWebPart.js -text
 api/webapp/clientapi/Security.js -text
+api/webapp/clientapi/SecurityPolicy.js -text
 api/webapp/clientapi/Specimen.js -text
 api/webapp/clientapi/Store.js -text
 api/webapp/clientapi/Utils.js -text
