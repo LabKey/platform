@@ -26,6 +26,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 
@@ -113,7 +114,13 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService<ListItem,
 
         //domain properties
         for(DomainProperty prop : listdef.getDomain().getProperties())
-            map.put(prop.getName(), bean.getProperty(prop));
+        {
+            Object value = bean.getProperty(prop);
+            if(value instanceof ObjectProperty)
+                value = ((ObjectProperty)value).value();
+                
+            map.put(prop.getName(), value);
+        }
 
         return map;
     }
