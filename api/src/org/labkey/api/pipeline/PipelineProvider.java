@@ -330,8 +330,9 @@ abstract public class PipelineProvider
             o.put("links",links);
 
             JSONArray files = new JSONArray();
-            for (File f : _files)
-                files.put(f.getName());
+            if (null != _files)
+                for (File f : _files)
+                    files.put(f.getName());
             o.put("files",files);
             
             return o;
