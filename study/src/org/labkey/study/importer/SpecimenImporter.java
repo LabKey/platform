@@ -143,7 +143,7 @@ public class SpecimenImporter
         }
     }
 
-    private enum TargetTable
+    public enum TargetTable
     {
         SPECIMEN_EVENTS
         {
@@ -202,7 +202,7 @@ public class SpecimenImporter
         public abstract String getName();
     }
 
-    protected static class SpecimenColumn extends ImportableColumn
+    public static class SpecimenColumn extends ImportableColumn
     {
         private TargetTable _targetTable;
         private String _fkTable;

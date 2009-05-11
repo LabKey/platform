@@ -43,7 +43,6 @@ public class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.Que
         pw.println(queryInfo.getFilename());
 
         SQLFragment sql = new SQLFragment().append("SELECT ");
-
         List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>(columns.length);
         String comma = "";
 
