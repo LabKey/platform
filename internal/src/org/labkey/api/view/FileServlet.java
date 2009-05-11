@@ -73,15 +73,15 @@ public class FileServlet extends HttpServlet
     }
 
 
-
     public void init(ServletConfig config) throws ServletException
     {
         super.init(config);
-        _log.info("FileServlet.init: " + config);
+        _log.info("FileServlet initialized");
     }
 
     /**
      * Return the original pageflow that was used to access a static file in this request...
+     *
      * @param request
      * @return
      */
@@ -89,20 +89,15 @@ public class FileServlet extends HttpServlet
     {
         return (String) request.getAttribute(PAGE_FLOW_ATTR);
     }
-    
+
     public static void _logError(String s, Throwable t)
-        {
+    {
         _log.error(s, t);
-        }
+    }
 
 
     public void log(String s, Throwable t)
-        {
+    {
         _logError(s, t);
-        }
-
-    private String _toString(Object o)
-        {
-        return o == null ? "" : String.valueOf(o);
-        }
     }
+}
