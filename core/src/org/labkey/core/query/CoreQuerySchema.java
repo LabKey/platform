@@ -92,6 +92,13 @@ public class CoreQuerySchema extends UserSchema
         col.setKeyField(true);
         col.setIsHidden(true);
         col.setReadOnly(true);
+        col.setFk(new LookupForeignKey("UserId")
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return getMembers();
+            }
+        });
         principals.addColumn(col);
 
         col = principals.wrapColumn(principalsBase.getColumn("Name"));
