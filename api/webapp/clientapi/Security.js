@@ -506,6 +506,29 @@ LABKEY.Security = new function()
             }
         },
 
+        /**
+         * Retrieves the security policy for the requested resource id. Note that this will return the
+         * policy in effect for this resource, which might be the policy from a parent resource if there
+         * is no explicit policy set on the requested resource. Use the isInherited method on the returned
+         * LABKEY.SecurityPolicy object to determine if the policy is inherited or not.
+         * Note that the securable resource must be within the current container, or one of its descendants.
+         * @param config A configuration object with the following properties
+         * @param {String} config.resourceId The unique id of the securable resource.
+         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>policy:</b> an instance of a LABKEY.SecurityPolicy object.</li>
+         * <li><b>relevantRoles:</b> an array of role ids that are relevant for the given resource.</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         */
         getPolicy : function(config)
         {
             var params = {resourceId: config.resourceId};
@@ -520,7 +543,73 @@ LABKEY.Security = new function()
                 }, this),
                 failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
             });
-        }
+        },
 
+        /**
+         * Deletes the security policy for the requested resource id. This will cause resource to inherit its
+         * security policy from its parent resource.
+         * @param config A configuration object with the following properties
+         * @param {String} config.resourceId The unique id of the securable resource.
+         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>data:</b> a simple object with one property called 'success' which will be set to true.</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         */
+        deletePolicy : function(config)
+        {
+            var params = {resourceId: config.resourceId};
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("security", "deletePolicy"),
+                method: "GET",
+                params: params,
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+            });
+        },
+
+        /**
+         * Saves the supplied security policy. This object should be a LABKEY.SecurityPolicy object. This
+         * method will completely overwrite the existing policy for the resource. If another user has changed
+         * the policy in between the time it was selected and this method is called, the save will fail with
+         * an optimistic concurrency exception. To force your policy over the other, call the setModified()
+         * method on the policy passing null.
+         * @param config A configuration object with the following properties
+         * @param {String} config.policy The LABKEY.SecurityPolicy object
+         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>data:</b> a simple object with one property called 'success' which will be set to true.</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         */
+        savePolicy : function(config)
+        {
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("security", "deletePolicy"),
+                method : 'POST',
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                jsonData : config.policy.policy,
+                headers : {
+                    'Content-Type' : 'application/json'
+                }
+            });
+        }
     };
 };

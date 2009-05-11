@@ -130,5 +130,10 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
                 groups = groups.concat(row.GroupId, this.getGroupsForPrincipal(row.GroupId, membershipsTable));
         }
         return groups;
+    },
+
+    setModified : function(modified)
+    {
+        this.policy.modified = modified;
     }
 });

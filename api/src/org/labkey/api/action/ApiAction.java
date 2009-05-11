@@ -230,6 +230,11 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
             ((ApiJsonForm)form).setJsonObject(jsonObj);
             return new BindException(form, "form");
         }
+        else if(form instanceof CustomApiForm)
+        {
+            ((CustomApiForm)form).bindProperties(jsonObj);
+            return new BindException(form, "form");
+        }
         else
         {
             JsonPropertyValues values = new JsonPropertyValues(jsonObj);

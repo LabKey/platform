@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 LabKey Corporation
+ * Copyright (c) 2009 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,18 +15,21 @@
  */
 package org.labkey.api.action;
 
-import org.json.JSONObject;
+import java.util.Map;
+
+/*
+* User: Dave
+* Date: May 11, 2009
+* Time: 3:23:56 PM
+*/
 
 /**
- * Implement this interface on your form class if you want to handle
- * the JSONObject that was posted to your form.
- *
- * User: Dave
- * Date: Feb 12, 2008
- * Time: 4:22:24 PM
- * @deprecated Use CustomApiForm instead
+ * Implement this interface on your form when you need
+ * to do custom binding of the raw maps sent to an API action.
+ * Note that this replaces ApiJsonForm with something that is
+ * more format agnostic (allowing us to move to other formats as necessary)
  */
-public interface ApiJsonForm
+public interface CustomApiForm
 {
-    public void setJsonObject(JSONObject jsonObj);
+    public void bindProperties(Map<String,Object> props);
 }
