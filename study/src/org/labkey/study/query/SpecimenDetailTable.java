@@ -60,23 +60,6 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
             }
         });
 
-        ColumnInfo commentsColumn = new AliasedColumn(this, "Comments", _rootTable.getColumn("GlobalUniqueId"));
-        commentsColumn.setFk(new LookupForeignKey("GlobalUniqueId")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return new SpecimenCommentTable(_schema);
-            }
-        });
-        commentsColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new CommentDisplayColumn(colInfo);
-            }
-        });
-        addColumn(commentsColumn);
-
         addWrapColumn(_rootTable.getColumn("SiteLdmsCode"));
         addWrapColumn(_rootTable.getColumn("AtRepository"));
         ColumnInfo availableColumn = addWrapColumn(_rootTable.getColumn("Available"));
@@ -127,30 +110,6 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addColumn(colAvailableCount);
     }
 
-    public static class CommentDisplayColumn extends DataColumn
-    {
-        public CommentDisplayColumn(ColumnInfo commentColumn)
-        {
-            super(commentColumn);
-        }
-
-        public Object getDisplayValue(RenderContext ctx)
-        {
-            Object value = getDisplayColumn().getValue(ctx);
-            if (value == null)
-                return "";
-            else
-                return value;
-        }
-
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-        {
-            Object value = getDisplayColumn().getValue(ctx);
-            if (value != null  && value instanceof String)
-                out.write((String) value);
-        }
-    }
-    
     public static class SiteNameDisplayColumn extends DataColumn
     {
         private static final String NO_SITE_DISPLAY_VALUE = "In Transit";

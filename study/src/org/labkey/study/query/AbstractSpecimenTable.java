@@ -1,10 +1,11 @@
 package org.labkey.study.query;
 
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.LookupForeignKey;
+
+import java.io.Writer;
+import java.io.IOException;
 
 /**
  * Superclass for specimen tables that adds and configures all the common columns.
@@ -45,6 +46,25 @@ public abstract class AbstractSpecimenTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("SalReceiptDate"));
         addWrapColumn(_rootTable.getColumn("ClassId"));
         addWrapColumn(_rootTable.getColumn("ProtocolNumber"));
+
+        ColumnInfo commentsColumn = new AliasedColumn(this, "Comments", _rootTable.getColumn("GlobalUniqueId"));
+        LookupForeignKey commentsFK = new LookupForeignKey("GlobalUniqueId")
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return new SpecimenCommentTable(_schema);
+            }
+        };
+        commentsFK.setJoinOnContainer(true);
+        commentsColumn.setFk(commentsFK);
+        commentsColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new CommentDisplayColumn(colInfo);
+            }
+        });
+        addColumn(commentsColumn);
     }
 
     protected void addVisitColumn(boolean dateBased)
@@ -64,15 +84,42 @@ public abstract class AbstractSpecimenTable extends BaseStudyTable
         {
             visitColumn = new AliasedColumn(this, "Visit", _rootTable.getColumn("VisitValue"));
         }
-        visitColumn.setFk(new LookupForeignKey(null, (String) null, "SequenceNumMin", null)
+        LookupForeignKey visitFK = new LookupForeignKey(null, (String) null, "SequenceNumMin", null)
         {
             public TableInfo getLookupTableInfo()
             {
                 return new VisitTable(_schema);
             }
-        });
+        };
+        visitFK.setJoinOnContainer(true);
+        visitColumn.setFk(visitFK);
         visitColumn.setKeyField(true);
         addColumn(visitColumn);
     }
+
+    public static class CommentDisplayColumn extends DataColumn
+    {
+        public CommentDisplayColumn(ColumnInfo commentColumn)
+        {
+            super(commentColumn);
+        }
+
+        public Object getDisplayValue(RenderContext ctx)
+        {
+            Object value = getDisplayColumn().getValue(ctx);
+            if (value == null)
+                return "";
+            else
+                return value;
+        }
+
+        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        {
+            Object value = getDisplayColumn().getValue(ctx);
+            if (value != null  && value instanceof String)
+                out.write((String) value);
+        }
+    }
+
 }
 
