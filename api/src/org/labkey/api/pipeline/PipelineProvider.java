@@ -703,6 +703,8 @@ abstract public class PipelineProvider
         ActionURL actionURL = entry.cloneHref();
         actionURL.setAction(action);
         String path = actionURL.getParameter(Params.path);
+        if (!path.endsWith("/"))
+            path += "/";
         for (File f : files)
         {
             actionURL.replaceParameter(Params.path, path + PageFlowUtil.encode(f.getName()));
