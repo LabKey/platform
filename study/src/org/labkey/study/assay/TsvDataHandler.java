@@ -16,6 +16,8 @@
 
 package org.labkey.study.assay;
 
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.MvColumn;
@@ -23,16 +25,16 @@ import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.study.assay.AbstractAssayTsvDataHandler;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.qc.TransformDataHandler;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.reader.TabLoader;
+import org.labkey.api.study.assay.AbstractAssayTsvDataHandler;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,7 +44,7 @@ import java.util.Set;
  * Date: Jul 11, 2007
  * Time: 11:17:56 AM
  */
-public class TsvDataHandler extends AbstractAssayTsvDataHandler
+public class TsvDataHandler extends AbstractAssayTsvDataHandler implements TransformDataHandler
 {
     public static final DataType DATA_TYPE = new DataType("AssayRunTSVData");
 
@@ -67,7 +69,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler
         return true;
     }
 
-    public List<Map<String, Object>> loadFileData(Domain dataDomain, File inputFile) throws IOException, ExperimentException
+    public Map<DataType, List<Map<String, Object>>> loadFileData(Domain dataDomain, File inputFile) throws IOException, ExperimentException
     {
         DomainProperty[] columns = dataDomain.getProperties();
         Map<String, Class> expectedColumns = new CaseInsensitiveHashMap<Class>(columns.length);
@@ -123,7 +125,10 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler
                 }
                 column.errorValues = ERROR_VALUE;
             }
-            return loader.load();
+            Map<DataType, List<Map<String, Object>>> datas = new HashMap<DataType, List<Map<String, Object>>>();
+
+            datas.put(DATA_TYPE, loader.load());
+            return datas;
         }
         finally
         {

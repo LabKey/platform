@@ -186,14 +186,15 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             setPlateTemplateList(provider, result);
         }
 
-        List<File> scripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_DEF);
+        // validation scripts
+        List<File> scripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_DEF, AssayProvider.ScriptType.VALIDATION);
         if (scripts.size() > 1)
             throw new IllegalStateException("Only a single validation script per Assay Definition is available for this release");
 
         if (scripts.size() == 1)
             result.setProtocolValidationScript(scripts.get(0).getAbsolutePath());
 
-        List<File> typeScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_TYPE);
+        List<File> typeScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_TYPE, AssayProvider.ScriptType.VALIDATION);
         if (!typeScripts.isEmpty())
         {
             List<String> scriptNames = new ArrayList<String>();
@@ -202,7 +203,17 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
 
             result.setValidationScripts(scriptNames);
         }
+
+        // data transform scripts
+        List<File> transformScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_DEF, AssayProvider.ScriptType.TRANSFORM);
+        if (transformScripts.size() > 1)
+            throw new IllegalStateException("Only a single data transform script per Assay Definition is available for this release");
+
+        if (transformScripts.size() == 1)
+            result.setProtocolTransformScript(transformScripts.get(0).getAbsolutePath());
+
         result.setAllowValidationScript(provider.getDataExchangeHandler() != null);
+        result.setAllowTransformationScript(provider.getDataExchangeHandler() != null);
 
         return result;
     }
@@ -335,12 +346,19 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                         throw new AssayException("The selected plate template could not be found.  Perhaps it was deleted by another user?");
                 }
 
+                // qc and data transform scripts
                 List<File> validationScripts = Collections.emptyList();
+                List<File> transformScripts = Collections.emptyList();
 
                 if (!StringUtils.isBlank(assay.getProtocolValidationScript()))
                     validationScripts = Collections.singletonList(new File(assay.getProtocolValidationScript()));
 
-                provider.setValidationAndAnalysisScripts(protocol, validationScripts);
+                provider.setValidationAndAnalysisScripts(protocol, validationScripts, AssayProvider.ScriptType.VALIDATION);
+
+                if (!StringUtils.isBlank(assay.getProtocolTransformScript()))
+                    transformScripts = Collections.singletonList(new File(assay.getProtocolTransformScript()));
+
+                provider.setValidationAndAnalysisScripts(protocol, transformScripts, AssayProvider.ScriptType.TRANSFORM);
                 protocol.save(getUser());
 
                 StringBuilder errors = new StringBuilder();

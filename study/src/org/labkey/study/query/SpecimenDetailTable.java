@@ -24,6 +24,7 @@ import java.io.Writer;
 import java.io.IOException;
 import java.util.Set;
 import java.util.List;
+import java.util.ArrayList;
 import java.sql.Types;
 
 public class SpecimenDetailTable extends BaseStudyTable
@@ -56,7 +57,7 @@ public class SpecimenDetailTable extends BaseStudyTable
         ColumnInfo visitDescriptionColumn = addWrapColumn(_rootTable.getColumn("VisitDescription"));
         if (_schema.getStudy().isDateBased())
         {
-            //consider:  use SequenceNumMin for visit-based studies too (in visit-based studies VisitValue == SequenceNumMin) 
+            //consider:  use SequenceNumMin for visit-based studies too (in visit-based studies VisitValue == SequenceNumMin)
             // could change to visitrowid but that changes datatype and displays rowid
             // instead of sequencenum when label is null
             visitColumn = new AliasedColumn(this, "Visit", _rootTable.getColumn("SequenceNumMin"));
@@ -145,6 +146,29 @@ public class SpecimenDetailTable extends BaseStudyTable
                 " AND Container = ?)");
         sqlFragQCComments.add(getContainer().getId());
         addColumn(new ExprColumn(this, "QualityControlComments", sqlFragQCComments, Types.VARCHAR));
+
+        setDefaultVisibleColumns(QueryService.get().getDefaultVisibleColumns(getColumns()));
+        
+        // add the vial count columns from specimen summary
+        String sqlVialCount = "( SELECT a.VialCount FROM " + StudySchema.getInstance().getTableInfoSpecimenSummary() +
+                " a WHERE a.SpecimenHash = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenHash)";
+        ColumnInfo colVialCount = new ExprColumn(this, "VialCount", new SQLFragment(sqlVialCount), Types.INTEGER);
+        addColumn(colVialCount);
+
+        String sqlLockedInRequest = "( SELECT a.LockedInRequestCount FROM " + StudySchema.getInstance().getTableInfoSpecimenSummary() +
+                " a WHERE a.SpecimenHash = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenHash)";
+        ColumnInfo colLockedInRequest = new ExprColumn(this, "LockedInRequestCount", new SQLFragment(sqlLockedInRequest), Types.INTEGER);
+        addColumn(colLockedInRequest);
+
+        String sqlAtRepositoryCount = "( SELECT a.AtRepositoryCount FROM " + StudySchema.getInstance().getTableInfoSpecimenSummary() +
+                " a WHERE a.SpecimenHash = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenHash)";
+        ColumnInfo colAtRepositoryCount = new ExprColumn(this, "AtRepositoryCount", new SQLFragment(sqlAtRepositoryCount), Types.INTEGER);
+        addColumn(colAtRepositoryCount);
+
+        String sqlAvailableCount = "( SELECT a.AvailableCount FROM " + StudySchema.getInstance().getTableInfoSpecimenSummary() +
+                " a WHERE a.SpecimenHash = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenHash)";
+        ColumnInfo colAvailableCount = new ExprColumn(this, "AvailableCount", new SQLFragment(sqlAvailableCount), Types.INTEGER);
+        addColumn(colAvailableCount);
     }
 
     public static class CommentDisplayColumn extends DataColumn

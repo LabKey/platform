@@ -487,7 +487,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     }
 
     @Override
-    public List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope)
+    public List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope, ScriptType type)
     {
         List<File> validationScripts = new ArrayList<File>();
 
@@ -516,7 +516,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
                 });
             }
         }
-        validationScripts.addAll(super.getValidationAndAnalysisScripts(protocol, scope));
+        validationScripts.addAll(super.getValidationAndAnalysisScripts(protocol, scope, type));
         return validationScripts;
     }
 

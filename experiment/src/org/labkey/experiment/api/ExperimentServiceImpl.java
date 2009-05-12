@@ -2518,17 +2518,23 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     /** @return all the Data objects from this run */
     private List<ExpData> ensureSimpleExperimentRunParameters(Collection<ExpMaterial> inputMaterials,
                                                      Collection<ExpData> inputDatas, Collection<ExpMaterial> outputMaterials,
-                                                     Collection<ExpData> outputDatas, User user) throws SQLException
+                                                     Collection<ExpData> outputDatas, Collection<ExpData> transformedDatas, User user) throws SQLException
     {
         // Save all the input and output objects to make sure they've been inserted
         saveAll(inputMaterials, user);
         saveAll(inputDatas, user);
         saveAll(outputMaterials, user);
         saveAll(outputDatas, user);
+        saveAll(transformedDatas, user);
 
         List<ExpData> result = new ArrayList<ExpData>();
-        result.addAll(inputDatas);
-        result.addAll(outputDatas);
+        if (transformedDatas.isEmpty())
+        {
+            result.addAll(inputDatas);
+            result.addAll(outputDatas);
+        }
+        else
+            result.addAll(transformedDatas);
         return result;
     }
 
@@ -2540,7 +2546,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public ExpRun insertSimpleExperimentRun(ExpRun baseRun, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException
+    public ExpRun insertSimpleExperimentRun(ExpRun baseRun, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials,
+                                            Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException
     {
         ExpRunImpl run = (ExpRunImpl)baseRun;
 //        if (outputMaterials.isEmpty() && outputDatas.isEmpty())
@@ -2571,7 +2578,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         run.setContainer(info.getContainer());
                     }
                     run.save(user);
-                    insertedDatas = ensureSimpleExperimentRunParameters(inputMaterials.keySet(), inputDatas.keySet(), outputMaterials.keySet(), outputDatas.keySet(), user);
+                    insertedDatas = ensureSimpleExperimentRunParameters(inputMaterials.keySet(), inputDatas.keySet(), outputMaterials.keySet(), outputDatas.keySet(), transformedDatas.keySet(), user);
+
+                    // add any transformed data to the outputDatas collection
+                    for (Map.Entry<ExpData, String> entry : transformedDatas.entrySet())
+                        outputDatas.put(entry.getKey(), entry.getValue());
 
                     ExpProtocolImpl parentProtocol = run.getProtocol();
 
@@ -2759,7 +2770,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         run.setProtocol(protocol);
         run.setFilePathRoot(pipeRoot.getRootPath());
 
-        return insertSimpleExperimentRun(run, inputMaterials, Collections.<ExpData, String>emptyMap(), outputMaterials, Collections.<ExpData, String>emptyMap(), info, log, true);
+        return insertSimpleExperimentRun(run, inputMaterials, Collections.<ExpData, String>emptyMap(), outputMaterials, Collections.<ExpData, String>emptyMap(),
+                Collections.<ExpData, String>emptyMap(), info, log, true);
     }
 
     private ExpProtocol ensureSampleDerivationProtocol(User user)

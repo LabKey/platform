@@ -199,6 +199,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             inputData,
             Collections.<ExpMaterial, String>emptyMap(),
             Collections.singletonMap(newData, "Data"),
+            Collections.<ExpData, String>emptyMap(),                
             new ViewBackgroundInfo(context.getContainer(),
                     context.getUser(), context.getActionURL()), LOG, false);
 
