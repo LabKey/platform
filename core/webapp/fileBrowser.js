@@ -1840,11 +1840,10 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
             this.fileSystem.onReady(this.start.createDelegate(this));
             return;
         }
-        var root = this.tree.getRootNode();
         if (this.showFolderTree)
-            root.expand();
-
-
+        {
+            this.tree.getRootNode().expand();
+        }
         if (typeof wd == "string")
         {
             this.changeDirectory(wd);
@@ -1859,9 +1858,12 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
                 this.changeDirectory(path);
                 return;
             }
+            // fall through
         }
-        this.selectFile(root.record);
-        this.changeDirectory(root.record);
+        // select root
+        var root = this.fileSystem.recordFromCache("/"); 
+        this.selectFile(root);
+        this.changeDirectory(root);
     },
 
 
@@ -1955,23 +1957,26 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
         // TREE
         //
 
-        var treeloader = new FileSystemTreeLoader({fileSystem: this.fileSystem, displayFiles:false});
-        var root = treeloader.createNodeFromRecord(this.fileSystem.rootRecord, this.fileSystem.rootPath);
-        this.tree = new Ext.tree.TreePanel(
+        if (this.showFolderTree)
         {
-            loader:treeloader,
-            root:root,
-            rootVisible:true,
-            title: 'Folders',
-            useArrows:true,
-            autoScroll:true,
-            animate:true,
-            enableDD:false,
-            containerScroll:true,
-            border:false,
-            pathSeparator:';'
-        });
-        this.tree.getSelectionModel().on(TREESELECTION_EVENTS.selectionchange, this.Tree_onSelectionchange, this);
+            var treeloader = new FileSystemTreeLoader({fileSystem: this.fileSystem, displayFiles:false});
+            var root = treeloader.createNodeFromRecord(this.fileSystem.rootRecord, this.fileSystem.rootPath);
+            this.tree = new Ext.tree.TreePanel(
+            {
+                loader:treeloader,
+                root:root,
+                rootVisible:true,
+                title: 'Folders',
+                useArrows:true,
+                autoScroll:true,
+                animate:true,
+                enableDD:false,
+                containerScroll:true,
+                border:false,
+                pathSeparator:';'
+            });
+            this.tree.getSelectionModel().on(TREESELECTION_EVENTS.selectionchange, this.Tree_onSelectionchange, this);
+        }
 
         //
         // Toolbar and Actions

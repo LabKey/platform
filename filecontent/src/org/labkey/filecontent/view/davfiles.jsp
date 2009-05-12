@@ -105,7 +105,7 @@ Ext.onReady(function()
         ,showDetails:true
         ,allowChangeDirectory:false
         ,actions:{drop:dropAction, configure:configureAction}
-        ,tbar:['download','deletePath','refresh'<%=c.hasPermission(context.getUser(),ACL.PERM_INSERT)?",'drop'":""%><%=c.hasPermission(context.getUser(),ACL.PERM_ADMIN)?",'configure'":""%>]
+        ,tbar:['download','deletePath','refresh'<%=c.hasPermission(context.getUser(),ACL.PERM_INSERT)?",'uploadTool'":""%><%=c.hasPermission(context.getUser(),ACL.PERM_ADMIN)?",'configure'":""%>]
     });
 
     fileBrowser.on("doubleclick", function(record){
