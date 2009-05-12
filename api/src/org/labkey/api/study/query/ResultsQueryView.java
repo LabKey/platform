@@ -18,21 +18,24 @@ package org.labkey.api.study.query;
 
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.security.ACL;
 import org.labkey.api.study.actions.PublishStartAction;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.assay.*;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
+
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -54,10 +57,27 @@ public class ResultsQueryView extends AssayBaseQueryView
         });
     }
 
+    @Override
+    protected DataRegion createDataRegion()
+    {
+        ResultsDataRegion rgn = new ResultsDataRegion();
+        rgn.setName(getDataRegionName());
+        rgn.setTable(getTable());
+        rgn.setDisplayColumns(getDisplayColumns());
+        rgn.setShowRecordSelectors(true);
+        rgn.setShadeAlternatingRows(true);
+        rgn.setShowBorders(true);
+        rgn.setMaxRows(getMaxRows());
+        rgn.setOffset(getOffset());
+        rgn.setShowRows(getShowRows());
+        rgn.setSelectionKey(getSelectionKey());
+        return rgn;
+    }
+
     public DataView createDataView()
     {
         DataView view = super.createDataView();
-        view.getRenderContext().setBaseSort(new Sort(AssayService.get().getProvider(_protocol).getDataRowIdFieldKey().toString()));
+        view.getRenderContext().setBaseSort(new Sort(AssayService.get().getProvider(_protocol).getTableMetadata().getResultRowIdFieldKey().toString()));
         view.getDataRegion().addHiddenFormField("rowId", "" + _protocol.getRowId());
         String returnURL = getViewContext().getRequest().getParameter("returnURL");
         if (returnURL == null)
@@ -106,5 +126,29 @@ public class ResultsQueryView extends AssayBaseQueryView
     protected TSVGridWriter.ColumnHeaderType getColumnHeaderType()
     {
         return TSVGridWriter.ColumnHeaderType.caption;
+    }
+
+    private class ResultsDataRegion extends DataRegion
+    {
+        private ColumnInfo _matchColumn;
+
+        @Override
+        protected boolean isErrorRow(RenderContext ctx, int rowIndex)
+        {
+            return _matchColumn != null && Boolean.FALSE.equals(_matchColumn.getValue(ctx));
+        }
+
+        @Override
+        public void addQueryColumns(Set<ColumnInfo> columns)
+        {
+            super.addQueryColumns(columns);
+            FieldKey fk = new FieldKey(_provider.getTableMetadata().getSpecimenIDFieldKey(), AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME);
+            Map<FieldKey, ColumnInfo> newColumns = QueryService.get().getColumns(getTable(), Collections.singleton(fk));
+            _matchColumn = newColumns.get(fk);
+            if (_matchColumn != null)
+            {
+                columns.add(_matchColumn);
+            }
+        }
     }
 }

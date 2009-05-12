@@ -16,14 +16,13 @@
 
 package org.labkey.api.study.query;
 
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
-
-import java.io.PrintWriter;
+import org.labkey.api.view.ViewContext;
 
 /**
  * User: brittp
@@ -33,11 +32,13 @@ import java.io.PrintWriter;
 public abstract class AssayBaseQueryView extends QueryView
 {
     protected ExpProtocol _protocol;
+    protected AssayProvider _provider;
 
     public AssayBaseQueryView(ExpProtocol protocol, ViewContext context, QuerySettings settings)
     {
         super(AssayService.get().createSchema(context.getUser(), context.getContainer()), settings);
         _protocol = protocol;
+        _provider = AssayService.get().getProvider(_protocol);
         getSettings().setAllowChooseQuery(false);
     }
 

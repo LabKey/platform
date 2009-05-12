@@ -701,6 +701,7 @@ api/src/org/labkey/api/study/assay/AssayRunType.java -text
 api/src/org/labkey/api/study/assay/AssayRunUploadContext.java -text
 api/src/org/labkey/api/study/assay/AssayRunsView.java -text
 api/src/org/labkey/api/study/assay/AssayService.java -text
+api/src/org/labkey/api/study/assay/AssayTableMetadata.java -text
 api/src/org/labkey/api/study/assay/AssayUrls.java -text
 api/src/org/labkey/api/study/assay/AssayWarningsDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/BatchListQueryView.java -text
@@ -718,6 +719,7 @@ api/src/org/labkey/api/study/assay/RunDataTable.java -text
 api/src/org/labkey/api/study/assay/RunListDetailsQueryView.java -text
 api/src/org/labkey/api/study/assay/SampleChooserDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/SimpleAssayDataImportHelper.java -text
+api/src/org/labkey/api/study/assay/SpecimenForeignKey.java -text
 api/src/org/labkey/api/study/assay/StudyDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/StudyParticipantVisitResolver.java -text
 api/src/org/labkey/api/study/assay/StudyParticipantVisitResolverType.java -text

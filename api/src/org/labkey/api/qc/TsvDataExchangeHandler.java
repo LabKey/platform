@@ -127,7 +127,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 ExperimentDataHandler handler = expData.findDataHandler();
                 if (handler instanceof ValidationDataHandler)
                 {
-                    Domain runDataDomain = context.getProvider().getRunDataDomain(context.getProtocol());
+                    Domain runDataDomain = context.getProvider().getResultsDomain(context.getProtocol());
                     _dataMap = ((ValidationDataHandler)handler).loadFileData(runDataDomain, entry.getValue());
                 }
             }
@@ -361,7 +361,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             AssayProvider provider = AssayService.get().getProvider(protocol);
             List<Map<String, Object>> dataRows = new ArrayList<Map<String, Object>>();
 
-            Domain runDataDomain = provider.getRunDataDomain(protocol);
+            Domain runDataDomain = provider.getResultsDomain(protocol);
             if (runDataDomain != null)
             {
                 DomainProperty[] properties = runDataDomain.getProperties();
@@ -493,7 +493,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
         return result;
     }
-    
+
     protected static String getSampleValue(DomainProperty prop)
     {
         switch (prop.getPropertyDescriptor().getPropertyType().getSqlType())

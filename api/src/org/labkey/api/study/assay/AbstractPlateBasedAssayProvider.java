@@ -19,25 +19,25 @@ package org.labkey.api.study.assay;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.WellGroupTemplate;
-import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.InsertView;
-import org.labkey.api.query.ValidationException;
-import org.labkey.api.util.Pair;
+import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -51,9 +51,9 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
 {
     public static final String ASSAY_DOMAIN_SAMPLE_WELLGROUP = ExpProtocol.ASSAY_DOMAIN_PREFIX + "SampleWellGroup";
 
-    public AbstractPlateBasedAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, DataType dataType)
+    public AbstractPlateBasedAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, DataType dataType, AssayTableMetadata tableMetadata)
     {
-        super(protocolLSIDPrefix, runLSIDPrefix, dataType);
+        super(protocolLSIDPrefix, runLSIDPrefix, dataType, tableMetadata);
     }
 
     public void setPlateTemplate(Container container, ExpProtocol protocol, PlateTemplate template)

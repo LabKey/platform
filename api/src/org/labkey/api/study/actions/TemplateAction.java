@@ -46,7 +46,7 @@ public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
     {
         _protocol = getProtocol(rowIdForm);
         AssayProvider provider = AssayService.get().getProvider(_protocol);
-        Domain runDataDomain = provider.getRunDataDomain(_protocol);
+        Domain runDataDomain = provider.getResultsDomain(_protocol);
         Map<String, String> colNameToPdname = new CaseInsensitiveHashMap<String>();
         DataRegion dr = createDataRegion(OntologyManager.getTinfoObject(), "ObjectURI", runDataDomain.getProperties(), colNameToPdname);
         SimpleFilter filter = new SimpleFilter();
@@ -56,7 +56,7 @@ public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
         for (DisplayColumn dc : dr.getDisplayColumns())
             dc.setCaption(colNameToPdname.get(dc.getName()));
 
-        dr.removeColumns(provider.getDataRowIdFieldKey().toString());
+        dr.removeColumns(provider.getTableMetadata().getResultRowIdFieldKey().toString());
 
         RenderContext ctx = new RenderContext(getViewContext());
         ctx.setContainer(getContainer());

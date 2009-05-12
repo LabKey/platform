@@ -65,7 +65,7 @@ public class PublishResultsQueryView extends ResultsQueryView
         _timepointType = AssayPublishService.get().getTimepointType(_targetStudyContainer);
         _filter = new SimpleFilter();
         AssayProvider provider = AssayService.get().getProvider(protocol);
-        _filter.addInClause(provider.getDataRowIdFieldKey().toString(), objectIds);
+        _filter.addInClause(provider.getTableMetadata().getResultRowIdFieldKey().toString(), objectIds);
         _reshowPtids = reshowPtids;
         _reshowVisits = reshowVisits;
         setViewItemFilter(ReportService.EMPTY_ITEM_LIST);
@@ -467,11 +467,12 @@ public class PublishResultsQueryView extends ResultsQueryView
         AssayProvider provider = AssayService.get().getProvider(_protocol);
         List<DisplayColumn> columns = new ArrayList<DisplayColumn>();
 
-        FieldKey runIdFieldKey = provider.getRunIdFieldKeyFromDataRow();
-        FieldKey objectIdFieldKey = provider.getDataRowIdFieldKey();
-        FieldKey ptidFieldKey = provider.getParticipantIDFieldKey();
-        FieldKey visitIDFieldKey = provider.getVisitIDFieldKey(_targetStudyContainer);
-        FieldKey specimenIDFieldKey = provider.getSpecimenIDFieldKey();
+        AssayTableMetadata tableMetadata = provider.getTableMetadata();
+        FieldKey runIdFieldKey = tableMetadata.getRunRowIdFieldKeyFromResults();
+        FieldKey objectIdFieldKey = tableMetadata.getResultRowIdFieldKey();
+        FieldKey ptidFieldKey = tableMetadata.getParticipantIDFieldKey();
+        FieldKey visitIDFieldKey = tableMetadata.getVisitIDFieldKey(AssayPublishService.get().getTimepointType(_targetStudyContainer));
+        FieldKey specimenIDFieldKey = tableMetadata.getSpecimenIDFieldKey();
         Set<FieldKey> fieldKeys = new HashSet<FieldKey>(Arrays.asList(runIdFieldKey, objectIdFieldKey, ptidFieldKey, visitIDFieldKey, specimenIDFieldKey));
 
         // In case the assay definition doesn't have all the fields

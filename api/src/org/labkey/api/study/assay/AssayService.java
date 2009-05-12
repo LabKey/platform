@@ -42,6 +42,7 @@ public class AssayService
 
     public static final String RUN_PROPERTIES_COLUMN_NAME = "RunProperties";
     public static final String BATCH_PROPERTIES_COLUMN_NAME = "BatchProperties";
+    public static final String BATCH_COLUMN_NAME = "Batch";
 
     static public synchronized Interface get()
     {

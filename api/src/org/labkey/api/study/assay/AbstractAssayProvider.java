@@ -86,19 +86,23 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public static final String DATE_PROPERTY_NAME = "Date";
     public static final String DATE_PROPERTY_CAPTION = "Date";
 
+    public static final String ASSAY_SPECIMEN_MATCH_COLUMN_NAME = "AssayMatch";
+
     public static final String IMPORT_DATA_LINK_NAME = "Import Data";
 
-    public static final FieldKey BATCH_ROWID_FROM_RUN = FieldKey.fromParts("Batch", "RowId");
+    public static final FieldKey BATCH_ROWID_FROM_RUN = FieldKey.fromParts(AssayService.BATCH_COLUMN_NAME, "RowId");
 
     protected final String _protocolLSIDPrefix;
     protected final String _runLSIDPrefix;
+    protected AssayTableMetadata _tableMetadata;
     protected final DataType _dataType;
 
-    public AbstractAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, DataType dataType)
+    public AbstractAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, DataType dataType, AssayTableMetadata tableMetadata)
     {
         _dataType = dataType;
         _protocolLSIDPrefix = protocolLSIDPrefix;
         _runLSIDPrefix = runLSIDPrefix;
+        _tableMetadata = tableMetadata;
         registerLsidHandler();
     }
 
@@ -324,6 +328,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
     }
 
+    public AssayTableMetadata getTableMetadata()
+    {
+        return _tableMetadata;
+    }
+
     protected void addInputDatas(AssayRunUploadContext context, Map<ExpData, String> inputDatas, ParticipantVisitResolverType resolverType) throws ExperimentException
     {
     }
@@ -363,7 +372,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return PropertyService.get().getDomain(container, getDomainURIForPrefix(protocol, domainPrefix));
     }
 
-    public Domain getRunDataDomain(ExpProtocol protocol)
+    public Domain getResultsDomain(ExpProtocol protocol)
     {
         return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_DATA);
     }
@@ -894,7 +903,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         });
         return runTable;
     }
-
+    
     public static ParticipantVisitResolverType findType(String name, List<ParticipantVisitResolverType> types)
     {
         for (ParticipantVisitResolverType type : types)
@@ -1046,7 +1055,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
         pds.addAll(Arrays.asList(runColumns));
         pds.addAll(Arrays.asList(batchColumns));
 
-        Map<String, ObjectProperty> props = run.getObjectProperties();
+        Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(run.getObjectProperties());
+        ExpExperiment batch = AssayService.get().findBatch(run);
+        if (batch != null)
+        {
+            props.putAll(batch.getObjectProperties());
+        }
 
         for (DomainProperty pd : pds)
         {

@@ -57,7 +57,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         ExpProtocol protocol = run.getProtocol();
         AssayProvider provider = AssayService.get().getProvider(protocol);
 
-        Domain dataDomain = provider.getRunDataDomain(protocol);
+        Domain dataDomain = provider.getResultsDomain(protocol);
 
         try
         {
@@ -137,7 +137,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
             }
 
-            Domain dataDomain = provider.getRunDataDomain(protocol);
+            Domain dataDomain = provider.getResultsDomain(protocol);
 
             Set<ExpMaterial> inputMaterials = checkData(dataDomain, rawData, resolver);
             DomainProperty[] dataDPs = dataDomain.getProperties();

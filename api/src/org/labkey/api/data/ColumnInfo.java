@@ -297,8 +297,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         ForeignKey fk = getFk();
         if (fk == null)
             return null;
-//        _displayField = fk.createLookupColumn(this, null);
-//        return _displayField;
         return fk.createLookupColumn(this, null);
     }
 

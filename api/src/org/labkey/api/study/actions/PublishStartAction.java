@@ -23,12 +23,14 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.FieldKey;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -190,16 +192,18 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             {
                 ((ContainerFilterable)table).setContainerFilter(ContainerFilter.getContainerFilterByName(publishForm.getContainerFilterName(), getViewContext().getUser()));
             }
-            ColumnInfo dataRowIdColumn = QueryService.get().getColumns(table, Collections.singleton(provider.getDataRowIdFieldKey())).get(provider.getDataRowIdFieldKey());
+            AssayTableMetadata tableMetadata = provider.getTableMetadata();
+            ColumnInfo dataRowIdColumn = QueryService.get().getColumns(table, Collections.singleton(tableMetadata.getResultRowIdFieldKey())).get(tableMetadata.getResultRowIdFieldKey());
             assert dataRowIdColumn  != null : "Could not find dataRowId column in assay results table";
-            ColumnInfo runIdColumn = QueryService.get().getColumns(table, Collections.singleton(provider.getRunIdFieldKeyFromDataRow())).get(provider.getRunIdFieldKeyFromDataRow());
+            FieldKey runFieldKey = tableMetadata.getRunRowIdFieldKeyFromResults();
+            ColumnInfo runIdColumn = QueryService.get().getColumns(table, Collections.singleton(runFieldKey)).get(runFieldKey);
             assert runIdColumn  != null : "Could not find runId column in assay results table";
 
             // Filter it to get only the rows from this set of runs
             SimpleFilter filter = new SimpleFilter();
-            filter.addClause(new SimpleFilter.InClause(provider.getRunIdFieldKeyFromDataRow().toString(), runIds, true));
+            filter.addClause(new SimpleFilter.InClause(runFieldKey.toString(), runIds, true));
 
-            ResultSet rs = Table.selectForDisplay(table, Arrays.asList(dataRowIdColumn, runIdColumn), filter, new Sort(provider.getRunIdFieldKeyFromDataRow().toString()), Table.ALL_ROWS, 0);
+            ResultSet rs = Table.selectForDisplay(table, Arrays.asList(dataRowIdColumn, runIdColumn), filter, new Sort(runFieldKey.toString()), Table.ALL_ROWS, 0);
             try
             {
                 // Pull out the data row ids

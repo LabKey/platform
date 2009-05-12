@@ -27,7 +27,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.qc.TransformResult;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -57,7 +56,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     Domain getRunDomain(ExpProtocol protocol);
 
-    Domain getRunDataDomain(ExpProtocol protocol);
+    Domain getResultsDomain(ExpProtocol protocol);
 
     /**
      * Creates a run, but does not persist it to the database. Creates the run only, no protocol applications, etc.
@@ -72,6 +71,8 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     String getName();
 
+    AssayTableMetadata getTableMetadata();
+
     ExpProtocol createAssayDefinition(User user, Container container, String name, String description) throws ExperimentException;
 
     List<Pair<Domain, Map<DomainProperty, Object>>> createDefaultDomains(Container c, User user);
@@ -85,16 +86,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
     TableInfo createDataTable(UserSchema schema, ExpProtocol protocol);
 
     ExpRunTable createRunTable(UserSchema schema, ExpProtocol protocol);
-
-    FieldKey getParticipantIDFieldKey();
-
-    FieldKey getVisitIDFieldKey(Container targetStudy);
-
-    FieldKey getRunIdFieldKeyFromDataRow();
-
-    FieldKey getDataRowIdFieldKey();
-
-    FieldKey getSpecimenIDFieldKey();
 
     ActionURL copyToStudy(User user, ExpProtocol protocol, Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors);
 

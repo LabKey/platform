@@ -31,9 +31,9 @@ import java.util.*;
  */
 public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
 {
-    public AbstractTsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, DataType dataType)
+    public AbstractTsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, DataType dataType, AssayTableMetadata tableMetadata)
     {
-        super(protocolLSIDPrefix, runLSIDPrefix, dataType);
+        super(protocolLSIDPrefix, runLSIDPrefix, dataType, tableMetadata);
     }
 
     public ExpData getDataForDataRow(Object dataRowId)
@@ -74,16 +74,16 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
             TimepointType studyType = AssayPublishService.get().getTimepointType(study);
 
             SimpleFilter filter = new SimpleFilter();
-            filter.addInClause(getDataRowIdFieldKey().toString(), dataKeys.keySet());
+            filter.addInClause(getTableMetadata().getResultRowIdFieldKey().toString(), dataKeys.keySet());
             OntologyObject[] dataRows = Table.select(OntologyManager.getTinfoObject(), Table.ALL_COLUMNS, filter,
-                    new Sort(getDataRowIdFieldKey().toString()), OntologyObject.class);
+                    new Sort(getTableMetadata().getResultRowIdFieldKey().toString()), OntologyObject.class);
 
             List<Map<String, Object>> dataMaps = new ArrayList<Map<String, Object>>(dataRows.length);
 
             CopyToStudyContext context = new CopyToStudyContext(protocol);
 
             Set<PropertyDescriptor> typeList = new LinkedHashSet<PropertyDescriptor>();
-            typeList.add(createPublishPropertyDescriptor(study, getDataRowIdFieldKey().toString(), PropertyType.INTEGER));
+            typeList.add(createPublishPropertyDescriptor(study, getTableMetadata().getResultRowIdFieldKey().toString(), PropertyType.INTEGER));
             typeList.add(createPublishPropertyDescriptor(study, "SourceLSID", PropertyType.INTEGER));
 
             Container sourceContainer = null;
@@ -93,7 +93,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
             // this will produce a types set that contains rowCount*columnCount property descriptors unless we prevent additions
             // to the map after the first row.  This is done by nulling out the 'tempTypes' object after the first iteration:
             Set<PropertyDescriptor> tempTypes = typeList;
-            PropertyDescriptor[] rowPropertyDescriptors = getPropertyDescriptors(getRunDataDomain(protocol));
+            PropertyDescriptor[] rowPropertyDescriptors = getPropertyDescriptors(getResultsDomain(protocol));
             for (OntologyObject row : dataRows)
             {
                 Map<String, Object> dataMap = new HashMap<String, Object>();
@@ -124,7 +124,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
                     dataMap.put("Date", publishKey.getDate());
                 }
                 dataMap.put("SourceLSID", run.getLSID());
-                dataMap.put(getDataRowIdFieldKey().toString(), publishKey.getDataId());
+                dataMap.put(getTableMetadata().getResultRowIdFieldKey().toString(), publishKey.getDataId());
 
                 addStandardRunPublishProperties(user, study, tempTypes, dataMap, run, context);
 
@@ -132,7 +132,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
                 tempTypes = null;
             }
             return AssayPublishService.get().publishAssayData(user, sourceContainer, study, protocol.getName(), protocol,
-                    dataMaps, new ArrayList<PropertyDescriptor>(typeList), getDataRowIdFieldKey().toString(), errors);
+                    dataMaps, new ArrayList<PropertyDescriptor>(typeList), getTableMetadata().getResultRowIdFieldKey().toString(), errors);
         }
         catch (SQLException e)
         {

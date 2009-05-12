@@ -19,11 +19,10 @@ package org.labkey.api.study.assay;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.*;
 import org.labkey.api.study.query.ProtocolFilteredObjectTable;
@@ -51,16 +50,36 @@ public class RunDataTable extends FilteredTable
         column.setKeyField(false);
         column.setIsUnselectable(true);
         final AssayProvider provider = AssayService.get().getProvider(protocol);
-        Domain runDataDomain = provider.getRunDataDomain(protocol);
-        DomainProperty[] dps = runDataDomain.getProperties();
-        QcAwarePropertyForeignKey fk = new QcAwarePropertyForeignKey(dps, this, schema);
+        Domain resultsDomain = provider.getResultsDomain(protocol);
+        DomainProperty[] resultsDPs = resultsDomain.getProperties();
+        QcAwarePropertyForeignKey fk = new QcAwarePropertyForeignKey(resultsDPs, this, schema)
+        {
+            @Override
+            protected ColumnInfo constructColumnInfo(final ColumnInfo parent, String name, final PropertyDescriptor pd)
+            {
+                ColumnInfo result = super.constructColumnInfo(parent, name, pd);
+                if (AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equals(pd.getName()))
+                {
+                    DomainProperty[] batchDPs = provider.getBatchDomain(protocol).getProperties();
+                    for (DomainProperty batchDP : batchDPs)
+                    {
+                        if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(batchDP.getName()))
+                        {
+                            result.setFk(new SpecimenForeignKey(schema, provider, protocol));
+                            return result;
+                        }
+                    }
+                }
+                return result;
+            }
+        };
 
         Set<String> hiddenCols = new HashSet<String>();
         for (PropertyDescriptor pd : fk.getDefaultHiddenProperties())
             hiddenCols.add(pd.getName());
 
         FieldKey dataKeyProp = new FieldKey(null, column.getName());
-        for (DomainProperty lookupCol : dps)
+        for (DomainProperty lookupCol : resultsDPs)
         {
             if (!lookupCol.isHidden() && !hiddenCols.contains(lookupCol.getName()))
                 visibleColumns.add(new FieldKey(dataKeyProp, lookupCol.getName()));
@@ -102,7 +121,7 @@ public class RunDataTable extends FilteredTable
         for (DomainProperty prop : provider.getBatchDomain(protocol).getProperties())
         {
             if (!prop.isHidden())
-                visibleColumns.add(FieldKey.fromParts("Run", "Batch", AssayService.BATCH_PROPERTIES_COLUMN_NAME, prop.getName()));
+                visibleColumns.add(FieldKey.fromParts("Run", AssayService.BATCH_COLUMN_NAME, AssayService.BATCH_PROPERTIES_COLUMN_NAME, prop.getName()));
         }
 
         Set<String> studyColumnNames = ((AbstractAssayProvider)provider).addCopiedToStudyColumns(this, protocol, schema.getUser(), "objectId", false);

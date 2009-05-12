@@ -155,6 +155,26 @@ public abstract class ContainerFilter
         }
     }
 
+    public static class SimpleContainerFilter extends ContainerFilter
+    {
+        private final Collection<String> _ids;
+
+        public SimpleContainerFilter(Collection<Container> containers)
+        {
+            _ids = toIds(containers);
+        }
+
+        public Collection<String> getIds(Container currentContainer)
+        {
+            return _ids;
+        }
+
+        public Type getType()
+        {
+            throw new UnsupportedOperationException();
+        }
+    }
+
     public static class CurrentPlusExtras extends ContainerFilterWithUser
     {
         private final Container[] _extraContainers;
@@ -177,16 +197,6 @@ public abstract class ContainerFilter
                 }
             }
             return toIds(containers);
-        }
-
-        private Set<String> toIds(Collection<Container> containers)
-        {
-            Set<String> ids = new HashSet<String>();
-            for (Container container : containers)
-            {
-                ids.add(container.getId());
-            }
-            return ids;
         }
 
         public Type getType()
@@ -348,7 +358,7 @@ public abstract class ContainerFilter
         }
     }
 
-    private static Set<String> toIds(Collection<Container> containers)
+    public static Set<String> toIds(Collection<Container> containers)
     {
         Set<String> ids = new HashSet<String>();
         for (Container container : containers)
