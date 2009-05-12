@@ -21,10 +21,12 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.qc.DataExchangeHandler;
+import org.labkey.api.qc.TransformResult;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -32,11 +34,10 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.study.query.RunListQueryView;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.qc.DataExchangeHandler;
-import org.labkey.api.util.Pair;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -153,17 +154,24 @@ public interface AssayProvider extends Handler<ExpProtocol>
         ASSAY_DEF,
     }
 
+    public enum ScriptType {
+        VALIDATION,
+        TRANSFORM,
+    }
+
     /**
      * File based QC and analysis scripts can be added to a protocol and invoked when the validate
      * method is called. Set to an empty list if no scripts exist.
      * @param protocol
      * @param scripts
      */
-    void setValidationAndAnalysisScripts(ExpProtocol protocol, List<File> scripts) throws ExperimentException;
+    void setValidationAndAnalysisScripts(ExpProtocol protocol, List<File> scripts, ScriptType type) throws ExperimentException;
 
-    List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope);
+    List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope, ScriptType type);
 
     void validate(AssayRunUploadContext context, ExpRun run) throws ValidationException;
+
+    TransformResult transform(AssayRunUploadContext context) throws ValidationException;
 
     /**
      * @return the data type that this run creates for its analyzed results

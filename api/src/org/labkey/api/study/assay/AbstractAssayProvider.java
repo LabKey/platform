@@ -30,16 +30,16 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.ui.PropertiesEditor;
 import org.labkey.api.qc.DataExchangeHandler;
+import org.labkey.api.qc.TransformResult;
+import org.labkey.api.qc.DefaultTransformResult;
+import org.labkey.api.qc.TransformDataHandler;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.actions.AssayResultDetailsAction;
-import org.labkey.api.study.actions.AssayRunDetailsAction;
-import org.labkey.api.study.actions.DesignerAction;
-import org.labkey.api.study.actions.UploadWizardAction;
+import org.labkey.api.study.actions.*;
 import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.study.query.RunListQueryView;
 import org.labkey.api.util.FileUtil;
@@ -622,6 +622,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         Map<ExpData, String> inputDatas = new HashMap<ExpData, String>();
         Map<ExpMaterial, String> outputMaterials = new HashMap<ExpMaterial, String>();
         Map<ExpData, String> outputDatas = new HashMap<ExpData, String>();
+        Map<ExpData, String> transformedDatas = new HashMap<ExpData, String>();
 
         Map<DomainProperty, String> runProperties = context.getRunProperties();
         Map<DomainProperty, String> batchProperties = context.getBatchProperties();
@@ -699,13 +700,25 @@ public abstract class AbstractAssayProvider implements AssayProvider
             // Add the run to the batch so that we can find it when we're loading the data files
             batch.addRuns(context.getUser(), run);
 
+            TransformResult transformResult = context.getTransformResult();
+            if (!transformResult.isEmpty())
+            {
+                for (Map.Entry<DataType, File> entry : transformResult.getTransformedData().entrySet())
+                {
+                    ExpData data = createData(context.getContainer(), entry.getValue(), "transformed output", entry.getKey());
+                    transformedDatas.put(data, "Data");
+                }
+            }
+
             run = ExperimentService.get().insertSimpleExperimentRun(run,
                 inputMaterials,
                 inputDatas,
                 outputMaterials,
                 outputDatas,
-                new ViewBackgroundInfo(context.getContainer(),
-                        context.getUser(), context.getActionURL()), LOG, true);
+                transformedDatas,
+                new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL()),
+                LOG,
+                true);
 
             validate(context, run);
 
@@ -1334,13 +1347,18 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return true;
     }
 
-    public void setValidationAndAnalysisScripts(ExpProtocol protocol, List<File> scripts) throws ExperimentException
+    public void setValidationAndAnalysisScripts(ExpProtocol protocol, List<File> scripts, ScriptType type) throws ExperimentException
     {
         if (scripts.size() > 1)
             throw new ExperimentException("Only one script is supported for this release");
 
         Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.getObjectProperties());
-        String propertyURI = protocol.getLSID() + "#ValidationScript";
+        String propertyURI;
+
+        if (type == ScriptType.VALIDATION)
+            propertyURI = protocol.getLSID() + "#ValidationScript";
+        else
+            propertyURI = protocol.getLSID() + "#TransformScript";
 
         if (scripts.isEmpty())
             props.remove(propertyURI);
@@ -1366,14 +1384,25 @@ public abstract class AbstractAssayProvider implements AssayProvider
         protocol.setObjectProperties(props);
     }
 
-    public List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope)
+    public List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope, ScriptType type)
     {
         if (scope == Scope.ASSAY_DEF || scope == Scope.ALL)
         {
-            ObjectProperty prop = protocol.getObjectProperties().get(protocol.getLSID() + "#ValidationScript");
-            if (prop != null)
+            if (type == ScriptType.VALIDATION)
             {
-                return Collections.singletonList(new File(prop.getStringValue()));
+                ObjectProperty prop = protocol.getObjectProperties().get(protocol.getLSID() + "#ValidationScript");
+                if (prop != null)
+                {
+                    return Collections.singletonList(new File(prop.getStringValue()));
+                }
+            }
+            else if (type == ScriptType.TRANSFORM)
+            {
+                ObjectProperty prop = protocol.getObjectProperties().get(protocol.getLSID() + "#TransformScript");
+                if (prop != null)
+                {
+                    return Collections.singletonList(new File(prop.getStringValue()));
+                }
             }
         }
         return Collections.emptyList();
@@ -1381,7 +1410,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public void validate(AssayRunUploadContext context, ExpRun run) throws ValidationException
     {
-        for (File scriptFile : getValidationAndAnalysisScripts(context.getProtocol(), Scope.ALL))
+        for (File scriptFile : getValidationAndAnalysisScripts(context.getProtocol(), Scope.ALL, ScriptType.VALIDATION))
         {
             // read the contents of the script file
             if (scriptFile.exists())
@@ -1490,5 +1519,93 @@ public abstract class AbstractAssayProvider implements AssayProvider
             tempFolder.mkdirs();
 
         return tempFolder;
+    }
+
+    public TransformResult transform(AssayRunUploadContext context) throws ValidationException
+    {
+        TransformResult result = DefaultTransformResult.createEmptyResult();
+        for (File scriptFile : getValidationAndAnalysisScripts(context.getProtocol(), Scope.ALL, ScriptType.TRANSFORM))
+        {
+            // read the contents of the script file
+            if (scriptFile.exists())
+            {
+                BufferedReader br = null;
+                StringBuffer sb = new StringBuffer();
+                try {
+                    br = new BufferedReader(new FileReader(scriptFile));
+                    String l;
+                    while ((l = br.readLine()) != null)
+                        sb.append(l).append('\n');
+                }
+                catch (Exception e)
+                {
+                    throw new ValidationException(e.getMessage());
+                }
+                finally
+                {
+                    if (br != null)
+                        try {br.close();} catch(IOException ioe) {}
+                }
+
+                ScriptEngine engine = ServiceRegistry.get().getService(ScriptEngineManager.class).getEngineByExtension(FileUtil.getExtension(scriptFile));
+                if (engine != null)
+                {
+                    File scriptDir = getScriptDir(context.getProtocol());
+                    try
+                    {
+                        DataExchangeHandler dataHandler = getDataExchangeHandler();
+                        if (dataHandler != null)
+                        {
+                            Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+                            String script = sb.toString();
+                            File runInfo = dataHandler.createTransformationRunInfo(context, scriptDir);
+
+                            bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, scriptDir.getAbsolutePath());
+                            bindings.put(ExternalScriptEngine.SCRIPT_PATH, scriptFile.getAbsolutePath());
+
+                            Map<String, String> paramMap = new HashMap<String, String>();
+
+                            paramMap.put("runInfo", runInfo.getAbsolutePath().replaceAll("\\\\", "/"));
+                            bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
+
+                            Object output = engine.eval(script);
+
+                            // process any output from the transformation script
+                            result = dataHandler.processTransformationOutput(context, runInfo);
+                        }
+                    }
+                    catch (ValidationException e)
+                    {
+                        throw e;
+                    }
+                    catch (Exception e)
+                    {
+                        throw new ValidationException(e.getMessage());
+                    }
+                    finally
+                    {
+                        // clean up temp directory
+                        if (FileUtil.deleteDir(scriptDir))
+                        {
+                            File parent = scriptDir.getParentFile();
+                            if (parent != null)
+                                parent.delete();
+                        }
+                    }
+                }
+                else
+                {
+                    // we may just want to log an error rather than fail the upload due to an engine config problem.
+                    throw new ValidationException("A script engine implementation was not found for the specified QC script. " +
+                            "Check configurations in the Admin Console.");
+                }
+            }
+            else
+            {
+                throw new ValidationException("The validation script: " + scriptFile.getAbsolutePath() + " configured for this Assay does not exist. Please check " +
+                        "the configuration for this Assay design.");
+            }
+        }
+        return result;
     }
 }

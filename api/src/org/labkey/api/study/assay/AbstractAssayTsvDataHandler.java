@@ -61,8 +61,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         try
         {
-            List<Map<String, Object>> rawData = loadFileData(dataDomain, dataFile);
-            importRows(data, info.getUser(), run, protocol, provider, rawData);
+            Map<DataType, List<Map<String, Object>>> rawData = loadFileData(dataDomain, dataFile);
+            assert(rawData.size() <= 1);
+            importRows(data, info.getUser(), run, protocol, provider, rawData.values().iterator().next());
         }
         catch (IOException e)
         {

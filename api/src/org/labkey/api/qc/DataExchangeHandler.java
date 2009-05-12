@@ -38,4 +38,7 @@ public interface DataExchangeHandler
     public File createValidationRunInfo(AssayRunUploadContext context, ExpRun run, File scriptDir) throws Exception;
     public void processValidationOutput(File runInfo) throws ValidationException;
     public void createSampleData(@NotNull ExpProtocol protocol, ViewContext viewContext, File scriptDir) throws Exception;
+
+    public File createTransformationRunInfo(AssayRunUploadContext context, File scriptDir) throws Exception;
+    public TransformResult processTransformationOutput(AssayRunUploadContext context, File runInfo) throws ValidationException;
 }

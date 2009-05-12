@@ -37,7 +37,7 @@ public class AssayFileWriter
 {
     public static final String DIR_NAME = "assaydata";
 
-    public File ensureUploadDirectory(Container container) throws ExperimentException
+    public static File ensureUploadDirectory(Container container) throws ExperimentException
     {
         File rootFile = getPipelineRoot(container).getRootPath();
 
@@ -52,7 +52,7 @@ public class AssayFileWriter
         return dir;
     }
 
-    public File createFile(ExpProtocol protocol, File dir, String extension)
+    public static File createFile(ExpProtocol protocol, File dir, String extension)
     {
         //File name is studyname_datasetname_date_hhmm.ss
         Date dateCreated = new Date();
@@ -100,7 +100,7 @@ public class AssayFileWriter
         }
     }
 
-    protected PipeRoot getPipelineRoot(Container container)
+    protected static PipeRoot getPipelineRoot(Container container)
     {
         PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(container);
         if (null == pipelineRoot)

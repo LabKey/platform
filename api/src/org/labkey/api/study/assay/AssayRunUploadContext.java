@@ -23,6 +23,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.qc.TransformResult;
 import org.apache.struts.upload.MultipartRequestHandler;
 import org.jetbrains.annotations.NotNull;
 
@@ -76,4 +77,5 @@ public interface AssayRunUploadContext
 
     String getTargetStudy();
 
+    TransformResult getTransformResult();
 }

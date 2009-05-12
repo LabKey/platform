@@ -17,27 +17,23 @@ package org.labkey.api.qc;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.struts.upload.MultipartRequestHandler;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayRunUploadContext;
-import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.reader.TabLoader;
-import org.labkey.api.reader.ColumnDescriptor;
-import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.*;
@@ -68,14 +64,17 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         runDataFile,
         runDataUploadedFile,
         errorsFile,
+        transformedDataFile,
     }
     public static final String SAMPLE_DATA_PROP_NAME = "sampleData";
     public static final String VALIDATION_RUN_INFO_FILE = "runProperties.tsv";
     public static final String ERRORS_FILE = "validationErrors.tsv";
     public static final String RUN_DATA_FILE = "runData.tsv";
+    public static final String TRANSFORM_DATA_FILE = "transformData.tsv";
 
     private Map<String, String> _formFields = new HashMap<String, String>();
     private Map<String, List<Map<String, Object>>> _sampleProperties = new HashMap<String, List<Map<String, Object>>>();
+    private Map<DataType, List<Map<String, Object>>> _dataMap;
 
     public File createValidationRunInfo(AssayRunUploadContext context, ExpRun run, File scriptDir) throws Exception
     {
@@ -114,27 +113,47 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
     }
 
+    private Map<DataType, List<Map<String, Object>>> getDataMap(AssayRunUploadContext context) throws Exception
+    {
+        if (_dataMap == null)
+        {
+            _dataMap = new HashMap<DataType, List<Map<String, Object>>>();
+
+            Map<String, File> data = context.getUploadedData();
+            assert(data.size() <= 1);
+            for (Map.Entry<String, File> entry : data.entrySet())
+            {
+                ExpData expData = ExperimentService.get().createData(context.getContainer(), context.getProvider().getDataType());
+                ExperimentDataHandler handler = expData.findDataHandler();
+                if (handler instanceof ValidationDataHandler)
+                {
+                    Domain runDataDomain = context.getProvider().getRunDataDomain(context.getProtocol());
+                    _dataMap = ((ValidationDataHandler)handler).loadFileData(runDataDomain, entry.getValue());
+                }
+            }
+        }
+        return _dataMap;
+    }
+
+    protected void writeDataMaps(Map<DataType, List<Map<String, Object>>> dataMap, File scriptDir, PrintWriter pw) throws Exception
+    {
+        for (Map.Entry<DataType, List<Map<String, Object>>> dataEntry : dataMap.entrySet())
+        {
+            //File runData = new File(scriptDir, RUN_DATA_FILE);
+            File runData = File.createTempFile(Props.runDataFile.name(), ".tsv", scriptDir);
+            writeRunData(dataEntry.getValue(), runData);
+
+            pw.append(Props.runDataFile.name());
+            pw.append('\t');
+            pw.append(runData.getAbsolutePath());
+            pw.append('\t');
+            pw.println(dataEntry.getKey().getNamespacePrefix());
+        }
+    }
+
     protected void writeRunData(AssayRunUploadContext context, ExpRun run, File scriptDir, PrintWriter pw) throws Exception
     {
-        for (ExpData expData : run.getDataOutputs())
-        {
-            ExperimentDataHandler handler = expData.findDataHandler();
-            if (handler instanceof ValidationDataHandler)
-            {
-                Domain runDataDomain = context.getProvider().getRunDataDomain(context.getProtocol());
-                List<Map<String, Object>> data = ((ValidationDataHandler)handler).loadFileData(runDataDomain, expData.getDataFile());
-                File runData = new File(scriptDir, RUN_DATA_FILE);
-                writeRunData(data, runData);
-
-                pw.append(Props.runDataFile.name());
-                pw.append('\t');
-                pw.println(runData.getAbsolutePath());
-            }
-            // the original path as well
-            pw.append(Props.runDataUploadedFile.name());
-            pw.append('\t');
-            pw.println(expData.getDataFile().getAbsolutePath());
-        }
+        writeDataMaps(getDataMap(context), scriptDir, pw);
     }
 
     /**
@@ -311,8 +330,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     sep = "";
                     for (String name : columns)
                     {
+                        Object o = row.get(name);
                         pw.append(sep);
-                        pw.append(String.valueOf(row.get(name)));
+                        if (o != null)
+                            pw.append(String.valueOf(o));
                         sep = "\t";
                     }
                     pw.println();
@@ -383,6 +404,96 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
     }
 
+    public File createTransformationRunInfo(AssayRunUploadContext context, File scriptDir) throws Exception
+    {
+        // include all of the batch and run properties
+        File runInfo = createValidationRunInfo(context, null, scriptDir);
+        PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(runInfo, true)));
+
+        try {
+            Map<String, File> files;
+            files = context.getUploadedData();
+            File dir = AssayFileWriter.ensureUploadDirectory(context.getContainer());
+
+            for (Map.Entry<String, File> entry : files.entrySet())
+            {
+                ExpData expData = AbstractAssayProvider.createData(context.getContainer(), entry.getValue(), entry.getKey(), context.getProvider().getDataType());
+                ExperimentDataHandler handler = expData.findDataHandler();
+                if (handler instanceof TransformDataHandler)
+                {
+                    Map<DataType, List<Map<String, Object>>> dataMap = getDataMap(context);
+                    for (DataType key : dataMap.keySet())
+                    {
+                        // transformed data file location, run data files will have been written in createValidationRuntInfo
+                        File transformedData = AssayFileWriter.createFile(context.getProtocol(), dir, "tsv");
+
+                        pw.append(Props.transformedDataFile.name());
+                        pw.append('\t');
+                        pw.append(transformedData.getAbsolutePath());
+                        pw.append('\t');
+                        pw.println(key.getNamespacePrefix());
+                    }
+                }
+            }
+        }
+        finally
+        {
+            pw.close();
+        }
+        return runInfo;
+    }
+
+    protected List<Map<String, Object>> parseRunInfo(File runInfo) throws IOException
+    {
+        TabLoader loader = new TabLoader(runInfo, false);
+        loader.setColumns(new ColumnDescriptor[]{
+                new ColumnDescriptor("name", String.class),
+                new ColumnDescriptor("value", String.class),
+                new ColumnDescriptor("type", String.class)
+        });
+        return loader.load();
+    }
+
+    public TransformResult processTransformationOutput(AssayRunUploadContext context, File runInfo) throws ValidationException
+    {
+        TransformResult result = DefaultTransformResult.createEmptyResult();
+
+        // check to see if any errors were generated
+        processValidationOutput(runInfo);
+
+        // if input data was transformed,
+        if (runInfo.exists())
+        {
+            try {
+                List<Map<String, Object>> maps = parseRunInfo(runInfo);
+                Map<String, File> transformedData = new HashMap<String, File>();
+                for (Map<String, Object> row : maps)
+                {
+                    if (row.get("name").equals(Props.transformedDataFile.name()))
+                    {
+                        transformedData.put(String.valueOf(row.get("type")), new File(row.get("value").toString()));
+                    }
+                }
+
+                if (!transformedData.isEmpty())
+                {
+                    Map<DataType, File> dataMap = new HashMap<DataType, File>();
+
+                    for (Map.Entry<String, File> entry : transformedData.entrySet())
+                    {
+                        dataMap.put(new DataType(entry.getKey()), entry.getValue());
+                    }
+                    result = new DefaultTransformResult(dataMap);
+                }
+            }
+            catch (Exception e)
+            {
+                throw new ValidationException(e.getMessage());
+            }
+        }
+        return result;
+    }
+    
     protected static String getSampleValue(DomainProperty prop)
     {
         switch (prop.getPropertyDescriptor().getPropertyType().getSqlType())
@@ -510,6 +621,11 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
 
         public String getTargetStudy()
+        {
+            return null;
+        }
+
+        public TransformResult getTransformResult()
         {
             return null;
         }

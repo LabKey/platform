@@ -29,6 +29,8 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.security.ACL;
 import org.labkey.api.util.GUID;
 import org.labkey.api.defaults.DefaultValueService;
+import org.labkey.api.qc.TransformResult;
+import org.labkey.api.qc.DefaultTransformResult;
 import org.apache.commons.beanutils.ConvertUtils;
 
 import java.util.*;
@@ -61,6 +63,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     private Integer _batchId;
     protected BindException _errors;
     private List<AssayDataCollector> _collectors;
+    private TransformResult _transformResult = DefaultTransformResult.createEmptyResult();
 
     // Unfortunate query hackery that orders display columns based on default view
     protected DomainProperty[] reorderDomainColumns(DomainProperty[] unorderedColumns, ViewContext context, ExpProtocol protocol)
@@ -464,5 +467,15 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     public void setErrors(BindException errors)
     {
         _errors = errors;
+    }
+
+    public TransformResult getTransformResult()
+    {
+        return _transformResult;
+    }
+
+    public void setTransformResult(TransformResult transformResult)
+    {
+        _transformResult = transformResult;
     }
 }

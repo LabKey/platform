@@ -46,6 +46,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.util.Pair;
+import org.labkey.api.qc.TransformResult;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
@@ -660,6 +661,12 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             {
                 exp = ExperimentService.get().getExpExperiment(form.getBatchId().intValue());
             }
+
+            AssayProvider provider = form.getProvider();
+
+            // handle data transformation
+            TransformResult result = provider.transform(form);
+            form.setTransformResult(result);
 
             Pair<ExpRun, ExpExperiment> insertedValues = form.getProvider().saveExperimentRun(form, exp);
 
