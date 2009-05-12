@@ -506,6 +506,51 @@ LABKEY.Security = new function()
             }
         },
 
+        getSecurableResources : function(config)
+        {
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("security", "getSecurableResources"),
+                method: "GET",
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+            });
+        },
+
+        getRoles : function(config)
+        {
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("security", "getRoles"),
+                method: "GET",
+                success: LABKEY.Utils.getCallbackWrapper(function(data, req){
+
+                    //roles and perms are returned in two separate blocks for efficiency
+                    var idx;
+                    var permMap = {};
+                    var perm;
+                    for(idx = 0; idx < data.permissions.length; ++idx)
+                    {
+                        perm = data.permissions[idx];
+                        permMap[perm.uniqueName] = perm;
+                    }
+
+                    var idxPerm;
+                    var role;
+                    for(idx = 0; idx < data.roles.length; ++idx)
+                    {
+                        role = data.roles[idx];
+                        for(idxPerm = 0; idxPerm < role.permissions.length; ++idxPerm)
+                        {
+                            role.permissions[idxPerm] = permMap[role.permissions[idxPerm]];
+                        }
+                    }
+
+                    config.successCallback.call(config.scope || this, data.roles, req);
+
+                }, this),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+            });
+        },
+
         /**
          * Retrieves the security policy for the requested resource id. Note that this will return the
          * policy in effect for this resource, which might be the policy from a parent resource if there

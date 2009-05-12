@@ -29,9 +29,10 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
         LABKEY.SecurityPolicy.superclass.constructor.apply(this, arguments);
 
         this.policy = config;
+        this._dirty = false;
 
         this.addEvents({
-            "changed": true
+            "change": true
         });
 
     },
@@ -65,6 +66,8 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
             userId: principalId,
             role: role
         });
+        this.fireEvent("change");
+        this._dirty = true;
     },
 
     removeRoleAssignment : function(principalId, role)
@@ -78,6 +81,8 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
         }
         if(idx < this.policy.assignments.length)
             this.policy.assignments.splice(idx, 1);
+        this.fireEvent("change");
+        this._dirty = true;
     },
 
     clearRoleAssignments : function(principalId)
@@ -95,6 +100,8 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
             if(assgn.userId == principalId)
                 this.policy.assignments.splice(idx, 1);
         }
+        this.fireEvent("change");
+        this._dirty = true;
     },
 
     getEffectiveRoles : function(principalId, membershipsTable)
@@ -135,5 +142,12 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
     setModified : function(modified)
     {
         this.policy.modified = modified;
+        this.fireEvent("change");
+        this._dirty = true;
+    },
+
+    isDirty : function()
+    {
+        return this._dirty;
     }
 });
