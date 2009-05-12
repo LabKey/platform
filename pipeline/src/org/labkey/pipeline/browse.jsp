@@ -43,9 +43,9 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
 %>
 <script type="text/javascript" language="javascript">
     LABKEY.requiresExtJs(true);
-    LABKEY.requiresScript("fileBrowser.js");
-    LABKEY.requiresScript("applet.js",true);
     LABKEY.requiresScript("FileUploadField.js");
+    LABKEY.requiresScript("applet.js");
+    LABKEY.requiresScript("fileBrowser.js");
 </script>
 
 <div class="extContainer" style="padding:20px;">
@@ -127,7 +127,7 @@ function renderPipelineActions(actions)
         var actionMarkup = {tag:'div', id:'actiondiv' + ++actionDivCounter, style:styleAction, children:[]};
         actionDivs.push(actionMarkup.id);
 
-        // some actions depend on this this parameter, why not append it themselves?
+        // UNDONE: some actions depend on this this parameter, why not append it themselves?
         var fileInputNames = "";
         for (f=0 ; f<action.files.length ; f++)
             fileInputNames += "&fileInputNames=" + action.files[f];
@@ -137,14 +137,15 @@ function renderPipelineActions(actions)
         for (l=0 ; l<action.links.length ; l++)
         {
             var link = action.links[l];
-            var a = {tag:'a', 'cls':'labkey-button', href:link.href + fileInputNamesParam || '#action', children:['<span>',$h(link.text),'</span>']};
+            var a = {tag:'a', 'cls':'labkey-button', href:(link.href ? link.href + fileInputNamesParam : '#action'), children:['<span>',$h(link.text),'</span>']};
 //            var span = {tag:'span', 'cls':'labkey-button', children:[a]};
             if (link.items && link.items.length)
             {
                 var menuid = 'actionmenu' + ++actionMenuCounter;
                 a.children.push("&nbsp;&nbsp;&nbsp;");
                 a.children.push({tag:'img', src:LABKEY.imagePath+'/text_link_arrow.gif', 'cls':'labkey-button-arrow'});
-                activeMenus[menuid] = new Ext.menu.Menu(Ext.apply(link, {cls:'extContainer'}));
+                var menu = toMenu(link);
+                activeMenus[menuid] = new Ext.menu.Menu(menu);
                 a.id = menuid;
                 a.onClick = "showActionMenu(this)";
             }
@@ -169,6 +170,23 @@ function renderPipelineActions(actions)
     pipelinePanel.body.update(Ext.DomHelper.markup(html));
 }
 
+
+function toMenu(link)
+{
+    var menu = Ext.apply({}, link);
+    menu.cls = 'extContainer';
+    var items = [];
+    for (var i=0 ; i<link.items.length ; i++)
+    {
+        var item = link.items[i];
+        if (item.text == '-')
+            items.push('-');
+        else
+            items.push(item);
+    }
+    menu.items = items;
+    return menu;
+}
 
 function consolidateActions(actions)
 {
@@ -283,7 +301,7 @@ Ext.onReady(function()
         baseUrl:<%=PageFlowUtil.jsString(rootPath)%>,
         rootName:<%=PageFlowUtil.jsString(rootName)%>});
 
-    var dropAction = new Ext.Action({text: 'Upload multiple files', scope:this, disabled:true, handler: function()
+    var dropAction = new Ext.Action({text: 'Upload multiple files (OLD)', scope:this, disabled:true, handler: function()
     {
         if (!fileBrowser.currentDirectory)
             return;
@@ -302,7 +320,7 @@ Ext.onReady(function()
         ,allowChangeDirectory:true
         ,propertiesPanel:[{title:'Pipeline Actions', id:'pipelinePanel'}]
         ,actions:{drop:dropAction}
-        ,tbar:['download','deletePath','refresh','drop']
+        ,tbar:['download', 'deletePath', 'refresh', 'drop', 'uploadTool']
     });
 
     fileBrowser.on(BROWSER_EVENTS.directorychange, updatePipelinePanel);

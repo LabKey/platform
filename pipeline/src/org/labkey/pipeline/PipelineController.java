@@ -425,8 +425,9 @@ public class PipelineController extends SpringActionController
         }        
     }
 
+
     @RequiresPermission(ACL.PERM_READ)
-    public class BrowseAction extends SimpleViewAction<PathForm>
+    public class OldAction extends SimpleViewAction<PathForm>
     {
         private boolean _fileView;
 
@@ -481,9 +482,7 @@ public class PipelineController extends SpringActionController
 
             URI uriCurrent = URIUtil.resolve(uriRoot, this._path);
 
-            ActionURL browseURL = isFileView() ?
-                    new ActionURL(FilesAction.class, c) :
-                    new ActionURL(BrowseAction.class, c);
+            ActionURL browseURL = new ActionURL(OldAction.class, c);
 
             List<PipelineProvider.FileEntry> parents = new ArrayList<PipelineProvider.FileEntry>();
             List<PipelineProvider.FileEntry> dirEntries = new ArrayList<PipelineProvider.FileEntry>();
@@ -586,9 +585,9 @@ public class PipelineController extends SpringActionController
 
 
     @RequiresPermission(ACL.PERM_READ)
-    public class FilesAction extends SimpleViewAction<PathForm>
+    public class BrowseAction extends SimpleViewAction<PathForm>
     {
-        public FilesAction()
+        public BrowseAction()
         {
         }
 
@@ -606,6 +605,7 @@ public class PipelineController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            root.addChild("Manage files");
             return root;
         }
     }

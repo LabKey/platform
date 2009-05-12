@@ -6,7 +6,6 @@
 
 LABKEY.requiresCss("_images/icons.css");
 
-
 var $ = Ext.get;
 var $h = Ext.util.Format.htmlEncode;
 var $dom = Ext.DomHelper;
@@ -246,15 +245,21 @@ var _previewWindow = null;
 var _previewAsync = null;
 var _previewScope = "previewAncor";
 
+// mouseout isn't very reliable, check that mouse is still over target
+//var hoverTask = {interval:100, run:function(){
+//    var e = Ext.Event;
+//    if (hoverPreviewAreas.length == 0)
+//        Ext.TaskMgr.stop(this);
+//}};
+//var hoverPreviewAreas = [];
+
+
 function _attachPreview(id,record)
 {
     if (this && !this.canRead(record))
         return;
     if (!record.data.file)
         return;
-//    var elImg = $(id);
-//    elImg.on("mouseover",preview.createCallback(id,record));
-//    elImg.on("mouseout",unpreviewWindow);
     var img = Ext.fly(id,_previewScope);
     if (!img) return;
     img.dom.onmouseover = preview.createCallback(id,record);
@@ -2188,7 +2193,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
                 var node = this.tree.getNodeById(record.id);
                 if (node)
                 {
-                    node.ensureVisible();
+                    if (node != this.tree.root) this.node.ensureVisible();
                     node.select();
                 }
             }
