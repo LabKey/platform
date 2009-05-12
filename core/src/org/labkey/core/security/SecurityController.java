@@ -1665,6 +1665,63 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
+    public class GetRolesAction extends ApiAction
+    {
+        private Set<Permission> _allPermissions = new HashSet<Permission>();
+
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            ArrayList<Map<String,Object>> rolesProps = new ArrayList<Map<String,Object>>();
+
+            for(Role role : RoleManager.getAllRoles())
+            {
+                if(role.isAssignable())
+                    rolesProps.add(getRoleProps(role));
+            }
+
+            List<Map<String,Object>> permsProps = new ArrayList<Map<String,Object>>();
+            for(Permission perm : _allPermissions)
+            {
+                permsProps.add(getPermissionProps(perm));
+            }
+
+            ApiSimpleResponse resp = new ApiSimpleResponse("roles", rolesProps);
+            resp.put("permissions", permsProps);
+            return resp;
+        }
+
+        public Map<String,Object> getRoleProps(Role role)
+        {
+            Map<String,Object> props = new HashMap<String,Object>();
+            props.put("uniqueName", role.getUniqueName());
+            props.put("name", role.getName());
+            props.put("description", role.getDescription());
+            props.put("sourceModule", role.getSourceModule().getName());
+
+            List<String> permissions = new ArrayList<String>();
+            for(Class<? extends Permission> permClass : role.getPermissions())
+            {
+                Permission perm = RoleManager.getPermission(permClass);
+                _allPermissions.add(perm);
+                permissions.add(perm.getUniqueName());
+            }
+
+            props.put("permissions", permissions);
+            return props;
+        }
+
+        public Map<String,Object> getPermissionProps(Permission perm)
+        {
+            Map<String,Object> props = new HashMap<String,Object>();
+            props.put("uniqueName", perm.getUniqueName());
+            props.put("name", perm.getName());
+            props.put("description", perm.getDescription());
+            props.put("sourceModule", perm.getSourceModule().getName());
+            return props;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
     public class GetSecurableResourcesAction extends ApiAction
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
