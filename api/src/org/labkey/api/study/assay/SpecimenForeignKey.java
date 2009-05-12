@@ -72,35 +72,49 @@ public class SpecimenForeignKey extends LookupForeignKey
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(_provider.createDataTable(studySchema, _protocol), Arrays.asList(participantFK, visitFK, dateFK));
 
         ColumnInfo participantIdCol = columns.get(participantFK);
-        if (participantIdCol != null)
-        {
-            sql.append(specimenAlias + ".ParticipantId = " + targetStudyAlias + "." + participantIdCol.getAlias());
-        }
         ColumnInfo visitIdCol = columns.get(visitFK);
         ColumnInfo dateCol = columns.get(dateFK);
-        if (visitIdCol != null || dateCol != null)
+        if (participantIdCol != null || visitIdCol != null || dateCol != null)
         {
+            sql.append("CASE WHEN (");
             if (participantIdCol != null)
             {
-                sql.append(" AND ");
+                sql.append("(" + specimenAlias + ".ParticipantId = " + targetStudyAlias + "." + participantIdCol.getAlias() + " OR ");
+                sql.append("(" + specimenAlias + ".ParticipantId IS NULL AND " + targetStudyAlias + "." + participantIdCol.getAlias() + " IS NULL))");
             }
-            sql.append("(");
-            if (visitIdCol != null)
+            if (visitIdCol != null || dateCol != null)
             {
-                sql.append("(NOT " + specimenAlias + ".DateBased AND " + specimenAlias + ".Visit = " + targetStudyAlias + "." + visitIdCol.getAlias() + ")");
+                if (participantIdCol != null)
+                {
+                    sql.append(" AND ");
+                }
+                sql.append("(");
+                if (visitIdCol != null)
+                {
+                    sql.append("(" + specimenAlias + ".DateBased = ? AND (" + specimenAlias + ".Visit = " + targetStudyAlias + "." + visitIdCol.getAlias() + " OR (" + specimenAlias + ".Visit IS NULL AND " + targetStudyAlias + "." + visitIdCol.getAlias() + " IS NULL)))");
+                    sql.add(Boolean.FALSE);
+                    if (dateCol != null)
+                    {
+                        sql.append(" OR ");
+                    }
+                }
                 if (dateCol != null)
                 {
-                    sql.append(" OR ");
+                    SqlDialect dialect = tableInfo.getSqlDialect();
+                    sql.append("(" + specimenAlias + ".DateBased = ? AND (" +
+                            dialect.getDateTimeToDateCast(specimenAlias + ".Date") + " = " +
+                            dialect.getDateTimeToDateCast(targetStudyAlias + "." + dateCol.getAlias()) + " OR (" + specimenAlias + ".Date IS NULL AND " + targetStudyAlias + "." + dateCol.getAlias() + " IS NULL)))");
+                    sql.add(Boolean.TRUE);
                 }
+                sql.append(")");
             }
-            if (dateCol != null)
-            {
-                SqlDialect dialect = tableInfo.getSqlDialect();
-                sql.append("(" + specimenAlias + ".DateBased AND " +
-                        dialect.getDateTimeToDateCast(specimenAlias + ".Date") + " = " +
-                        dialect.getDateTimeToDateCast(targetStudyAlias + "." + dateCol.getAlias()) + ")");
-            }
-            sql.append(")");
+            sql.append(") THEN ? ELSE ? END");
+            sql.add(Boolean.TRUE);
+            sql.add(Boolean.FALSE);
+        }
+        else
+        {
+            sql.append("NULL");
         }
 
         tableInfo.addColumn(new ExprColumn(tableInfo, AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME, sql, Types.BOOLEAN));
@@ -170,7 +184,7 @@ public class SpecimenForeignKey extends LookupForeignKey
             if (targetStudyCol != null)
             {
                 ColumnInfo objectIdCol = columns.get(objectIdFK);
-                SQLFragment targetStudySQL = QueryService.get().getSelectSQL(getParentTable(), columns.values(), null, null, -1, 0);
+                SQLFragment targetStudySQL = QueryService.get().getSelectSQL(getParentTable(), columns.values(), null, null, Table.ALL_ROWS, 0);
                 SQLFragment sql = new SQLFragment("LEFT OUTER JOIN (");
                 sql.append(targetStudySQL);
                 String targetStudyAlias = parentAlias + TARGET_STUDY_SUFFIX;
@@ -181,7 +195,7 @@ public class SpecimenForeignKey extends LookupForeignKey
                 sql.append(" (SELECT specimen.RowId, specimen.GlobalUniqueId, specimen.Container, specimen.PTID AS ParticipantId, specimen.drawtimestamp AS Date, specimen.VisitValue AS Visit, s.DateBased ");
                 sql.append(" FROM study.specimen specimen, study.study s WHERE s.Container = specimen.Container) AS " + specimenAlias);
                 sql.append(" ON " + specimenAlias + ".GlobalUniqueId = " + foreignKey.getValueSql(parentAlias));
-                sql.append(" AND " + targetStudyAlias + "." + targetStudyCol.getAlias() + " = " + specimenAlias + ".Container "); 
+                sql.append(" AND " + targetStudyAlias + "." + targetStudyCol.getAlias() + " = " + specimenAlias + ".Container"); 
 
                 sql.append("\n\tLEFT OUTER JOIN ");
 

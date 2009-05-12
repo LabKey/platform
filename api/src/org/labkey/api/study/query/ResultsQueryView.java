@@ -147,7 +147,7 @@ public class ResultsQueryView extends AssayBaseQueryView
             _matchColumn = newColumns.get(fk);
             if (_matchColumn != null)
             {
-                columns.add(_matchColumn);
+//                columns.add(_matchColumn);
             }
         }
     }

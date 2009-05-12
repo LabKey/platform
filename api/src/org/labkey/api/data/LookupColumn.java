@@ -166,6 +166,10 @@ public class LookupColumn extends ColumnInfo
         return foreignKey.getAlias() + "$";
     }
 
+    public void setJoinOnContainer(boolean joinOnContainer)
+    {
+        this.joinOnContainer = joinOnContainer;
+    }
 
     public String getColumnName()
     {

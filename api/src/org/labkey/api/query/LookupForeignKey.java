@@ -29,6 +29,7 @@ abstract public class LookupForeignKey extends AbstractForeignKey
     Object _param;
     private boolean _prefixColumnCaption = true;
     String _titleColumn;
+    private boolean _joinOnContainer = false;
 
     public LookupForeignKey(ActionURL baseURL, String paramName, String tableName, String pkColumnName, String titleColumn)
     {
@@ -80,6 +81,16 @@ abstract public class LookupForeignKey extends AbstractForeignKey
         _prefixColumnCaption = prefix;
     }
 
+    public boolean isJoinOnContainer()
+    {
+        return _joinOnContainer;
+    }
+
+    public void setJoinOnContainer(boolean joinOnContainer)
+    {
+        _joinOnContainer = joinOnContainer;
+    }
+
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
     {
         TableInfo table = getLookupTableInfo();
@@ -99,7 +110,12 @@ abstract public class LookupForeignKey extends AbstractForeignKey
             if (newTable.hasDefaultContainerFilter())
                 newTable.setContainerFilter(new DelegatingContainerFilter(parent.getParentTable()));
         }
-        return LookupColumn.create(parent, getPkColumn(table), table.getColumn(displayField), _prefixColumnCaption);
+        LookupColumn result = LookupColumn.create(parent, getPkColumn(table), table.getColumn(displayField), _prefixColumnCaption);
+//        if (result != null)
+//        {
+////            result.setJoinOnContainer(_joinOnContainer);
+//        }
+        return result;
     }
 
     /**
