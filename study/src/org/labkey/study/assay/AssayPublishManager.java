@@ -27,6 +27,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -432,9 +433,9 @@ public class AssayPublishManager implements AssayPublishService.Service
     private boolean renameRunPropertyToBatch(PropertyDescriptor[] pds, Map<String, String> propertyNamesToUris, Set<String> newPdNames, DomainDescriptor domainDescriptor, String newPdName)
             throws SQLException
     {
-        if (newPdName.startsWith("Batch"))
+        if (newPdName.startsWith(AssayService.BATCH_COLUMN_NAME))
         {
-            String oldName = "Run" + newPdName.substring("Batch".length());
+            String oldName = "Run" + newPdName.substring(AssayService.BATCH_COLUMN_NAME.length());
             // Check if we don't have a different run-prefixed property to copy and and we do have a run-prefixed property in the target domain
             if (!newPdNames.contains(oldName) && propertyNamesToUris.containsKey(oldName))
             {

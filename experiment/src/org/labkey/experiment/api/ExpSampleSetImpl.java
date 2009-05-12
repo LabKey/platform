@@ -41,6 +41,8 @@ import java.util.List;
 
 public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> implements ExpSampleSet
 {
+    private Domain _domain;
+
     public ExpSampleSetImpl(MaterialSource ms)
     {
         super(ms);
@@ -195,7 +197,11 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     public Domain getType()
     {
-        return PropertyService.get().getDomain(getContainer(), getLSID());
+        if (_domain == null)
+        {
+            _domain = PropertyService.get().getDomain(getContainer(), getLSID());
+        }
+        return _domain;
     }
 
     public ExpProtocol[] getProtocols(User user)

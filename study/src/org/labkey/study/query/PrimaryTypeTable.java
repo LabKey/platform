@@ -16,8 +16,8 @@
 
 package org.labkey.study.query;
 
-import org.labkey.study.StudySchema;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.study.StudySchema;
 
 public class PrimaryTypeTable extends BaseStudyTable
 {

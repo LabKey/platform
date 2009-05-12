@@ -16,14 +16,13 @@
 
 package org.labkey.study.query;
 
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryForeignKey;
 
 public abstract class BaseStudyTable extends FilteredTable
 {
@@ -49,7 +48,9 @@ public abstract class BaseStudyTable extends FilteredTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new SiteTable(_schema);
+                SiteTable result = new SiteTable(_schema);
+                result.setContainerFilter(ContainerFilter.EVERYTHING);
+                return result;
             }
         });
         return addColumn(originatingSiteCol);
@@ -62,14 +63,17 @@ public abstract class BaseStudyTable extends FilteredTable
         {
             public TableInfo getLookupTableInfo()
             {
+                BaseStudyTable result;
                 if (rootTableColumnName.equals("PrimaryTypeId"))
-                    return new PrimaryTypeTable(_schema);
+                    result = new PrimaryTypeTable(_schema);
                 else if (rootTableColumnName.equals("DerivativeTypeId") || rootTableColumnName.equals("DerivativeTypeId2"))
-                    return new DerivativeTypeTable(_schema);
+                    result = new DerivativeTypeTable(_schema);
                 else if (rootTableColumnName.equals("AdditiveTypeId"))
-                    return new AdditiveTypeTable(_schema);
+                    result = new AdditiveTypeTable(_schema);
                 else
                     throw new IllegalStateException(rootTableColumnName + " is not recognized as a valid specimen type column.");
+                result.setContainerFilter(ContainerFilter.EVERYTHING);
+                return result;
             }
         });
         return addColumn(typeColumn);

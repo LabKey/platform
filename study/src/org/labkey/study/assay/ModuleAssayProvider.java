@@ -35,8 +35,8 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.actions.UploadWizardAction;
-import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -88,6 +88,40 @@ public class ModuleAssayProvider extends TsvAssayProvider
     public ModuleAssayProvider(String name, File baseDir, ProviderType providerConfig)
     {
         super(name + "Protocol", name + "Run");
+        _tableMetadata = new AssayTableMetadata(_tableMetadata.getSpecimenDetailParentFieldKey(), _tableMetadata.getRunRowIdFieldKeyFromResults(), _tableMetadata.getResultRowIdFieldKey())
+        {
+            @Override
+            public FieldKey getParticipantIDFieldKey()
+            {
+                if (participantIdKey != null)
+                    return participantIdKey;
+                return super.getParticipantIDFieldKey();
+            }
+
+            @Override
+            public FieldKey getVisitIDFieldKey(TimepointType timepointType)
+            {
+                if (timepointType == TimepointType.VISIT)
+                {
+                    if (visitIdKey != null)
+                        return visitIdKey;
+                }
+                else
+                {
+                    if (dateKey != null)
+                        return dateKey;
+                }
+                return super.getVisitIDFieldKey(timepointType);
+            }
+
+            @Override
+            public FieldKey getSpecimenIDFieldKey()
+            {
+                if (specimenIdKey != null)
+                    return specimenIdKey;
+                return super.getSpecimenIDFieldKey();
+            }
+        };
         this.name = name;
         this.baseDir = baseDir;
         this.viewsDir = new File(baseDir, "views");
@@ -245,38 +279,6 @@ public class ModuleAssayProvider extends TsvAssayProvider
             required.put(domainType.getPrefix(), properties);
         }
         return required;
-    }
-
-    @Override
-    public FieldKey getParticipantIDFieldKey()
-    {
-        if (participantIdKey != null)
-            return participantIdKey;
-        return super.getParticipantIDFieldKey();
-    }
-
-    @Override
-    public FieldKey getVisitIDFieldKey(Container targetStudy)
-    {
-        if (AssayPublishService.get().getTimepointType(targetStudy) == TimepointType.VISIT)
-        {
-            if (visitIdKey != null)
-                return visitIdKey;
-        }
-        else
-        {
-            if (dateKey != null)
-                return dateKey;
-        }
-        return super.getVisitIDFieldKey(targetStudy);
-    }
-
-    @Override
-    public FieldKey getSpecimenIDFieldKey()
-    {
-        if (specimenIdKey != null)
-            return specimenIdKey;
-        return super.getSpecimenIDFieldKey();
     }
 
     protected String getViewFileName(IAssayDomainType domainType, boolean details)

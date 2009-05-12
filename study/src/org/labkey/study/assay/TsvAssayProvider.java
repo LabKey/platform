@@ -16,23 +16,24 @@
 
 package org.labkey.study.assay;
 
-import org.labkey.api.data.*;
-import org.labkey.api.exp.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.assay.*;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
-import org.labkey.api.util.Pair;
 
 import java.io.File;
 import java.util.*;
@@ -51,7 +52,10 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
     protected TsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix)
     {
-        super(protocolLSIDPrefix, runLSIDPrefix, TsvDataHandler.DATA_TYPE);
+        super(protocolLSIDPrefix, runLSIDPrefix, TsvDataHandler.DATA_TYPE, new AssayTableMetadata(
+            FieldKey.fromParts("Properties"),
+            FieldKey.fromParts("Run"),
+            FieldKey.fromParts("ObjectId")));
     }
 
     public List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles)
@@ -100,34 +104,6 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     public TableInfo createDataTable(UserSchema schema, ExpProtocol protocol)
     {
         return new RunDataTable(schema, protocol);
-    }
-
-    public FieldKey getParticipantIDFieldKey()
-    {
-        return FieldKey.fromParts("Properties", PARTICIPANTID_PROPERTY_NAME);
-    }
-
-    public FieldKey getVisitIDFieldKey(Container targetStudy)
-    {
-        if (AssayPublishService.get().getTimepointType(targetStudy) == TimepointType.VISIT)
-            return FieldKey.fromParts("Properties", VISITID_PROPERTY_NAME);
-        else
-            return FieldKey.fromParts("Properties", DATE_PROPERTY_NAME);
-    }
-
-    public FieldKey getRunIdFieldKeyFromDataRow()
-    {
-        return FieldKey.fromParts("Run", "RowId");
-    }
-
-    public FieldKey getDataRowIdFieldKey()
-    {
-        return FieldKey.fromParts("ObjectId");
-    }
-
-    public FieldKey getSpecimenIDFieldKey()
-    {
-        return FieldKey.fromParts("Properties", SPECIMENID_PROPERTY_NAME);
     }
 
     protected Map<String, Set<String>> getRequiredDomainProperties()

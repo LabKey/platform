@@ -105,7 +105,7 @@ public abstract class AbstractAssayAPIAction<FORM extends SimpleApiJsonForm> ext
         sql.append("ORDER BY child.ObjectId");
         String[] objectURIs = Table.executeArray(OntologyManager.getExpSchema(), sql, String.class);
 
-        Domain dataDomain = provider.getRunDataDomain(protocol);
+        Domain dataDomain = provider.getResultsDomain(protocol);
 
         for (String objectURI : objectURIs)
         {

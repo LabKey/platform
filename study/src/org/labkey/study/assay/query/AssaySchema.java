@@ -200,7 +200,7 @@ public class AssaySchema extends UserSchema
         batchSQL.append(".RowId AND e.BatchProtocolId = ");
         batchSQL.append(protocol.getRowId());
         batchSQL.append(")");
-        ExprColumn batchColumn = new ExprColumn(runTable, "Batch", batchSQL, Types.INTEGER, runTable.getColumn(ExpRunTable.Column.RowId));
+        ExprColumn batchColumn = new ExprColumn(runTable, AssayService.BATCH_COLUMN_NAME, batchSQL, Types.INTEGER, runTable.getColumn(ExpRunTable.Column.RowId));
         batchColumn.setFk(new LookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()

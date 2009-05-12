@@ -20,14 +20,17 @@ import org.labkey.api.action.*;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.api.exp.*;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.actions.*;
@@ -38,11 +41,9 @@ import org.labkey.api.view.template.AppBar;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.assay.AssayServiceImpl;
 import org.labkey.study.assay.ModuleAssayProvider;
-import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.assay.actions.GetAssayBatchAction;
 import org.labkey.study.controllers.assay.actions.SaveAssayBatchAction;
-import org.labkey.api.util.Pair;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -672,7 +673,6 @@ public class AssayController extends SpringActionController
         public ActionURL getAssayRunsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... batchIds)
         {
             ActionURL result = getProtocolURL(container, protocol, AssayRunsAction.class);
-            FieldKey batchIdFieldKey = FieldKey.fromParts("Batch", "RowId");
             if (batchIds.length > 1)
             {
                 String sep = "";
@@ -683,12 +683,12 @@ public class AssayController extends SpringActionController
                     sep = ";";
                 }
                 result.addFilter(AssayService.get().getRunsTableName(protocol),
-                        batchIdFieldKey, CompareType.IN, filterValue.toString());
+                        AbstractAssayProvider.BATCH_ROWID_FROM_RUN, CompareType.IN, filterValue.toString());
             }
             else if (batchIds.length == 1)
             {
                 result.addFilter(AssayService.get().getResultsTableName(protocol),
-                        batchIdFieldKey, CompareType.EQUAL, batchIds[0]);
+                        AbstractAssayProvider.BATCH_ROWID_FROM_RUN, CompareType.EQUAL, batchIds[0]);
             }
             if (containerFilter != null)
                 result.addParameter(protocol.getName() + " Runs." + QueryParam.containerFilterName, containerFilter.getType().name());
@@ -729,12 +729,12 @@ public class AssayController extends SpringActionController
                     sep = ";";
                 }
                 result.addFilter(AssayService.get().getResultsTableName(protocol),
-                        provider.getRunIdFieldKeyFromDataRow(), CompareType.IN, filterValue.toString());
+                        provider.getTableMetadata().getRunRowIdFieldKeyFromResults(), CompareType.IN, filterValue.toString());
             }
             else if (runIds.length == 1)
             {
                 result.addFilter(AssayService.get().getResultsTableName(protocol),
-                        provider.getRunIdFieldKeyFromDataRow(), CompareType.EQUAL, runIds[0]);
+                        provider.getTableMetadata().getRunRowIdFieldKeyFromResults(), CompareType.EQUAL, runIds[0]);
             }
             if (containerFilter != null)
                 result.addParameter(protocol.getName() + " Data." + QueryParam.containerFilterName, containerFilter.getType().name());

@@ -78,6 +78,7 @@ public class StudyQuerySchema extends UserSchema
             ret.add("Visit");
             ret.add("SpecimenEvent");
             ret.add("SpecimenDetail");
+            ret.add("SimpleSpecimen");
             ret.add("SpecimenSummary");
             ret.add("SpecimenRequest");
             ret.add("SpecimenRequestStatus");
@@ -151,6 +152,13 @@ public class StudyQuerySchema extends UserSchema
         {
             StudyPropertiesTable ret = new StudyPropertiesTable(this);
             return ret;
+        }
+
+        // Expose the simplified specimen table even if there's no study in this container. The caller may
+        // want to set a container filter to look at specimens across the entire site
+        if ("SimpleSpecimen".equalsIgnoreCase(name))
+        {
+            return new SimpleSpecimenTable(this);
         }
 
         if (_study == null)

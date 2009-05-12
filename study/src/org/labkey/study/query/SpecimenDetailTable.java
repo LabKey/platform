@@ -16,29 +16,23 @@
 
  package org.labkey.study.query;
 
-import org.labkey.study.StudySchema;
 import org.labkey.api.data.*;
-import org.labkey.api.query.*;
+import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.study.StudySchema;
 
-import java.io.Writer;
 import java.io.IOException;
-import java.util.Set;
-import java.util.List;
-import java.util.ArrayList;
+import java.io.Writer;
 import java.sql.Types;
+import java.util.Set;
 
-public class SpecimenDetailTable extends BaseStudyTable
+public class SpecimenDetailTable extends AbstractSpecimenTable
 {
     public SpecimenDetailTable(StudyQuerySchema schema)
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimenDetail());
-
-        ColumnInfo rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
-        rowIdColumn.setKeyField(true);
-        addWrapColumn(_rootTable.getColumn("Container"));
-        addWrapColumn(_rootTable.getColumn("SpecimenHash")).setIsHidden(true);
-        addWrapColumn(_rootTable.getColumn("GlobalUniqueId"));
-        addWrapParticipantColumn("PTID").setKeyField(true);
 
         ColumnInfo pvColumn = new ParticipantVisitColumn(
                 "ParticipantVisit",
@@ -53,40 +47,8 @@ public class SpecimenDetailTable extends BaseStudyTable
             }
         });
 
-        AliasedColumn visitColumn;
-        ColumnInfo visitDescriptionColumn = addWrapColumn(_rootTable.getColumn("VisitDescription"));
-        if (_schema.getStudy().isDateBased())
-        {
-            //consider:  use SequenceNumMin for visit-based studies too (in visit-based studies VisitValue == SequenceNumMin)
-            // could change to visitrowid but that changes datatype and displays rowid
-            // instead of sequencenum when label is null
-            visitColumn = new AliasedColumn(this, "Visit", _rootTable.getColumn("SequenceNumMin"));
-            visitColumn.setCaption("Timepoint");
-            visitDescriptionColumn.setIsHidden(true);
-        }
-        else
-        {
-            visitColumn = new AliasedColumn(this, "Visit", _rootTable.getColumn("VisitValue"));
-        }
-        visitColumn.setFk(new LookupForeignKey(null, (String) null, "SequenceNumMin", null)
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return new VisitTable(_schema);
-            }
-        });
-        visitColumn.setKeyField(true);
-        addColumn(visitColumn);
-        addWrapColumn(_rootTable.getColumn("Volume"));
-        addWrapColumn(_rootTable.getColumn("VolumeUnits"));
-        addWrapTypeColumn("PrimaryType", "PrimaryTypeId");
-        addWrapTypeColumn("DerivativeType", "DerivativeTypeId");
-        addWrapTypeColumn("AdditiveType", "AdditiveTypeId");
-        addWrapTypeColumn("DerivativeType2", "DerivativeTypeId2");
-        addWrapColumn(_rootTable.getColumn("PrimaryVolume"));
-        addWrapColumn(_rootTable.getColumn("PrimaryVolumeUnits"));
-        addWrapColumn(_rootTable.getColumn("FrozenTime"));
-        addWrapColumn(_rootTable.getColumn("ProcessingTime"));
+        addVisitColumn(_schema.getStudy().isDateBased());
+        addVolumeAndTypeColumns();
 
         addWrapColumn(_rootTable.getColumn("LockedInRequest"));
         ColumnInfo siteNameColumn = addWrapColumn(_rootTable.getColumn("SiteName"));
@@ -97,7 +59,6 @@ public class SpecimenDetailTable extends BaseStudyTable
                 return new SiteNameDisplayColumn(colInfo);
             }
         });
-        addWrapLocationColumn("Clinic", "OriginatingLocationId");
 
         ColumnInfo commentsColumn = new AliasedColumn(this, "Comments", _rootTable.getColumn("GlobalUniqueId"));
         commentsColumn.setFk(new LookupForeignKey("GlobalUniqueId")
@@ -117,14 +78,9 @@ public class SpecimenDetailTable extends BaseStudyTable
         addColumn(commentsColumn);
 
         addWrapColumn(_rootTable.getColumn("SiteLdmsCode"));
-        addWrapColumn(_rootTable.getColumn("DrawTimestamp"));
         addWrapColumn(_rootTable.getColumn("AtRepository"));
         ColumnInfo availableColumn = addWrapColumn(_rootTable.getColumn("Available"));
         availableColumn.setKeyField(true);
-        addWrapColumn(_rootTable.getColumn("SalReceiptDate"));
-        addWrapColumn(_rootTable.getColumn("ClassId"));
-        addWrapColumn(_rootTable.getColumn("ProtocolNumber"));
-        addWrapColumn(_rootTable.getColumn("SubAdditiveDerivative"));
 
         String innerSelect = "(SELECT QualityControlFlag FROM " +
                 StudySchema.getInstance().getTableInfoSpecimenComment() +
@@ -148,7 +104,7 @@ public class SpecimenDetailTable extends BaseStudyTable
         addColumn(new ExprColumn(this, "QualityControlComments", sqlFragQCComments, Types.VARCHAR));
 
         setDefaultVisibleColumns(QueryService.get().getDefaultVisibleColumns(getColumns()));
-        
+
         // add the vial count columns from specimen summary
         String sqlVialCount = "( SELECT a.VialCount FROM " + StudySchema.getInstance().getTableInfoSpecimenSummary() +
                 " a WHERE a.SpecimenHash = " + ExprColumn.STR_TABLE_ALIAS + ".SpecimenHash)";

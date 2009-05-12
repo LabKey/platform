@@ -2066,6 +2066,7 @@ study/src/org/labkey/study/plate/query/WellGroupTable.java -text
 study/src/org/labkey/study/plate/view/copyTemplate.jsp -text
 study/src/org/labkey/study/plate/view/plateTemplate.jsp -text
 study/src/org/labkey/study/plate/view/plateTemplateList.jsp -text
+study/src/org/labkey/study/query/AbstractSpecimenTable.java -text
 study/src/org/labkey/study/query/AdditiveTypeTable.java -text
 study/src/org/labkey/study/query/BaseStudyQueryView.java -text
 study/src/org/labkey/study/query/BaseStudyTable.java -text
@@ -2088,6 +2089,7 @@ study/src/org/labkey/study/query/PrimaryTypeTable.java -text
 study/src/org/labkey/study/query/PublishedRecordQueryView.java -text
 study/src/org/labkey/study/query/QCStateTable.java -text
 study/src/org/labkey/study/query/RequestStatusTable.java -text
+study/src/org/labkey/study/query/SimpleSpecimenTable.java -text
 study/src/org/labkey/study/query/SiteTable.java -text
 study/src/org/labkey/study/query/SpecimenCommentTable.java -text
 study/src/org/labkey/study/query/SpecimenDetailTable.java -text
