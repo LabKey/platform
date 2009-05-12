@@ -109,6 +109,7 @@ function updatePipelinePanel(record)
 
 function renderPipelineActions(actions)
 {
+    var i, f, l;
     var html = [];
     activeMenus = {};
     fileMap = {};
@@ -120,32 +121,39 @@ function renderPipelineActions(actions)
     var all = {id:'showAll', style:{display:'none'}, children:['[', {tag:'a', onClick:'showAllActions()', href:'#', children:['show all']},']']};
     html.push(all);
     
-    for (var i=0 ; i<actions.length ; i++)
+    for (i=0 ; i<actions.length ; i++)
     {
         var action = actions[i];
         var actionMarkup = {tag:'div', id:'actiondiv' + ++actionDivCounter, style:styleAction, children:[]};
         actionDivs.push(actionMarkup.id);
+
+        // some actions depend on this this parameter, why not append it themselves?
+        var fileInputNames = "";
+        for (f=0 ; f<action.files.length ; f++)
+            fileInputNames += "&fileInputNames=" + action.files[f];
+        var fileInputNamesParam = $h(fileInputNames);
+
         // BUTTONS
-        for (var l=0 ; l<action.links.length ; l++)
+        for (l=0 ; l<action.links.length ; l++)
         {
             var link = action.links[l];
-            var a = {tag:'a', href:link.href || '#action', children:['<span>',$h(link.text),'</span>']};
-            var span = {tag:'span', 'cls':'labkey-button', children:[a]};
+            var a = {tag:'a', 'cls':'labkey-button', href:link.href + fileInputNamesParam || '#action', children:['<span>',$h(link.text),'</span>']};
+//            var span = {tag:'span', 'cls':'labkey-button', children:[a]};
             if (link.items && link.items.length)
             {
                 var menuid = 'actionmenu' + ++actionMenuCounter;
                 a.children.push("&nbsp;&nbsp;&nbsp;");
                 a.children.push({tag:'img', src:LABKEY.imagePath+'/text_link_arrow.gif', 'cls':'labkey-button-arrow'});
                 activeMenus[menuid] = new Ext.menu.Menu(Ext.apply(link, {cls:'extContainer'}));
-                span.id = menuid;
-                span.onClick = "showActionMenu(this)";
+                a.id = menuid;
+                a.onClick = "showActionMenu(this)";
             }
-            actionMarkup.children.push(span);
+            actionMarkup.children.push(a);
             actionMarkup.children.push('<br>');
         }
         // FILES
         actionMarkup.children.push('<ul style="margin-left:5px;">');
-        for (var f=0 ; f<action.files.length ; f++)
+        for (f=0 ; f<action.files.length ; f++)
         {
             var file = action.files[f];
             actionMarkup.children.push({tag:'li', html:$h(file)});
@@ -286,7 +294,7 @@ Ext.onReady(function()
 
     fileBrowser = new LABKEY.FileBrowser({
         fileSystem:fileSystem
-        ,statePrefix:window.location.pathname + '#pipeline'
+        ,statePrefix:'<%=context.getContainer().getId()%>#pipeline'
         ,helpEl:null
         ,showAddressBar:true
         ,showFolderTree:true
