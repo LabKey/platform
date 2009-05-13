@@ -713,6 +713,165 @@ LABKEY.Security = new function()
                     'Content-Type' : 'application/json'
                 }
             });
+        },
+
+        /**
+         * Creates a new group. The new group will be created at the project level when the current
+         * container is a folder or project, or will be created at the system level if the current
+         * container is the root.
+         * @param config A configuration object with the following properties:
+         * @param {String} config.groupName The name of the group to create
+         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>data:</b> a simple object with two properties: id and name (the new group id and name respectively)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         */
+        createGroup : function(config)
+        {
+            var params = {name: config.groupName};
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("security", "createGroup"),
+                method: "GET",
+                params: params,
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+            });
+        },
+
+        /**
+         * Deletes a group.
+         * @param config A configuration object with the following properties:
+         * @param {String} config.groupId The id of the group to delete
+         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>data:</b> a simple object with a property named "deleted" that contains the deleted group id.</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         */
+        deleteGroup : function(config)
+        {
+            var params = {id: config.groupId};
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("security", "deleteGroup"),
+                method: "GET",
+                params: params,
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+            });
+        },
+
+        /**
+         * Adds a new member to an existing group.
+         * @param config A configuration object with the following properties:
+         * @param {String} config.groupId The id of the group to which you want to add the member.
+         * @param {String} config.principalId The id of the user or group you want to add as a member.
+         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>data:</b> a simple object with a property named "added" that contains the added principal id.</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         */
+        addGroupMember : function(config)
+        {
+            var params = {groupId: config.groupId, principalId: config.principalId};
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("security", "addGroupMember"),
+                method: "GET",
+                params: params,
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+            });
+
+        },
+
+        /**
+         * Removes a member from an existing groupo.
+         * @param config A configuration object with the following properties:
+         * @param {String} config.groupId The id of the group from which you want to remove the member.
+         * @param {String} config.principalId The id of the user or group you want to remove.
+         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>data:</b> a simple object with a property named "removed" that contains the removed principal id.</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         */
+        removeGroupMember : function(config)
+        {
+            var params = {groupId: config.groupId, principalId: config.principalId};
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("security", "removeGroupMember"),
+                method: "GET",
+                params: params,
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+            });
+        },
+
+        /**
+         * Replaces the membership of a given group.
+         * @param config A configuration object with the following properties:
+         * @param {String} config.groupId The id of the group you want to update.
+         * @param {Array[String]} config.names An array email addresses of the users and/or names of the groups you want to
+         * be the new membership. Email addresses that do not map to existing user accounts will be created as
+         * new users and then added to the specified group.
+         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>data:</b> a simple object with a property named "messages" that contains an array of response messages,
+         * each of which is a string.</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         */
+        changeGroupMembers : function(config)
+        {
+            var params = {groupId: config.groupId, names: config.names};
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("security", "changeGroupMembers"),
+                method: "GET",
+                params: params,
+                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+            });
         }
     };
 };
