@@ -601,6 +601,11 @@ Ext.extend(FileSystem, Ext.util.Observable,
         return true;
     },
 
+    canMkdir: function(record)
+    {
+        return true;
+    },
+
     canDelete : function(record)
     {
         return true;
@@ -840,6 +845,12 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
     {
         var options = record.data.options;
         return !options || -1 != options.indexOf("PUT");
+    },
+
+    canMkdir : function(record)
+    {
+        var options = record.data.options;
+        return !options || -1 != options.indexOf("MKCOL");
     },
 
     canDelete : function(record)
@@ -1225,10 +1236,12 @@ if (LABKEY.Applet)
                 height: params.height,
                 params:
                 {
-                    url :params.url || (window.location.protocol + "//" + window.location.host + LABKEY.contextPath + '/_webdav/'),
+                    url : params.url || (window.location.protocol + "//" + window.location.host + LABKEY.contextPath + '/_webdav/'),
                     webdavPrefix: LABKEY.contextPath+'/_webdav/',
                     user: LABKEY.user.email,
-                    password: LABKEY.user.sessionid
+                    password: LABKEY.user.sessionid,
+                    text : params.text,
+                    enabled : !('enabled' in params) || params.enabled
                 }
             };
             this.transferReader = new Ext.data.JsonReader({successProperty:'success', totalProperty:'recordCount', root:'records', id:'target'}, this.TransferRecord);
@@ -1343,7 +1356,6 @@ if (LABKEY.Applet)
                 console.error("NYI: Do not call before isReady()!");
         },
 
-
         setEnabled : function(b)
         {
             var applet = this.getApplet();
@@ -1355,6 +1367,16 @@ if (LABKEY.Applet)
                 console.error("NYI: Do not call before isReady()!");
         },
 
+        setText : function(text)
+        {
+            var applet = this.getApplet();
+            if (applet)
+                applet.setText(text);
+            else if (!this.rendered)
+                this.params.text = text;
+            else
+                console.error("NYI: Do not call before isReady()!");
+        },
 
         getTransfers : function()
         {
@@ -1692,6 +1714,11 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
         if (pct != this.lastSummary.pct || file != this.lastSummary.file)
             this.progressBar.updateProgress(pct, file);
 
+        if (summary.success != this.lastSummary.success)
+        {
+            // limit with timer?
+            this.refreshDirectory();
+        }
         // UNDONE: failed transfers
         this.lastSummary = summary;
         this.lastSummary.pct = pct;
@@ -1781,6 +1808,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
     //
     // event handlers
     //
+
     Grid_onRowselect : function(sm, rowIdx, record)
     {
         if (this.tree)
@@ -2025,19 +2053,19 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
         this.applet = new TransferApplet({directory:this.currentDirectory.data.path});
         this.progressBar = new Ext.ProgressBar({id:'appletStatusProgressBar'});
 
-        var fileAction = new Ext.Action({text:'Choose File...', scope:this, disabled:false, iconCls:'iconFileNew', handler:function()
+        this.actions.appletFileAction = new Ext.Action({text:'Choose File...', scope:this, disabled:false, iconCls:'iconFileNew', handler:function()
         {
             var a = this.applet.getApplet();
             if (a) a.showFileChooser();
         }});
-        var dirAction = new Ext.Action({text:'(NYI) Choose Folder...', scope:this, disabled:false,  iconCls:'iconFileOpen', handler:function()
+        this.actions.appletDirAction = new Ext.Action({text:'(NYI) Choose Folder...', scope:this, disabled:false,  iconCls:'iconFileOpen', handler:function()
         {
             var a = this.applet.getApplet();
             if (a) a.showDirectoryChooser();
         }});
 
         var toolbar = new Ext.Toolbar({buttons:[
-            fileAction, dirAction
+            this.actions.appletFileAction, this.actions.appletDirAction
         ]});
         this.appletStatusBar = new Ext.StatusBar({id:'appletStatusBar', defaultText:'Ready', busyText:'Copying...', items:[
             {xtype:'panel', layout:'fit', border:false, items:this.progressBar, width:120, minWidth:120}
@@ -2065,8 +2093,40 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
         // make sure that the applet still matches the current directory when it appears
         this.applet.onReady(function()
         {
-            this.applet.changeWorkingDirectory(this.currentDirectory.data.path);
+            this.updateAppletState(this.currentDirectory);
         }, this);
+    },
+
+
+    updateAppletState : function(record)
+    {
+        if (!this.applet)
+            return;
+
+        var canWrite = this.fileSystem.ready && this.fileSystem.canWrite(record);
+        var canMkdir = this.fileSystem.ready && this.fileSystem.canMkdir(record);
+        if (this.actions.appletFileAction)
+            this.actions.appletFileAction[canWrite?'enable':'disable']();
+        if (this.actions.appletDirAction)
+            this.actions.appletDirAction[canWrite?'enable':'disable']();
+        try
+        {
+            this.applet.changeWorkingDirectory(record.data.path);
+            if (canWrite || canMkdir)
+            {
+                this.applet.setEnabled(true);
+                this.applet.setText( (canMkdir ? "Drop files and folders here" : "Drop files here") + "\nFolder: " +record.data.name);
+            }
+            else
+            {
+                this.applet.setEnabled(false);
+                this.applet.setText("(read-only)\nFolder: " +record.data.name);
+            }
+        }
+        catch (e)
+        {
+            console.error(e);
+        }
     },
 
 
@@ -2323,17 +2383,34 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
                 this.actions.deletePath.disable();
         }, this);
 
-        if (this.actions.parentFolder)
+
+        // actions
+        this.on(BROWSER_EVENTS.directorychange, function(record)
         {
-            this.on(BROWSER_EVENTS.directorychange, function(record)
+            if (this.actions.parentFolder)
             {
                 if (record && record.data && record.data.path != this.fileSystem.rootPath)
                     this.actions.parentFolder.enable();
                 else
                     this.actions.parentFolder.disable();
-            }, this);
-        }
+            }
 
+            var canWrite = this.fileSystem.ready && this.fileSystem.canWrite(record);
+            if (canWrite)
+            {
+                if (this.fileSystem.prefixUrl)
+                    this.fileUploadField.enable();
+                this.actions.uploadTool.enable();
+            }
+            else
+            {
+                this.fileUploadField.disable();
+                this.actions.uploadTool.disable();
+            }
+        }, this);
+
+
+        // main ui
         this.on(BROWSER_EVENTS.directorychange,function(record)
         {
             // data store
@@ -2355,34 +2432,10 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
                     node.select();
                 }
             }
-
-            // actions
-            var canWrite = this.fileSystem.ready && this.fileSystem.canWrite(record);
-            if (this.applet && this.applet.getApplet())
-            {
-                try
-                {
-                    this.applet.changeWorkingDirectory(record.data.path);
-                }
-                catch (e)
-                {
-                    console.error(e);
-                    canWrite = false;
-                }
-            }
-            if (canWrite)
-            {
-                if (this.fileSystem.prefixUrl)
-                    this.fileUploadField.enable();
-                this.actions.uploadTool.enable();
-            }
-            else
-            {
-                this.fileUploadField.disable();
-                this.actions.uploadTool.disable();
-                if (this.appletWindow)
-                    this.appletWindow.hide();
-            }
         }, this);
+
+
+        // applet
+        this.on(BROWSER_EVENTS.directorychange, this.updateAppletState, this);
     }
 });
