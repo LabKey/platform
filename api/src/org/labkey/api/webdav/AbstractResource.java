@@ -191,13 +191,14 @@ public abstract class AbstractResource implements WebdavResolver.Resource
         return _etag;
     }
 
-
+    /** provides one place to completely block access to the resource */
     protected boolean hasAccess(User user)
     {
         return true;
     }
 
 
+    /** permissions */
     public boolean canList(User user)
     {
         return canRead(user);
@@ -214,26 +215,32 @@ public abstract class AbstractResource implements WebdavResolver.Resource
 
     public boolean canWrite(User user)
     {
-        return hasAccess(user) && getPermissions(user).contains(UpdatePermission.class);
+        return hasAccess(user) && !user.isGuest() && getPermissions(user).contains(UpdatePermission.class);
     }
 
 
     public boolean canCreate(User user)
     {
-        return hasAccess(user) && getPermissions(user).contains(InsertPermission.class);
+        return hasAccess(user) && !user.isGuest() && getPermissions(user).contains(InsertPermission.class);
     }
 
+    public boolean canCreateCollection(User user)
+    {
+        return canCreate(user);
+    }
 
     public boolean canDelete(User user)
     {
+        if (user.isGuest() || !hasAccess(user))
+            return false;
         Set<Class<? extends Permission>> perms = getPermissions(user);
-        return hasAccess(user) && (perms.contains(UpdatePermission.class) || perms.contains(DeletePermission.class));
+        return perms.contains(UpdatePermission.class) || perms.contains(DeletePermission.class);
     }
 
 
     public boolean canRename(User user)
     {
-        return hasAccess(user) && canCreate(user) && canDelete(user);
+        return hasAccess(user) && !user.isGuest() && canCreate(user) && canDelete(user);
     }
 
 

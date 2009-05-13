@@ -124,6 +124,7 @@ public interface WebdavResolver
         
         boolean canWrite(User user);
         boolean canCreate(User user);
+        boolean canCreateCollection(User user); // only on collection can create sub collection
         boolean canDelete(User user);
         boolean canRename(User user);
 

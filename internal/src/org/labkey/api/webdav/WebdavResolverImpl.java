@@ -351,7 +351,12 @@ public class WebdavResolverImpl implements WebdavResolver
         }
 
 
-        // UNDONE : clarify canCreate() canCreateSubfolder(), canCreateFile()
+        @Override 
+        public boolean canCreateCollection(User user)
+        {
+            return false;
+        }
+
         @Override
         public boolean canCreate(User user)
         {
