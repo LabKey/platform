@@ -1600,9 +1600,12 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
         if (!this.currentDirectory)
             return;
         this.fileSystem.reloadFiles(this.currentDirectory.data.path, this.loadRecords.createDelegate(this));
-        var sel = this.tree.getSelectionModel().getSelectedNode();
-        if (sel)
-            sel.reload();
+        if (this.tree)
+        {
+            var sel = this.tree.getSelectionModel().getSelectedNode();
+            if (sel)
+                sel.reload();
+        }
     },
 
 
@@ -1818,17 +1821,25 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
 
     loadRecords : function(filesystem, success, path, records)
     {
+        var i, len;
         if (success && this.currentDirectory.data.path == path)
         {
-            this.store.removeAll();
             if (!this.allowChangeDirectory)
             {
                 var t = records;
                 records = [];
-                for (var i=0 ; i<t.length ; i++)
+                for (i=0 ; i<t.length ; i++)
                     if (t[i].data.file) records.push(t[i]);
             }
-            this.store.add(records);
+            // consider subclassing store? this is meant to act like loadRecords()            
+            this.store.modified = [];
+            for (i = 0, len = records.length; i < len; i++)
+                records[i].join(this.store);
+            this.store.data.clear();
+            this.store.data.addAll(records);
+            this.store.totalLength = records.length;
+            this.store.applySort();
+            this.store.fireEvent("datachanged", this.store);
         }
     },
 
@@ -1840,7 +1851,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
             this.fileSystem.onReady(this.start.createDelegate(this));
             return;
         }
-        if (this.showFolderTree)
+        if (this.tree)
         {
             this.tree.getRootNode().expand();
         }
