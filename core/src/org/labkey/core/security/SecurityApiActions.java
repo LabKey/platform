@@ -26,6 +26,7 @@ import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.springframework.validation.BindException;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.*;
 
@@ -520,5 +521,222 @@ public class SecurityApiActions
             return new ApiSimpleResponse("success", true);
         }
     }
+
+    public static class NameForm
+    {
+        private String _name;
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+    }
+
+    public static class IdForm
+    {
+        private int _id = -1;
+
+        public int getId()
+        {
+            return _id;
+        }
+
+        public void setId(int id)
+        {
+            _id = id;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public static class CreateGroupAction extends ApiAction<NameForm>
+    {
+        public ApiResponse execute(NameForm form, BindException errors) throws Exception
+        {
+            String name = StringUtils.trimToNull(form.getName());
+            if(null == name)
+                throw new IllegalArgumentException("You must specify a name parameter!");
+
+            Group newGroup = SecurityManager.createGroup(getViewContext().getContainer(), name);
+
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("id", newGroup.getUserId());
+            resp.put("name", newGroup.getName());
+            return resp;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public static class DeleteGroupAction extends ApiAction<IdForm>
+    {
+        public ApiResponse execute(IdForm form, BindException errors) throws Exception
+        {
+            if(form.getId() < 0)
+                throw new IllegalArgumentException("You must specify an id parameter!");
+
+            Group group = SecurityManager.getGroup(form.getId());
+            if(null == group || !getViewContext().getContainer().getId().equals(group.getContainer()))
+                throw new IllegalArgumentException("Group id " + form.getId() + " does not exist within this container!");
+
+            SecurityManager.deleteGroup(group);
+            return new ApiSimpleResponse("deleted", form.getId());
+        }
+    }
+
+    public static class GroupMemberForm
+    {
+        private int _groupId = -1;
+        private int _principalId = -1;
+
+        public int getGroupId()
+        {
+            return _groupId;
+        }
+
+        public void setGroupId(int groupId)
+        {
+            _groupId = groupId;
+        }
+
+        public int getPrincipalId()
+        {
+            return _principalId;
+        }
+
+        public void setPrincipalId(int principalId)
+        {
+            _principalId = principalId;
+        }
+    }
+
+    public static abstract class BaseGroupMemberAction extends ApiAction<GroupMemberForm>
+    {
+        public Group getGroup(GroupMemberForm form)
+        {
+            Group group = SecurityManager.getGroup(form.getGroupId());
+            if(null == group)
+                throw new IllegalArgumentException("Invalid group id (" + form.getGroupId() + ")");
+            if(!getViewContext().getContainer().getId().equals(group.getContainer()))
+                throw new IllegalArgumentException("Group id " + form.getGroupId() + " does not exist within this container!");
+            return group;
+        }
+
+        public UserPrincipal getPrincipal(GroupMemberForm form)
+        {
+            UserPrincipal principal = SecurityManager.getPrincipal(form.getPrincipalId());
+            if(null == principal)
+                throw new IllegalArgumentException("Invalid principal id (" + form.getPrincipalId() + ")");
+            return principal;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public static class AddGroupMemberAction extends BaseGroupMemberAction
+    {
+        public ApiResponse execute(GroupMemberForm form, BindException errors) throws Exception
+        {
+            SecurityManager.addMember(getGroup(form), getPrincipal(form));
+            return new ApiSimpleResponse("added", form.getPrincipalId());
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public static class RemoveGroupMemberAction extends BaseGroupMemberAction
+    {
+        public ApiResponse execute(GroupMemberForm form, BindException errors) throws Exception
+        {
+            Group group = getGroup(form);
+            UserPrincipal principal = getPrincipal(form);
+
+            //ensure there will still be someone in the admin group
+            if(group.isAdministrators() && principal instanceof User)
+            {
+                List<User> currentMembers = SecurityManager.getGroupMembers(group);
+                if(currentMembers.size() == 1 && currentMembers.contains((User)principal))
+                    throw new IllegalArgumentException("The system administrators group must have at least one member!");
+            }
+
+            SecurityManager.deleteMember(getGroup(form), getPrincipal(form));
+            return new ApiSimpleResponse("removed", form.getPrincipalId());
+        }
+    }
+
+    public static class MembersListForm
+    {
+        private int _groupId = -1;
+        private String[] _names;
+
+        public int getGroupId()
+        {
+            return _groupId;
+        }
+
+        public void setGroupId(int groupId)
+        {
+            _groupId = groupId;
+        }
+
+        public String[] getNames()
+        {
+            return _names;
+        }
+
+        public void setNames(String[] names)
+        {
+            _names = names;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public static class ChangeGroupMembersAction extends ApiAction<MembersListForm>
+    {
+        public ApiResponse execute(MembersListForm form, BindException errors) throws Exception
+        {
+            Container container = getViewContext().getContainer();
+            Group group = SecurityManager.getGroup(form.getGroupId());
+            if(null == group)
+                throw new IllegalArgumentException("Invalid group id (" + form.getGroupId() + ")");
+            if(!getViewContext().getContainer().getId().equals(group.getContainer()))
+                throw new IllegalArgumentException("Group id " + form.getGroupId() + " does not exist within this container!");
+
+            if(null == form.getNames())
+                throw new IllegalArgumentException("You must specificy an array of user email addresses!");
+
+            List<String> messages = new ArrayList<String>();
+            List<UserPrincipal> currentMembers = SecurityManager.getGroupMembers(group, SecurityManager.GroupMemberType.Both);
+            for(String name : form.getNames())
+            {
+                UserPrincipal principal = SecurityManager.getPrincipal(name, container);
+                if(null == principal)
+                {
+                    //add user
+                    //(for now we will not allow the creation of groups via this mechanism
+                    //as it would be really error prone)
+                    messages.add(SecurityManager.addUser(getViewContext(), new ValidEmail(name), true, null, null));
+                }
+                else
+                {
+                    //existing user--add or remove as necessary
+                    if(currentMembers.contains(principal))
+                    {
+                        SecurityManager.deleteMember(group, principal);
+                        messages.add("Removed '" + principal.getName() + "' from group.");
+                    }
+                    else
+                    {
+                        SecurityManager.addMember(group, principal);
+                        messages.add("Added '" + principal.getName() + "' to group.");
+                    }
+                }
+            }
+
+            return new ApiSimpleResponse("messages", messages);
+        }
+    }
+
 
 }

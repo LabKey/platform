@@ -166,7 +166,7 @@ if (!bean.isSystemGroup)
         if (bean.members.size() == 0)
             {
     %>
-    <form action="deleteGroup.post" method="POST">
+    <form action="standardDeleteGroup.post" method="POST">
     <%=PageFlowUtil.generateSubmitButton("Delete Empty Group", "return confirm('Permanently delete group " + bean.groupName + "?')")%>
     <input type="hidden" name="group" value="<%= bean.groupName %>">
     </form>

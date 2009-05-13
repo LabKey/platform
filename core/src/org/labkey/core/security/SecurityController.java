@@ -24,8 +24,6 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.*;
 import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.util.*;
@@ -58,7 +56,12 @@ public class SecurityController extends SpringActionController
             SecurityApiActions.GetSecurableResourcesAction.class,
             SecurityApiActions.GetPolicyAction.class,
             SecurityApiActions.SavePolicyAction.class,
-            SecurityApiActions.DeletePolicyAction.class);
+            SecurityApiActions.DeletePolicyAction.class,
+            SecurityApiActions.CreateGroupAction.class,
+            SecurityApiActions.DeleteGroupAction.class,
+            SecurityApiActions.AddGroupMemberAction.class,
+            SecurityApiActions.RemoveGroupMemberAction.class,
+            SecurityApiActions.ChangeGroupMembersAction.class);
 
     public SecurityController()
     {
@@ -185,7 +188,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class DeleteGroupAction extends FormHandlerAction<GroupForm>
+    public class StandardDeleteGroupAction extends FormHandlerAction<GroupForm>
     {
         public void validateCommand(GroupForm form, Errors errors) {}
 

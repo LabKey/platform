@@ -32,6 +32,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.JobRunner;
@@ -59,7 +60,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     // standard string to use in URLs etc.
     public static final String DATASETKEY = "datasetId";
     private static Category _log = Logger.getInstance(DataSetDefinition.class);
-   
+
     private Study _study;
     private int _dataSetId;
     private String _name;
@@ -302,7 +303,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         //noinspection ConstantConditions
         if (user == null)
             throw new IllegalArgumentException("user cannot be null");
-        
+
         if (checkPermission && !canRead(user))
             HttpView.throwUnauthorized();
 
@@ -449,7 +450,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             }
         }
     }
-    
+
 
     private Table.TempTableInfo materialize(TableInfo tinfoFrom, String tempName)
             throws SQLException
@@ -458,7 +459,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         boolean debug=false;
         //noinspection ConstantConditions
         assert debug=true;
-        
+
         Table.TempTableInfo tinfoMat;
         tinfoMat = Table.createTempTable(tinfoFrom, tempName);
         String fullName = tinfoMat.getTempTableName();
@@ -543,7 +544,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     public boolean canRead(User user)
     {
-        return SecurityManager.getPolicy(this).hasPermission(user, ReadPermission.class);
+        //need to check both the study's policy and the dataset's policy
+        //users that have read permission on the study can read all datasets
+        //users that have read-some permission on the study must also have read permission on this dataset
+        return SecurityManager.getPolicy(getStudy()).hasPermission(user, ReadPermission.class) ||
+                SecurityManager.getPolicy(this).hasPermission(user, ReadPermission.class);
     }
 
     public boolean canWrite(User user)
@@ -564,7 +569,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             return true;
         }
         
-        return SecurityManager.getPolicy(this).hasPermission(user, UpdatePermission.class);
+        return SecurityManager.getPolicy(getStudy()).hasPermission(user, UpdatePermission.class) ||
+            SecurityManager.getPolicy(this).hasPermission(user, UpdatePermission.class);
     }
 
     public String getVisitDatePropertyName()
