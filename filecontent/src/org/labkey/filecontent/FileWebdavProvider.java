@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.security.User;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.apache.commons.lang.StringUtils;
@@ -93,6 +94,12 @@ public class FileWebdavProvider implements WebdavService.Provider
                     _names.add(dir.getLabel());
                 }
             Collections.sort(_names, String.CASE_INSENSITIVE_ORDER);
+        }
+
+        @Override
+        public boolean canCreateCollection(User user)
+        {
+            return false;
         }
 
         public boolean exists()

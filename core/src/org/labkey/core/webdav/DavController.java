@@ -2488,7 +2488,7 @@ public class DavController extends SpringActionController
         StringBuilder methodsAllowed = new StringBuilder("OPTIONS");
 
         boolean createResource = resource.canCreate(user);
-        boolean createCollection = createResource; // UNDONE
+        boolean createCollection = resource.canCreateCollection(user);
 
         if (!resource.exists())
         {

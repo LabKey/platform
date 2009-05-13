@@ -194,15 +194,23 @@ class WikiWebdavProvider implements WebdavService.Provider
         }
 
 
+        @Override
         public boolean canDelete(User user)
         {
             return false;   // NYI
         }
 
 
+        @Override
         public boolean canRename(User user)
         {
             return false;   // NYI
+        }
+
+        @Override
+        public boolean canCreateCollection(User user)
+        {
+            return false;
         }
 
 
