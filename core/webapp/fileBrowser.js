@@ -10,7 +10,6 @@ var $ = Ext.get;
 var $h = Ext.util.Format.htmlEncode;
 var $dom = Ext.DomHelper;
 
-//$dom.append(document.getElementsByTagName("head")[0],"<style>.refreshIcon {background-image: url(" + LABKEY.contextPath + "/_images/reload.png)}</style>");
 
 /*
 	parseUri 1.2.1
@@ -240,19 +239,161 @@ function renderDateTime(value, metadata, record, rowIndex, colIndex, store)
 // PREVIEW
 //
 
+var _previewScope = "previewAncor";
+
+var PreviewResource = Ext.extend(Ext.ToolTip, {
+
+    baseCls: 'x-panel',
+    minWidth : 40,
+    maxWidth : 800,
+    frame : true,
+
+    destroy : function()
+    {
+        PreviewResource.superclass.destroy.call(this);
+    },
+
+    // we're not really ready to show anything, we have to get the resource still
+    showAt : function(xy)
+    {
+        this.showAt_xy = xy;
+        this.loadResource();
+    },
+
+    previewAt : function(xy)
+    {
+        PreviewResource.superclass.showAt.call(this, xy);
+    },
+
+    render : function(ct)
+    {
+        PreviewResource.superclass.render.call(this, ct);
+    },
+
+    onRender : function(ct)
+    {
+        this.title = false;
+        PreviewResource.superclass.onRender.call(this, ct);
+        this.body.update($dom.markup(this.html));
+    },
+
+    doAutoWidth : function()
+    {
+        PreviewResource.superclass.doAutoWidth.call(this);
+    },
+
+
+    loadResource : function()
+    {
+        var record = this.record;
+        var name = record.data.name;
+        var uri = record.data.uri;
+        var contentType = record.data.contentType;
+        var size = record.data.size;
+
+        if (!uri || !contentType || !size)
+            return;
+
+        if (startsWith(contentType,'image/'))
+        {
+            var image = new Image();
+            image.onload = (function()
+            {
+                var img = {tag:'img', src:uri, border:'0', width:image.width, height:image.height};
+                this.constrain(img, 400, 400);
+                this.html = img;
+                this.previewAt(this.showAt_xy);
+            }).createDelegate(this);
+            image.src = uri;
+        }
+        else if (contentType == 'text/html')
+        {
+            this.html = {tag:'iframe', width:600, height:400, frameborder:'no', src:$h(uri)};
+            this.previewAt(this.showAt_xy);
+        }
+        else if (startsWith(contentType,'text/') || contentType == 'application/javascript' || endsWith(name,".log"))
+        {
+            var headers = {};
+            if (contentType != 'text/html' && size > 10000)
+                headers['Range'] = 'bytes 0-10000';
+            var requestid = this.connection.request({
+                autoAbort:true,
+                url:uri,
+                headers:headers,
+                method:'GET',
+                disableCaching:false,
+                success : (function(response)
+                {
+                    var contentType = response.getResponseHeader["Content-Type"] || "text/plain";
+                    if (startsWith(contentType,"text/"))
+                    {
+                        var text = response.responseText;
+                        if (headers['Range']) text += "\n. . .";
+                        this.html = {tag:'div', style:{width:'600px', height:'400px', overflow:'auto'}, children:{tag:'pre', children:$h(text)}};
+                        this.previewAt(this.showAt_xy);
+                    }
+                }).createDelegate(this)
+            });
+        }
+    },
+
+    constrain : function(img,w,h)
+    {
+        var X = img.width;
+        var Y = img.height;
+        if (X > w)
+        {
+            img.width = w;
+            img.height = Math.round(Y * (1.0*w/X));
+        }
+        X = img.width;
+        Y = img.height;
+        if (Y > h)
+        {
+            img.height = h;
+            img.width = Math.round(X * (1.0*h/Y));
+        }
+    },
+
+    connection : new Ext.data.Connection({autoAbort:true, method:'GET', disableCaching:false})
+});
+
+
+var allPreviews = [];
+
+function _attachPreview(id,record)
+{
+    if (this && !this.canRead(record))
+        return;
+    if (!record.data.file)
+        return;
+    var img = Ext.fly(id,_previewScope);
+    if (!img) return;
+    var preview = new PreviewResource({title:id, target:id, record:record});
+    allPreviews.push(preview);
+}
+
+
+function destroyPreviews()
+{
+    Ext.destroy.apply(null, allPreviews);
+    allPreviews = [];
+}
+
+
+/*
 var _previewConnection = new Ext.data.Connection({autoAbort:true, method:'GET', disableCaching:false});
 var _previewWindow = null;
 var _previewAsync = null;
-var _previewScope = "previewAncor";
 
 // mouseout isn't very reliable, check that mouse is still over target
-//var hoverTask = {interval:100, run:function(){
-//    var e = Ext.Event;
-//    if (hoverPreviewAreas.length == 0)
-//        Ext.TaskMgr.stop(this);
-//}};
-//var hoverPreviewAreas = [];
-
+var hoverTask = {interval:100, run:function(e)
+{
+    if (hoverPreviewAreas.length == 0)
+        return;
+}};
+var hoverPreviewAreas = [];
+Ext.getDoc().on("mousemove",hoverTask.run);
 
 function _attachPreview(id,record)
 {
@@ -273,6 +414,7 @@ function preview(id, record)
     closePreviewWindow();
     var timeout = previewFN.defer(200,null,[id,record]);
     _previewAsync = {timeout:timeout, cancel:function() {clearTimeout(this.timeout);}};
+    hoverPreviewAreas = [id];
 }
 
 
@@ -400,7 +542,7 @@ function constrain(img,w,h)
         img.width = Math.round(X * (1.0*h/Y));
     }
 }
-
+*/
 
 //
 // FileSystem
@@ -726,7 +868,7 @@ Ext.extend(LABKEY.WebdavFileSystem, FileSystem,
         }
         catch (x)
         {
-            window.alert(x);                                
+            window.alert(x);
         }
         return true;
     },
@@ -1073,7 +1215,7 @@ if (LABKEY.Applet)
         constructor : function(params)
         {
             this.addEvents([TRANSFER_EVENTS.update]);
-            
+
             var config =
             {
                 id: params.id,
@@ -1212,7 +1354,7 @@ if (LABKEY.Applet)
             else
                 console.error("NYI: Do not call before isReady()!");
         },
-        
+
 
         getTransfers : function()
         {
@@ -1278,14 +1420,14 @@ Ext.extend(_TextItem, Ext.Toolbar.Item,
             return;
         var w = Ext.Element.addUnits(this.width,"px");
         var html = [{tag:'img', src:(LABKEY.contextPath + '/_.gif'), width:w, height:1}, "<br>", this.text ? Ext.util.Format.htmlEncode(this.text) : '&nbsp;'];
-        Ext.fly(this.dom).setSize(w).update(Ext.DomHelper.markup(html));
+        Ext.fly(this.dom).setSize(w).update($dom.markup(html));
         Ext.fly(this.td).setSize(w);
         this.last.width = this.width;
         this.last.text = this.text;
     },
     render:function(td)
     {
-        this.dom = Ext.DomHelper.append(td, {id:this.id, className:'ytb-text'});
+        this.dom = $dom.append(td, {id:this.id, className:'ytb-text'});
         this.td = td;
         Ext.fly(this.td).addClass('x-status-text-panel');
         this._update();
@@ -1522,13 +1664,13 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
 
 
     lastSummary: {info:0, success:0, file:'', pct:0},
-    
+
     updateProgressBar : function()
     {
         var record = this.progressRecord && this.progressRecord.get('state') == 0 ? this.progressRecord : null;
         var pct = record ? record.get('percent')/100 : 0;
         var file = record ? record.get('name') : '';
-        
+
         var summary = this.applet.getSummary();
 
         if (summary.info != this.lastSummary.info)
@@ -1549,13 +1691,13 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
 
         if (pct != this.lastSummary.pct || file != this.lastSummary.file)
             this.progressBar.updateProgress(pct, file);
-        
+
         // UNDONE: failed transfers
         this.lastSummary = summary;
         this.lastSummary.pct = pct;
         this.lastSummary.file = file;
     },
-    
+
 
     getUploadToolAction : function()
     {
@@ -1831,7 +1973,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
                 for (i=0 ; i<t.length ; i++)
                     if (t[i].data.file) records.push(t[i]);
             }
-            // consider subclassing store? this is meant to act like loadRecords()            
+            // consider subclassing store? this is meant to act like loadRecords()
             this.store.modified = [];
             for (i = 0, len = records.length; i < len; i++)
                 records[i].join(this.store);
@@ -1872,7 +2014,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
             // fall through
         }
         // select root
-        var root = this.fileSystem.recordFromCache("/"); 
+        var root = this.fileSystem.recordFromCache("/");
         this.selectFile(root);
         this.changeDirectory(root);
     },
@@ -2198,7 +2340,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
             this.store.removeAll();
             this.fileSystem.listFiles(record.data.path, this.loadRecords.createDelegate(this));
 
-            // address bar                                                                             
+            // address bar
             this.updateAddressBar(record.data.path);
 
             // expand tree
@@ -2244,18 +2386,3 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
         }, this);
     }
 });
-
-
-
-//function generateLabkeyButton(config)
-//{
-//    if (typeof config == "text")
-//        config = {text:config};
-//    var html = '<span';
-//    if (config.id)
-//        html += ' id="' + config.id + '"';
-//    if (config.onclick)
-//        html += ' onclick="' + config.onclick + '"';
-//    html += '>' + config.text + '</span>';
-//    return html;
-//}
