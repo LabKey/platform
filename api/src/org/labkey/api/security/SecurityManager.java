@@ -1132,6 +1132,29 @@ public class SecurityManager
         return group;
     }
 
+    public static UserPrincipal getPrincipal(int id)
+    {
+        UserPrincipal principal = UserManager.getUser(id);
+        return null != principal ? principal : getGroup(id);
+    }
+
+    public static UserPrincipal getPrincipal(String name, Container container)
+    {
+        Integer id = getGroupId(container, name, false);
+        if(null != id)
+            return getGroup(id.intValue());
+        else
+        {
+            try
+            {
+                return UserManager.getUser(new ValidEmail(name));
+            }
+            catch(ValidEmail.InvalidEmailException e)
+            {
+                return null;
+            }
+        }
+    }
 
     private static void removeGroupFromCache(int groupId)
     {
@@ -1221,6 +1244,29 @@ public class SecurityManager
         for(String email : emails)
             users.add(UserManager.getUser(new ValidEmail(email)));
         return users;
+    }
+
+    public static enum GroupMemberType
+    {
+        Users,
+        Groups,
+        Both
+    }
+
+    @NotNull
+    public static List<UserPrincipal> getGroupMembers(Group group, GroupMemberType memberType) throws SQLException
+    {
+        List<UserPrincipal> principals = new ArrayList<UserPrincipal>();
+        Integer[] ids = getGroupMemberIds(ContainerManager.getForId(group.getContainer()), group.getName());
+        for(Integer id : ids)
+        {
+            UserPrincipal principal = getPrincipal(id.intValue());
+            if(null != principal && (GroupMemberType.Both == memberType
+                    || (GroupMemberType.Users == memberType && principal instanceof User)
+                    || (GroupMemberType.Groups == memberType && principal instanceof Group)))
+                principals.add(principal);
+        }
+        return principals;
     }
 
 
