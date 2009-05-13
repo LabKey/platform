@@ -18,8 +18,9 @@ package org.labkey.study.writer;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.util.VirtualFile;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Type;
+import org.labkey.api.util.VirtualFile;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.xml.StudyDocument.Study.Datasets;
 
@@ -65,6 +66,8 @@ public class SchemaWriter implements Writer<DataSetDefinition[]>
 
                     Class clazz = col.getJavaClass();
                     Type t = Type.getTypeByClass(clazz);
+
+                    assert null != t : col.getName() + " has unknown java class " + clazz.getName();
 
                     writer.print(t.getXsdType() + '\t');
                     writer.print('\t');

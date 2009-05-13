@@ -15,6 +15,7 @@
  */
 package org.labkey.study.importer;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.data.Container;
@@ -136,17 +137,27 @@ public class StudyImporter
         }
 
         // Cohorts
-        StudyDocument.Study.Cohorts cohorts = studyXml.getCohorts();
-        CohortType.Enum cohortType = cohorts.getType();
+        StudyDocument.Study.Cohorts cohortsXml = studyXml.getCohorts();
+        CohortType.Enum cohortType = cohortsXml.getType();
 
         if (cohortType == CohortType.AUTOMATIC)
         {
-            Integer dataSetId = cohorts.getDataSetId();
-            String dataSetProperty = cohorts.getDataSetProperty();
+            Integer dataSetId = cohortsXml.getDataSetId();
+            String dataSetProperty = cohortsXml.getDataSetProperty();
             CohortController.updateAutomaticCohort(getStudy(), _user, dataSetId, dataSetProperty);
         }
         else
-            assert false : "Unknown cohort type";
+        {
+            StudyDocument.Study.Cohorts.Cohort[] cohortXmls = cohortsXml.getCohortArray();
+
+            for (StudyDocument.Study.Cohorts.Cohort cohortXml : cohortXmls)
+            {
+                String label = cohortXml.getLabel();
+                String[] ids = cohortXml.getIdArray();
+
+                _log.info("Cohort \"" + label + "\" : " + StringUtils.join(ids, " "));
+            }
+        }
 
         // QC States
         // TODO: Generalize to all qc state properties

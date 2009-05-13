@@ -85,8 +85,8 @@ public class DataSetWriter implements Writer<Study>
             List<ColumnInfo> columns = new ArrayList<ColumnInfo>(allColumns.size());
 
             for (ColumnInfo col : allColumns)
-                if (!"qcstate".equalsIgnoreCase(col.getName()))
-                    columns.add(col);  // TODO: Eliminate non-user-editable?
+                if (shouldExport(col))
+                    columns.add(col);
 
             ResultSet rs = Table.select(ti, columns, null, null);
             TSVGridWriter tsvWriter = new TSVGridWriter(rs);
@@ -101,9 +101,6 @@ public class DataSetWriter implements Writer<Study>
         if (!column.isUserEditable())
             return false;
 
-        String propertyURI = column.getPropertyURI();
-
-        // TODO: Beter check for this?
-        return !(propertyURI.equals(DataSetDefinition.getParticipantIdURI()) || propertyURI.equals(DataSetDefinition.getSequenceNumURI()));
+        return !"visit".equalsIgnoreCase(column.getName());
     }
 }

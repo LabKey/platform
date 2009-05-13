@@ -54,8 +54,9 @@ public class SpecimenWriter implements Writer<Study>
         for (SpecimenColumn column : columns)
         {
             SpecimenImporter.TargetTable tt = column.getTargetTable();
-            TableInfo tinfo = tt.isSpecimens() ? schema.getTableInfoSpecimen() : schema.getTableInfoSpecimenEvent();
+            TableInfo tinfo = tt.isEvents() ? schema.getTableInfoSpecimenEvent() : schema.getTableInfoSpecimen();
             ColumnInfo ci = tinfo.getColumn(column.getDbColumnName());
+
             ci.setCaption(column.getTsvColumnName());
             DataColumn dc = new DataColumn(ci);
             displayColumns.add(dc);
@@ -98,7 +99,8 @@ public class SpecimenWriter implements Writer<Study>
         _log.info(sql);
 
         // Note: must be uncached result set -- this query can be very large
-        ResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), 0, false);
+        // TODO: Remove row limit -- this is just for testing
+        ResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), 1000, false);
 
         TSVGridWriter gridWriter = new TSVGridWriter(rs, displayColumns);
         gridWriter.write(pw);

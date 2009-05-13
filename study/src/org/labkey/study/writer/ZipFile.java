@@ -91,7 +91,7 @@ public class ZipFile implements Archive
 
     public void makeDir(String path) throws IOException
     {
-        ZipEntry entry = new ZipEntry(_path + makeLegalName(path));
+        ZipEntry entry = new ZipEntry(_path + makeLegalName(path) + "/");
         _out.putNextEntry(entry);
     }
 

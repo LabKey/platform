@@ -447,7 +447,11 @@ public class SpecimenImporter
             replaceTable(schema, container, "SpecimenDerivative", DERIVATIVE_COLUMNS, fileMap.get("derivatives"), false);
             replaceTable(schema, container, "SpecimenPrimaryType", PRIMARYTYPE_COLUMNS, fileMap.get("primary_types"), false);
 
-            populateSpecimenTables(loadInfo);
+            // Columns will be empty in specimens.tsv has no data
+            if (!loadInfo.getAvailableColumns().isEmpty())
+                populateSpecimenTables(loadInfo);
+            else
+                info("Specimens: 0 rows found in input file.");
 
             cpuCurrentLocations.start();
             updateCalculatedSpecimenData(container, user, _logger);
@@ -1323,7 +1327,7 @@ public class SpecimenImporter
         for (ImportableColumn col : columns)
             expectedColumns.put(col.getTsvColumnName().toLowerCase(), col.getColumnDescriptor());
 
-        TabLoader loader = new TabLoader(tsvFile);
+        TabLoader loader = new TabLoader(tsvFile, true);
         for (ColumnDescriptor column : loader.getColumns())
         {
             ColumnDescriptor expectedColumnDescriptor = expectedColumns.get(column.name.toLowerCase());

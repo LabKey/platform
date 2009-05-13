@@ -3174,63 +3174,69 @@ public class StudyManager
         {
             if (transactionOwner)
                 scope.beginTransaction();
+
             DataSetDefinition dataset = study.getDataSet(study.getParticipantCohortDataSetId());
-            TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
-            TableInfo cohortDatasetTinfo = dataset.getTableInfo(user, false, true);
-            //TODO: Use Property URI & Make sure this is set properly
-            ColumnInfo cohortLabelCol = cohortDatasetTinfo.getColumn(study.getParticipantCohortProperty());
-            if (null != cohortLabelCol)
+
+            if (null != dataset)
             {
-                clearParticipantCohorts(user, study);
+                TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
+                TableInfo cohortDatasetTinfo = dataset.getTableInfo(user, false, true);
 
-                // Find the set of cohorts specified in our dataset
-                SQLFragment sqlFragment = new SQLFragment();
-                sqlFragment.append("SELECT DISTINCT " + cohortLabelCol.getValueSql("CO") + " FROM " + cohortDatasetTinfo.getSelectName() + " CO " +
-                        "\nWHERE " + cohortLabelCol.getValueSql("CO") + " IS NOT NULL AND " + cohortLabelCol.getValueSql("CO") + " NOT IN\n" +
-                        " (SELECT Label FROM " + StudySchema.getInstance().getTableInfoCohort() + " WHERE Container = ?)");
-                sqlFragment.add(study.getContainer().getId());
-
-                Set<String> newCohortLabels = new HashSet<String>();
-                Table.TableResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sqlFragment);
-                try
+                //TODO: Use Property URI & Make sure this is set properly
+                ColumnInfo cohortLabelCol = cohortDatasetTinfo.getColumn(study.getParticipantCohortProperty());
+                if (null != cohortLabelCol)
                 {
-                    while (rs.next())
+                    clearParticipantCohorts(user, study);
+
+                    // Find the set of cohorts specified in our dataset
+                    SQLFragment sqlFragment = new SQLFragment();
+                    sqlFragment.append("SELECT DISTINCT " + cohortLabelCol.getValueSql("CO") + " FROM " + cohortDatasetTinfo.getSelectName() + " CO " +
+                            "\nWHERE " + cohortLabelCol.getValueSql("CO") + " IS NOT NULL AND " + cohortLabelCol.getValueSql("CO") + " NOT IN\n" +
+                            " (SELECT Label FROM " + StudySchema.getInstance().getTableInfoCohort() + " WHERE Container = ?)");
+                    sqlFragment.add(study.getContainer().getId());
+
+                    Set<String> newCohortLabels = new HashSet<String>();
+                    Table.TableResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sqlFragment);
+                    try
                     {
-                        newCohortLabels.add(rs.getString(1));
+                        while (rs.next())
+                        {
+                            newCohortLabels.add(rs.getString(1));
+                        }
                     }
+                    finally
+                    {
+                        rs.close();
+                    }
+
+                    for (String cohortLabel : newCohortLabels)
+                    {
+                        Cohort cohort = new Cohort();
+                        cohort.setLabel(cohortLabel);
+                        StudyManager.getInstance().createCohort(study, user, cohort);
+                    }
+
+                    // update participants table to reference correct cohorts:
+                    String datasetSelect = "SELECT MAX(CohortLabel) FROM (\n" +
+                            "\tSELECT " + cohortLabelCol.getValueSql("Visits") + " AS CohortLabel, Visits.ParticipantId FROM " + cohortDatasetTinfo + " Visits, (\n" +
+                            "\t\tSELECT ParticipantId, max(sequencenum) AS SequenceNum FROM " + cohortDatasetTinfo.getSelectName() + " GROUP BY ParticipantId\n" +
+                            "\t) As LastVisit \n" +
+                            "\tWHERE Visits.ParticipantId = LastVisit.ParticipantId AND Visits.SequenceNum = LastVisit.SequenceNum\n" +
+                            ") AS DupEliminationTable GROUP BY ParticipantId HAVING ParticipantId = " + tableParticipant + ".ParticipantId";
+
+                    String cohortIdSelect = "SELECT RowId FROM " + StudySchema.getInstance().getTableInfoCohort() +
+                            " WHERE Label = (" + datasetSelect + ") AND Container = ?";
+
+                    String sql = "UPDATE " + tableParticipant + " SET CohortId = (\n" + cohortIdSelect + "\n) WHERE Container = ? AND (" +
+                            tableParticipant + ".CohortId IS NULL OR NOT " + tableParticipant + ".CohortId = \n(" + cohortIdSelect + "))";
+
+                    Table.execute(getSchema(), sql, new Object[] {
+                            study.getContainer().getId(),
+                            study.getContainer().getId(),
+                            study.getContainer().getId() });
+                    if (transactionOwner)
+                        scope.commitTransaction();
                 }
-                finally
-                {
-                    rs.close();
-                }
-
-                for (String cohortLabel : newCohortLabels)
-                {
-                    Cohort cohort = new Cohort();
-                    cohort.setLabel(cohortLabel);
-                    StudyManager.getInstance().createCohort(study, user, cohort);
-                }
-
-                // update participants table to reference correct cohorts:
-                String datasetSelect = "SELECT MAX(CohortLabel) FROM (\n" +
-                        "\tSELECT " + cohortLabelCol.getValueSql("Visits") + " AS CohortLabel, Visits.ParticipantId FROM " + cohortDatasetTinfo + " Visits, (\n" +
-                        "\t\tSELECT ParticipantId, max(sequencenum) AS SequenceNum FROM " + cohortDatasetTinfo.getSelectName() + " GROUP BY ParticipantId\n" +
-                        "\t) As LastVisit \n" +
-                        "\tWHERE Visits.ParticipantId = LastVisit.ParticipantId AND Visits.SequenceNum = LastVisit.SequenceNum\n" +
-                        ") AS DupEliminationTable GROUP BY ParticipantId HAVING ParticipantId = " + tableParticipant + ".ParticipantId";
-
-                String cohortIdSelect = "SELECT RowId FROM " + StudySchema.getInstance().getTableInfoCohort() +
-                        " WHERE Label = (" + datasetSelect + ") AND Container = ?";
-
-                String sql = "UPDATE " + tableParticipant + " SET CohortId = (\n" + cohortIdSelect + "\n) WHERE Container = ? AND (" +
-                        tableParticipant + ".CohortId IS NULL OR NOT " + tableParticipant + ".CohortId = \n(" + cohortIdSelect + "))";
-
-                Table.execute(getSchema(), sql, new Object[] {
-                        study.getContainer().getId(),
-                        study.getContainer().getId(),
-                        study.getContainer().getId() });
-                if (transactionOwner)
-                    scope.commitTransaction();
             }
         }
         finally

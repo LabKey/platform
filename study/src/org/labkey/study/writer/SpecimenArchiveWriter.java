@@ -31,16 +31,16 @@ import org.labkey.study.xml.StudyDocument;
  */
 public class SpecimenArchiveWriter implements Writer<Study>
 {
-    private static final String FILE_NAME = "sample.specimens";
-
     public void write(Study study, ExportContext ctx, VirtualFile fs) throws Exception
     {
+        String archiveName = fs.makeLegalName(study.getLabel().replaceAll("\\s", "") + ".specimens");
+
         StudyDocument.Study studyXml = ctx.getStudyXml();
         StudyDocument.Study.Specimens specimens = studyXml.addNewSpecimens();
         specimens.setRepositoryType(RepositoryType.STANDARD);
-        specimens.setSource(FILE_NAME);
+        specimens.setSource(archiveName);
 
-        Archive zip = fs.createZipArchive(FILE_NAME);
+        Archive zip = fs.createZipArchive(archiveName);
 
         StudySchema schema = StudySchema.getInstance();
 

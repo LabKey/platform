@@ -305,7 +305,9 @@
       <ns:column columnName="Container"/>
       <ns:column columnName="GlobalUniqueId"/>
       <ns:column columnName="Ptid"/>
-      <ns:column columnName="DrawTimestamp"/>
+      <ns:column columnName="DrawTimestamp">
+        <ns:formatString>DateTime</ns:formatString>
+      </ns:column>
       <ns:column columnName="SalReceiptDate"/>
       <ns:column columnName="SpecimenHash"/>
       <ns:column columnName="ClassId"/>
@@ -342,7 +344,9 @@
     <ns:columns>
       <ns:column columnName="Container"/>
       <ns:column columnName="Ptid"/>
-      <ns:column columnName="DrawTimestamp"/>
+      <ns:column columnName="DrawTimestamp">
+        <ns:formatString>DateTime</ns:formatString>
+      </ns:column>
       <ns:column columnName="SalReceiptDate"/>
       <ns:column columnName="SpecimenHash"/>
       <ns:column columnName="ProtocolNumber"/>
@@ -406,7 +410,9 @@
       <ns:column columnName="Container"/>
       <ns:column columnName="GlobalUniqueId"/>
       <ns:column columnName="Ptid"/>
-      <ns:column columnName="DrawTimestamp"/>
+      <ns:column columnName="DrawTimestamp">
+        <ns:formatString>DateTime</ns:formatString>
+      </ns:column>
       <ns:column columnName="SalReceiptDate"/>
       <ns:column columnName="SpecimenHash"/>
       <ns:column columnName="ClassId"/>
@@ -508,7 +514,9 @@
       <ns:column columnName="SampleNumber"/>
       <ns:column columnName="XSampleOrigin"/>
       <ns:column columnName="ExternalLocation"/>
-      <ns:column columnName="UpdateTimestamp"/>
+      <ns:column columnName="UpdateTimestamp">
+        <ns:formatString>DateTime</ns:formatString>
+      </ns:column>
       <ns:column columnName="OtherSpecimenId"/>
       <ns:column columnName="ExpectedTimeValue"/>
       <ns:column columnName="ExpectedTimeUnit"/>
@@ -523,7 +531,9 @@
       <ns:column columnName="ShippedFromLab"/>
       <ns:column columnName="ShippedToLab"/>
       <ns:column columnName="Ptid"/>
-      <ns:column columnName="DrawTimestamp"/>
+      <ns:column columnName="DrawTimestamp">
+          <ns:formatString>DateTime</ns:formatString>
+      </ns:column>
       <ns:column columnName="SalReceiptDate"/>
       <ns:column columnName="ClassId"/>
       <ns:column columnName="VisitValue"/>

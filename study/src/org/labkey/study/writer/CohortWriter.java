@@ -15,10 +15,17 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.study.model.Study;
-import org.labkey.study.xml.StudyDocument;
-import org.labkey.study.xml.CohortType;
+import org.apache.commons.collections15.MultiMap;
+import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.labkey.api.util.VirtualFile;
+import org.labkey.study.model.Cohort;
+import org.labkey.study.model.Participant;
+import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.xml.CohortType;
+import org.labkey.study.xml.StudyDocument;
+
+import java.util.Collection;
 
 /**
  * User: adam
@@ -29,12 +36,39 @@ public class CohortWriter implements Writer<Study>
 {
     public void write(Study study, ExportContext ctx, VirtualFile fs) throws Exception
     {
-        // TODO: Support manual cohorts
-
         StudyDocument.Study studyXml = ctx.getStudyXml();
-        StudyDocument.Study.Cohorts cohorts = studyXml.addNewCohorts();
-        cohorts.setType(CohortType.AUTOMATIC);
-        cohorts.setDataSetId(study.getParticipantCohortDataSetId().intValue());
-        cohorts.setDataSetProperty(study.getParticipantCohortProperty());
+        StudyDocument.Study.Cohorts cohortsXml = studyXml.addNewCohorts();
+
+        if (study.isManualCohortAssignment())
+        {
+            cohortsXml.setType(CohortType.MANUAL);
+
+            Cohort[] cohorts = study.getCohorts(ctx.getUser());
+            MultiMap<Integer, String> participantsInEachCohort = new MultiHashMap<Integer, String>(cohorts.length);
+
+            for (Participant participant : StudyManager.getInstance().getParticipants(study))
+            {
+                Integer id = participant.getCohortId();
+
+                if (null != id)
+                    participantsInEachCohort.put(id, participant.getParticipantId());
+            }
+
+            for (Cohort cohort : cohorts)
+            {
+                StudyDocument.Study.Cohorts.Cohort cohortXml = cohortsXml.addNewCohort();
+                cohortXml.setLabel(cohort.getLabel());
+                Collection<String> ids = participantsInEachCohort.get(cohort.getRowId());
+
+                if (null != ids)
+                    cohortXml.setIdArray(ids.toArray(new String[ids.size()]));
+            }
+        }
+        else
+        {
+            cohortsXml.setType(CohortType.AUTOMATIC);
+            cohortsXml.setDataSetId(study.getParticipantCohortDataSetId().intValue());
+            cohortsXml.setDataSetProperty(study.getParticipantCohortProperty());
+        }
     }
 }

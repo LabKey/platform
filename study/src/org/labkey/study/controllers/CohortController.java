@@ -192,6 +192,7 @@ public class CohortController extends BaseStudyController
         }
     }
 
+    // TODO: Move to CohortManager or similar
     public static void updateAutomaticCohort(Study study, User user, Integer participantCohortDataSetId, String participantCohortProperty) throws SQLException
     {
         study = study.createMutable();
@@ -199,6 +200,11 @@ public class CohortController extends BaseStudyController
         study.setParticipantCohortProperty(participantCohortProperty);
         StudyManager.getInstance().updateStudy(user, study);
         StudyManager.getInstance().updateParticipantCohorts(user, study);
+    }
+
+    public static void updateManualCohort(Study study)
+    {
+
     }
 
     public static class ManageCohortsForm
