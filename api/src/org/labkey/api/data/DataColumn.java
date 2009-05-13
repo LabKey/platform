@@ -80,6 +80,13 @@ public class DataColumn extends DisplayColumn
     }
 
 
+    @Override
+    public String toString()
+    {
+        return getClass().getName() + ": " + getName();
+    }
+
+
     public String getURL(RenderContext ctx)
     {
         if (null == _url)

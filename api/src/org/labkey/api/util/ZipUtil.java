@@ -40,7 +40,6 @@ public class ZipUtil
 
 
     // Unzip an archive to the specified directory; log each file if Loggger is non-null
-    // TODO: Does not handle directories yet
     public static List<File> unzipToDirectory(File zipFile, File unzipDir, @Nullable Logger log) throws IOException
     {
         List<File> files = new ArrayList<File>();
@@ -53,14 +52,20 @@ public class ZipUtil
             while (entries.hasMoreElements())
             {
                 ZipEntry entry = entries.nextElement();
+
                 if (entry.isDirectory())
+                {
+                    File newDir = new File(unzipDir, entry.getName());
+                    newDir.mkdir();
                     continue;
+                }
 
                 if (null != log)
                     log.info("Expanding " + entry.getName());
 
                 BufferedInputStream is = null;
                 BufferedOutputStream os = null;
+
                 try
                 {
                     is = new BufferedInputStream(zip.getInputStream(entry));

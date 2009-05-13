@@ -22,24 +22,31 @@ import java.util.Date;
 * Date: Apr 29, 2009
 * Time: 9:44:07 AM
 */
-// TODO: Consider getting rid of this, using PropertyType instead
+// TODO: Consider getting rid of this, adding the xsd: to PropertyType instead
 public enum Type
 {
     StringType("Text (String)", "xsd:string", String.class),
     IntType("Integer", "xsd:int", Integer.class),
-    DoubleType("Number (Double)", "xsd:double", Double.class),
+    DoubleType("Number (Double)", "xsd:double", Double.class, Double.TYPE), // Double.TYPE is here because manually created datasets with required doubles return Double.TYPE as Class
     DateTimeType("DateTime", "xsd:dateTime", Date.class),
     BooleanType("Boolean", "xsd:boolean", Boolean.class);
 
     private String label;
     private String xsd;
     private Class clazz;
+    private Class type;
 
     Type(String label, String xsd, Class clazz)
+    {
+        this(label, xsd, clazz, null);
+    }
+
+    Type(String label, String xsd, Class clazz, Class type)
     {
         this.label = label;
         this.xsd = xsd;
         this.clazz = clazz;
+        this.type = type;
     }
 
     public String getLabel()
@@ -55,6 +62,11 @@ public enum Type
     public Class getJavaClass()
     {
         return clazz;
+    }
+
+    public Class getJavaType()
+    {
+        return type;
     }
 
     public static Type getTypeByLabel(String label)
@@ -82,6 +94,12 @@ public enum Type
         for (Type type : values())
         {
             if (type.getJavaClass().equals(clazz))
+                return type;
+
+            Class typeClass = type.getJavaType();
+
+            // Double.TYPE is supported because manually created datasets with required doubles return Double.TYPE as Class
+            if (null != typeClass && typeClass.equals(clazz))
                 return type;
         }
         return null;
