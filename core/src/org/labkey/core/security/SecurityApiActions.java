@@ -561,7 +561,7 @@ public class SecurityApiActions
             if(null == name)
                 throw new IllegalArgumentException("You must specify a name parameter!");
 
-            Group newGroup = SecurityManager.createGroup(getViewContext().getContainer(), name);
+            Group newGroup = SecurityManager.createGroup(getViewContext().getContainer().getProject(), name);
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("id", newGroup.getUserId());
@@ -579,7 +579,7 @@ public class SecurityApiActions
                 throw new IllegalArgumentException("You must specify an id parameter!");
 
             Group group = SecurityManager.getGroup(form.getId());
-            if(null == group || !getViewContext().getContainer().getId().equals(group.getContainer()))
+            if(null == group || !getViewContext().getContainer().getProject().getId().equals(group.getContainer()))
                 throw new IllegalArgumentException("Group id " + form.getId() + " does not exist within this container!");
 
             SecurityManager.deleteGroup(group);
@@ -620,7 +620,7 @@ public class SecurityApiActions
             Group group = SecurityManager.getGroup(form.getGroupId());
             if(null == group)
                 throw new IllegalArgumentException("Invalid group id (" + form.getGroupId() + ")");
-            if(!getViewContext().getContainer().getId().equals(group.getContainer()))
+            if(!getViewContext().getContainer().getProject().getId().equals(group.getContainer()))
                 throw new IllegalArgumentException("Group id " + form.getGroupId() + " does not exist within this container!");
             return group;
         }
