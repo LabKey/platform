@@ -19,6 +19,9 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.SiteAdminRole;
+import org.labkey.api.security.roles.DeveloperRole;
+
 import java.util.*;
 
 /*
@@ -124,7 +127,9 @@ public class SecurityPolicy
      */
     public Set<Role> getEffectiveRoles(UserPrincipal principal)
     {
-        return getRoles(GroupManager.getAllGroupsForPrincipal(principal));
+        Set<Role> roles = getRoles(GroupManager.getAllGroupsForPrincipal(principal));
+        roles.addAll(getContextualRoles(principal));
+        return roles;
     }
 
     /**
@@ -149,6 +154,11 @@ public class SecurityPolicy
 
     public Set<Class<? extends Permission>> getPermissions(UserPrincipal principal, Set<Role> contextualRoles)
     {
+        if(contextualRoles == null)
+            contextualRoles = getContextualRoles(principal);
+        else
+            contextualRoles.addAll(getContextualRoles(principal));
+
         return getPermissions(GroupManager.getAllGroupsForPrincipal(principal), contextualRoles);
     }
 
@@ -189,11 +199,6 @@ public class SecurityPolicy
     public boolean hasPermissions(UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles)
     {
         return getPermissions(principal, contextualRoles).containsAll(permissions);
-    }
-
-    protected Set<Class<? extends Permission>> getPermissions(int[] principals)
-    {
-        return getPermissions(principals, null);
     }
 
     protected Set<Class<? extends Permission>> getPermissions(int[] principals, Set<Role> contextualRoles)
@@ -383,6 +388,23 @@ public class SecurityPolicy
         }
 
         return policy;
+    }
+
+    protected Set<Role> getContextualRoles(UserPrincipal principal)
+    {
+        Set<Role> roles = null;
+        if(principal instanceof User)
+        {
+            User user = (User)principal;
+            roles = new HashSet<Role>();
+
+            if(user.isAdministrator())
+                roles.add(RoleManager.getRole(SiteAdminRole.class));
+            if(user.isDeveloper())
+                roles.add(RoleManager.getRole(DeveloperRole.class));
+        }
+        
+        return roles;
     }
 
 }

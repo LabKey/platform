@@ -506,6 +506,32 @@ LABKEY.Security = new function()
             }
         },
 
+        /**
+         * Returns the tree of securable resources from the current container downward
+         * @param config A configuration object with the following properties:
+         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>data:</b> an object with a property named "resources" which contains the root resource.
+         * Each resource has the following properties:
+         *  <ul>
+         *      <li>id: The unique id of the resource (String, typically a GUID).</li>
+         *      <li>name: The name of the resource suitable for showing to a user.</li>
+         *      <li>description: The description of the reosurce.</li>
+         *      <li>sourceModule: The name of the module in which the resource is defined and managed</li>
+         *      <li>children: An array of child resource objects.</li>
+         *  </ul>
+         * </li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         */
         getSecurableResources : function(config)
         {
             Ext.Ajax.request({
@@ -516,6 +542,38 @@ LABKEY.Security = new function()
             });
         },
 
+        /**
+         * Returns the complete set of roles defined on the server, along with the permissions each role grants.
+         * @param config A configuration object with the following properties:
+         * @param {Function} config.successCallback A reference to a function to call with the API results. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>roles:</b> An array of role objects, each of which has the following properties:
+         *  <ul>
+         *      <li>uniqueName: The unique name of the resource (String, typically a fully-qualified class name).</li>
+         *      <li>name: The name of the role suitable for showing to a user.</li>
+         *      <li>description: The description of the role.</li>
+         *      <li>sourceModule: The name of the module in which the role is defined.</li>
+         *      <li>permissions: An array of permissions the role grants. Each permission has the following properties:
+         *          <ul>
+         *              <li>uniqueName: The unique name of the permission (String, typically a fully-qualified class name).</li>
+         *              <li>name: The name of the permission.</li>
+         *              <li>description: A description of the permission.</li>
+         *              <li>sourceModule: The module in which the permission is defined.</li>
+         *          </ul>
+         *      </li>
+         *  </ul>
+         * </li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
+         * function will be passed the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+         * <li><b>response:</b> The XMLHttpResponse object</li>
+         * </ul>
+         * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         */
         getRoles : function(config)
         {
             Ext.Ajax.request({
