@@ -199,7 +199,25 @@ LABKEY.Experiment = new function()
             });
         },
 
-        saveMaterial : function (config)
+        /**
+         * Saves materials.
+         *
+         * @param config An object that contains the following configuration parameters
+         * @param name name of the sample set
+         * @param materials An array of LABKEY.Exp.Material objects to be saved.
+         * @param {function} config.successCallback The function to call when the function finishes successfully.
+         * This function will be called with a the parameters:
+         * <ul>
+         * <li><b>batch</b> A new LABKEY.Exp.RunGroup object.  Some values will be filled in by the server.
+         * <li><b>response</b> The original response
+         * </ul>
+         * @param {function} [config.errorCallback] The function to call if this function encounters an error.
+         * This function will be called with the following parameters:
+         * <ul>
+         * <li><b>response</b> The original response
+         * </ul>
+         */
+        saveMaterials : function (config)
         {
             if (!config.successCallback) {
                 Ext.Msg.alert("Programming Error", "You must specify a value for the config.successCallback when calling LABKEY.Exp.saveBatch()!");
