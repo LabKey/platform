@@ -57,8 +57,6 @@ public class BaseWikiPermissions
         Set<Role> roles = new HashSet<Role>();
         if(userIsCreator(wiki))
             roles.add(RoleManager.getRole(OwnerRole.class));
-        if(_user.isDeveloper())
-            roles.add(RoleManager.getRole(DeveloperRole.class));
         return roles;
     }
 
