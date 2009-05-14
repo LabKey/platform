@@ -1933,7 +1933,7 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
         if (this.actions.appletFileAction)
             this.actions.appletFileAction[canWrite?'enable':'disable']();
         if (this.actions.appletDirAction)
-            this.actions.appletDirAction[canWrite?'enable':'disable']();
+            this.actions.appletDirAction[canMkdir?'enable':'disable']();
         try
         {
             this.applet.changeWorkingDirectory(record.data.path);
@@ -2220,18 +2220,12 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
                     this.actions.parentFolder.disable();
             }
 
-            var canWrite = this.fileSystem.ready && this.fileSystem.canWrite(record);
-            if (canWrite)
-            {
-                if (this.fileSystem.prefixUrl)
-                    this.fileUploadField.enable();
-                this.actions.uploadTool.enable();
-            }
-            else
-            {
-                this.fileUploadField.disable();
-                this.actions.uploadTool.disable();
-            }
+            var dav = this.fileSystem.ready && this.fileSystem.prefixUrl;
+            var canWrite = dav && this.fileSystem.canWrite(record);
+            var canMkdir = dav && this.fileSystem.canMkdir(record);
+            this.fileUploadField[canWrite?'enable':'disable']();
+            this.actions.uploadTool[canWrite?'enable':'disable']();
+            this.actions.createDirectory[canMkdir?'enable':'disable']();
         }, this);
 
 
