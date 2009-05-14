@@ -24,6 +24,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.*;
 import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.util.*;
@@ -171,6 +172,34 @@ public class SecurityController extends SpringActionController
             throw new UnsupportedOperationException();
         }
     }
+
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ExtAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            String root = getViewContext().getContainer().getId();
+            String resource = root;
+            return new SecurityAdministrationView(root, resource);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
+    }
+
+
+    public class SecurityAdministrationView extends JspView
+    {
+        SecurityAdministrationView(String root, String resource)
+        {
+            super(SecurityController.class, "admin.jsp", null);
+            this.setFrame(FrameType.NONE);
+        }
+    }
+
 
     public static class GroupForm
     {
