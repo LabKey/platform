@@ -44,6 +44,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.util.Pair;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
+import org.labkey.study.security.permissions.ManageSpecimenActorsPermission;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.designer.MapArrayExcelWriter;
@@ -572,7 +573,7 @@ public class SamplesController extends ViewController
     @Jpf.Action
     protected Forward manageActors(ActorEditForm form) throws Exception
     {
-        requiresAdmin();
+        requiresPermission(ManageSpecimenActorsPermission.class);
         if ("POST".equalsIgnoreCase(getRequest().getMethod()))
         {
             ActionErrors errors = PageFlowUtil.getActionErrors(getRequest(), true);
@@ -1406,7 +1407,6 @@ public class SamplesController extends ViewController
 
     private Forward displayManagementSubpage(String jsp, String title, String helpTopic) throws Exception
     {
-        requiresAdmin();
         JspView<Study> view = new JspView<Study>("/org/labkey/study/view/samples/" + jsp + ".jsp", getStudy());
         NavTree[] navTrail = new NavTree[]{
             new NavTree(getStudy().getLabel(), getActionURL().relativeUrl("overview", null, "Study")),

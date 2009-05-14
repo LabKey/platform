@@ -368,11 +368,29 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
-    public static class GetSecurableResourcesAction extends ApiAction
+    public static class GetSecurableResourcesForm
     {
-        public ApiResponse execute(Object o, BindException errors) throws Exception
+        private boolean _includeSubfolders = false;
+
+        public boolean isIncludeSubfolders()
         {
+            return _includeSubfolders;
+        }
+
+        public void setIncludeSubfolders(boolean includeSubfolders)
+        {
+            _includeSubfolders = includeSubfolders;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public static class GetSecurableResourcesAction extends ApiAction<GetSecurableResourcesForm>
+    {
+        private boolean _includeSubfolders = false;
+
+        public ApiResponse execute(GetSecurableResourcesForm form, BindException errors) throws Exception
+        {
+            _includeSubfolders = form.isIncludeSubfolders();
             Container container = getViewContext().getContainer();
             return new ApiSimpleResponse("resources", getResourceProps(container));
         }
@@ -393,7 +411,8 @@ public class SecurityApiActions
             List<Map<String,Object>> childProps = new ArrayList<Map<String,Object>>();
             for(SecurableResource child : resource.getChildResources(getViewContext().getUser()))
             {
-                childProps.add(getResourceProps(child));
+                if(_includeSubfolders || !(child instanceof Container))
+                    childProps.add(getResourceProps(child));
             }
             return childProps;
         }

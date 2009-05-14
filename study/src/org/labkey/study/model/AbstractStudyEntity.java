@@ -210,4 +210,9 @@ public abstract class AbstractStudyEntity<T>
     {
         return getContainer();
     }
+
+    public boolean mayInheritPolicy()
+    {
+        return true;
+    }
 }

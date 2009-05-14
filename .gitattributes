@@ -2171,6 +2171,9 @@ study/src/org/labkey/study/samples/report/specimentype/TypeParticipantReportFact
 study/src/org/labkey/study/samples/report/specimentype/TypeReportFactory.java -text
 study/src/org/labkey/study/samples/report/specimentype/TypeSummaryReportFactory.java -text
 study/src/org/labkey/study/security/datasets.jsp -text
+study/src/org/labkey/study/security/permissions/ManageSpecimenActorsPermission.java -text
+study/src/org/labkey/study/security/permissions/ManageStudyPermission.java -text
+study/src/org/labkey/study/security/roles/SpecimenCoordinatorRole.java -text
 study/src/org/labkey/study/security/sites.jsp -text
 study/src/org/labkey/study/security/study.jsp -text
 study/src/org/labkey/study/security/studySecurity.jsp -text

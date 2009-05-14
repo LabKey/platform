@@ -823,6 +823,7 @@ public class ProjectController extends SpringActionController
     public static class GetContainersForm
     {
         private boolean _includeSubfolders = false;
+        private int _depth = Integer.MAX_VALUE;
 
         public boolean isIncludeSubfolders()
         {
@@ -833,6 +834,16 @@ public class ProjectController extends SpringActionController
         {
             _includeSubfolders = includeSubfolders;
         }
+
+        public int getDepth()
+        {
+            return _depth;
+        }
+
+        public void setDepth(int depth)
+        {
+            _depth = depth;
+        }
     }
 
     /**
@@ -841,15 +852,18 @@ public class ProjectController extends SpringActionController
     @RequiresPermission(ACL.PERM_NONE)
     public class GetContainersAction extends ApiAction<GetContainersForm>
     {
+        int _requestedDepth;
+
         public ApiResponse execute(GetContainersForm form, BindException errors) throws Exception
         {
+            _requestedDepth = form.getDepth();
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.putAll(getContainerProps(getViewContext().getContainer(),
-                    getViewContext().getUser(), form.isIncludeSubfolders()));
+                    getViewContext().getUser(), form.isIncludeSubfolders(), 0));
             return response;
         }
 
-        protected Map<String, Object> getContainerProps(Container container, User user, boolean recurse)
+        protected Map<String, Object> getContainerProps(Container container, User user, boolean recurse, int depth)
         {
             Map<String, Object> containerProps = new HashMap<String,Object>();
             containerProps.put("name", container.getName());
@@ -859,13 +873,13 @@ public class ProjectController extends SpringActionController
             containerProps.put("userPermissions", container.getPolicy().getPermsAsOldBitMask(user));
 
             //recurse into children if requested
-            if (recurse)
-                containerProps.put("children", getContainers(container, user, recurse));
+            if (recurse && depth < _requestedDepth)
+                containerProps.put("children", getContainers(container, user, recurse, depth+1));
 
             return containerProps;
         }
 
-        protected List<Map<String,Object>> getContainers(Container parent, User user, boolean recurse)
+        protected List<Map<String,Object>> getContainers(Container parent, User user, boolean recurse, int depth)
         {
             List<Map<String,Object>> containersProps = new ArrayList<Map<String,Object>>();
             for(Container child : parent.getChildren())
@@ -873,7 +887,7 @@ public class ProjectController extends SpringActionController
                 if (!child.hasPermission(user, ACL.PERM_READ))
                     continue;
 
-                containersProps.add(getContainerProps(child, user, recurse));
+                containersProps.add(getContainerProps(child, user, recurse, depth));
             }
 
             return containersProps;

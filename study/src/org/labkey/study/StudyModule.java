@@ -37,6 +37,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.SpecimenService;
@@ -56,8 +57,8 @@ import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.controllers.designer.DesignerController;
 import org.labkey.study.controllers.plate.PlateController;
 import org.labkey.study.controllers.reports.ReportsController;
-import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.controllers.samples.SpecimenApiController;
+import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
@@ -70,6 +71,9 @@ import org.labkey.study.query.StudySchemaProvider;
 import org.labkey.study.reports.*;
 import org.labkey.study.samples.SamplesWebPart;
 import org.labkey.study.samples.SpecimenCommentAuditViewFactory;
+import org.labkey.study.security.permissions.ManageSpecimenActorsPermission;
+import org.labkey.study.security.permissions.ManageStudyPermission;
+import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.view.*;
 
 import java.lang.reflect.InvocationTargetException;
@@ -140,6 +144,13 @@ public class StudyModule extends DefaultModule
 
         EnumConverter.registerEnum(SecurityType.class);
         QuerySnapshotService.registerProvider(StudyManager.getSchemaName(), DatasetSnapshotProvider.getInstance());
+
+        //register roles
+        RoleManager.registerRole(new SpecimenCoordinatorRole());
+
+        //add permissions to site/project/folder admin roles
+        RoleManager.addPermissionToAdminRoles(ManageStudyPermission.class);
+        RoleManager.addPermissionToAdminRoles(ManageSpecimenActorsPermission.class);
     }
 
     @Override

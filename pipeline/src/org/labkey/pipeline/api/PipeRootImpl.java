@@ -309,4 +309,10 @@ public class PipeRootImpl implements PipeRoot
     {
         return getContainer();
     }
+
+    public boolean mayInheritPolicy()
+    {
+        //pipeline roots should not inherit policies from the container!
+        return false;
+    }
 }

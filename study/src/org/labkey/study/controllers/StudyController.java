@@ -53,11 +53,11 @@ import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.*;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.User;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
@@ -71,6 +71,8 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.util.Pair;
 import org.labkey.study.*;
+import org.labkey.study.security.permissions.ManageSpecimenActorsPermission;
+import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.writer.StudyWriter;
 import org.labkey.study.writer.FileSystemFile;
 import org.labkey.study.writer.ExportContext;
@@ -1034,7 +1036,7 @@ public class StudyController extends BaseStudyController
         SampleManager.getInstance().saveRepositorySettings(c, reposSettings);
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(ManageStudyPermission.class)
     public class ManageStudyAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception

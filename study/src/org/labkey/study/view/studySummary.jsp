@@ -15,20 +15,22 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.security.ACL"%>
+<%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.security.User"%>
-<%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.study.controllers.CohortController"%>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.study.controllers.CohortController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.study.security.permissions.ManageStudyPermission" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     User user = (User)request.getUserPrincipal();
+
 if (null == getStudy())
 {
     out.println("A study has not yet been created in this folder.<br>");
-    if (getViewContext().hasPermission(ACL.PERM_ADMIN))
+    if (getViewContext().getContainer().hasPermission(user, AdminPermission.class))
     {
         Container c = getViewContext().getContainer();
         ActionURL createURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, c);
@@ -47,7 +49,7 @@ if (null == getStudy())
     return;
 }
     boolean dateBased = getStudy().isDateBased();
-    boolean isAdmin = getStudy().getContainer().hasPermission(user, ACL.PERM_ADMIN);
+    boolean isAdmin = getStudy().getContainer().hasPermission(user, ManageStudyPermission.class);
     ActionURL url = new ActionURL(StudyController.BeginAction.class, getStudy().getContainer());
     String visitLabel = StudyManager.getInstance().getVisitManager(getStudy()).getPluralLabel();
 %>
