@@ -203,6 +203,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return getPolicy().hasPermission(user, perm);
     }
 
+    public boolean hasOneOf(User user, Set<Class<? extends Permission>> perms)
+    {
+        return getPolicy().hasOneOf(user, perms, null);
+    }
+
     /**
      * Don't use this anymore
      * @param user the user
@@ -840,5 +845,10 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         SecurableResource parent = getParent();
         return getParent().equals(this) ? null : parent;
+    }
+
+    public boolean mayInheritPolicy()
+    {
+        return true;
     }
 }

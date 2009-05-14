@@ -112,4 +112,19 @@ public class RoleManager
         }
     }
 
+    public static void addPermissionToAdminRoles(Class<? extends Permission> perm)
+    {
+        getRole(SiteAdminRole.class).addPermission(perm);
+        getRole(ProjectAdminRole.class).addPermission(perm);
+        getRole(FolderAdminRole.class).addPermission(perm);
+    }
+
+    public static Set<Class<? extends Permission>> permSet(Class<? extends Permission>... perms)
+    {
+        //for some reason, Collections.asSet() will not compile with these kinds of generics
+        Set<Class<? extends Permission>> set = new HashSet<Class<? extends Permission>>();
+        set.addAll(Arrays.asList(perms));
+        return set;
+    }
+
 }

@@ -32,6 +32,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.SpringAttachmentFile;
@@ -540,13 +541,23 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
         RequiresPermission oldReqPerm = actionClass.getAnnotation(RequiresPermission.class);
         RequiresPermissionClass requiresPerm = actionClass.getAnnotation(RequiresPermissionClass.class);
-        Class<? extends Permission> permissionRequired = null != requiresPerm ? requiresPerm.value()
-                : translatePermission(oldReqPerm);
+        RequiresOneOf requiresOneOf = actionClass.getAnnotation(RequiresOneOf.class);
+        Set<Class<? extends Permission>> permissionsRequired = null;
+        if(null != requiresPerm)
+            permissionsRequired = RoleManager.permSet(requiresPerm.value());
+        if(null != requiresOneOf)
+            permissionsRequired = RoleManager.permSet(requiresOneOf.value());
+        if(null != oldReqPerm)
+        {
+            Class<? extends Permission> perm = translatePermission(oldReqPerm);
+            if(null != perm)
+                permissionsRequired = RoleManager.permSet(perm);
+        }
 
-        if(null != permissionRequired)
+        if(null != permissionsRequired)
         {
             SecurityPolicy policy = SecurityManager.getPolicy(c);
-            if(!policy.hasPermission(user, permissionRequired))
+            if(!policy.hasOneOf(user, permissionsRequired, null))
                 throw new UnauthorizedException();
         }
 
@@ -558,8 +569,8 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         if (requiresLogin && user.isGuest())
             HttpView.throwUnauthorized();
 
-        if (null == oldReqPerm && null == requiresPerm && !requiresSiteAdmin && !requiresLogin)
-            throw new IllegalStateException("@RequiresPermission, @RequiresPermissionClass, @RequiresSiteAdmin, or @RequiresLogin annotation is required on class " + actionClass.getName());
+        if (null == oldReqPerm && null == requiresPerm && !requiresSiteAdmin && !requiresLogin && null == requiresOneOf)
+            throw new IllegalStateException("@RequiresPermission, @RequiresPermissionClass, @RequiresOneOf, @RequiresSiteAdmin, or @RequiresLogin annotation is required on class " + actionClass.getName());
     }
 
     private static Class<? extends Permission> translatePermission(RequiresPermission requiresPerm)

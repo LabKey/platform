@@ -24,6 +24,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Ownable;
 import org.labkey.api.security.*;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
@@ -443,6 +445,23 @@ public class ViewController extends PageFlowControllerFIXED implements Controlle
     {
         if (!getUser().isAdministrator())
             requiresPermission(ACL.PERM_ADMIN, objectContainerId);
+    }
+
+    /**
+     * New form of permissions checking.
+     * @param perm The permission class that you require (e.g. ReadPermission.class)
+     * @throws ServletException Thrown if there is an exception
+     */
+    protected void requiresPermission(Class<? extends Permission> perm) throws ServletException
+    {
+        Container container = getViewContext().getContainer();
+        User user = getViewContext().getUser();
+
+        SecurityPolicy policy = SecurityManager.getPolicy(container);
+        if(!policy.hasPermission(user, perm))
+           HttpView.throwUnauthorized();
+        
+        requiresTermsOfUse();
     }
 
     public boolean isPost()

@@ -59,4 +59,6 @@ public interface SecurableResource
 
     @NotNull
     public List<SecurableResource> getChildResources(User user);
+
+    public boolean mayInheritPolicy();
 }

@@ -588,6 +588,7 @@ api/src/org/labkey/api/security/IgnoresTermsOfUse.java -text
 api/src/org/labkey/api/security/LoginUrls.java -text
 api/src/org/labkey/api/security/PermissionsMap.java -text
 api/src/org/labkey/api/security/RequiresLogin.java -text
+api/src/org/labkey/api/security/RequiresOneOf.java -text
 api/src/org/labkey/api/security/RequiresPermission.java -text
 api/src/org/labkey/api/security/RequiresPermissionClass.java -text
 api/src/org/labkey/api/security/RequiresSiteAdmin.java -text

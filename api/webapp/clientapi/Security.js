@@ -341,6 +341,7 @@ LABKEY.Security = new function()
          * @param config A configuration object with the following properties
          * @param {boolean} [config.includeSubfolders] If set to true, the entire branch of containers will be returned.
          * If false, only the immediate children of the starting container will be returned (defaults to false).
+         * @param {int} [config.depth] May be used to control the depth of recursion if includeSubfolders is set to true.
          * @param {function} config.successCallback A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
@@ -376,6 +377,8 @@ LABKEY.Security = new function()
             var params = {};
             if(undefined != config.includeSubfolders)
                 params.includeSubfolders = config.includeSubfolders;
+            if(undefined != config.depth)
+                params.depth = config.depth;
 
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("project", "getContainers", config.containerPath),
@@ -509,6 +512,8 @@ LABKEY.Security = new function()
         /**
          * Returns the tree of securable resources from the current container downward
          * @param config A configuration object with the following properties:
+         * @param {Boolean} config.includeSubfolders If set to true, the response will include subfolders
+         * and their contained securable resources (defaults to false).
          * @param {Function} config.successCallback A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
@@ -531,12 +536,19 @@ LABKEY.Security = new function()
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
          * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
+         * the current container path will be used.
          */
         getSecurableResources : function(config)
         {
+            var params = {};
+            if(undefined != config.includeSubfolders)
+                params.includeSubfolders = config.includeSubfolders;
+
             Ext.Ajax.request({
-                url: LABKEY.ActionURL.buildURL("security", "getSecurableResources"),
+                url: LABKEY.ActionURL.buildURL("security", "getSecurableResources", config.containerPath),
                 method: "GET",
+                params: params,
                 success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
             });
@@ -631,12 +643,14 @@ LABKEY.Security = new function()
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
          * @param {object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
+         * the current container path will be used.
          */
         getPolicy : function(config)
         {
             var params = {resourceId: config.resourceId};
             Ext.Ajax.request({
-                url: LABKEY.ActionURL.buildURL("security", "getPolicy"),
+                url: LABKEY.ActionURL.buildURL("security", "getPolicy", config.containerPath),
                 method: "GET",
                 params: params,
                 success: LABKEY.Utils.getCallbackWrapper(function(data, req){
@@ -666,12 +680,14 @@ LABKEY.Security = new function()
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
          * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
+         * the current container path will be used.
          */
         deletePolicy : function(config)
         {
             var params = {resourceId: config.resourceId};
             Ext.Ajax.request({
-                url: LABKEY.ActionURL.buildURL("security", "deletePolicy"),
+                url: LABKEY.ActionURL.buildURL("security", "deletePolicy", config.containerPath),
                 method: "GET",
                 params: params,
                 success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
@@ -700,11 +716,13 @@ LABKEY.Security = new function()
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
          * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
+         * the current container path will be used.
          */
         savePolicy : function(config)
         {
             Ext.Ajax.request({
-                url: LABKEY.ActionURL.buildURL("security", "deletePolicy"),
+                url: LABKEY.ActionURL.buildURL("security", "deletePolicy", config.containerPath),
                 method : 'POST',
                 success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
@@ -734,12 +752,14 @@ LABKEY.Security = new function()
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
          * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
+         * the current container path will be used.
          */
         createGroup : function(config)
         {
             var params = {name: config.groupName};
             Ext.Ajax.request({
-                url: LABKEY.ActionURL.buildURL("security", "createGroup"),
+                url: LABKEY.ActionURL.buildURL("security", "createGroup", config.containerPath),
                 method: "GET",
                 params: params,
                 success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
@@ -764,12 +784,14 @@ LABKEY.Security = new function()
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
          * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
+         * the current container path will be used.
          */
         deleteGroup : function(config)
         {
             var params = {id: config.groupId};
             Ext.Ajax.request({
-                url: LABKEY.ActionURL.buildURL("security", "deleteGroup"),
+                url: LABKEY.ActionURL.buildURL("security", "deleteGroup", config.containerPath),
                 method: "GET",
                 params: params,
                 success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
@@ -795,12 +817,14 @@ LABKEY.Security = new function()
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
          * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
+         * the current container path will be used.
          */
         addGroupMember : function(config)
         {
             var params = {groupId: config.groupId, principalId: config.principalId};
             Ext.Ajax.request({
-                url: LABKEY.ActionURL.buildURL("security", "addGroupMember"),
+                url: LABKEY.ActionURL.buildURL("security", "addGroupMember", config.containerPath),
                 method: "GET",
                 params: params,
                 success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
@@ -827,12 +851,14 @@ LABKEY.Security = new function()
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
          * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
+         * the current container path will be used.
          */
         removeGroupMember : function(config)
         {
             var params = {groupId: config.groupId, principalId: config.principalId};
             Ext.Ajax.request({
-                url: LABKEY.ActionURL.buildURL("security", "removeGroupMember"),
+                url: LABKEY.ActionURL.buildURL("security", "removeGroupMember", config.containerPath),
                 method: "GET",
                 params: params,
                 success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
@@ -861,12 +887,14 @@ LABKEY.Security = new function()
          * <li><b>response:</b> The XMLHttpResponse object</li>
          * </ul>
          * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
+         * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
+         * the current container path will be used.
          */
         changeGroupMembers : function(config)
         {
             var params = {groupId: config.groupId, names: config.names};
             Ext.Ajax.request({
-                url: LABKEY.ActionURL.buildURL("security", "changeGroupMembers"),
+                url: LABKEY.ActionURL.buildURL("security", "changeGroupMembers", config.containerPath),
                 method: "GET",
                 params: params,
                 success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),

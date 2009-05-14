@@ -511,4 +511,9 @@ public class ReportDescriptor extends Entity implements SecurableResource
     {
         return lookupContainer();
     }
+
+    public boolean mayInheritPolicy()
+    {
+        return true;
+    }
 }
