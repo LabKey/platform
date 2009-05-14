@@ -49,7 +49,7 @@ public class ViewBackgroundInfo implements Serializable
     {
         setContainer(c);
         setUser(u);
-        setUrlHelper(h);
+        setURL(h);
     }
 
     public String getContainerId()
@@ -106,14 +106,14 @@ public class ViewBackgroundInfo implements Serializable
         _user = user;
     }
 
-    public ActionURL getUrlHelper()
+    public ActionURL getURL()
     {
         if (_url == null && _pageFlow != null)
             _url = new ActionURL(_pageFlow, _action, getContainer());
         return _url;
     }
 
-    public void setUrlHelper(ActionURL url)
+    public void setURL(ActionURL url)
     {
         _pageFlow = (url == null ? null : url.getPageFlow());
         _action = (url == null ? null : url.getAction());

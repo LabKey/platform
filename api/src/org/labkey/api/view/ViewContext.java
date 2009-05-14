@@ -89,7 +89,7 @@ public class ViewContext extends BoundMap implements MessageSource
 
     public ViewContext(ViewBackgroundInfo copyFrom)
     {
-        _url = copyFrom.getUrlHelper();
+        _url = copyFrom.getURL();
         _user = copyFrom.getUser();
         _c = copyFrom.getContainer();
     }

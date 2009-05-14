@@ -382,7 +382,7 @@ public class Table
     }
 
 
-    // Cafeful: Caller must track and clean up parameters (e.g., close InputStreams) after execution is complete
+    // Careful: Caller must track and clean up parameters (e.g., close InputStreams) after execution is complete
     public static void batchExecute(DbSchema schema, String sql, Collection<? extends Collection<?>> paramList)
             throws SQLException
     {

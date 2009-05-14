@@ -174,7 +174,7 @@ abstract public class PipelineJob extends Job implements Serializable
         _activeTaskStatus = TaskStatus.waiting;
 
         // TODO: Fix TestJob for mini-pipeline using job with no PipeRoot.
-        if (info.getUrlHelper() != null)
+        if (info.getURL() != null)
         {
             Container c = info.getContainer();
             PipeRoot pr = PipelineService.get().findPipelineRoot(c);
@@ -1418,7 +1418,7 @@ abstract public class PipelineJob extends Job implements Serializable
      */
     public ActionURL getActionURL()
     {
-        return getInfo().getUrlHelper();
+        return getInfo().getURL();
     }
 
     /**
