@@ -18,13 +18,14 @@ package org.labkey.study.importer;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.MvUtil;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineService;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.model.*;
@@ -32,9 +33,9 @@ import org.labkey.study.pipeline.DatasetBatch;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.xml.CohortType;
+import org.labkey.study.xml.CohortsDocument;
 import org.labkey.study.xml.RepositoryType;
 import org.labkey.study.xml.StudyDocument;
-import org.labkey.study.xml.CohortsDocument;
 import org.springframework.validation.BindException;
 import org.xml.sax.SAXException;
 
@@ -103,6 +104,27 @@ public class StudyImporter
         studyForm.setStartDate(studyXml.getStartDate().getTime());
         studyForm.setSecurityType(SecurityType.valueOf(studyXml.getSecurityType().toString()));
         StudyController.createStudy(getStudy(true), _c, _user, studyForm);
+
+        // Missing value indicators
+        StudyDocument.Study.MissingValueIndicators mvXml = studyXml.getMissingValueIndicators();
+        StudyDocument.Study.MissingValueIndicators.MissingValueIndicator[] mvs = mvXml.getMissingValueIndicatorArray();
+
+        // Create a map that looks just like the map returned by MvUtil.getIndicatorsAndLabels()
+        Map<String, String> newMvMap = new HashMap<String, String>(mvs.length);
+
+        for (StudyDocument.Study.MissingValueIndicators.MissingValueIndicator mv : mvs)
+            newMvMap.put(mv.getIndicator(), mv.getLabel());
+
+        Map<String, String> oldMvMap = MvUtil.getIndicatorsAndLabels(_c);
+
+        // Only save the imported missing value indicators if they don't match the current settings exactly; this makes
+        // it possible to share the same MV indicators across a folder tree, without an import breaking inheritance.
+        if (!newMvMap.equals(oldMvMap))
+        {
+            String[] mvIndicators = newMvMap.keySet().toArray(new String[mvs.length]);
+            String[] mvLabels = newMvMap.values().toArray(new String[mvs.length]);
+            MvUtil.assignMvIndicators(_c, mvIndicators, mvLabels);
+        }
 
         // Visit map
         StudyDocument.Study.Visits visits = studyXml.getVisits();

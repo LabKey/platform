@@ -15,14 +15,16 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.study.model.Study;
-import org.labkey.study.xml.StudyDocument;
-import org.labkey.study.xml.SecurityType;
-import org.labkey.api.util.VirtualFile;
 import org.apache.xmlbeans.XmlOptions;
+import org.labkey.api.data.MvUtil;
+import org.labkey.api.util.VirtualFile;
+import org.labkey.study.model.Study;
+import org.labkey.study.xml.SecurityType;
+import org.labkey.study.xml.StudyDocument;
 
 import java.io.PrintWriter;
 import java.util.Calendar;
+import java.util.Map;
 
 /**
  * User: adam
@@ -30,7 +32,7 @@ import java.util.Calendar;
  * Time: 9:39:31 AM
  */
 
-// This writer is primarily responsible for study.xml.  It constructs the StudyDocument (xml bean used to read/write study.xml)
+// This writer is largely responsible for study.xml.  It constructs the StudyDocument (xml bean used to read/write study.xml)
 //  that gets added to the ExportContext, writes the top-level study attributes, and writes out the bean when it's complete.
 //  However, each top-level writer is responsible for their respective elements in study.xml -- VisitMapWriter handles "visits"
 //  element, DataSetWriter is responsible for "datasets" element, etc.  As a result, StudyXmlWriter must be invoked after all
@@ -48,6 +50,17 @@ public class StudyXmlWriter implements Writer<Study>
         startDate.setTime(study.getStartDate());
         studyXml.setStartDate(startDate);        // TODO: TimeZone?
         studyXml.setSecurityType(SecurityType.Enum.forString(study.getSecurityType().name()));
+
+        // Export the MV indicators -- always write these, even if they're blank
+        Map<String, String> mvMap = MvUtil.getIndicatorsAndLabels(study.getContainer());
+        StudyDocument.Study.MissingValueIndicators mvXml = studyXml.addNewMissingValueIndicators();
+
+        for (Map.Entry<String, String> mv : mvMap.entrySet())
+        {
+            StudyDocument.Study.MissingValueIndicators.MissingValueIndicator indXml = mvXml.addNewMissingValueIndicator();
+            indXml.setIndicator(mv.getKey());
+            indXml.setLabel(mv.getValue());
+        }
 
         // This gets called last, after all other writers have populated the other sections.  Save the study.xml
         PrintWriter writer = fs.getPrintWriter("study.xml");
