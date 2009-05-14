@@ -42,11 +42,7 @@ function parseUri(str)
     {
         if ($1) uri[o.q.name][$1] = $2;
     });
-    uri.toString = function()
-    {
-        return this.protocol + "://" + this.host + this.pathname + this.search;
-    };
-    uri.href = uri.toString();
+    uri.href = this.protocol + "://" + this.host + this.pathname + this.search;
     return uri;
 }
 parseUri.options =
@@ -68,6 +64,10 @@ parseUri.options =
 
 var URI = function(u)
 {
+    this.toString = function()
+    {
+        return this.protocol + "://" + this.host + this.pathname + this.search;
+    };
     if (typeof u == "string")
         this.parse(u);
     else if (typeof u == "object")
@@ -380,169 +380,6 @@ function destroyPreviews()
     allPreviews = [];
 }
 
-
-/*
-var _previewConnection = new Ext.data.Connection({autoAbort:true, method:'GET', disableCaching:false});
-var _previewWindow = null;
-var _previewAsync = null;
-
-// mouseout isn't very reliable, check that mouse is still over target
-var hoverTask = {interval:100, run:function(e)
-{
-    if (hoverPreviewAreas.length == 0)
-        return;
-}};
-var hoverPreviewAreas = [];
-Ext.getDoc().on("mousemove",hoverTask.run);
-
-function _attachPreview(id,record)
-{
-    if (this && !this.canRead(record))
-        return;
-    if (!record.data.file)
-        return;
-    var img = Ext.fly(id,_previewScope);
-    if (!img) return;
-    img.dom.onmouseover = preview.createCallback(id,record);
-    img.dom.mouseout = unpreviewWindow;
-}
-
-
-function preview(id, record)
-{
-    cancelAsyncPreview();
-    closePreviewWindow();
-    var timeout = previewFN.defer(200,null,[id,record]);
-    _previewAsync = {timeout:timeout, cancel:function() {clearTimeout(this.timeout);}};
-    hoverPreviewAreas = [id];
-}
-
-
-function previewFN(id, record)
-{
-    var uri = record.data.uri;
-    var contentType = record.data.contentType;
-    var size = record.data.size;
-    if (!uri || !contentType || !size)
-        return;
-
-    if (startsWith(contentType,'image/'))
-    {
-        //dynamicToolTip(el, {tag:'img', src:uri});
-        //previewWindow(el, {tag:'img', src:uri});
-        var image = new Image();
-        image.onload = function()
-        {
-            var img = {tag:'img', src:uri, border:'0', width:image.width, height:image.height};
-            constrain(img, 400, 400);
-            previewWindow(id, img);
-        };
-        image.src = uri;
-        _previewAsync = {image:image, cancel:function(){image.onload=null;}};
-    }
-    else if (startsWith(contentType,'text/') || contentType == 'application/javascript' || endsWith(record.data.name,".log"))
-    {
-        var headers = {};
-        if (contentType != 'text/html' && size > 10000)
-            headers['Content-Range'] = 'bytes 0-10000/'+size;
-        var requestid = _previewConnection.request({
-            autoAbort:true,
-            url:uri,
-            headers:headers,
-            method:'GET',
-            disableCaching:false,
-            success : function(response)
-            {
-                var contentType = response.getResponseHeader["Content-Type"] || "text/plain";
-                var html;
-                if (contentType == "text/html")
-                    html = response.responseText;
-                else if (startsWith(contentType,"text/") || contentType == 'application/javascript')
-                    html = "<div style='width:640px;'><pre>" + $h(response.responseText) + "</pre></div>";
-                previewWindow(id, html);
-                if (_previewAsync && _previewAsync.requestid == requestid)
-                    _previewAsync = null;
-            }
-        });
-        _previewAsync = {requestid:requestid, cancel:function(){_previewConnection.abort(this.requestid);}};
-    }
-}
-
-
-function dynamicToolTip(id, html)
-{
-    html = $dom.markup(html);
-    var tt = new Ext.ToolTip({target:Ext.fly(id,_previewScope), html:html, trackMouse:true});
-    tt.onTargetOver(Ext.EventObject);
-}
-
-
-function previewWindow(id, html)
-{
-    var el = Ext.fly(id,_previewScope);
-    if (!el) return;
-    html = $dom.markup(html);
-    if (_previewWindow)
-        _previewWindow.close();
-    var xy = el.getAnchorXY('tr');
-    _previewWindow = new Ext.Window({html:html, target:el, closable:false, constrain:true, x:xy[0]+2, y:xy[1]});
-    _previewWindow.show();
-    _previewWindow.getEl().on("mouseout",unpreviewWindow);
-}
-
-
-function closePreviewWindow()
-{
-    if (_previewWindow)
-    {
-        _previewWindow.close();
-        _previewWindow = null;
-    }
-}
-
-
-function cancelAsyncPreview()
-{
-    if (_previewAsync && typeof _previewAsync.cancel == 'function')
-        _previewAsync.cancel.call(_previewAsync);
-    _previewAsync = null;
-}
-
-
-function unpreviewWindow(e)
-{
-    cancelAsyncPreview();
-    if (_previewWindow)
-    {
-        if (e  && _previewWindow.getEl().getRegion().contains(e.getPoint()))
-        {
-            // defer()?
-        }
-        else
-        {
-            closePreviewWindow();
-        }
-    }
-}
-
-function constrain(img,w,h)
-{
-    var X = img.width;
-    var Y = img.height;
-    if (X > w)
-    {
-        img.width = w;
-        img.height = Math.round(Y * (1.0*w/X));
-    }
-    X = img.width;
-    Y = img.height;
-    if (Y > h)
-    {
-        img.height = h;
-        img.width = Math.round(X * (1.0*h/Y));
-    }
-}
-*/
 
 //
 // FileSystem
@@ -1616,20 +1453,6 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
         }});
     },
 
-
-//    getOldDropAction : function()
-//    {
-//        return new Ext.Action({text: 'Upload multiple files', scope:this, disabled:true, handler: function()
-//        {
-//            if (!this.currentDirectory)
-//                return;
-//            var prefix = this.fileSystem.prefixUrl;
-//            var url = this.fileSystem.concatPaths(prefix,this.currentDirectory.data.path);
-//            window.open(url, '_blank', 'height=600,width=1000,resizable=yes');
-//        }});
-//    },
-
-
     helpEl : null,
     helpWindow : null,
 
@@ -2050,7 +1873,9 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
 
     layoutAppletWindow : function()
     {
-        this.applet = new TransferApplet({directory:this.currentDirectory.data.path});
+        var uri = new URI(this.fileSystem.prefixUrl);  // implementation leaking here
+        var url = uri.toString();
+        this.applet = new TransferApplet({url:url, directory:this.currentDirectory.data.path});
         this.progressBar = new Ext.ProgressBar({id:'appletStatusProgressBar'});
 
         this.actions.appletFileAction = new Ext.Action({text:'Choose File...', scope:this, disabled:false, iconCls:'iconFileNew', handler:function()
