@@ -24,15 +24,11 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
-import org.labkey.study.model.Cohort;
-import org.labkey.study.model.Participant;
-import org.labkey.study.model.Study;
-import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.*;
 import org.labkey.study.query.CohortQueryView;
 import org.labkey.study.query.CohortTable;
 import org.labkey.study.query.StudyQuerySchema;
@@ -43,7 +39,6 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.ServletException;
 import java.util.HashMap;
 import java.util.Map;
-import java.sql.SQLException;
 
 /**
  * User: jgarms
@@ -133,6 +128,7 @@ public class CohortController extends BaseStudyController
         public boolean handlePost(ManageCohortsForm form, BindException errors) throws Exception
         {
             Study study = getStudy();
+
             if (form.isManualCohortAssignment() != study.isManualCohortAssignment())
             {
                 study.setManualCohortAssignment(form.isManualCohortAssignment());
@@ -141,6 +137,7 @@ public class CohortController extends BaseStudyController
                 // We'll ignore anything else, since our whole view is about to change
                 return true;
             }
+
             if (form.isManualCohortAssignment())
             {
                 // Update the assignments from the individual entries in the form
@@ -154,31 +151,21 @@ public class CohortController extends BaseStudyController
                 }
                 assert cohorts.length == participants.length : "Submitted different numbers of participants and cohorts";
 
-                Map<String,Integer> p2c = new HashMap<String,Integer>();
+                Map<String, Integer> p2c = new HashMap<String, Integer>();
+
                 for (int i=0; i<participants.length; i++)
                 {
                     p2c.put(participants[i], cohorts[i]);
                 }
 
-                for (Participant p : StudyManager.getInstance().getParticipants(study))
-                {
-                    Integer newCohortId = p2c.get(p.getParticipantId());
-                    if (!nullSafeEqual(newCohortId, p.getCohortId()))
-                    {
-                        if (newCohortId.intValue() == -1) // unassigned cohort
-                            p.setCohortId(null);
-                        else
-                            p.setCohortId(newCohortId);
-                        StudyManager.getInstance().updateParticipant(getUser(), p);
-                    }
-                }
+                CohortManager.updateManualCohortAssignment(study, getUser(), p2c);
             }
             else
             {
                 // Update all participants via the new dataset column
                 // Note: we need to do this even if no changes have been made to
                 // this setting, as it's possible that the user manually set some cohorts previously
-                updateAutomaticCohort(study, getUser(), form.getParticipantCohortDataSetId(), form.getParticipantCohortProperty());
+                CohortManager.updateAutomaticCohortAssignment(study, getUser(), form.getParticipantCohortDataSetId(), form.getParticipantCohortProperty());
             }
 
             return true;
@@ -190,21 +177,6 @@ public class CohortController extends BaseStudyController
                 return new ActionURL(ManageCohortsAction.class, getContainer());
             return new ActionURL(StudyController.ManageStudyAction.class, getContainer());
         }
-    }
-
-    // TODO: Move to CohortManager or similar
-    public static void updateAutomaticCohort(Study study, User user, Integer participantCohortDataSetId, String participantCohortProperty) throws SQLException
-    {
-        study = study.createMutable();
-        study.setParticipantCohortDataSetId(participantCohortDataSetId);
-        study.setParticipantCohortProperty(participantCohortProperty);
-        StudyManager.getInstance().updateStudy(user, study);
-        StudyManager.getInstance().updateParticipantCohorts(user, study);
-    }
-
-    public static void updateManualCohort(Study study)
-    {
-
     }
 
     public static class ManageCohortsForm
@@ -332,18 +304,7 @@ public class CohortController extends BaseStudyController
             {
                 if (isInsert())
                 {
-                    cohort = new Cohort();
-
-                    // Check if there's a conflict
-                    Cohort existingCohort = StudyManager.getInstance().getCohortByLabel(getContainer(), getUser(), newLabel);
-                    if (existingCohort != null)
-                    {
-                        errors.reject("insertCohort", "A cohort with the label '" + newLabel + "' already exists");
-                        return false;
-                    }
-
-                    cohort.setLabel(newLabel);
-                    StudyManager.getInstance().createCohort(getStudy(), getUser(), cohort);
+                    cohort = CohortManager.createCohort(getStudy(), getUser(), newLabel);
                 }
                 else
                 {
@@ -387,6 +348,11 @@ public class CohortController extends BaseStudyController
             {
                 for (ValidationError error : e.getErrors())
                     errors.reject(SpringActionController.ERROR_MSG, PageFlowUtil.filter(error.getMessage()));
+                return false;
+            }
+            catch (ServletException e)
+            {
+                errors.reject("insertCohort", e.getMessage());
                 return false;
             }
             finally

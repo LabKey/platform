@@ -31,14 +31,19 @@ import org.labkey.study.xml.StudyDocument;
  */
 public class SpecimenArchiveWriter implements Writer<Study>
 {
-    public void write(Study study, ExportContext ctx, VirtualFile fs) throws Exception
+    private static final String DEFAULT_DIRECTORY = "specimens";
+
+    public void write(Study study, ExportContext ctx, VirtualFile root) throws Exception
     {
+        VirtualFile fs = root.getDir(DEFAULT_DIRECTORY);
+
         String archiveName = fs.makeLegalName(study.getLabel().replaceAll("\\s", "") + ".specimens");
 
         StudyDocument.Study studyXml = ctx.getStudyXml();
         StudyDocument.Study.Specimens specimens = studyXml.addNewSpecimens();
         specimens.setRepositoryType(RepositoryType.STANDARD);
-        specimens.setSource(archiveName);
+        specimens.setDir(DEFAULT_DIRECTORY);
+        specimens.setFile(archiveName);
 
         Archive zip = fs.createZipArchive(archiveName);
 

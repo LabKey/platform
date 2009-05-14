@@ -40,10 +40,15 @@ import java.util.List;
  */
 public class DataSetWriter implements Writer<Study>
 {
-    public void write(Study study, ExportContext ctx, VirtualFile fs) throws SQLException, IOException, ServletException
+    private static final String DEFAULT_DIRECTORY = "datasets";
+
+    public void write(Study study, ExportContext ctx, VirtualFile root) throws SQLException, IOException, ServletException
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();
         Datasets datasetsXml = studyXml.addNewDatasets();
+        datasetsXml.setDir(DEFAULT_DIRECTORY);
+
+        VirtualFile fs = root.getDir(DEFAULT_DIRECTORY);
 
         DataSetDefinition[] datasets = study.getDataSets();
 
@@ -54,7 +59,7 @@ public class DataSetWriter implements Writer<Study>
         // Write out the .dataset file and add reference to study.xml
         Datasets.Definition definitionXml = datasetsXml.addNewDefinition();
         String datasetFilename = fs.makeLegalName(study.getLabel().replaceAll("\\s", "") + ".dataset");
-        definitionXml.setSource(datasetFilename);
+        definitionXml.setFile(datasetFilename);
 
         PrintWriter writer = fs.getPrintWriter(datasetFilename);
         writer.println("# default group can be used to avoid repeating definitions for each dataset\n" +

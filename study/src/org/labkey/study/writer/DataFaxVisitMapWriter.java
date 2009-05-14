@@ -39,7 +39,7 @@ public class DataFaxVisitMapWriter implements Writer<Visit[]>
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();
         StudyDocument.Study.Visits visitsXml = studyXml.addNewVisits();
-        visitsXml.setSource(FILENAME);
+        visitsXml.setFile(FILENAME);
 
         for (Visit visit : visits)
         {

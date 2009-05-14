@@ -1999,6 +1999,7 @@ study/src/org/labkey/study/importer/LDMSRecord.java -text
 study/src/org/labkey/study/importer/PipeDelimParser.java -text
 study/src/org/labkey/study/importer/SimpleSpecimenImporter.java -text
 study/src/org/labkey/study/importer/SpecimenImporter.java -text
+study/src/org/labkey/study/importer/StudyImportJob.java -text
 study/src/org/labkey/study/importer/StudyImporter.java -text
 study/src/org/labkey/study/importer/VisitMapImporter.java -text
 study/src/org/labkey/study/importer/VisitMapReader.java -text
@@ -2010,6 +2011,7 @@ study/src/org/labkey/study/model/AllParticipantData.java -text
 study/src/org/labkey/study/model/BaseStudyDomainKind.java -text
 study/src/org/labkey/study/model/Cohort.java -text
 study/src/org/labkey/study/model/CohortDomainKind.java -text
+study/src/org/labkey/study/model/CohortManager.java -text
 study/src/org/labkey/study/model/CustomParticipantView.java -text
 study/src/org/labkey/study/model/DataSetDefinition.java -text
 study/src/org/labkey/study/model/DatasetDomainKind.java -text

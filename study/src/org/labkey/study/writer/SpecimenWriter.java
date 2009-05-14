@@ -96,11 +96,8 @@ public class SpecimenWriter implements Writer<Study>
         sql.append("\nWHERE se.Container = ? ORDER BY se.ExternalId");
         sql.add(c);
 
-        _log.info(sql);
-
         // Note: must be uncached result set -- this query can be very large
-        // TODO: Remove row limit -- this is just for testing
-        ResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), 1000, false);
+        ResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), 0, false);
 
         TSVGridWriter gridWriter = new TSVGridWriter(rs, displayColumns);
         gridWriter.write(pw);

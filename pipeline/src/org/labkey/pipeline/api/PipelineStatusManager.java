@@ -460,7 +460,7 @@ public class PipelineStatusManager
             ViewBackgroundInfo infoSet =
                     new ViewBackgroundInfo(ContainerManager.getForId(sf.getContainerId()),
                             info.getUser(),
-                            info.getUrlHelper());
+                            info.getURL());
 
             setStatusFile(infoSet, sf, false);
         }

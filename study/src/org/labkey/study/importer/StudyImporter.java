@@ -15,7 +15,6 @@
  */
 package org.labkey.study.importer;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.data.Container;
@@ -24,19 +23,18 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.study.controllers.CohortController;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
-import org.labkey.study.model.SecurityType;
-import org.labkey.study.model.Study;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Visit;
+import org.labkey.study.model.*;
 import org.labkey.study.pipeline.DatasetBatch;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.xml.CohortType;
 import org.labkey.study.xml.RepositoryType;
 import org.labkey.study.xml.StudyDocument;
+import org.labkey.study.xml.CohortsDocument;
 import org.springframework.validation.BindException;
 import org.xml.sax.SAXException;
 
@@ -45,8 +43,10 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: adam
@@ -106,7 +106,7 @@ public class StudyImporter
 
         // Visit map
         StudyDocument.Study.Visits visits = studyXml.getVisits();
-        File visitMap = new File(_root, visits.getSource());
+        File visitMap = new File(_root, visits.getFile());
 
         if (visitMap.exists())
         {
@@ -139,24 +139,34 @@ public class StudyImporter
         // Cohorts
         StudyDocument.Study.Cohorts cohortsXml = studyXml.getCohorts();
         CohortType.Enum cohortType = cohortsXml.getType();
+        PipelineJob importFinalizer = null;
 
         if (cohortType == CohortType.AUTOMATIC)
         {
             Integer dataSetId = cohortsXml.getDataSetId();
             String dataSetProperty = cohortsXml.getDataSetProperty();
-            CohortController.updateAutomaticCohort(getStudy(), _user, dataSetId, dataSetProperty);
+            CohortManager.updateAutomaticCohortAssignment(getStudy(), _user, dataSetId, dataSetProperty);
         }
         else
         {
-            StudyDocument.Study.Cohorts.Cohort[] cohortXmls = cohortsXml.getCohortArray();
+            File cohortFile = new File(_root, cohortsXml.getFile());
+            CohortsDocument cohortAssignmentXml = CohortsDocument.Factory.parse(cohortFile);
 
-            for (StudyDocument.Study.Cohorts.Cohort cohortXml : cohortXmls)
+            Map<String, Integer> p2c = new HashMap<String, Integer>();
+            CohortsDocument.Cohorts.Cohort[] cohortXmls = cohortAssignmentXml.getCohorts().getCohortArray();
+
+            for (CohortsDocument.Cohorts.Cohort cohortXml : cohortXmls)
             {
                 String label = cohortXml.getLabel();
-                String[] ids = cohortXml.getIdArray();
+                Cohort cohort = CohortManager.createCohort(getStudy(), _user, label);
 
-                _log.info("Cohort \"" + label + "\" : " + StringUtils.join(ids, " "));
+                for (String ptid : cohortXml.getIdArray())
+                    p2c.put(ptid, cohort.getRowId());
             }
+
+            // Dataset and Specimen upload jobs delete "unused" participants, so we need to defer setting participant
+            // cohorts until the end of upload.
+            importFinalizer = new StudyImportJob(getStudy(), p2c, _c, _user, _url, _root);
         }
 
         // QC States
@@ -166,22 +176,25 @@ public class StudyImporter
         StudyController.updateQcState(getStudy(), _user, qcForm);
 
         // Datasets
-        StudyDocument.Study.Datasets.Schema schema = studyXml.getDatasets().getSchema();
-        String schemaSource = schema.getSource();
+        StudyDocument.Study.Datasets datasetsXml = studyXml.getDatasets();
+        File datasetDir = (null == datasetsXml.getDir() ? _root : new File(_root, datasetsXml.getDir()));
+
+        StudyDocument.Study.Datasets.Schema schema = datasetsXml.getSchema();
+        String schemaSource = schema.getFile();
         String labelColumn = schema.getLabelColumn();
         String typeNameColumn = schema.getTypeNameColumn();
         String typeIdColumn = schema.getTypeIdColumn();
 
-        String datasetSource = studyXml.getDatasets().getDefinition().getSource();
+        String datasetFilename = studyXml.getDatasets().getDefinition().getFile();
 
-        File schemaFile = new File(_root, schemaSource);
+        File schemaFile = new File(datasetDir, schemaSource);
 
         if (schemaFile.exists())
         {
             if (!StudyManager.getInstance().bulkImportTypes(getStudy(), schemaFile, _user, labelColumn, typeNameColumn, typeIdColumn, _errors))
                 return false;
 
-            File datasetFile = new File(_root, datasetSource);
+            File datasetFile = new File(datasetDir, datasetFilename);
 
             if (datasetFile.exists())
             {
@@ -194,12 +207,16 @@ public class StudyImporter
 
         if (null != specimens)
         {
+            // TODO: support specimen archives that are not zipped
             RepositoryType.Enum repositoryType = specimens.getRepositoryType();
             StudyController.updateRepositorySettings(_c, RepositoryType.STANDARD == repositoryType);
-            String source = specimens.getSource();
-            File specimenFile = new File(_root, source);
+            File specimenDir = (null == specimens.getDir() ? _root : new File(_root, specimens.getDir()));
+            File specimenFile = new File(specimenDir, specimens.getFile());
             SpringSpecimenController.submitSpecimenBatch(_c, _user, _url, specimenFile);
         }
+
+        if (null != importFinalizer)
+            PipelineService.get().queueJob(importFinalizer);
 
         _log.info("Finished loading study: " + file.getAbsolutePath());
 

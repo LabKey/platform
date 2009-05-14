@@ -18,7 +18,6 @@ package org.labkey.study.writer;
 import org.apache.commons.lang.StringUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.util.VirtualFile;
 import org.labkey.study.model.DataSetDefinition;
@@ -41,7 +40,7 @@ public class SchemaWriter implements Writer<DataSetDefinition[]>
         Datasets datasetsXml = ctx.getStudyXml().getDatasets();
         Datasets.Schema schemaXml = datasetsXml.addNewSchema();
         String schemaFilename = fs.makeLegalName(SCHEMA_FILENAME);
-        schemaXml.setSource(schemaFilename);
+        schemaXml.setFile(schemaFilename);
         schemaXml.setTypeNameColumn("platename");
         schemaXml.setLabelColumn("platelabel");
         schemaXml.setTypeIdColumn("plateno");

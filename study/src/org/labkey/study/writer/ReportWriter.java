@@ -16,6 +16,7 @@
 package org.labkey.study.writer;
 
 import org.labkey.study.model.Study;
+import org.labkey.study.xml.StudyDocument;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.util.VirtualFile;
@@ -33,6 +34,9 @@ public class ReportWriter implements Writer<Study>
 
         if (reports.length > 0)
         {
+            StudyDocument.Study.Reports reportsXml = ctx.getStudyXml().addNewReports();
+            reportsXml.setDir("reports");
+
             fs.makeDir("reports");
             VirtualFile reportsDir = fs.getDir("reports");
 
