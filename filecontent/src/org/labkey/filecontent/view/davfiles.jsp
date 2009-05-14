@@ -21,12 +21,9 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.webdav.WebdavService" %>
 <%@ page import="org.labkey.api.attachments.AttachmentDirectory" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.filecontent.FileContentController" %>
-<%@ page import="org.labkey.api.util.URLHelper" %>
-<%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.filecontent.FilesWebPart" %>
 <%@ page import="org.labkey.api.security.ACL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -38,11 +35,7 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
     ViewContext context = HttpView.currentContext();
     AttachmentDirectory root = (AttachmentDirectory)HttpView.currentModel();
     FilesWebPart me = (FilesWebPart) HttpView.currentView();
-    Container c = ContainerManager.getForId(root.getContainerId());
-    if (null == c)
-    {
-        return;
-    }
+    Container c = context.getContainer();
 
     // prefix is where we what the tree rooted
     // TODO: applet and fileBrowser could use more consistent configuration parameters
