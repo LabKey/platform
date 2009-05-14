@@ -16,6 +16,7 @@
 package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -73,6 +74,7 @@ public class SecurityPolicy
         }
     }
 
+    @NotNull
     public SecurableResource getResource()
     {
         return _resource;
@@ -94,6 +96,7 @@ public class SecurityPolicy
         addAssignment(assignment);
     }
 
+    @NotNull
     public SortedSet<RoleAssignment> getAssignments()
     {
         return Collections.unmodifiableSortedSet(_assignments);
@@ -107,7 +110,7 @@ public class SecurityPolicy
      * @return The roles this principal is directly assigned
      */
     @NotNull
-    public List<Role> getAssignedRoles(UserPrincipal principal)
+    public List<Role> getAssignedRoles(@NotNull UserPrincipal principal)
     {
         List<Role> roles = new ArrayList<Role>();
         for(RoleAssignment assignment : _assignments)
@@ -125,7 +128,8 @@ public class SecurityPolicy
      * @param principal The principal
      * @return The roles this principal is playing
      */
-    public Set<Role> getEffectiveRoles(UserPrincipal principal)
+    @NotNull
+    public Set<Role> getEffectiveRoles(@NotNull UserPrincipal principal)
     {
         Set<Role> roles = getRoles(GroupManager.getAllGroupsForPrincipal(principal));
         roles.addAll(getContextualRoles(principal));
@@ -136,7 +140,7 @@ public class SecurityPolicy
      * Clears assigned roles for the user principal
      * @param principal The principal
      */
-    public void clearAssignedRoles(UserPrincipal principal)
+    public void clearAssignedRoles(@NotNull UserPrincipal principal)
     {
         List<RoleAssignment> toRemove = new ArrayList<RoleAssignment>();
         for(RoleAssignment assignment : _assignments)
@@ -147,12 +151,14 @@ public class SecurityPolicy
         _assignments.removeAll(toRemove);
     }
 
-    public Set<Class<? extends Permission>> getPermissions(UserPrincipal principal)
+    @NotNull
+    public Set<Class<? extends Permission>> getPermissions(@NotNull UserPrincipal principal)
     {
         return getPermissions(principal, null);
     }
 
-    public Set<Class<? extends Permission>> getPermissions(UserPrincipal principal, Set<Role> contextualRoles)
+    @NotNull
+    public Set<Class<? extends Permission>> getPermissions(@NotNull UserPrincipal principal, @Nullable Set<Role> contextualRoles)
     {
         if(contextualRoles == null)
             contextualRoles = getContextualRoles(principal);
@@ -174,34 +180,52 @@ public class SecurityPolicy
         return _assignments.size() == 0;
     }
 
-    public boolean hasPermission(UserPrincipal principal, Class<? extends Permission> permission)
+    public boolean hasPermission(@NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission)
     {
         return hasPermission(principal, permission, null);
     }
 
-    public boolean hasPermission(UserPrincipal principal, Class<? extends Permission> permission, Set<Role> contextualRoles)
+    public boolean hasPermission(@NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission, @Nullable Set<Role> contextualRoles)
     {
         return getPermissions(principal, contextualRoles).contains(permission);
     }
 
-    public boolean hasPermissions(UserPrincipal principal, Class<? extends Permission>... permissions)
+    public boolean hasPermissions(@NotNull UserPrincipal principal, Class<? extends Permission>... permissions)
     {
         Set<Class<? extends Permission>> permsSet = new HashSet<Class<? extends Permission>>();
         permsSet.addAll(Arrays.asList(permissions));
         return hasPermissions(principal, permsSet);
     }
 
-    public boolean hasPermissions(UserPrincipal principal, Set<Class<? extends Permission>> permissions)
+    public boolean hasPermissions(@NotNull UserPrincipal principal, @NotNull Set<Class<? extends Permission>> permissions)
     {
         return hasPermissions(principal, permissions, null);
     }
 
-    public boolean hasPermissions(UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles)
+    public boolean hasPermissions(@NotNull UserPrincipal principal, @NotNull Set<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
     {
         return getPermissions(principal, contextualRoles).containsAll(permissions);
     }
 
-    protected Set<Class<? extends Permission>> getPermissions(int[] principals, Set<Role> contextualRoles)
+    /**
+     * Returns true if the principal has at least one of the required permissions.
+     * @param principal The principal.
+     * @param permissions The set of required permissions.
+     * @param contextualRoles An optional set of contextual roles (or null)
+     * @return True if the principal has at least one of the required permissions.
+     */
+    public boolean hasOneOf(@NotNull UserPrincipal principal, @NotNull Set<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
+    {
+        Set<Class<? extends Permission>> grantedPerms = getPermissions(principal, contextualRoles);
+        for(Class<? extends Permission> requiredPerm : permissions)
+        {
+            if(grantedPerms.contains(requiredPerm))
+                return true;
+        }
+        return false;
+    }
+
+    protected Set<Class<? extends Permission>> getPermissions(@NotNull int[] principals, @Nullable Set<Role> contextualRoles)
     {
         Set<Class<? extends Permission>> perms = new HashSet<Class<? extends Permission>>();
 
@@ -240,7 +264,8 @@ public class SecurityPolicy
         return perms;
     }
 
-    protected Set<Role> getRoles(int[] principals)
+    @NotNull
+    protected Set<Role> getRoles(@NotNull int[] principals)
     {
         Set<Role> roles = new HashSet<Role>();
 
@@ -299,11 +324,13 @@ public class SecurityPolicy
         return perms;
     }
 
+    @NotNull
     public Date getModified()
     {
         return _modified;
     }
 
+    @NotNull
     public SecurityPolicyBean getBean()
     {
         return new SecurityPolicyBean(_resource, _modified);
@@ -313,6 +340,7 @@ public class SecurityPolicy
      * Serializes this policy into a map suitable for returning via an API action
      * @return The serialized policy
      */
+    @NotNull
     public Map<String,Object> toMap()
     {
         Map<String,Object> props = new HashMap<String,Object>();
@@ -390,13 +418,13 @@ public class SecurityPolicy
         return policy;
     }
 
+    @NotNull
     protected Set<Role> getContextualRoles(UserPrincipal principal)
     {
-        Set<Role> roles = null;
+        Set<Role> roles = new HashSet<Role>();
         if(principal instanceof User)
         {
             User user = (User)principal;
-            roles = new HashSet<Role>();
 
             if(user.isAdministrator())
                 roles.add(RoleManager.getRole(SiteAdminRole.class));
