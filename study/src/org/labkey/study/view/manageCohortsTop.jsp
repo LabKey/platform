@@ -68,13 +68,16 @@
                     <option value="">[None]</option>
                 <%
             PropertyDescriptor[] descriptors;
-            Integer particpantCohortDataSetId = study.getParticipantCohortDataSetId();
-            if (particpantCohortDataSetId == null || particpantCohortDataSetId.intValue() < 0)
+            Integer participantCohortDataSetId = study.getParticipantCohortDataSetId();
+            if (participantCohortDataSetId == null || participantCohortDataSetId.intValue() < 0)
                 descriptors = new PropertyDescriptor[0];
             else
             {
-                DataSetDefinition dataset = StudyManager.getInstance().getDataSetDefinition(study, particpantCohortDataSetId.intValue());
-                descriptors = OntologyManager.getPropertiesForType(dataset.getTypeURI(), study.getContainer());
+                DataSetDefinition dataset = StudyManager.getInstance().getDataSetDefinition(study, participantCohortDataSetId.intValue());
+                if (dataset != null)
+                    descriptors = OntologyManager.getPropertiesForType(dataset.getTypeURI(), study.getContainer());
+                else
+                    descriptors = new PropertyDescriptor[0];
             }
                 for (PropertyDescriptor pd : descriptors)
                 {
