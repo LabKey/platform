@@ -468,6 +468,7 @@ core/src/org/labkey/core/webdav/WebdavServlet.java -text
 core/src/org/labkey/core/webdav/apache/XMLWriter.java -text
 core/src/org/labkey/core/webdav/list.jsp -text
 core/webapp/FileTree.js -text
+core/webapp/SecurityAdmin.css -text
 core/webapp/SecurityAdmin.js -text
 core/webapp/dropApplet.js -text
 core/webapp/fileBrowser.js -text

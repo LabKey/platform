@@ -1,3 +1,6 @@
+var curvyCornersNoAutoScan = true;
+LABKEY.requiresScript('curvycorners.src.js');
+
 
 var $ = Ext.get;
 var $h = Ext.util.Format.htmlEncode;
@@ -34,7 +37,6 @@ var SecurityCacheStore = Ext.extend(LABKEY.ext.Store,{
     
     ready : false
 });
-
 
 
 /*
@@ -79,13 +81,13 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         SecurityCache.superclass.constructor.call(this,config);
         this.addEvents(['ready']);
         var container = config.project || LABKEY.container.id;
-        S.getContainers({containerPath:container, includeSubfolders:true, successCallback:this._loadContainersResponse, scope:this});
-        S.getRoles({containerPath:container, successCallback:this._loadRolesResponse, scope:this});
+        S.getContainers({containerPath:container, includeSubfolders:true, successCallback:this._loadContainersResponse, errorCallback:this._errorCallback, scope:this});
+        S.getRoles({containerPath:container, successCallback:this._loadRolesResponse, errorCallback:this._errorCallback, scope:this});
         this.membershipStore.load();
         this.membershipStore.onReady(this.checkReady, this);
         this.principalsStore.load();
         this.principalsStore.onReady(this.checkReady, this);
-        S.getSecurableResources({successCallBack:this._loadResourcesResponse, scope:this});
+        S.getSecurableResources({successCallBack:this._loadResourcesResponse, errorCallback:this._errorCallback, scope:this});
     },
 
 
@@ -94,6 +96,14 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         return this.roleMap[id];
     },
 
+
+    getPrincipal : function(id)
+    {
+        var record = this.principalsStore.getById(id);
+        if (record)
+            return record.data;
+        return null;
+    },
 
     ready : false,
     
@@ -116,6 +126,11 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
             fn.call(scope);
         else
             this.on("ready", fn, scope);
+    },
+
+    _errorCallback: function(e,r)
+    {
+        console.error(e + " " + r);
     },
 
     _loadResourcesResponse : function(r)
@@ -156,7 +171,49 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
             map[c.id] = c;
             this._mapContainers(c, c.children, map);
         }
-        return map;
+        return map;                                                                                 
+    }
+});
+
+
+
+var CloseButton = Ext.extend(Ext.Button,{
+
+    template : new Ext.Template(
+                    '<table border="0" cellpadding="0" cellspacing="0" class="x-btn-wrap" style="display:inline;"><tbody><tr>',
+                    '<td class="x-btn-left"><i>&#160;</i></td><td class="x-btn-center"><em unselectable="on"><button class="x-btn-text" type="{1}">{0}</button></em></td><td class="x-btn-center"><i class="pclose">&#160;</i></td><td class="x-btn-right"><i>&#160;</i></td>',
+                    "</tr></tbody></table>"),
+
+    initComponent : function()
+    {
+        CloseButton.superclass.initComponent.call(this);
+        this.addEvents(['close']);
+    },
+
+    onRender : function(ct, position)
+    {
+        CloseButton.superclass.onRender.call(this, ct, position);
+        // find the close element
+        var close = this.el.child('I[class=pclose]');
+        if (close)
+            close.on("click",this.onClose,this);                                              
+    },
+
+    stoppedEvent : null,
+    
+    onClose : function(event,button)
+    {
+        // can't seem to actually stop mousedown events, but we can disable the button
+        //        event.stopEvent();
+        this.stoppedEvent = event;
+        this.fireEvent("close",event,button);
+    },
+
+    onClick : function(event)
+    {
+        if (!this.stoppedEvent)
+            CloseButton.superclass.onClick.call(this,event);
+        this.stoppedEvent = null;
     }
 });
 
@@ -169,7 +226,6 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         PolicyEditor.superclass.constructor.call(this,config);
         this.cache = config.securityCache;
         this.roleTemplate.compile();
-        this.groupsTemplate.compile();
     },
 
     resource : null,
@@ -195,24 +251,55 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     },
 
 
-    roleTemplate : new Ext.Template('<tr><td><div><h3>{name}</h3>{description}</div></td><td><div id="{uniqueName}">...</div></td><tr>'),
-    groupsTemplate : new Ext.Template(''),
+    getResizeEl : function()
+    {
+        return this.table || this.el;
+    },
+    
+
+    roleTemplate : new Ext.Template('<tr><td>&nbsp;</td></tr><tr><td width=300 valign=top><div><h3 class="rn">{name}</h3><div class="rd">{description}</div></div></td><td valign=top width=100% id="{uniqueName}" style=""></td></tr>'),
 
     _update : function()
     {
         if (this.resource)
             this.setTitle(this.resource.name);
-        var html = ['<table style="border:solid 1px #ff0000;" cellspacing=4 cellpadding=4><tr><th width=300><h3>Roles</h3></th><th width=400><h3>Groups</h3></th></tr>'];
-        for (var r=0 ; r<this.roles.length ; r++)
+        var r, role;
+        var b;
+
+        var html = ['<table cellspacing=4 cellpadding=4><tr><th><h3>Roles<br><img src="' +Ext.BLANK_IMAGE_URL + '" width=300 height=1></h3></th><th><h3>Groups</h3></th></tr>'];
+        for (r=0 ; r<this.roles.length ; r++)
         {
-            var role = this.roles[r];
+            role = this.roles[r];
             html.push(this.roleTemplate.applyTemplate(role));
         }
         html.push("</table>");
         this.body.update("");
-        var table = this.body.insertHtml('beforeend', html, true);
-        this.table = table;
-    }
+        var m = $dom.markup(html);
+        this.table = this.body.insertHtml('beforeend', m, true);
+
+        for (r=0 ; r<this.roles.length ; r++)
+        {
+            var ct = Ext.fly(role.uniqueName);
+            role = this.roles[r];
+            var groups = this.policy.getAssignedPrincipals(role.uniqueName);
+            for (var g=0 ; g<groups.length ; g++)
+            {
+                var group = this.cache.getPrincipal(groups[g]);
+                if (!group) continue;
+                b = new CloseButton({text:group.Name});
+                b.on("close",window.alert.createDelegate(window,['close ' + group.Name]));
+                b.on("click",window.alert.createDelegate(window,['click ' + group.Name]));
+                b.render(ct);
+            }
+            b = new Ext.Button({text:'Add Group'});
+            b.on("click",window.alert.createDelegate(window,['add to ' + role.uniqueName]));
+            b.render(ct);
+        }
+
+        //curvyCorners({tl:{radius:6}, tr:{radius:6}, bl:{radius:6}, br:{radius:6}, antiAlias:true}, '.curvy');
+    },
+
+    _corners : {tl:{radius:6}, tr:{radius:6}, bl:{radius:6}, br:{radius:6}, antiAlias:true}
 });
 
 

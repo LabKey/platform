@@ -1,0 +1,14 @@
+/* principals */
+.pn {background-color:#ccccff; color:#000088; border:1px solid #000088; padding-left:5px; padding-right:5px;}
+.pclose {
+    overflow:hidden;
+    width:15px;
+    height:15px;
+    float:right;
+    cursor:pointer;
+    background: url(ext-2.2/resources/images/default/panel/tool-sprites.gif) no-repeat 0 -0;
+    margin-left:2px;
+}
+/* roles */
+.rh {}
+.rd {}
