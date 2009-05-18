@@ -1491,6 +1491,33 @@ table.labkey-manage-default-reqs
     padding-left: 10px;
 }
 
+.labkey-callout-tip {
+    border-left:1px dotted #89A1B4;
+    padding-left:2px;
+    padding-right:4px;
+    margin-left:2px;
+    margin-right:2px;
+}
+
+.labkey-callout-tip-over {
+    background-color: #89A1B4;
+}
+
+.labkey-callout-tip img {
+    background-position: 0px 0px;
+    background-repeat: no-repeat;
+    background-color: transparent;
+    background-image: url(/labkey/_images/callout_tip.gif);
+    vertical-align: middle;
+    width: 8px;
+    height: 5px;
+}
+
+.labkey-callout-tip-over img {
+    background-position: -9px 0px;
+}
+
+
 /* Wiki */
 
 td.labkey-wiki-tab, .labkey-wiki-tab
