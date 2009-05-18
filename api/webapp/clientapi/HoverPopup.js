@@ -42,16 +42,16 @@ LABKEY.HoverPopup = function(config)
                 this.delayHide();
             }
         }, this);
-        this.extPopup.hover(function(e) {
-            this.cancelHide();
-        }, function (e) {
-            if (!this.extPopup.getRegion().contains(e.getPoint()) && !this.extElem.getRegion().contains(e.getPoint()))
-            {
-                this.delayHide();
-            }
-        }, this);
-        //Update the shadow on click, since we sometimes cause the change of the inner div
-        this.extPopup.on("click", function(e) {this.extPopup.enableShadow(true)}, this);
+    this.extPopup.hover(function(e) {
+        this.cancelHide();
+    }, function (e) {
+        if (!this.extPopup.getRegion().contains(e.getPoint()) && !this.extElem.getRegion().contains(e.getPoint()))
+        {
+            this.delayHide();
+        }
+    }, this);
+    //Update the shadow on click, since we sometimes cause the change of the inner div
+    this.extPopup.on("click", function(e) {this.extPopup.enableShadow(true)}, this);
 };
 
 Ext.extend(LABKEY.HoverPopup,  Ext.util.Observable, {

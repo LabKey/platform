@@ -894,6 +894,7 @@ api/webapp/clientapi/HoverPopup.js -text
 api/webapp/clientapi/LongTextEditor.js -text
 api/webapp/clientapi/MultiRequest.js -text
 api/webapp/clientapi/NavTrail.js -text
+api/webapp/clientapi/PersistentToolTip.js -text
 api/webapp/clientapi/Query.js -text
 api/webapp/clientapi/QueryWebPart.js -text
 api/webapp/clientapi/Security.js -text
@@ -1860,6 +1861,7 @@ internal/webapp/_images/button_arrow.gif -text
 internal/webapp/_images/button_bar_bg.gif -text
 internal/webapp/_images/button_bar_left.gif -text
 internal/webapp/_images/button_bar_right.gif -text
+internal/webapp/_images/callout_tip.gif -text
 internal/webapp/_images/cancel.gif -text
 internal/webapp/_images/cart.gif -text
 internal/webapp/_images/cart_added.gif -text

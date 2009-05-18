@@ -47,13 +47,18 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
 
     public SimpleWebPartFactory(String name, Class<? extends ModelAndView> viewClass)
     {
-        this(name, viewClass, null);
+        this(name, null, viewClass, null);
     }
 
 
     public SimpleWebPartFactory(String name, Class<? extends ModelAndView> viewClass, Class formClass)
     {
-        super(name);
+        this(name, null, viewClass, formClass);
+    }
+
+    public SimpleWebPartFactory(String name, String defaultLocation, Class<? extends ModelAndView> viewClass, Class formClass)
+    {
+        super(name, defaultLocation);
         _viewClass = viewClass;
         _formClass = formClass;
 

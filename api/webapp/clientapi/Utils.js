@@ -302,6 +302,22 @@ LABKEY.Utils = new function()
                 else if(undefined === targetPropName && applyOthers)
                     target[prop] = source[prop];
             }
+        },
+
+        /**
+         * Ensure BoxComponent is visible on the page.  
+         * @param boxComponent
+         */
+        ensureBoxVisible : function (boxComponent)
+        {
+            var box = boxComponent.getBox(true);
+            var viewportWidth = Ext.lib.Dom.getViewWidth();
+            var scrollLeft = Ext.dd.DragDropMgr.getScrollLeft();
+
+            if (viewportWidth + scrollLeft < box.width + box.x) {
+                var scrollBarWidth = 18;
+                boxComponent.setPosition(viewportWidth + scrollLeft - box.width - scrollBarWidth);
+            }
         }
     };
 };
