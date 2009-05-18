@@ -48,33 +48,30 @@ public class StudyImportJob extends PipelineJob
 
     public void run()
     {
+        boolean success = false;
+
         try
         {
+            setStatus("IMPORT cohort settings");
             // Dataset and Specimen upload jobs delete "unused" participants, so we need to defer setting participant
             // cohorts until the end of upload.
             new CohortImporter().process(_study, _ctx, _root);
-        }
-        catch (Exception e)
-        {
-            error("Exception setting manual cohorts", e);
-        }
 
-        try
-        {
+            setStatus("IMPORT queries");
             new QueryImporter().process(_ctx, _root);
-        }
-        catch (Exception e)
-        {
-            error("Exception importing queries", e);
-        }
 
-        try
-        {
+            setStatus("IMPORT reports");
             new ReportImporter().process(_ctx, _root);
+
+            success = true;
         }
         catch (Exception e)
         {
-            error("Exception importing reports", e);
+            error("Exception during study import", e);
+        }
+        finally
+        {
+            setStatus(success ? PipelineJob.COMPLETE_STATUS : PipelineJob.ERROR_STATUS);
         }
     }
 

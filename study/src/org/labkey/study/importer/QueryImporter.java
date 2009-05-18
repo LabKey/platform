@@ -18,6 +18,8 @@ package org.labkey.study.importer;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryDefinition;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
 import org.labkey.study.writer.QueryWriter;
@@ -29,6 +31,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.sql.SQLException;
 
 /**
  * User: adam
@@ -39,7 +42,7 @@ public class QueryImporter
 {
     private static final Logger _log = Logger.getLogger(QueryImporter.class);
 
-    void process(ImportContext ctx, File root) throws ServletException, XmlException, IOException
+    void process(ImportContext ctx, File root) throws ServletException, XmlException, IOException, SQLException
     {
         StudyDocument.Study.Queries queriesXml = ctx.getStudyXml().getQueries();
 
@@ -68,7 +71,8 @@ public class QueryImporter
 
             for (File sqlFile : sqlFiles)
             {
-                String metaFileName = sqlFile.getName().substring(0, sqlFile.getName().length() - QueryWriter.FILE_EXTENSION.length()) + QueryWriter.META_FILE_EXTENSION;
+                String queryName = sqlFile.getName().substring(0, sqlFile.getName().length() - QueryWriter.FILE_EXTENSION.length());
+                String metaFileName = queryName + QueryWriter.META_FILE_EXTENSION;
                 File metaFile = metaFiles.get(metaFileName);
 
                 if (null == metaFile)
@@ -77,10 +81,19 @@ public class QueryImporter
                 String sql = PageFlowUtil.getFileContentsAsString(sqlFile);
                 QueryType queryXml = QueryDocument.Factory.parse(metaFile).getQuery();
 
-                _log.info(sql);
-                _log.info(queryXml.getDescription());
-                _log.info(queryXml.getSchemaName());
-                _log.info(queryXml.getMetadata());
+                // For now, just delete if a query by this name already exists.  TODO: Merge
+                QueryDefinition oldQuery = QueryService.get().getQueryDef(ctx.getContainer(), queryXml.getSchemaName(), queryName);
+
+                if (null != oldQuery)
+                    oldQuery.delete(ctx.getUser());
+
+                QueryDefinition newQuery = QueryService.get().createQueryDef(ctx.getContainer(), queryXml.getSchemaName(), queryName);
+                newQuery.setSql(sql);
+                newQuery.setDescription(queryXml.getDescription());
+
+                // TODO: Set meta data!
+
+                newQuery.save(ctx.getUser(), ctx.getContainer());
             }
 
             // TODO: Check for map.size == 0

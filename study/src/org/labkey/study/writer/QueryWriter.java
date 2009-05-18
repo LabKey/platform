@@ -56,7 +56,6 @@ public class QueryWriter implements Writer<Study>
                 sql.println(query.getSql());
                 sql.close();
 
-                // TODO: What is SchemaVersion?
                 QueryType qtDoc = QueryType.Factory.newInstance();
                 qtDoc.setDescription(query.getDescription());
                 qtDoc.setHidden(query.isHidden());
