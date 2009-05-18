@@ -51,7 +51,7 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
     {
         var idx, assgn;
         var roles = [];
-        for(idx = 0; idx < this.policy.assignments.length; ++idx)
+        for (idx = 0; idx < this.policy.assignments.length; ++idx)
         {
             assgn = this.policy.assignments[idx];
             if(assgn.userId == principalId)
@@ -60,8 +60,28 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
         return roles;
     },
 
+    getAssignedPrincipals : function(role)
+    {
+        var idx, len, assgn;
+        var principals = [];
+        for (idx = 0, len=this.policy.assignments.length ; idx < len ; ++idx)
+        {
+            assgn = this.policy.assignments[idx];
+            if (assgn.role == role)
+                principals.push(assgn.userId);
+        }
+        return principals;
+    },
+
     addRoleAssignment : function(principalId, role)
     {
+        var idx, len, assgn;
+        for (idx = 0, len = this.policy.assignments.length; idx < len ; ++idx)
+        {
+            assgn = this.policy.assignments[idx];
+            if (assgn.userId == principalId && assgn.role == role)
+                return;
+        }
         this.policy.assignments.push({
             userId: principalId,
             role: role
@@ -73,35 +93,42 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
     removeRoleAssignment : function(principalId, role)
     {
         var idx, assgn;
-        for(idx = 0; idx < this.policy.assignments.length; ++idx)
+        for (idx = 0; idx < this.policy.assignments.length; ++idx)
         {
             assgn = this.policy.assignments[idx];
-            if(assgn.userId == principalId && assgn.role == role)
+            if (assgn.userId == principalId && assgn.role == role)
                 break;
         }
         if(idx < this.policy.assignments.length)
+        {
             this.policy.assignments.splice(idx, 1);
-        this.fireEvent("change");
-        this._dirty = true;
+            this.fireEvent("change");
+            this._dirty = true;
+        }
     },
 
     clearRoleAssignments : function(principalId)
     {
-        if(undefined === principalId)
+        if (undefined === principalId)
         {
             this.policy.assignments = [];
+            this.fireEvent("change");
+            this._dirty = true;
             return;
         }
 
-        var idx, assgn;
-        for(idx = 0; idx < this.policy.assignments.length; ++idx)
+        var idx, assgn, len = this.policy.assignments.length;
+        for (idx = len-1 ; idx >= 0 ; --idx)
         {
             assgn = this.policy.assignments[idx];
-            if(assgn.userId == principalId)
+            if (assgn.userId == principalId)
                 this.policy.assignments.splice(idx, 1);
         }
-        this.fireEvent("change");
-        this._dirty = true;
+        if (len != this.policy.assignments.length)
+        {
+            this.fireEvent("change");
+            this._dirty = true;
+        }
     },
 
     getEffectiveRoles : function(principalId, membershipsTable)
@@ -111,7 +138,7 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
 
         var idxAssgn, assgn, idxIds;
         var roles = [];
-        for(idxAssgn = 0; idxAssgn < this.policy.assignments.length; ++idxAssgn)
+        for (idxAssgn = 0; idxAssgn < this.policy.assignments.length; ++idxAssgn)
         {
             assgn = this.policy.assignments[idxAssgn];
             for(idxIds = 0; idxIds < ids.length; ++idxIds)
