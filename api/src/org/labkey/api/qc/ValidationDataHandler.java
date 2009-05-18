@@ -15,17 +15,16 @@
  */
 package org.labkey.api.qc;
 
-import org.labkey.api.exp.PropertyDescriptor;
+import org.apache.log4j.Logger;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.DataType;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.Domain;
-import org.labkey.api.study.assay.ParticipantVisitResolver;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.view.ViewBackgroundInfo;
 
-import java.util.Map;
-import java.util.List;
 import java.io.File;
-import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 /*
 * User: Karl Lum
@@ -35,12 +34,10 @@ import java.io.IOException;
 public interface ValidationDataHandler
 {
     /**
-     *
-     * @param dataDomain
-     * @param dataFile
-     * @return
-     * @throws IOException
-     * @throws ExperimentException
+     * Creates the data map from the uploaded file in a format that can be used by validation and analysis (transform) scripts. The DataType key is
+     * used to locate a data handler that can import data in the same tsv format into the DB. This would be the case when an external data transform script
+     * is invoked to possibly modify uploaded data.
      */
-    public Map<DataType, List<Map<String, Object>>> loadFileData(Domain dataDomain, File dataFile)  throws IOException, ExperimentException;
+    public Map<DataType, List<Map<String, Object>>> getValidationDataMap(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context) throws ExperimentException;
+
 }

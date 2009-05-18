@@ -162,7 +162,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     void validate(AssayRunUploadContext context, ExpRun run) throws ValidationException;
 
-    TransformResult transform(AssayRunUploadContext context) throws ValidationException;
+    TransformResult transform(AssayRunUploadContext context, ExpRun run) throws ValidationException;
 
     /**
      * @return the data type that this run creates for its analyzed results

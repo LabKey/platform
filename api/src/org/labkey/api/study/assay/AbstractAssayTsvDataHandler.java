@@ -57,18 +57,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         ExpProtocol protocol = run.getProtocol();
         AssayProvider provider = AssayService.get().getProvider(protocol);
 
-        Domain dataDomain = provider.getResultsDomain(protocol);
-
-        try
-        {
-            Map<DataType, List<Map<String, Object>>> rawData = loadFileData(dataDomain, dataFile);
-            assert(rawData.size() <= 1);
-            importRows(data, info.getUser(), run, protocol, provider, rawData.values().iterator().next());
-        }
-        catch (IOException e)
-        {
-            throw new ExperimentException(e);
-        }
+        Map<DataType, List<Map<String, Object>>> rawData = getValidationDataMap(data, dataFile, info, log, context);
+        assert(rawData.size() <= 1);
+        importRows(data, info.getUser(), run, protocol, provider, rawData.values().iterator().next());
     }
 
     public void importRows(ExpData data, User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, List<Map<String, Object>> rawData) throws ExperimentException

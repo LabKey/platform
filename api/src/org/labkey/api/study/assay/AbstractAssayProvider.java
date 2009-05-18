@@ -709,26 +709,50 @@ public abstract class AbstractAssayProvider implements AssayProvider
             // Add the run to the batch so that we can find it when we're loading the data files
             batch.addRuns(context.getUser(), run);
 
-            TransformResult transformResult = context.getTransformResult();
+            ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL());
+            XarContext xarContext = new XarContext("Simple Run Creation", context.getContainer(), context.getUser());
+
+            run = ExperimentService.get().insertSimpleExperimentRun(run,
+                    inputMaterials,
+                    inputDatas,
+                    outputMaterials,
+                    outputDatas,
+                    transformedDatas,
+                    info,
+                    LOG,
+                    false);
+
+            // handle data transformation
+            TransformResult transformResult = transform(context, run);
+            List<ExpData> insertedDatas = new ArrayList<ExpData>();
+            if (context instanceof AssayRunUploadForm)
+                ((AssayRunUploadForm)context).setTransformResult(transformResult);
+
             if (!transformResult.isEmpty())
             {
                 for (Map.Entry<DataType, File> entry : transformResult.getTransformedData().entrySet())
                 {
+                    // for any transformed data, we want to attach it to the run and request that it be imported
+                    // instead of the original data.
                     ExpData data = createData(context.getContainer(), entry.getValue(), "transformed output", entry.getKey());
-                    transformedDatas.put(data, "Data");
+                    data.setSourceApplication(run.getOutputProtocolApplication());
+                    data.setRun(run);
+                    data.save(context.getUser());
+
+                    run.getOutputProtocolApplication().addDataInput(context.getUser(), data, "Data");
+                    insertedDatas.add(data);
                 }
             }
+            else
+            {
+                insertedDatas.addAll(inputDatas.keySet());
+                insertedDatas.addAll(outputDatas.keySet());
+            }
 
-            run = ExperimentService.get().insertSimpleExperimentRun(run,
-                inputMaterials,
-                inputDatas,
-                outputMaterials,
-                outputDatas,
-                transformedDatas,
-                new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL()),
-                LOG,
-                true);
-
+            for (ExpData insertedData : insertedDatas)
+            {
+                insertedData.findDataHandler().importFile(ExperimentService.get().getExpData(insertedData.getRowId()), insertedData.getFile(), info, LOG, xarContext);
+            }
             validate(context, run);
 
             if (transactionOwner)
@@ -1535,7 +1559,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return tempFolder;
     }
 
-    public TransformResult transform(AssayRunUploadContext context) throws ValidationException
+    public TransformResult transform(AssayRunUploadContext context, ExpRun run) throws ValidationException
     {
         TransformResult result = DefaultTransformResult.createEmptyResult();
         for (File scriptFile : getValidationAndAnalysisScripts(context.getProtocol(), Scope.ALL, ScriptType.TRANSFORM))
@@ -1572,7 +1596,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                         {
                             Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
                             String script = sb.toString();
-                            File runInfo = dataHandler.createTransformationRunInfo(context, scriptDir);
+                            File runInfo = dataHandler.createTransformationRunInfo(context, run, scriptDir);
 
                             bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, scriptDir.getAbsolutePath());
                             bindings.put(ExternalScriptEngine.SCRIPT_PATH, scriptFile.getAbsolutePath());

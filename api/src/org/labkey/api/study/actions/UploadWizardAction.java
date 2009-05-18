@@ -664,10 +664,6 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
             AssayProvider provider = form.getProvider();
 
-            // handle data transformation
-            TransformResult result = provider.transform(form);
-            form.setTransformResult(result);
-
             Pair<ExpRun, ExpExperiment> insertedValues = form.getProvider().saveExperimentRun(form, exp);
 
             ExpRun run = insertedValues.getKey();
