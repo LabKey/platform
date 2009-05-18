@@ -16,23 +16,22 @@
 
 package org.labkey.api.reports;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.data.Filter;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.view.RReportBean;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.Filter;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.security.User;
-import org.labkey.api.query.QuerySettings;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
-import java.io.File;
-import java.io.Reader;
-import java.io.IOException;
 
 /**
  * Created by IntelliJ IDEA.
