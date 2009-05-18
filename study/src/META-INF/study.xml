@@ -297,6 +297,7 @@
       <ns:column columnName="Container"/>
       <ns:column columnName="SampleRequestId"/>
       <ns:column columnName="specimenglobaluniqueid"/>
+      <ns:column columnName="orphaned"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Specimen" tableDbType="TABLE">

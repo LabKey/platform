@@ -14,15 +14,9 @@
  * limitations under the License.
  */
 CREATE VIEW study.LockedSpecimens AS
-    SELECT study.Specimen.RowId, study.Specimen.GlobalUniqueId, study.Specimen.Container
-    FROM study.Specimen, study.SampleRequest, study.SampleRequestSpecimen, study.SampleRequestStatus
-    WHERE
-        study.SampleRequestSpecimen.SampleRequestId = study.SampleRequest.RowId AND
-        study.SampleRequestSpecimen.SpecimenGlobalUniqueId = study.Specimen.GlobalUniqueId AND
-        study.SampleRequestSpecimen.Container = study.Specimen.Container AND
-        study.SampleRequest.StatusId = study.SampleRequestStatus.RowId AND
-        study.SampleRequestStatus.SpecimensLocked = 1
-    GROUP BY study.Specimen.GlobalUniqueId, study.Specimen.RowId, study.Specimen.Container
+  SELECT map.RowId, map.SpecimenGlobalUniqueId AS GlobalUniqueId, map.Container FROM study.SampleRequest AS request
+      JOIN study.SampleRequestStatus AS status ON request.StatusId = status.RowId AND status.SpecimensLocked = 1
+      JOIN study.SampleRequestSpecimen AS map ON request.rowid = map.SampleRequestId AND map.Orphaned = 0;
 GO
 
 CREATE VIEW study.SpecimenDetail AS
