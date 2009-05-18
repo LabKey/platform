@@ -21,8 +21,8 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.MvColumn;
-import org.labkey.api.exp.api.DataType;
-import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.XarContext;
+import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.qc.TransformDataHandler;
@@ -31,6 +31,10 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.study.assay.AbstractAssayTsvDataHandler;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.view.ViewBackgroundInfo;
+import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -69,13 +73,17 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
         return true;
     }
 
-    public Map<DataType, List<Map<String, Object>>> loadFileData(Domain dataDomain, File inputFile) throws IOException, ExperimentException
+    public Map<DataType, List<Map<String, Object>>> getValidationDataMap(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context) throws ExperimentException
     {
+        ExpProtocol protocol = data.getRun().getProtocol();
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+
+        Domain dataDomain = provider.getResultsDomain(protocol);
+
         DomainProperty[] columns = dataDomain.getProperties();
         Map<String, Class> expectedColumns = new CaseInsensitiveHashMap<Class>(columns.length);
         Set<String> mvEnabledColumns = new CaseInsensitiveHashSet();
         Set<String> mvIndicatorColumns = new CaseInsensitiveHashSet();
-
 
         for (DomainProperty col : columns)
         {
@@ -93,13 +101,13 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
         try
         {
 
-            if (inputFile.getName().toLowerCase().endsWith(".xls"))
+            if (dataFile.getName().toLowerCase().endsWith(".xls"))
             {
-                loader = new ExcelLoader(inputFile, true);
+                loader = new ExcelLoader(dataFile, true);
             }
             else
             {
-                loader = new TabLoader(inputFile, true);
+                loader = new TabLoader(dataFile, true);
             }
             for (ColumnDescriptor column : loader.getColumns())
             {
@@ -129,6 +137,10 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
 
             datas.put(DATA_TYPE, loader.load());
             return datas;
+        }
+        catch (IOException ioe)
+        {
+            throw new ExperimentException(ioe);
         }
         finally
         {
