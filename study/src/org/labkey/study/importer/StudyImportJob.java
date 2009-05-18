@@ -15,17 +15,12 @@
  */
 package org.labkey.study.importer;
 
-import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.Study;
 
-import java.sql.SQLException;
-import java.util.Map;
 import java.io.File;
 
 /**
@@ -36,16 +31,18 @@ import java.io.File;
 public class StudyImportJob extends PipelineJob
 {
     private final Study _study;
-    private final Map<String, Integer> _p2c;
+    private final ImportContext _ctx;
+    private final File _root;
 
     // Note: At the moment, this just updates manual cohorts, which must be done after dataset and specimen uploads.
     // It could be extended to do other end-of-import tasks and/or wrap the dataset load, specimen load, and final
     // tasks in a single job.
-    public StudyImportJob(Study study, Map<String, Integer> p2c, Container c, User user, ActionURL url, File root)
+    public StudyImportJob(Study study, ImportContext ctx, File root)
     {
-        super(null, new ViewBackgroundInfo(c, user, url));
+        super(null, new ViewBackgroundInfo(ctx.getContainer(), ctx.getUser(), ctx.getUrl()));
         _study = study;
-        _p2c = p2c;
+        _ctx = ctx;
+        _root = root;
         setLogFile(new File(root, "study_load.log"));
     }
 
@@ -53,11 +50,31 @@ public class StudyImportJob extends PipelineJob
     {
         try
         {
-            CohortManager.updateManualCohortAssignment(_study, getUser(), _p2c);
+            // Dataset and Specimen upload jobs delete "unused" participants, so we need to defer setting participant
+            // cohorts until the end of upload.
+            new CohortImporter().process(_study, _ctx, _root);
         }
-        catch (SQLException e)
+        catch (Exception e)
         {
             error("Exception setting manual cohorts", e);
+        }
+
+        try
+        {
+            new QueryImporter().process(_ctx, _root);
+        }
+        catch (Exception e)
+        {
+            error("Exception importing queries", e);
+        }
+
+        try
+        {
+            new ReportImporter().process(_ctx, _root);
+        }
+        catch (Exception e)
+        {
+            error("Exception importing reports", e);
         }
     }
 

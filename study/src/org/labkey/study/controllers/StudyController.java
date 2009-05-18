@@ -85,6 +85,7 @@ import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.client.Designer;
 import org.labkey.study.importer.StudyImporter;
 import org.labkey.study.importer.VisitMapImporter;
+import org.labkey.study.importer.DatasetImporter;
 import org.labkey.study.model.*;
 import org.labkey.study.pipeline.DatasetBatch;
 import org.labkey.study.pipeline.StudyPipeline;
@@ -3565,7 +3566,7 @@ public class StudyController extends BaseStudyController
 
             try
             {
-                StudyImporter.submitStudyBatch(study, f, c, getUser(), getViewContext().getActionURL());
+                DatasetImporter.submitStudyBatch(study, f, c, getUser(), getViewContext().getActionURL());
             }
             catch (StudyImporter.DatasetLockExistsException e)
             {

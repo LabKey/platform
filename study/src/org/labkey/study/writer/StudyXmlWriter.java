@@ -16,6 +16,7 @@
 package org.labkey.study.writer;
 
 import org.apache.xmlbeans.XmlOptions;
+import org.apache.xmlbeans.XmlTokenSource;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.util.VirtualFile;
 import org.labkey.study.model.Study;
@@ -23,6 +24,7 @@ import org.labkey.study.xml.SecurityType;
 import org.labkey.study.xml.StudyDocument;
 
 import java.io.PrintWriter;
+import java.io.IOException;
 import java.util.Calendar;
 import java.util.Map;
 
@@ -63,13 +65,9 @@ public class StudyXmlWriter implements Writer<Study>
         }
 
         // This gets called last, after all other writers have populated the other sections.  Save the study.xml
-        PrintWriter writer = fs.getPrintWriter("study.xml");
-        XmlOptions options = new XmlOptions();
-        options.setSavePrettyPrint();
-        options.setUseDefaultNamespace();
-        ctx.getStudyDocument().save(writer, options);
+        PrintWriter pw = fs.getPrintWriter("study.xml");
+        saveDoc(pw, ctx.getStudyDocument());
         ctx.lockStudyDocument();
-        writer.close();
     }
 
     public static StudyDocument getStudyDocument()
@@ -77,5 +75,14 @@ public class StudyXmlWriter implements Writer<Study>
         StudyDocument doc = StudyDocument.Factory.newInstance();
         doc.addNewStudy();
         return doc;
+    }
+
+    public static void saveDoc(PrintWriter pw, XmlTokenSource doc) throws IOException
+    {
+        XmlOptions options = new XmlOptions();
+        options.setSavePrettyPrint();
+        options.setUseDefaultNamespace();
+        doc.save(pw, options);
+        pw.close();
     }
 }

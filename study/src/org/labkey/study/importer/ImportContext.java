@@ -13,38 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.writer;
+package org.labkey.study.importer;
 
 import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
+import org.labkey.api.view.ActionURL;
 import org.labkey.study.xml.StudyDocument;
+import org.labkey.study.writer.AbstractContext;
 
 /**
  * User: adam
  * Date: May 16, 2009
- * Time: 2:43:07 PM
+ * Time: 2:48:59 PM
  */
-public class ExportContext extends AbstractContext
+public class ImportContext extends AbstractContext
 {
-    private boolean _locked = false;
+    private final ActionURL _url;
 
-    public ExportContext(User user, Container c)
+    public ImportContext(User user, Container c, StudyDocument studyDoc, ActionURL url)
     {
-        super(user, c, StudyXmlWriter.getStudyDocument());
+        super(user, c, studyDoc);
+        _url = url;
     }
 
-    public void lockStudyDocument()
+    public ActionURL getUrl()
     {
-        _locked = true;
-    }
-
-    @Override
-    // Full study doc -- only interesting to StudyXmlWriter
-    public StudyDocument getStudyDocument()
-    {
-        if (_locked)
-            throw new IllegalStateException("Can't access StudyDocument after study.xml has been written");
-
-        return super.getStudyDocument();
+        return _url;
     }
 }

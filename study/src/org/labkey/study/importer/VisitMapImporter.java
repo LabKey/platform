@@ -54,6 +54,7 @@ public class VisitMapImporter
         }
 
         List<VisitMapRecord> records;
+
         try
         {
             records = format.getReader().getRecords(content);
@@ -65,6 +66,7 @@ public class VisitMapImporter
         }
         
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
+
         try
         {
             scope.beginTransaction();

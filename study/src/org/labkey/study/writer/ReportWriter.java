@@ -28,6 +28,8 @@ import org.labkey.api.util.VirtualFile;
  */
 public class ReportWriter implements Writer<Study>
 {
+    private static final String DEFAULT_DIRECTORY = "reports";
+
     public void write(Study study, ExportContext ctx, VirtualFile fs) throws Exception
     {
         Report[] reports = ReportService.get().getReports(ctx.getUser(), ctx.getContainer());
@@ -35,10 +37,10 @@ public class ReportWriter implements Writer<Study>
         if (reports.length > 0)
         {
             StudyDocument.Study.Reports reportsXml = ctx.getStudyXml().addNewReports();
-            reportsXml.setDir("reports");
+            reportsXml.setDir(DEFAULT_DIRECTORY);
 
-            fs.makeDir("reports");
-            VirtualFile reportsDir = fs.getDir("reports");
+            fs.makeDir(DEFAULT_DIRECTORY);
+            VirtualFile reportsDir = fs.getDir(DEFAULT_DIRECTORY);
 
             for (Report report : reports)
             {

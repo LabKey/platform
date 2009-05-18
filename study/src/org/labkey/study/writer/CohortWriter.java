@@ -17,18 +17,17 @@ package org.labkey.study.writer;
 
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
-import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.util.VirtualFile;
 import org.labkey.study.model.Cohort;
 import org.labkey.study.model.Participant;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.CohortType;
-import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.xml.CohortsDocument;
+import org.labkey.study.xml.StudyDocument;
 
-import java.util.Collection;
 import java.io.PrintWriter;
+import java.util.Collection;
 
 /**
  * User: adam
@@ -75,11 +74,7 @@ public class CohortWriter implements Writer<Study>
                     cohortXml.setIdArray(ids.toArray(new String[ids.size()]));
             }
 
-            XmlOptions options = new XmlOptions();
-            options.setSavePrettyPrint();
-            options.setUseDefaultNamespace();
-            cohortFileXml.save(pw, options);
-            pw.close();
+            StudyXmlWriter.saveDoc(pw, cohortFileXml);
         }
         else
         {

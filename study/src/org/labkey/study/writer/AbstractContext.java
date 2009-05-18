@@ -15,36 +15,46 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 import org.labkey.study.xml.StudyDocument;
 
 /**
  * User: adam
- * Date: May 16, 2009
- * Time: 2:43:07 PM
+ * Date: Apr 23, 2009
+ * Time: 10:00:46 AM
  */
-public class ExportContext extends AbstractContext
+public abstract class AbstractContext
 {
-    private boolean _locked = false;
+    private final User _user;
+    private final Container _c;
+    private final StudyDocument _studyDoc;
 
-    public ExportContext(User user, Container c)
+    public AbstractContext(User user, Container c, StudyDocument studyDoc)
     {
-        super(user, c, StudyXmlWriter.getStudyDocument());
+        _user = user;
+        _c = c;
+        _studyDoc = studyDoc;
     }
 
-    public void lockStudyDocument()
+    public User getUser()
     {
-        _locked = true;
+        return _user;
     }
 
-    @Override
-    // Full study doc -- only interesting to StudyXmlWriter
-    public StudyDocument getStudyDocument()
+    public Container getContainer()
     {
-        if (_locked)
-            throw new IllegalStateException("Can't access StudyDocument after study.xml has been written");
+        return _c;
+    }
 
-        return super.getStudyDocument();
+    // Study node -- interesting to any top-level writer that needs to set info into study.xml
+    public StudyDocument.Study getStudyXml()
+    {
+        return getStudyDocument().getStudy();
+    }
+
+    protected StudyDocument getStudyDocument()
+    {
+        return _studyDoc;
     }
 }

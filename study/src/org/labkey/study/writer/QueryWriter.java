@@ -15,6 +15,7 @@
  */
 package org.labkey.study.writer;
 
+import org.apache.xmlbeans.XmlString;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
@@ -22,7 +23,6 @@ import org.labkey.api.util.VirtualFile;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
 import org.labkey.study.model.Study;
-import org.apache.xmlbeans.XmlObject;
 
 import java.io.PrintWriter;
 import java.util.List;
@@ -34,37 +34,46 @@ import java.util.List;
  */
 public class QueryWriter implements Writer<Study>
 {
-    public void write(Study study, ExportContext ctx, VirtualFile fs) throws Exception
+    public static final String FILE_EXTENSION = ".sql";
+    public static final String META_FILE_EXTENSION =  ".query.xml";
+
+    private static final String DEFAULT_DIRECTORY = "queries";
+
+    public void write(Study study, ExportContext ctx, VirtualFile root) throws Exception
     {
         Container c = study.getContainer();
         List<QueryDefinition> queries = QueryService.get().getQueryDefs(c);
 
-        for (QueryDefinition query : queries)
+        if (queries.size() > 0)
         {
-            String path = "queries/" + fs.makeLegalName(query.getSchemaName());
-            fs.makeDir(path);
+            ctx.getStudyXml().addNewQueries().setDir(DEFAULT_DIRECTORY);
+            root.makeDir(DEFAULT_DIRECTORY);
+            VirtualFile queriesDir = root.getDir(DEFAULT_DIRECTORY);
 
-            String baseName = path + "/" + fs.makeLegalName(query.getName());
-            PrintWriter sql = fs.getPrintWriter(baseName + ".sql");   // TODO: ModuleQueryDef.FILE_EXTENSION
-            sql.println(query.getSql());
-            sql.close();
-
-            // TODO: Set other properties
-            QueryType qtDoc = QueryType.Factory.newInstance();
-            qtDoc.setDescription(query.getDescription());
-
-            if (false)
+            for (QueryDefinition query : queries)
             {
-                XmlObject metadata = XmlObject.Factory.newValue(query.getMetadataXml());  // TODO: Does not work at all
-                qtDoc.setMetadata(metadata);
+                PrintWriter sql = queriesDir.getPrintWriter(query.getName() + FILE_EXTENSION);
+                sql.println(query.getSql());
+                sql.close();
+
+                // TODO: What is SchemaVersion?
+                QueryType qtDoc = QueryType.Factory.newInstance();
+                qtDoc.setDescription(query.getDescription());
+                qtDoc.setHidden(query.isHidden());
+                qtDoc.setSchemaName(query.getSchemaName());
+
+                if (null != query.getMetadataXml())
+                {
+                    XmlString str = XmlString.Factory.parse(query.getMetadataXml());
+                    qtDoc.setMetadata(str);
+                }
+
+                QueryDocument qDoc = QueryDocument.Factory.newInstance();
+                qDoc.setQuery(qtDoc);
+
+                PrintWriter pw = queriesDir.getPrintWriter(query.getName() + META_FILE_EXTENSION);
+                StudyXmlWriter.saveDoc(pw, qDoc);
             }
-
-            QueryDocument qDoc = QueryDocument.Factory.newInstance();
-            qDoc.setQuery(qtDoc);
-
-            PrintWriter xml = fs.getPrintWriter(baseName + ".query.xml");    // TODO: ModuleQueryDef.META_FILE_EXTENSION
-            qDoc.save(xml);               // TODO: Set options for namespace, indenting
-            xml.close();
         }
     }
 }

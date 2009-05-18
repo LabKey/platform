@@ -27,6 +27,7 @@
 <%@ page import="java.util.ArrayList"%>
 <%@ page import="java.util.List"%>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 JspView me = (JspView)HttpView.currentView();
@@ -76,7 +77,7 @@ int datasetsPerCol = userDatasets.size() / 3;
                 return "";
 
             String category = startIndex == 0 ? null : datasets.get(startIndex-1).getCategory();
-            String datasetUrl = ctx.cloneActionURL().deleteParameters().setAction(StudyController.DefaultDatasetReportAction.class).getLocalURIString();
+            ActionURL datasetURL = new ActionURL(StudyController.DefaultDatasetReportAction.class, ctx.getContainer());
             sb.append("<table>\n");
             //Print a column header if necessary
             DataSetDefinition firstDataset = datasets.get(startIndex);
@@ -108,7 +109,7 @@ int datasetsPerCol = userDatasets.size() / 3;
                 String dataSetLabel = (dataSet.getLabel() != null ? dataSet.getLabel() : "" + dataSet.getDataSetId());
 
                 sb.append("        <tr><td>");
-                sb.append("<a href=\"").append(datasetUrl).append("&amp;datasetId=").append(dataSet.getDataSetId());
+                sb.append("<a href=\"").append(datasetURL.replaceParameter("datasetId", String.valueOf(dataSet.getDataSetId())));
                 sb.append("\">");
                 sb.append(h(dataSetLabel));
                 sb.append("</a></td></tr>\n");
