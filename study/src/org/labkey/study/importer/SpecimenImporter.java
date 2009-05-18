@@ -717,10 +717,26 @@ public class SpecimenImporter
         logger.info("Complete.");
     }
 
+    private static void markOrphanedRequestVials(Container container, User user, Logger logger) throws SQLException
+    {
+        SQLFragment orphanMarkerSql = new SQLFragment("UPDATE study.SampleRequestSpecimen SET Orphaned = ? WHERE RowId IN (\n" +
+                "\tSELECT study.SampleRequestSpecimen.RowId FROM study.SampleRequestSpecimen\n" +
+                "\tLEFT OUTER JOIN study.Specimen ON\n" +
+                "\t\tstudy.Specimen.GlobalUniqueId = study.SampleRequestSpecimen.SpecimenGlobalUniqueId AND\n" +
+                "\t\tstudy.Specimen.Container = study.SampleRequestSpecimen.Container\n" +
+                "\tWHERE study.Specimen.GlobalUniqueId IS NULL\n" +
+                ");", Boolean.TRUE);
+        logger.info("Marking requested vials that have been orphaned...");
+        Table.execute(StudySchema.getInstance().getSchema(), orphanMarkerSql);
+        logger.info("Complete.");
+    }
+
     private static void updateCalculatedSpecimenData(Container container, User user, Logger logger) throws SQLException
     {
         // delete unnecessary comments and create placeholders for newly discovered errors:
         prepareQCComments(container, user, logger);
+
+        markOrphanedRequestVials(container, user, logger);
 
         // clear caches before determining current sites:
         SimpleFilter containerFilter = new SimpleFilter("Container", container.getId());

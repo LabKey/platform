@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-ALTER TABLE exp.ObjectProperty ADD COLUMN MvIndicator VARCHAR(50);
-
-UPDATE exp.ObjectProperty SET MvIndicator = QcValue;
-
-ALTER TABLE exp.ObjectProperty DROP COLUMN QcValue;
+ALTER TABLE exp.ObjectProperty
+  RENAME COLUMN QcValue TO MvIndicator;
 
 ALTER TABLE exp.PropertyDescriptor ADD COLUMN MvEnabled BOOLEAN NOT NULL DEFAULT '0';
 

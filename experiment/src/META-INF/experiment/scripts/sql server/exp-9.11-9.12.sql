@@ -14,13 +14,7 @@
  * limitations under the License.
  */
 
-ALTER TABLE exp.ObjectProperty ADD MvIndicator NVARCHAR(50) NULL
-GO
-
-UPDATE exp.ObjectProperty SET MvIndicator = QcValue
-GO
-
-ALTER TABLE exp.ObjectProperty DROP COLUMN QcValue
+EXEC sp_rename 'exp.ObjectProperty.QcValue', 'MvIndicator', 'COLUMN';
 GO
 
 ALTER TABLE exp.PropertyDescriptor ADD MvEnabled BIT NOT NULL DEFAULT 0

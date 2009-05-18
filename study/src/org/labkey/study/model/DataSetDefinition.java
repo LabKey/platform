@@ -464,7 +464,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         tinfoMat = Table.createTempTable(tinfoFrom, tempName);
         String fullName = tinfoMat.getTempTableName();
         String shortName = fullName.substring(1+fullName.lastIndexOf('.'));
-        Table.execute(tinfoFrom.getSchema(), "CREATE INDEX IX_" + shortName + " ON " + fullName + "(ParticipantId,SequenceNum)", null);
+        Table.execute(tinfoFrom.getSchema(), "CREATE INDEX IX_" + shortName + "_seq ON " + fullName + "(SequenceNum)", null);
+        Table.execute(tinfoFrom.getSchema(), "CREATE INDEX IX_" + shortName + "_ptid ON " + fullName + "(ParticipantId)", null);
+        Table.execute(tinfoFrom.getSchema(), "CREATE INDEX IX_" + shortName + "_ptid_seq ON " + fullName + "(ParticipantId,SequenceNum)", null);
 
         //noinspection ConstantConditions
         if (debug)
