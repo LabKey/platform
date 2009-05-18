@@ -343,7 +343,8 @@ public class SecurityApiActions
             props.put("uniqueName", role.getUniqueName());
             props.put("name", role.getName());
             props.put("description", role.getDescription());
-            props.put("sourceModule", role.getSourceModule().getName());
+            if (null != role.getSourceModule())
+                props.put("sourceModule", role.getSourceModule().getName());
 
             List<String> permissions = new ArrayList<String>();
             for(Class<? extends Permission> permClass : role.getPermissions())
@@ -363,7 +364,8 @@ public class SecurityApiActions
             props.put("uniqueName", perm.getUniqueName());
             props.put("name", perm.getName());
             props.put("description", perm.getDescription());
-            props.put("sourceModule", perm.getSourceModule().getName());
+            if (null != perm.getSourceModule())
+                props.put("sourceModule", perm.getSourceModule().getName());
             return props;
         }
     }
@@ -401,7 +403,8 @@ public class SecurityApiActions
             props.put("id", resource.getResourceId());
             props.put("name", resource.getResourceName());
             props.put("description", resource.getResourceDescription());
-            props.put("sourceModule", resource.getSourceModule().getName());
+            if (null != resource.getSourceModule())
+                props.put("sourceModule", resource.getSourceModule().getName());
             props.put("children", getChildrenProps(resource));
             return props;
         }
