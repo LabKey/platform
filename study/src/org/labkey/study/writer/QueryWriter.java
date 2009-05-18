@@ -15,7 +15,7 @@
  */
 package org.labkey.study.writer;
 
-import org.apache.xmlbeans.XmlString;
+import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
@@ -63,8 +63,8 @@ public class QueryWriter implements Writer<Study>
 
                 if (null != query.getMetadataXml())
                 {
-                    XmlString str = XmlString.Factory.parse(query.getMetadataXml());
-                    qtDoc.setMetadata(str);
+                    XmlObject xObj = XmlObject.Factory.parse(query.getMetadataXml());
+                    qtDoc.setMetadata(xObj);
                 }
 
                 QueryDocument qDoc = QueryDocument.Factory.newInstance();

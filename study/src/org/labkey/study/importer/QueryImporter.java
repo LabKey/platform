@@ -90,13 +90,11 @@ public class QueryImporter
                 QueryDefinition newQuery = QueryService.get().createQueryDef(ctx.getContainer(), queryXml.getSchemaName(), queryName);
                 newQuery.setSql(sql);
                 newQuery.setDescription(queryXml.getDescription());
-
-                // TODO: Set meta data!
-
+                newQuery.setMetadataXml(queryXml.getMetadata().xmlText());
                 newQuery.save(ctx.getUser(), ctx.getContainer());
             }
 
-            // TODO: Check for map.size == 0
+            // TODO: Remove meta data files from map on each save and check for map.size == 0
         }
     }
 }
