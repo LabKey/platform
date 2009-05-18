@@ -397,14 +397,14 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
             {
                 writer = directory.getPrintWriter(scriptFileName);
                 writer.write(descriptor.getProperty(RReportDescriptor.Prop.script));
-
-                super.serializeToFolder(directory);
             }
             finally
             {
                 if (writer != null)
                     writer.close();
             }
+
+            super.serializeToFolder(directory);
         }
         else
             throw new IllegalArgumentException("Cannot serialize a report that hasn't been saved yet");
