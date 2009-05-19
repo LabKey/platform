@@ -30,6 +30,6 @@ public class ManageNotificationsPermission extends AbstractPermission
     {
         super("Manage Notifications",
                 "Allows management of specimen request notifications",
-                ModuleLoader.getInstance().getModule(StudyModule.class));
+                StudyModule.class);
     }
 }

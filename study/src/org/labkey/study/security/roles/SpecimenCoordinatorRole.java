@@ -32,7 +32,7 @@ public class SpecimenCoordinatorRole extends AbstractRole
     {
         super("Specimen Coordinator",
                 "Specimen Coordinators may perform a number of management tasks related to specimens",
-                ModuleLoader.getInstance().getModule(StudyModule.class),
+                StudyModule.class,
                 ReadPermission.class, //TODO: remove this once we have multi-role-assignment UI
                 ManageRequestsPermission.class,
                 LockSpecimensPermission.class,

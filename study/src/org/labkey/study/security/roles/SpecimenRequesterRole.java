@@ -32,7 +32,7 @@ public class SpecimenRequesterRole extends AbstractRole
     {
         super("Specimen Requester",
                 "Specimen Requesters may request specimen vials.",
-                ModuleLoader.getInstance().getModule(StudyModule.class),
+                StudyModule.class,
                 ReadPermission.class, //TODO: remove this once we have multi-role-assignment UI
                 RequestSpecimensPermission.class);
     }

@@ -30,6 +30,6 @@ public class ManageRequestSettingsPermission extends AbstractPermission
     {
         super("Manage Specimen Request and Tracking Settings",
                 "Allows management of specimen request and tracking settings",
-                ModuleLoader.getInstance().getModule(StudyModule.class));
+                StudyModule.class);
     }
 }

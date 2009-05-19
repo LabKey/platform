@@ -29,6 +29,6 @@ public class ManageStudyPermission extends AbstractPermission
     public ManageStudyPermission()
     {
         super("Manage Study", "Allows access to the manage study portal.",
-                ModuleLoader.getInstance().getModule(StudyModule.class));
+                StudyModule.class);
     }
 }

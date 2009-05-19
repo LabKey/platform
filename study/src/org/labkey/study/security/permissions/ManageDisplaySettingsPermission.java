@@ -30,6 +30,6 @@ public class ManageDisplaySettingsPermission extends AbstractPermission
     {
         super("Manage Specimen Display Settings",
                 "Allows management of display settings on the specimen request form",
-                ModuleLoader.getInstance().getModule(StudyModule.class));
+                StudyModule.class);
     }
 }

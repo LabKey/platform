@@ -29,6 +29,6 @@ public class ManageSpecimenActorsPermission extends AbstractPermission
     public ManageSpecimenActorsPermission()
     {
         super("Manage Specimen Actors", "Allows management of specimen actors",
-                ModuleLoader.getInstance().getModule(StudyModule.class));
+                StudyModule.class);
     }
 }

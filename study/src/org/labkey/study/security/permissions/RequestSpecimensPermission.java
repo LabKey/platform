@@ -30,6 +30,6 @@ public class RequestSpecimensPermission extends AbstractPermission
     {
         super("Request Specimens",
                 "Allows request of specimens",
-                ModuleLoader.getInstance().getModule(StudyModule.class));
+                StudyModule.class);
     }
 }

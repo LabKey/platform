@@ -30,6 +30,6 @@ public class LockSpecimensPermission extends AbstractPermission
     {
         super("Lock Specimens",
                 "Allows locking of specimens",
-                ModuleLoader.getInstance().getModule(StudyModule.class));        
+                StudyModule.class);
     }
 }

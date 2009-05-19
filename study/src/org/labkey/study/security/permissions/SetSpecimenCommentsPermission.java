@@ -30,6 +30,6 @@ public class SetSpecimenCommentsPermission extends AbstractPermission
     {
         super("Set Specimen Comments",
                 "Allows the setting of comments on specimens",
-                ModuleLoader.getInstance().getModule(StudyModule.class));
+                StudyModule.class);
     }
 }

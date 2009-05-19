@@ -30,6 +30,6 @@ public class ManageRequestsPermission extends AbstractPermission
     {
         super("Manage Specimen Requests",
                 "Allows management and approval of specimen requests",
-                ModuleLoader.getInstance().getModule(StudyModule.class));
+                StudyModule.class);
     }
 }

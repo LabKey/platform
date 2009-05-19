@@ -29,6 +29,6 @@ public class IncludeScriptPermission extends AbstractPermission
     public IncludeScriptPermission()
     {
         super("Include Script", "Allows the user to include client-side script in wiki pages",
-                ModuleLoader.getInstance().getModule(WikiModule.class));
+                WikiModule.class);
     }
 }

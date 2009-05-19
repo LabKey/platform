@@ -29,6 +29,6 @@ public class ManageRequestStatusesPermission extends AbstractPermission
     public ManageRequestStatusesPermission()
     {
         super("Manage Request Statuses", "Allows management of specimen request statuses",
-        ModuleLoader.getInstance().getModule(StudyModule.class));
+                StudyModule.class);
     }
 }

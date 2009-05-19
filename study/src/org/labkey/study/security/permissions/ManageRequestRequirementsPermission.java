@@ -30,6 +30,6 @@ public class ManageRequestRequirementsPermission extends AbstractPermission
     {
         super("Manage Specimen Request Default Requirements",
                 "Allows management of specimen request default requirements",
-                ModuleLoader.getInstance().getModule(StudyModule.class));
+                StudyModule.class);
     }
 }

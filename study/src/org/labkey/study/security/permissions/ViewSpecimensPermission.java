@@ -30,6 +30,6 @@ public class ViewSpecimensPermission extends AbstractPermission
     {
         super("View Available Specimens",
                 "Allows visibility of available specimens",
-                ModuleLoader.getInstance().getModule(StudyModule.class));
+                StudyModule.class);
     }
 }
