@@ -32,7 +32,6 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.JobRunner;

@@ -33,6 +33,11 @@ public class SpecimenArchiveWriter implements Writer<Study>
 {
     private static final String DEFAULT_DIRECTORY = "specimens";
 
+    public String getSelectionText()
+    {
+        return "Specimen Archive";
+    }
+
     public void write(Study study, ExportContext ctx, VirtualFile root) throws Exception
     {
         VirtualFile fs = root.getDir(DEFAULT_DIRECTORY);

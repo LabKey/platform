@@ -75,7 +75,7 @@ public abstract class StudyBatch extends PipelineJob implements Serializable
 
     public void submit() throws IOException
     {
-        File log = StudyPipeline.logForDataset(getStudy(), _definitionFile);
+        File log = StudyPipeline.logForInputFile(_definitionFile);
         setLogFile(log);
         PipelineService.get().queueJob(this);
     }

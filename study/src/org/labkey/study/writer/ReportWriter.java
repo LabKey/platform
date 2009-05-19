@@ -30,6 +30,11 @@ public class ReportWriter implements Writer<Study>
 {
     private static final String DEFAULT_DIRECTORY = "reports";
 
+    public String getSelectionText()
+    {
+        return "Reports";
+    }
+
     public void write(Study study, ExportContext ctx, VirtualFile fs) throws Exception
     {
         Report[] reports = ReportService.get().getReports(ctx.getUser(), ctx.getContainer());

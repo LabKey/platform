@@ -16,6 +16,7 @@
 package org.labkey.study.writer;
 
 import org.labkey.api.util.VirtualFile;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * User: adam
@@ -24,5 +25,7 @@ import org.labkey.api.util.VirtualFile;
  */
 public interface Writer<T>
 {
+    @Nullable
+    public String getSelectionText();
     public void write(T object, ExportContext ctx, VirtualFile fs) throws Exception;
 }

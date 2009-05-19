@@ -32,6 +32,11 @@ import java.util.List;
  */
 public class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo>
 {
+    public String getSelectionText()
+    {
+        return null;
+    }
+
     public void write(QueryInfo queryInfo, ExportContext ctx, VirtualFile fs) throws Exception
     {
         TableInfo tinfo = queryInfo.getTableInfo();

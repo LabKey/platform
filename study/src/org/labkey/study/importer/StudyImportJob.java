@@ -20,6 +20,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.Study;
+import org.labkey.study.pipeline.StudyPipeline;
 
 import java.io.File;
 
@@ -43,7 +44,7 @@ public class StudyImportJob extends PipelineJob
         _study = study;
         _ctx = ctx;
         _root = root;
-        setLogFile(new File(root, "study_load.log"));
+        setLogFile(StudyPipeline.logForInputFile(new File(root, "study_load")));
     }
 
     public void run()
@@ -53,15 +54,21 @@ public class StudyImportJob extends PipelineJob
         try
         {
             setStatus("IMPORT cohort settings");
+            info("Importing cohort settings");
             // Dataset and Specimen upload jobs delete "unused" participants, so we need to defer setting participant
             // cohorts until the end of upload.
             new CohortImporter().process(_study, _ctx, _root);
+            info("Done importing cohort settings");
 
+            info("Importing queries");
             setStatus("IMPORT queries");
             new QueryImporter().process(_ctx, _root);
+            info("Done importing queries");
 
+            info("Importing reports");
             setStatus("IMPORT reports");
             new ReportImporter().process(_ctx, _root);
+            info("Done importing reports");
 
             success = true;
         }

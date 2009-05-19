@@ -37,6 +37,11 @@ public class SpecimenWriter implements Writer<Study>
 {
     private static final Logger _log = Logger.getLogger(SpecimenWriter.class);
 
+    public String getSelectionText()
+    {
+        return null;
+    }
+
     public void write(Study study, ExportContext ctx, VirtualFile fs) throws Exception
     {
         SpecimenColumn[] columns = SpecimenImporter.SPECIMEN_COLUMNS;

@@ -113,12 +113,12 @@ public class StudyPipeline extends PipelineProvider
     }
 
 
-    public static File logForDataset(Study study, File f)
+    public static File logForInputFile(File f)
     {
         String path = f.getPath();
-        String time = DateUtil.toISO(currentSeconds(),false);
-        time = time.replace(":","-");
-        time = time.replace(" ","_");
+        String time = DateUtil.toISO(currentSeconds(), false);
+        time = time.replace(":", "-");
+        time = time.replace(" ", "_");
         return new File(path + "_" + time + ".log");
     }
 

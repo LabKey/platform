@@ -27,6 +27,11 @@ import java.io.IOException;
  */
 public class VisitMapWriter implements Writer<Study>
 {
+    public String getSelectionText()
+    {
+        return "Visit Map";
+    }
+
     public void write(Study study, ExportContext ctx, VirtualFile fs) throws IOException
     {
         DataFaxVisitMapWriter writer = new DataFaxVisitMapWriter();

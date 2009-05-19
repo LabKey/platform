@@ -39,6 +39,11 @@ public class QueryWriter implements Writer<Study>
 
     private static final String DEFAULT_DIRECTORY = "queries";
 
+    public String getSelectionText()
+    {
+        return "Queries";
+    }
+
     public void write(Study study, ExportContext ctx, VirtualFile root) throws Exception
     {
         Container c = study.getContainer();

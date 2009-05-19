@@ -35,6 +35,11 @@ public class SchemaWriter implements Writer<DataSetDefinition[]>
 {
     private static final String SCHEMA_FILENAME = "schema.tsv";
 
+    public String getSelectionText()
+    {
+        return "Dataset Schema Description";
+    }
+
     public void write(DataSetDefinition[] definitions, ExportContext ctx, VirtualFile fs) throws IOException
     {
         Datasets datasetsXml = ctx.getStudyXml().getDatasets();
@@ -55,30 +60,30 @@ public class SchemaWriter implements Writer<DataSetDefinition[]>
 
             TableInfo tinfo = def.getTableInfo(ctx.getUser());
 
-            for (ColumnInfo col : tinfo.getColumns())
+            for (ColumnInfo col : DataSetWriter.getColumnsToExport(tinfo.getColumns(), true))
             {
-                if (col.getName().equals("autokey") || DataSetWriter.shouldExport(col))
-                {
-                    writer.print(prefix);
-                    writer.print(col.getColumnName() + '\t');
-                    writer.print(col.getCaption() + '\t');
+                writer.print(prefix);
+                writer.print(col.getColumnName() + '\t');
+                writer.print(col.getCaption() + '\t');
 
-                    Class clazz = col.getJavaClass();
-                    Type t = Type.getTypeByClass(clazz);
+                Class clazz = col.getJavaClass();
+                Type t = Type.getTypeByClass(clazz);
 
-                    if (null == t)
-                        throw new IllegalStateException(col.getName() + " in dataset " + def.getName() + " (" + def.getLabel() + ") has unknown java class " + clazz.getName());
+                if (null == t)
+                    throw new IllegalStateException(col.getName() + " in dataset " + def.getName() + " (" + def.getLabel() + ") has unknown java class " + clazz.getName());
 
-                    writer.print(t.getXsdType() + '\t');
-                    writer.print('\t');
-                    writer.print(col.isNullable() ? "optional\t" : "required\t");
-                    writer.print(StringUtils.trimToEmpty(col.getFormatString()) + "\t");
+                writer.print(t.getXsdType());
+                writer.print('\t');
+                writer.print(col.isNullable() ? "optional\t" : "required\t");
+                writer.print(StringUtils.trimToEmpty(col.getFormatString()) + "\t");
 
-                    if (col.getName().equals("autokey"))
-                        writer.print("1\ttrue");
+                // TODO: ConceptURI?
+                writer.print("\t");
 
-                    writer.println();
-                }
+                if (col.getName().equals("autokey"))
+                    writer.print("1\ttrue");
+
+                writer.println();
             }
         }
 

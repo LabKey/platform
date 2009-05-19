@@ -35,6 +35,11 @@ public class DataFaxVisitMapWriter implements Writer<Visit[]>
 {
     private static final String FILENAME = "visit_map.txt";
 
+    public String getSelectionText()
+    {
+        return null;
+    }
+
     public void write(Visit[] visits, ExportContext ctx, VirtualFile fs) throws IOException
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();

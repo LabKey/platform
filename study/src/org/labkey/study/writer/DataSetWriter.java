@@ -24,6 +24,7 @@ import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.xml.StudyDocument.Study.Datasets;
+import org.apache.log4j.Logger;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -40,7 +41,13 @@ import java.util.List;
  */
 public class DataSetWriter implements Writer<Study>
 {
+    private static final Logger LOG = Logger.getLogger(DataSetWriter.class);
     private static final String DEFAULT_DIRECTORY = "datasets";
+
+    public String getSelectionText()
+    {
+        return "Datasets";
+    }
 
     public void write(Study study, ExportContext ctx, VirtualFile root) throws SQLException, IOException, ServletException
     {
@@ -87,11 +94,7 @@ public class DataSetWriter implements Writer<Study>
         {
             TableInfo ti = def.getTableInfo(ctx.getUser());
             List<ColumnInfo> allColumns = ti.getColumns();
-            List<ColumnInfo> columns = new ArrayList<ColumnInfo>(allColumns.size());
-
-            for (ColumnInfo col : allColumns)
-                if (shouldExport(col))
-                    columns.add(col);
+            List<ColumnInfo> columns = getColumnsToExport(allColumns, false);
 
             ResultSet rs = Table.select(ti, columns, null, null);
             TSVGridWriter tsvWriter = new TSVGridWriter(rs);
@@ -101,11 +104,51 @@ public class DataSetWriter implements Writer<Study>
         }
     }
 
-    public static boolean shouldExport(ColumnInfo column)
+    private static boolean shouldExport(ColumnInfo column)
     {
-        if (!column.isUserEditable())
-            return false;
+        return column.isUserEditable();
+    }
 
-        return !"visit".equalsIgnoreCase(column.getName());
+    public static List<ColumnInfo> getColumnsToExport(List<ColumnInfo> inColumns, boolean includeAutoKey)
+    {
+        List<ColumnInfo> outColumns = new ArrayList<ColumnInfo>(inColumns.size());
+
+        ColumnInfo ptidColumn = null; String ptidURI = DataSetDefinition.getParticipantIdURI();
+        ColumnInfo sequenceColumn = null; String sequenceURI = DataSetDefinition.getSequenceNumURI();
+
+        for (ColumnInfo in : inColumns)
+        {
+            if (in.getPropertyURI().equals(ptidURI))
+            {
+                if (null == ptidColumn)
+                    ptidColumn = in;
+                else
+                    LOG.error("More than one ptid column found: " + ptidColumn.getName() + " and " + in.getName());
+            }
+
+            if (in.getPropertyURI().equals(sequenceURI))
+            {
+                if (null == sequenceColumn)
+                    sequenceColumn = in;
+                else
+                    LOG.error("More than one sequence number column found: " + sequenceColumn.getName() + " and " + in.getName());
+            }
+        }
+
+        for (ColumnInfo in : inColumns)
+        {
+            if (shouldExport(in) || (includeAutoKey && in.getName().equals("autokey")))
+            {
+                if ("visit".equalsIgnoreCase(in.getName()) && !in.equals(sequenceColumn))
+                    continue;
+
+                if ("ptid".equalsIgnoreCase(in.getName()) && !in.equals(ptidColumn))
+                    continue;
+
+                outColumns.add(in);
+            }
+        }
+
+        return outColumns;
     }
 }

@@ -36,10 +36,16 @@ public class StudyWriter implements Writer<Study>
         new CohortWriter(),
         new QcStateWriter(),
         new DataSetWriter(),
-        new ReportWriter(),
-        new QueryWriter(),
         new SpecimenArchiveWriter(),
-        new StudyXmlWriter());  // Note: Needs to be last since it writes out the study.xml file (to which other writers contribute)
+        new StudyXmlWriter(),          // Note: Needs to be last of the study writers since it writes out the study.xml file (to which other writers contribute)
+
+        new ReportWriter(),
+        new QueryWriter());
+
+    public String getSelectionText()
+    {
+        return null;
+    }
 
     public void write(Study study, ExportContext ctx, VirtualFile fs) throws Exception
     {
@@ -47,6 +53,9 @@ public class StudyWriter implements Writer<Study>
 
         for (Writer<Study> writer : WRITERS)
         {
+            if (null != writer.getSelectionText())
+                LOG.info("Writing " + writer.getSelectionText());
+
             writer.write(study, ctx, fs);
         }
 

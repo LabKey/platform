@@ -31,6 +31,11 @@ import java.util.List;
  */
 public class TdmVisitMapWriter implements Writer<Visit[]>
 {
+    public String getSelectionText()
+    {
+        return null;
+    }
+
     public void write(Visit[] visits, ExportContext ctx, VirtualFile fs) throws Exception
     {
         PrintWriter out = fs.getPrintWriter("visit_map.xml");

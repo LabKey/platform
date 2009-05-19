@@ -38,6 +38,11 @@ public class CohortWriter implements Writer<Study>
 {
     private static final String COHORTS_FILENAME = "cohorts.xml";
 
+    public String getSelectionText()
+    {
+        return "Cohort settings";
+    }
+
     public void write(Study study, ExportContext ctx, VirtualFile fs) throws Exception
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();

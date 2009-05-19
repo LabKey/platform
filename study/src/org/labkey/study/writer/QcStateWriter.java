@@ -26,6 +26,11 @@ import org.labkey.api.util.VirtualFile;
  */
 public class QcStateWriter implements Writer<Study>
 {
+    public String getSelectionText()
+    {
+        return "QC State Settings";
+    }
+
     public void write(Study study, ExportContext ctx, VirtualFile fs) throws Exception
     {
         // TODO: Write other QC properties

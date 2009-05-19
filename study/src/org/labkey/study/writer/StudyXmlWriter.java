@@ -41,6 +41,11 @@ import java.util.Map;
 //  writers are done modifying the StudyDocument.  Locking the StudyDocument after writing it out helps ensure this ordering.
 public class StudyXmlWriter implements Writer<Study>
 {
+    public String getSelectionText()
+    {
+        return "Study Export Manifest (study.xml)";
+    }
+
     public void write(Study study, ExportContext ctx, VirtualFile fs) throws Exception
     {
         StudyDocument.Study studyXml = ctx.getStudyXml();
