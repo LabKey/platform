@@ -26,10 +26,10 @@ import java.util.Date;
 public enum Type
 {
     StringType("Text (String)", "xsd:string", String.class),
-    IntType("Integer", "xsd:int", Integer.class),
+    IntType("Integer", "xsd:int", Integer.class, Integer.TYPE),
     DoubleType("Number (Double)", "xsd:double", Double.class, Double.TYPE), // Double.TYPE is here because manually created datasets with required doubles return Double.TYPE as Class
     DateTimeType("DateTime", "xsd:dateTime", Date.class),
-    BooleanType("Boolean", "xsd:boolean", Boolean.class);
+    BooleanType("Boolean", "xsd:boolean", Boolean.class, Boolean.TYPE);
 
     private String label;
     private String xsd;
