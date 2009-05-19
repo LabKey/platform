@@ -364,6 +364,9 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         if (typeof role == 'object')
             roleId = role.uniqueName;
 
+        var btnId = roleId+'$'+groupId;
+        var btnEl = Ext.fly(btnId);
+
         var br = Ext.get('$br$' + roleId);  // why doesn't Ext.fly() work?
         if (true == animate)
         {
@@ -371,16 +374,15 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
             var combo = Ext.getCmp('$add$' + roleId);
             var span = body.insertHtml("beforeend",'<span style:"position:absolute;">' + $h(groupName) + '<span>', true);
             span.setXY(combo.el.getXY());
-            var xy = br.getXY();
+            var xy = btnEl ? btnEl.getXY() : br.getXY();
             span.shift({x:xy[0], y:xy[1], callback:function(){
                 span.remove();
-                this.addButton(group, role, 'frame');
+                this.addButton(group, role, false);
             }, scope:this});
             return;
         }
         
-        var btnId = roleId+'$'+groupId;
-        if (Ext.fly(btnId))
+        if (btnEl)
             return;
         var ct = Ext.fly(roleId);
         b = new CloseButton({text:groupName, id:btnId});
@@ -401,7 +403,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         {
             var combo = Ext.getCmp('$add$' + roleId);
             var xy = combo.el.getXY();
-            var fx = {callback:this.removeButton.createDelegate(this,[groupId,roleId,false]), x:xy[0], y:xy[1], endOpacity:0}; 
+            var fx = {callback:this.removeButton.createDelegate(this,[groupId,roleId,false]), x:xy[0], y:xy[1], opacity:0};
             if (typeof animate == 'string')
                 button.el[animate](fx);
             else
