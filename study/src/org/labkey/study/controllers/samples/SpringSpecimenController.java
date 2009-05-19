@@ -30,6 +30,8 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
@@ -37,6 +39,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
+import org.labkey.study.security.permissions.*;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.*;
@@ -755,7 +758,7 @@ public class SpringSpecimenController extends BaseStudyController
         {
             super(context, SampleManager.getInstance().getRequestSpecimens(sampleRequest), !forExport, !forExport, forExport, false);
             _submissionResult = submissionResult;
-            _requestManager = context.getContainer().hasPermission(context.getUser(), ACL.PERM_ADMIN);
+            _requestManager = context.getContainer().hasPermission(context.getUser(), ManageRequestsPermission.class);
             _possibleNotifications = getUtils().getPossibleNotifications(sampleRequest);
             _sampleRequest = sampleRequest;
             _finalState = SampleManager.getInstance().isInFinalState(_sampleRequest);
@@ -884,7 +887,7 @@ public class SpringSpecimenController extends BaseStudyController
     }
 
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ManageRequestAction extends FormViewAction<ManageRequestForm>
     {
         private int _requestId;
@@ -913,6 +916,9 @@ public class SpringSpecimenController extends BaseStudyController
 
         public boolean handlePost(ManageRequestForm form, BindException errors) throws Exception
         {
+            if (!getViewContext().getContainer().hasPermission(getViewContext().getUser(), ManageRequestsPermission.class))
+                throw new UnauthorizedException("You do not have permissions to create new specimen request requirements!");
+
             SampleRequest request = SampleManager.getInstance().getRequest(getContainer(), form.getId());
             if (request == null)
                 HttpView.throwNotFound();
@@ -983,7 +989,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ViewRequestsAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -1072,7 +1078,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(RequestSpecimensPermission.class)
     public class ManageRequestStatusAction extends FormViewAction<ManageRequestStatusForm>
     {
         private SampleRequest _sampleRequest;
@@ -1401,7 +1407,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(RequestSpecimensPermission.class)
     public class HandleCreateSampleRequestAction extends FormViewAction<CreateSampleRequestForm>
     {
         private SampleRequest _sampleRequest;
@@ -1551,7 +1557,7 @@ public class SpringSpecimenController extends BaseStudyController
                 new NewRequestBean(getViewContext(), requested, form, errors));
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(RequestSpecimensPermission.class)
     public class ShowCreateSampleRequestAction extends SimpleViewAction<CreateSampleRequestForm>
     {
         public ModelAndView getView(CreateSampleRequestForm form, BindException errors) throws Exception
@@ -1565,7 +1571,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(RequestSpecimensPermission.class)
     public class ShowAPICreateSampleRequestAction extends SimpleViewAction<CreateQuickSampleRequestForm>
     {
         public ModelAndView getView(CreateQuickSampleRequestForm form, BindException errors) throws Exception
@@ -1745,7 +1751,7 @@ public class SpringSpecimenController extends BaseStudyController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(ManageRequestRequirementsPermission.class)
     public class DeleteDefaultRequirementAction extends RedirectAction<IdForm>
     {
         public void validateCommand(IdForm target, Errors errors)
@@ -1808,7 +1814,7 @@ public class SpringSpecimenController extends BaseStudyController
             _possibleNotifications = getUtils().getPossibleNotifications(request);
             SimpleFilter filter = new SimpleFilter("RequestId", requirement.getRequestId());
             filter.addCondition("RequirementId", requirement.getRowId());
-            _requestManager = context.getContainer().hasPermission(context.getUser(), ACL.PERM_ADMIN);
+            _requestManager = context.getContainer().hasPermission(context.getUser(), ManageRequestsPermission.class);
             _historyView = getUtils().getRequestEventGridView(context.getRequest(), filter);
             _finalState = SampleManager.getInstance().isInFinalState(request);
         }
@@ -1849,7 +1855,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(ReadPermission.class)
     public class ManageRequirementAction extends FormViewAction<ManageRequirementForm>
     {
         private SampleRequest _sampleRequest;
@@ -1870,6 +1876,9 @@ public class SpringSpecimenController extends BaseStudyController
 
         public boolean handlePost(final ManageRequirementForm form, BindException errors) throws Exception
         {
+            if (!getViewContext().getContainer().hasPermission(getViewContext().getUser(), ManageRequestsPermission.class))
+                throw new UnauthorizedException("You do not have permission to update requirements!");
+
             _sampleRequest = SampleManager.getInstance().getRequest(getContainer(), form.getId());
             final SampleRequestRequirement requirement =
                     SampleManager.getInstance().getRequirementsProvider().getRequirement(getContainer(), form.getRequirementId());
@@ -2122,7 +2131,7 @@ public class SpringSpecimenController extends BaseStudyController
             return _actors;
         }
     }
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(ManageRequestRequirementsPermission.class)
     public class ManageDefaultReqsAction extends FormViewAction<DefaultRequirementsForm>
     {
         private String _nextPage;
@@ -2259,7 +2268,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(RequestSpecimensPermission.class)
     public class SubmitRequestAction extends RedirectAction<IdForm>
     {
         public void validateCommand(IdForm target, Errors errors)
@@ -2300,7 +2309,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermissionClass(RequestSpecimensPermission.class)
     public class DeleteRequestAction extends RedirectAction<IdForm>
     {
         public void validateCommand(IdForm target, Errors errors)
@@ -2536,7 +2545,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(ManageRequestsPermission.class)
     public class LabSpecimenListsAction extends SimpleViewAction<LabSpecimenListsForm>
     {
         private int _requestId;
@@ -3080,7 +3089,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(SetSpecimenCommentsPermission.class)
     public class ClearCommentsAction extends RedirectAction<UpdateSpecimenCommentsForm>
     {
         public ActionURL getSuccessURL(UpdateSpecimenCommentsForm updateSpecimenCommentsForm)
@@ -3110,7 +3119,7 @@ public class SpringSpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(SetSpecimenCommentsPermission.class)
     public class UpdateCommentsAction extends FormViewAction<UpdateSpecimenCommentsForm>
     {
         public void validateCommand(UpdateSpecimenCommentsForm specimenCommentsForm, Errors errors)

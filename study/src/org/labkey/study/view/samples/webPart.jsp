@@ -23,6 +23,10 @@
 <%@ page import="org.labkey.study.SampleManager"%>
 <%@ page import="org.labkey.study.model.SpecimenTypeSummary" %>
 <%@ page import="org.labkey.study.samples.SamplesWebPart" %>
+<%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
+<%@ page import="org.labkey.study.security.permissions.RequestSpecimensPermission" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ViewContext currentContext = HttpView.currentContext();
@@ -30,6 +34,9 @@
     ActionURL url = currentContext.cloneActionURL();
     url.setPageFlow("Study-Samples");
     ActionURL vialsURL = url.clone().addParameter("showVials", "true");
+
+    Container container = currentContext.getContainer();
+    User user = currentContext.getUser();
 
     SpecimenTypeSummary summary = SampleManager.getInstance().getSpecimenTypeSummary(currentContext.getContainer());
     boolean shoppingCart = SampleManager.getInstance().isSpecimenShoppingCartEnabled(currentContext.getContainer());
@@ -90,7 +97,7 @@ if (settings.isEnableRequests())
 <% WebPartView.startTitleFrame(out, "Specimen Requests", null, "100%", null); %>
 <a href="<%= url.setAction("viewRequests") %>">View Existing Requests</a><br>
 <%
-    if (shoppingCart)
+    if (shoppingCart && container.hasPermission(user, RequestSpecimensPermission.class))
     {
 %>
 <a href="<%= url.setAction("showCreateSampleRequest") %>">Create New Request</a><br>
@@ -104,7 +111,7 @@ if (settings.isEnableRequests())
 WebPartView.endTitleFrame(out);
 %>
 <%
-    if (currentContext.getContainer().hasPermission(currentContext.getUser(), ACL.PERM_ADMIN))
+    if (container.hasPermission(user, ManageRequestSettingsPermission.class))
     {
 %>
 <% WebPartView.startTitleFrame(out, "Administration", null, "100%", null); %>

@@ -28,6 +28,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
+import org.labkey.study.security.permissions.SetSpecimenCommentsPermission;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.*;
 import org.labkey.study.query.SpecimenQueryView;
@@ -165,7 +166,7 @@ public class SpecimenUtils
             buttons.add(requestMenuButton);
         }
 
-        if (getViewContext().hasPermission(ACL.PERM_ADMIN))
+        if (getViewContext().getContainer().hasPermission(getUser(), SetSpecimenCommentsPermission.class))
         {
             if (commentsMode)
             {

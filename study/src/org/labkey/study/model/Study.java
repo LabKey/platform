@@ -179,7 +179,7 @@ public class Study extends ExtensibleStudyEntity<Study>
     public void savePolicy(SecurityPolicy policy)
     {
         super.savePolicy(policy);
-        StudyManager.getInstance().scrubDatasetAcls(this);
+        StudyManager.getInstance().scrubDatasetAcls(this, policy);
     }
 
     @Override

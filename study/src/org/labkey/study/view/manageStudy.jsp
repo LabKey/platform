@@ -28,8 +28,9 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
-<h4>General Study Information</h4>
 <%
     JspView<StudyPropertiesQueryView> me = (JspView<StudyPropertiesQueryView>) HttpView.currentView();
     String visitLabel = StudyManager.getInstance().getVisitManager(getStudy()).getPluralLabel();
@@ -44,6 +45,11 @@
     String propString = numProperties == 1 ? "property" : "properties";
 
 %>
+<%
+    if(c.hasPermission(user, AdminPermission.class))
+    {
+%>
+<h4>General Study Information</h4>
 <table>
     <tr>
         <th align="left">Study Label</th>
@@ -113,13 +119,19 @@
         <td><%= PageFlowUtil.textLink("Manage QC States", new ActionURL(StudyController.ManageQCStatesAction.class, getStudy().getContainer())) %></td>
     </tr>
 </table>
-
+<%
+    } //admin permission
+%>
+<%
+    if(c.hasPermission(user, ManageRequestSettingsPermission.class))
+    {
+%>
 <h4>Specimen Request/Tracking Settings</h4>
 <table>
     <tr>
         <th align="left">Specimen Repository</th>
         <td>This study uses <%=getStudy().getRepositorySettings().isSimple() ? "standard" : "advanced"%> specimen repository</td>
-        <td><%=textLink("Change Repository System", new ActionURL("Study-Samples", "showManageRepositorySettings.view", getStudy().getContainer()))%></td>
+        <td><% if(c.hasPermission(user, AdminPermission.class)) {out.write(textLink("Change Repository System", new ActionURL("Study-Samples", "showManageRepositorySettings.view", getStudy().getContainer())));}%></td>
     </tr>
     <%
         if (getStudy().getRepositorySettings().isEnableRequests())
@@ -167,4 +179,14 @@
         }
     %>
 </table>
+<%
+    } //manage specimen settings perm
+%>
+<%
+    if(c.hasPermission(user, AdminPermission.class))
+    {
+%>
 <%=generateButton("Export Study", "exportStudy.view")%> <%=generateButton("Snapshot Study Data", "snapshot.view")%> <%=generateButton("Delete Study", "deleteStudy.view")%>
+<%
+    }
+%>

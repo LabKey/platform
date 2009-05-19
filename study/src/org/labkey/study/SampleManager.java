@@ -28,6 +28,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.*;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.query.*;
@@ -43,6 +44,7 @@ import org.labkey.study.requirements.SpecimenRequestRequirementType;
 import org.labkey.study.samples.report.SpecimenCountSummary;
 import org.labkey.study.samples.SpecimenCommentAuditViewFactory;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.apache.commons.beanutils.PropertyUtils;
 
 import javax.mail.Address;
@@ -454,9 +456,9 @@ public class SampleManager
         if (request == null)
             return false;
         Container container = request.getContainer();
-        if (!container.hasPermission(user, ACL.PERM_INSERT))
+        if (!container.hasPermission(user, RequestSpecimensPermission.class))
             return false;
-        if (user.isAdministrator() || container.hasPermission(user, ACL.PERM_ADMIN))
+        if (user.isAdministrator() || container.hasPermission(user, AdminPermission.class))
             return true;
 
         if (SampleManager.getInstance().isSpecimenShoppingCartEnabled(container))

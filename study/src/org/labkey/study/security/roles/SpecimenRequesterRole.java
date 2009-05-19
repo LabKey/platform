@@ -19,34 +19,21 @@ import org.labkey.api.security.roles.AbstractRole;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.study.StudyModule;
-import org.labkey.study.security.permissions.*;
+import org.labkey.study.security.permissions.RequestSpecimensPermission;
 
 /*
 * User: Dave
-* Date: May 13, 2009
-* Time: 3:16:54 PM
+* Date: May 18, 2009
+* Time: 2:23:42 PM
 */
-public class SpecimenCoordinatorRole extends AbstractRole
+public class SpecimenRequesterRole extends AbstractRole
 {
-    public SpecimenCoordinatorRole()
+    public SpecimenRequesterRole()
     {
-        super("Specimen Coordinator",
-                "Specimen Coordinators may perform a number of management tasks related to specimens",
+        super("Specimen Requester",
+                "Speciment Requesters may request specimen vials.",
                 ModuleLoader.getInstance().getModule(StudyModule.class),
                 ReadPermission.class, //TODO: remove this once we have multi-role-assignment UI
-                ManageRequestsPermission.class,
-                LockSpecimensPermission.class,
-                ManageDisplaySettingsPermission.class,
-                ManageNewRequestFormPermission.class,
-                ManageNotificationsPermission.class,
-                ManageRequestRequirementsPermission.class,
-                ManageRequestSettingsPermission.class,
-                ManageRequestStatusesPermission.class,
-                ManageSpecimenActorsPermission.class,
-                ManageStudyPermission.class,
-                RequestSpecimensPermission.class,
-                SetSpecimenCommentsPermission.class,
-                ViewSpecimensPermission.class
-                );
+                RequestSpecimensPermission.class);
     }
 }

@@ -73,6 +73,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.study.*;
 import org.labkey.study.security.permissions.ManageSpecimenActorsPermission;
 import org.labkey.study.security.permissions.ManageStudyPermission;
+import org.labkey.study.security.permissions.ManageRequestSettingsPermission;
 import org.labkey.study.writer.StudyWriter;
 import org.labkey.study.writer.FileSystemFile;
 import org.labkey.study.writer.ExportContext;

@@ -26,6 +26,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.SampleManager;
+import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.labkey.study.controllers.samples.SpecimenUtils;
 import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.Specimen;
@@ -595,7 +596,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
                                 getUser().isAdministrator());
             }
             SampleManager.RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(getContainer());
-            if (!settings.isSimple())
+            if (!settings.isSimple() && getViewContext().getContainer().hasPermission(getUser(), RequestSpecimensPermission.class))
             {
                 // Only add this column if we're using advanced specimen management
                 rgn.addDisplayColumn(0, new SpecimenRequestDisplayColumn(this, getTable(), zeroVialIndicator, oneVialIndicator,

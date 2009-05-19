@@ -41,6 +41,9 @@ import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.StudyService;
@@ -1586,29 +1589,26 @@ public class StudyManager
      *
      * UNDONE: move StudyManager into model package (so we can have protected access)
      * @param study
+     * @param newPolicy
      */
-    protected void scrubDatasetAcls(Study study)
+    protected void scrubDatasetAcls(Study study, SecurityPolicy newPolicy)
     {
-        //NOTE: old code is below in comments. I'm not entirely sure
-        //if this new code is exactly the same. It seems that we should
-        //delete policies for all the datasets at this point.
-        DataSetDefinition[] defs = getDataSetDefinitions(study);
-        for (DataSetDefinition def : defs)
+        //for every principal that plays something other than the RestrictedReaderRole,
+        //delete that group's role assignments in all dataset policies
+        Role restrictedReader = RoleManager.getRole(RestrictedReaderRole.class);
+
+        Set<SecurableResource> resources = new HashSet<SecurableResource>();
+        resources.addAll(Arrays.asList(getDataSetDefinitions(study)));
+
+        Set<UserPrincipal> principals = new HashSet<UserPrincipal>();
+
+        for (RoleAssignment ra : newPolicy.getAssignments())
         {
-            SecurityManager.deletePolicy(def);
+            if (!(ra.getRole().equals(restrictedReader)))
+                principals.add(SecurityManager.getPrincipal(ra.getUserId()));
         }
-        
-//        ACL acl = study.getACL();
-//        int[] restrictedGroups = acl.getGroups(ACL.PERM_READOWN, null);
-//        DataSetDefinition[] defs = getDataSetDefinitions(study);
-//        for (DataSetDefinition def : defs)
-//        {
-//            ACL aclOld = def.getACL();
-//            ACL aclScrubbed = aclOld.scrub(restrictedGroups);
-//            if (aclOld == aclScrubbed)
-//                continue;
-//            def.updateACL(aclScrubbed);
-//        }
+
+        SecurityManager.clearRoleAssignments(resources, principals);
     }
 
 

@@ -38,6 +38,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.SpecimenService;
@@ -73,7 +74,9 @@ import org.labkey.study.samples.SamplesWebPart;
 import org.labkey.study.samples.SpecimenCommentAuditViewFactory;
 import org.labkey.study.security.permissions.ManageSpecimenActorsPermission;
 import org.labkey.study.security.permissions.ManageStudyPermission;
+import org.labkey.study.security.permissions.ViewSpecimensPermission;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
+import org.labkey.study.security.roles.SpecimenRequesterRole;
 import org.labkey.study.view.*;
 
 import java.lang.reflect.InvocationTargetException;
@@ -147,10 +150,12 @@ public class StudyModule extends DefaultModule
 
         //register roles
         RoleManager.registerRole(new SpecimenCoordinatorRole());
-
-        //add permissions to site/project/folder admin roles
+        RoleManager.registerRole(new SpecimenRequesterRole());
+        
         RoleManager.addPermissionToAdminRoles(ManageStudyPermission.class);
-        RoleManager.addPermissionToAdminRoles(ManageSpecimenActorsPermission.class);
+
+        //add view specimen perm to reader role (all readers are allowed to see available specimens)
+        RoleManager.getRole(ReaderRole.class).addPermission(ViewSpecimensPermission.class);
     }
 
     @Override

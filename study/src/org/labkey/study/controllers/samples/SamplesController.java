@@ -28,7 +28,6 @@ import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.labkey.api.attachments.AttachmentDirectory;
-import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.*;
 import org.labkey.api.security.*;
@@ -44,7 +43,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.util.Pair;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
-import org.labkey.study.security.permissions.ManageSpecimenActorsPermission;
+import org.labkey.study.security.permissions.*;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.designer.MapArrayExcelWriter;
@@ -56,7 +55,6 @@ import org.labkey.study.query.SpecimenQueryView;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
-import java.io.IOException;
 import java.net.URISyntaxException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -173,7 +171,7 @@ public class SamplesController extends ViewController
     @Jpf.Action
     protected Forward showGroupMembers(UpdateGroupForm form) throws Exception
     {
-        requiresAdmin();
+        requiresPermission(ManageSpecimenActorsPermission.class);
         SampleRequestActor actor = SampleManager.getInstance().getRequirementsProvider().getActor(getContainer(), form.getId());
         if (actor == null)
         {
@@ -367,6 +365,7 @@ public class SamplesController extends ViewController
     @Jpf.Action
     protected Forward showManageRepositorySettings() throws Exception
     {
+        requiresAdmin();
         JspView<SampleManager.RepositorySettings> view = new JspView<SampleManager.RepositorySettings>("/org/labkey/study/view/samples/manageRepositorySettings.jsp", SampleManager.getInstance().getRepositorySettings(getContainer()));
         return _renderInTemplate(view, "Manage Repository Settings",
                 new NavTree("Study", new ActionURL(StudyController.BeginAction.class, getContainer())),
@@ -455,7 +454,7 @@ public class SamplesController extends ViewController
     @Jpf.Action
     protected Forward manageActorOrder(BaseStudyController.BulkEditForm form) throws Exception
     {
-        requiresAdmin();
+        requiresPermission(ManageSpecimenActorsPermission.class);
         if ("POST".equalsIgnoreCase(getRequest().getMethod()))
         {
             String order = form.getOrder();
@@ -559,7 +558,7 @@ public class SamplesController extends ViewController
     @Jpf.Action
     protected Forward deleteActor(IdForm form) throws Exception
     {
-        requiresAdmin();
+        requiresPermission(ManageSpecimenActorsPermission.class);
         SampleRequestActor actor = SampleManager.getInstance().getRequirementsProvider().getActor(getContainer(), form.getId());
         if (actor != null)
             actor.delete();
@@ -639,7 +638,7 @@ public class SamplesController extends ViewController
     @Jpf.Action
     protected Forward manageStatusOrder(BaseStudyController.BulkEditForm form) throws Exception
     {
-        requiresAdmin();
+        requiresPermission(ManageSpecimenActorsPermission.class);
         if ("POST".equalsIgnoreCase(getRequest().getMethod()))
         {
             String order = form.getOrder();
@@ -702,7 +701,7 @@ public class SamplesController extends ViewController
     @Jpf.Action
     protected Forward manageStatuses(StatusEditForm form) throws Exception
     {
-        requiresAdmin();
+        requiresPermission(ManageRequestStatusesPermission.class);
         if ("POST".equalsIgnoreCase(getRequest().getMethod()))
         {
             int[] rowIds = form.getIds();
@@ -923,7 +922,7 @@ public class SamplesController extends ViewController
     @Jpf.Action
     protected Forward handleUpdateRequestInputs(ManageRequestInputsForm form) throws Exception
     {
-        requiresAdmin();
+        requiresPermission(ManageNewRequestFormPermission.class);
 
         SampleManager.SpecimenRequestInput[] inputs = new SampleManager.SpecimenRequestInput[form.getTitle().length];
         for (int i = 0; i < form.getTitle().length; i++)
@@ -947,7 +946,7 @@ public class SamplesController extends ViewController
     @Jpf.Action
     protected Forward manageRequestInputs(PipelineForm form) throws Exception
     {
-        requiresAdmin();
+        requiresPermission(ManageNewRequestFormPermission.class);
         JspView<ManageRequestInputsBean> view = new JspView<ManageRequestInputsBean>("/org/labkey/study/view/samples/manageRequestInputs.jsp",
                 new ManageRequestInputsBean(getViewContext()));
         NavTree[] navTrail = new NavTree[]{
@@ -1234,7 +1233,7 @@ public class SamplesController extends ViewController
     @Jpf.Action
     protected Forward manageDisplaySettings(DisplaySettingsForm form) throws Exception
     {
-        requiresAdmin();
+        requiresPermission(ManageDisplaySettingsPermission.class);
         // try to get the settings from the form, just in case this is a reshow:
         SampleManager.DisplaySettings settings = form.getBean();
         if (settings == null || settings.getLastVialEnum() == null)
@@ -1260,7 +1259,7 @@ public class SamplesController extends ViewController
     @Jpf.Action
     protected Forward manageNotifications(ManageNotificationsForm form) throws Exception
     {
-        requiresAdmin();
+        requiresPermission(ManageNotificationsPermission.class);
         // try to get the settings from the form, just in case this is a reshow:
         SampleManager.RequestNotificationSettings settings = form.getBean();
         if (settings == null || settings.getReplyTo() == null)

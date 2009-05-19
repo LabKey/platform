@@ -23,6 +23,8 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.security.permissions.ManageStudyPermission" %>
+<%@ page import="org.labkey.api.security.SecurityPolicy" %>
+<%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     User user = (User)request.getUserPrincipal();
@@ -49,7 +51,8 @@ if (null == getStudy())
     return;
 }
     boolean dateBased = getStudy().isDateBased();
-    boolean isAdmin = getStudy().getContainer().hasPermission(user, ManageStudyPermission.class);
+    SecurityPolicy policy = getViewContext().getContainer().getPolicy();
+    boolean isAdmin = policy.hasPermission(user, AdminPermission.class);
     ActionURL url = new ActionURL(StudyController.BeginAction.class, getStudy().getContainer());
     String visitLabel = StudyManager.getInstance().getVisitManager(getStudy()).getPluralLabel();
 %>
@@ -85,6 +88,11 @@ if (null == getStudy())
         out.write(textLink("Manage Study", url.setAction(StudyController.ManageStudyAction.class)));
         out.write("&nbsp;");
         out.write(textLink("Data Pipeline", url.setPageFlow("Pipeline").setAction("begin.view")));
+    }
+    else if (policy.hasPermission(user, ManageRequestSettingsPermission.class) &&
+            getStudy().getRepositorySettings().isEnableRequests())
+    {
+        out.write(textLink("Manage Specimen Request Settings", url.setAction(StudyController.ManageStudyAction.class)));
     }
 %>
 
