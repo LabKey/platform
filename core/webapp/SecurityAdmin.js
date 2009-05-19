@@ -84,11 +84,12 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         var container = config.project || LABKEY.container.id;
         S.getContainers({containerPath:container, includeSubfolders:true, successCallback:this._loadContainersResponse, errorCallback:this._errorCallback, scope:this});
         S.getRoles({containerPath:container, successCallback:this._loadRolesResponse, errorCallback:this._errorCallback, scope:this});
-        this.membershipStore.load();
-        this.membershipStore.onReady(this.checkReady, this);
         this.principalsStore.load();
         this.principalsStore.onReady(this.checkReady, this);
         S.getSecurableResources({successCallback:this._loadResourcesResponse, errorCallback:this._errorCallback, scope:this});
+
+        // not required for onReady
+        this.membershipStore.load();
     },
 
 
@@ -116,7 +117,6 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     checkReady : function()
     {
         if (this.principalsStore.ready &&
-            this.membershipStore.ready &&
             this.containersReady &&
             this.rolesReady &&
             this.resourcesReady)
@@ -200,7 +200,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
 var CloseButton = Ext.extend(Ext.Button,{
 
     template : new Ext.Template(
-                    '<table border="0" cellpadding="0" cellspacing="0" class="x-btn-wrap" style="display:inline;"><tbody><tr>',
+                    '<table border="0" cellpadding="0" cellspacing="0" class="x-btn-wrap" style="display:inline-table;"><tbody><tr>',
                     '<td class="x-btn-left"><i>&#160;</i></td><td class="x-btn-center"><em unselectable="on"><button class="x-btn-text" type="{1}">{0}</button></em></td><td class="x-btn-center"><i class="pclose">&#160;</i></td><td class="x-btn-right"><i>&#160;</i></td>',
                     "</tr></tbody></table>"),
 
@@ -216,23 +216,36 @@ var CloseButton = Ext.extend(Ext.Button,{
         // find the close element
         var close = this.el.child('I[class=pclose]');
         if (close)
-            close.on("click",this.onClose,this);                                              
+        {
+            close.on("click",this.onClose,this);
+            if (this.tooltip)
+            {
+                if (typeof this.closeTooltip == 'object')
+                {
+                    Ext.QuickTips.register(Ext.apply({target: close}, this.closeTooltip));
+                }
+                else
+                {
+                    close.dom[this.tooltipType] = this.closeTooltip;
+                }
+            }
+        }
     },
 
     stoppedEvent : null,
-    
-    onClose : function(event,button)
+
+    onClose : function(event)
     {
         // can't seem to actually stop mousedown events, but we can disable the button
         //        event.stopEvent();
         this.stoppedEvent = event;
-        this.fireEvent("close",event,this);
+        this.fireEvent("close", this, event);
     },
 
     onClick : function(event)
     {
-        if (!this.stoppedEvent)
-            CloseButton.superclass.onClick.call(this,event);
+        if (!this.stoppedEvent || event.type != 'click')
+            CloseButton.superclass.onClick.call(this, event);
         this.stoppedEvent = null;
     }
 });
@@ -273,7 +286,11 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     resource : null,
 
     table : null,
-    
+
+    doLayout : function()
+    {
+    },
+
     setResource : function(id)
     {
         this.resource = this.cache.getResource(id);
@@ -290,7 +307,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
             if (role)
                 this.roles.push(role);
         }
-        this._update();
+        this._redraw();
     },
 
 
@@ -298,14 +315,23 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     {
         return this.table || this.el;
     },
-    
 
-    roleTemplate : new Ext.Template('<tr><td>&nbsp;</td></tr><tr><td width=300 valign=top><div><h3 class="rn">{name}</h3><div class="rd">{description}</div></div></td><td valign=top width=100% id="{uniqueName}" style=""><span id="$br${uniqueName}"><br></span></td></tr>'),
 
-    _update : function()
+    // documented as a container method, but it's not there
+    removeAll : function()
     {
-        if (this.resource)
-            this.setTitle(this.resource.name);
+        if (this.items)
+            Ext.destroy.apply(Ext, this.items.items);
+        this.items = null;
+    },
+
+
+    roleTemplate : new Ext.Template('<tr><td>&nbsp;</td></tr><tr><td width=300 valign=top><div><h3 class="rn">{name}</h3><div class="rd">{description}</div></div></td><td valign=top width=100% id="{uniqueName}" style=""><span id="$br${uniqueName}">&nbsp;<img height=20 width=1 src="' + Ext.BLANK_IMAGE_URL + '"><br></span></td></tr>'),
+
+    _redraw : function()
+    {
+        this.removeAll();
+
         var r, role;
         var b;
 
@@ -318,6 +344,8 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         html.push("</table>");
         this.body.update("");
         var m = $dom.markup(html);
+
+        this.body.update("",false);
         this.table = this.body.insertHtml('beforeend', m, true);
 
         for (r=0 ; r<this.roles.length ; r++)
@@ -334,17 +362,24 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
             var c = new PrincipalComboBox({cache:this.cache, id:('$add$'+role.uniqueName), roleId:role.uniqueName});
             c.on("select", this.Combo_onSelect, this);
             c.render(ct);
+            this.add(c);
         }
 
         this.saveButton = new Ext.Button({text:'Save', handler:this.save, scope:this});
         this.saveButton.render(this.el);
+        this.add(this.saveButton);
         // UNDONE: enable/disable
     },
 
     // expects button to have roleId and groupId attribute
-    Button_onClose : function(event,btn)
+    Button_onClose : function(btn,event)
     {
         this.removeRoleAssignment(btn.groupId, btn.roleId);
+    },
+
+    Button_onClick : function(btn,event)
+    {
+        alert('click ' + btn.groupId);
     },
 
     // expects combo to have roleId attribute
@@ -371,7 +406,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         if (true == animate)
         {
             var body = Ext.getBody();
-            var combo = Ext.getCmp('$add$' + roleId);
+            var combo = this.getComponent('$add$' + roleId);
             var span = body.insertHtml("beforeend",'<span style:"position:absolute;">' + $h(groupName) + '<span>', true);
             span.setXY(combo.el.getXY());
             var xy = btnEl ? btnEl.getXY() : br.getXY();
@@ -383,12 +418,18 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         }
         
         if (btnEl)
+        {
+            btnEl.frame();
             return;
+        }
+
+        // really add the button
         var ct = Ext.fly(roleId);
-        b = new CloseButton({text:groupName, id:btnId});
-        b.on("close", this.removeRoleAssignment.createDelegate(this,[groupId,roleId]));
-        b.on("click", window.alert.createDelegate(window, ['click ' + groupName]));
+        b = new CloseButton({text:groupName, id:btnId, groupId:groupId, roleId:roleId, closeTooltip:'Remove ' + groupName + ' from role'});
+        b.on("close", this.Button_onClose, this);
+        b.on("click", this.Button_onClick, this);
         b.render(ct, br);
+        this.add(b);
         br.insertHtml("beforebegin"," ");
         if (typeof animate == 'string')
             b.el[animate]();
@@ -396,12 +437,12 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
 
     removeButton : function(groupId, roleId, animate)
     {
-        var button = Ext.getCmp(roleId+ '$' + groupId);
+        var button = this.getComponent(roleId+ '$' + groupId);
         if (!button)
             return;
         if (animate)
         {
-            var combo = Ext.getCmp('$add$' + roleId);
+            var combo = this.getComponent('$add$' + roleId);
             var xy = combo.el.getXY();
             var fx = {callback:this.removeButton.createDelegate(this,[groupId,roleId,false]), x:xy[0], y:xy[1], opacity:0};
             if (typeof animate == 'string')
@@ -410,9 +451,11 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
                 button.el.shift(fx);
             return;
         }
-        var button = Ext.getCmp(roleId+ '$' + groupId);
+        var button = this.getComponent(roleId+ '$' + groupId);
         if (button)
-            button.destroy();
+        {
+            this.remove(button);
+        }
     },
     
     addRoleAssignment : function(group, role)
@@ -424,10 +467,13 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         if (typeof role == "object")
             roleId = role.uniqueName;
         this.policy.addRoleAssignment(groupId, roleId);
+
         this.addButton(group,role,true);
-        var combo = Ext.getCmp('$add$' + roleId);
-        if (combo)
-            combo.clearValue();
+
+        var combo = this.getComponent('$add$' + roleId);
+        combo.selectText();
+        // reset(), and clearValue() seem to leave combo in bad state
+        // however, calling selectText() allows you to start typing a new value right away
     },
 
     removeRoleAssignment : function(group, role)
@@ -446,8 +492,13 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     {
         if (!this.policy.isDirty())
             return;
-        alert('save policy for ' + this.resource.id);
-        S.savePolicy({policy:this.policy, successCallback:function(){alert('saved');}, failureCallback:function(){alert('fail');}});
+        S.savePolicy({policy:this.policy, successCallback:function(){this.afterSave();}, failureCallback:function(){alert('fail'); this.afterSave();}, scope:this});
+    },
+
+    afterSave : function()
+    {
+        // reload policy
+        S.getPolicy({resourceId:this.resource.id, successCallback:this.setPolicy , scope:this});
     },
 
     _corners : {tl:{radius:6}, tr:{radius:6}, bl:{radius:6}, br:{radius:6}, antiAlias:true}
