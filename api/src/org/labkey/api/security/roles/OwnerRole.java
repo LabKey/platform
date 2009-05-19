@@ -30,7 +30,9 @@ public class OwnerRole extends AbstractContextualRole
     public OwnerRole()
     {
         super("Owner Role", "A role automatically assigned if the current user 'owns' the resource being accessed.",
-                ReadPermission.class, ReadSomePermission.class,
-                UpdatePermission.class, DeletePermission.class);
+                ReadPermission.class,
+                ReadSomePermission.class,
+                UpdatePermission.class,
+                DeletePermission.class);
     }
 }

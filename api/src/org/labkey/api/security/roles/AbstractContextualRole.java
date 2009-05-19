@@ -30,9 +30,9 @@ public abstract class AbstractContextualRole extends AbstractRole implements Con
         super(name, description, perms);
     }
 
-    protected AbstractContextualRole(String name, String description, Module sourceModule, Class<? extends Permission>... perms)
+    protected AbstractContextualRole(String name, String description, Class<? extends Module> sourceModuleClass, Class<? extends Permission>... perms)
     {
-        super(name, description, sourceModule, perms);
+        super(name, description, sourceModuleClass, perms);
     }
 
     @Override

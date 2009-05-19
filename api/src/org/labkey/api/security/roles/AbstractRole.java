@@ -46,7 +46,12 @@ public abstract class AbstractRole implements Role
         this(name, description, ModuleLoader.getInstance().getCoreModule(), perms);
     }
 
-    protected AbstractRole(String name, String description, Module sourceModule, Class<? extends Permission>... perms)
+    protected AbstractRole(String name, String description, Class<? extends Module> sourceModuleClass, Class<? extends Permission>... perms)
+    {
+        this(name, description, ModuleLoader.getInstance().getModule(sourceModuleClass), perms);
+    }
+
+    private AbstractRole(String name, String description, Module sourceModule, Class<? extends Permission>... perms)
     {
         _name = name;
         _description = description;

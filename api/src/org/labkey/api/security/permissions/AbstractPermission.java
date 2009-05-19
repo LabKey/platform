@@ -43,7 +43,12 @@ public abstract class AbstractPermission implements Permission
         this(name, description, ModuleLoader.getInstance().getCoreModule());
     }
 
-    protected AbstractPermission(@NotNull String name, @NotNull String description, @NotNull Module sourceModule)
+    protected AbstractPermission(@NotNull String name, @NotNull String description, @NotNull Class<? extends Module> sourceModuleClass)
+    {
+        this(name, description, ModuleLoader.getInstance().getModule(sourceModuleClass));
+    }
+
+    private AbstractPermission(@NotNull String name, @NotNull String description, @NotNull Module sourceModule)
     {
         _name = name;
         _description = description;
