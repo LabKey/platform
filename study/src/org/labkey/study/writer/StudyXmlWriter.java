@@ -48,9 +48,14 @@ public class StudyXmlWriter implements Writer<Study>
         // Study attributes
         studyXml.setLabel(study.getLabel());
         studyXml.setDateBased(study.isDateBased());
-        Calendar startDate = Calendar.getInstance();
-        startDate.setTime(study.getStartDate());
-        studyXml.setStartDate(startDate);        // TODO: TimeZone?
+
+        if (null != study.getStartDate())
+        {
+            Calendar startDate = Calendar.getInstance();
+            startDate.setTime(study.getStartDate());
+            studyXml.setStartDate(startDate);        // TODO: TimeZone?
+        }
+
         studyXml.setSecurityType(SecurityType.Enum.forString(study.getSecurityType().name()));
 
         // Export the MV indicators -- always write these, even if they're blank

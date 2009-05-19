@@ -89,7 +89,10 @@ public class StudyImporter
         StudyController.StudyPropertiesForm studyForm = new StudyController.StudyPropertiesForm();
         studyForm.setLabel(studyXml.getLabel());
         studyForm.setDateBased(studyXml.getDateBased());
-        studyForm.setStartDate(studyXml.getStartDate().getTime());
+
+        if (null != studyXml.getStartDate())
+            studyForm.setStartDate(studyXml.getStartDate().getTime());
+
         studyForm.setSecurityType(SecurityType.valueOf(studyXml.getSecurityType().toString()));
         StudyController.createStudy(getStudy(true), _c, _user, studyForm);
 

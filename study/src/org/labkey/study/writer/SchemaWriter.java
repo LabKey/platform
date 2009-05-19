@@ -66,7 +66,8 @@ public class SchemaWriter implements Writer<DataSetDefinition[]>
                     Class clazz = col.getJavaClass();
                     Type t = Type.getTypeByClass(clazz);
 
-                    assert null != t : col.getName() + " has unknown java class " + clazz.getName();
+                    if (null == t)
+                        throw new IllegalStateException(col.getName() + " in dataset " + def.getName() + " (" + def.getLabel() + ") has unknown java class " + clazz.getName());
 
                     writer.print(t.getXsdType() + '\t');
                     writer.print('\t');

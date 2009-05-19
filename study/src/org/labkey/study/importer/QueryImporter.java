@@ -15,11 +15,10 @@
  */
 package org.labkey.study.importer;
 
-import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
 import org.labkey.study.writer.QueryWriter;
@@ -29,9 +28,9 @@ import javax.servlet.ServletException;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
-import java.sql.SQLException;
 
 /**
  * User: adam
@@ -40,8 +39,6 @@ import java.sql.SQLException;
  */
 public class QueryImporter
 {
-    private static final Logger _log = Logger.getLogger(QueryImporter.class);
-
     void process(ImportContext ctx, File root) throws ServletException, XmlException, IOException, SQLException
     {
         StudyDocument.Study.Queries queriesXml = ctx.getStudyXml().getQueries();
@@ -90,7 +87,10 @@ public class QueryImporter
                 QueryDefinition newQuery = QueryService.get().createQueryDef(ctx.getContainer(), queryXml.getSchemaName(), queryName);
                 newQuery.setSql(sql);
                 newQuery.setDescription(queryXml.getDescription());
-                newQuery.setMetadataXml(queryXml.getMetadata().xmlText());
+
+                if (null != queryXml.getMetadata())
+                    newQuery.setMetadataXml(queryXml.getMetadata().xmlText());
+
                 newQuery.save(ctx.getUser(), ctx.getContainer());
             }
 

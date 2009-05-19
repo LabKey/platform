@@ -3726,7 +3726,7 @@ public class StudyController extends BaseStudyController
 
 
     // TODO: Change to "Study Data Administrator" role?
-    @RequiresPermission(ACL.PERM_READ)
+    @RequiresPermission(ACL.PERM_ADMIN)
     public class ExportStudyAction extends FormViewAction<ExportForm>
     {
         public ModelAndView getView(ExportForm form, boolean reshow, BindException errors) throws Exception
