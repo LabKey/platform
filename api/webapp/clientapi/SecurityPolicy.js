@@ -75,6 +75,8 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
 
     addRoleAssignment : function(principalId, role)
     {
+        this.removeRoleAssignment(principalId, this.noPermissionsRole);
+
         var idx, len, assgn;
         for (idx = 0, len = this.policy.assignments.length; idx < len ; ++idx)
         {
