@@ -262,7 +262,7 @@ LABKEY.Utils = new function()
                     json = Ext.util.JSON.decode(response.responseText);
 
                 if(!json && isErrorCallback)
-                    json = {exeption: (response && response.statusText ? response.statusText : "Communication failure.")};
+                    json = {exception: (response && response.statusText ? response.statusText : "Communication failure.")};
 
                 if(fn)
                     fn.call(scope || this, json, response, options);

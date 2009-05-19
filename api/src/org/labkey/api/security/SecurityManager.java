@@ -1757,7 +1757,8 @@ public class SecurityManager
             SecurityPolicyBean currentPolicyBean = Table.selectObject(core.getTableInfoPolicies(),
                     policy.getResource().getResourceId(), SecurityPolicyBean.class);
 
-            if(null != currentPolicyBean && null != policy.getModified() && !policy.getModified().equals(currentPolicyBean.getModified()))
+            if(null != currentPolicyBean && null != policy.getModified() &&
+                    0 != policy.getModified().compareTo(currentPolicyBean.getModified()))
             {
                 throw new Table.OptimisticConflictException("The security policy you are attempting to save" +
                 " has been altered by someone else since you selected it.", Table.SQLSTATE_TRANSACTION_STATE, 0);
@@ -1771,7 +1772,7 @@ public class SecurityManager
             }
             else
             {
-                Table.update(null, core.getTableInfoPolicies(), policy.getBean(), policy.getResource().getResourceId(), policy.getModified());
+                Table.update(null, core.getTableInfoPolicies(), policy.getBean(), policy.getResource().getResourceId(), null);
             }
 
             TableInfo table = core.getTableInfoRoleAssignments();
@@ -1851,8 +1852,11 @@ public class SecurityManager
      * @param resources The resources
      * @param principals The principals
      */
-    public static void clearRoleAssignments(Set<SecurableResource> resources, Set<UserPrincipal> principals)
+    public static void clearRoleAssignments(@NotNull Set<SecurableResource> resources, @NotNull Set<UserPrincipal> principals)
     {
+        if(resources.size() == 0 || principals.size() == 0)
+            return;
+
         try
         {
             TableInfo table = core.getTableInfoRoleAssignments();

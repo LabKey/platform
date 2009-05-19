@@ -22,6 +22,8 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.security.roles.DeveloperRole;
+import org.labkey.api.util.DateUtil;
+import org.json.JSONArray;
 
 import java.util.*;
 
@@ -378,15 +380,15 @@ public class SecurityPolicy
     public static SecurityPolicy fromMap(@NotNull Map<String,Object> map, @NotNull SecurableResource resource)
     {
         SecurityPolicy policy = new SecurityPolicy(resource);
-        policy._modified = (Date)map.get("modified");
+        policy._modified = new Date(DateUtil.parseDateTime((String)map.get("modified")));
 
         //ensure that if there is a property called 'assignments', that it is indeed a list
         if(map.containsKey("assignments"))
         {
-            if(!(map.get("assignments") instanceof List))
+            if(!(map.get("assignments") instanceof JSONArray))
                 throw new RuntimeException("The assignements property does not contain a list!");
-            List assignments = (List)map.get("assignments");
-            for(Object element : assignments)
+            JSONArray assignments = (JSONArray)map.get("assignments");
+            for(Object element : assignments.toMapList())
             {
                 if(!(element instanceof Map))
                     throw new RuntimeException("An element within the assignments property was not a map!");

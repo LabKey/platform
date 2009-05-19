@@ -722,7 +722,7 @@ LABKEY.Security = new function()
         savePolicy : function(config)
         {
             Ext.Ajax.request({
-                url: LABKEY.ActionURL.buildURL("security", "deletePolicy", config.containerPath),
+                url: LABKEY.ActionURL.buildURL("security", "savePolicy", config.containerPath),
                 method : 'POST',
                 success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
