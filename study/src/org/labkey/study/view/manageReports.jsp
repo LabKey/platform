@@ -16,20 +16,19 @@
  */
 %>
 <%@ page import="org.apache.commons.lang.StringUtils" %>
-<%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.*" %>
 <%@ page import="org.labkey.study.controllers.reports.StudyManageReportsBean" %>
+<%@ page import="org.labkey.study.reports.ReportManager" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.io.Writer" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
-<%@ page import="org.labkey.study.reports.ReportManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%
     JspView<StudyManageReportsBean> me = (JspView<StudyManageReportsBean>) HttpView.currentView();
@@ -39,13 +38,10 @@
     ActionURL url = context.cloneActionURL();
     User user = context.getUser();
 
-    int maxColumns = 3;
-    int reportsPerColumn = (bean.getReportCount() + 1) / maxColumns;
-    int reportCount = 0;
-
     // group by query name
+    List<Map<String, String>> allViews = ReportManager.get().getViews(context, null, null, true);
     Map<String, List<Map<String, String>>> groups = new TreeMap<String, List<Map<String, String>>>();
-    for (Map<String, String> view : ReportManager.get().getViews(context, null, null, true))
+    for (Map<String, String> view : allViews)
     {
         List<Map<String, String>> views;
         String queryName = view.get("query");
@@ -61,6 +57,11 @@
         }
         views.add(view);
     }
+
+    int maxColumns = 3;
+    int reportsPerColumn = (allViews.size() + 1) / maxColumns;
+    int reportCount = 0;
+
 %>
 
 <table>

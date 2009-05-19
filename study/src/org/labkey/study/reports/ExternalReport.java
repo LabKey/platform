@@ -24,6 +24,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.report.AbstractReport;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
@@ -68,6 +69,14 @@ public class ExternalReport extends AbstractReport
     public static final String REPORT_FILE_SUBST = "${REPORT_FILE}";
     private static final String DATA_FILE_SUFFIX = "Data.tsv";
     private static final MimeMap mimeMap = new MimeMap();
+
+    public void setDescriptor(ReportDescriptor descriptor)
+    {
+        super.setDescriptor(descriptor);
+
+        // strange, but this report is only bound to study
+        descriptor.setProperty(ReportDescriptor.Prop.schemaName, StudyManager.getSchemaName());
+    }
 
     public String getType()
     {
