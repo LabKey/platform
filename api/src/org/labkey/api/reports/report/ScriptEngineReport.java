@@ -62,7 +62,7 @@ public abstract class ScriptEngineReport extends AbstractReport implements Repor
 
     public static final String TYPE = "ReportService.scriptEngineReport";
     public static final String DATA_INPUT = "input_data.tsv";
-    public static final String REPORT_DIR = "Reports";
+    public static final String REPORT_DIR = "reports_temp";
     public static final String FILE_PREFIX = "rpt";
     public static final String SUBSTITUTION_MAP = "substitutionMap.txt";
     public static final String CONSOLE_OUTPUT = "console.txt";
