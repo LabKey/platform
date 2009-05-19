@@ -324,7 +324,7 @@ public class SecurityPolicy
         return perms;
     }
 
-    @NotNull
+    @Nullable
     public Date getModified()
     {
         return _modified;
@@ -427,7 +427,7 @@ public class SecurityPolicy
             User user = (User)principal;
 
             if(user.isAdministrator())
-                roles.add(RoleManager.getRole(SiteAdminRole.class));
+                roles.add(RoleManager.siteAdminRole);
             if(user.isDeveloper())
                 roles.add(RoleManager.getRole(DeveloperRole.class));
         }

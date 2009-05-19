@@ -33,6 +33,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class RoleManager
 {
+    public static final Role siteAdminRole = new SiteAdminRole();
+
     public static final Set<Class<? extends Permission>> BasicPermissions = new HashSet<Class<? extends Permission>>();
     static
     {
@@ -50,7 +52,7 @@ public class RoleManager
     //register all core roles
     static
     {
-        registerRole(new SiteAdminRole());
+        registerRole(siteAdminRole);
         registerRole(new ProjectAdminRole());
         registerRole(new FolderAdminRole());
         registerRole(new EditorRole());
@@ -101,6 +103,9 @@ public class RoleManager
         //register all exposed permissions in the name and class maps
         for(Class<? extends Permission> permClass : role.getPermissions())
         {
+            //add all permissions to site admin role
+            siteAdminRole.addPermission(permClass);
+
             try
             {
                 Permission perm = permClass.newInstance();
@@ -114,7 +119,7 @@ public class RoleManager
 
     public static void addPermissionToAdminRoles(Class<? extends Permission> perm)
     {
-        getRole(SiteAdminRole.class).addPermission(perm);
+        siteAdminRole.addPermission(perm);
         getRole(ProjectAdminRole.class).addPermission(perm);
         getRole(FolderAdminRole.class).addPermission(perm);
     }

@@ -1844,6 +1844,62 @@ public class SecurityManager
 
     }
 
+    /**
+     * Clears all role assignments for the specified principals for the specified resources.
+     * After this call completes, all the specified principals will no longer have any role
+     * assignments for the specified resources.
+     * @param resources The resources
+     * @param principals The principals
+     */
+    public static void clearRoleAssignments(Set<SecurableResource> resources, Set<UserPrincipal> principals)
+    {
+        try
+        {
+            TableInfo table = core.getTableInfoRoleAssignments();
+
+            SQLFragment sql = new SQLFragment("delete from ");
+            sql.append(core.getTableInfoRoleAssignments());
+            sql.append(" where ResourceId in(");
+
+            String sep = "";
+            SQLFragment resourcesList = new SQLFragment();
+            for(SecurableResource resource : resources)
+            {
+                resourcesList.append(sep);
+                resourcesList.append("?");
+                resourcesList.add(resource.getResourceId());
+                sep = ",";
+            }
+            sql.append(resourcesList);
+            sql.append(") and UserId in(");
+
+            sep = "";
+            SQLFragment principalsList = new SQLFragment();
+            for(UserPrincipal principal : principals)
+            {
+                principalsList.append(sep);
+                principalsList.append("?");
+                principalsList.add(principal.getUserId());
+                sep = ",";
+            }
+            sql.append(principalsList);
+            sql.append(")");
+
+            Table.execute(core.getSchema(), sql);
+
+            DbCache.clear(table);
+            
+            for(SecurableResource resource : resources)
+            {
+                notifyPolicyChange(resource.getResourceId());
+            }
+        }
+        catch(SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
     // Modules register a factory to add module-specific ui to the permissions page
     public static void addViewFactory(ViewFactory vf)
     {

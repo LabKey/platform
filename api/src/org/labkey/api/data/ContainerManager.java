@@ -70,7 +70,7 @@ public class ContainerManager
     {
         Name,
         Parent,
-        ACL,
+        Policy,
         WebRoot,
         AttachmentDirectory,
         PipelineRoot
@@ -1085,7 +1085,7 @@ public class ContainerManager
         if (null != c)
         {
             _removeFromCache(c);
-            ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(c, Property.ACL, null, null);
+            ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(c, Property.Policy, null, null);
             firePropertyChangeEvent(evt);
         }
     }

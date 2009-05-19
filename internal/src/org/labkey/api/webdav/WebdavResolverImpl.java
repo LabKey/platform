@@ -148,7 +148,7 @@ public class WebdavResolverImpl implements WebdavResolver
                 switch (evt.property)
                 {
                     case PipelineRoot:
-                    case ACL:
+                    case Policy:
                     case AttachmentDirectory:
                     case WebRoot:
                     default:
