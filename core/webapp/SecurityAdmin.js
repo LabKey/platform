@@ -69,8 +69,9 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     roles : null,
     roleMap : {},
 
-    resourcesReady : true,
+    resourcesReady : false,
     resources : null,
+    resourceMap : {},
     
     /*
      * fires "ready" when all the initially requested objects are loaded, subsequent loads
@@ -87,7 +88,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         this.membershipStore.onReady(this.checkReady, this);
         this.principalsStore.load();
         this.principalsStore.onReady(this.checkReady, this);
-        S.getSecurableResources({successCallBack:this._loadResourcesResponse, errorCallback:this._errorCallback, scope:this});
+        S.getSecurableResources({successCallback:this._loadResourcesResponse, errorCallback:this._errorCallback, scope:this});
     },
 
 
@@ -103,6 +104,11 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         if (record)
             return record.data;
         return null;
+    },
+
+    getResource : function(id)
+    {
+        return this.resourceMap[id];
     },
 
     ready : false,
@@ -135,9 +141,23 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
 
     _loadResourcesResponse : function(r)
     {
-        this.resources = r;
+        this.resources = r.resources;
+        this._mapResources([r.resources],this.resourceMap);
         this.resourcesReady = true;
         this.checkReady();
+    },
+
+    _mapResources : function(list,map)
+    {
+        if (!list || list.length==0)
+            return map;
+        for (var i=0; i<list.length ; i++)
+        {
+            var r = list[i];
+            map[r.id] = r;
+            this._mapResources(r.children, map);
+        }
+        return map;
     },
 
     _loadRolesResponse : function(resp)
@@ -206,7 +226,7 @@ var CloseButton = Ext.extend(Ext.Button,{
         // can't seem to actually stop mousedown events, but we can disable the button
         //        event.stopEvent();
         this.stoppedEvent = event;
-        this.fireEvent("close",event,button);
+        this.fireEvent("close",event,this);
     },
 
     onClick : function(event)
@@ -219,6 +239,28 @@ var CloseButton = Ext.extend(Ext.Button,{
 
 
 
+var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
+
+    constructor : function(config)
+    {
+        var config = Ext.apply({}, config, {
+            store : config.cache.principalsStore,
+            mode : 'local',
+            forceSelection : true,
+            typeAhead : true,
+            displayField : 'Name',
+            emptyText : config.groupsOnly ? 'Add group..,' : 'Add user or group...'
+        });
+        PrincipalComboBox.superclass.constructor.call(this, config);
+    },
+    
+    initComponent : function()
+    {
+        PrincipalComboBox.superclass.initComponent.call(this);
+    }
+});
+
+
 var PolicyEditor = Ext.extend(Ext.Panel, {
 
     constructor : function(config)
@@ -229,11 +271,12 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     },
 
     resource : null,
+
     table : null,
     
     setResource : function(id)
     {
-        this.resource = this.cache.resources;
+        this.resource = this.cache.getResource(id);
         S.getPolicy({resourceId:id, successCallback:this.setPolicy , scope:this});
     },
 
@@ -257,7 +300,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     },
     
 
-    roleTemplate : new Ext.Template('<tr><td>&nbsp;</td></tr><tr><td width=300 valign=top><div><h3 class="rn">{name}</h3><div class="rd">{description}</div></div></td><td valign=top width=100% id="{uniqueName}" style=""></td></tr>'),
+    roleTemplate : new Ext.Template('<tr><td>&nbsp;</td></tr><tr><td width=300 valign=top><div><h3 class="rn">{name}</h3><div class="rd">{description}</div></div></td><td valign=top width=100% id="{uniqueName}" style=""><span id="$br${uniqueName}"><br></span></td></tr>'),
 
     _update : function()
     {
@@ -279,24 +322,130 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
 
         for (r=0 ; r<this.roles.length ; r++)
         {
-            var ct = Ext.fly(role.uniqueName);
             role = this.roles[r];
+            var ct = Ext.fly(role.uniqueName);
             var groups = this.policy.getAssignedPrincipals(role.uniqueName);
             for (var g=0 ; g<groups.length ; g++)
             {
                 var group = this.cache.getPrincipal(groups[g]);
                 if (!group) continue;
-                b = new CloseButton({text:group.Name});
-                b.on("close",window.alert.createDelegate(window,['close ' + group.Name]));
-                b.on("click",window.alert.createDelegate(window,['click ' + group.Name]));
-                b.render(ct);
+                this.addButton(group,role,false);
             }
-            b = new Ext.Button({text:'Add Group'});
-            b.on("click",window.alert.createDelegate(window,['add to ' + role.uniqueName]));
-            b.render(ct);
+            var c = new PrincipalComboBox({cache:this.cache, id:('$add$'+role.uniqueName), roleId:role.uniqueName});
+            c.on("select", this.Combo_onSelect, this);
+            c.render(ct);
         }
 
-        //curvyCorners({tl:{radius:6}, tr:{radius:6}, bl:{radius:6}, br:{radius:6}, antiAlias:true}, '.curvy');
+        this.saveButton = new Ext.Button({text:'Save', handler:this.save, scope:this});
+        this.saveButton.render(this.el);
+        // UNDONE: enable/disable
+    },
+
+    // expects button to have roleId and groupId attribute
+    Button_onClose : function(event,btn)
+    {
+        this.removeRoleAssignment(btn.groupId, btn.roleId);
+    },
+
+    // expects combo to have roleId attribute
+    Combo_onSelect : function(combo,record,index)
+    {
+        if (record)
+            this.addRoleAssignment(record.data, combo.roleId);
+    },
+
+    addButton : function(group, role, animate)
+    {
+        if (typeof group != 'object')
+            group = this.cache.getPrincipal(group);
+        var groupName = group.Name;
+        var groupId = group.UserId;
+        var roleId = role;
+        if (typeof role == 'object')
+            roleId = role.uniqueName;
+
+        var br = Ext.get('$br$' + roleId);  // why doesn't Ext.fly() work?
+        if (true == animate)
+        {
+            var body = Ext.getBody();
+            var combo = Ext.getCmp('$add$' + roleId);
+            var span = body.insertHtml("beforeend",'<span style:"position:absolute;">' + $h(groupName) + '<span>', true);
+            span.setXY(combo.el.getXY());
+            var xy = br.getXY();
+            span.shift({x:xy[0], y:xy[1], callback:function(){
+                span.remove();
+                this.addButton(group, role, 'frame');
+            }, scope:this});
+            return;
+        }
+        
+        var btnId = roleId+'$'+groupId;
+        if (Ext.fly(btnId))
+            return;
+        var ct = Ext.fly(roleId);
+        b = new CloseButton({text:groupName, id:btnId});
+        b.on("close", this.removeRoleAssignment.createDelegate(this,[groupId,roleId]));
+        b.on("click", window.alert.createDelegate(window, ['click ' + groupName]));
+        b.render(ct, br);
+        br.insertHtml("beforebegin"," ");
+        if (typeof animate == 'string')
+            b.el[animate]();
+    },
+
+    removeButton : function(groupId, roleId, animate)
+    {
+        var button = Ext.getCmp(roleId+ '$' + groupId);
+        if (!button)
+            return;
+        if (animate)
+        {
+            var combo = Ext.getCmp('$add$' + roleId);
+            var xy = combo.el.getXY();
+            var fx = {callback:this.removeButton.createDelegate(this,[groupId,roleId,false]), x:xy[0], y:xy[1], endOpacity:0}; 
+            if (typeof animate == 'string')
+                button.el[animate](fx);
+            else
+                button.el.shift(fx);
+            return;
+        }
+        var button = Ext.getCmp(roleId+ '$' + groupId);
+        if (button)
+            button.destroy();
+    },
+    
+    addRoleAssignment : function(group, role)
+    {
+        var groupId = group;
+        if (typeof group == "object")
+            groupId = group.UserId;
+        var roleId = role;
+        if (typeof role == "object")
+            roleId = role.uniqueName;
+        this.policy.addRoleAssignment(groupId, roleId);
+        this.addButton(group,role,true);
+        var combo = Ext.getCmp('$add$' + roleId);
+        if (combo)
+            combo.clearValue();
+    },
+
+    removeRoleAssignment : function(group, role)
+    {
+        var groupId = group;
+        if (typeof group == "object")
+            groupId = group.UserId;
+        var roleId = role;
+        if (typeof role == "object")
+            roleId= role.uniqueName;
+        this.policy.removeRoleAssignment(groupId,roleId);
+        this.removeButton(groupId, roleId, true);
+    },
+
+    save : function()
+    {
+        if (!this.policy.isDirty())
+            return;
+        alert('save policy for ' + this.resource.id);
+        S.savePolicy({policy:this.policy, successCallback:function(){alert('saved');}, failureCallback:function(){alert('fail');}});
     },
 
     _corners : {tl:{radius:6}, tr:{radius:6}, bl:{radius:6}, br:{radius:6}, antiAlias:true}
