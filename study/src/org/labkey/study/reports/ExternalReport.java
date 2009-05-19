@@ -63,7 +63,7 @@ public class ExternalReport extends AbstractReport
     private Container _container;
     private String queryString;
     private RecomputeWhen recomputeWhen = RecomputeWhen.Always;
-    public static final String REPORT_DIR = "Reports";
+    public static final String REPORT_DIR = "reports_temp";
     public static final String DATA_FILE_SUBST = "${DATA_FILE}";
     public static final String REPORT_FILE_SUBST = "${REPORT_FILE}";
     private static final String DATA_FILE_SUFFIX = "Data.tsv";
