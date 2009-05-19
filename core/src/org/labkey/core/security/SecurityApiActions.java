@@ -406,6 +406,8 @@ public class SecurityApiActions
             if (null != resource.getSourceModule())
                 props.put("sourceModule", resource.getSourceModule().getName());
             props.put("children", getChildrenProps(resource));
+            if(null != resource.getParentResource())
+                props.put("parentId", resource.getParentResource().getResourceId());
             return props;
         }
 
