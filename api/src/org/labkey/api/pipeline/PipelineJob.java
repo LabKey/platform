@@ -1374,7 +1374,7 @@ abstract public class PipelineJob extends Job implements Serializable
     }
 
     /////////////////////////////////////////////////////////////////////////
-    //  ViewBrackgroundInfo access
+    //  ViewBackgroundInfo access
     //      WARNING: Some access of ViewBackgroundInfo is not supported when
     //               the job is running outside the LabKey Server.
 
