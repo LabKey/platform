@@ -196,6 +196,9 @@ public class ReportUtil
 
     public static String[] splitReportKey(String key)
     {
+        if (key == null)
+            return new String[0];
+
         String[] parts = key.split("/");
 
         for (int i=0; i < parts.length; i++)
