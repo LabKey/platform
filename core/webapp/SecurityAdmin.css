@@ -8,6 +8,11 @@
     background: url(ext-2.2/resources/images/default/panel/tool-sprites.gif) no-repeat 0 -0;
     margin-left:2px;
 }
+
+.pSite button, div.pSite {font-weight:bold;}
+.pGroup button, div.pGroup {}
+.pUser button, div.pUser {font-style:italic;}
+
 /* roles */
 .rh {}
 .rd {}

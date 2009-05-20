@@ -39,6 +39,13 @@ var SecurityCacheStore = Ext.extend(LABKEY.ext.Store,{
             this.on("ready",fn,scope);
         }
     },
+
+    removeById : function(id)
+    {
+        var record = this.getById(id);
+        if (record)
+            this.remove(record);
+    },
     
     ready : false
 });
@@ -51,6 +58,12 @@ var SecurityCacheStore = Ext.extend(LABKEY.ext.Store,{
  * Ext.data.Store is overkill, but it has handy events rigged already
  */
 var SecurityCache = Ext.extend(Ext.util.Observable,{
+
+    groupAdministrators : -1,
+    groupUsers : -2,
+    groupGuests : -3,
+    groupDevelopers : -4,
+
 
     principalsStore : new SecurityCacheStore(
     {
@@ -90,7 +103,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         S.getContainers({containerPath:container, includeSubfolders:true, successCallback:this._loadContainersResponse, errorCallback:this._errorCallback, scope:this});
         S.getRoles({containerPath:container, successCallback:this._loadRolesResponse, errorCallback:this._errorCallback, scope:this});
         this.principalsStore.load();
-        this.principalsStore.onReady(this.checkReady, this);
+        this.principalsStore.onReady(this.Principals_onReady, this);
         S.getSecurableResources({successCallback:this._loadResourcesResponse, errorCallback:this._errorCallback, scope:this});
 
         // not required for onReady
@@ -137,6 +150,13 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
             fn.call(scope);
         else
             this.on("ready", fn, scope);
+    },
+
+    Principals_onReady : function()
+    {
+        this.principalsStore.removeById(this.groupDevelopers);
+        this.principalsStore.removeById(this.groupAdministrators);
+        this.checkReady();
     },
 
     _errorCallback: function(e,r)
@@ -308,7 +328,20 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
         });
         PrincipalComboBox.superclass.constructor.call(this, config);
     },
-    
+
+    tpl : new Ext.XTemplate('<tpl for="."><div class="x-combo-list-item {[this.extraClass(values.Type,values.Container)]}">{Name}</div></tpl>',
+    {
+        extraClass : function(type,container)
+        {
+            var c = 'pGroup';
+            if (type == 'u')
+                c = 'pUser';
+            else if (!container)
+                c = 'pSite';
+            return c;
+        }
+    }),
+
     initComponent : function()
     {
         PrincipalComboBox.superclass.initComponent.call(this);
@@ -418,11 +451,11 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
 
     getPolicy : function()
     {
-        var policy = this.policy.copy();
         if (this.inheritedCheckbox.getValue())
-            policy.clearRoleAssignments();
-        else if (policy.isEmpty())
-            policy.addRoleAssignment(this.policy.guestsPrincipal, this.policy.noPermissionsRole);
+            return null;
+        var policy = this.policy.copy();
+        if (policy.isEmpty())
+            policy.addRoleAssignment(this.cache.groupGuests, this.policy.noPermissionsRole);
         return policy;
     },
 
@@ -615,6 +648,12 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         if (typeof role == 'object')
             roleId = role.uniqueName;
 
+        var style = 'pGroup';
+        if (group.Type == 'u')
+            style = 'pUser';
+        else if (!group.Container)
+            style = 'pSite';
+
         var btnId = roleId+'$'+groupId;
         var btnEl = Ext.fly(btnId);
 
@@ -642,6 +681,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         // really add the button
         var ct = Ext.fly(roleId);
         b = new CloseButton({text:groupName, id:btnId, groupId:groupId, roleId:roleId, closeTooltip:'Remove ' + groupName + ' from role'});
+        b.addClass(style);
         b.on("close", this.Button_onClose, this);
         b.on("click", this.Button_onClick, this);
         b.render(ct, br);
@@ -728,7 +768,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     {
         var policy = this.getPolicy();
         this.disable();
-        if (policy.isEmpty())
+        if (!policy)
             S.deletePolicy({resourceId:this.resource.id, successCallback:function(){this.afterSave();}, failureCallback:function(){alert('fail'); this.afterSave();}, scope:this});
         else
             S.savePolicy({policy:policy, successCallback:function(){this.afterSave();}, failureCallback:function(){alert('fail'); this.afterSave();}, scope:this});
