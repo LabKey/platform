@@ -90,8 +90,10 @@ public class RoleAssignment implements Comparable<RoleAssignment>, Cloneable
 
         //sort by resource id, user id
         int ret = _resourceId.compareTo(other._resourceId);
-        if(0 == ret)
+        if (0 == ret)
             ret = _userId - other._userId;
+        if (0 == ret) // CONSIDER _role extends Comparable
+            ret = _role.getUniqueName().compareTo(other._role.getUniqueName());
         return ret;
     }
 
