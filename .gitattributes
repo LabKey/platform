@@ -824,6 +824,7 @@ api/src/org/labkey/api/view/RequestBasicAuthException.java -text
 api/src/org/labkey/api/view/ServletView.java -text
 api/src/org/labkey/api/view/SimpleTextDisplayElement.java -text
 api/src/org/labkey/api/view/SimpleWebPartFactory.java -text
+api/src/org/labkey/api/view/TabBoxView.java -text
 api/src/org/labkey/api/view/TabStripView.java -text
 api/src/org/labkey/api/view/TermsOfUseException.java -text
 api/src/org/labkey/api/view/ThemeFont.java -text
@@ -845,6 +846,7 @@ api/src/org/labkey/api/view/menu/NavTreeMenu.java -text
 api/src/org/labkey/api/view/menu/ProjectAdminMenu.java -text
 api/src/org/labkey/api/view/menu/ProjectsMenu.java -text
 api/src/org/labkey/api/view/menu/SiteAdminMenu.java -text
+api/src/org/labkey/api/view/tabbox.jsp -text
 api/src/org/labkey/api/view/tabstrip.jsp -text
 api/src/org/labkey/api/view/template/AppBar.java -text
 api/src/org/labkey/api/view/template/AppBarView.java -text

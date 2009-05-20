@@ -49,6 +49,12 @@ public class VBox extends WebPartView
         _views.add(v);
     }
 
+    public List<ModelAndView> getViews()
+    {
+        ArrayList<ModelAndView> ret = new ArrayList<ModelAndView>(_views.size());
+        ret.addAll(_views);
+        return ret;
+    }
 
     @Override
     public void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
