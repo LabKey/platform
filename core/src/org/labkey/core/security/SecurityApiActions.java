@@ -355,6 +355,14 @@ public class SecurityApiActions
             }
 
             props.put("permissions", permissions);
+
+            List<Integer> excludedPrincipals = new ArrayList<Integer>();
+            for(UserPrincipal principal : role.getExcludedPrincipals())
+            {
+                excludedPrincipals.add(principal.getUserId());
+            }
+            props.put("excludedPrincipals", excludedPrincipals);
+
             return props;
         }
 
@@ -406,8 +414,13 @@ public class SecurityApiActions
             if (null != resource.getSourceModule())
                 props.put("sourceModule", resource.getSourceModule().getName());
             props.put("children", getChildrenProps(resource));
-            if(null != resource.getParentResource())
-                props.put("parentId", resource.getParentResource().getResourceId());
+
+            SecurableResource parent = resource.getParentResource();
+            if(null != parent)
+            {
+                props.put("parentId", parent.getResourceId());
+                props.put("parentContainerPath", parent.getResourceContainer().getPath());
+            }
             return props;
         }
 
