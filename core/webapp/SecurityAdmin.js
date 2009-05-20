@@ -262,6 +262,9 @@ var ButtonGroup = function()
 };
 
 Ext.apply(ButtonGroup.prototype, {
+
+    buttons : null,
+
     add : function(btn)
     {
         this.buttons.push(btn);
@@ -287,7 +290,7 @@ Ext.apply(ButtonGroup.prototype, {
         }
     }
 
-})
+});
 
 
 var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
@@ -320,36 +323,87 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         PolicyEditor.superclass.constructor.call(this,config);
         this.cache = config.securityCache;
         this.roleTemplate.compile();
+        if (this.resourceId)
+            this.setResource(this.resourceId);
     },
 
-    resource : null,
+    initComponent : function()
+    {
+    },
 
+    onRender : function(ct, position)
+    {
+        PolicyEditor.superclass.onRender.call(this, ct, position);
+        this._redraw();
+    },
+
+    // config
+    resourceId : null,
+    saveButton : true,      // overloaded
+
+    // components, internal
+    inheritedCheckbox : null,
     table : null,
+
+    // internal, private
+    inheritedOriginally : false,
+    resource : null,
+    policy : null,
+    roles : null,
+    inheritedPolicy : null,
+    buttonGroups : {},
+    
 
     doLayout : function()
     {
     },
 
-    setResource : function(id)
+
+    isDirty : function()
     {
-        this.resource = this.cache.getResource(id);
-        S.getPolicy({resourceId:id, successCallback:this.setPolicy , scope:this});
+        if (this.inheritedCheckbox && this.inheritedCheckbox.getValue() != this.inheritedOriginally)
+            return true;
+        return this.policy && this.policy.isDirty();
     },
 
 
+    setResource : function(id)
+    {
+        this.cache.onReady(function(){
+            this.resource = this.cache.getResource(id);
+            S.getPolicy({resourceId:id, successCallback:this.setPolicy , scope:this});
+        },this);
+    },
+
+
+    setInheritedPolicy : function(policy)
+    {
+        this.inheritedPolicy = policy;
+        if (this.inheritedCheckbox && this.inheritedCheckbox.getValue())
+            this._redraw();
+        if (this.inheritedCheckbox)
+            this.inheritedCheckbox.enable();
+    },
+    
+
     setPolicy : function(policy, roles)
     {
-        if (this.resource.id != policy.getResourceId() || policy.isInherited())
+        this.inheritedOriginally = policy.isInherited();
+        if (this.inheritedCheckbox)
+            this.inheritedCheckbox.setValue(this.inheritedOriginally);
+
+        if (policy.isInherited())
         {
             this.inheritedPolicy = policy;
-            if (!this.policy)
-            {
-                this.policy = policy.copy(this.resource.id);
-            }
+            this.policy = policy.copy(this.resource.id);
+            if (this.inheritedCheckbox)
+                this.inheritedCheckbox.enable();
         }
         else
         {
             this.policy = policy;
+            // we'd still like to get the inherited policy
+            S.getPolicy({resourceId:this.resource.parentId, containerPath:this.resource.parentId, successCallback:this.setInheritedPolicy, scope:this});
         }
         this.roles = [];
         for (var r=0 ; r<roles.length ; r++)
@@ -362,9 +416,14 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     },
 
 
-    getResizeEl : function()
+    getPolicy : function()
     {
-        return this.table || this.el;
+        var policy = this.policy.copy();
+        if (this.inheritedCheckbox.getValue())
+            policy.clearRoleAssignments();
+        else if (policy.isEmpty())
+            policy.addRoleAssignment(this.policy.guestsPrincipal, this.policy.noPermissionsRole);
+        return policy;
     },
 
 
@@ -376,54 +435,131 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         this.items = null;
     },
 
+    removeAllButtons : function()
+    {
+        for (var g in this.buttonGroups)
+        {
+            var bg = this.buttonGroups[g];
+            for (var b=0 ; b<bg.buttons.length ; b++)
+            {
+                var btn = bg.buttons[b];
+                this.remove(btn);
+            }
+        }
+        this.buttonGroups = {};
+    },
 
-    roleTemplate : new Ext.Template('<tr><td>&nbsp;</td></tr><tr><td width=300 valign=top><div><h3 class="rn">{name}</h3><div class="rd">{description}</div></div></td><td valign=top width=100% id="{uniqueName}" style=""><span id="$br${uniqueName}">&nbsp;<img height=20 width=1 src="' + Ext.BLANK_IMAGE_URL + '"><br></span></td></tr>'),
+    _eachItem : function(fn)
+    {
+        this.items.each(function(item){
+            if (item == this.saveButton)
+                return;
+            if (item == this.inheritedCheckbox)
+                return;
+            item[fn]();
+        },this);
+    },
+
+    disable : function()
+    {
+        this._eachItem('disable');
+    },
+
+    enable : function()
+    {
+        this._eachItem('enable');
+    },
+
+    roleTemplate : new Ext.Template(
+            '<tr class="permissionsTR">'+
+            '<td width=300 valign=top class="roleTD"><div><h3 class="rn">{name}</h3><div class="rd">{description}</div></div></td>'+
+            '<td valign=top width=100% id="{uniqueName}" class="groupsTD"><span id="$br${uniqueName}">&nbsp;<img height=20 width=1 src="' + Ext.BLANK_IMAGE_URL + '"><br></span></td>'+
+            '</tr>\n'),
+
+
 
     _redraw : function()
     {
-        //this.body.applyStyles({display:'block'});
-        this.removeAll();
-        this.buttonGroups = {};
-
-        var r, role;
-        var b;
-        var policy = this.policy || this.inheritedPolicy;
-
-        var html = ['<table cellspacing=4 cellpadding=4><tr><th><h3>Roles<br><img src="' +Ext.BLANK_IMAGE_URL + '" width=300 height=1></h3></th><th><h3>Groups</h3></th></tr>'];
-        for (r=0 ; r<this.roles.length ; r++)
+        if (!this.rendered)
+            return;
+        if (!this.roles)
         {
-            role = this.roles[r];
-            html.push(this.roleTemplate.applyTemplate(role));
+            this.body.update("<i>Loading...</i>");
+            return;
         }
-        html.push("</table>");
-        this.body.update("");
-        var m = $dom.markup(html);
+        
+        var r, role, ct;
 
-        this.body.update("",false);
-        this.table = this.body.insertHtml('beforeend', m, true);
+        this.removeAllButtons();
 
-        for (r=0 ; r<this.roles.length ; r++)
+        // CONSIDER: use FormPanel for outer layout
+        if (!this.table)
         {
-            role = this.roles[r];
-            var ct = Ext.fly(role.uniqueName);
-            var groups = policy.getAssignedPrincipals(role.uniqueName);
-            for (var g=0 ; g<groups.length ; g++)
+            var html = [];
+
+            var label = "Inherit permissions from " + (this.parentName || 'parent') + "<br>";
+            html.push('<table><tr><td id=checkboxTD></td><td>&nbsp;' + label + '</td></tr></table>');
+
+            html.push(['<table cellspacing=0 style="border-collapse:collapse;"><tr><th><h3>Roles<br><img src="' +Ext.BLANK_IMAGE_URL + '" width=300 height=1></h3></th><th><h3>Groups</h3></th></tr>']);
+            var spacerRow = ''; // '<tr class="spacerTR"><td><img src="' + Ext.BLANK_IMAGE_URL + '"></td></tr>';
+            for (r=0 ; r<this.roles.length ; r++)
             {
-                var group = this.cache.getPrincipal(groups[g]);
-                if (!group) continue;
-                this.addButton(group,role,false);
+                role = this.roles[r];
+                if (r > 0) html.push(spacerRow);
+                html.push(this.roleTemplate.applyTemplate(role));
             }
-            var c = new PrincipalComboBox({cache:this.cache, id:('$add$'+role.uniqueName), roleId:role.uniqueName});
-            c.on("select", this.Combo_onSelect, this);
-            c.render(ct);
-            this.add(c);
+            html.push("</table>");
+            var m = $dom.markup(html);
+            this.body.update("",false);
+            this.table = this.body.insertHtml('beforeend', m, true);
+
+            this.inheritedCheckbox = new Ext.form.Checkbox({id:'inheritedCheckbox', style:{display:'inline'}, disabled:(!this.inheritedPolicy), checked:this.inheritedOriginally});
+            this.inheritedCheckbox.render('checkboxTD');
+//            this.inheritedCheckbox.on("change", this.Inherited_onChange, this);
+            this.inheritedCheckbox.on("check", this.Inherited_onChange, this);
+            this.add(this.inheritedCheckbox);
+
+            if (this.saveButton) // check if caller want's to omit the button
+            {
+                this.saveButton = new Ext.Button({text:'Save', handler:this.save, scope:this});
+                this.saveButton.render(this.body);
+                this.add(this.saveButton);
+            }
+            
+            for (r=0 ; r<this.roles.length ; r++)
+            {
+                role = this.roles[r];
+                ct = Ext.fly(role.uniqueName);
+                var c = new PrincipalComboBox({cache:this.cache, id:('$add$'+role.uniqueName), roleId:role.uniqueName});
+                c.on("select", this.Combo_onSelect, this);
+                c.render(ct);
+                this.add(c);
+            }
         }
 
-        this.saveButton = new Ext.Button({text:'Save', handler:this.save, scope:this});
-        this.saveButton.render(this.el);
-        this.add(this.saveButton);
-        this.body.applyStyles({display:'block'});
+        // render security policy
+        var policy = this.inheritedCheckbox.getValue() ? this.inheritedPolicy : this.policy;
+        if (policy)
+        {
+            // render the security policy buttons
+            for (r=0 ; r<this.roles.length ; r++)
+            {
+                role = this.roles[r];
+                var groups = policy.getAssignedPrincipals(role.uniqueName);
+                for (var g=0 ; g<groups.length ; g++)
+                {
+                    var group = this.cache.getPrincipal(groups[g]);
+                    if (!group) continue;
+                    this.addButton(group,role,false);
+                }
+            }
+        }
+        if (this.inheritedCheckbox.getValue())
+            this.disable();
+        else
+            this.enable();
     },
+
 
     // expects button to have roleId and groupId attribute
     Button_onClose : function(btn,event)
@@ -431,20 +567,43 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         this.removeRoleAssignment(btn.groupId, btn.roleId);
     },
 
+
     Button_onClick : function(btn,event)
     {
         alert('click ' + btn.groupId);
     },
+
 
     // expects combo to have roleId attribute
     Combo_onSelect : function(combo,record,index)
     {
         if (record)
             this.addRoleAssignment(record.data, combo.roleId);
+
+        combo.selectText();
+        //combo.reset();
+        //Ext.getBody().el.focus.defer(100);
+        // reset(), and clearValue() seem to leave combo in bad state
+        // however, calling selectText() allows you to start typing a new value right away
     },
 
 
-    buttonGroups : {},
+    Inherited_onChange : function(checkbox)
+    {
+        var inh = this.inheritedCheckbox.getValue();
+        if (inh && !this.inheritedPolicy)
+        {
+            // UNDONE: use blank if we don't know the inherited policy
+            this.inheritedPolicy = this.policy.copy();
+            this.inheritedPolicy.clearRoleAssignments();
+        }
+        if (!inh && !this.policy)
+        {
+            this.policy = this.inheritedPolicy.copy();
+        }
+        this._redraw();
+    },
+
     
     addButton : function(group, role, animate)
     {
@@ -548,11 +707,6 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         this.policy.addRoleAssignment(groupId, roleId);
 
         this.addButton(group,role,true);
-
-        var combo = this.getComponent('$add$' + roleId);
-        combo.selectText();
-        // reset(), and clearValue() seem to leave combo in bad state
-        // however, calling selectText() allows you to start typing a new value right away
     },
 
     removeRoleAssignment : function(group, role)
@@ -567,29 +721,32 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         this.removeButton(groupId, roleId, true);
     },
 
+
+    /* save probably belongs in a wrapper form */
+
     save : function()
     {
-        if (!this.policy.isDirty())
-            return;
-        if (this.policy.isEmpty())
-            this.policy.addRoleAssignment(this.policy.guestsPrincipal, this.policy.noPermissionsRole);
-        S.savePolicy({policy:this.policy, successCallback:function(){this.afterSave();}, failureCallback:function(){alert('fail'); this.afterSave();}, scope:this});
+        var policy = this.getPolicy();
+        this.disable();
+        if (policy.isEmpty())
+            S.deletePolicy({resourceId:this.resource.id, successCallback:function(){this.afterSave();}, failureCallback:function(){alert('fail'); this.afterSave();}, scope:this});
+        else
+            S.savePolicy({policy:policy, successCallback:function(){this.afterSave();}, failureCallback:function(){alert('fail'); this.afterSave();}, scope:this});
     },
 
     afterSave : function()
     {
         // reload policy
+        S.getPolicy({resourceId:this.resource.id, successCallback:this.setPolicy, scope:this});
+        // feedback
         var w = new Ext.Window({closeAction:'close', html:'<h3 style="color:green;">saved</h3>', border:false, closable:false});
         w.show();
         w.el.pause(1);
         w.el.fadeOut({callback:w.close, scope:w});
-        S.getPolicy({resourceId:this.resource.id, successCallback:this.setPolicy , scope:this});
     },
 
     _corners : {tl:{radius:6}, tr:{radius:6}, bl:{radius:6}, br:{radius:6}, antiAlias:true}
 });
-
-
 
 
 /*
