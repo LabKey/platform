@@ -251,6 +251,39 @@ var CloseButton = Ext.extend(Ext.Button,{
 });
 
 
+var ButtonGroup = function()
+{
+    this.buttons = [];
+};
+
+Ext.apply(ButtonGroup.prototype, {
+    add : function(btn)
+    {
+        this.buttons.push(btn);
+        btn.on("mouseover", this.over, this);
+        btn.on("mouseout", this.out, this);
+    },
+
+    over : function()
+    {
+        for (var i=0 ; i<this.buttons.length ; i++)
+        {
+            var btn = this.buttons[i];
+            btn.el.addClass("x-btn-over");
+        }
+    },
+
+    out : function()
+    {
+        for (var i=0 ; i<this.buttons.length ; i++)
+        {
+            var btn = this.buttons[i];
+            btn.el.removeClass("x-btn-over");
+        }
+    }
+
+})
+
 
 var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
 
@@ -343,8 +376,9 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
 
     _redraw : function()
     {
-        this.body.applyStyles({display:'block'});
+        //this.body.applyStyles({display:'block'});
         this.removeAll();
+        this.buttonGroups = {};
 
         var r, role;
         var b;
@@ -404,6 +438,9 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
             this.addRoleAssignment(record.data, combo.roleId);
     },
 
+
+    buttonGroups : {},
+    
     addButton : function(group, role, animate)
     {
         if (typeof group != 'object')
@@ -444,10 +481,32 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         b.on("close", this.Button_onClose, this);
         b.on("click", this.Button_onClick, this);
         b.render(ct, br);
-        this.add(b);
+//        b.el.hover(this.highlightGroup.createDelegate(this,[groupId]), Ext.emptyFn, this);
         br.insertHtml("beforebegin"," ");
+
         if (typeof animate == 'string')
             b.el[animate]();
+
+        this.add(b);
+        if (!this.buttonGroups[groupId])
+            this.buttonGroups[groupId] = new ButtonGroup();
+        this.buttonGroups[groupId].add(b);
+    },
+
+    highlightGroup : function(groupId)
+    {
+        var btns = this.getButtonsForGroup(groupId);
+        for (var i ; i<btns.length ; i++)
+            btns[i].el.frame();
+    },
+    
+    getButtonsForGroup : function(groupId)
+    {
+        var btns = [];
+        this.items.each(function(item){
+            if (item.buttonSelector && item.groupId == groupId) btns.push(item)
+        });
+        return btns;
     },
 
     removeButton : function(groupId, roleId, animate)
