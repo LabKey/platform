@@ -33,8 +33,10 @@ import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.study.actions.*;
 import org.labkey.api.study.assay.*;
+import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
@@ -324,7 +326,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(DesignAssayPermission.class)
     public class ChooseAssayTypeAction extends FormViewAction<ProtocolIdForm>
     {
         public void validateCommand(ProtocolIdForm form, Errors errors)
@@ -369,7 +371,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_INSERT)
+    @RequiresPermissionClass(DesignAssayPermission.class)
     public class ServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()

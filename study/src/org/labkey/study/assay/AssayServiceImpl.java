@@ -37,6 +37,11 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.OwnerRole;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.assay.AbstractAssayProvider;
@@ -437,7 +442,11 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
     {
         Container c = getContainer();
         User u = getUser();
-        return c.hasPermission(u, ACL.PERM_UPDATE) ||
-                (c.hasPermission(u, ACL.PERM_UPDATEOWN) && protocol.getCreatedBy().equals(u));
+        SecurityPolicy policy = c.getPolicy();
+        Set<Role> contextualRoles = new HashSet<Role>();
+
+        if(protocol.getCreatedBy().equals(u))
+            contextualRoles.add(RoleManager.getRole(OwnerRole.class));
+        return policy.hasPermission(u, UpdatePermission.class, contextualRoles);
     }
 }

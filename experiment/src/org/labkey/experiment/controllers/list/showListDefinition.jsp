@@ -15,20 +15,25 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.defaults.SetDefaultValuesListAction" %>
 <%@ page import="org.labkey.api.exp.list.ListDefinition" %>
 <%@ page import="org.labkey.api.exp.property.Domain" %>
 <%@ page import="org.labkey.api.exp.property.DomainProperty" %>
-<%@ page import="org.labkey.api.security.ACL" %>
+<%@ page import="org.labkey.api.lists.permissions.DesignListPermission" %>
+<%@ page import="org.labkey.api.security.SecurityPolicy" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.experiment.controllers.list.ListController" %>
 <%@ page import="org.labkey.experiment.controllers.list.ListDefinitionForm" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.defaults.SetDefaultValuesAction" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib"%>
 <%
     ListDefinitionForm form = (ListDefinitionForm) __form;
     ListDefinition list = form.getList();
     Domain domain = list.getDomain();
+    User user = getViewContext().getUser();
+    SecurityPolicy policy = getViewContext().getContainer().getPolicy();
 %>
 <table>
     <tr><td colspan="2"><b>List Properties</b></td></tr>
@@ -42,8 +47,8 @@
     <tr><td>Allow Import:</td><td><%=list.getAllowUpload() ? "Yes" : "No"%></td></tr>
     <tr><td>Allow Export &amp; Print:</td><td><%=list.getAllowExport() ? "Yes" : "No"%></td></tr>
 </table>
-<% if (hasPermission(ACL.PERM_ADMIN)) {
-    ActionURL setDefaultsURL = new ActionURL(SetDefaultValuesAction.class, getContainer());
+<% if (policy.hasPermission(user, DesignListPermission.class)) {
+    ActionURL setDefaultsURL = new ActionURL(SetDefaultValuesListAction.class, getContainer());
     setDefaultsURL.addParameter("domainId", list.getDomain().getTypeId());
     setDefaultsURL.addParameter("returnUrl", getViewContext().getActionURL().getLocalURIString());
 %>
@@ -52,7 +57,7 @@
     <labkey:link href="<%= setDefaultsURL.getLocalURIString() %>" text="set default values" />
 <% } %>
     <labkey:link href="<%=list.urlShowData()%>" text="view data" />
-<% if (hasPermission(ACL.PERM_UPDATE) && list.getAllowUpload()) { %>
+<% if (policy.hasPermission(user, UpdatePermission.class) && list.getAllowUpload()) { %>
     <labkey:link href="<%=list.urlFor(ListController.Action.uploadListItems)%>" text="import data" />
 <% } %>
 <br><br>
@@ -68,6 +73,6 @@
 
 <% } %>
 
-<% if (hasPermission(ACL.PERM_ADMIN)) { %>
+<% if (policy.hasPermission(user, DesignListPermission.class)) { %>
     <labkey:link href="<%=list.getDomain().urlEditDefinition(false, true, true)%>" text="edit fields"/>
 <% } %>

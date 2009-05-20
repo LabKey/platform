@@ -22,6 +22,7 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.security.ACL;
 import org.labkey.api.data.Container;
+import org.labkey.api.lists.permissions.DesignListPermission;
 
 import java.io.PrintWriter;
 import java.util.Map;
@@ -65,7 +66,7 @@ public class ListWebPart extends WebPartView<ViewContext>
             }
         }
         out.write("</table>");
-        if (model.hasPermission(ACL.PERM_UPDATE))
+        if (model.getContainer().hasPermission(model.getUser(), DesignListPermission.class))
             out.write("[<a href=\"" + PageFlowUtil.filter(ListController.getBeginURL(model.getContainer())) + "\">manage lists</a>]<br>");
     }
 }

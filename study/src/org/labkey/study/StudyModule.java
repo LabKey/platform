@@ -72,11 +72,10 @@ import org.labkey.study.query.StudySchemaProvider;
 import org.labkey.study.reports.*;
 import org.labkey.study.samples.SamplesWebPart;
 import org.labkey.study.samples.SpecimenCommentAuditViewFactory;
-import org.labkey.study.security.permissions.ManageSpecimenActorsPermission;
-import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.security.permissions.ViewSpecimensPermission;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.security.roles.SpecimenRequesterRole;
+import org.labkey.study.security.roles.AssayDesignerRole;
 import org.labkey.study.view.*;
 
 import java.lang.reflect.InvocationTargetException;
@@ -151,9 +150,8 @@ public class StudyModule extends DefaultModule
         //register roles
         RoleManager.registerRole(new SpecimenCoordinatorRole());
         RoleManager.registerRole(new SpecimenRequesterRole());
+        RoleManager.registerRole(new AssayDesignerRole());
         
-        RoleManager.addPermissionToAdminRoles(ManageStudyPermission.class);
-
         //add view specimen perm to reader role (all readers are allowed to see available specimens)
         RoleManager.getRole(ReaderRole.class).addPermission(ViewSpecimensPermission.class);
     }

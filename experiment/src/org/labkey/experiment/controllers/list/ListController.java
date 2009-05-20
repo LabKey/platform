@@ -26,9 +26,9 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.*;
 import org.labkey.api.defaults.ClearDefaultValuesAction;
 import org.labkey.api.defaults.DefaultValueService;
-import org.labkey.api.defaults.SetDefaultValuesAction;
-import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.defaults.SetDefaultValuesListAction;
 import org.labkey.api.exp.MvFieldWrapper;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
@@ -37,16 +37,18 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.jsp.FormPage;
+import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.reader.TabLoader;
 import org.labkey.experiment.list.ListAuditViewFactory;
 import org.labkey.experiment.list.ListManager;
 import org.labkey.experiment.list.client.ListImporter;
@@ -71,7 +73,7 @@ import java.util.Map;
 public class ListController extends SpringActionController
 {
     private static DefaultActionResolver _actionResolver = new DefaultActionResolver(ListController.class,
-            SetDefaultValuesAction.class,
+            SetDefaultValuesListAction.class,
             ClearDefaultValuesAction.class
             );
     //private static final Object ERROR_VALUE = new Object();
@@ -123,7 +125,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermission(ACL.PERM_ADMIN)
+    @RequiresPermissionClass(DesignListPermission.class)
     public class NewListDefinitionAction extends FormViewAction<NewListForm>
     {
         private ListDefinition _list;

@@ -31,6 +31,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -123,7 +124,7 @@ public class AssayDomainKind extends DomainKind
 
     public boolean canEditDefinition(User user, Domain domain)
     {
-        return domain.getContainer().hasPermission(user, ACL.PERM_INSERT);
+        return domain.getContainer().hasPermission(user, DesignAssayPermission.class);
     }
 
     public Set<String> getReservedPropertyNames(Domain domain)

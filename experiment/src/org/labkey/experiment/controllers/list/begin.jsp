@@ -21,10 +21,15 @@
 <%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.experiment.controllers.list.ListController" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.security.SecurityPolicy" %>
+<%@ page import="org.labkey.api.lists.permissions.DesignListPermission" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <% Map<String, ListDefinition> map = ListService.get().getLists(getContainer());
+    User user = getViewContext().getUser();
+    SecurityPolicy policy = getViewContext().getContainer().getPolicy();
 %>
 
 <% if (map.isEmpty()) { %>
@@ -42,7 +47,7 @@
         <td>
             <labkey:link href="<%=def.urlShowData()%>" text="view data" />
         </td>
-<% if (hasPermission(ACL.PERM_UPDATE)) { %>
+<% if (policy.hasPermission(user, DesignListPermission.class)) { %>
         <td>
             <labkey:link href="<%=def.urlShowDefinition()%>" text="view design" />
         </td>
@@ -59,6 +64,6 @@
 <% }%>
     </table>
     <%} %>
-<% if (hasPermission(ACL.PERM_ADMIN)) { %>
+<% if (policy.hasPermission(user, DesignListPermission.class)) { %>
     <labkey:button text="Create New List" href="<%=h(urlFor(ListController.NewListDefinitionAction.class))%>" />
 <% } %>
