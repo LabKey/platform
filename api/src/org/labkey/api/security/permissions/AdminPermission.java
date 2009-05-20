@@ -15,6 +15,14 @@
  */
 package org.labkey.api.security.permissions;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.Group;
+
+import java.util.HashSet;
+import java.util.Set;
+
 /*
 * User: Dave
 * Date: Apr 28, 2009
@@ -25,5 +33,15 @@ public class AdminPermission extends AbstractPermission
     public AdminPermission()
     {
         super("Administrate", "Users may perform general administration");
+    }
+
+    @NotNull
+    @Override
+    public Set<UserPrincipal> getExcludedPrincipals()
+    {
+        Set<UserPrincipal> principals = new HashSet<UserPrincipal>();
+        principals.add(SecurityManager.getGroup(Group.groupGuests));
+        principals.add(SecurityManager.getGroup(Group.groupUsers));
+        return principals;
     }
 }

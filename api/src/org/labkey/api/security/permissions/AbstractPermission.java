@@ -19,9 +19,11 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.security.UserPrincipal;
 
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Collections;
 
 /*
 * User: Dave
@@ -123,5 +125,11 @@ public abstract class AbstractPermission implements Permission
     public int hashCode()
     {
         return this.getClass().hashCode();
+    }
+
+    @NotNull
+    public Set<UserPrincipal> getExcludedPrincipals()
+    {
+        return Collections.emptySet();
     }
 }

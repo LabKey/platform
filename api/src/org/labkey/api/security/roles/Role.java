@@ -17,6 +17,7 @@ package org.labkey.api.security.roles;
 
 import org.labkey.api.module.Module;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.UserPrincipal;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;
@@ -86,4 +87,13 @@ public interface Role
      */
     public boolean isAssignable();
 
+    /**
+     * Returns a set of user principals that should never be assigned
+     * to this role. This is typically used to prohibit assigning
+     * the Guests or Users group to an administrator role. Note that
+     * this method is called only if isAssignable() returns true.
+     * @return A set of principals that should not be assigned to this role
+     */
+    @NotNull
+    public Set<UserPrincipal> getExcludedPrincipals();
 }

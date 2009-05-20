@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.UserPrincipal;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -40,6 +41,7 @@ public abstract class AbstractRole implements Role
     private String _description;
     private Module _sourceModule;
     private final Set<Class<? extends Permission>> _permissions = new HashSet<Class<? extends Permission>>();
+    private final Set<UserPrincipal> _excludedPrincipals = new HashSet<UserPrincipal>();
 
     protected AbstractRole(String name, String description, Class<? extends Permission>... perms)
     {
@@ -125,4 +127,14 @@ public abstract class AbstractRole implements Role
         return getUniqueName();
     }
 
+    @NotNull
+    public Set<UserPrincipal> getExcludedPrincipals()
+    {
+        return _excludedPrincipals;
+    }
+
+    protected void addExcludedPrincipal(UserPrincipal principal)
+    {
+        _excludedPrincipals.add(principal);
+    }
 }

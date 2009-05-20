@@ -92,6 +92,9 @@ public class SecurityPolicy
         if(null == principal || null == role)
             return;
 
+        if(role.getExcludedPrincipals().contains(principal))
+            throw new IllegalArgumentException("The principal " + principal.getName() + " may not be assigned the role " + role.getName() + "!");
+        
         RoleAssignment assignment = new RoleAssignment(_resource, principal, role);
         assignment.setUserId(principal.getUserId());
         assignment.setRole(role);

@@ -16,6 +16,11 @@
 package org.labkey.api.security.roles;
 
 import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.*;
+import org.labkey.api.security.SecurityManager;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Set;
 
 /*
 * User: Dave
@@ -34,5 +39,8 @@ public class FolderAdminRole extends AbstractRole
                 UpdatePermission.class,
                 DeletePermission.class,
                 AdminPermission.class);
+
+        addExcludedPrincipal(org.labkey.api.security.SecurityManager.getGroup(Group.groupGuests));
+        addExcludedPrincipal(SecurityManager.getGroup(Group.groupUsers));
     }
 }
