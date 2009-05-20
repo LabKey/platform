@@ -259,6 +259,7 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
         var config = Ext.apply({}, config, {
             store : config.cache.principalsStore,
             mode : 'local',
+            triggerAction : 'all',
             forceSelection : true,
             typeAhead : true,
             displayField : 'Name',
@@ -297,9 +298,21 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         S.getPolicy({resourceId:id, successCallback:this.setPolicy , scope:this});
     },
 
+
     setPolicy : function(policy, roles)
     {
-        this.policy = policy;
+        if (this.resource.id != policy.getResourceId() || policy.isInherited())
+        {
+            this.inheritedPolicy = policy;
+            if (!this.policy)
+            {
+                this.policy = policy.copy(this.resource.id);
+            }
+        }
+        else
+        {
+            this.policy = policy;
+        }
         this.roles = [];
         for (var r=0 ; r<roles.length ; r++)
         {
@@ -330,10 +343,12 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
 
     _redraw : function()
     {
+        this.body.applyStyles({display:'block'});
         this.removeAll();
 
         var r, role;
         var b;
+        var policy = this.policy || this.inheritedPolicy;
 
         var html = ['<table cellspacing=4 cellpadding=4><tr><th><h3>Roles<br><img src="' +Ext.BLANK_IMAGE_URL + '" width=300 height=1></h3></th><th><h3>Groups</h3></th></tr>'];
         for (r=0 ; r<this.roles.length ; r++)
@@ -352,7 +367,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         {
             role = this.roles[r];
             var ct = Ext.fly(role.uniqueName);
-            var groups = this.policy.getAssignedPrincipals(role.uniqueName);
+            var groups = policy.getAssignedPrincipals(role.uniqueName);
             for (var g=0 ; g<groups.length ; g++)
             {
                 var group = this.cache.getPrincipal(groups[g]);
@@ -368,7 +383,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         this.saveButton = new Ext.Button({text:'Save', handler:this.save, scope:this});
         this.saveButton.render(this.el);
         this.add(this.saveButton);
-        // UNDONE: enable/disable
+        this.body.applyStyles({display:'block'});
     },
 
     // expects button to have roleId and groupId attribute
@@ -492,12 +507,18 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     {
         if (!this.policy.isDirty())
             return;
+        if (this.policy.isEmpty())
+            this.policy.addRoleAssignment(this.policy.guestsPrincipal, this.policy.noPermissionsRole);
         S.savePolicy({policy:this.policy, successCallback:function(){this.afterSave();}, failureCallback:function(){alert('fail'); this.afterSave();}, scope:this});
     },
 
     afterSave : function()
     {
         // reload policy
+        var w = new Ext.Window({closeAction:'close', html:'<h3 style="color:green;">saved</h3>', border:false, closable:false});
+        w.show();
+        w.el.pause(1);
+        w.el.fadeOut({callback:w.close, scope:w});
         S.getPolicy({resourceId:this.resource.id, successCallback:this.setPolicy , scope:this});
     },
 
