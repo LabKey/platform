@@ -18,6 +18,8 @@ package org.labkey.api.view;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.MemTracker;
 import org.springframework.web.servlet.View;
@@ -31,7 +33,7 @@ import java.util.Map;
 
 public abstract class DisplayElement implements View, Cloneable
 {
-    private int _displayPermission = ACL.PERM_READ;
+    private Class<? extends Permission> _displayPermission = ReadPermission.class;
     private boolean _visible = true;
     private int _displayModes = DataRegion.MODE_ALL;
     protected StringExpressionFactory.StringExpression _caption = null;
@@ -47,7 +49,7 @@ public abstract class DisplayElement implements View, Cloneable
         return "text/html";
     }
 
-    public int getDisplayPermission()
+    public Class<? extends Permission> getDisplayPermission()
     {
         return _displayPermission;
     }
@@ -55,7 +57,13 @@ public abstract class DisplayElement implements View, Cloneable
     public void setDisplayPermission(int displayPermission)
     {
         checkLocked();
-        _displayPermission = displayPermission;
+        _displayPermission = ACL.translatePermission(displayPermission);
+    }
+
+    public void setDisplayPermission(Class<? extends Permission> perm)
+    {
+        checkLocked();
+        _displayPermission = perm;
     }
 
     public boolean isVisible(Map ctx)
@@ -72,7 +80,7 @@ public abstract class DisplayElement implements View, Cloneable
 
     public boolean shouldRender(RenderContext ctx)
     {
-        return isVisible(ctx) && ctx.getViewContext().hasPermission(_displayPermission);
+        return isVisible(ctx) && (null == _displayPermission || ctx.getViewContext().getContainer().hasPermission(ctx.getViewContext().getUser(), _displayPermission));
     }
 
     public String getOutput(RenderContext ctx)

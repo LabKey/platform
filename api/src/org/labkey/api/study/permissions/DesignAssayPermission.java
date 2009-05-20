@@ -13,29 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.security.roles;
+package org.labkey.api.study.permissions;
 
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.permissions.AbstractPermission;
 
 /*
 * User: Dave
-* Date: Apr 23, 2009
-* Time: 12:17:37 PM
+* Date: May 19, 2009
+* Time: 4:35:02 PM
 */
-
-/**
- * The Site Administrator role
- */
-public class SiteAdminRole extends AbstractContextualRole
+public class DesignAssayPermission extends AbstractPermission
 {
-    public SiteAdminRole()
+    public DesignAssayPermission()
     {
-        super("Site Administrator", "The Site Administrator has full control over the entire system.",
-                ReadPermission.class,
-                ReadSomePermission.class,
-                UpdatePermission.class,
-                InsertPermission.class, 
-                DeletePermission.class,
-                AdminPermission.class);
-    }
+        super("Design Assays",
+                "May design new assays and change the designs of existing assays.");
+    }    
 }

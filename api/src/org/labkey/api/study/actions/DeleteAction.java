@@ -20,6 +20,11 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.PageFlowUtil;
@@ -27,6 +32,9 @@ import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.view.template.AppBar;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
+
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  * User: brittp
@@ -51,7 +59,9 @@ public class DeleteAction extends BaseAssayAction<ProtocolIdForm>
     private boolean allowDelete(ExpProtocol protocol)
     {
         ViewContext ctx = getViewContext();
-        return ctx.hasPermission(ACL.PERM_DELETE) ||
-                    (ctx.hasPermission(ACL.PERM_DELETEOWN) && ctx.getUser().equals(protocol.getCreatedBy()));
+        User user = ctx.getUser();
+
+        Set<Role> contextualRoles = RoleManager.roleSet(user.equals(protocol.getCreatedBy()) ? OwnerRole.class : null);
+        return ctx.getContainer().hasPermission(user, DeletePermission.class, contextualRoles);
     }
 }

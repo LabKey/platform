@@ -23,8 +23,11 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.*;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.lists.permissions.DesignListPermission;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -43,7 +46,7 @@ import java.io.File;
  * Time: 4:52:21 PM
  */
 
-@RequiresPermission(ACL.PERM_ADMIN)
+@RequiresPermissionClass(AdminPermission.class)
 public class SetDefaultValuesAction<FormType extends DomainIdForm> extends DefaultValuesAction<FormType>
 {
     private String _returnUrl;

@@ -17,6 +17,8 @@
 package org.labkey.api.security;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.security.permissions.*;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -352,6 +354,23 @@ public class ACL implements Cloneable
         System.arraycopy(_permissions, 0, copy, 0,
                          _permissions.length);
         return copy;
+    }
+
+    @Nullable
+    public static Class<? extends Permission> translatePermission(int perm)
+    {
+        if((perm & PERM_READ) > 0 || (perm & PERM_READOWN) > 0)
+            return ReadPermission.class;
+        if((perm & PERM_INSERT) > 0)
+            return InsertPermission.class;
+        if((perm & PERM_UPDATE) > 0 || (perm & PERM_UPDATEOWN) > 0)
+            return UpdatePermission.class;
+        if((perm & PERM_DELETE) > 0 || (perm & PERM_DELETEOWN) > 0)
+            return DeletePermission.class;
+        if((perm & PERM_ADMIN) > 0)
+            return AdminPermission.class;
+
+        return null;
     }
 
 }

@@ -198,6 +198,8 @@ api/src/org/labkey/api/defaults/DefaultableDisplayColumn.java -text
 api/src/org/labkey/api/defaults/DomainIdForm.java -text
 api/src/org/labkey/api/defaults/SetDefaultValuesAction.java -text
 api/src/org/labkey/api/defaults/SetDefaultValuesAssayAction.java -text
+api/src/org/labkey/api/defaults/SetDefaultValuesDatasetAction.java -text
+api/src/org/labkey/api/defaults/SetDefaultValuesListAction.java -text
 api/src/org/labkey/api/exp/AbstractParameter.java -text
 api/src/org/labkey/api/exp/ChangePropertyDescriptorException.java -text
 api/src/org/labkey/api/exp/DomainDescriptor.java -text
@@ -306,6 +308,7 @@ api/src/org/labkey/api/jsp/taglib/OptionsTag.java -text
 api/src/org/labkey/api/jsp/taglib/RadioTag.java -text
 api/src/org/labkey/api/jsp/taglib/SelectAll.java -text
 api/src/org/labkey/api/jsp/taglib/SimpleTagBase.java -text
+api/src/org/labkey/api/lists/permissions/DesignListPermission.java -text
 api/src/org/labkey/api/microarray/ArrayService.java -text
 api/src/org/labkey/api/microarray/ExtractionConfigException.java -text
 api/src/org/labkey/api/microarray/ExtractionException.java -text
@@ -730,6 +733,7 @@ api/src/org/labkey/api/study/assay/ThawListFileResolver.java -text
 api/src/org/labkey/api/study/assay/ThawListListResolver.java -text
 api/src/org/labkey/api/study/assay/ThawListResolverType.java -text
 api/src/org/labkey/api/study/assay/thawListSelector.jsp -text
+api/src/org/labkey/api/study/permissions/DesignAssayPermission.java -text
 api/src/org/labkey/api/study/query/AssayBaseQueryView.java -text
 api/src/org/labkey/api/study/query/PlateBasedAssayRunDataTable.java -text
 api/src/org/labkey/api/study/query/ProtocolFilteredObjectTable.java -text

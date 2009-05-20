@@ -208,7 +208,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     public String getDefaultValuesURL()
     {
         if (defaultValuesURL == null)
-            return PropertyUtil.getRelativeURL("setDefaultValues", "list");
+            return PropertyUtil.getRelativeURL("setDefaultValuesList", "list");
         return defaultValuesURL;
     }
 

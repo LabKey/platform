@@ -29,6 +29,7 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.util.Pair;
@@ -153,13 +154,13 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
     {
         ViewContext ctx = getViewContext();
         Container container = protocol.getContainer();
-        return container.hasPermission(ctx.getUser(), ACL.PERM_ADMIN);
+        return container.hasPermission(ctx.getUser(), DesignAssayPermission.class);
     }
 
     protected boolean allowDelete(ExpProtocol protocol)
     {
         ViewContext ctx = getViewContext();
         Container container = protocol.getContainer();
-        return container.hasPermission(ctx.getUser(), ACL.PERM_ADMIN);
+        return container.hasPermission(ctx.getUser(), DesignAssayPermission.class);
     }
 }

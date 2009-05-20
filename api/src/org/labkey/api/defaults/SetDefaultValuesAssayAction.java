@@ -24,8 +24,10 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.actions.ParticipantVisitResolverChooser;
 import org.labkey.api.study.actions.UploadWizardAction;
+import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.ACL;
+import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
@@ -38,7 +40,7 @@ import java.util.ArrayList;
  * Time: 4:20:14 PM
  */
 
-@RequiresPermission(ACL.PERM_ADMIN)
+@RequiresPermissionClass(DesignAssayPermission.class)
 public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefaultValuesAssayAction.AssayDomainIdForm>
 {
     private AssayProvider _provider;

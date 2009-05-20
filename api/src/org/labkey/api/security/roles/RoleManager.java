@@ -17,6 +17,7 @@ package org.labkey.api.security.roles;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.security.permissions.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -100,11 +101,14 @@ public class RoleManager
         _classToRoleMap.put(role.getClass(), role);
         _roles.add(role);
 
+        boolean adminRole = role instanceof SiteAdminRole || role instanceof ProjectAdminRole || role instanceof FolderAdminRole;
+
         //register all exposed permissions in the name and class maps
         for(Class<? extends Permission> permClass : role.getPermissions())
         {
-            //add all permissions to site admin role
-            siteAdminRole.addPermission(permClass);
+            //add all permissions to the admin roles
+            if(!adminRole)
+                addPermissionToAdminRoles(permClass);
 
             try
             {
@@ -130,6 +134,25 @@ public class RoleManager
         Set<Class<? extends Permission>> set = new HashSet<Class<? extends Permission>>();
         set.addAll(Arrays.asList(perms));
         return set;
+    }
+
+    /**
+     * Returns a set of Role objects based on the provided role classes
+     * @param roleClasses The role classes
+     * @return A set of Role objects corresponding to the role classes
+     */
+    @NotNull
+    public static Set<Role> roleSet(Class<? extends Role>... roleClasses)
+    {
+        Set<Role> roles = new HashSet<Role>();
+        if(null != roleClasses && roleClasses.length > 0)
+        {
+            for(Class<? extends Role> roleClass : roleClasses)
+            {
+                roles.add(getRole(roleClass));
+            }
+        }
+        return roles;
     }
 
 }

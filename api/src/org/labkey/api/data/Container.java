@@ -25,6 +25,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -198,12 +199,17 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return SecurityManager.getPolicy(this);
     }
 
-    public boolean hasPermission(User user, Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull User user, @NotNull Class<? extends Permission> perm)
     {
         return getPolicy().hasPermission(user, perm);
     }
 
-    public boolean hasOneOf(User user, Set<Class<? extends Permission>> perms)
+    public boolean hasPermission(@NotNull User user, @NotNull Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
+    {
+        return getPolicy().hasPermission(user, perm, contextualRoles);
+    }
+
+    public boolean hasOneOf(@NotNull User user, @NotNull Set<Class<? extends Permission>> perms)
     {
         return getPolicy().hasOneOf(user, perms, null);
     }

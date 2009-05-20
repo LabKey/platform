@@ -13,29 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.security.roles;
+package org.labkey.api.defaults;
 
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.RequiresPermissionClass;
 
 /*
 * User: Dave
-* Date: Apr 23, 2009
-* Time: 12:17:37 PM
+* Date: May 20, 2009
+* Time: 12:04:54 PM
 */
-
-/**
- * The Site Administrator role
- */
-public class SiteAdminRole extends AbstractContextualRole
+@RequiresPermissionClass(AdminPermission.class)
+public class SetDefaultValuesDatasetAction extends SetDefaultValuesAction
 {
-    public SiteAdminRole()
-    {
-        super("Site Administrator", "The Site Administrator has full control over the entire system.",
-                ReadPermission.class,
-                ReadSomePermission.class,
-                UpdatePermission.class,
-                InsertPermission.class, 
-                DeletePermission.class,
-                AdminPermission.class);
-    }
 }
