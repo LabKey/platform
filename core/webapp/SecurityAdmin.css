@@ -9,9 +9,9 @@
     margin-left:2px;
 }
 
-.pSite button, div.pSite {font-weight:bold;}
-.pGroup button, div.pGroup {}
-.pUser button, div.pUser {font-style:italic;}
+.pSite button, div.pSite {font-weight:bold; font-variant:small-caps;}
+.pGroup button, div.pGroup {font-variant:small-caps; font-size:110%;}
+.pUser button, div.pUser {}
 
 /* roles */
 .rh {}

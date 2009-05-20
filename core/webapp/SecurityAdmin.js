@@ -320,6 +320,7 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
         var config = Ext.apply({}, config, {
             store : config.cache.principalsStore,
             mode : 'local',
+            minListWidth : 200,
             triggerAction : 'all',
             forceSelection : true,
             typeAhead : true,
