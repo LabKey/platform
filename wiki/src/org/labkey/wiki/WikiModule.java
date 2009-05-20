@@ -72,7 +72,6 @@ public class WikiModule extends DefaultModule
         addController("wiki", WikiController.class, "attachments");
 
         ServiceRegistry.get().registerService(WikiService.class, new ServiceImpl());
-        RoleManager.getRole(DeveloperRole.class).addPermission(IncludeScriptPermission.class);
     }
 
     protected Collection<? extends WebPartFactory> createWebPartFactories()
@@ -90,6 +89,8 @@ public class WikiModule extends DefaultModule
 
     public void startup(ModuleContext moduleContext)
     {
+        RoleManager.getRole(DeveloperRole.class).addPermission(IncludeScriptPermission.class);
+        
         ContainerManager.addContainerListener(new WikiContainerListener());
         Search.register(new WikiSearchable());
         ModuleLoader.getInstance().registerFolderType(new CollaborationFolderType());

@@ -147,13 +147,6 @@ public class StudyModule extends DefaultModule
         EnumConverter.registerEnum(SecurityType.class);
         QuerySnapshotService.registerProvider(StudyManager.getSchemaName(), DatasetSnapshotProvider.getInstance());
 
-        //register roles
-        RoleManager.registerRole(new SpecimenCoordinatorRole());
-        RoleManager.registerRole(new SpecimenRequesterRole());
-        RoleManager.registerRole(new AssayDesignerRole());
-        
-        //add view specimen perm to reader role (all readers are allowed to see available specimens)
-        RoleManager.getRole(ReaderRole.class).addPermission(ViewSpecimensPermission.class);
     }
 
     @Override
@@ -195,6 +188,14 @@ public class StudyModule extends DefaultModule
 
     public void startup(ModuleContext moduleContext)
     {
+        //register roles
+        RoleManager.registerRole(new SpecimenCoordinatorRole());
+        RoleManager.registerRole(new SpecimenRequesterRole());
+        RoleManager.registerRole(new AssayDesignerRole());
+
+        //add view specimen perm to reader role (all readers are allowed to see available specimens)
+        RoleManager.getRole(ReaderRole.class).addPermission(ViewSpecimensPermission.class);
+        
         PipelineService.get().registerPipelineProvider(new StudyPipeline());
         ContainerManager.addContainerListener(new StudyContainerListener());
         AssayPublishService.register(new AssayPublishManager());
