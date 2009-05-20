@@ -22,6 +22,7 @@
 
 LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
 
+    guestsPrincipal:-3,
     noPermissionsRole: "org.labkey.api.security.roles.NoPermissionsRole",
     
     constructor : function(config)
@@ -40,6 +41,11 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
     getResourceId : function()
     {
         return this.policy.resourceId;
+    },
+
+    isEmpty : function()
+    {
+        return this.policy.assignments.length == 0;
     },
 
     isInherited : function()
@@ -178,5 +184,23 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
     isDirty : function()
     {
         return this._dirty;
+    },
+
+    copy : function(resourceid)
+    {
+        var config = Ext.apply(this.policy);
+        if (resourceid)
+            config.requestedResourceId = config.resourceId = resourceid;
+        config.assignments = this.copyArray(config.assignments);
+        return new LABKEY.SecurityPolicy(this.policy);
+    },
+
+    /* private shallow copy*/
+    copyArray : function(a)
+    {
+    var copy = [];
+    for (var i=0 ; i<a.length ; i++)
+        copy.push(a[i]);
+    return copy;
     }
 });
