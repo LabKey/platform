@@ -31,6 +31,6 @@ public class SimpleSpecimenTable extends AbstractSpecimenTable
 
         addVisitColumn(false);
 
-        addVolumeAndTypeColumns();
+        addVolumeAndTypeColumns(false);
     }
 }

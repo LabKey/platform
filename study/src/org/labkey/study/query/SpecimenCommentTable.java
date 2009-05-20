@@ -29,11 +29,16 @@ public class SpecimenCommentTable extends FilteredTable
 {
     public SpecimenCommentTable(final StudyQuerySchema schema)
     {
+        this(schema, true);
+    }
+
+    public SpecimenCommentTable(final StudyQuerySchema schema, boolean joinBackToSpecimens)
+    {
         super(StudySchema.getInstance().getTableInfoSpecimenComment(), schema.getContainer());
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
             String name = baseColumn.getName();
-            if ("GlobalUniqueId".equalsIgnoreCase(name))
+            if (joinBackToSpecimens && "GlobalUniqueId".equalsIgnoreCase(name))
             {
                 AliasedColumn globalUniqueIdColumn = new AliasedColumn(this, "GlobalUniqueId", _rootTable.getColumn("GlobalUniqueId"));
                 globalUniqueIdColumn.setFk(new LookupForeignKey(null, (String) null, "GlobalUniqueId", "GlobalUniqueId")

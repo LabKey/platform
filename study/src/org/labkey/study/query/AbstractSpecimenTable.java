@@ -41,7 +41,7 @@ public abstract class AbstractSpecimenTable extends BaseStudyTable
         addWrapParticipantColumn("PTID").setKeyField(true);
     }
 
-    protected void addVolumeAndTypeColumns()
+    protected void addVolumeAndTypeColumns(final boolean joinBackToSpecimens)
     {
         addWrapColumn(_rootTable.getColumn("Volume"));
         addWrapColumn(_rootTable.getColumn("VolumeUnits"));
@@ -67,7 +67,9 @@ public abstract class AbstractSpecimenTable extends BaseStudyTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new SpecimenCommentTable(_schema);
+                SpecimenCommentTable result = new SpecimenCommentTable(_schema, joinBackToSpecimens);
+                result.setContainerFilter(ContainerFilter.EVERYTHING);
+                return result;
             }
         };
         commentsFK.setJoinOnContainer(true);
@@ -103,7 +105,9 @@ public abstract class AbstractSpecimenTable extends BaseStudyTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new VisitTable(_schema);
+                VisitTable visitTable = new VisitTable(_schema);
+                visitTable.setContainerFilter(ContainerFilter.EVERYTHING);
+                return visitTable;
             }
         };
         visitFK.setJoinOnContainer(true);
