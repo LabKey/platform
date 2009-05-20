@@ -37,7 +37,7 @@ public class StudyWriter implements Writer<Study>
         new VisitMapWriter(),
         new CohortWriter(),
         new QcStateWriter(),
-        new DataSetWriter2(),
+        new DatasetWriter(),
         new SpecimenArchiveWriter(),
         new ReportWriter(),
         new QueryWriter(),

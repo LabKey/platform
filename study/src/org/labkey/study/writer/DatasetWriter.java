@@ -39,9 +39,9 @@ import java.util.List;
  * Date: Apr 16, 2009
  * Time: 3:10:37 PM
  */
-public class DataSetWriter2 implements Writer<Study>
+public class DatasetWriter implements Writer<Study>
 {
-    private static final Logger LOG = Logger.getLogger(DataSetWriter2.class);
+    private static final Logger LOG = Logger.getLogger(DatasetWriter.class);
     private static final String DEFAULT_DIRECTORY = "datasets";
 
     public String getSelectionText()

@@ -60,7 +60,7 @@ public class SchemaWriter implements Writer<DataSetDefinition[]>
 
             TableInfo tinfo = def.getTableInfo(ctx.getUser());
 
-            for (ColumnInfo col : DataSetWriter2.getColumnsToExport(tinfo.getColumns(), true))
+            for (ColumnInfo col : DatasetWriter.getColumnsToExport(tinfo.getColumns(), true))
             {
                 writer.print(prefix);
                 writer.print(col.getColumnName() + '\t');
