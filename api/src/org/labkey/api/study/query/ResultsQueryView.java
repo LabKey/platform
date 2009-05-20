@@ -135,6 +135,7 @@ public class ResultsQueryView extends AssayBaseQueryView
         @Override
         protected boolean isErrorRow(RenderContext ctx, int rowIndex)
         {
+            // If we know that the specimen info doesn't match, flag the row as being problematic
             return _matchColumn != null && Boolean.FALSE.equals(_matchColumn.getValue(ctx));
         }
 
@@ -147,6 +148,7 @@ public class ResultsQueryView extends AssayBaseQueryView
             _matchColumn = newColumns.get(fk);
             if (_matchColumn != null)
             {
+                // Add the column that decides if the specimen info has changed on the study side
 //                columns.add(_matchColumn);
             }
         }

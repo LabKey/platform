@@ -45,7 +45,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext> ex
         Map<String, File> files = getCurrentFilesForDisplay(context);
         if (files.isEmpty())
         {
-            return "<div class=\"labkey-error>No files have been selected.</div>";
+            return "<div class=\"labkey-error\">No files have been selected.</div>";
         }
 
         StringBuilder sb = new StringBuilder();
@@ -94,7 +94,12 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext> ex
 
     public String getDescription(ContextType context)
     {
-        Map<String, File> files = getFileCollection(context).get(0);
+        List<Map<String, File>> allFiles = getFileCollection(context);
+        if (allFiles.isEmpty())
+        {
+            return "";
+        }
+        Map<String, File> files = allFiles.get(0);
         return (files.size() > 1 ? files.size() + " files" : "File ") + " from the Data Pipeline in " + files.values().iterator().next().getParent();
     }
 

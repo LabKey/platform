@@ -35,21 +35,25 @@ import org.apache.log4j.*;
 import org.apache.log4j.spi.HierarchyEventListener;
 import org.apache.log4j.spi.LoggerFactory;
 import org.apache.log4j.spi.LoggerRepository;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.User;
-import org.labkey.api.util.*;
-import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.labkey.api.security.User;
+import org.labkey.api.util.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.*;
 import java.net.URI;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Vector;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 abstract public class PipelineJob extends Job implements Serializable
 {
@@ -166,7 +170,9 @@ abstract public class PipelineJob extends Job implements Serializable
     private transient boolean _settingStatus;
     private transient PipelineQueue _queue;
 
-    public PipelineJob(String provider, ViewBackgroundInfo info)
+    /** Although having a null provider is legal, it is recommended that one be used
+     * so that it can respond to events as needed */ 
+    public PipelineJob(@Nullable String provider, ViewBackgroundInfo info)
     {
         _info = info;
         _provider = provider;

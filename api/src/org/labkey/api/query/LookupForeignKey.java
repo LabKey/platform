@@ -111,10 +111,10 @@ abstract public class LookupForeignKey extends AbstractForeignKey
                 newTable.setContainerFilter(new DelegatingContainerFilter(parent.getParentTable()));
         }
         LookupColumn result = LookupColumn.create(parent, getPkColumn(table), table.getColumn(displayField), _prefixColumnCaption);
-//        if (result != null)
-//        {
-////            result.setJoinOnContainer(_joinOnContainer);
-//        }
+        if (result != null)
+        {
+            result.setJoinOnContainer(_joinOnContainer);
+        }
         return result;
     }
 

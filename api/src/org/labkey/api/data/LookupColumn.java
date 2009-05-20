@@ -88,14 +88,13 @@ public class LookupColumn extends ColumnInfo
     public SQLFragment getJoinCondition(String tableAliasName)
     {
         return getJoinConditionHelper(
-            tableAliasName, foreignKey.getValueSql(tableAliasName), foreignKey.getSqlTypeInt(),
+            foreignKey.getTableAlias(), foreignKey.getValueSql(tableAliasName), foreignKey.getSqlTypeInt(),
             getTableAlias(), lookupKey.getValueSql(getTableAlias()), lookupKey.getSqlTypeInt(),
             joinOnContainer, getSqlDialect().isPostgreSQL()
         );
     }
 
 
-    // broken out to share code with QueryLookupColumn
     public static SQLFragment getJoinConditionHelper(String tableAliasName, SQLFragment fkSql, int fkType,
             String joinAlias, SQLFragment pkSql, int pkType,
             boolean joinOnContainer, boolean isPostgreSQL)

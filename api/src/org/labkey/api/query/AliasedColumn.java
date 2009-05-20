@@ -81,4 +81,11 @@ public class AliasedColumn extends ColumnInfo
     {
         return _column;
     }
+
+    @Override
+    public String getTableAlias()
+    {
+        return _column.getTableAlias();
+//        return super.getTableAlias();
+    }
 }

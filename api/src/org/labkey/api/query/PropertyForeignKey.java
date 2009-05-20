@@ -22,6 +22,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -54,7 +55,7 @@ public class PropertyForeignKey extends AbstractForeignKey
     {
         if (displayField == null)
             return null;
-        PropertyDescriptor pd = _pdMap.get(displayField);
+        PropertyDescriptor pd = new CaseInsensitiveHashMap<PropertyDescriptor>(_pdMap).get(displayField);
         if (pd == null)
         {
             pd = resolvePropertyDescriptor(displayField);

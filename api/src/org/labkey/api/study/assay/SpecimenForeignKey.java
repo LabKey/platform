@@ -91,7 +91,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         ColumnInfo dateCol = columns.get(dateFK);
         if (participantIdCol != null || visitIdCol != null || dateCol != null)
         {
-            sql.append("CASE WHEN (");
+            sql.append("CASE WHEN (" + specimenAlias + ".DateBased IS NULL) THEN NULL ELSE (CASE WHEN (");
             if (participantIdCol != null)
             {
                 sql.append("(" + specimenAlias + ".ParticipantId = " + targetStudyAlias + "." + participantIdCol.getAlias() + " OR ");
@@ -106,7 +106,7 @@ public class SpecimenForeignKey extends LookupForeignKey
                 sql.append("(");
                 if (visitIdCol != null)
                 {
-                    sql.append("(" + specimenAlias + ".DateBased = ? AND (" + specimenAlias + ".Visit = " + targetStudyAlias + "." + visitIdCol.getAlias() + " OR (" + specimenAlias + ".Visit IS NULL AND " + targetStudyAlias + "." + visitIdCol.getAlias() + " IS NULL)))");
+                    sql.append("((" + specimenAlias + ".DateBased IS NULL OR " + specimenAlias + ".DateBased = ?) AND (" + specimenAlias + ".Visit = " + targetStudyAlias + "." + visitIdCol.getAlias() + " OR (" + specimenAlias + ".Visit IS NULL AND " + targetStudyAlias + "." + visitIdCol.getAlias() + " IS NULL)))");
                     sql.add(Boolean.FALSE);
                     if (dateCol != null)
                     {
@@ -116,14 +116,14 @@ public class SpecimenForeignKey extends LookupForeignKey
                 if (dateCol != null)
                 {
                     SqlDialect dialect = tableInfo.getSqlDialect();
-                    sql.append("(" + specimenAlias + ".DateBased = ? AND (" +
+                    sql.append("((" + specimenAlias + ".DateBased = ? OR " + specimenAlias + ".DateBased IS NULL) AND (" +
                             dialect.getDateTimeToDateCast(specimenAlias + ".Date") + " = " +
                             dialect.getDateTimeToDateCast(targetStudyAlias + "." + dateCol.getAlias()) + " OR (" + specimenAlias + ".Date IS NULL AND " + targetStudyAlias + "." + dateCol.getAlias() + " IS NULL)))");
                     sql.add(Boolean.TRUE);
                 }
                 sql.append(")");
             }
-            sql.append(") THEN ? ELSE ? END");
+            sql.append(") THEN ? ELSE ? END) END");
             sql.add(Boolean.TRUE);
             sql.add(Boolean.FALSE);
         }
@@ -200,7 +200,7 @@ public class SpecimenForeignKey extends LookupForeignKey
             {
                 ColumnInfo objectIdCol = columns.get(objectIdFK);
                 SQLFragment targetStudySQL = QueryService.get().getSelectSQL(getParentTable(), columns.values(), null, null, Table.ALL_ROWS, 0);
-                SQLFragment sql = new SQLFragment("LEFT OUTER JOIN (");
+                SQLFragment sql = new SQLFragment(" LEFT OUTER JOIN (");
                 sql.append(targetStudySQL);
                 String targetStudyAlias = parentAlias + TARGET_STUDY_SUFFIX;
                 String specimenAlias = parentAlias + SPECIMEN_SUFFIX;

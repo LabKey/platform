@@ -15,11 +15,11 @@
  */
 package org.labkey.api.pipeline;
 
-import org.labkey.api.view.ViewBackgroundInfo;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 
-import java.sql.SQLException;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Date;
 
 /**
@@ -78,6 +78,11 @@ public interface PipelineStatusFile
 
     String getJobParentId();
 
+    /**
+     * @return the name of the PipelineProvider for this job. Used to provide hooks for
+     * doing work before deletion of the job, etc
+     */
+    @Nullable
     String getProvider();
 
     String getStatus();
