@@ -27,6 +27,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.core.user.UserController;
 
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.*;
 
 /**
@@ -126,10 +127,8 @@ public class CoreQuerySchema extends UserSchema
         //filter for container is null or container = current-container
         principals.addCondition(new SQLFragment("Container IS NULL or Container=?", getContainer().getProject()));
 
-        //only site admins are allowed to see site principals,
-        //so if the user is not a site admin, add a filter that will
-        //generate an empty set
-        if(!getUser().isAdministrator())
+        //only users with admin perms in the container may see the principals
+        if(!getContainer().hasPermission(getUser(), AdminPermission.class))
             addNullSetFilter(principals);
 
         return principals;
@@ -167,9 +166,12 @@ public class CoreQuerySchema extends UserSchema
             addNullSetFilter(members);
         else
         {
+            Container container = getContainer();
+            Container project = container.isRoot() ? container : container.getProject();
+
             //filter for groups defined in this container or null container
             members.addCondition(new SQLFragment("GroupId IN (SELECT UserId FROM " + CoreSchema.getInstance().getTableInfoPrincipals()
-                    + " WHERE Container=? OR Container IS NULL)", getContainer().getProject().getId()));
+                    + " WHERE Container=? OR Container IS NULL)", project.getId()));
         }
 
         List<FieldKey> defCols = new ArrayList<FieldKey>();
