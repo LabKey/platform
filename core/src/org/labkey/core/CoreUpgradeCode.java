@@ -105,9 +105,22 @@ public class CoreUpgradeCode implements UpgradeCode
             // Need to insert standard QC values for the root
             Container rootContainer = ContainerManager.getRoot();
             String rootContainerId = rootContainer.getId();
-            Map<String,String> mvMap = MvUtil.getDefaultMvIndicators();
             TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
-            for(Map.Entry<String,String> qcEntry : mvMap.entrySet())
+
+            // If we already have any entries, skip this step
+            Filter rootFilter = new SimpleFilter("Container", rootContainerId);
+            ResultSet rs = Table.select(mvTable, Collections.singleton("MvIndicator"), rootFilter, null);
+            try
+            {
+                if (rs.next())
+                    return;
+            }
+            finally
+            {
+                rs.close();
+            }
+
+            for(Map.Entry<String,String> qcEntry : MvUtil.getDefaultMvIndicators().entrySet())
             {
                 Map<String,Object> params = new HashMap<String,Object>();
                 params.put("Container", rootContainerId);
