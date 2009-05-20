@@ -17,10 +17,12 @@ package org.labkey.study.writer;
 
 import org.labkey.study.model.Study;
 import org.labkey.api.util.VirtualFile;
+import org.labkey.api.util.PageFlowUtil;
 import org.apache.log4j.Logger;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 /**
  * User: adam
@@ -31,16 +33,28 @@ public class StudyWriter implements Writer<Study>
 {
     private static final Logger LOG = Logger.getLogger(StudyWriter.class);
 
-    private static final List<Writer<Study>> WRITERS = Arrays.asList(
+    public static final List<Writer<Study>> WRITERS = Arrays.asList(
         new VisitMapWriter(),
         new CohortWriter(),
         new QcStateWriter(),
-        new DataSetWriter(),
+        new DataSetWriter2(),
         new SpecimenArchiveWriter(),
-        new StudyXmlWriter(),          // Note: Needs to be last of the study writers since it writes out the study.xml file (to which other writers contribute)
-
         new ReportWriter(),
-        new QueryWriter());
+        new QueryWriter(),
+        new StudyXmlWriter()  // Note: Needs to be last of the study writers since it writes out the study.xml file (to which other writers contribute)
+    );
+
+    private final Set<String> _dataTypes;
+
+    public StudyWriter()
+    {
+        _dataTypes = null;   // All data types
+    }
+
+    public StudyWriter(String... dataTypes)
+    {
+        _dataTypes = PageFlowUtil.set(dataTypes);
+    }
 
     public String getSelectionText()
     {
@@ -53,10 +67,8 @@ public class StudyWriter implements Writer<Study>
 
         for (Writer<Study> writer : WRITERS)
         {
-            if (null != writer.getSelectionText())
-                LOG.info("Writing " + writer.getSelectionText());
-
-            writer.write(study, ctx, fs);
+            if (null == _dataTypes || null == writer.getSelectionText() || _dataTypes.contains(writer.getSelectionText()))
+                writer.write(study, ctx, fs);
         }
 
         LOG.info("Done exporting study to " + fs.getLocation());

@@ -15,22 +15,20 @@
  */
 package org.labkey.study.importer;
 
-import org.labkey.study.xml.StudyDocument;
+import org.apache.xmlbeans.XmlException;
+import org.labkey.study.model.Cohort;
+import org.labkey.study.model.CohortManager;
+import org.labkey.study.model.Study;
 import org.labkey.study.xml.CohortType;
 import org.labkey.study.xml.CohortsDocument;
-import org.labkey.study.model.CohortManager;
-import org.labkey.study.model.Cohort;
-import org.labkey.study.model.Study;
-import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.view.ActionURL;
-import org.apache.xmlbeans.XmlException;
+import org.labkey.study.xml.StudyDocument;
 
 import javax.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: adam
@@ -49,8 +47,8 @@ public class CohortImporter
 
             if (cohortType == CohortType.AUTOMATIC)
             {
-                Integer dataSetId = cohortsXml.getDataSetId();
-                String dataSetProperty = cohortsXml.getDataSetProperty();
+                Integer dataSetId = cohortsXml.getDatasetId();
+                String dataSetProperty = cohortsXml.getDatasetProperty();
                 CohortManager.updateAutomaticCohortAssignment(study, ctx.getUser(), dataSetId, dataSetProperty);
             }
             else

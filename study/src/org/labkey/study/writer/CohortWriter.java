@@ -84,8 +84,15 @@ public class CohortWriter implements Writer<Study>
         else
         {
             cohortsXml.setType(CohortType.AUTOMATIC);
-            cohortsXml.setDataSetId(study.getParticipantCohortDataSetId().intValue());
-            cohortsXml.setDataSetProperty(study.getParticipantCohortProperty());
+
+            Integer datasetId = study.getParticipantCohortDataSetId();
+            String datasetProperty = study.getParticipantCohortProperty();
+
+            if (null != datasetId && null != datasetProperty)
+            {
+                cohortsXml.setDatasetId(study.getParticipantCohortDataSetId().intValue());
+                cohortsXml.setDatasetProperty(study.getParticipantCohortProperty());
+            }
         }
     }
 }

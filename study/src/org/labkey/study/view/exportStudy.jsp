@@ -19,6 +19,10 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.StudyController"%>
+<%@ page import="org.labkey.study.model.Study" %>
+<%@ page import="org.labkey.study.writer.StudyWriter" %>
+<%@ page import="org.labkey.study.writer.Writer" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<StudyController.ExportForm> me = (JspView<StudyController.ExportForm>) HttpView.currentView();
@@ -29,11 +33,29 @@
 <form action="" method="post">
     <table>
         <tr>
-            <td>This will export the entire study.</td>
+            <td>Choose the study objects you wish to export:</td>
         </tr>
+        <%
+            List<Writer<Study>> writers = StudyWriter.WRITERS;
+
+            for (Writer writer : writers)
+            {
+                String text = writer.getSelectionText();
+
+                if (null != text)
+                { %>
+        <tr><td><input type="checkbox" name="types" value="<%=text%>" checked> <%=text%></td></tr><%
+                }
+            }
+        %>
+        <tr><td>&nbsp;</td></tr>
+        <tr><td>Export to:</td></tr>
+        <tr><td><input type="radio" name="location" value="0">Pipeline root as individual files</td></tr>
+        <tr><td><input type="radio" name="location" value="1">Pipeline root as zip file</td></tr>
+        <tr><td><input type="radio" name="location" value="2" checked>Browser as zip file</td></tr>
         <tr>
             <td>
-                <%=generateSubmitButton("Export To Pipeline Root")%>&nbsp;<%=generateButton("Export to Zip File", "exportZip.view")%>&nbsp;<%=generateButton("Cancel", "manageStudy.view")%>
+                <%=generateSubmitButton("Export")%>&nbsp;<%=generateButton("Cancel", "manageStudy.view")%>
             </td>
         </tr>
     </table>

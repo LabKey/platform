@@ -2319,7 +2319,7 @@ study/src/org/labkey/study/visitmanager/VisitManager.java -text
 study/src/org/labkey/study/writer/AbstractContext.java -text
 study/src/org/labkey/study/writer/CohortWriter.java -text
 study/src/org/labkey/study/writer/DataFaxVisitMapWriter.java -text
-study/src/org/labkey/study/writer/DataSetWriter.java -text
+study/src/org/labkey/study/writer/DataSetWriter2.java -text
 study/src/org/labkey/study/writer/ExportContext.java -text
 study/src/org/labkey/study/writer/FileSystemFile.java -text
 study/src/org/labkey/study/writer/QcStateWriter.java -text

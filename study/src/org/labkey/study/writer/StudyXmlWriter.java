@@ -37,13 +37,13 @@ import java.util.Map;
 // This writer is largely responsible for study.xml.  It constructs the StudyDocument (xml bean used to read/write study.xml)
 //  that gets added to the ExportContext, writes the top-level study attributes, and writes out the bean when it's complete.
 //  However, each top-level writer is responsible for their respective elements in study.xml -- VisitMapWriter handles "visits"
-//  element, DataSetWriter is responsible for "datasets" element, etc.  As a result, StudyXmlWriter must be invoked after all
+//  element, DataSetWriter2 is responsible for "datasets" element, etc.  As a result, StudyXmlWriter must be invoked after all
 //  writers are done modifying the StudyDocument.  Locking the StudyDocument after writing it out helps ensure this ordering.
 public class StudyXmlWriter implements Writer<Study>
 {
     public String getSelectionText()
     {
-        return "Study Export Manifest (study.xml)";
+        return null;
     }
 
     public void write(Study study, ExportContext ctx, VirtualFile fs) throws Exception

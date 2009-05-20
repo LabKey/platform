@@ -26,11 +26,14 @@ import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.xmlbeans.XmlException;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -55,9 +58,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.*;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
@@ -67,26 +68,16 @@ import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.DialogTemplate;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.util.Pair;
 import org.labkey.study.*;
-import org.labkey.study.security.permissions.ManageSpecimenActorsPermission;
-import org.labkey.study.security.permissions.ManageStudyPermission;
-import org.labkey.study.security.permissions.ManageRequestSettingsPermission;
-import org.labkey.study.writer.StudyWriter;
-import org.labkey.study.writer.FileSystemFile;
-import org.labkey.study.writer.ExportContext;
-import org.labkey.study.writer.ZipFile;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.samples.SpringSpecimenController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.client.Designer;
+import org.labkey.study.importer.DatasetImporter;
 import org.labkey.study.importer.StudyImporter;
 import org.labkey.study.importer.VisitMapImporter;
-import org.labkey.study.importer.DatasetImporter;
 import org.labkey.study.model.*;
 import org.labkey.study.pipeline.DatasetBatch;
 import org.labkey.study.pipeline.StudyPipeline;
@@ -96,15 +87,19 @@ import org.labkey.study.query.StudyPropertiesQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.reports.StudyReportUIProvider;
+import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.visitmanager.VisitManager;
+import org.labkey.study.writer.ExportContext;
+import org.labkey.study.writer.FileSystemFile;
+import org.labkey.study.writer.StudyWriter;
+import org.labkey.study.writer.ZipFile;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
-import org.springframework.web.multipart.MultipartFile;
 import org.xml.sax.SAXException;
-import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -3730,14 +3725,22 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ACL.PERM_ADMIN)
     public class ExportStudyAction extends FormViewAction<ExportForm>
     {
+        private ActionURL _successURL = null;
+
         public ModelAndView getView(ExportForm form, boolean reshow, BindException errors) throws Exception
         {
+            // In export-to-browser case, base action will attempt to reshow the view since we returned null as the success
+            // URL; returning null here causes the base action to stop pestering us. 
+            if (reshow)
+                return null;
+
             return new JspView<ExportForm>("/org/labkey/study/view/exportStudy.jsp", form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;
+            _appendManageStudy(root);
+            return root.addChild("Export Study");
         }
 
         public void validateCommand(ExportForm form, Errors errors)
@@ -3746,41 +3749,73 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(ExportForm form, BindException errors) throws Exception
         {
-            long start = System.currentTimeMillis();
-            File rootDir = PipelineService.get().findPipelineRoot(getContainer()).getRootPath();
-            File exportDir = new File(rootDir, "export");
+            Study study = getStudy();
+            StudyWriter writer = new StudyWriter(form.getTypes());
 
-            StudyWriter writer = new StudyWriter();
-            writer.write(getStudy(), new ExportContext(getUser(), getContainer()), new FileSystemFile(exportDir));
+            switch(form.getLocation())
+            {
+                case 0:
+                {
+                    File rootDir = PipelineService.get().findPipelineRoot(getContainer()).getRootPath();
+                    File exportDir = new File(rootDir, "export");
+                    writer.write(study, new ExportContext(getUser(), getContainer()), new FileSystemFile(exportDir));
+                    _successURL = new ActionURL(ManageStudyAction.class, getContainer());
+                    break;
+                }
+                case 1:
+                {
+                    File rootDir = PipelineService.get().findPipelineRoot(getContainer()).getRootPath();
+                    File exportDir = new File(rootDir, "export");
+                    exportDir.mkdir();
+                    ZipFile zip = new ZipFile(exportDir, study.getLabel() + ".zip");
+                    writer.write(study, new ExportContext(getUser(), getContainer()), zip);
+                    zip.close();
+                    _successURL = new ActionURL(ManageStudyAction.class, getContainer());
+                    break;
+                }
+                case 2:
+                {
+                    ZipFile zip = new ZipFile(getViewContext().getResponse(), study.getLabel() + ".zip");
+                    writer.write(study, new ExportContext(getUser(), getContainer()), zip);
+                    zip.close();
+                    break;
+                }
+            }
 
-            return true; //new HtmlView("Study \"" + getStudy().getLabel() + "\" was successfully exported to " + exportDir.getAbsolutePath() + " in " + (System.currentTimeMillis() - start)/1000.0 + " seconds." + "<br><br>" + PageFlowUtil.generateButton("Back", new ActionURL(ManageStudyAction.class, getContainer())));
+            return true;
         }
 
         public ActionURL getSuccessURL(ExportForm form)
         {
-            return new ActionURL(BeginAction.class, getContainer());
+            return _successURL;
         }
     }
 
     public static class ExportForm
     {
+        private String[] _types;
+        private int _location;
 
-    }
-
-    // TODO: Change to "Study Data Administrator" role?
-    @RequiresPermission(ACL.PERM_READ)
-    public class ExportZipAction extends ExportAction
-    {
-        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
+        public String[] getTypes()
         {
-            Study study = getStudy();
-            StudyWriter writer = new StudyWriter();
-            ZipFile zip = new ZipFile(response, study.getLabel() + ".zip");
-            writer.write(study, new ExportContext(getUser(), getContainer()), zip);
-            zip.close();
+            return _types;
+        }
+
+        public void setTypes(String[] types)
+        {
+            _types = types;
+        }
+
+        public int getLocation()
+        {
+            return _location;
+        }
+
+        public void setLocation(int location)
+        {
+            _location = location;
         }
     }
-
 
     @RequiresPermission(ACL.PERM_DELETE)
     public class PurgeDatasetAction extends SimpleRedirectAction
