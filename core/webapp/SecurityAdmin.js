@@ -18,6 +18,8 @@ var SecurityCacheStore = Ext.extend(LABKEY.ext.Store,{
     {
         SecurityCacheStore.superclass.constructor.call(this,config);
         this.addEvents("ready");
+        this.remoteSort = false;
+        
         // consider the component 'ready' after first successful load
         this.on("load", function()
         {
@@ -38,6 +40,11 @@ var SecurityCacheStore = Ext.extend(LABKEY.ext.Store,{
         {
             this.on("ready",fn,scope);
         }
+    },
+
+    onMetaChange : function(meta, rtype, o)
+    {
+        SecurityCacheStore.superclass.onMetaChange.apply(this, arguments);
     },
 
     removeById : function(id)
@@ -103,23 +110,13 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     groupDevelopers : -4,
 
 
-    principalsStore : new SecurityCacheStore(
-    {
-        id:'UserId',
-        schemaName:'core',
-        queryName:'Principals'
-    }),
+    principalsStore : null,
 
-    membershipStore : new SecurityCacheStore(
-    {
-        schemaName:'core',
-        queryName:'Members'
-    }),
+    membershipStore : null,
 
     containersReady : false,
     ContainerRecord : Ext.data.Record.create(['id','name','path','sortOrder']),
-    containersStore : new Ext.data.Store({id:'id'}, this.ContainerRecord),
-
+    containersStore : null,
 
     rolesReady : false,
     roles : null,
@@ -138,6 +135,32 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         SecurityCache.superclass.constructor.call(this,config);
         this.addEvents(['ready']);
         var container = config.project || LABKEY.container.id;
+
+
+        this.principalsStore = new SecurityCacheStore(
+        {
+            id:'UserId',
+            schemaName:'core',
+            queryName:'Principals'
+        });
+        this.principalsStore.on("loadexception", this._onLoadException, this);
+        this.principalsStore.on("metachange", function(store,meta)
+        {
+            meta.fields.push({name:'sortOrder',type:'string',mvEnabled:false});
+            var rtype = Ext.data.Record.create(meta.fields,'UserId');
+            store.fields = rtype.prototype.fields;
+            store.recordType = store.reader.recordType = rtype;
+        }, this);
+
+        this.membershipStore = new SecurityCacheStore(
+        {
+            schemaName:'core',
+            queryName:'Members'
+        });
+        this.membershipStore.on("loadexception", this._onLoadException, this);
+
+        this.containersStore = new Ext.data.Store({id:'id'}, this.ContainerRecord);
+
         S.getContainers({containerPath:container, includeSubfolders:true, successCallback:this._loadContainersResponse, errorCallback:this._errorCallback, scope:this});
         S.getRoles({containerPath:container, successCallback:this._loadRolesResponse, errorCallback:this._errorCallback, scope:this});
         this.principalsStore.load();
@@ -148,6 +171,10 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         this.membershipStore.load();
     },
 
+    _onLoadException : function(proxy, result, response, e)
+    {
+        console.log(e.message);   
+    },
 
     getRole : function(id)
     {
@@ -244,6 +271,14 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     {
 //        this.principalsStore.removeById(this.groupDevelopers);
 //        this.principalsStore.removeById(this.groupAdministrators);
+        // add a sortOrder field to each principal
+        this.principalsStore.data.each(function(item){
+            var data = item.data;
+            var major = data.Type == 'u' ? '3' : data.Container ? '2' : '1';
+            var minor = data.Name.toLowerCase();
+            data.sortOrder = major + "." + minor;
+        });
+        this.principalsStore.sort('sortOrder');
         this.checkReady();
     },
 
@@ -397,7 +432,6 @@ Ext.apply(ButtonGroup.prototype, {
             btn.el.removeClass("x-btn-over");
         }
     }
-
 });
 
 
@@ -409,8 +443,6 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
     {
         var i;
         
-        // UNDONE: ComboBox does not lend itself to filtering, but this is expensive!
-        // UNDONE: would be nice to share a filtered DataView like object across the PrincipalComboBoxes
         var a = config.excludedPrincipals || [];
         a.push(-4);//Developers
         a.push(-1);//Site Admin
@@ -418,24 +450,9 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
         this.excludedPrincipals = {};
         for (i=0 ; i<a.length ; i++)
             this.excludedPrincipals[a[i]] = true;
-
-        // CONSIDER only store UserId and lookup record in XTemplate
-        var ss = new Ext.data.SimpleStore({id:0, fields:[{name:'UserId'},{name:'Name'},{name:'Type'}]});
-        var data = [];
-        var records = config.cache.principalsStore.getRange();
-        for (i=0 ; i<records.length ; i++)
-        {
-            var d = records[i].data;
-            if (this.excludedPrincipals[d.UserId])
-                continue;
-            if (config.groupsOnly && d.Type!='g')
-                continue;
-            data.push([d.UserId,d.Name,d.Type=='u'?'u':d.Container?'g':'s']);
-        }
-        ss.loadData(data);
         
         config = Ext.apply({}, config, {
-            store : ss,
+            store : config.cache.principalsStore,
             mode : 'local',
             minListWidth : 200,
             triggerAction : 'all',
@@ -459,6 +476,31 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
             return c;
         }
     }),
+
+    bindStore : function(store, initial)
+    {
+        // UNDONE: ComboBox does not lend itself to filtering, but this is expensive!
+        // UNDONE: would be nice to share a filtered DataView like object across the PrincipalComboBoxes
+        // CONSIDER only store UserId and lookup record in XTemplate
+        if (store)
+        {
+            var ss = new Ext.data.SimpleStore({id:0, fields:[{name:'UserId'},{name:'Name'},{name:'Type'}]});
+            var data = [];
+            var records = store.getRange();
+            for (i=0 ; i<records.length ; i++)
+            {
+                var d = records[i].data;
+                if (this.excludedPrincipals[d.UserId])
+                    continue;
+                if (this.groupsOnly && d.Type!='g')
+                    continue;
+                data.push([d.UserId,d.Name,d.Type=='u'?'u':d.Container?'g':'s']);
+            }
+            ss.loadData(data);
+            store = ss;
+        }
+        PrincipalComboBox.superclass.bindStore.call(this,store,initial);
+    },
 
     initComponent : function()
     {
@@ -898,16 +940,27 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         // reload policy
         S.getPolicy({resourceId:this.resource.id, successCallback:this.setPolicy, scope:this});
         // feedback
-        // UNDONE: use MessageBox
-        var w = new Ext.Window({closeAction:'close', html:'<h3 style="color:green;">saved</h3>', border:false, closable:false});
-        w.show();
+        var mb = Ext.MessageBox.show({title : 'Save', msg:'<div align=center><h3 style="color:green;">save successful</h3></div>', width:150, animEl:this.saveButton});
+        var w = mb.getDialog();
+        var save = w.el.getStyles();
         w.el.pause(1);
-        w.el.fadeOut({callback:w.close, scope:w});
+        w.el.fadeOut({callback:function(){mb.hide(); w.el.addStyles(save);}, scope:mb});
+        this.enable();
     },
 
     saveFail : function(json, response, options)
     {
-        alert(json.exception || response.statusText || 'save failed');
+        var optimisticFail = false;
+        if (-1 != response.responseText.indexOf('OptimisticConflictException'))
+            optimisticFail = true;
+        if (-1 != json.exception.indexOf('has been altered by someone'))
+            optimisticFail = true;
+
+        // reload policy
+        if (optimisticFail)
+            S.getPolicy({resourceId:this.resource.id, successCallback:this.setPolicy, scope:this});
+
+        Ext.MessageBox.alert("Error", (json.exception || response.statusText || 'save failed'));
         this.enable();
     }
 });
