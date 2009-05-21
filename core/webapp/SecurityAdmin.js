@@ -59,43 +59,6 @@ var SecurityCacheStore = Ext.extend(LABKEY.ext.Store,{
 
 
 
-var UserInfoPopup = Ext.extend(Ext.Window,{
-    constructor : function(config)
-    {
-        //this.panel = new Ext.Panel({html:'hey'});
-        config = Ext.apply({},config,{
-            closeable : true,
-            closeAction : 'close',
-            constrain : true,
-            minWidth:200,
-            width:200,
-            height:200,
-            autoScroll:true,
-            minHeight:200
-        });
-        UserInfoPopup.superclass.constructor.call(this, config);
-    },
-
-    onRender : function(ct, where)
-    {
-        UserInfoPopup.superclass.onRender.call(this, ct, where);
-        var cache = this.cache;
-        var userId = this.userId;
-        var ct = this.body;
-        var user = this.cache.getPrincipal(userId);
-        var groups = this.cache.getGroupsFor(userId);
-        var html = ["<b>" + user.Name + "</b><br>"];
-        for (var g=0 ; g<groups.length ; g++)
-        {
-            var group = groups[g];
-            html.push(group.Name+"<br>");
-        }
-        var m = $dom.markup(html);
-        ct.update(m, false);
-    }
-});
-
-
 /*
  * SecurityCache consolidates a lot of the background data requests into one place, with one
  * onReady() event
@@ -115,7 +78,8 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     membershipStore : null,
 
     containersReady : false,
-    ContainerRecord : Ext.data.Record.create(['id','name','path','sortOrder']),
+    projectsReady : false,
+    ContainerRecord : Ext.data.Record.create(['id','name','path','sortOrder', {name:'project', type:'boolean'}]),
     containersStore : null,
 
     rolesReady : false,
@@ -127,6 +91,8 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     resourceMap : {},
     
     /*
+     * config just takes a project path/id 
+     *
      * fires "ready" when all the initially requested objects are loaded, subsequent loads
      * are handled with regular callbacks
      */
@@ -135,7 +101,6 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         SecurityCache.superclass.constructor.call(this,config);
         this.addEvents(['ready']);
         var container = config.project || LABKEY.container.id;
-
 
         this.principalsStore = new SecurityCacheStore(
         {
@@ -162,6 +127,8 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         this.containersStore = new Ext.data.Store({id:'id'}, this.ContainerRecord);
 
         S.getContainers({containerPath:container, includeSubfolders:true, successCallback:this._loadContainersResponse, errorCallback:this._errorCallback, scope:this});
+        S.getContainers({containerPath:'/', includeSubfolders:true, depth:1, successCallback:this._loadProjectsResponse, errorCallback:this._errorCallback, scope:this});
+
         S.getRoles({containerPath:container, successCallback:this._loadRolesResponse, errorCallback:this._errorCallback, scope:this});
         this.principalsStore.load();
         this.principalsStore.onReady(this.Principals_onReady, this);
@@ -199,6 +166,36 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         if (!user.groups)
             this.cacheGroups(user);
         return user.groups;
+    },
+
+    // array of ids
+    getEffectiveGroups : function(id)
+    {
+        var record = this.principalsStore.getById(id);
+        if (id == this.groupGuests || id == 0 || !record) // guest
+            return [0, this.groupGuests];
+        var set = {};
+        set['-3'] = true;
+        set['-2'] = true;
+        this.getGroupsFor(id);
+        this.collectGroups([record.data], set);
+        var ret = [];
+        for (var id  in set)
+            ret.push(id);
+        ret.sort();
+        return ret;
+    },
+
+    collectGroups : function(groups, set)
+    {
+        if (!groups)
+            return;
+        for (var g=0 ; g<groups.length ; g++)
+        {
+            var group = groups[g];
+            set[group.UserId] = true;
+            this.collectGroups(group.groups, set);
+        }
     },
 
     mapGroupToMembers : null,
@@ -251,6 +248,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     {
         if (this.principalsStore.ready &&
             this.containersReady &&
+            this.projectsReady &&
             this.rolesReady &&
             this.resourcesReady)
         {
@@ -317,14 +315,31 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         this.checkReady();
     },
 
+    _makeRecord : function(c)
+    {
+        c.project = c.path != '/' && 0 == c.path.lastIndexOf('/');
+        return new this.ContainerRecord(c,c.id);
+    },
+            
     _loadContainersResponse :function(r)
     {
         var map = this._mapContainers(null, [r], {});
         var records = [];
         for (var id in map)
-            records.push(new this.ContainerRecord(map[id],id))
+            records.push(this._makeRecord(map[id]));
         this.containersStore.add(records);
         this.containersReady = true;
+        this.checkReady();
+    },
+
+    _loadProjectsResponse : function(r)
+    {
+        var map = this._mapContainers(null, [r], {});
+        var records = [];
+        for (var id in map)
+            records.push(this._makeRecord(map[id]));
+        this.containersStore.add(records);
+        this.projectsReady = true;
         this.checkReady();
     },
 
@@ -342,6 +357,83 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         return map;                                                                                 
     }
 });
+
+
+
+
+/* config: cache, user or userId, and policy */
+
+var UserInfoPopup = Ext.extend(Ext.Window,{
+    constructor : function(config)
+    {
+        if (!config.user && config.userId)
+            config.user = config.cache.getPrincipal(config.userId);
+
+         //this.panel = new Ext.Panel({html:'hey'});
+        config = Ext.apply({},config,{
+            title:config.user.Name + ' Information',
+            closeable : true,
+            extraCls : 'extContainer',
+            closeAction : 'close',
+            constrain : true,
+            minWidth:200,
+            width:400,
+            height:300,
+            autoScroll:true,
+            minHeight:200
+        });
+        UserInfoPopup.superclass.constructor.call(this, config);
+    },
+
+    onRender : function(ct, where)
+    {
+        UserInfoPopup.superclass.onRender.call(this, ct, where);
+        var isGroup = this.user.Type == 'g';
+        
+        var html = ["<h3>" + (isGroup?'Group ':'User ') + this.user.Name + "</h3>"];
+
+        var groups = this.cache.getGroupsFor(this.userId);
+        if (groups.length)
+        {
+            html.push('<b>member of</b><ul style="list-style-type:none;">');
+            for (var g=0 ; g<groups.length ; g++)
+            {
+                var group = groups[g];
+                html.push("<li>" + group.Name + "</li>");
+                // UNDONE: also render inherited groups (indented)?
+            }
+            html.push("</ul>\n");
+        }
+
+        if (this.policy)
+        {
+            var ids = this.cache.getEffectiveGroups(this.userId);
+            var roles = this.policy.getEffectiveRolesForIds(ids);
+            html.push('<b>effective roles</b><ul style="list-style-type:none;">');
+            for (var r=0 ; r<roles.length ; r++)
+            {
+                var roleName = roles[r];
+                var role = this.cache.getRole(roleName);
+                html.push("<li>" + ((role && role.name) ? role.name : roleName) + "</li>");
+            }
+            html.push("</ul>\n");
+        }
+
+        if (isGroup)
+        {
+            html.push("<b>users</b><br>user list here...");
+        }
+
+        var m = $dom.markup(html);
+        this.body.update(m, false);
+    }
+});
+
+
+
+
+
+
 
 
 
@@ -384,6 +476,8 @@ var CloseButton = Ext.extend(Ext.Button,{
 
     onClose : function(event)
     {
+        if (this.disabled)
+            return;
         // can't seem to actually stop mousedown events, but we can disable the button
         //        event.stopEvent();
         this.stoppedEvent = event;
@@ -397,6 +491,8 @@ var CloseButton = Ext.extend(Ext.Button,{
         this.stoppedEvent = null;
     }
 });
+
+
 
 
 var ButtonGroup = function()
@@ -433,6 +529,9 @@ Ext.apply(ButtonGroup.prototype, {
         }
     }
 });
+
+
+
 
 
 var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
@@ -714,7 +813,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
 
             if (this.saveButton) // check if caller want's to omit the button
             {
-                this.saveButton = new Ext.Button({text:'Save', handler:this.save, scope:this});
+                this.saveButton = new Ext.Button({text:'Save', handler:this.SaveButton_onClick, scope:this});
                 this.saveButton.render(this.body);
                 this.add(this.saveButton);
             }
@@ -746,6 +845,9 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
                     this.addButton(group,role,false);
                 }
             }
+            // make selenium testing easiers
+            if (!$('policyRendered'))
+                $dom.insertHtml('beforeend', document.body, '<input type=hidden id="policyRendered" value="1">');
         }
         if (this.inheritedCheckbox.getValue())
             this.disable();
@@ -757,14 +859,16 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     // expects button to have roleId and groupId attribute
     Button_onClose : function(btn,event)
     {
-        this.removeRoleAssignment(btn.groupId, btn.roleId);
+        if (!this.inheritedCheckbox.getValue())
+            this.removeRoleAssignment(btn.groupId, btn.roleId);
     },
 
 
     Button_onClick : function(btn,event)
     {
         var id = btn.groupId;
-        var w = new UserInfoPopup({userId:id, cache:this.cache});
+        var policy = this.inheritedCheckbox.getValue() ? this.inheritedPolicy : this.policy;
+        var w = new UserInfoPopup({userId:id, cache:this.cache, policy:policy});
         w.show();
     },
 
@@ -923,16 +1027,30 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     },
 
 
-    /* save probably belongs in a wrapper form */
 
-    save : function()
+    /*
+     * SAVE
+     */
+    
+    SaveButton_onClick : function(e)
     {
+        this.save(false);
+    },
+
+    save : function(overwrite)
+    {
+        Ext.removeNode(document.getElementById('policyRendered'));
+        
         var policy = this.getPolicy();
         this.disable();
         if (!policy)
             S.deletePolicy({resourceId:this.resource.id, successCallback:this.saveSuccess, errorCallback:this.saveFail, scope:this});
         else
+        {
+            if (overwrite)
+                policy.setModified(null);
             S.savePolicy({policy:policy, successCallback:this.saveSuccess, errorCallback:this.saveFail, scope:this});
+        }
     },
 
     saveSuccess : function()
@@ -945,7 +1063,6 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         var save = w.el.getStyles();
         w.el.pause(1);
         w.el.fadeOut({callback:function(){mb.hide(); w.el.addStyles(save);}, scope:mb});
-        this.enable();
     },
 
     saveFail : function(json, response, options)
@@ -956,9 +1073,13 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         if (-1 != json.exception.indexOf('has been altered by someone'))
             optimisticFail = true;
 
-        // reload policy
         if (optimisticFail)
+        {
+            // UNDONE: prompt for overwrite
+            Ext.MessageBox.alert("Error", (json.exception || response.statusText || 'save failed'));
             S.getPolicy({resourceId:this.resource.id, successCallback:this.setPolicy, scope:this});
+            return;
+        }
 
         Ext.MessageBox.alert("Error", (json.exception || response.statusText || 'save failed'));
         this.enable();
