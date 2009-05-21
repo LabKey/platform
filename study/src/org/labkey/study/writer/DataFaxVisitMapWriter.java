@@ -46,16 +46,6 @@ public class DataFaxVisitMapWriter implements Writer<Visit[]>
         StudyDocument.Study.Visits visitsXml = studyXml.addNewVisits();
         visitsXml.setFile(FILENAME);
 
-        for (Visit visit : visits)
-        {
-            if (!visit.isShowByDefault())
-            {
-                StudyDocument.Study.Visits.Visit visitXml = visitsXml.addNewVisit();
-                visitXml.setSequenceNum(visit.getSequenceNumMin());
-                visitXml.setShowByDefault(false);
-            }
-        }
-
         PrintWriter out = fs.getPrintWriter(FILENAME);
 
         try
@@ -84,10 +74,13 @@ public class DataFaxVisitMapWriter implements Writer<Visit[]>
                 if (null != v.getLabel())
                     out.print(v.getLabel());
 
-                out.printf("|||||");
+                // TODO: out.print(v.getVisitDateDatasetId()) 
+
+                out.print("|||||");
 
                 String s = "";
 
+                // Required datasets
                 for (VisitDataSet vd : vds)
                 {
                     if (vd.isRequired())
@@ -99,10 +92,12 @@ public class DataFaxVisitMapWriter implements Writer<Visit[]>
                 }
 
                 out.print("|");
+                s = "";
 
+                // Optional datasets
                 for (VisitDataSet vd : vds)
                 {
-                    if (vd.isRequired())
+                    if (!vd.isRequired())
                     {
                         out.print(s);
                         out.print(vd.getDataSetId());

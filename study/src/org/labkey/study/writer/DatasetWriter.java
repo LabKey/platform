@@ -22,7 +22,9 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.VirtualFile;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.StudyDocument;
+import org.labkey.study.xml.DatasetsDocument;
 import org.labkey.study.xml.StudyDocument.Study.Datasets;
 import org.apache.log4j.Logger;
 
@@ -31,8 +33,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * User: adam
@@ -43,6 +44,7 @@ public class DatasetWriter implements Writer<Study>
 {
     private static final Logger LOG = Logger.getLogger(DatasetWriter.class);
     private static final String DEFAULT_DIRECTORY = "datasets";
+    private static final String MANIFEST_FILENAME = "datasets.xml";
 
     public String getSelectionText()
     {
@@ -54,10 +56,47 @@ public class DatasetWriter implements Writer<Study>
         StudyDocument.Study studyXml = ctx.getStudyXml();
         Datasets datasetsXml = studyXml.addNewDatasets();
         datasetsXml.setDir(DEFAULT_DIRECTORY);
+        datasetsXml.setFile(MANIFEST_FILENAME);
 
         VirtualFile fs = root.getDir(DEFAULT_DIRECTORY);
-
         DataSetDefinition[] datasets = study.getDataSets();
+
+        DatasetsDocument manifestXml = DatasetsDocument.Factory.newInstance();
+        DatasetsDocument.Datasets dsXml = manifestXml.addNewDatasets();
+        dsXml.setDefaultDateFormat(StudyManager.getInstance().getDefaultDateFormatString(ctx.getContainer()));
+        dsXml.setDefaultNumberFormat(StudyManager.getInstance().getDefaultNumberFormatString(ctx.getContainer()));
+        DatasetsDocument.Datasets.Datasets2 datasets2Xml = dsXml.addNewDatasets();
+
+        Set<String> categories = new LinkedHashSet<String>();
+
+        for (DataSetDefinition def : datasets)
+        {
+            DatasetsDocument.Datasets.Datasets2.Dataset datasetXml = datasets2Xml.addNewDataset();
+            datasetXml.setId(def.getDataSetId());
+
+            if (null != def.getCohort())
+                datasetXml.setCohort(def.getCohort().getLabel());
+
+            // Default value is "true"
+            if (!def.isShowByDefault())
+                datasetXml.setShowByDefault(def.isShowByDefault());
+
+            String category = def.getCategory();
+
+            if (null != category)
+            {
+                categories.add(category);
+                datasetXml.setCategory(category);
+            }
+        }
+
+        if (!categories.isEmpty())
+        {
+            DatasetsDocument.Datasets.Categories categoriesXml = dsXml.addNewCategories();
+            categoriesXml.setCategoryArray(categories.toArray(new String[categories.size()]));
+        }
+
+        StudyXmlWriter.saveDoc(fs.getPrintWriter(MANIFEST_FILENAME), manifestXml);
 
         // Write out the schema.tsv file and add reference & attributes to study.xml
         SchemaWriter schemaWriter = new SchemaWriter();

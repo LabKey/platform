@@ -26,6 +26,7 @@ import org.labkey.study.visitmanager.VisitManager;
 
 import java.sql.SQLException;
 import java.util.*;
+import java.io.File;
 
 /**
  * User: brittp
@@ -40,9 +41,37 @@ public class VisitMapImporter
             public VisitMapReader getReader()
             {
                 return new DataFaxVisitMapReader();
+            }
+
+            public String getExtension()
+            {
+                return ".txt";
+            }},
+
+        Xml {
+            public VisitMapReader getReader()
+            {
+                return new XmlVisitMapReader();
+            }
+
+            public String getExtension()
+            {
+                return ".xml";
             }};
 
         abstract public VisitMapReader getReader();
+        abstract public String getExtension();
+
+        static Format getFormat(File visitMapFile)
+        {
+            String name = visitMapFile.getName();
+
+            for (Format format : Format.values())
+                if (name.endsWith(format.getExtension()))
+                    return format;
+
+            throw new IllegalStateException("Unknown visit map extension for file " + name);
+        }
     }
 
     public boolean process(User user, Study study, String content, Format format, List<String> errors) throws SQLException
@@ -93,6 +122,7 @@ public class VisitMapImporter
     private void saveVisits(User user, Study study, List<VisitMapRecord> records) throws SQLException
     {
         VisitManager visitManager = StudyManager.getInstance().getVisitManager(study);
+
         for (VisitMapRecord record : records)
         {
             Visit visit = visitManager.findVisitBySequence(record.getSequenceNumMin());
@@ -144,8 +174,8 @@ public class VisitMapImporter
     {
         // NOTE: the only visit map setting for now is REQUIRED/OPTIONAL so...
         Container container = study.getContainer();
-        Map<VisitMapKey,Boolean> requiredMapCurr = StudyManager.getInstance().getRequiredMap(study);
-        Map<VisitMapKey,Boolean> requiredMapNew = new HashMap<VisitMapKey, Boolean>();
+        Map<VisitMapKey, Boolean> requiredMapCurr = StudyManager.getInstance().getRequiredMap(study);
+        Map<VisitMapKey, Boolean> requiredMapNew = new HashMap<VisitMapKey, Boolean>();
 
         for (VisitMapRecord record : records)
         {

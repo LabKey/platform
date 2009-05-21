@@ -3767,7 +3767,7 @@ public class StudyController extends BaseStudyController
                     File rootDir = PipelineService.get().findPipelineRoot(getContainer()).getRootPath();
                     File exportDir = new File(rootDir, "export");
                     exportDir.mkdir();
-                    ZipFile zip = new ZipFile(exportDir, study.getLabel() + ".zip");
+                    ZipFile zip = new ZipFile(exportDir, study.getLabel() + "_" + StudyPipeline.getTimestamp() + ".zip");
                     writer.write(study, new ExportContext(getUser(), getContainer()), zip);
                     zip.close();
                     _successURL = new ActionURL(ManageStudyAction.class, getContainer());
@@ -3775,7 +3775,7 @@ public class StudyController extends BaseStudyController
                 }
                 case 2:
                 {
-                    ZipFile zip = new ZipFile(getViewContext().getResponse(), study.getLabel() + ".zip");
+                    ZipFile zip = new ZipFile(getViewContext().getResponse(), study.getLabel() + "_" + StudyPipeline.getTimestamp() + ".zip");
                     writer.write(study, new ExportContext(getUser(), getContainer()), zip);
                     zip.close();
                     break;

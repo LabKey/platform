@@ -61,22 +61,21 @@ public class QueryWriter implements Writer<Study>
                 sql.println(query.getSql());
                 sql.close();
 
-                QueryType qtDoc = QueryType.Factory.newInstance();
-                qtDoc.setDescription(query.getDescription());
-                qtDoc.setHidden(query.isHidden());
-                qtDoc.setSchemaName(query.getSchemaName());
+                QueryDocument qDoc = QueryDocument.Factory.newInstance();
+                QueryType queryXml = qDoc.addNewQuery();
+                queryXml.setName(query.getName());
+                queryXml.setDescription(query.getDescription());
+                if (query.isHidden())
+                    queryXml.setHidden(true);
+                queryXml.setSchemaName(query.getSchemaName());
 
                 if (null != query.getMetadataXml())
                 {
                     XmlObject xObj = XmlObject.Factory.parse(query.getMetadataXml());
-                    qtDoc.setMetadata(xObj);
+                    queryXml.setMetadata(xObj);
                 }
 
-                QueryDocument qDoc = QueryDocument.Factory.newInstance();
-                qDoc.setQuery(qtDoc);
-
-                PrintWriter pw = queriesDir.getPrintWriter(query.getName() + META_FILE_EXTENSION);
-                StudyXmlWriter.saveDoc(pw, qDoc);
+                StudyXmlWriter.saveDoc(queriesDir.getPrintWriter(query.getName() + META_FILE_EXTENSION), qDoc);
             }
         }
     }

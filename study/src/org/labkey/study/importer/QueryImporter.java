@@ -68,8 +68,8 @@ public class QueryImporter
 
             for (File sqlFile : sqlFiles)
             {
-                String queryName = sqlFile.getName().substring(0, sqlFile.getName().length() - QueryWriter.FILE_EXTENSION.length());
-                String metaFileName = queryName + QueryWriter.META_FILE_EXTENSION;
+                String baseFilename = sqlFile.getName().substring(0, sqlFile.getName().length() - QueryWriter.FILE_EXTENSION.length());
+                String metaFileName = baseFilename + QueryWriter.META_FILE_EXTENSION;
                 File metaFile = metaFiles.get(metaFileName);
 
                 if (null == metaFile)
@@ -79,12 +79,12 @@ public class QueryImporter
                 QueryType queryXml = QueryDocument.Factory.parse(metaFile).getQuery();
 
                 // For now, just delete if a query by this name already exists.  TODO: Merge
-                QueryDefinition oldQuery = QueryService.get().getQueryDef(ctx.getContainer(), queryXml.getSchemaName(), queryName);
+                QueryDefinition oldQuery = QueryService.get().getQueryDef(ctx.getContainer(), queryXml.getSchemaName(), queryXml.getName());
 
                 if (null != oldQuery)
                     oldQuery.delete(ctx.getUser());
 
-                QueryDefinition newQuery = QueryService.get().createQueryDef(ctx.getContainer(), queryXml.getSchemaName(), queryName);
+                QueryDefinition newQuery = QueryService.get().createQueryDef(ctx.getContainer(), queryXml.getSchemaName(), queryXml.getName());
                 newQuery.setSql(sql);
                 newQuery.setDescription(queryXml.getDescription());
 
@@ -94,7 +94,7 @@ public class QueryImporter
                 newQuery.save(ctx.getUser(), ctx.getContainer());
             }
 
-            // TODO: Remove meta data files from map on each save and check for map.size == 0
+            // TODO: As a check, remove meta data files from map on each save and check for map.size == 0
         }
     }
 }

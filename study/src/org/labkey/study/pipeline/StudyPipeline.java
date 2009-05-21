@@ -115,11 +115,17 @@ public class StudyPipeline extends PipelineProvider
 
     public static File logForInputFile(File f)
     {
-        String path = f.getPath();
+        return new File(f.getPath() + "_" + getTimestamp() + ".log");
+    }
+
+
+    public static String getTimestamp()
+    {
         String time = DateUtil.toISO(currentSeconds(), false);
         time = time.replace(":", "-");
         time = time.replace(" ", "_");
-        return new File(path + "_" + time + ".log");
+
+        return time;
     }
 
 

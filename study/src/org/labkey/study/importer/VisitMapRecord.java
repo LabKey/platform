@@ -35,18 +35,37 @@ import java.util.StringTokenizer;
 class VisitMapRecord
 {
     private int _visitRowId = -1;
-    private double _sequenceNumberMin = 0;
-    private double _sequenceNumberMax = 0;
-    private Visit.Type _visitType;
-    private String _visitLabel;
-    private int _visitDatePlate = -1;
-    private String _visitDateField;
-    private int _visitDueDay = -1;
-    private int _visitOverdueAllowance = -1;
-    private int[] _requiredPlates;
-    private int[] _optionalPlates;
-    private int _missedNotificationPlate = -1;
-    private String _terminationWindow;
+
+    private final double _sequenceNumberMin;
+    private final double _sequenceNumberMax;
+    private final Visit.Type _visitType;
+    private final String _visitLabel;
+    private final int _visitDatePlate;
+    private final String _visitDateField;
+    private final int _visitDueDay;
+    private final int _visitOverdueAllowance;
+    private final int[] _requiredPlates;
+    private final int[] _optionalPlates;
+    private final int _missedNotificationPlate;
+    private final String _terminationWindow;
+
+    public VisitMapRecord(double sequenceNumberMin, double sequenceNumberMax, String visitType, String visitLabel, int visitDatePlate, int[] requiredPlates, int[] optionalPlates)
+    {
+        _sequenceNumberMin = sequenceNumberMin;
+        _sequenceNumberMax = sequenceNumberMax;
+        _visitType = getType(visitType);
+        _visitLabel = visitLabel;
+        _visitDatePlate = visitDatePlate;
+        _requiredPlates = requiredPlates;
+        _optionalPlates = optionalPlates;
+
+        // These are not currently used
+        _visitDateField = null;
+        _visitDueDay =  -1;
+        _visitOverdueAllowance = -1;
+        _missedNotificationPlate = -1;
+        _terminationWindow = null;
+    }
 
     public VisitMapRecord(Map record)
     {

@@ -34,7 +34,7 @@ public class VisitMapWriter implements Writer<Study>
 
     public void write(Study study, ExportContext ctx, VirtualFile fs) throws IOException
     {
-        DataFaxVisitMapWriter writer = new DataFaxVisitMapWriter();
+        XmlVisitMapWriter writer = new XmlVisitMapWriter();
         writer.write(study.getVisits(), ctx, fs);
     }
 }

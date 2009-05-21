@@ -15,19 +15,16 @@
  */
 package org.labkey.study.importer;
 
-import org.labkey.study.xml.StudyDocument;
-import org.labkey.study.visitmanager.VisitManager;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Visit;
-import org.labkey.study.model.Study;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.study.model.Study;
+import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
-import java.io.IOException;
 import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * User: adam
@@ -52,7 +49,7 @@ public class VisitImporter
                 VisitMapImporter importer = new VisitMapImporter();
                 List<String> errorMsg = new LinkedList<String>();
 
-                if (!importer.process(ctx.getUser(), study, content, VisitMapImporter.Format.DataFax, errorMsg))
+                if (!importer.process(ctx.getUser(), study, content, VisitMapImporter.Format.getFormat(visitMap), errorMsg))
                 {
                     for (String error : errorMsg)
                         errors.reject("uploadVisitMap", error);
@@ -61,6 +58,7 @@ public class VisitImporter
                 }
             }
 
+/*         TODO: Cohort, visibility
             VisitManager visitManager = StudyManager.getInstance().getVisitManager(study);
 
             for (StudyDocument.Study.Visits.Visit visitXml : visitsXml.getVisitArray())
@@ -72,6 +70,7 @@ public class VisitImporter
                 mutable.setShowByDefault(visitXml.getShowByDefault());
                 StudyManager.getInstance().updateVisit(ctx.getUser(), mutable);
             }
+*/
         }
 
         return true;
