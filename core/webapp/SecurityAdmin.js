@@ -403,14 +403,39 @@ Ext.apply(ButtonGroup.prototype, {
 
 var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
 
-    hiddenPrincipals : {},
+    excludedPrincipals : null,
 
     constructor : function(config)
     {
-        // each combo gets its own template so we can change the hidden list
+        var i;
+        
+        // UNDONE: ComboBox does not lend itself to filtering, but this is expensive!
+        // UNDONE: would be nice to share a filtered DataView like object across the PrincipalComboBoxes
+        var a = config.excludedPrincipals || [];
+        a.push(-4);//Developers
+        a.push(-1);//Site Admin
+        delete config.excludedPrincipals;
+        this.excludedPrincipals = {};
+        for (i=0 ; i<a.length ; i++)
+            this.excludedPrincipals[a[i]] = true;
 
-        var config = Ext.apply({}, config, {
-            store : config.cache.principalsStore,
+        // CONSIDER only store UserId and lookup record in XTemplate
+        var ss = new Ext.data.SimpleStore({id:0, fields:[{name:'UserId'},{name:'Name'},{name:'Type'}]});
+        var data = [];
+        var records = config.cache.principalsStore.getRange();
+        for (i=0 ; i<records.length ; i++)
+        {
+            var d = records[i].data;
+            if (this.excludedPrincipals[d.UserId])
+                continue;
+            if (config.groupsOnly && d.Type!='g')
+                continue;
+            data.push([d.UserId,d.Name,d.Type=='u'?'u':d.Container?'g':'s']);
+        }
+        ss.loadData(data);
+        
+        config = Ext.apply({}, config, {
+            store : ss,
             mode : 'local',
             minListWidth : 200,
             triggerAction : 'all',
@@ -420,45 +445,21 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
             emptyText : config.groupsOnly ? 'Add group..,' : 'Add user or group...'
         });
         PrincipalComboBox.superclass.constructor.call(this, config);
-
-        var a = config.hidePrincipals || [-1,-4];
-        for (var i=0 ; i<a.length ; i++)
-            this.hiddenPrincipals[a[i]] = true;
     },
 
-    tpl : new Ext.XTemplate('<tpl for="."><div class="x-combo-list-item {[this.extraClass(values.Type,values.Container)]}">{Name}</div></tpl>',
+    tpl : new Ext.XTemplate('<tpl for="."><div class="x-combo-list-item {[this.extraClass(values.Type)]}">{Name}</div></tpl>',
     {
-        typeName : function(type,container)
-        {
-            return type=='u' ? 'user' : 'group';
-        },
         extraClass : function(type,container)
         {
             var c = 'pGroup';
             if (type == 'u')
                 c = 'pUser';
-            else if (!container)
+            else if (type == 's')
                 c = 'pSite';
             return c;
         }
     }),
 
-    // HACK there is no place to modify the DataView, but I want to change collectData() for filtering
-    bindStore : function(store, initial)
-    {
-        // override collectData() to provide for filtering
-        var me = this;
-        this.view.collectData = function(records, startIndex){
-            var hidden = me.hiddenPrincipals;
-            var r = [];
-            for (var i = 0, len = records.length; i < len; i++)
-                if (!hidden[records[i].id])
-                    r.push(records[i].data);
-            return r;
-        };
-        PrincipalComboBox.superclass.bindStore.call(this, store, initial);
-    },
-    
     initComponent : function()
     {
         PrincipalComboBox.superclass.initComponent.call(this);
@@ -680,7 +681,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
             {
                 role = this.roles[r];
                 ct = Ext.fly(role.uniqueName);
-                var c = new PrincipalComboBox({cache:this.cache, id:('$add$'+role.uniqueName), roleId:role.uniqueName});
+                var c = new PrincipalComboBox({cache:this.cache, id:('$add$'+role.uniqueName), roleId:role.uniqueName, excludedPrincipals:role.excludedPrincipals});
                 c.on("select", this.Combo_onSelect, this);
                 c.render(ct);
                 this.add(c);
