@@ -143,7 +143,11 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
     {
         var ids = this.getGroupsForPrincipal(principalId, membershipsTable);
         ids.push(principalId);
+        return this.getEffectiveRolesForIds(ids);
+    },
 
+    getEffectiveRolesForIds : function(ids)
+    {
         var idxAssgn, assgn, idxIds;
         var roles = [];
         for (idxAssgn = 0; idxAssgn < this.policy.assignments.length; ++idxAssgn)
@@ -157,6 +161,7 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
         }
         return roles;
     },
+
 
     getGroupsForPrincipal : function(principalId, membershipsTable)
     {
