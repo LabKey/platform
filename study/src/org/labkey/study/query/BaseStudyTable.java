@@ -36,7 +36,7 @@ public abstract class BaseStudyTable extends FilteredTable
     protected ColumnInfo addWrapParticipantColumn(String rootTableColumnName)
     {
         ColumnInfo participantColumn = new AliasedColumn(this, "ParticipantId", _rootTable.getColumn(rootTableColumnName));
-        participantColumn.setFk(new QueryForeignKey(_schema, "Participant", "ParticipantID", null));
+        participantColumn.setFk(new QueryForeignKey(_schema, "Participant", "ParticipantId", null));
         participantColumn.setKeyField(true);
         return addColumn(participantColumn);
     }
