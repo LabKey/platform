@@ -332,6 +332,10 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
 
     tpl : new Ext.XTemplate('<tpl for="."><div class="x-combo-list-item {[this.extraClass(values.Type,values.Container)]}">{Name}</div></tpl>',
     {
+        typeName : function(type,container)
+        {
+            return type=='u' ? 'user' : 'group';
+        },                              
         extraClass : function(type,container)
         {
             var c = 'pGroup';
@@ -770,12 +774,12 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         var policy = this.getPolicy();
         this.disable();
         if (!policy)
-            S.deletePolicy({resourceId:this.resource.id, successCallback:function(){this.afterSave();}, failureCallback:function(){alert('fail'); this.afterSave();}, scope:this});
+            S.deletePolicy({resourceId:this.resource.id, successCallback:this.saveSuccess, errorCallback:this.saveFail, scope:this});
         else
-            S.savePolicy({policy:policy, successCallback:function(){this.afterSave();}, failureCallback:function(){alert('fail'); this.afterSave();}, scope:this});
+            S.savePolicy({policy:policy, successCallback:this.saveSuccess, errorCallback:this.saveFail, scope:this});
     },
 
-    afterSave : function()
+    saveSuccess : function()
     {
         // reload policy
         S.getPolicy({resourceId:this.resource.id, successCallback:this.setPolicy, scope:this});
@@ -784,6 +788,12 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         w.show();
         w.el.pause(1);
         w.el.fadeOut({callback:w.close, scope:w});
+    },
+
+    saveFail : function(json, response, options)
+    {
+        alert(json.exception || response.statusText || 'save failed');
+        this.enable();
     },
 
     _corners : {tl:{radius:6}, tr:{radius:6}, bl:{radius:6}, br:{radius:6}, antiAlias:true}
