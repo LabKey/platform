@@ -383,7 +383,8 @@ public class SecurityPolicy
     public static SecurityPolicy fromMap(@NotNull Map<String,Object> map, @NotNull SecurableResource resource)
     {
         SecurityPolicy policy = new SecurityPolicy(resource);
-        policy._modified = new Date(DateUtil.parseDateTime((String)map.get("modified")));
+        String modified = (String)map.get("modified");
+        policy._modified = (modified == null || modified.length() == 0) ? null : new Date(DateUtil.parseDateTime(modified));
 
         //ensure that if there is a property called 'assignments', that it is indeed a list
         if(map.containsKey("assignments"))
