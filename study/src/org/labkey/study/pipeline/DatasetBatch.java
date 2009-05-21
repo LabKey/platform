@@ -27,10 +27,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.QCState;
-import org.labkey.study.model.Study;
-import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.*;
 
 import java.io.*;
 import java.sql.SQLException;
@@ -395,6 +392,7 @@ public class DatasetBatch extends StudyBatch implements Serializable
             _logInfo("Finish batch " + (null == _definitionFile ? "" : _definitionFile.getName()));
 
             getStudyManager().getVisitManager(getStudy()).updateParticipantVisits(getUser());
+
             try
             {
                 getStudyManager().updateParticipantCohorts(getUser(), getStudy());

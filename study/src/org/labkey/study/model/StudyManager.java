@@ -20,8 +20,8 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.commons.beanutils.converters.BooleanConverter;
+import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.StringUtils;
@@ -31,6 +31,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
+import org.labkey.api.collections.Cache;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpObject;
@@ -39,24 +41,24 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
-import org.labkey.api.security.*;
-import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.roles.RestrictedReaderRole;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.util.*;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.WebPartView;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.Cache;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
+import org.labkey.api.security.*;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.RestrictedReaderRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.WebPartView;
 import org.labkey.study.QueryHelper;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudyCache;
@@ -65,6 +67,7 @@ import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.designer.StudyDesignManager;
+import org.labkey.study.importer.DatasetImporter.ExtraImportProperties;
 import org.labkey.study.query.DataSetTable;
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.visitmanager.DateVisitManager;
@@ -73,8 +76,8 @@ import org.labkey.study.visitmanager.VisitManager;
 import org.springframework.validation.BindException;
 
 import javax.servlet.ServletException;
-import java.io.IOException;
 import java.io.File;
+import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
@@ -2441,17 +2444,17 @@ public class StudyManager
 
     public boolean bulkImportTypes(Study study, String tsv, User user, String labelColumn, String typeNameColumn, String typeIdColumn, BindException errors) throws IOException, SQLException
     {
-        return bulkImportTypes(study, new TabLoader(tsv, true), user, labelColumn, typeNameColumn, typeIdColumn, errors);
+        return bulkImportTypes(study, new TabLoader(tsv, true), user, labelColumn, typeNameColumn, typeIdColumn, null, errors);
     }
 
 
-    public boolean bulkImportTypes(Study study, File tsvFile, User user, String labelColumn, String typeNameColumn, String typeIdColumn, BindException errors) throws IOException, SQLException
+    public boolean bulkImportTypes(Study study, File tsvFile, User user, String labelColumn, String typeNameColumn, String typeIdColumn, Map<Integer, ExtraImportProperties> extraImportProps, BindException errors) throws IOException, SQLException
     {
-        return bulkImportTypes(study, new TabLoader(tsvFile, true), user, labelColumn, typeNameColumn, typeIdColumn, errors);
+        return bulkImportTypes(study, new TabLoader(tsvFile, true), user, labelColumn, typeNameColumn, typeIdColumn, extraImportProps, errors);
     }
 
 
-    private boolean bulkImportTypes(Study study, TabLoader loader, User user, String labelColumn, String typeNameColumn, String typeIdColumn, BindException errors) throws IOException, SQLException
+    private boolean bulkImportTypes(Study study, TabLoader loader, User user, String labelColumn, String typeNameColumn, String typeIdColumn, Map<Integer, ExtraImportProperties> extraImportProps, BindException errors) throws IOException, SQLException
     {
         loader.setParseQuotes(true);
         List<Map<String, Object>> mapsLoad = loader.load();
@@ -2486,13 +2489,25 @@ public class StudyManager
                     continue;
                 }
 
-                boolean isHidden = false;
-                String hiddenValue = (String)props.get("hidden");
-                if ("true".equalsIgnoreCase(hiddenValue))
-                    isHidden = true;
-
                 Integer typeId = (Integer) typeIdObj;
+                ExtraImportProperties extraProps = null != extraImportProps ? extraImportProps.get(typeId) : null;
+
+                boolean isHidden;
+
+                if (null != extraProps)
+                {
+                    isHidden = !extraProps.isShowByDefault();
+                }
+                else
+                {
+                    isHidden = false;
+                    String hiddenValue = (String)props.get("hidden");
+                    if ("true".equalsIgnoreCase(hiddenValue))
+                        isHidden = true;
+                }
+
                 DataSetImportInfo info = datasetInfoMap.get(typeId);
+
                 if (info != null)
                 {
                     if (!info.name.equals(typeName))
@@ -2585,7 +2600,8 @@ public class StudyManager
                 }
 
                 // Category field
-                String category = (String)props.get("Category");
+                String category = null != extraProps ? extraProps.getCategory() : (String)props.get("Category");
+
                 if (category != null && !"".equals(category))
                 {
                     if (info.category != null && !info.category.equalsIgnoreCase(category))
@@ -2599,7 +2615,6 @@ public class StudyManager
                         info.category = category;
                     }
                 }
-
 
                 mapsImport.add(props);
             }
@@ -2644,12 +2659,15 @@ public class StudyManager
 
                     // Check for name conflicts
                     DataSetDefinition existingDef = manager.getDataSetDefinition(study, label);
+
                     if (existingDef != null && existingDef.getDataSetId() != id)
                     {
                         errors.reject("bulkImportDataTypes", "A different dataset already exists with the label " + label);
                         return false;
                     }
+
                     existingDef = manager.getDataSetDefinitionByName(study, name);
+
                     if (existingDef != null && existingDef.getDataSetId() != id)
                     {
                         errors.reject("bulkImportDataTypes", "A different dataset already exists with the name " + name);
@@ -2658,6 +2676,7 @@ public class StudyManager
 
                     DataSetDefinition def = manager.getDataSetDefinition(study, id);
                     Container c = study.getContainer();
+
                     if (def == null)
                     {
                         def = new DataSetDefinition(study, id, name, label, null, getDomainURI(c, name));

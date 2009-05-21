@@ -4154,21 +4154,19 @@ public class StudyController extends BaseStudyController
         public boolean handlePost(ReorderForm form, BindException errors) throws Exception
         {
             String order = form.getOrder();
+
             if (order != null && order.length() > 0)
             {
-                String[] orderedIds = order.split(",");
-                for (int i = 0; i < orderedIds.length; i++)
-                {
-                    int id = Integer.parseInt(orderedIds[i]);
-                    DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), id);
-                    if (def.getDisplayOrder() != i)
-                    {
-                        def = def.createMutable();
-                        def.setDisplayOrder(i);
-                        StudyManager.getInstance().updateDataSetDefinition(getUser(), def);
-                    }
-                }
+                String[] ids = order.split(",");
+                List<Integer> orderedIds = new ArrayList<Integer>(ids.length);
+
+                for (String id : ids)
+                    orderedIds.add(Integer.parseInt(id));
+
+                DatasetReorderer reorderer = new DatasetReorderer(getStudy(), getUser());
+                reorderer.reorderDatasets(orderedIds);
             }
+
             return true;
         }
 

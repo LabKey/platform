@@ -16,8 +16,10 @@
 package org.labkey.study.importer;
 
 import org.labkey.study.xml.StudyDocument;
+import org.labkey.study.xml.DatasetsDocument;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.Study;
+import org.labkey.study.model.DatasetReorderer;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.pipeline.DatasetBatch;
 import org.labkey.api.data.Container;
@@ -26,10 +28,15 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.springframework.validation.BindException;
+import org.apache.xmlbeans.XmlException;
 
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * User: adam
@@ -38,7 +45,7 @@ import java.sql.SQLException;
  */
 public class DatasetImporter
 {
-    boolean process(Study study, ImportContext ctx, File root, BindException errors) throws IOException, SQLException, StudyImporter.DatasetLockExistsException
+    boolean process(Study study, ImportContext ctx, File root, BindException errors) throws IOException, SQLException, StudyImporter.DatasetLockExistsException, XmlException
     {
         StudyDocument.Study.Datasets datasetsXml = ctx.getStudyXml().getDatasets();
 
@@ -58,14 +65,57 @@ public class DatasetImporter
 
             if (schemaFile.exists())
             {
-                if (!StudyManager.getInstance().bulkImportTypes(study, schemaFile, ctx.getUser(), labelColumn, typeNameColumn, typeIdColumn, errors))
+                List<Integer> orderedIds = null;
+                Map<Integer, ExtraImportProperties> extraProps = null;
+
+                String datasetsXmlFilename = ctx.getStudyXml().getDatasets().getFile();
+
+                if (null != datasetsXmlFilename)
+                {
+                    File datasetsXmlFile = new File(datasetDir, datasetsXmlFilename);
+
+                    if (datasetsXmlFile.exists())
+                    {
+                        Container c = ctx.getContainer();
+                        DatasetsDocument datasetsDoc = DatasetsDocument.Factory.parse(datasetsXmlFile);
+                        DatasetsDocument.Datasets manifestDatasetsXml = datasetsDoc.getDatasets();
+
+                        if (manifestDatasetsXml.isSetDefaultDateFormat())
+                            if (manifestDatasetsXml.getDefaultDateFormat().equals(StudyManager.getInstance().getDefaultDateFormatString(c)))
+                                StudyManager.getInstance().setDefaultDateFormatString(c, manifestDatasetsXml.getDefaultDateFormat());
+
+                        if (manifestDatasetsXml.isSetDefaultNumberFormat())
+                            if (manifestDatasetsXml.getDefaultNumberFormat().equals(StudyManager.getInstance().getDefaultNumberFormatString(c)))
+                                StudyManager.getInstance().setDefaultNumberFormatString(c, manifestDatasetsXml.getDefaultNumberFormat());
+
+                        DatasetsDocument.Datasets.Datasets2.Dataset[] datasets = manifestDatasetsXml.getDatasets().getDatasetArray();
+
+                        orderedIds = new ArrayList<Integer>(datasets.length);
+                        extraProps = new HashMap<Integer, ExtraImportProperties>(datasets.length);
+
+                        for (DatasetsDocument.Datasets.Datasets2.Dataset dataset : datasets)
+                        {
+                            orderedIds.add(dataset.getId());
+                            ExtraImportProperties props = new ExtraImportProperties(dataset.getCategory(), dataset.getCohort(), dataset.getShowByDefault());
+                            extraProps.put(dataset.getId(), props);
+                        }
+                    }
+                }
+
+                if (!StudyManager.getInstance().bulkImportTypes(study, schemaFile, ctx.getUser(), labelColumn, typeNameColumn, typeIdColumn, extraProps, errors))
                     return false;
+
+                if (null != orderedIds)
+                {
+                    DatasetReorderer reorderer = new DatasetReorderer(study, ctx.getUser());
+                    reorderer.reorderDatasets(orderedIds);
+                }
 
                 File datasetFile = new File(datasetDir, datasetFilename);
 
                 if (datasetFile.exists())
                 {
-                    submitStudyBatch(study, datasetFile, ctx.getContainer(), ctx.getUser(), ctx.getUrl());
+                    submitStudyBatch(study, datasetFile, ctx.getContainer(), ctx.getUser(), ctx.getUrl());  // TODO: remove last param
                 }
             }
         }
@@ -89,5 +139,35 @@ public class DatasetImporter
 
         DatasetBatch batch = new DatasetBatch(new ViewBackgroundInfo(c, user, url), datasetFile);
         batch.submit();
+    }
+
+    // These dataset properties are defined in datasets.xml; the rest are specified in schema.tsv
+    public static class ExtraImportProperties
+    {
+        private String _category;
+        private String _cohort;
+        private boolean _showByDefault;
+
+        private ExtraImportProperties(String category, String cohort, boolean showByDefault)
+        {
+            _category = category;
+            _cohort = cohort;
+            _showByDefault = showByDefault;
+        }
+
+        public String getCategory()
+        {
+            return _category;
+        }
+
+        public String getCohort()
+        {
+            return _cohort;
+        }
+
+        public boolean isShowByDefault()
+        {
+            return _showByDefault;
+        }
     }
 }
