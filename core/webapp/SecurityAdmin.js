@@ -51,6 +51,44 @@ var SecurityCacheStore = Ext.extend(LABKEY.ext.Store,{
 });
 
 
+
+var UserInfoPopup = Ext.extend(Ext.Window,{
+    constructor : function(config)
+    {
+        //this.panel = new Ext.Panel({html:'hey'});
+        config = Ext.apply({},config,{
+            closeable : true,
+            closeAction : 'close',
+            constrain : true,
+            minWidth:200,
+            width:200,
+            height:200,
+            autoScroll:true,
+            minHeight:200
+        });
+        UserInfoPopup.superclass.constructor.call(this, config);
+    },
+
+    onRender : function(ct, where)
+    {
+        UserInfoPopup.superclass.onRender.call(this, ct, where);
+        var cache = this.cache;
+        var userId = this.userId;
+        var ct = this.body;
+        var user = this.cache.getPrincipal(userId);
+        var groups = this.cache.getGroupsFor(userId);
+        var html = ["<b>" + user.Name + "</b><br>"];
+        for (var g=0 ; g<groups.length ; g++)
+        {
+            var group = groups[g];
+            html.push(group.Name+"<br>");
+        }
+        var m = $dom.markup(html);
+        ct.update(m, false);
+    }
+});
+
+
 /*
  * SecurityCache consolidates a lot of the background data requests into one place, with one
  * onReady() event
@@ -125,6 +163,56 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         return null;
     },
 
+    getGroupsFor : function(id)
+    {
+        var record = this.principalsStore.getById(id);
+        if (!record)
+            return [];
+        var user = record.data;
+        if (!user.groups)
+            this.cacheGroups(user);
+        return user.groups;
+    },
+
+    mapGroupToMembers : null,
+    mapPrincipalToGroups : null,
+
+    cacheGroups : function(user)
+    {
+        if (!this.mapPrincipalToGroups)
+            this._computeMembershipMaps();
+        var ids = this.mapPrincipalToGroups[user.UserId] || [];
+        var groups = [];
+        for (var i=0 ; i<ids.length ; i++)
+        {
+            var id = ids[i];
+            var record = this.principalsStore.getById(id);
+            if (!record)
+                continue;
+            var group = record.data;
+            groups.push(group);
+            if (!group.groups)
+                this.cacheGroups(group);
+        }
+        user.groups = groups;
+    },
+
+    _computeMembershipMaps : function()
+    {
+        var groups = {};
+        var members = {};
+        
+        this.membershipStore.each(function(item){
+            var uid = item.data.UserId;
+            var gid = item.data.GroupId;
+            groups[uid] ? groups[uid].push(gid) : groups[uid]=[gid];
+            members[gid] ? members[gid].push(uid) : members[gid]=[uid];
+        });
+
+        this.mapGroupToMembers = members;
+        this.mapPrincipalToGroups = groups;
+    },
+
     getResource : function(id)
     {
         return this.resourceMap[id];
@@ -154,8 +242,8 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
 
     Principals_onReady : function()
     {
-        this.principalsStore.removeById(this.groupDevelopers);
-        this.principalsStore.removeById(this.groupAdministrators);
+//        this.principalsStore.removeById(this.groupDevelopers);
+//        this.principalsStore.removeById(this.groupAdministrators);
         this.checkReady();
     },
 
@@ -315,8 +403,12 @@ Ext.apply(ButtonGroup.prototype, {
 
 var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
 
+    hiddenPrincipals : {},
+
     constructor : function(config)
     {
+        // each combo gets its own template so we can change the hidden list
+
         var config = Ext.apply({}, config, {
             store : config.cache.principalsStore,
             mode : 'local',
@@ -328,6 +420,10 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
             emptyText : config.groupsOnly ? 'Add group..,' : 'Add user or group...'
         });
         PrincipalComboBox.superclass.constructor.call(this, config);
+
+        var a = config.hidePrincipals || [-1,-4];
+        for (var i=0 ; i<a.length ; i++)
+            this.hiddenPrincipals[a[i]] = true;
     },
 
     tpl : new Ext.XTemplate('<tpl for="."><div class="x-combo-list-item {[this.extraClass(values.Type,values.Container)]}">{Name}</div></tpl>',
@@ -335,7 +431,7 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
         typeName : function(type,container)
         {
             return type=='u' ? 'user' : 'group';
-        },                              
+        },
         extraClass : function(type,container)
         {
             var c = 'pGroup';
@@ -347,6 +443,22 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
         }
     }),
 
+    // HACK there is no place to modify the DataView, but I want to change collectData() for filtering
+    bindStore : function(store, initial)
+    {
+        // override collectData() to provide for filtering
+        var me = this;
+        this.view.collectData = function(records, startIndex){
+            var hidden = me.hiddenPrincipals;
+            var r = [];
+            for (var i = 0, len = records.length; i < len; i++)
+                if (!hidden[records[i].id])
+                    r.push(records[i].data);
+            return r;
+        };
+        PrincipalComboBox.superclass.bindStore.call(this, store, initial);
+    },
+    
     initComponent : function()
     {
         PrincipalComboBox.superclass.initComponent.call(this);
@@ -608,7 +720,9 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
 
     Button_onClick : function(btn,event)
     {
-        alert('click ' + btn.groupId);
+        var id = btn.groupId;
+        var w = new UserInfoPopup({userId:id, cache:this.cache});
+        w.show();
     },
 
 
@@ -663,7 +777,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         var btnEl = Ext.fly(btnId);
 
         var br = Ext.get('$br$' + roleId);  // why doesn't Ext.fly() work?
-        if (true == animate)
+        if (typeof animate == 'boolean' && animate)
         {
             var body = Ext.getBody();
             var combo = this.getComponent('$add$' + roleId);
@@ -690,7 +804,6 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         b.on("close", this.Button_onClose, this);
         b.on("click", this.Button_onClick, this);
         b.render(ct, br);
-//        b.el.hover(this.highlightGroup.createDelegate(this,[groupId]), Ext.emptyFn, this);
         br.insertHtml("beforebegin"," ");
 
         if (typeof animate == 'string')
@@ -784,6 +897,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         // reload policy
         S.getPolicy({resourceId:this.resource.id, successCallback:this.setPolicy, scope:this});
         // feedback
+        // UNDONE: use MessageBox
         var w = new Ext.Window({closeAction:'close', html:'<h3 style="color:green;">saved</h3>', border:false, closable:false});
         w.show();
         w.el.pause(1);
@@ -794,95 +908,5 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     {
         alert(json.exception || response.statusText || 'save failed');
         this.enable();
-    },
-
-    _corners : {tl:{radius:6}, tr:{radius:6}, bl:{radius:6}, br:{radius:6}, antiAlias:true}
+    }
 });
-
-
-/*
-
-
-// use a Store just for events
-var ContainerRecord = Ext.data.Record.create(['id','name','path','sortOrder']);
-var containers = new Ext.data.Store({id:'id'}, ContainerRecord);
-
-var getContainer = function(id)
-{
-    var record = containers.getById(id);
-    if (record)
-        return record.data;
-    S.getContainers({containerPath:id, successCallback:function(info){
-        var r = new ContainerRecord(info, info.id);
-        containers.add([r]);
-    }});
-    return {id:id};
-};
-
-
-
-var containerRenderer =  function(value, metadata, record, rowIndex, colIndex, store)
-{
-    if (!value)
-        return "&nbsp;";
-    var c = getContainer(value);
-    return $h(c.name || c.id);
-};
-
-
-var groupRenderer = function(value, metadata, record, rowIndex, colIndex, store)
-{
-    if (!record.data.Container && record.data.Type=='g')
-        value = '/' + value;
-    if (record.data.Type == 'g')
-        return '<b>' + $h(value) + '</b>';
-    if (record.data.Type == 'r')
-        return '<i>' + $h(value) + '</i>';
-    return $h(value);
-};
-
-
-var principalsGrid = new Ext.grid.GridPanel(
-{
-    store: principalsStore,
-    border:false,
-    columns: [
-        {header:'UserId', sortable: true},
-        {header:'Name', renderer:groupRenderer, sortable: true},
-        {header:'Type', sortable: true},
-        {header:'Container', renderer:containerRenderer, sortable: true}]
-});
-
-
-var groupLookupRenderer = function(value, metadata, record, rowIndex, colIndex, store)
-{
-    var principal = principalsStore.getById(value);
-    if (!principal)
-        return value;
-    return $h(principal.data.Name);
-};
-
-
-var membersGrid = new Ext.grid.GridPanel(
-{
-    store: membershipStore,
-    border:false,
-    columns: [
-        {header:'UserId', sortable: true, renderer:groupLookupRenderer},
-        {header:'GroupId', sortable: true, renderer:groupLookupRenderer}
-    ]
-});
-
-
-//window.alert(LABKEY.container.id);
-
-S.getSecurableResources({successCallback:function(r){
-//    window.alert(r.resources.name + " " + r.resources.id);
-}});
-
-S.getPolicy({resourceId:LABKEY.container.id, successCallback:function(policy,roles){
-    //    window.alert(policy.getAssignedRoles(1001) + " - " + roles);
-}});
-
-        
-*/
