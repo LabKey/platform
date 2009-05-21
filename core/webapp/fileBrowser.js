@@ -1320,31 +1320,7 @@ var BROWSER_EVENTS = {selectionchange:"selectionchange", directorychange:"direct
 //      showDetails: true,
 //      showProperties: false,
 //
-LABKEY.FileBrowser = function(config)
-{
-    this.actions =
-    {
-        download: this.getDownloadAction(),
-        parentFolder: this.getParentFolderAction(),
-        refresh: this.getRefreshAction(),
-        help: this.getHelpAction(),
-        createDirectory: this.getCreateDirectoryAction(),
-        //drop : this.getOldDropAction(),
-        showHistory : this.getShowHistoryAction(),
-        deletePath: this.getDeleteAction(),
-        uploadTool: this.getUploadToolAction()
-    };
-    this.addEvents( [ BROWSER_EVENTS.selectionchange, BROWSER_EVENTS.directorychange, BROWSER_EVENTS.doubleclick ]);
-
-    config = config || {};
-    Ext.apply(this.actions, config.actions || {});
-    delete config.actions;
-    Ext.apply(this, config);
-    this.__init__(config);
-};
-
-
-Ext.extend(LABKEY.FileBrowser, Ext.Panel,
+LABKEY.FileBrowser = Ext.extend(Ext.Panel,
 {
     FOLDER_ICON: LABKEY.contextPath + "/" + LABKEY.extJsRoot + "/resources/images/default/tree/folder.gif",
 
@@ -1955,10 +1931,25 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
     },
 
 
-    __init__ : function(config)
+    constructor : function(config)
     {
-        var me = this; // for anonymous inner functions
+        config = config || {};
+        Ext.apply(this, config);
+        this.actions = Ext.apply({}, this.actions,
+        {
+            download: this.getDownloadAction(),
+            parentFolder: this.getParentFolderAction(),
+            refresh: this.getRefreshAction(),
+            help: this.getHelpAction(),
+            createDirectory: this.getCreateDirectoryAction(),
+            //drop : this.getOldDropAction(),
+            showHistory : this.getShowHistoryAction(),
+            deletePath: this.getDeleteAction(),
+            uploadTool: this.getUploadToolAction()
+        });
+        delete config.actions;  // so superclass.constructor doesn't overwrite this.actions
 
+        var me = this; // for anonymous inner functions
 
         //
         // GRID
@@ -2184,10 +2175,17 @@ Ext.extend(LABKEY.FileBrowser, Ext.Panel,
 
         Ext.apply(config, {layout:'border', tbar:tbarConfig, items: layoutItems, renderTo:null}, {id:'fileBrowser', height:600, width:800});
         LABKEY.FileBrowser.superclass.constructor.call(this, config);
+    },
 
+    initComponent : function()
+    {
+        LABKEY.FileBrowser.superclass.initComponent.call(this);
+        
         //
         // EVENTS (tie together components)
         //
+        this.addEvents( [ BROWSER_EVENTS.selectionchange, BROWSER_EVENTS.directorychange, BROWSER_EVENTS.doubleclick ]);
+
 
         this.on(BROWSER_EVENTS.selectionchange, function(record)
         {
