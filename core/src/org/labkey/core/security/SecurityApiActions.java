@@ -25,6 +25,8 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.ProjectAdminRole;
+import org.labkey.api.view.UnauthorizedException;
 import org.springframework.validation.BindException;
 import org.apache.commons.lang.StringUtils;
 
@@ -490,6 +492,11 @@ public class SecurityApiActions
                 }
             }
 
+            //special cases for relevant roles:
+            // - don't include project admin if this is not a project
+            if(!container.isProject())
+                relevantRoles.remove(RoleManager.getRole(ProjectAdminRole.class).getUniqueName());
+
             resp.put("relevantRoles", relevantRoles);
             return resp;
         }
@@ -594,6 +601,9 @@ public class SecurityApiActions
     {
         public ApiResponse execute(NameForm form, BindException errors) throws Exception
         {
+            if(!getViewContext().getContainer().isProject())
+                throw new IllegalArgumentException("You may not create groups at the folder level. Call this API at the project level.");
+
             String name = StringUtils.trimToNull(form.getName());
             if(null == name)
                 throw new IllegalArgumentException("You must specify a name parameter!");
@@ -612,6 +622,9 @@ public class SecurityApiActions
     {
         public ApiResponse execute(IdForm form, BindException errors) throws Exception
         {
+            if(!getViewContext().getContainer().isProject())
+                throw new IllegalArgumentException("You may not delete groups at the folder level. Call this API at the project level.");
+
             if(form.getId() < 0)
                 throw new IllegalArgumentException("You must specify an id parameter!");
 
@@ -676,6 +689,9 @@ public class SecurityApiActions
     {
         public ApiResponse execute(GroupMemberForm form, BindException errors) throws Exception
         {
+            if(!getViewContext().getContainer().isProject())
+                throw new IllegalArgumentException("You may not alter group membership at the folder level. Call this API at the project level.");
+
             SecurityManager.addMember(getGroup(form), getPrincipal(form));
             return new ApiSimpleResponse("added", form.getPrincipalId());
         }
@@ -686,6 +702,9 @@ public class SecurityApiActions
     {
         public ApiResponse execute(GroupMemberForm form, BindException errors) throws Exception
         {
+            if(!getViewContext().getContainer().isProject())
+                throw new IllegalArgumentException("You may not alter group membership at the folder level. Call this API at the project level.");
+
             Group group = getGroup(form);
             UserPrincipal principal = getPrincipal(form);
 
@@ -733,6 +752,9 @@ public class SecurityApiActions
     {
         public ApiResponse execute(MembersListForm form, BindException errors) throws Exception
         {
+            if(!getViewContext().getContainer().isProject())
+                throw new IllegalArgumentException("You may not alter group membership at the folder level. Call this API at the project level.");
+
             Container container = getViewContext().getContainer();
             Group group = SecurityManager.getGroup(form.getGroupId());
             if(null == group)

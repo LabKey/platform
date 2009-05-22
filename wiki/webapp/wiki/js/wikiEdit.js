@@ -19,13 +19,13 @@ tinyMCE.init({
     entities : "160,nbsp,60,lt,62,gt,38,amp",
     relative_urls : "true",
     document_base_url : "",
-    plugins : "table,advhr,advlink,searchreplace,contextmenu,fullscreen,nonbreaking,cleanup",
+    plugins : "table,advhr,advlink,advimage,searchreplace,contextmenu,fullscreen,nonbreaking,cleanup,inlinepopups",
     theme_advanced_buttons1_add : "fontselect,fontsizeselect",
     theme_advanced_buttons2_add : "separator,forecolor,backcolor",
     theme_advanced_buttons2_add_before: "cut,copy,paste,separator,search,replace,separator",
     theme_advanced_buttons3_add_before : "tablecontrols,separator",
     theme_advanced_buttons3_add : "advhr,nonbreaking,separator,fullscreen",
-    theme_advanced_disable : "image,code,hr,removeformat,visualaid",
+    theme_advanced_disable : "code,hr,removeformat,visualaid",
     theme_advanced_layout_manager: "SimpleLayout",
     width: "100%",
     nonbreaking_force_tab : true,
@@ -42,7 +42,7 @@ tinyMCE.init({
     theme_advanced_statusbar_location: "bottom",
     fix_list_elements : true,
     handle_event_callback : "tinyMceHandleEvent",
-    onchange_callback: onTinyMceChange
+    gecko_spellcheck: true
     });
 
 //the onReady function will execute after all elements
@@ -107,11 +107,6 @@ function tinyMceHandleEvent(evt)
     }
     else
         return true;
-}
-
-function onTinyMceChange(tinyMceInstance)
-{
-    setSaveEnabled(true);
 }
 
 //Ext event handler--the evt object is an Ext.EventObject
@@ -455,12 +450,11 @@ function cloneObj(source)
 
 function updateSourceFromVisual()
 {
-    tinyMCE.triggerSave();
+    tinymce.EditorManager.triggerSave();
 }
 
 function updateVisaulFromSource()
 {
-    tinyMCE.updateContent();
 }
 
 function updateControls(wikiProps)
@@ -519,8 +513,8 @@ function switchToSource()
     setTabStripVisible(true);
     document.getElementById("wiki-tab-visual").className = "labkey-wiki-tab labkey-tab labkey-tab-shaded";
     document.getElementById("wiki-tab-source").className = "labkey-wiki-tab labkey-tab-selected";
-    if(tinyMCE.getEditorId("body"))
-        tinyMCE.removeMCEControl(tinyMCE.getEditorId("body"));
+    if(tinyMCE.get(_idPrefix + "body"))
+        tinyMCE.execCommand('mceRemoveControl', false, _idPrefix + "body");
     _editor = "source";
     showEditingHelp(_wikiProps.rendererType);
 }
@@ -552,8 +546,8 @@ function switchToVisual(confirmOverride, savePreference)
         setTabStripVisible(true);
         document.getElementById("wiki-tab-visual").className = "labkey-wiki-tab labkey-tab-selected";
         document.getElementById("wiki-tab-source").className = "labkey-wiki-tab labkey-tab labkey-tab-shaded";
-        if(!tinyMCE.getEditorId("body"))
-            tinyMCE.addMCEControl(document.getElementById(_idPrefix + "body"), "body");
+        if(!tinyMCE.get(_idPrefix + "body"))
+            tinyMCE.execCommand('mceAddControl', false, _idPrefix + "body");
         _editor = "visual";
         showEditingHelp(_wikiProps.rendererType);
         if(savePreference)
@@ -669,7 +663,6 @@ function onDeleteAttachment(index)
 
     //add a prop so we know we need to save the attachments
     _attachments.isDirty = true;
-    setSaveEnabled(true);
 }
 
 function onUndeleteAttachment(index)
@@ -743,7 +736,6 @@ function onAddAttachment(fileInput, index)
 
     //mark the attachments as dirty
     _attachments.isDirty = true;
-    setSaveEnabled(true);
 
     //add another new attachment input
     addNewAttachmentInput();
@@ -776,7 +768,6 @@ function getNewAttachmentsTable()
 function setWikiDirty()
 {
     _wikiProps.isDirty = true;
-    setSaveEnabled(true);
 }
 
 function setClean()
@@ -784,51 +775,15 @@ function setClean()
     _wikiProps.isDirty = false;
     _attachments.isDirty = false;
 
-    //hack: tinyMCE doesn't have a proper API for resetting the dirty flag
-    //but I found this at
-    //http://www.bram.us/2007/06/15/my-tinymce-ajax-implementation-autosave-plugin-vs-isdirty-aka-fixing-the-tweak/
-    if(tinyMCE.getEditorId("body"))
-    {
-        var inst = tinyMCE.getInstanceById(tinyMCE.getEditorId("body"));
-        if(inst)
-        {
-            inst.startContent = tinyMCE.trim(inst.getBody().innerHTML);
-            inst.isNotDirty = true;
-        }
-    }
-    setSaveEnabled(false);
-}
+    if(tinyMCE.get(_idPrefix + "body"))
+        tinyMCE.get(_idPrefix + "body").isNotDirty = 1;
 
-function setSaveEnabled(enabled)
-{
-    //alert("setSaveEnabled()");
-
-    var buttonSave = Ext.get('wiki-button-save').dom;
-    var buttonFinish = Ext.get('wiki-button-finish').dom;
-
-    if(!buttonSave || !buttonFinish)
-        return;
-
-    if(enabled)
-    {
-        buttonSave.className = "labkey-button";
-        buttonSave.onclick = onSave;
-        buttonFinish.className = "labkey-button";
-        buttonFinish.onclick = onFinish;
-    }
-    else
-    {
-        buttonSave.className = "labkey-disabled-button";
-        buttonSave.onclick = undefined;
-        buttonFinish.className = "labkey-disabled-button";
-        buttonFinish.onclick = undefined;
-    }
 }
 
 function isDirty()
 {
     return _wikiProps.isDirty || _attachments.isDirty ||
-    (tinyMCE.getEditorId("body") && tinyMCE.getInstanceById(tinyMCE.getEditorId("body")).isDirty());
+    (tinyMCE.get(_idPrefix + "body") && tinyMCE.get(_idPrefix + "body").isDirty());
 }
 
 var _convertWin;
@@ -919,7 +874,7 @@ function onConvertSuccess(response)
 
         //if the new type is HTML, switch to visual appropriate editor
         if(_editor == "source")
-            switchToSource()
+            switchToSource();
         else
             switchToVisual();
     }

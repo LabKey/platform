@@ -34,7 +34,7 @@
 %>
 
 <script type="text/javascript">
-    LABKEY.requiresScript('tiny_mce/tiny_mce.js');
+    LABKEY.requiresScript('tinymce3/tiny_mce.js');
 </script>
 <script type="text/javascript">
     LABKEY.requiresClientAPI();
@@ -98,9 +98,9 @@
 <table class="labkey-button-bar" width=99%;>
     <tr>
         <td width="50%" align="left"  nowrap="true">
-            <%=PageFlowUtil.generateDisabledSubmitButton("Save & Close", "return false;", "id='wiki-button-finish'")%>
-            <%=PageFlowUtil.generateDisabledSubmitButton(saveButtonCaption, "return false;", "id='wiki-button-save'")%>
-            <%=PageFlowUtil.generateSubmitButton("Cancel", "onCancel()")%>
+            <%=PageFlowUtil.generateSubmitButton("Save & Close", "onFinish();", "id='wiki-button-finish'")%>
+            <%=PageFlowUtil.generateSubmitButton(saveButtonCaption, "onSave();", "id='wiki-button-save'")%>
+            <%=PageFlowUtil.generateSubmitButton("Cancel", "onCancel();")%>
         </td>
         <td width="50%" align="right" nowrap="true">
             <% if(model.canUserDelete()) { %>
