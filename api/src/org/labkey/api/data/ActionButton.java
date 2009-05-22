@@ -122,7 +122,7 @@ public class ActionButton extends DisplayElement implements Cloneable
     private StringExpressionFactory.StringExpression _title;
     private String _target;
     private boolean _appendScript;
-    private boolean _requiresSelection;
+    protected boolean _requiresSelection;
     private String _confirmText;
     private String _encodedSubmitForm;
 

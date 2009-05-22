@@ -1216,11 +1216,18 @@ public class PageFlowUtil
     }
 
     /* Renders a span and a drop down arrow image wrapped in a link */
-    public static String generateDropDownButton(String text, String href, String onClick)
+    public static String generateDropDownButton(String text, String href, String onClick, String attributes)
     {
         return "<a class=\"labkey-menu-button\" href=\"" + filter(href) + "\"" + (onClick != null ? " onClick=" + wrapOnClick(onClick) : "") +
+                (attributes != null ? " " + attributes : "") +
                 "><span>" + filter(text) + "</span>&nbsp;<img src=\"" + HttpView.currentView().getViewContext().getContextPath() +
                 "/_images/button_arrow.gif\" class=\"labkey-button-arrow\"></a>";
+    }
+
+    /* Renders a span and a drop down arrow image wrapped in a link */
+    public static String generateDropDownButton(String text, String href, String onClick)
+    {
+        return generateDropDownButton(text, href, onClick, null);
     }
 
     /* Renders text and a drop down arrow image wrapped in a link not of type labkey-button */

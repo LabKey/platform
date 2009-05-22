@@ -88,11 +88,17 @@ public class PopupMenu extends DisplayElement
 
     public void renderMenuButton(Writer out) throws IOException
     {
+        renderMenuButton(out, null);
+    }
+
+    public void renderMenuButton(Writer out, String requiresSelectionDataRegion) throws IOException
+    {
         if (null == _navTree.getKey())
             return;
 
         if (_buttonStyle == ButtonStyle.TEXTBUTTON)
         {
+            assert (requiresSelectionDataRegion == null) : "Only button-style popups can require selection.";
             out.append("[");
             out.append("<a href='javascript:void(0)'");
             out.append("onclick=\"showMenu(this, '").append(getId()).append("','").append(_align.getExtPosition()).append("');\">");
@@ -102,30 +108,28 @@ public class PopupMenu extends DisplayElement
         }
         else if (_buttonStyle == ButtonStyle.MENUBUTTON)
         {
+            String attributes = null;
+            if (requiresSelectionDataRegion != null)
+                attributes = "labkey-requires-selection=\"" + PageFlowUtil.filter(requiresSelectionDataRegion) + "\"";
             out.append(PageFlowUtil.generateDropDownButton(_navTree.getKey(), "javascript:void(0)",
-                    "showMenu(this, '" + getId() + "','" + _align.getExtPosition() + "');"));
+                    (requiresSelectionDataRegion != null ? "if (this.className.indexOf('labkey-disabled-button') == -1)\n" : "") +
+                    "showMenu(this, '" + getId() + "','" + _align.getExtPosition() + "');", attributes));
         }
         else if (_buttonStyle == ButtonStyle.BOLDTEXT)
         {
+            assert (requiresSelectionDataRegion == null) : "Only button-style popups can require selection.";
             out.append(PageFlowUtil.generateDropDownTextLink(_navTree.getKey(), "javascript:void(0)",
                     "showMenu(this, '" + getId() + "','" + _align.getExtPosition() + "');"));
         }
     }
 
-    public void renderMenuScript(Writer out)
-            throws IOException
+    public void renderMenuScript(Writer out) throws IOException
     {
-        out.append(
-            "<script type=\"text/javascript\">\n" +
-                "LABKEY.requiresExtJs();\n" +
-             "</script>" +
-             "<script type=\"text/javascript\">\n" +
-                "        new Ext.menu.Menu(");
+        out.append("<script type=\"text/javascript\">LABKEY.requiresExtJs();</script>");
+        out.append("<script type=\"text/javascript\">\n");
+        out.append("        new Ext.menu.Menu(");
         out.append(renderMenuModel(_navTree.getChildren(), getId()));
-        out.append(
-                "         );"+
-                "\n" +
-                "</script>");
+        out.append("         );\n</script>");
     }
 
     // UNDONE: use NavTree.toJS()
