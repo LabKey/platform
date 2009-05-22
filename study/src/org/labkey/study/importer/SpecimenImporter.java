@@ -724,8 +724,8 @@ public class SpecimenImporter
                 "\tLEFT OUTER JOIN study.Specimen ON\n" +
                 "\t\tstudy.Specimen.GlobalUniqueId = study.SampleRequestSpecimen.SpecimenGlobalUniqueId AND\n" +
                 "\t\tstudy.Specimen.Container = study.SampleRequestSpecimen.Container\n" +
-                "\tWHERE study.Specimen.GlobalUniqueId IS NULL\n" +
-                ");", Boolean.TRUE);
+                "\tWHERE study.Specimen.GlobalUniqueId IS NULL AND\n" +
+                "\t\tstudy.SampleRequestSpecimen.Container = ?);", Boolean.TRUE, container.getId());
         logger.info("Marking requested vials that have been orphaned...");
         Table.execute(StudySchema.getInstance().getSchema(), orphanMarkerSql);
         logger.info("Complete.");
@@ -1449,7 +1449,7 @@ public class SpecimenImporter
         return value;
     }
 
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     private String createTempTable(DbSchema schema) throws SQLException
     {

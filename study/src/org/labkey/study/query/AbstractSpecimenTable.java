@@ -18,9 +18,12 @@ package org.labkey.study.query;
 import org.labkey.api.data.*;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.study.StudySchema;
 
 import java.io.Writer;
 import java.io.IOException;
+import java.sql.Types;
 
 /**
  * Superclass for specimen tables that adds and configures all the common columns.
@@ -86,14 +89,18 @@ public abstract class AbstractSpecimenTable extends BaseStudyTable
 
     protected void addVisitColumn(boolean dateBased)
     {
-        AliasedColumn visitColumn;
+        ColumnInfo visitColumn;
         ColumnInfo visitDescriptionColumn = addWrapColumn(_rootTable.getColumn("VisitDescription"));
         if (dateBased)
         {
             //consider:  use SequenceNumMin for visit-based studies too (in visit-based studies VisitValue == SequenceNumMin)
             // could change to visitrowid but that changes datatype and displays rowid
             // instead of sequencenum when label is null
-            visitColumn = new AliasedColumn(this, "Visit", _rootTable.getColumn("SequenceNumMin"));
+            SQLFragment sqlFragVisit = new SQLFragment("(SELECT V.SequenceNumMin FROM " + StudySchema.getInstance().getTableInfoParticipantVisit() + " PV, " +
+                    StudySchema.getInstance().getTableInfoVisit() + " V WHERE V.RowId = PV.VisitRowId AND " +
+                    ExprColumn.STR_TABLE_ALIAS + ".ParticipantId = PV.ParticipantId AND" +
+                    ExprColumn.STR_TABLE_ALIAS + ".Container = PV.Container)");
+            visitColumn = addColumn(new ExprColumn(this, "Visit", sqlFragVisit, Types.VARCHAR));
             visitColumn.setCaption("Timepoint");
             visitDescriptionColumn.setIsHidden(true);
         }
@@ -101,6 +108,7 @@ public abstract class AbstractSpecimenTable extends BaseStudyTable
         {
             visitColumn = new AliasedColumn(this, "Visit", _rootTable.getColumn("VisitValue"));
         }
+
         LookupForeignKey visitFK = new LookupForeignKey(null, (String) null, "SequenceNumMin", null)
         {
             public TableInfo getLookupTableInfo()

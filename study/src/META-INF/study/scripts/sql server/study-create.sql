@@ -16,7 +16,7 @@
 CREATE VIEW study.LockedSpecimens AS
   SELECT map.RowId, map.SpecimenGlobalUniqueId AS GlobalUniqueId, map.Container FROM study.SampleRequest AS request
       JOIN study.SampleRequestStatus AS status ON request.StatusId = status.RowId AND status.SpecimensLocked = 1
-      JOIN study.SampleRequestSpecimen AS map ON request.rowid = map.SampleRequestId AND map.Orphaned = 0;
+      JOIN study.SampleRequestSpecimen AS map ON request.rowid = map.SampleRequestId AND map.Orphaned = 0
 GO
 
 CREATE VIEW study.SpecimenDetail AS
@@ -43,14 +43,11 @@ CREATE VIEW study.SpecimenDetail AS
 	    ) AS Available
          FROM
             (
-                SELECT Specimen.*, 	PV.VisitRowId, V.SequenceNumMin,
+                SELECT Specimen.*,
                     (CASE Repository WHEN 1 THEN 1 ELSE 0 END) AS AtRepository,
                      Site.Label AS SiteName,Site.LdmsLabCode AS SiteLdmsCode,
                     (CASE LockedSpecimens.Locked WHEN 1 THEN 1 ELSE 0 END) AS LockedInRequest
     	        FROM study.Specimen AS Specimen
-				LEFT OUTER JOIN
-					(study.ParticipantVisit PV INNER JOIN study.Visit V ON (V.RowId = PV.VisitRowId))
-					ON (Specimen.Ptid = PV.ParticipantId AND Specimen.VisitValue = PV.SequenceNum AND Specimen.Container = PV.Container)
                 LEFT OUTER JOIN study.Site AS Site ON
                         (Site.RowId = Specimen.CurrentLocation)
                 LEFT OUTER JOIN (SELECT *, 1 AS Locked FROM study.LockedSpecimens) LockedSpecimens ON
@@ -60,8 +57,8 @@ CREATE VIEW study.SpecimenDetail AS
 GO
 
 CREATE VIEW study.SpecimenSummary AS
-    SELECT Container, SpecimenHash, Ptid, VisitDescription, VisitValue, VisitRowId, SequenceNumMin
-		, SUM(Volume) AS TotalVolume, SUM(CASE Available WHEN 1 THEN Volume ELSE 0 END) AS AvailableVolume,
+    SELECT Container, SpecimenHash, Ptid, VisitDescription, VisitValue,
+		SUM(Volume) AS TotalVolume, SUM(CASE Available WHEN 1 THEN Volume ELSE 0 END) AS AvailableVolume,
         VolumeUnits, PrimaryTypeId, AdditiveTypeId, DerivativeTypeId, DrawTimestamp, SalReceiptDate,
         ClassId, ProtocolNumber, SubAdditiveDerivative, OriginatingLocationId,
         PrimaryVolume, PrimaryVolumeUnits, DerivativeTypeId2,
@@ -74,5 +71,5 @@ CREATE VIEW study.SpecimenSummary AS
         VisitValue, VolumeUnits, PrimaryTypeId, AdditiveTypeId, DerivativeTypeId,
         PrimaryVolume, PrimaryVolumeUnits, DerivativeTypeId2,
         DrawTimestamp, SalReceiptDate, ClassId, ProtocolNumber, SubAdditiveDerivative,
-        OriginatingLocationId, VisitRowId, SequenceNumMin
+        OriginatingLocationId
 GO

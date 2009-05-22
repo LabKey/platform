@@ -219,20 +219,38 @@ public class QueryServiceImpl extends QueryService
         return ret.get(name);
     }
 
+    private Map<String, CustomView> getCustomViewMap(User user, Container container, String schema, String query) throws SQLException
+    {
+        Map<Map.Entry<String, String>, QueryDefinition> queryDefs = getAllQueryDefs(container, schema, false, true);
+        Map<String, CustomView> views = new HashMap<String, CustomView>();
+        for (CstmView collist : QueryManager.get().getAllColumnLists(container, schema, query, user, true))
+            addCustomView(container, user, views, collist, queryDefs);
+        return views;
+    }
+
+    public CustomView getCustomView(User user, Container container, String schema, String query, String name)
+    {
+        try
+        {
+            Map<String, CustomView> views = getCustomViewMap(user, container, schema, query);
+            return views.get(name);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
     public List<CustomView> getCustomViews(User user, Container container, String schema, String query)
     {
-        try {
-            Map<String, CustomView> views = new HashMap<String, CustomView>();
-            Map<Map.Entry<String, String>, QueryDefinition> queryDefs = getAllQueryDefs(container, schema, false, true);
-
-            for (CstmView collist : QueryManager.get().getAllColumnLists(container, schema, query, user, true))
-                addCustomView(container, user, views, collist, queryDefs);
-
+        try
+        {
+            Map<String, CustomView> views = getCustomViewMap(user, container, schema, query);
             return new ArrayList<CustomView>(views.values());
         }
         catch (SQLException e)
         {
-            return Collections.emptyList();
+            throw new RuntimeSQLException(e);
         }
     }
 

@@ -39,7 +39,7 @@
     LABKEY.requiresScript('sampleRequest.js');
 </script>
 <%
-    boolean enableRequests = SampleManager.getInstance().getRepositorySettings(me.getViewContext().getContainer()).isEnableRequests();
+   // boolean enableRequests = SampleManager.getInstance().getRepositorySettings(me.getViewContext().getContainer()).isEnableRequests();
     String vialLinkText = bean.isShowingVials() ? "Hide Vial Info" : "Show Vial Info";
 
     if (bean.getViewContext().getContainer().hasPermission(bean.getViewContext().getUser(), ACL.PERM_ADMIN))
