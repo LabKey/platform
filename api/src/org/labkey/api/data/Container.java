@@ -390,9 +390,14 @@ public class Container implements Serializable, Comparable<Container>, Securable
         //recurse down child containers
         for(Container child : getChildren())
         {
-            SecurableResource resource = child.findSecurableResource(resourceId, user);
-            if(null != resource)
-                return resource;
+            //only look in child containers where the user has admin perm
+            if(child.hasPermission(user, AdminPermission.class))
+            {
+                SecurableResource resource = child.findSecurableResource(resourceId, user);
+
+                if(null != resource)
+                    return resource;
+            }
         }
 
         return null;

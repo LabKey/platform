@@ -2284,15 +2284,13 @@ public class SecurityManager
         */
 
         // Create default groups
-        Group adminGroup = SecurityManager.createGroup(project, "Administrators");
+        //Note: we are no longer creating the project-level Administrators group
         Group userGroup = SecurityManager.createGroup(project, "Users");
 
         // Set default permissions
         // CONSIDER: get/set permissions on Container, rather than going behind its back
         Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
         SecurityPolicy policy = new SecurityPolicy(project);
-        policy.addRoleAssignment(getGroup(Group.groupAdministrators), RoleManager.getRole(SiteAdminRole.class));
-        policy.addRoleAssignment(adminGroup, RoleManager.getRole(ProjectAdminRole.class));
         policy.addRoleAssignment(userGroup, noPermsRole);
 
         //users and guests have no perms by default
@@ -2305,11 +2303,20 @@ public class SecurityManager
     public static void setAdminOnlyPermissions(Container c)
     {
         SecurityPolicy policy = new SecurityPolicy(c);
-        policy.addRoleAssignment(getGroup(Group.groupAdministrators), RoleManager.getRole(SiteAdminRole.class));
 
-        Integer administratorsGroupId = getGroupId(c.getProject(), "Administrators", false);
-        if (null != administratorsGroupId && 0 != administratorsGroupId.intValue())
-            policy.addRoleAssignment(getGroup(administratorsGroupId.intValue()), RoleManager.getRole(ProjectAdminRole.class));
+        //assign all principals who are project admins at the project level to the folder admin role in the container
+        SecurityPolicy projectPolicy = c.getProject().getPolicy();
+        Role projAdminRole = RoleManager.getRole(ProjectAdminRole.class);
+        Role folderAdminRole = RoleManager.getRole(FolderAdminRole.class);
+        for(RoleAssignment ra : projectPolicy.getAssignments())
+        {
+            if (ra.getRole().equals(projAdminRole))
+            {
+                UserPrincipal principal = getPrincipal(ra.getUserId());
+                if(null != principal)
+                    policy.addRoleAssignment(principal, folderAdminRole);
+            }
+        }
 
         savePolicy(policy);
     }

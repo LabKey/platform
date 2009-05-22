@@ -37,7 +37,8 @@ public class StaticContentCachingFilter implements Filter
         String path = null != request.getServletPath() ? request.getServletPath().toLowerCase() : "";
         boolean cachableJsFile = path.contains("/ext-")
                                 || path.contains("/_yui/")
-                                || path.contains("/tiny_mce/");
+                                || path.contains("/tiny_mce/")
+                                || path.contains("/tinymce3/");
 
         if (cachableJsFile || _cachingAllowed)
         {
