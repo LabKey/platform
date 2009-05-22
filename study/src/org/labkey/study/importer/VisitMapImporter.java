@@ -19,6 +19,7 @@ package org.labkey.study.importer;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
 import org.labkey.study.visitmanager.SequenceVisitManager;
@@ -121,7 +122,9 @@ public class VisitMapImporter
 
     private void saveVisits(User user, Study study, List<VisitMapRecord> records) throws SQLException
     {
-        VisitManager visitManager = StudyManager.getInstance().getVisitManager(study);
+        Container c = study.getContainer();
+        StudyManager studyManager = StudyManager.getInstance();
+        VisitManager visitManager = studyManager.getVisitManager(study);
 
         for (VisitMapRecord record : records)
         {
@@ -135,7 +138,8 @@ public class VisitMapImporter
             {
                 visit = new Visit(study.getContainer(), record.getSequenceNumMin(), record.getSequenceNumMax(), record.getVisitLabel(), record.getVisitType());
                 visit.setVisitDateDatasetId(record.getVisitDatePlate());
-                int rowId = StudyManager.getInstance().createVisit(study, user, visit);
+                visit.setShowByDefault(record.isShowByDefault());
+                int rowId = studyManager.createVisit(study, user, visit);
                 record.setVisitRowId(rowId);
                 assert record.getVisitRowId() > 0;
             }
@@ -143,13 +147,18 @@ public class VisitMapImporter
             {
                 if (visit.getVisitDateDatasetId() <= 0 && record.getVisitDatePlate() > 0)
                 {
-                    visit = _mutable(visit);
+                    visit = _ensureMutable(visit);
                     visit.setVisitDateDatasetId(record.getVisitDatePlate());
                 }
                 if (visit.getSequenceNumMax() != record.getSequenceNumMax())
                 {
-                    visit = _mutable(visit);
+                    visit = _ensureMutable(visit);
                     visit.setSequenceNumMax(record.getSequenceNumMax());
+                }
+                if (visit.isShowByDefault() != record.isShowByDefault())
+                {
+                    visit = _ensureMutable(visit);
+                    visit.setShowByDefault(record.isShowByDefault());
                 }
                 if (visit.isMutable())
                 {
@@ -162,7 +171,7 @@ public class VisitMapImporter
     }
 
     
-    private Visit _mutable(Visit v)
+    private Visit _ensureMutable(Visit v)
     {
         if (!v.isMutable())
             v = v.createMutable();

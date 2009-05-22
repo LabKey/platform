@@ -56,12 +56,10 @@ public class XmlVisitMapReader implements VisitMapReader
                     }
                 }
 
-                // TODO: Cohort, visibility
-
                 VisitMapRecord record = new VisitMapRecord(visitXml.getSequenceNum(), maxSequenceNum, visitXml.getTypeCode(),
-                        visitXml.getLabel(), visitXml.getVisitDateDatasetId(), 
+                        visitXml.getLabel(), visitXml.getCohort(), visitXml.getVisitDateDatasetId(),
                         ArrayUtils.toPrimitive(required.toArray(new Integer[required.size()])),
-                        ArrayUtils.toPrimitive(optional.toArray(new Integer[optional.size()])));
+                        ArrayUtils.toPrimitive(optional.toArray(new Integer[optional.size()])), visitXml.getShowByDefault());
 
                 visits.add(record);
             }

@@ -60,6 +60,12 @@ public class StudyImportJob extends PipelineJob
             new CohortImporter().process(_study, _ctx, _root);
             info("Done importing cohort settings");
 
+            setStatus("IMPORT visit map cohort assignments");
+            info("Importing visit map cohort assignments");
+            // Can't assign visits to cohorts until the cohorts are created
+            new VisitCohortAssigner().process(_study, _ctx, _root);
+            info("Done importing visit map cohort assignments");
+
             info("Importing queries");
             setStatus("IMPORT queries");
             new QueryImporter().process(_ctx, _root);

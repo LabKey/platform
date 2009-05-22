@@ -2014,6 +2014,7 @@ study/src/org/labkey/study/importer/SpecimenArchiveImporter.java -text
 study/src/org/labkey/study/importer/SpecimenImporter.java -text
 study/src/org/labkey/study/importer/StudyImportJob.java -text
 study/src/org/labkey/study/importer/StudyImporter.java -text
+study/src/org/labkey/study/importer/VisitCohortAssigner.java -text
 study/src/org/labkey/study/importer/VisitImporter.java -text
 study/src/org/labkey/study/importer/VisitMapImporter.java -text
 study/src/org/labkey/study/importer/VisitMapReader.java -text

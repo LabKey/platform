@@ -60,12 +60,15 @@ public class XmlVisitMapWriter implements Writer<Visit[]>
 
             // Only set if false; default value is "true"
             if (!visit.isShowByDefault())
-                visitXml.setShowByDefault(visit.isShowByDefault());  // Default is "true"
+                visitXml.setShowByDefault(visit.isShowByDefault());
 
             visitXml.setSequenceNum(visit.getSequenceNumMin());
 
             if (visit.getSequenceNumMin() != visit.getSequenceNumMax())
                 visitXml.setMaxSequenceNum(visit.getSequenceNumMax());
+
+            if (null != visit.getCohort())
+                visitXml.setCohort(visit.getCohort().getLabel());
 
             if (null != visit.getVisitDateDatasetId())
                 visitXml.setVisitDateDatasetId(visit.getVisitDateDatasetId().intValue());

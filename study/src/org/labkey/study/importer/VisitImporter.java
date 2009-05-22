@@ -57,20 +57,6 @@ public class VisitImporter
                     return false;
                 }
             }
-
-/*         TODO: Cohort, visibility
-            VisitManager visitManager = StudyManager.getInstance().getVisitManager(study);
-
-            for (StudyDocument.Study.Visits.Visit visitXml : visitsXml.getVisitArray())
-            {
-                // Just a proof of concept -- only works for "show by default".  TODO: Move to alternative, xml-based visit map
-                double sequenceNum = visitXml.getSequenceNum();
-                Visit visit = visitManager.findVisitBySequence(sequenceNum);
-                Visit mutable = visit.createMutable();
-                mutable.setShowByDefault(visitXml.getShowByDefault());
-                StudyManager.getInstance().updateVisit(ctx.getUser(), mutable);
-            }
-*/
         }
 
         return true;

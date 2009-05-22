@@ -38,6 +38,7 @@ class VisitMapRecord
 
     private final double _sequenceNumberMin;
     private final double _sequenceNumberMax;
+    private final boolean _showByDefault;
     private final Visit.Type _visitType;
     private final String _visitLabel;
     private final int _visitDatePlate;
@@ -48,16 +49,19 @@ class VisitMapRecord
     private final int[] _optionalPlates;
     private final int _missedNotificationPlate;
     private final String _terminationWindow;
+    private final String _cohort;
 
-    public VisitMapRecord(double sequenceNumberMin, double sequenceNumberMax, String visitType, String visitLabel, int visitDatePlate, int[] requiredPlates, int[] optionalPlates)
+    public VisitMapRecord(double sequenceNumberMin, double sequenceNumberMax, String visitType, String visitLabel, String cohort, int visitDatePlate, int[] requiredPlates, int[] optionalPlates, boolean showByDefault)
     {
         _sequenceNumberMin = sequenceNumberMin;
         _sequenceNumberMax = sequenceNumberMax;
         _visitType = getType(visitType);
         _visitLabel = visitLabel;
+        _cohort = cohort;
         _visitDatePlate = visitDatePlate;
         _requiredPlates = requiredPlates;
         _optionalPlates = optionalPlates;
+        _showByDefault = showByDefault;
 
         // These are not currently used
         _visitDateField = null;
@@ -82,6 +86,7 @@ class VisitMapRecord
 
         _visitType = getType((String)record.get("visitType"));
         _visitLabel = (String)record.get("visitLabel");
+        _cohort = (String)record.get("cohort");
         _visitDatePlate = defaultInt((Integer)record.get("visitDatePlate"), -1);
         _visitDateField = (String)record.get("visitDateField");
         _visitDueDay =  defaultInt((Integer)record.get("visitDueDay"), -1);
@@ -90,6 +95,7 @@ class VisitMapRecord
         _optionalPlates = toIntArray((String) record.get("optionalPlates"));
         _missedNotificationPlate = defaultInt((Integer)record.get("missedNotificationPlate"), -1);
         _terminationWindow = (String)record.get("terminationWindow");
+        _showByDefault = true;
     }
 
     private static int defaultInt(Integer i, int defaultInt)
@@ -110,7 +116,8 @@ class VisitMapRecord
     public String getVisitLabel()           { return _visitLabel; }
     public int getVisitOverdueAllowance()   { return _visitOverdueAllowance; }
     public Visit.Type getVisitType()        { return _visitType; }
-
+    public String getCohort()               { return _cohort; }
+    public boolean isShowByDefault()        { return _showByDefault; }
 
 /*    private int toInt(String str, int defaultValue)
     {
