@@ -842,6 +842,9 @@ public class StudyManager
             return true;
         Study study = StudyManager.getInstance().getStudy(container);
 
+        if (study == null)
+            return false;
+
         if (study.isManualCohortAssignment())
         {
             // If we're not reading from a dataset for cohort definition,

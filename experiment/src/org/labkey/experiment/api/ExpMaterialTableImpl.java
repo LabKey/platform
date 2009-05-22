@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.*;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
@@ -105,7 +106,11 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
                 ColumnInfo ret = createPropertyColumn(alias);
                 if (_ss != null)
                 {
-                    ret.setFk(new DomainForeignKey(_ss.getType(), _schema));
+                    Domain domain = _ss.getType();
+                    if (domain != null)
+                    {
+                        ret.setFk(new DomainForeignKey(domain, _schema));
+                    }
                 }
                 return ret;
             case Flag:

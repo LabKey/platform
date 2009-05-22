@@ -55,8 +55,11 @@ public class SampleInfo
         _label = new Label(_name);
 
         _sampleSetListBox = new ListBox();
+        DOM.setElementAttribute(_sampleSetListBox.getElement(), "id", "sampleSetListBox" + index);
         _materialListBox = new ListBox();
+        DOM.setElementAttribute(_materialListBox.getElement(), "id", "sampleListBox" + index);
         _materialTextBox = new TextBox();
+        DOM.setElementAttribute(_materialTextBox.getElement(), "id", "sampleTextBox" + index);
 
         _sampleSetListBox.addChangeListener(new ChangeListener()
         {

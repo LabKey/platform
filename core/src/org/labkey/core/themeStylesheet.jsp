@@ -375,8 +375,8 @@ td.labkey-main-menu
 }
 
 .gwt-DialogBox .Caption {
-  background-color: #<%=wpHeaderPanel%>;
-  border: 1px solid #<%= navBorder %>;
+    background-color: #<%=wpHeaderPanel%>;
+    border: 1px solid #<%= wpHeaderPanelBorder %>;
 }
 
 .gwt-DialogBox {

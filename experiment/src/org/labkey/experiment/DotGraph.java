@@ -132,7 +132,7 @@ public class DotGraph
     public void addStartingMaterial (ExpMaterial m, Integer groupId, Integer actionseq, Integer runId)
     {
         DotNode node = new MNode(m);
-        node.setLink("resolveLSID", "lsid=" + m.getLSID());
+        node.setLink("resolveLSID", "lsid=" + PageFlowUtil.encode(m.getLSID()));
 
         if (null != focusId && objectType.equals(TYPECODE_MATERIAL) && focusId.intValue() == m.getRowId())
             node.setFocus(true);

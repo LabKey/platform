@@ -35,7 +35,7 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
     PipeRoot root = me.getPipeRoot();
     Container c = root.getContainer();
 
-    // prefix is where we what the tree rooted
+    // prefix is where we want the tree rooted
     // TODO: applet and fileBrowser could use more consistent configuration parameters
     String rootName = c.getName();
     String webdavPrefix = context.getContextPath() + "/" + WebdavService.getServletPath();
@@ -61,7 +61,7 @@ FastDateFormat dateFormat = FastDateFormat.getInstance("EEE, dd MMM yyyy HH:mm:s
 <script type="text/javascript">
 Ext.BLANK_IMAGE_URL = LABKEY.contextPath + "/_.gif";
 var rootPath = <%=PageFlowUtil.jsString(rootPath)%>;
-var actionsURL = <%=PageFlowUtil.jsString(new ActionURL(PipelineController.ActionsAction.class,c).getLocalURIString() + "path=")%>;
+var actionsURL = <%=PageFlowUtil.jsString(new ActionURL(PipelineController.ActionsAction.class,context.getContainer()).getLocalURIString() + "path=")%>;
 
 function $c(a,b)
 {

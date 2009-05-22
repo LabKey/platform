@@ -64,6 +64,7 @@ public class SampleChooser extends SampleChooserUtils implements EntryPoint
             if (minSampleCount < _maxSampleCount)
             {
                 _sampleCountListBox = new ListBox();
+                DOM.setElementAttribute(_sampleCountListBox.getElement(), "id", "sampleCountListBox");
                 for (int i = minSampleCount; i <= _maxSampleCount; i++)
                 {
                     _sampleCountListBox.addItem(i + " sample" + (i == 1 ? "" : "s"), Integer.toString(i));

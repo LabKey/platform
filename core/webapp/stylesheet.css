@@ -1565,8 +1565,12 @@ table.labkey-r-tsvout
   font-size: 8pt;
 }
 
+.dialogMiddleCenter {
+    padding: 5px;
+}
+
 .gwt-DialogBox {
-  sborder: 8px solid #89A1B4;
+  border: 8px solid #89A1B4;
   border: 2px outset;
   background-color: #FFFFFF;
 }
@@ -1575,7 +1579,6 @@ table.labkey-r-tsvout
   background-color: #EBF4FF;
   border: 1px solid #89A1B4;
   padding: 3px;
-  margin: 2px;
   font-weight: bold;
   cursor: default;
 }
