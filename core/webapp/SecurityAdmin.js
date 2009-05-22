@@ -72,7 +72,8 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     groupGuests : -3,
     groupDevelopers : -4,
 
-
+    rootContainer : null,
+    
     principalsStore : null,
 
     membershipStore : null,
@@ -337,7 +338,12 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         var map = this._mapContainers(null, [r], {});
         var records = [];
         for (var id in map)
-            records.push(this._makeRecord(map[id]));
+        {
+            var c = map[id];
+            if (c.path=='/')
+                this.rootContainer = c;
+            records.push(this._makeRecord(c));
+        }
         this.containersStore.add(records);
         this.projectsReady = true;
         this.checkReady();
@@ -583,20 +589,18 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
         // CONSIDER only store UserId and lookup record in XTemplate
         if (store)
         {
-            var ss = new Ext.data.SimpleStore({id:0, fields:[{name:'UserId'},{name:'Name'},{name:'Type'}]});
             var data = [];
             var records = store.getRange();
-            for (i=0 ; i<records.length ; i++)
+            for (var i=0 ; i<records.length ; i++)
             {
                 var d = records[i].data;
                 if (this.excludedPrincipals[d.UserId])
                     continue;
                 if (this.groupsOnly && d.Type!='g')
                     continue;
-                data.push([d.UserId,d.Name,d.Type=='u'?'u':d.Container?'g':'s']);
+                data.push(d);
             }
-            ss.loadData(data);
-            store = ss;
+            store = new Ext.data.Store({data:data, reader:new Ext.data.JsonReader({id:'UserId'},store.reader.recordType)});
         }
         PrincipalComboBox.superclass.bindStore.call(this,store,initial);
     },
@@ -627,6 +631,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     {
         PolicyEditor.superclass.onRender.call(this, ct, position);
         this._redraw();
+        window.onbeforeunload = LABKEY.beforeunload(this.isDirty, this);
     },
 
     // config
@@ -695,7 +700,8 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         {
             this.policy = policy;
             // we'd still like to get the inherited policy
-            S.getPolicy({resourceId:this.resource.parentId, containerPath:this.resource.parentId, successCallback:this.setInheritedPolicy, scope:this});
+            if (this.resource.parentId && this.resource.parentId != this.cache.rootContainer.id)
+                S.getPolicy({resourceId:this.resource.parentId, containerPath:this.resource.parentId, successCallback:this.setInheritedPolicy, scope:this});
         }
         this.roles = [];
         for (var r=0 ; r<roles.length ; r++)
@@ -820,12 +826,30 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
             
             for (r=0 ; r<this.roles.length ; r++)
             {
+                // add role combo
                 role = this.roles[r];
                 ct = Ext.fly(role.uniqueName);
                 var c = new PrincipalComboBox({cache:this.cache, id:('$add$'+role.uniqueName), roleId:role.uniqueName, excludedPrincipals:role.excludedPrincipals});
                 c.on("select", this.Combo_onSelect, this);
                 c.render(ct);
                 this.add(c);
+
+                // CONSIDER enable drop...
+//                var dropEl = ct.dom;
+//                new Ext.dd.DropTarget(dropEl,
+//                {
+//                    ddGroup  : 'rolesDDGroup',
+//                    notifyEnter : function(ddSource, e, data)
+//                    {
+//                        dropEl.stopFx();
+//                        dropEl.highlight();
+//                    },
+//                    notifyDrop  : function(ddSource, e, data)
+//                    {
+//                        console.log(ddSource);
+//                        return true;
+//                    }
+//                });
             }
         }
 
@@ -868,7 +892,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     {
         var id = btn.groupId;
         var policy = this.inheritedCheckbox.getValue() ? this.inheritedPolicy : this.policy;
-        var w = new UserInfoPopup({userId:id, cache:this.cache, policy:policy});
+        var w = new UserInfoPopup({userId:id, cache:this.cache, policy:policy, modal:true});
         w.show();
     },
 
