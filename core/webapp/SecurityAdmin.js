@@ -311,7 +311,22 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     {
         this.roles = resp;
         for (var r=0 ; r<this.roles.length ; r++)
-            this.roleMap[this.roles[r].uniqueName] = this.roles[r];
+        {
+            var role = this.roles[r];
+            this.roleMap[role.uniqueName] = role;
+            if (!role.excludedPrincipals)
+                role.excludedPrincipals = [];
+            role.accept = function(id)
+            {
+                if (typeof id == 'object')
+                    id = id.Userid;
+                //return -1 == role.excludedPrincipals.indexOf(id);
+                for (var i=0 ; i<this.excludedPrincipals.length ; i++)
+                    if (id == this.excludedPrincipals[i])
+                        return false;
+                return true;
+            };
+        }
         this.rolesReady = true;
         this.checkReady();
     },
@@ -537,6 +552,66 @@ Ext.apply(ButtonGroup.prototype, {
 });
 
 
+
+
+var ButtonsDragDrop = Ext.extend(Ext.dd.DragZone,
+{
+    ddGroup : "ButtonsDD",
+
+    constructor : function(container, config)
+    {
+        this.container = container;
+        this.node = container.el.dom;
+        //this.view = grid.getView();
+        ButtonsDragDrop.superclass.constructor.call(this, this.node, config);
+        this.scroll = false;
+        this.ddel = document.createElement('div');
+    },
+
+    getDragData : function(e)
+    {
+        // is target a button in my container?
+        var table = Ext.fly(e.getTarget()).findParentNode('table');
+        if (!table || !table.id) return;
+        var btn = this.container.getComponent(table.id);
+        if (!btn)
+            return false;
+        if (!('groupId' in btn) || !btn.roleId)
+            return false;
+        return btn;
+    },
+
+    onInitDrag : function(e)
+    {
+        var data = this.dragData;
+        this.ddel.innerHTML = data.text;
+        this.proxy.update(this.ddel);
+        this.proxy.setStatus(this.proxy.dropAllowed);
+    },
+
+    afterRepair : function()
+    {
+        this.dragging = false;
+    },
+
+    getRepairXY : function(e, data)
+    {
+        return false;
+    },
+
+    onEndDrag : function(data, e)
+    {
+    },
+
+    onValidDrop : function(dd, e, id)
+    {
+        this.hideProxy();
+    },
+
+    beforeInvalidDrop : function(e, id)
+    {
+    }
+});
 
 
 
@@ -770,8 +845,8 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
 
     roleTemplate : new Ext.Template(
             '<tr class="permissionsTR">'+
-            '<td width=300 valign=top class="roleTD"><div><h3 class="rn">{name}</h3><div class="rd">{description}</div></div></td>'+
-            '<td valign=top width=100% id="{uniqueName}" class="groupsTD"><span id="$br${uniqueName}">&nbsp;<img height=20 width=1 src="' + Ext.BLANK_IMAGE_URL + '"><br></span></td>'+
+            '<td height=50 width=300 valign=top class="roleTD"><div><h3 class="rn">{name}</h3><div class="rd">{description}</div></div></td>'+
+            '<td valign=top width=100% id="{uniqueName}" class="groupsTD"><span id="$br${uniqueName}"><img height=20 width=1 src="' + Ext.BLANK_IMAGE_URL + '"><br></span></td>'+
             '</tr>\n'),
 
 
@@ -834,23 +909,50 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
                 c.render(ct);
                 this.add(c);
 
-                // CONSIDER enable drop...
-//                var dropEl = ct.dom;
-//                new Ext.dd.DropTarget(dropEl,
-//                {
-//                    ddGroup  : 'rolesDDGroup',
-//                    notifyEnter : function(ddSource, e, data)
-//                    {
-//                        dropEl.stopFx();
-//                        dropEl.highlight();
-//                    },
-//                    notifyDrop  : function(ddSource, e, data)
-//                    {
-//                        console.log(ddSource);
-//                        return true;
-//                    }
-//                });
+                // DropTarget
+                new Ext.dd.DropTarget(ct.dom.parentNode,
+                {
+                    editor : this,
+                    role : role,
+                    ddGroup  : 'ButtonsDD',
+                    notifyEnter : function(dd, e, data)
+                    {
+                        this.el.stopFx();
+                        if (data.roleId == this.role.uniqueName || !this.role.accept(data.groupId))
+                        {
+                            dd.proxy.setStatus(this.dropNotAllowed);
+                            return this.dropNotAllowed;
+                        }
+                        // DOESN'T WORK RELIABLY... this.el.highlight("ffff9c",{duration:1});
+                        dd.proxy.setStatus(this.dropAllowed);
+                        return this.dropAllowed;
+                    },
+                    notifyOut : function(dd, e, data)
+                    {
+                        this.el.stopFx();
+                    },
+                    notifyDrop  : function(ddSource, e, data)
+                    {
+                        this.el.stopFx();
+                        console.log('drop ' + (e.shiftKey?'SHIFT ':'') + data.text + ' ' + data.groupId + ' ' + data.roleId);
+                        if (data.roleId == this.role.uniqueName || !this.role.accept(data.groupId))
+                        {
+                            // add for fail animation
+                            this.editor.addRoleAssignment(data.groupId, data.roleId, ddSource.proxy.el);
+                            return false;
+                        }
+                        else
+                        {
+                            this.editor.addRoleAssignment(data.groupId, this.role, ddSource.proxy.el);
+                            if (!e.shiftKey)
+                                this.editor.removeRoleAssignment(data.groupId, data.roleId);
+                            return true;
+                        }
+                    }
+                });
             }
+            // DropSource (whole editor)
+            new ButtonsDragDrop(this, {});
         }
 
         // render security policy
@@ -928,13 +1030,13 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     },
 
     
-    addButton : function(group, role, animate)
+    addButton : function(group, role, animate, animEl)
     {
         if (typeof group != 'object')
             group = this.cache.getPrincipal(group);
         var groupName = group.Name;
         var groupId = group.UserId;
-        var roleId = role;
+        var roleId = role; 
         if (typeof role == 'object')
             roleId = role.uniqueName;
 
@@ -950,10 +1052,11 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         var br = Ext.get('$br$' + roleId);  // why doesn't Ext.fly() work?
         if (typeof animate == 'boolean' && animate)
         {
+            if (!animEl)
+                animEl = this.getComponent('$add$' + roleId).el;
             var body = Ext.getBody();
-            var combo = this.getComponent('$add$' + roleId);
             var span = body.insertHtml("beforeend",'<span style:"position:absolute;">' + $h(groupName) + '<span>', true);
-            span.setXY(combo.el.getXY());
+            span.setXY(animEl.getXY());
             var xy = btnEl ? btnEl.getXY() : br.getXY();
             span.shift({x:xy[0], y:xy[1], callback:function(){
                 span.remove();
@@ -1025,7 +1128,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         }
     },
     
-    addRoleAssignment : function(group, role)
+    addRoleAssignment : function(group, role, animEl)
     {
         var groupId = group;
         if (typeof group == "object")
@@ -1035,7 +1138,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
             roleId = role.uniqueName;
         this.policy.addRoleAssignment(groupId, roleId);
 
-        this.addButton(group,role,true);
+        this.addButton(group,role,true,animEl);
     },
 
     removeRoleAssignment : function(group, role)
