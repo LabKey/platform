@@ -607,7 +607,7 @@ public class QueryServiceImpl extends QueryService
 			orderBy = sort.getOrderByClause(dialect, columnMap);
 		}
 
-		if (filterFrag == null && sort == null && rowCount == 0 && offset == 0)
+		if ((filterFrag == null || filterFrag.getSQL().length()==0) && sort == null && rowCount == 0 && offset == 0)
 		{
 			selectFrag.append("\n").append(fromFrag);
 			return selectFrag;
