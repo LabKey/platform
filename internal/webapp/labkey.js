@@ -380,13 +380,14 @@ LABKEY.setDirty = function (dirty)
 };
 
 LABKEY.isDirty = function () { return this.dirty; };
+LABKEY.unloadMessage = "You will lose any changes made to this page.";
 
-LABKEY.beforeunload = function (dirtyCallback)
+LABKEY.beforeunload = function (dirtyCallback, scope)
 {
     return function () {
         if (!LABKEY.submit &&
-            (LABKEY.isDirty() || (dirtyCallback && dirtyCallback()))) {
-            return "You will lose any changes made to this page.";
+            (LABKEY.isDirty() || (dirtyCallback && dirtyCallback.call(scope)))) {
+            return LABKEY.unloadMessage;
         }
     };
 };
