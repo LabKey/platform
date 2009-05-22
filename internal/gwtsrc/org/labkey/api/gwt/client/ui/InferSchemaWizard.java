@@ -53,7 +53,7 @@ public class InferSchemaWizard extends DialogBox
         form.setWidget(panel);
 
         fileButton = new RadioButton("source", "file");
-        fileButton.setText("File:");
+        fileButton.setText("Upload Excel or tab-delimited file (.xls, .tsv, .txt, .csv):");
         fileButton.setFormValue("file");
         fileButton.setChecked(true);
         panel.add(fileButton);
@@ -70,7 +70,7 @@ public class InferSchemaWizard extends DialogBox
         panel.add(upload);
 
         tsvButton = new RadioButton("source", "tsv");
-        tsvButton.setText("Tab-delimited data:");
+        tsvButton.setText("Paste tab-delimited data:");
         tsvButton.setFormValue("tsv");
         panel.add(tsvButton);
         tsvTextArea = new TextArea();

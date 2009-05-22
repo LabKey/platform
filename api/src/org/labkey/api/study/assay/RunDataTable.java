@@ -59,7 +59,7 @@ public class RunDataTable extends FilteredTable
             {
                 ColumnInfo result = super.constructColumnInfo(parent, name, pd);
                 // Don't override any lookups that are already set
-                if (AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equals(pd.getName()) && pd.getLookupQuery() != null && pd.getLookupSchema() != null)
+                if (AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equals(pd.getName()) && pd.getLookupQuery() == null && pd.getLookupSchema() == null)
                 {
                     DomainProperty[] batchDPs = provider.getBatchDomain(protocol).getProperties();
                     for (DomainProperty batchDP : batchDPs)

@@ -128,6 +128,26 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
     {
         copyValuesToPropertyDescriptor();
 
+        _currentPD = newPD;
+
+        setEnabled(editable);
+
+        if (_currentPD != null)
+        {
+            DOM.setStyleAttribute(getElement(), "display", "block");
+            DOM.setStyleAttribute(_backgroundElement, "backgroundColor", "#eeeeee");
+            
+            for (PropertyPaneItem<DomainType, FieldType> item : _items)
+            {
+                item.showPropertyDescriptor(_propertiesEditor.getCurrentDomain(), _currentPD);
+            }
+        }
+        else
+        {
+            DOM.setStyleAttribute(getElement(), "display", "none");
+            DOM.setStyleAttribute(_backgroundElement, "backgroundColor", "#ffffff");
+        }
+
         int newSpacerHeight = Math.max(0, rowAbsoluteY - getAbsoluteTop() - 25);
         int bottomOfEditor = _propertiesEditor.getContentPanel().getOffsetHeight() - 5;
         if (newSpacerHeight + (getOffsetHeight() - _spacerHeight) > bottomOfEditor)
@@ -136,26 +156,6 @@ public class PropertyPane<DomainType extends GWTDomain<FieldType>, FieldType ext
         }
         _spacerImage.setHeight(newSpacerHeight + "px");
         _spacerHeight = newSpacerHeight;
-
-        _currentPD = newPD;
-
-        setEnabled(editable);
-
-        if (_currentPD != null)
-        {
-            for (PropertyPaneItem<DomainType, FieldType> item : _items)
-            {
-                item.showPropertyDescriptor(_propertiesEditor.getCurrentDomain(), _currentPD);
-            }
-
-            DOM.setStyleAttribute(getElement(), "visibility", "visible");
-            DOM.setStyleAttribute(_backgroundElement, "backgroundColor", "#eeeeee");
-        }
-        else
-        {
-            DOM.setStyleAttribute(getElement(), "visibility", "hidden");
-            DOM.setStyleAttribute(_backgroundElement, "backgroundColor", "#ffffff");
-        }
     }
 
     public FieldType getField()

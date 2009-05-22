@@ -34,7 +34,6 @@ public class ExportSchemaWizard extends DialogBox
         this.propertiesEditor = propertiesEditor;
 
         VerticalPanel vPanel = new VerticalPanel();
-        vPanel.setSpacing(5);
 
         Label caption = new Label("The schema can be copied from the text area below:");
         vPanel.add(caption);
@@ -64,6 +63,8 @@ public class ExportSchemaWizard extends DialogBox
         mainPanel.add(vPanel);
 
         setWidget(mainPanel);
+
+        schemaTsv.setSelectionRange(0, schemaTsv.getText().length() - 1);
     }
 
     private String getTsv()

@@ -34,7 +34,6 @@ class ImportSchemaWizard extends DialogBox
         super(false, true);
         this.propertiesEditor = propertiesEditor;
         VerticalPanel vPanel = new VerticalPanel();
-        vPanel.setSpacing(5);
         String warning = "<b>NOTE: This will replace any existing fields you have defined.</b>";
         if (propertiesEditor._domain.getFields().size() > 0)
         {
