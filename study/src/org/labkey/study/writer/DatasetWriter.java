@@ -23,6 +23,7 @@ import org.labkey.api.util.VirtualFile;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.Cohort;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.xml.DatasetsDocument;
 import org.labkey.study.xml.StudyDocument.Study.Datasets;
@@ -65,6 +66,9 @@ public class DatasetWriter implements Writer<Study>
         DatasetsDocument.Datasets dsXml = manifestXml.addNewDatasets();
         dsXml.setDefaultDateFormat(StudyManager.getInstance().getDefaultDateFormatString(ctx.getContainer()));
         dsXml.setDefaultNumberFormat(StudyManager.getInstance().getDefaultNumberFormatString(ctx.getContainer()));
+
+        // Create <categories> element now so it appears first in the file
+        DatasetsDocument.Datasets.Categories categoriesXml = dsXml.addNewCategories();
         DatasetsDocument.Datasets.Datasets2 datasets2Xml = dsXml.addNewDatasets();
 
         Set<String> categories = new LinkedHashSet<String>();
@@ -74,8 +78,10 @@ public class DatasetWriter implements Writer<Study>
             DatasetsDocument.Datasets.Datasets2.Dataset datasetXml = datasets2Xml.addNewDataset();
             datasetXml.setId(def.getDataSetId());
 
-            if (null != def.getCohort())
-                datasetXml.setCohort(def.getCohort().getLabel());
+            Cohort cohort = def.getCohort();
+
+            if (null != cohort)
+                datasetXml.setCohort(cohort.getLabel());
 
             // Default value is "true"
             if (!def.isShowByDefault())
@@ -90,11 +96,10 @@ public class DatasetWriter implements Writer<Study>
             }
         }
 
-        if (!categories.isEmpty())
-        {
-            DatasetsDocument.Datasets.Categories categoriesXml = dsXml.addNewCategories();
+        if (categories.isEmpty())
+            dsXml.unsetCategories();     // Didn't need <categories> element after all
+        else
             categoriesXml.setCategoryArray(categories.toArray(new String[categories.size()]));
-        }
 
         StudyXmlWriter.saveDoc(fs.getPrintWriter(MANIFEST_FILENAME), manifestXml);
 

@@ -20,6 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Category;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.Cache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -882,6 +883,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         _cohortId = cohortId;
     }
 
+    @Nullable
     public Cohort getCohort()
     {
         if (_cohortId == null)

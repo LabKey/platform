@@ -27,8 +27,11 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.BindException;
 import org.apache.xmlbeans.XmlException;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,7 +54,7 @@ public class DatasetImporter
 
         if (null != datasetsXml)
         {
-            File datasetDir = (null == datasetsXml.getDir() ? root : new File(root, datasetsXml.getDir()));
+            File datasetDir = getDatasetDirectory(ctx, root);
 
             StudyDocument.Study.Datasets.Schema schema = datasetsXml.getSchema();
             String schemaSource = schema.getFile();
@@ -66,40 +69,28 @@ public class DatasetImporter
             if (schemaFile.exists())
             {
                 List<Integer> orderedIds = null;
-                Map<Integer, ExtraImportProperties> extraProps = null;
+                Map<Integer, DatasetImportProperties> extraProps = null;
 
-                String datasetsXmlFilename = ctx.getStudyXml().getDatasets().getFile();
+                DatasetsDocument.Datasets manifestDatasetsXml = getDatasetsManifest(ctx, root);
 
-                if (null != datasetsXmlFilename)
+                if (null != manifestDatasetsXml)
                 {
-                    File datasetsXmlFile = new File(datasetDir, datasetsXmlFilename);
+                    Container c = ctx.getContainer();
 
-                    if (datasetsXmlFile.exists())
-                    {
-                        Container c = ctx.getContainer();
-                        DatasetsDocument datasetsDoc = DatasetsDocument.Factory.parse(datasetsXmlFile);
-                        DatasetsDocument.Datasets manifestDatasetsXml = datasetsDoc.getDatasets();
+                    if (!PageFlowUtil.nullSafeEquals(manifestDatasetsXml.getDefaultDateFormat(), StudyManager.getInstance().getDefaultDateFormatString(c)))
+                        StudyManager.getInstance().setDefaultDateFormatString(c, manifestDatasetsXml.getDefaultDateFormat());
 
-                        if (manifestDatasetsXml.isSetDefaultDateFormat())
-                            if (manifestDatasetsXml.getDefaultDateFormat().equals(StudyManager.getInstance().getDefaultDateFormatString(c)))
-                                StudyManager.getInstance().setDefaultDateFormatString(c, manifestDatasetsXml.getDefaultDateFormat());
+                    if (!PageFlowUtil.nullSafeEquals(manifestDatasetsXml.getDefaultNumberFormat(), StudyManager.getInstance().getDefaultNumberFormatString(c)))
+                        StudyManager.getInstance().setDefaultNumberFormatString(c, manifestDatasetsXml.getDefaultNumberFormat());
 
-                        if (manifestDatasetsXml.isSetDefaultNumberFormat())
-                            if (manifestDatasetsXml.getDefaultNumberFormat().equals(StudyManager.getInstance().getDefaultNumberFormatString(c)))
-                                StudyManager.getInstance().setDefaultNumberFormatString(c, manifestDatasetsXml.getDefaultNumberFormat());
+                    DatasetsDocument.Datasets.Datasets2.Dataset[] datasets = manifestDatasetsXml.getDatasets().getDatasetArray();
 
-                        DatasetsDocument.Datasets.Datasets2.Dataset[] datasets = manifestDatasetsXml.getDatasets().getDatasetArray();
+                    extraProps = getDatasetImportProperties(manifestDatasetsXml);
 
-                        orderedIds = new ArrayList<Integer>(datasets.length);
-                        extraProps = new HashMap<Integer, ExtraImportProperties>(datasets.length);
+                    orderedIds = new ArrayList<Integer>(datasets.length);
 
-                        for (DatasetsDocument.Datasets.Datasets2.Dataset dataset : datasets)
-                        {
-                            orderedIds.add(dataset.getId());
-                            ExtraImportProperties props = new ExtraImportProperties(dataset.getCategory(), dataset.getCohort(), dataset.getShowByDefault());
-                            extraProps.put(dataset.getId(), props);
-                        }
-                    }
+                    for (DatasetsDocument.Datasets.Datasets2.Dataset dataset : datasets)
+                        orderedIds.add(dataset.getId());
                 }
 
                 if (!StudyManager.getInstance().bulkImportTypes(study, schemaFile, ctx.getUser(), labelColumn, typeNameColumn, typeIdColumn, extraProps, errors))
@@ -115,7 +106,7 @@ public class DatasetImporter
 
                 if (datasetFile.exists())
                 {
-                    submitStudyBatch(study, datasetFile, ctx.getContainer(), ctx.getUser(), ctx.getUrl());  // TODO: remove last param
+                    submitStudyBatch(study, datasetFile, ctx.getContainer(), ctx.getUser(), ctx.getUrl());
                 }
             }
         }
@@ -141,14 +132,68 @@ public class DatasetImporter
         batch.submit();
     }
 
-    // These dataset properties are defined in datasets.xml; the rest are specified in schema.tsv
-    public static class ExtraImportProperties
+
+    private static File getDatasetDirectory(ImportContext ctx, File root)
+    {
+        StudyDocument.Study.Datasets datasetsXml = ctx.getStudyXml().getDatasets();
+
+        if (null != datasetsXml)
+        {
+            return (null == datasetsXml.getDir() ? root : new File(root, datasetsXml.getDir()));
+        }
+
+        return null;
+    }
+
+
+    @Nullable
+    public static DatasetsDocument.Datasets getDatasetsManifest(ImportContext ctx, File root) throws XmlException, IOException
+    {
+        File datasetDir = getDatasetDirectory(ctx, root);
+
+        if (null != datasetDir)
+        {
+            String datasetsXmlFilename = ctx.getStudyXml().getDatasets().getFile();
+
+            if (null != datasetsXmlFilename)
+            {
+                File datasetsXmlFile = new File(datasetDir, datasetsXmlFilename);
+
+                if (datasetsXmlFile.exists())
+                {
+                    return DatasetsDocument.Factory.parse(datasetsXmlFile).getDatasets();
+                }
+            }
+        }
+
+        return null;
+    }
+
+
+    public static Map<Integer, DatasetImportProperties> getDatasetImportProperties(@NotNull DatasetsDocument.Datasets datasetsXml)
+    {
+        DatasetsDocument.Datasets.Datasets2.Dataset[] datasets = datasetsXml.getDatasets().getDatasetArray();
+        Map<Integer, DatasetImportProperties> extraProps = new HashMap<Integer, DatasetImportProperties>(datasets.length);
+
+        for (DatasetsDocument.Datasets.Datasets2.Dataset dataset : datasets)
+        {
+            DatasetImportProperties props = new DatasetImportProperties(dataset.getCategory(), dataset.getCohort(), dataset.getShowByDefault());
+            extraProps.put(dataset.getId(), props);
+        }
+
+        return extraProps;
+    }
+
+
+    // These dataset properties are defined in datasets.xml; the rest are specified in schema.tsv.
+    // TODO: Get rid of schema.tsv and put all dataset-level properties here 
+    public static class DatasetImportProperties
     {
         private String _category;
         private String _cohort;
         private boolean _showByDefault;
 
-        private ExtraImportProperties(String category, String cohort, boolean showByDefault)
+        private DatasetImportProperties(String category, String cohort, boolean showByDefault)
         {
             _category = category;
             _cohort = cohort;

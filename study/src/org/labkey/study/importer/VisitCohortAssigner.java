@@ -36,7 +36,8 @@ import java.util.List;
  */
 public class VisitCohortAssigner
 {
-    // Parses the whole visit map again to retrieve the cohort assigments; not ideal...
+    // Parses the whole visit map again to retrieve the cohort assigments; should cache info from the first parsing
+    // somewhere in the ImportContext
     void process(Study study, ImportContext ctx, File root) throws SQLException
     {
         StudyDocument.Study.Visits visitsXml = ctx.getStudyXml().getVisits();

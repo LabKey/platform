@@ -67,7 +67,7 @@ import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.designer.StudyDesignManager;
-import org.labkey.study.importer.DatasetImporter.ExtraImportProperties;
+import org.labkey.study.importer.DatasetImporter.DatasetImportProperties;
 import org.labkey.study.query.DataSetTable;
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.visitmanager.DateVisitManager;
@@ -2451,13 +2451,13 @@ public class StudyManager
     }
 
 
-    public boolean bulkImportTypes(Study study, File tsvFile, User user, String labelColumn, String typeNameColumn, String typeIdColumn, Map<Integer, ExtraImportProperties> extraImportProps, BindException errors) throws IOException, SQLException
+    public boolean bulkImportTypes(Study study, File tsvFile, User user, String labelColumn, String typeNameColumn, String typeIdColumn, Map<Integer, DatasetImportProperties> extraImportProps, BindException errors) throws IOException, SQLException
     {
         return bulkImportTypes(study, new TabLoader(tsvFile, true), user, labelColumn, typeNameColumn, typeIdColumn, extraImportProps, errors);
     }
 
 
-    private boolean bulkImportTypes(Study study, TabLoader loader, User user, String labelColumn, String typeNameColumn, String typeIdColumn, Map<Integer, ExtraImportProperties> extraImportProps, BindException errors) throws IOException, SQLException
+    private boolean bulkImportTypes(Study study, TabLoader loader, User user, String labelColumn, String typeNameColumn, String typeIdColumn, Map<Integer, DatasetImportProperties> extraImportProps, BindException errors) throws IOException, SQLException
     {
         loader.setParseQuotes(true);
         List<Map<String, Object>> mapsLoad = loader.load();
@@ -2493,7 +2493,7 @@ public class StudyManager
                 }
 
                 Integer typeId = (Integer) typeIdObj;
-                ExtraImportProperties extraProps = null != extraImportProps ? extraImportProps.get(typeId) : null;
+                DatasetImportProperties extraProps = null != extraImportProps ? extraImportProps.get(typeId) : null;
 
                 boolean isHidden;
 

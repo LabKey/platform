@@ -53,18 +53,24 @@ public class StudyImportJob extends PipelineJob
 
         try
         {
-            setStatus("IMPORT cohort settings");
-            info("Importing cohort settings");
             // Dataset and Specimen upload jobs delete "unused" participants, so we need to defer setting participant
             // cohorts until the end of upload.
+            setStatus("IMPORT cohort settings");
+            info("Importing cohort settings");
             new CohortImporter().process(_study, _ctx, _root);
             info("Done importing cohort settings");
 
+            // Can't assign visits to cohorts until the cohorts are created
             setStatus("IMPORT visit map cohort assignments");
             info("Importing visit map cohort assignments");
-            // Can't assign visits to cohorts until the cohorts are created
             new VisitCohortAssigner().process(_study, _ctx, _root);
             info("Done importing visit map cohort assignments");
+
+            // Can't assign datasets to cohorts until the cohorts are created
+            setStatus("IMPORT dataset cohort assignments");
+            info("Importing dataset cohort assignments");
+            new DatasetCohortAssigner().process(_study, _ctx, _root);
+            info("Done importing dataset cohort assignments");
 
             info("Importing queries");
             setStatus("IMPORT queries");
