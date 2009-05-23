@@ -149,17 +149,21 @@ LABKEY.SecurityPolicy = Ext.extend(Ext.util.Observable, {
     getEffectiveRolesForIds : function(ids)
     {
         var idxAssgn, assgn, idxIds;
-        var roles = [];
+        var set = {};
         for (idxAssgn = 0; idxAssgn < this.policy.assignments.length; ++idxAssgn)
         {
             assgn = this.policy.assignments[idxAssgn];
-            for(idxIds = 0; idxIds < ids.length; ++idxIds)
+            for (idxIds = 0; idxIds < ids.length; ++idxIds)
             {
                 if(ids[idxIds] == assgn.userId)
-                    roles.push(assgn.role);
+                    set[assgn.role]=true;
             }
         }
-        return roles;
+        return set;
+//        var roles = [];
+//        for (var role in set)
+//            roles.push(role);
+//        return roles;
     },
 
 
