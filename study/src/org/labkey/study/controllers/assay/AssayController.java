@@ -694,7 +694,7 @@ public class AssayController extends SpringActionController
             }
             if (containerFilter != null)
                 result.addParameter(protocol.getName() + " Runs." + QueryParam.containerFilterName, containerFilter.getType().name());
-            return PageFlowUtil.addLastFilterParameter(result);
+            return result;
         }
 
         public ActionURL getAssayListURL(Container container)
@@ -709,7 +709,7 @@ public class AssayController extends SpringActionController
             {
                 url.addParameter(protocol.getName() + " Batches." + QueryParam.containerFilterName, containerFilter.getType().name());
             }
-            return PageFlowUtil.addLastFilterParameter(url);
+            return url;
         }
 
         public ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, int... runIds)
@@ -740,7 +740,7 @@ public class AssayController extends SpringActionController
             }
             if (containerFilter != null)
                 result.addParameter(protocol.getName() + " Data." + QueryParam.containerFilterName, containerFilter.getType().name());
-            return PageFlowUtil.addLastFilterParameter(result);
+            return result;
         }
 
         public ActionURL getChooseCopyDestinationURL(ExpProtocol protocol, Container container)
