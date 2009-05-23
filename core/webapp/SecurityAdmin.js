@@ -3,9 +3,6 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-var curvyCornersNoAutoScan = true;
-LABKEY.requiresScript('curvycorners.src.js');
-
 
 var $ = Ext.get;
 var $h = Ext.util.Format.htmlEncode;
@@ -156,6 +153,21 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         if (record)
             return record.data;
         return null;
+    },
+
+    // type = 'project', 'site', 'both'
+    getGroups : function(type)
+    {
+        var groups = [];
+        if (!type) type = 'both';
+        this.principalsStore.each(function(record){
+            var data = record.data;
+            if (data.TYPE == 'u')
+                return;
+            if ('both' == type || 'site' == type && !data.Container || 'project' == type && data.Container)
+                groups.push(data);
+        });
+        return groups;
     },
 
     getGroupsFor : function(id)
@@ -430,12 +442,13 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
         {
             var ids = this.cache.getEffectiveGroups(this.userId);
             var roles = this.policy.getEffectiveRolesForIds(ids);
+            var allRoles = this.cache.roles;
             html.push('<b>effective roles</b><ul style="list-style-type:none;">');
-            for (var r=0 ; r<roles.length ; r++)
+            for (var r=0 ; r<allRoles.length ; r++)
             {
-                var roleName = roles[r];
-                var role = this.cache.getRole(roleName);
-                html.push("<li>" + ((role && role.name) ? role.name : roleName) + "</li>");
+                var role = allRoles[r];
+                if (roles[role.uniqueName])
+                    html.push("<li>" + ((role && role.name) ? role.name : roleName) + "</li>");
             }
             html.push("</ul>\n");
         }
@@ -657,13 +670,23 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
         }
     }),
 
+    onDataChanged : function(store)
+    {
+        // UNDONE: reload combo
+    },
+
     bindStore : function(store, initial)
     {
+        if (this.store)
+            this.store.unwatch("datachanged", this.onDataChanged, this);
+        
         // UNDONE: ComboBox does not lend itself to filtering, but this is expensive!
         // UNDONE: would be nice to share a filtered DataView like object across the PrincipalComboBoxes
         // CONSIDER only store UserId and lookup record in XTemplate
         if (store)
         {
+            store.on("datachanged", this.onDataChanged, this);
+
             var data = [];
             var records = store.getRange();
             for (var i=0 ; i<records.length ; i++)
@@ -671,7 +694,7 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
                 var d = records[i].data;
                 if (this.excludedPrincipals[d.UserId])
                     continue;
-                if (this.groupsOnly && d.Type!='g')
+                if (this.groupsOnly && d.Type!='g' || this.usersOnly && d.Type!='u')
                     continue;
                 data.push(d);
             }

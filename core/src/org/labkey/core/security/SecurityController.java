@@ -181,7 +181,7 @@ public class SecurityController extends SpringActionController
         {
             String root = getViewContext().getContainer().getId();
             String resource = root;
-            return new SecurityAdministrationView(root, resource);
+            return new FolderPermissions(root, resource);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -191,11 +191,11 @@ public class SecurityController extends SpringActionController
     }
 
 
-    public class SecurityAdministrationView extends JspView
+    public class FolderPermissions extends JspView
     {
-        SecurityAdministrationView(String root, String resource)
+        FolderPermissions(String root, String resource)
         {
-            super(SecurityController.class, "admin.jsp", null);
+            super(SecurityController.class, "FolderPermissions.jsp", null);
             this.setFrame(FrameType.NONE);
         }
     }
@@ -262,15 +262,17 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    public class GroupsBean
+    public static class GroupsBean
     {
+        ViewContext _context;
         Container _container;
         Group[] _groups;
         String _expandedGroupPath;
         List<String> _messages;
 
-        public GroupsBean(Container c, String expandedGroupPath, List<String> messages)
+        public GroupsBean(ViewContext context, String expandedGroupPath, List<String> messages)
         {
+            Container c = context.getContainer();
             if (null == c || c.isRoot())
             {
                 _groups = org.labkey.api.security.SecurityManager.getGroups(null, false);
@@ -313,8 +315,8 @@ public class SecurityController extends SpringActionController
                     names.add(user.getLastName() + ", " + user.getFirstName() + " (" + user.getEmail() + ")");
                     shortName += " (" + user.getFirstName() + " " + user.getLastName() + ")";
                 }
-                if (user.getDisplayName(getViewContext()).compareToIgnoreCase(user.getEmail()) != 0)
-                    names.add(user.getDisplayName(getViewContext()) + " (" + user.getEmail() + ")");
+                if (user.getDisplayName(_context).compareToIgnoreCase(user.getEmail()) != 0)
+                    names.add(user.getDisplayName(_context) + " (" + user.getEmail() + ")");
 
                 names.add(shortName);
             }
@@ -329,13 +331,14 @@ public class SecurityController extends SpringActionController
 
     private HttpView getGroupsView(Container container, String expandedGroup, BindException errors, List<String> messages)
     {
-        JspView<GroupsBean> groupsView = new JspView<GroupsBean>("/org/labkey/core/security/groups.jsp", new GroupsBean(container, expandedGroup, messages), errors);
+        JspView<GroupsBean> groupsView = new JspView<GroupsBean>("/org/labkey/core/security/groups.jsp", new GroupsBean(getViewContext(), expandedGroup, messages), errors);
         if (null == container || container.isRoot())
             groupsView.setTitle("Site Groups");
         else
             groupsView.setTitle("Groups for project " + container.getProject().getName());
         return groupsView;
     }
+    
 
     private ModelAndView renderContainerPermissions(String expandedGroup, BindException errors, List<String> messages, boolean wizard) throws Exception
     {
@@ -457,9 +460,9 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class NewGroupAction extends SimpleViewAction<NewGroupForm>
+    public class NewGroupAction extends FormHandlerAction<NewGroupForm>
     {
-        public ModelAndView getView(NewGroupForm form, BindException errors) throws Exception
+        public boolean handlePost(NewGroupForm form, BindException errors) throws Exception
         {
             // UNDONE: use form validation
             String name = form.getName();
@@ -488,13 +491,18 @@ public class SecurityController extends SpringActionController
             if (error != null)
             {
                 errors.addError(new LabkeyError(error));
+                return false;
             }
-            return renderContainerPermissions(null, errors, null, false);
+            return true;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void validateCommand(NewGroupForm target, Errors errors)
         {
-            return root.addChild("Permissions");
+        }
+
+        public ActionURL getSuccessURL(NewGroupForm newGroupForm)
+        {
+            return new ActionURL(ProjectAction.class, getContainer());
         }
     }
 

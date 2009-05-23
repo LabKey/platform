@@ -440,6 +440,7 @@ core/src/org/labkey/core/query/CoreQuerySchema.java -text
 core/src/org/labkey/core/query/GroupAuditViewFactory.java -text
 core/src/org/labkey/core/query/UserAuditViewFactory.java -text
 core/src/org/labkey/core/security/ContainersView.java -text
+core/src/org/labkey/core/security/FolderPermissions.jsp -text
 core/src/org/labkey/core/security/GroupView.java -text
 core/src/org/labkey/core/security/PermissionsDetailsView.java -text
 core/src/org/labkey/core/security/SecurityApiActions.java -text
