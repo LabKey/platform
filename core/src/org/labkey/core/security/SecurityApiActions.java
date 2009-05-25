@@ -15,17 +15,18 @@
  */
 package org.labkey.core.security;
 
+import org.apache.commons.lang.StringUtils;
 import org.labkey.api.action.*;
+import org.labkey.api.audit.AuditLogEvent;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.roles.ProjectAdminRole;
-import org.labkey.api.view.UnauthorizedException;
 import org.springframework.validation.BindException;
-import org.apache.commons.lang.StringUtils;
 
 import java.util.*;
 
@@ -515,8 +516,14 @@ public class SecurityApiActions
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public static class SavePolicyAction extends ApiAction<SavePolicyForm>
+    public static class SavePolicyAction extends MutatingApiAction<SavePolicyForm>
     {
+        protected enum RoleModification
+        {
+            Added,
+            Removed
+        }
+
         public ApiResponse execute(SavePolicyForm form, BindException errors) throws Exception
         {
             Container container = getViewContext().getContainer();
@@ -531,13 +538,127 @@ public class SecurityApiActions
             if(null == resource)
                 throw new IllegalArgumentException("No resource with the id '" + resourceId + "' was found in this container!");
 
+            //get the existing policy so we can audit how it's changed
+            SecurityPolicy oldPolicy = SecurityManager.getPolicy(resource);
+
             //create the policy from the props (will throw if invalid)
             SecurityPolicy policy = SecurityPolicy.fromMap(form.getProps(), resource);
 
             //save it
             SecurityManager.savePolicy(policy);
 
+            //audit log
+            writeToAuditLog(oldPolicy, policy);
+
             return new ApiSimpleResponse("success", true);
+        }
+
+        protected void writeToAuditLog(SecurityPolicy oldPolicy, SecurityPolicy newPolicy)
+        {
+            SecurableResource resource = newPolicy.getResource();
+
+            //if moving from inherted to not-inherited, just log the new role assignments
+            if (!(oldPolicy.getResource().getResourceId().equals(newPolicy.getResource().getResourceId())))
+            {
+                SecurableResource parent = resource.getParentResource();
+                String parentName = parent != null ? parent.getResourceName() : "root";
+                AuditLogService.get().addEvent(getViewContext(), GroupManager.GROUP_AUDIT_EVENT,
+                        resource.getResourceId(), "A new security policy was established for " +
+                        resource.getResourceName() + ". It will no longer inherit permissions from " +
+                        parentName);
+                for (RoleAssignment newAsgn : newPolicy.getAssignments())
+                {
+                    writeAuditEvent(newAsgn.getUserId(), newAsgn.getRole(), RoleModification.Added, resource);
+                }
+                return;
+            }
+
+            Iterator<RoleAssignment> oldIter = oldPolicy.getAssignments().iterator();
+            Iterator<RoleAssignment> newIter = newPolicy.getAssignments().iterator();
+            RoleAssignment oldAsgn = oldIter.hasNext() ? oldIter.next() : null;
+            RoleAssignment newAsgn = newIter.hasNext() ? newIter.next() : null;
+
+            while (null != oldAsgn && null != newAsgn)
+            {
+                //if different users...
+                if (oldAsgn.getUserId() != newAsgn.getUserId())
+                {
+                    //if old user < new user, user has been removed
+                    if (oldAsgn.getUserId() < newAsgn.getUserId())
+                    {
+                        writeAuditEvent(oldAsgn.getUserId(), oldAsgn.getRole(), RoleModification.Removed, resource);
+                    }
+                    else
+                    {
+                        //else, user has been added
+                        writeAuditEvent(newAsgn.getUserId(), newAsgn.getRole(), RoleModification.Added, resource);
+                    }
+                }
+                else if (!oldAsgn.getRole().equals(newAsgn.getRole()))
+                {
+                    //if old role < new role, role has been removed
+                    if (oldAsgn.getRole().getUniqueName().compareTo(newAsgn.getRole().getUniqueName()) < 0)
+                    {
+                        writeAuditEvent(oldAsgn.getUserId(), oldAsgn.getRole(), RoleModification.Removed, resource);
+                    }
+                    else
+                    {
+                        //else, role has been added
+                        writeAuditEvent(newAsgn.getUserId(), newAsgn.getRole(), RoleModification.Added, resource);
+                    }
+                }
+
+                //advance
+                if (oldAsgn.compareTo(newAsgn) > 0)
+                    newAsgn = newIter.hasNext() ? newIter.next() : null;
+                else if (oldAsgn.compareTo(newAsgn) < 0)
+                    oldAsgn = oldIter.hasNext() ? oldIter.next() : null;
+                else
+                {
+                    newAsgn = newIter.hasNext() ? newIter.next() : null;
+                    oldAsgn = oldIter.hasNext() ? oldIter.next() : null;
+                }
+
+            }
+
+            //after the loop, we may still have remaining entries in either the old or new assignments
+            while (null != newAsgn)
+            {
+                writeAuditEvent(newAsgn.getUserId(), newAsgn.getRole(), RoleModification.Added, resource);
+                newAsgn = newIter.hasNext() ? newIter.next() : null;
+            }
+
+            while (null != oldAsgn)
+            {
+                writeAuditEvent(oldAsgn.getUserId(), oldAsgn.getRole(), RoleModification.Removed, resource);
+                oldAsgn = oldIter.hasNext() ? oldIter.next() : null;
+            }
+        }
+
+        protected void writeAuditEvent(int principalId, Role role, RoleModification mod, SecurableResource resource)
+        {
+            UserPrincipal principal = SecurityManager.getPrincipal(principalId);
+            if(null == principal)
+                return;
+
+            StringBuilder sb = new StringBuilder("The user/group ");
+            sb.append(principal.getName());
+            if (RoleModification.Added == mod)
+                sb.append(" was assigned to the security role ");
+            else
+                sb.append(" was removed from the security role ");
+            sb.append(role.getName());
+            sb.append(".");
+
+            Container c = getViewContext().getContainer();
+            AuditLogEvent event = new AuditLogEvent();
+            event.setComment(sb.toString());
+            event.setContainerId(c.getId());
+            event.setProjectId(c.getProject() != null ? c.getProject().getId() : null);
+            event.setCreatedBy(getViewContext().getUser());
+            event.setEntityId(resource.getResourceId());
+            event.setEventType(GroupManager.GROUP_AUDIT_EVENT);
+            AuditLogService.get().addEvent(event);
         }
     }
 
@@ -559,7 +680,27 @@ public class SecurityApiActions
                 throw new IllegalArgumentException("No resource with the id '" + resourceId + "' was found in this container!");
 
             SecurityManager.deletePolicy(resource);
+
+            //audit log
+            writeToAuditLog(resource);
+
             return new ApiSimpleResponse("success", true);
+        }
+
+        protected void writeToAuditLog(SecurableResource resource)
+        {
+            String parentResource = resource.getParentResource() != null ? resource.getParentResource().getResourceName() : "root";
+            AuditLogEvent event = new AuditLogEvent();
+            event.setComment("The security policy for " + resource.getResourceName() 
+                    + " was deleted. It will now inherit the security policy of " +
+                    parentResource);
+            event.setContainerId(resource.getResourceContainer().getId());
+            if(null != resource.getResourceContainer().getProject())
+                event.setProjectId(resource.getResourceContainer().getProject().getId());
+            event.setEventType(GroupManager.GROUP_AUDIT_EVENT);
+            event.setCreatedBy(getViewContext().getUser());
+            event.setEntityId(resource.getResourceId());
+            AuditLogService.get().addEvent(event);
         }
     }
 
@@ -607,11 +748,18 @@ public class SecurityApiActions
                 throw new IllegalArgumentException("You must specify a name parameter!");
 
             Group newGroup = SecurityManager.createGroup(getViewContext().getContainer().getProject(), name);
+            writeToAuditLog(newGroup);
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("id", newGroup.getUserId());
             resp.put("name", newGroup.getName());
             return resp;
+        }
+
+        protected void writeToAuditLog(Group newGroup)
+        {
+            AuditLogService.get().addEvent(getViewContext(), GroupManager.GROUP_AUDIT_EVENT, newGroup.getName(),
+                    "A new security group named " + newGroup.getName() + " was created.");
         }
     }
 
@@ -628,7 +776,15 @@ public class SecurityApiActions
                 throw new IllegalArgumentException("Group id " + form.getId() + " does not exist within this container!");
 
             SecurityManager.deleteGroup(group);
+            writeToAuditLog(group);
+
             return new ApiSimpleResponse("deleted", form.getId());
+        }
+
+        protected void writeToAuditLog(Group group)
+        {
+            AuditLogService.get().addEvent(getViewContext(), GroupManager.GROUP_AUDIT_EVENT, group.getName(),
+                    "The security group named " + group.getName() + " was deleted.");
         }
     }
 
@@ -660,6 +816,12 @@ public class SecurityApiActions
 
     public static abstract class BaseGroupMemberAction extends MutatingApiAction<GroupMemberForm>
     {
+        protected enum MembershipModification
+        {
+            Added,
+            Removed
+        }
+
         public Group getGroup(GroupMemberForm form)
         {
             Group group = SecurityManager.getGroup(form.getGroupId());
@@ -677,6 +839,18 @@ public class SecurityApiActions
                 throw new IllegalArgumentException("Invalid principal id (" + principalId + ")");
             return principal;
         }
+
+        protected void writeToAuditLog(Group group, UserPrincipal principal, MembershipModification mod)
+        {
+            StringBuilder sb = new StringBuilder("The user/group ");
+            sb.append(principal.getName());
+            sb.append(" was ");
+            sb.append(mod.name());
+            sb.append(" to the security group ");
+            sb.append(group.getName());
+            
+            AuditLogService.get().addEvent(getViewContext(), GroupManager.GROUP_AUDIT_EVENT, group.getName(), sb.toString());
+        }
     }
 
     @RequiresPermissionClass(AdminPermission.class)
@@ -687,7 +861,9 @@ public class SecurityApiActions
             Group group = getGroup(form);
             for (int id : form.getPrincipalIds())
             {
-                SecurityManager.addMember(group, getPrincipal(id));
+                UserPrincipal principal = getPrincipal(id);
+                SecurityManager.addMember(group, principal);
+                //group cache listener already writes to audit log
             }
             return new ApiSimpleResponse("added", form.getPrincipalIds());
         }
@@ -706,7 +882,9 @@ public class SecurityApiActions
 
             for (int id : form.getPrincipalIds())
             {
-                SecurityManager.deleteMember(getGroup(form), getPrincipal(id));
+                UserPrincipal principal = getPrincipal(id);
+                SecurityManager.deleteMember(group, principal);
+                //group cache listener already writes to audit log
             }
 
             return new ApiSimpleResponse("removed", form.getPrincipalIds());
