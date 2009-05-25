@@ -690,10 +690,13 @@ LABKEY.Security = new function()
             var params = {resourceId: config.resourceId};
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "deletePolicy", config.containerPath),
-                method: "GET",
-                params: params,
+                method: "POST",
                 success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                jsonData: params,
+                headers : {
+                    'Content-Type' : 'application/json'
+                }
             });
         },
 
@@ -762,10 +765,13 @@ LABKEY.Security = new function()
             var params = {name: config.groupName};
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "createGroup", config.containerPath),
-                method: "GET",
-                params: params,
+                method: "POST",
                 success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                jsonData: params,
+                headers : {
+                    'Content-Type' : 'application/json'
+                }
             });
         },
 
@@ -794,10 +800,13 @@ LABKEY.Security = new function()
             var params = {id: config.groupId};
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "deleteGroup", config.containerPath),
-                method: "GET",
-                params: params,
+                method: "POST",
                 success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                jsonData: params,
+                headers : {
+                    'Content-Type' : 'application/json'
+                }
             });
         },
 
@@ -805,7 +814,7 @@ LABKEY.Security = new function()
          * Adds a new member to an existing group.
          * @param config A configuration object with the following properties:
          * @param {String} config.groupId The id of the group to which you want to add the member.
-         * @param {String} config.principalId The id of the user or group you want to add as a member.
+         * @param {int or Array} config.principalIds An integer id or array of ids of the users or groups you want to add as members.
          * @param {Function} config.successCallback A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
@@ -822,15 +831,21 @@ LABKEY.Security = new function()
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
          */
-        addGroupMember : function(config)
+        addGroupMembers : function(config)
         {
-            var params = {groupId: config.groupId, principalId: config.principalId};
+            var params = {
+                groupId: config.groupId,
+                principalIds: (Ext.isArray(config.principalIds) ? config.principalIds : [config.principalIds])
+            };
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "addGroupMember", config.containerPath),
-                method: "GET",
-                params: params,
+                method: "POST",
                 success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                jsonData: params,
+                headers : {
+                    'Content-Type' : 'application/json'
+                }
             });
 
         },
@@ -839,7 +854,7 @@ LABKEY.Security = new function()
          * Removes a member from an existing groupo.
          * @param config A configuration object with the following properties:
          * @param {String} config.groupId The id of the group from which you want to remove the member.
-         * @param {String} config.principalId The id of the user or group you want to remove.
+         * @param {int or Array} config.principalIds An integer id or array of ids of the users or groups you want to remove.
          * @param {Function} config.successCallback A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
@@ -856,51 +871,21 @@ LABKEY.Security = new function()
          * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
          * the current container path will be used.
          */
-        removeGroupMember : function(config)
+        removeGroupMembers : function(config)
         {
-            var params = {groupId: config.groupId, principalId: config.principalId};
+            var params = {
+                groupId: config.groupId,
+                principalIds: (Ext.isArray(config.principalIds) ? config.principalIds : [config.principalIds])
+            };
             Ext.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "removeGroupMember", config.containerPath),
-                method: "GET",
-                params: params,
+                method: "POST",
                 success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
-            });
-        },
-
-        /**
-         * Replaces the membership of a given group.
-         * @param config A configuration object with the following properties:
-         * @param {String} config.groupId The id of the group you want to update.
-         * @param {Array[String]} config.names An array email addresses of the users and/or names of the groups you want to
-         * be the new membership. Email addresses that do not map to existing user accounts will be created as
-         * new users and then added to the specified group.
-         * @param {Function} config.successCallback A reference to a function to call with the API results. This
-         * function will be passed the following parameters:
-         * <ul>
-         * <li><b>data:</b> a simple object with a property named "messages" that contains an array of response messages,
-         * each of which is a string.</li>
-         * <li><b>response:</b> The XMLHttpResponse object</li>
-         * </ul>
-         * @param {Function} [config.errorCallback] A reference to a function to call when an error occurs. This
-         * function will be passed the following parameters:
-         * <ul>
-         * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
-         * <li><b>response:</b> The XMLHttpResponse object</li>
-         * </ul>
-         * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
-         * @param {string} [config.containerPath] An alternate container path to get permissions from. If not specified,
-         * the current container path will be used.
-         */
-        changeGroupMembers : function(config)
-        {
-            var params = {groupId: config.groupId, names: config.names};
-            Ext.Ajax.request({
-                url: LABKEY.ActionURL.buildURL("security", "changeGroupMembers", config.containerPath),
-                method: "GET",
-                params: params,
-                success: LABKEY.Utils.getCallbackWrapper(config.successCallback, config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true)
+                failure: LABKEY.Utils.getCallbackWrapper(config.errorCallback, config.scope, true),
+                jsonData: params,
+                headers : {
+                    'Content-Type' : 'application/json'
+                }
             });
         }
     };

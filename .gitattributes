@@ -56,6 +56,7 @@ api/src/org/labkey/api/action/HasValidator.java -text
 api/src/org/labkey/api/action/HasViewContext.java -text
 api/src/org/labkey/api/action/InterfaceAction.java -text
 api/src/org/labkey/api/action/LabkeyError.java -text
+api/src/org/labkey/api/action/MutatingApiAction.java -text
 api/src/org/labkey/api/action/NavTrailAction.java -text
 api/src/org/labkey/api/action/PermissionCheckable.java -text
 api/src/org/labkey/api/action/QueryViewAction.java -text
