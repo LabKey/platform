@@ -61,8 +61,7 @@ public class SecurityController extends SpringActionController
             SecurityApiActions.CreateGroupAction.class,
             SecurityApiActions.DeleteGroupAction.class,
             SecurityApiActions.AddGroupMemberAction.class,
-            SecurityApiActions.RemoveGroupMemberAction.class,
-            SecurityApiActions.ChangeGroupMembersAction.class);
+            SecurityApiActions.RemoveGroupMemberAction.class);
 
     public SecurityController()
     {

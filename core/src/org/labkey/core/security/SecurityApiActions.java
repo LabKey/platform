@@ -15,10 +15,7 @@
  */
 package org.labkey.core.security;
 
-import org.labkey.api.action.ApiAction;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.CustomApiForm;
+import org.labkey.api.action.*;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
@@ -545,7 +542,7 @@ public class SecurityApiActions
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public static class DeletePolicyAction extends ApiAction<PolicyIdForm>
+    public static class DeletePolicyAction extends MutatingApiAction<PolicyIdForm>
     {
         public ApiResponse execute(PolicyIdForm form, BindException errors) throws Exception
         {
@@ -597,12 +594,13 @@ public class SecurityApiActions
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public static class CreateGroupAction extends ApiAction<NameForm>
+    public static class CreateGroupAction extends MutatingApiAction<NameForm>
     {
         public ApiResponse execute(NameForm form, BindException errors) throws Exception
         {
-            if(!getViewContext().getContainer().isProject())
-                throw new IllegalArgumentException("You may not create groups at the folder level. Call this API at the project level.");
+            Container container = getViewContext().getContainer();
+            if(!container.isRoot() && !container.isProject())
+                throw new IllegalArgumentException("You may not create groups at the folder level. Call this API at the project or root level.");
 
             String name = StringUtils.trimToNull(form.getName());
             if(null == name)
@@ -618,18 +616,15 @@ public class SecurityApiActions
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public static class DeleteGroupAction extends ApiAction<IdForm>
+    public static class DeleteGroupAction extends MutatingApiAction<IdForm>
     {
         public ApiResponse execute(IdForm form, BindException errors) throws Exception
         {
-            if(!getViewContext().getContainer().isProject())
-                throw new IllegalArgumentException("You may not delete groups at the folder level. Call this API at the project level.");
-
             if(form.getId() < 0)
                 throw new IllegalArgumentException("You must specify an id parameter!");
 
             Group group = SecurityManager.getGroup(form.getId());
-            if(null == group || !getViewContext().getContainer().getProject().getId().equals(group.getContainer()))
+            if(null == group || !getViewContext().getContainer().getId().equals(group.getContainer()))
                 throw new IllegalArgumentException("Group id " + form.getId() + " does not exist within this container!");
 
             SecurityManager.deleteGroup(group);
@@ -640,7 +635,7 @@ public class SecurityApiActions
     public static class GroupMemberForm
     {
         private int _groupId = -1;
-        private int _principalId = -1;
+        private int[] _principalIds;
 
         public int getGroupId()
         {
@@ -652,34 +647,34 @@ public class SecurityApiActions
             _groupId = groupId;
         }
 
-        public int getPrincipalId()
+        public int[] getPrincipalIds()
         {
-            return _principalId;
+            return _principalIds;
         }
 
-        public void setPrincipalId(int principalId)
+        public void setPrincipalIds(int[] principalIds)
         {
-            _principalId = principalId;
+            _principalIds = principalIds;
         }
     }
 
-    public static abstract class BaseGroupMemberAction extends ApiAction<GroupMemberForm>
+    public static abstract class BaseGroupMemberAction extends MutatingApiAction<GroupMemberForm>
     {
         public Group getGroup(GroupMemberForm form)
         {
             Group group = SecurityManager.getGroup(form.getGroupId());
             if(null == group)
                 throw new IllegalArgumentException("Invalid group id (" + form.getGroupId() + ")");
-            if(!getViewContext().getContainer().getProject().getId().equals(group.getContainer()))
+            if(!getViewContext().getContainer().getId().equals(group.getContainer()))
                 throw new IllegalArgumentException("Group id " + form.getGroupId() + " does not exist within this container!");
             return group;
         }
 
-        public UserPrincipal getPrincipal(GroupMemberForm form)
+        public UserPrincipal getPrincipal(int principalId)
         {
-            UserPrincipal principal = SecurityManager.getPrincipal(form.getPrincipalId());
+            UserPrincipal principal = SecurityManager.getPrincipal(principalId);
             if(null == principal)
-                throw new IllegalArgumentException("Invalid principal id (" + form.getPrincipalId() + ")");
+                throw new IllegalArgumentException("Invalid principal id (" + principalId + ")");
             return principal;
         }
     }
@@ -689,11 +684,12 @@ public class SecurityApiActions
     {
         public ApiResponse execute(GroupMemberForm form, BindException errors) throws Exception
         {
-            if(!getViewContext().getContainer().isProject())
-                throw new IllegalArgumentException("You may not alter group membership at the folder level. Call this API at the project level.");
-
-            SecurityManager.addMember(getGroup(form), getPrincipal(form));
-            return new ApiSimpleResponse("added", form.getPrincipalId());
+            Group group = getGroup(form);
+            for (int id : form.getPrincipalIds())
+            {
+                SecurityManager.addMember(group, getPrincipal(id));
+            }
+            return new ApiSimpleResponse("added", form.getPrincipalIds());
         }
     }
 
@@ -702,100 +698,19 @@ public class SecurityApiActions
     {
         public ApiResponse execute(GroupMemberForm form, BindException errors) throws Exception
         {
-            if(!getViewContext().getContainer().isProject())
-                throw new IllegalArgumentException("You may not alter group membership at the folder level. Call this API at the project level.");
-
             Group group = getGroup(form);
-            UserPrincipal principal = getPrincipal(form);
 
             //ensure there will still be someone in the admin group
-            if(group.isAdministrators() && principal instanceof User)
+            if(group.isAdministrators() && SecurityManager.getGroupMembers(group).size() == 1)
+                throw new IllegalArgumentException("The system administrators group must have at least one member!");
+
+            for (int id : form.getPrincipalIds())
             {
-                List<User> currentMembers = SecurityManager.getGroupMembers(group);
-                if(currentMembers.size() == 1 && currentMembers.contains((User)principal))
-                    throw new IllegalArgumentException("The system administrators group must have at least one member!");
+                SecurityManager.deleteMember(getGroup(form), getPrincipal(id));
             }
 
-            SecurityManager.deleteMember(getGroup(form), getPrincipal(form));
-            return new ApiSimpleResponse("removed", form.getPrincipalId());
+            return new ApiSimpleResponse("removed", form.getPrincipalIds());
         }
     }
-
-    public static class MembersListForm
-    {
-        private int _groupId = -1;
-        private String[] _names;
-
-        public int getGroupId()
-        {
-            return _groupId;
-        }
-
-        public void setGroupId(int groupId)
-        {
-            _groupId = groupId;
-        }
-
-        public String[] getNames()
-        {
-            return _names;
-        }
-
-        public void setNames(String[] names)
-        {
-            _names = names;
-        }
-    }
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public static class ChangeGroupMembersAction extends ApiAction<MembersListForm>
-    {
-        public ApiResponse execute(MembersListForm form, BindException errors) throws Exception
-        {
-            if(!getViewContext().getContainer().isProject())
-                throw new IllegalArgumentException("You may not alter group membership at the folder level. Call this API at the project level.");
-
-            Container container = getViewContext().getContainer();
-            Group group = SecurityManager.getGroup(form.getGroupId());
-            if(null == group)
-                throw new IllegalArgumentException("Invalid group id (" + form.getGroupId() + ")");
-            if(!getViewContext().getContainer().getId().equals(group.getContainer()))
-                throw new IllegalArgumentException("Group id " + form.getGroupId() + " does not exist within this container!");
-
-            if(null == form.getNames())
-                throw new IllegalArgumentException("You must specificy an array of user email addresses!");
-
-            List<String> messages = new ArrayList<String>();
-            List<UserPrincipal> currentMembers = SecurityManager.getGroupMembers(group, SecurityManager.GroupMemberType.Both);
-            for(String name : form.getNames())
-            {
-                UserPrincipal principal = SecurityManager.getPrincipal(name, container);
-                if(null == principal)
-                {
-                    //add user
-                    //(for now we will not allow the creation of groups via this mechanism
-                    //as it would be really error prone)
-                    messages.add(SecurityManager.addUser(getViewContext(), new ValidEmail(name), true, null, null));
-                }
-                else
-                {
-                    //existing user--add or remove as necessary
-                    if(currentMembers.contains(principal))
-                    {
-                        SecurityManager.deleteMember(group, principal);
-                        messages.add("Removed '" + principal.getName() + "' from group.");
-                    }
-                    else
-                    {
-                        SecurityManager.addMember(group, principal);
-                        messages.add("Added '" + principal.getName() + "' to group.");
-                    }
-                }
-            }
-
-            return new ApiSimpleResponse("messages", messages);
-        }
-    }
-
 
 }
