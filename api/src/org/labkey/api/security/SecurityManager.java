@@ -1388,20 +1388,13 @@ public class SecurityManager
 
     public static List<Pair<Integer, String>> getGroupMemberNamesAndIds(String path)
     {
-        try
-        {
-            Integer groupId = SecurityManager.getGroupId(path);
-            if (groupId == null)
-                return Collections.emptyList();
-            else
-                return getGroupMemberNamesAndIds(groupId);
-        }
-        catch (SQLException e)
-        {
-            _log.error(e);
-            throw new RuntimeSQLException(e);
-        }
+        Integer groupId = SecurityManager.getGroupId(path);
+        if (groupId == null)
+            return Collections.emptyList();
+        else
+            return getGroupMemberNamesAndIds(groupId);
     }
+    
 
     public static String[] getGroupMemberNames(String path)
     {
@@ -1420,7 +1413,7 @@ public class SecurityManager
         }
     }
 
-    public static List<Pair<Integer, String>> getGroupMemberNamesAndIds(Integer groupId) throws SQLException
+    public static List<Pair<Integer, String>> getGroupMemberNamesAndIds(Integer groupId)
     {
         ResultSet rs = null;
         try
@@ -1440,7 +1433,7 @@ public class SecurityManager
         catch (SQLException e)
         {
             _log.error(e);
-            throw e;
+            throw new RuntimeSQLException(e);
         }
         finally
         {

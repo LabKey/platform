@@ -15,6 +15,9 @@
  */
 package org.labkey.api.security;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+
 /**
  * Created by IntelliJ IDEA.
  * User: arauch
@@ -80,5 +83,23 @@ public class Group extends UserPrincipal
     public void setContainer(String containerId)
     {
         this.container = containerId;
+    }
+
+
+    private volatile String _path = null;
+    
+    // @deprecated
+    public String getPath()
+    {
+        if (null == _path)
+        {
+            if (null == container)
+                return "/" + getName();
+            Container c = ContainerManager.getForId(container);
+            if (c == null)
+                return "/" + container + "/" + getName();
+            return "/" + c.getName() + "/" + getName();
+        }
+        return _path;
     }
 }

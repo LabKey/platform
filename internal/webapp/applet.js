@@ -42,6 +42,7 @@ LABKEY.Applet = Ext.extend(Ext.BoxComponent,
         var tag = 'applet';
         var p;
         var html = '';
+        var h = Ext.util.Format.htmlEncode;
 
         var archive = applet.archive + '?' + LABKEY.hash + (LABKEY.devMode ? Math.random() : '');
 
@@ -61,7 +62,7 @@ LABKEY.Applet = Ext.extend(Ext.BoxComponent,
                 ' type="application/x-java-applet;version=1.5.0"';
 //		    ' pluginspage="http://java.sun.com/j2se/1.5.0/download.html">');
             for (p in applet.params)
-                html += '<PARAM name="' + p + '" value="' + applet.params[p] + '">\n';
+                html += '<PARAM name="' + p + '" value="' + h(applet.params[p]) + '">\n';
             html += '<NOEMBED>Applet not supported</NOEMBED></EMBED>';
         }
         else if (tag == 'object')
@@ -75,7 +76,7 @@ LABKEY.Applet = Ext.extend(Ext.BoxComponent,
                 '<PARAM name="code" value="' + applet.code + '">' +
                 '<PARAM name="arhive" value="' + archive + '">';
             for (p in applet.params)
-                html += '<PARAM name="' + p + '" value="' + applet.params[p] + '">\n';
+                html += '<PARAM name="' + p + '" value="' + h(applet.params[p]) + '">\n';
             html += 'Applet not supported</OBJECT>';
         }
         else if (tag == 'applet')
@@ -88,7 +89,7 @@ LABKEY.Applet = Ext.extend(Ext.BoxComponent,
                 ' height=' + applet.height +
                 ' MAYSCRIPT="true" SCRIPTABLE="true">\n';
             for (p in applet.params)
-                html += '<PARAM name="' + p + '" value="' + applet.params[p] + '">\n';
+                html += '<PARAM name="' + p + '" value="' + h(applet.params[p]) + '">\n';
             html += 'This feature requires the Java browser plug-in.</APPLET>';
         }
         return html;

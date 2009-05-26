@@ -147,6 +147,8 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
                 ApiResponse response = execute(form, errors);
                 if(null != response)
                     createResponseWriter().write(response);
+                else if (null != errors && errors.hasErrors())
+                    createResponseWriter().write((Errors)errors);
             }
         }
         catch (Exception e)

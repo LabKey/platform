@@ -134,7 +134,9 @@ the container "My Project/My Folder":
             if(containerPath.charAt(containerPath.length - 1) != "/")
                 containerPath = containerPath + "/";
 
-            var newUrl = this.getContextPath() + "/" + controller + containerPath + action + ".view";
+            var newUrl = this.getContextPath() + "/" + controller + containerPath + action;
+            if (-1 == action.indexOf('.'))
+                newUrl += '.view';
             if (parameters)
             {
                 newUrl += '?';
