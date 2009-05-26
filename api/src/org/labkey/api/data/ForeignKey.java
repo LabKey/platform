@@ -33,7 +33,7 @@ public interface ForeignKey
      */
     ColumnInfo createLookupColumn(ColumnInfo parent, String displayField);
 
-    /**s
+    /**
      * Return the TableInfo for the foreign table.  This TableInfo can be used to discover the names of available
      * columns in a UI.  The returned TableInfo will not necessarily be one that can be used for querying (e.g. passing
      * to Table.select...

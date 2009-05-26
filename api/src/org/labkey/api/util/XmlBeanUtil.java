@@ -15,22 +15,25 @@
  */
 package org.labkey.api.util;
 
-import java.io.IOException;
+import org.apache.xmlbeans.XmlTokenSource;
+import org.apache.xmlbeans.XmlOptions;
+
 import java.io.PrintWriter;
+import java.io.IOException;
 
 /**
  * User: adam
- * Date: Apr 16, 2009
- * Time: 3:28:31 PM
+ * Date: May 25, 2009
+ * Time: 9:26:59 AM
  */
-public interface VirtualFile
+public class XmlBeanUtil
 {
-    public PrintWriter getPrintWriter(String path) throws IOException;
-    @Deprecated
-    // No longer needed -- just use getDir()
-    public void makeDir(String path) throws IOException;
-    public Archive createZipArchive(String name) throws IOException;
-    public VirtualFile getDir(String path);
-    public String makeLegalName(String name);
-    public String getLocation();
+    public static void saveDoc(PrintWriter pw, XmlTokenSource doc) throws IOException
+    {
+        XmlOptions options = new XmlOptions();
+        options.setSavePrettyPrint();
+        options.setUseDefaultNamespace();
+        doc.save(pw, options);
+        pw.close();
+    }
 }

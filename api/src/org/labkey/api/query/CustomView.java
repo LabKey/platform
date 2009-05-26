@@ -19,10 +19,12 @@ package org.labkey.api.query;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.util.VirtualFile;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
+import java.io.IOException;
 
 public interface CustomView
 {
@@ -44,7 +46,6 @@ public interface CustomView
     boolean isEditable();
     String getCustomIconUrl();
 
-
     List<FieldKey> getColumns();
     List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> getColumnProperties();
     void setColumns(List<FieldKey> columns);
@@ -60,4 +61,5 @@ public interface CustomView
 
     void save(User user, HttpServletRequest request) throws QueryException;
     void delete(User user, HttpServletRequest request) throws QueryException;
+    void serialize(VirtualFile dir) throws IOException;
 }
