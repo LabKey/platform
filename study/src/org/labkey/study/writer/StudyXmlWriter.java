@@ -17,7 +17,7 @@ package org.labkey.study.writer;
 
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.util.VirtualFile;
-import org.labkey.api.util.XmlBeanUtil;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.study.model.Study;
 import org.labkey.study.xml.SecurityType;
 import org.labkey.study.xml.StudyDocument;
@@ -74,7 +74,7 @@ public class StudyXmlWriter implements Writer<Study>
 
         // This gets called last, after all other writers have populated the other sections.  Save the study.xml
         PrintWriter pw = fs.getPrintWriter("study.xml");
-        XmlBeanUtil.saveDoc(pw, ctx.getStudyDocument());
+        XmlBeansUtil.saveDoc(pw, ctx.getStudyDocument());
         ctx.lockStudyDocument();
     }
 

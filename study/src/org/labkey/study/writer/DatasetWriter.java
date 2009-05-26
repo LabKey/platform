@@ -17,7 +17,7 @@ package org.labkey.study.writer;
 
 import org.labkey.api.data.*;
 import org.labkey.api.util.VirtualFile;
-import org.labkey.api.util.XmlBeanUtil;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.DateUtil;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
@@ -211,9 +211,9 @@ public class DatasetWriter implements Writer<Study>
             tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
         }
 
-        XmlBeanUtil.saveDoc(fs.getPrintWriter(META_DATA_FILENAME), tablesDoc);
+        XmlBeansUtil.saveDoc(fs.getPrintWriter(META_DATA_FILENAME), tablesDoc);
         dsXml.setMetaDataFile(META_DATA_FILENAME);
-        XmlBeanUtil.saveDoc(fs.getPrintWriter(MANIFEST_FILENAME), manifestXml);
+        XmlBeansUtil.saveDoc(fs.getPrintWriter(MANIFEST_FILENAME), manifestXml);
     }
 
     private static boolean shouldExport(ColumnInfo column)

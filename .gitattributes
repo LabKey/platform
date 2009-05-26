@@ -2013,6 +2013,8 @@ study/src/org/labkey/study/importer/PipeDelimParser.java -text
 study/src/org/labkey/study/importer/QcStatesImporter.java -text
 study/src/org/labkey/study/importer/QueryImporter.java -text
 study/src/org/labkey/study/importer/ReportImporter.java -text
+study/src/org/labkey/study/importer/SchemaReader.java -text
+study/src/org/labkey/study/importer/SchemaTsvReader.java -text
 study/src/org/labkey/study/importer/SimpleSpecimenImporter.java -text
 study/src/org/labkey/study/importer/SpecimenArchiveImporter.java -text
 study/src/org/labkey/study/importer/SpecimenImporter.java -text

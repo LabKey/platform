@@ -20,7 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.VirtualFile;
-import org.labkey.api.util.XmlBeanUtil;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
 import org.labkey.study.model.Study;
@@ -75,7 +75,7 @@ public class QueryWriter implements Writer<Study>
                     queryXml.setMetadata(xObj);
                 }
 
-                XmlBeanUtil.saveDoc(queriesDir.getPrintWriter(query.getName() + META_FILE_EXTENSION), qDoc);
+                XmlBeansUtil.saveDoc(queriesDir.getPrintWriter(query.getName() + META_FILE_EXTENSION), qDoc);
             }
         }
     }

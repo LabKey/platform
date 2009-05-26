@@ -111,7 +111,7 @@ public class DatasetImporter
                     }
                 }
 
-                if (!StudyManager.getInstance().bulkImportTypes(study, schemaFile, ctx.getUser(), labelColumn, typeNameColumn, typeIdColumn, extraProps, errors))
+                if (!StudyManager.getInstance().importDatasetSchemas(study, schemaFile, ctx.getUser(), labelColumn, typeNameColumn, typeIdColumn, extraProps, errors))
                     return false;
 
                 if (null != orderedIds)

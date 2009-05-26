@@ -1821,7 +1821,7 @@ public class StudyController extends BaseStudyController
         @SuppressWarnings("unchecked")
         public boolean handlePost(BulkImportTypesForm form, BindException errors) throws Exception
         {
-            return StudyManager.getInstance().bulkImportTypes(getStudy(), form.tsv, getUser(), form.getLabelColumn(), form.getTypeNameColumn(), form.getTypeIdColumn(), errors);
+            return StudyManager.getInstance().importDatasetSchemas(getStudy(), form.tsv, getUser(), form.getLabelColumn(), form.getTypeNameColumn(), form.getTypeIdColumn(), errors);
         }
 
         public ActionURL getSuccessURL(BulkImportTypesForm bulkImportTypesForm)

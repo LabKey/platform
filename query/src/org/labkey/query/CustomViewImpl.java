@@ -349,7 +349,7 @@ public class CustomViewImpl implements CustomView
         if (null != getCustomIconUrl())
             customViewXml.setCustomIconUrl(getCustomIconUrl());
 
-        XmlBeanUtil.saveDoc(dir.getPrintWriter(getName() + ".xml"), customViewDoc);
+        XmlBeansUtil.saveDoc(dir.getPrintWriter(getName() + ".xml"), customViewDoc);
     }
 
     static public boolean isUnselectable(ColumnInfo column)

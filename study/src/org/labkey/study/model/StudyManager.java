@@ -20,8 +20,6 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.beanutils.converters.BooleanConverter;
-import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang.StringUtils;
@@ -68,6 +66,8 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.importer.DatasetImporter.DatasetImportProperties;
+import org.labkey.study.importer.SchemaReader;
+import org.labkey.study.importer.SchemaTsvReader;
 import org.labkey.study.query.DataSetTable;
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.visitmanager.DateVisitManager;
@@ -2445,218 +2445,48 @@ public class StudyManager
     }
 
 
-    public boolean bulkImportTypes(Study study, String tsv, User user, String labelColumn, String typeNameColumn, String typeIdColumn, BindException errors) throws IOException, SQLException
+    public boolean importDatasetSchemas(Study study, String tsv, User user, String labelColumn, String typeNameColumn, String typeIdColumn, BindException errors) throws IOException, SQLException
     {
-        return bulkImportTypes(study, new TabLoader(tsv, true), user, labelColumn, typeNameColumn, typeIdColumn, null, errors);
+        return importDatasetSchemas(study, user, new SchemaTsvReader(study, tsv, labelColumn, typeNameColumn, typeIdColumn, errors), typeNameColumn, errors);
     }
 
 
-    public boolean bulkImportTypes(Study study, File tsvFile, User user, String labelColumn, String typeNameColumn, String typeIdColumn, Map<Integer, DatasetImportProperties> extraImportProps, BindException errors) throws IOException, SQLException
+    public boolean importDatasetSchemas(Study study, File tsvFile, User user, String labelColumn, String typeNameColumn, String typeIdColumn, Map<Integer, DatasetImportProperties> extraImportProps, BindException errors) throws IOException, SQLException
     {
-        return bulkImportTypes(study, new TabLoader(tsvFile, true), user, labelColumn, typeNameColumn, typeIdColumn, extraImportProps, errors);
+        return importDatasetSchemas(study, user, new SchemaTsvReader(study, tsvFile, labelColumn, typeNameColumn, typeIdColumn, extraImportProps, errors), typeNameColumn, errors);
     }
 
 
-    private boolean bulkImportTypes(Study study, TabLoader loader, User user, String labelColumn, String typeNameColumn, String typeIdColumn, Map<Integer, DatasetImportProperties> extraImportProps, BindException errors) throws IOException, SQLException
+    private boolean importDatasetSchemas(Study study, User user, SchemaReader reader, String typeNameColumn, BindException errors) throws IOException, SQLException
     {
-        loader.setParseQuotes(true);
-        List<Map<String, Object>> mapsLoad = loader.load();
+        if (errors.hasErrors())
+            return false;
 
-        ArrayList<Map<String, Object>> mapsImport = new ArrayList<Map<String, Object>>(mapsLoad.size());
-        PropertyDescriptor[] pds;
+        List<Map<String, Object>> mapsImport = reader.getImportMaps();
 
-        if (mapsLoad.size() > 0)
+        if (!mapsImport.isEmpty())
         {
-            Map<Integer, DataSetImportInfo> datasetInfoMap = new HashMap<Integer, DataSetImportInfo>();
-            int missingTypeNames = 0;
-            int missingTypeIds = 0;
-            int missingTypeLabels = 0;
-
-            for (Map<String, Object> props : mapsLoad)
-            {
-                props = new CaseInsensitiveHashMap<Object>(props);
-
-                String typeName = (String) props.get(typeNameColumn);
-                Object typeIdObj = props.get(typeIdColumn);
-                String propName = (String) props.get("Property");
-
-                if (typeName == null || typeName.length() == 0)
-                {
-                    missingTypeNames++;
-                    continue;
-                }
-
-                if (!(typeIdObj instanceof Integer))
-                {
-                    missingTypeIds++;
-                    continue;
-                }
-
-                Integer typeId = (Integer) typeIdObj;
-                DatasetImportProperties extraProps = null != extraImportProps ? extraImportProps.get(typeId) : null;
-
-                boolean isHidden;
-
-                if (null != extraProps)
-                {
-                    isHidden = !extraProps.isShowByDefault();
-                }
-                else
-                {
-                    isHidden = false;
-                    String hiddenValue = (String)props.get("hidden");
-                    if ("true".equalsIgnoreCase(hiddenValue))
-                        isHidden = true;
-                }
-
-                DataSetImportInfo info = datasetInfoMap.get(typeId);
-
-                if (info != null)
-                {
-                    if (!info.name.equals(typeName))
-                    {
-                        errors.reject("bulkImportDataTypes", "Type ID " + typeName + " is associated with multiple " +
-                                "type names ('" + typeName + "' and '" + info.name + "').");
-                        return false;
-                    }
-                    if (!info.isHidden == isHidden)
-                    {
-                        errors.reject("bulkImportDataTypes", "Type ID " + typeName + " is set as both hidden and "
-                        + "not hidden in different fields.");
-                        return false;
-                    }
-                }
-
-                // we've got a good entry
-                if (null == info)
-                {
-                    info = new DataSetImportInfo(typeName);
-                    info.label = (String) props.get(labelColumn);
-                    if (info.label == null || info.label.length() == 0)
-                    {
-                        missingTypeLabels++;
-                        continue;
-                    }
-
-                    info.isHidden = isHidden;
-                    datasetInfoMap.put((Integer) typeIdObj, info);
-                }
-
-                // filter out the built-in types
-                if (DataSetDefinition.isDefaultFieldName(propName, study))
-                    continue;
-
-                // look for visitdate column
-                String conceptURI = (String)props.get("ConceptURI");
-                if (null == conceptURI)
-                {
-                    String vtype = (String)props.get("vtype");  // datafax special case
-                    if (null != vtype && vtype.toLowerCase().contains("visitdate"))
-                        conceptURI = DataSetDefinition.getVisitDateURI();
-                }
-                if (DataSetDefinition.getVisitDateURI().equalsIgnoreCase(conceptURI))
-                {
-                    if (info.visitDatePropertyName == null)
-                        info.visitDatePropertyName = propName;
-                    else
-                    {
-                        errors.reject("bulkImportDataTypes", "Type ID " + typeName + " has multiple visitdate fields (" + info.visitDatePropertyName + " and " + propName+").");
-                        return false;
-                    }
-                }
-
-                // Deal with extra key field
-                IntegerConverter intConverter = new IntegerConverter(0);
-                Integer keyField = (Integer)intConverter.convert(Integer.class, props.get("key"));
-                if (keyField != null && keyField.intValue() == 1)
-                {
-                    if (info.keyPropertyName == null)
-                        info.keyPropertyName = propName;
-                    else
-                    {
-                        // It's already been set
-                        errors.reject("bulkImportDataTypes", "Type ID " + typeName + " has multiple fields with key set to 1.");
-                        return false;
-                    }
-                }
-
-                // Deal with managed key field
-                BooleanConverter booleanConverter = new BooleanConverter(false);
-                Boolean managedKey = (Boolean)booleanConverter.convert(Boolean.class, props.get("AutoKey"));
-
-                if (managedKey.booleanValue())
-                {
-                    if (!info.keyManaged)
-                        info.keyManaged = true;
-                    else
-                    {
-                        // It's already been set
-                        errors.reject("bulkImportDataTypes", "Type ID " + typeName + " has multiple fields set to AutoKey.");
-                        return false;
-                    }
-                    // Check that our key is the key field as well
-                    if (!propName.equals(info.keyPropertyName))
-                    {
-                        errors.reject("bulkImportDataTypes", "Type ID " + typeName + " is set to AutoKey, but is not a key");
-                        return false;
-                    }
-                }
-
-                // Category field
-                String category = null != extraProps ? extraProps.getCategory() : (String)props.get("Category");
-
-                if (category != null && !"".equals(category))
-                {
-                    if (info.category != null && !info.category.equalsIgnoreCase(category))
-                    {
-                        // It's changed from field to field within the same dataset
-                        errors.reject("bulkImportDataTypes", "Type ID " + typeName + " has multiple fields set with different categories");
-                        return false;
-                    }
-                    else
-                    {
-                        info.category = category;
-                    }
-                }
-
-                mapsImport.add(props);
-            }
-
-            if (missingTypeNames > 0)
-            {
-                errors.reject("bulkImportDataTypes", "Couldn't find type name in column " + typeNameColumn + " in " + missingTypeNames + " rows.");
-                return false;
-            }
-            if (missingTypeIds > 0)
-            {
-                errors.reject("bulkImportDataTypes", "Couldn't find type id in column " + typeIdColumn + " in " + missingTypeIds + " rows.");
-                return false;
-            }
-            if (missingTypeLabels > 0)
-            {
-                errors.reject("bulkImportDataTypes", "Couldn't find type label in column " + typeIdColumn + " in " + missingTypeLabels + " rows.");
-                return false;
-            }
-
             String domainURI = getDomainURI(study.getContainer(), (DataSetDefinition)null);
 
             List<String> importErrors = new LinkedList<String>();
-            pds = OntologyManager.importTypes(domainURI, typeNameColumn, mapsImport, importErrors, study.getContainer(), true);
+            PropertyDescriptor[] pds = OntologyManager.importTypes(domainURI, typeNameColumn, mapsImport, importErrors, study.getContainer(), true);
 
             if (!importErrors.isEmpty())
             {
                 for (String error : importErrors)
-                    errors.reject("bulkImportDataTypes", error);
+                    errors.reject("importDatasetSchemas", error);
                 return false;
             }
 
             if (pds != null && pds.length > 0)
             {
+                Map<Integer, SchemaReader.DataSetImportInfo> datasetInfoMap = reader.getDatasetInfo();
                 StudyManager manager = StudyManager.getInstance();
-                for (Map.Entry<Integer, DataSetImportInfo> entry : datasetInfoMap.entrySet())
+
+                for (Map.Entry<Integer, SchemaReader.DataSetImportInfo> entry : datasetInfoMap.entrySet())
                 {
                     int id = entry.getKey().intValue();
-                    DataSetImportInfo info = entry.getValue();
+                    SchemaReader.DataSetImportInfo info = entry.getValue();
                     String name = info.name;
                     String label = info.label;
 
@@ -2665,7 +2495,7 @@ public class StudyManager
 
                     if (existingDef != null && existingDef.getDataSetId() != id)
                     {
-                        errors.reject("bulkImportDataTypes", "A different dataset already exists with the label " + label);
+                        errors.reject("importDatasetSchemas", "A different dataset already exists with the label " + label);
                         return false;
                     }
 
@@ -2673,7 +2503,7 @@ public class StudyManager
 
                     if (existingDef != null && existingDef.getDataSetId() != id)
                     {
-                        errors.reject("bulkImportDataTypes", "A different dataset already exists with the name " + name);
+                        errors.reject("importDatasetSchemas", "A different dataset already exists with the name " + name);
                         return false;
                     }
 
@@ -2722,22 +2552,6 @@ public class StudyManager
     private String getDomainURI(Container c, String name)
     {
         return new DatasetDomainKind().generateDomainURI(c, name);
-    }
-
-    private static class DataSetImportInfo
-    {
-        DataSetImportInfo(String name)
-        {
-            this.name = name;
-        }
-        String name;
-        String label;
-        String visitDatePropertyName;
-        String startDatePropertyName;
-        boolean isHidden;
-        String keyPropertyName;
-        boolean keyManaged;
-        String category;
     }
 
     /**
