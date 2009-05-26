@@ -7,6 +7,7 @@
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.security.roles.FolderAdminRole" %>
 <%
 /*
  * Copyright (c) 2009 LabKey Corporation
@@ -35,6 +36,10 @@
 <script type="text/javascript">
 LABKEY.requiresCss("SecurityAdmin.css");
 LABKEY.requiresScript("SecurityAdmin.js", true);
+
+var isFolderAdmin = <%=c.hasPermission(user, ACL.PERM_ADMIN) ? "true" : "false"%>;
+var isProjectAdmin = <%=project.hasPermission(user, ACL.PERM_ADMIN) ? "true" : "false"%>;
+var isSiteAdmin = <%= user.isAdministrator() ? "true" : "false" %>;
 </script>
 <script type="text/javascript">
 var $ = Ext.get;
@@ -102,11 +107,19 @@ Ext.onReady(function(){
 tabItems.push({contentEl:'permissionsFrame', title:'Permissions', autoHeight:true});
 Ext.onReady(function()
 {
-    var policyEditor = new PolicyEditor({securityCache:securityCache, border:false});
-    securityCache.onReady(function(){
-        policyEditor.setResource(LABKEY.container.id);
-    });
+    var policyEditor = new PolicyEditor({cache:securityCache, border:false, isSiteAdmin:isSiteAdmin, isProjectAdmin:isSiteAdmin,
+        resourceId:LABKEY.container.id});
     policyEditor.render($('permissionsFrame'));
+
+    tabPanel.on("beforetabchange", function(panel, newTab, currentTab)
+    {
+        if (currentTab.contentEl.id != 'permissionsFrame')
+            return true;
+        if (!policyEditor.isDirty())
+            return true;
+        Ext.MessageBox.alert("Save Changes", "Please save changes (refresh page to discard)");
+        return false;
+    });
 });
 </script>
 
@@ -117,21 +130,100 @@ Ext.onReady(function()
 <%
     if (project.hasPermission(user, ACL.PERM_ADMIN))
     {
-        // UNDONE: support expanding specified group
-        JspView<SecurityController.GroupsBean> groupsView = new JspView<SecurityController.GroupsBean>("/org/labkey/core/security/groups.jsp",
-                new SecurityController.GroupsBean(getViewContext(), null, null), null);
         String title;
         if (null == c || c.isRoot())
             title = "Site Groups";
         else
             title = "Groups for project " + c.getProject().getName();
-        %><script type="text/javascript">
-        tabItems.push({contentEl:'groupsFrame', title:<%=PageFlowUtil.jsString(title)%>, autoHeight:true});
-        </script>
-        <div id="groupsFrame"><%
-        groupsView.setFrame(WebPartView.FrameType.NONE);
-        me.include(groupsView,out);
-        %></div><%
+
+        if (1==1)
+        {
+            %><div id="groupsFrame">
+            </div>
+            <script type="text/javascript">
+            function makeGroupsPanel(container)
+            {
+                var newGroupForm = null;
+                var groupsList = new GroupPicker({cache:securityCache, width:200, border:false, autoScroll:true, containerId:container});
+                groupsList.on("select", function(list,group){
+                    window.alert(group.Name);
+                });
+
+                var formId = 'newGroupForm' + (container?'':'Site');
+                var action = LABKEY.ActionURL.buildURL('security','newGroupExt.post',container);
+                var groupsPanel = new Ext.Panel({
+                    layout : 'border',
+                    border : true, style:{border:'solid 1px red'},
+                    height: 400, width:800,
+                    items :[
+                    {
+                        region:'west',
+                        size:200,
+                        items:[
+                            {border:false, html:'<form id="' + formId + '" action="' + action + '" method=POST><input type="text" size="30" name="name"><br><a id="' + (formId + 'Add') + '" class="labkey-button" href="#"" ><span>Create new group</span></a></form>'},
+                            groupsList
+                        ]
+                    },
+                    {
+                        region:'center',
+                        border: false,
+                        items:[{html:'CENTER'}]
+                    }]
+                });
+                var adjustGroupsPanel = function()
+                {
+                    var sz = tabPanel.body.getSize();
+                    groupsPanel.setSize(sz.width-10,sz.height-10);
+                    var btm = sz.height + tabPanel.body.getX();
+                    groupsList.setSize(200,btm-groupsList.el.getX());
+                    groupsPanel.doLayout();
+                };
+                groupsPanel.render('groupsFrame');
+                adjustGroupsPanel();
+                tabPanel.on("bodyresize", adjustGroupsPanel);
+                tabPanel.on("activate", adjustGroupsPanel);
+
+                // UNDONE: use security api (Security.js)
+                var formEl = $(formId);
+                var btnEl = $(formId + 'Add');
+                newGroupForm = new Ext.form.BasicForm( formEl );
+                formEl.addKeyListener(13, newGroupForm.submit, newGroupForm);
+                btnEl.on("click", newGroupForm.submit, newGroupForm);
+                newGroupForm.on("actioncomplete", function(f,action){
+                    var json = action.response.responseText;
+                    var resp = eval("(" + json + ")");
+                    // principals cache uses Uppercased names
+                    var group = {UserId:resp.group.UserId, Name:resp.group.name, Container:resp.group.container, Type:resp.group.type};
+                    groupsList.selectedGroup = group;
+                    var st = securityCache.principalsStore;
+                    st.add(new st.reader.recordType(group),group.UserId);
+                    alert('actioncomplete ' + group.Name);
+                });
+                return groupsPanel;
+            };
+
+
+            tabItems.push({contentEl:'groupsFrame', title:<%=PageFlowUtil.jsString(title)%>, autoHeight:true});
+            Ext.onReady(function(){
+                var groupsPanel = makeGroupsPanel(<%=PageFlowUtil.jsString(project.getId())%>);
+                groupsPanel.render('groupsFrame');
+            });
+            
+            </script><%
+        }
+        else // groups.jsp 
+        {
+            // UNDONE: support expanding specified group
+            JspView<SecurityController.GroupsBean> groupsView = new JspView<SecurityController.GroupsBean>("/org/labkey/core/security/groups.jsp",
+                    new SecurityController.GroupsBean(getViewContext(), null, null), null);
+            %><script type="text/javascript">
+            tabItems.push({contentEl:'groupsFrame', title:<%=PageFlowUtil.jsString(title)%>, autoHeight:true});
+            </script>
+            <div id="groupsFrame"><%
+            groupsView.setFrame(WebPartView.FrameType.NONE);
+            me.include(groupsView,out);
+            %></div><%
+        }
     }
 %>
 
@@ -149,7 +241,7 @@ Ext.onReady(function()
             tabItems.push({contentEl:'impersonateFrame', title:'Impersonate', autoHeight:true});
             </script>
             <div id="impersonateFrame"><%
-            ((WebPartView)impersonateView).setFrame(WebPartView.FrameType.NONE);
+            impersonateView.setFrame(WebPartView.FrameType.NONE);
             me.include(impersonateView,out);
             %></div><%
         }

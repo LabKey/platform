@@ -37,11 +37,13 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
+import org.json.JSONObject;
 
 import javax.mail.MessagingException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.naming.OperationNotSupportedException;
 import java.io.Writer;
 import java.sql.SQLException;
 import java.util.*;
@@ -79,7 +81,7 @@ public class SecurityController extends SpringActionController
         public ActionURL getGroupPermissionURL(Container container, int id)
         {
             ActionURL url = new ActionURL(GroupPermissionAction.class, container);
-            return url.addParameter("group", id);
+            return url.addParameter("id", id);
         }
 
         public ActionURL getProjectURL(Container container)
@@ -127,8 +129,23 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    private void ensureGroupInContainer(String group, Container c)
+    private static void ensureGroupInContainer(Group group, Container c)
             throws ServletException
+    {
+        if (group.getContainer() == null)
+        {
+            if (!c.isRoot())
+                HttpView.throwUnauthorized();
+        }
+        else
+        {
+            if (!c.getId().equals(group.getContainer()))
+                HttpView.throwUnauthorized();
+        }
+    }
+    
+    private static void ensureGroupInContainer(String group, Container c)
+        throws ServletException
     {
         if (group.startsWith("/"))
             group = group.substring(1);
@@ -202,7 +219,18 @@ public class SecurityController extends SpringActionController
 
     public static class GroupForm
     {
-        private String group;
+        private String group = null;
+        private int id = Integer.MIN_VALUE;
+
+        public void setId(int id)
+        {
+            this.id = id;
+        }
+
+        public int getId()
+        {
+            return id;
+        }
 
         public void setGroup(String name)
         {
@@ -211,6 +239,21 @@ public class SecurityController extends SpringActionController
 
         public String getGroup()
         {
+            return group;
+        }
+
+        public Group getGroupFor(Container c) throws ServletException
+        {
+            if (id == Integer.MIN_VALUE)
+            {
+                Integer gid = SecurityManager.getGroupId(group);
+                if (gid == null)
+                    return null;
+                id = gid.intValue();
+            }
+            Group group = SecurityManager.getGroup(id);
+            if (null != c)
+                ensureGroupInContainer(group, c);
             return group;
         }
     }
@@ -222,15 +265,12 @@ public class SecurityController extends SpringActionController
 
         public boolean handlePost(GroupForm form, BindException errors) throws Exception
         {
-            String groupPath = form.getGroup();
-            ensureGroupInContainer(groupPath, getContainer());
-            Integer gid = SecurityManager.getGroupId(groupPath);
-            if (gid != null)
+            Group group = form.getGroupFor(getContainer());
+            if (group != null)
             {
-                Group group = SecurityManager.getGroup(gid.intValue());
-                addGroupAuditEvent(group, "The group: " + form.getGroup() + " was deleted.");
+                SecurityManager.deleteGroup(group);
+                addGroupAuditEvent(group, "The group: " + group.getPath() + " was deleted.");
             }
-            SecurityManager.deleteGroup(groupPath);
             return true;
         }
 
@@ -269,7 +309,7 @@ public class SecurityController extends SpringActionController
         String _expandedGroupPath;
         List<String> _messages;
 
-        public GroupsBean(ViewContext context, String expandedGroupPath, List<String> messages)
+        public GroupsBean(ViewContext context, Group expandedGroupPath, List<String> messages)
         {
             Container c = context.getContainer();
             if (null == c || c.isRoot())
@@ -282,7 +322,7 @@ public class SecurityController extends SpringActionController
                 _groups = SecurityManager.getGroups(c.getProject(), false);
                 _container = c;
             }
-            _expandedGroupPath = expandedGroupPath;
+            _expandedGroupPath = expandedGroupPath == null ? null : expandedGroupPath.getPath();
             _messages = messages != null ? messages : Collections.<String>emptyList();
         }
 
@@ -328,7 +368,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    private HttpView getGroupsView(Container container, String expandedGroup, BindException errors, List<String> messages)
+    private HttpView getGroupsView(Container container, Group expandedGroup, BindException errors, List<String> messages)
     {
         JspView<GroupsBean> groupsView = new JspView<GroupsBean>("/org/labkey/core/security/groups.jsp", new GroupsBean(getViewContext(), expandedGroup, messages), errors);
         if (null == container || container.isRoot())
@@ -339,7 +379,7 @@ public class SecurityController extends SpringActionController
     }
     
 
-    private ModelAndView renderContainerPermissions(String expandedGroup, BindException errors, List<String> messages, boolean wizard) throws Exception
+    private ModelAndView renderContainerPermissions(Group expandedGroup, BindException errors, List<String> messages, boolean wizard) throws Exception
     {
         Container c = getContainer();
         Container project = c.getProject();
@@ -458,9 +498,69 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ACL.PERM_ADMIN)
-    public class NewGroupAction extends FormHandlerAction<NewGroupForm>
+
+    public static class GroupResponse extends ApiSimpleResponse
     {
+        GroupResponse(Group group)
+        {
+            Map<String, Object> map = ObjectFactory.Registry.getFactory(Group.class).toMap(group, new HashMap<String, Object>());
+            List<Pair<Integer, String>> members = SecurityManager.getGroupMemberNamesAndIds(group.getUserId());
+            map.put("members",members);
+            put("success", true);
+            put("group",map);
+        }
+    }
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class NewGroupExtAction extends ApiAction<NewGroupForm>
+    {
+        @Override
+        public void validateForm(NewGroupForm form, Errors errors)
+        {
+            String name = form.getName();
+            if (name == null || name.length() == 0)
+            {
+                errors.rejectValue("name", ERROR_REQUIRED);
+            }
+            else
+            {
+                String msg  = UserManager.validGroupName(name, Group.typeProject);
+                if (null != msg)
+                    errors.rejectValue("name", ERROR_MSG, msg);
+            }
+        }
+
+        public ApiResponse execute(NewGroupForm form, BindException errors) throws Exception
+        {
+            String name = form.getName();
+            try
+            {
+                Group group = SecurityManager.createGroup(getContainer().getProject(), name);
+                addGroupAuditEvent(group, "The group: " + name + " was created.");
+                return new GroupResponse(group);
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.addError(new LabkeyError(e));
+                return null;
+            }
+        }
+    }
+
+
+    @RequiresPermission(ACL.PERM_ADMIN)
+    public class NewGroupAction extends FormViewAction<NewGroupForm>
+    {
+        public ModelAndView getView(NewGroupForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return renderContainerPermissions(null, errors, null, false);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Permissions");
+        }
+        
         public boolean handlePost(NewGroupForm form, BindException errors) throws Exception
         {
             // UNDONE: use form validation
@@ -539,7 +639,7 @@ public class SecurityController extends SpringActionController
     @RequiresPermission(ACL.PERM_ADMIN)
     public class UpdateMembersAction extends SimpleViewAction<UpdateMembersForm>
     {
-        private String _groupName;
+        private Group _group;
         private boolean _showGroup;
 
         public ModelAndView getView(UpdateMembersForm form, BindException errors) throws Exception
@@ -548,20 +648,14 @@ public class SecurityController extends SpringActionController
             // 2 - warn if you are deleting yourself from global or project admins
             // 3 - if user confirms delete, post to action again, with list of users to delete and confirmation flag.
 
-            _groupName = StringUtils.trimToNull(form.getGroup());
-            if (null == _groupName)
-                HttpView.throwNotFound();
             Container container = getContainer();
 
             if (!container.isRoot() && !container.isProject())
                 container = container.getProject();
-            ensureGroupInContainer(_groupName, container);
+
+            _group = form.getGroupFor(getContainer());
 
             List<String> messages = new ArrayList<String>();
-
-            // UNDONE: need SecurityManager.getGroup()
-            Integer groupId = SecurityManager.getGroupId(_groupName);
-            Group group = null == groupId ? null : SecurityManager.getGroup(groupId.intValue());
 
             //check for new users to add.
             String[] allNames = form.getNames() == null ? new String[0] : form.getNames().split("\n");
@@ -591,21 +685,21 @@ public class SecurityController extends SpringActionController
                     errors.reject(ERROR_MSG, "Could not remove user " + filter(e) + ": Invalid email address");
             }
 
-            if (group != null)
+            if (_group != null)
             {
                 //check for users to delete
                 if (removeNames != null)
                 {
                     //get list of group members. need this to determine how many there are.
-                    String[] groupMemberNames = SecurityManager.getGroupMemberNames(groupId);
+                    String[] groupMemberNames = SecurityManager.getGroupMemberNames(_group.getUserId());
 
                     //if this is the site admins group and user is attempting to remove all site admins, display error.
-                    if (groupId == Group.groupAdministrators && removeNames.length == groupMemberNames.length)
+                    if (_group.getUserId() == Group.groupAdministrators && removeNames.length == groupMemberNames.length)
                     {
                         errors.addError(new LabkeyError("The Site Administrators group must always contain at least one member. You cannot remove all members of this group."));
                     }
                     //if this is site or project admins group and user is removing themselves, display warning.
-                    else if (_groupName.compareToIgnoreCase("Administrators") == 0
+                    else if (_group.getName().compareToIgnoreCase("Administrators") == 0
                             && Arrays.asList(removeNames).contains(getUser().getEmail())
                             && !form.isConfirmed())
                     {
@@ -615,7 +709,7 @@ public class SecurityController extends SpringActionController
                         UpdateMembersBean bean = v.getModelBean();
                         bean.addnames = addEmails;
                         bean.removenames = removeNames;
-                        bean.groupName = _groupName;
+                        bean.groupName = _group.getName();
                         bean.mailPrefix = form.getMailPrefix();
 
                         getPageConfig().setTemplate(PageConfig.Template.Dialog);
@@ -623,7 +717,7 @@ public class SecurityController extends SpringActionController
                     }
                     else
                     {
-                        SecurityManager.deleteMembers(group, removeEmails);
+                        SecurityManager.deleteMembers(_group, removeEmails);
                     }
                 }
 
@@ -646,7 +740,7 @@ public class SecurityController extends SpringActionController
 
                     try
                     {
-                        SecurityManager.addMembers(group, addEmails);
+                        SecurityManager.addMembers(_group, addEmails);
                     }
                     catch (SQLException e)
                     {
@@ -656,11 +750,11 @@ public class SecurityController extends SpringActionController
             }
 
             if (form.isQuickUI())
-                return renderContainerPermissions(_groupName, errors, messages, false);
+                return renderContainerPermissions(_group, errors, messages, false);
             else
             {
                 _showGroup = true;
-                return renderGroup(_groupName, errors, messages);
+                return renderGroup(_group, errors, messages);
             }
         }
 
@@ -668,7 +762,7 @@ public class SecurityController extends SpringActionController
         {
             if (_showGroup)
             {
-                return addGroupNavTrail(root, _groupName);
+                return addGroupNavTrail(root, _group);
             }
             else
             {
@@ -686,10 +780,9 @@ public class SecurityController extends SpringActionController
         public String mailPrefix;
     }
 
-    public static class UpdateMembersForm
+    public static class UpdateMembersForm extends GroupForm
     {
         private String names;
-        private String group;
         private String[] delete;
         private boolean sendEmail;
         private boolean confirmed;
@@ -716,16 +809,6 @@ public class SecurityController extends SpringActionController
         public String getNames()
         {
             return this.names;
-        }
-
-        public String getGroup()
-        {
-            return group;
-        }
-
-        public void setGroup(String group)
-        {
-            this.group = group;
         }
 
         public String[] getDelete()
@@ -770,43 +853,28 @@ public class SecurityController extends SpringActionController
     }
 
 
-    private NavTree addGroupNavTrail(NavTree root, String group)
+    private NavTree addGroupNavTrail(NavTree root, Group group)
     {
         root.addChild("Permissions", new ActionURL(ContainerAction.class, getContainer()));
         root.addChild("Manage Group");
-
-        String title;
-        if (-1 == group.indexOf('/'))
-            title = group;
-        else
-            title = group.substring(group.lastIndexOf('/') + 1);
-
-        root.addChild(title + " Group");
+        root.addChild(group.getName() + " Group");
         return root;
     }
 
-    private ModelAndView renderGroup(String groupName, BindException errors, List<String> messages) throws Exception
+    private ModelAndView renderGroup(Group group, BindException errors, List<String> messages) throws Exception
     {
-        if (groupName.startsWith("/"))
-            groupName = groupName.substring(1);
-
         // validate that group is in the current project!
         Container c = getContainer();
-        ensureGroupInContainer(groupName, c);
-        List<Pair<Integer, String>> members = SecurityManager.getGroupMemberNamesAndIds(groupName);
+        ensureGroupInContainer(group, c);
+        List<Pair<Integer, String>> members = SecurityManager.getGroupMemberNamesAndIds(group.getUserId());
 
         if (null == members)
             HttpView.throwNotFound();
 
-        Group group = SecurityManager.getGroup(SecurityManager.getGroupId(groupName).intValue());
-        VBox view = new VBox(new GroupView(groupName, members, messages, group.isSystemGroup(), errors));
+        VBox view = new VBox(new GroupView(group.getPath(), members, messages, group.isSystemGroup(), errors));
         if (getUser().isAdministrator())
         {
-            Integer id = SecurityManager.getGroupId(groupName);
-            if (id != null)
-            {
-                view.addView(GroupAuditViewFactory.getInstance().createGroupView(getViewContext(), id.intValue()));
-            }
+            view.addView(GroupAuditViewFactory.getInstance().createGroupView(getViewContext(), group.getUserId()));
         }
         return view;
     }
@@ -814,11 +882,11 @@ public class SecurityController extends SpringActionController
     @RequiresPermission(ACL.PERM_ADMIN)
     public class GroupAction extends SimpleViewAction<GroupForm>
     {
-        private String _group;
+        private Group _group;
 
         public ModelAndView getView(GroupForm form, BindException errors) throws Exception
         {
-            _group = form.getGroup();
+            _group = form.getGroupFor(getContainer());
             return renderGroup(_group, errors, Collections.<String>emptyList());
         }
 
@@ -890,31 +958,16 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    public static class GroupIdForm
-    {
-        private int _group;
-
-        public int getGroup()
-        {
-            return _group;
-        }
-
-        public void setGroup(int group)
-        {
-            _group = group;
-        }
-    }
 
     @RequiresPermission(ACL.PERM_ADMIN)
-    public class GroupPermissionAction extends SimpleViewAction<GroupIdForm>
+    public class GroupPermissionAction extends SimpleViewAction<GroupForm>
     {
         private Group _requestedGroup;
 
-        public ModelAndView getView(GroupIdForm form, BindException errors) throws Exception
+        public ModelAndView getView(GroupForm form, BindException errors) throws Exception
         {
-            final int groupId = form.getGroup();
             List<UserController.AccessDetailRow> rows = new ArrayList<UserController.AccessDetailRow>();
-            _requestedGroup = SecurityManager.getGroup(groupId);
+            _requestedGroup = form.getGroupFor(getContainer());
             if (_requestedGroup != null)
             {
                 buildAccessDetailList(Collections.singletonList(getContainer().getProject()), rows, _requestedGroup, 0);

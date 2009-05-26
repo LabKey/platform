@@ -62,19 +62,12 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
         Integer groupId = getGroupId(site, false);
         if (groupId == null)
             return new User[0];
-        try
-        {
-            List<Pair<Integer, String>> userIds = SecurityManager.getGroupMemberNamesAndIds(groupId);
-            User[] users = new User[userIds.size()];
-            Iterator<Pair<Integer, String>> idIt = userIds.iterator();
-            for (int i = 0; i < users.length; i++)
-                users[i] = UserManager.getUser(idIt.next().getKey());
-            return users;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        List<Pair<Integer, String>> userIds = SecurityManager.getGroupMemberNamesAndIds(groupId);
+        User[] users = new User[userIds.size()];
+        Iterator<Pair<Integer, String>> idIt = userIds.iterator();
+        for (int i = 0; i < users.length; i++)
+            users[i] = UserManager.getUser(idIt.next().getKey());
+        return users;
     }
 
     public void removeMembers(User... members)

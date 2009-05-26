@@ -1,3 +1,6 @@
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%
 /*
  * Copyright (c) 2009 LabKey Corporation
@@ -14,14 +17,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+%><%
+    Container c = HttpView.currentContext().getContainer();
+    Container project = c.isRoot() ? c : c.getProject();
+
 %>
-<%--
-<style type="text/css">
-.round {
-  -webkit-border-radius: 3ex;
-  -moz-border-radius: 3ex;
-}
-</style> --%>
 <div id="adminFrame" class="extContainer"></div>
 <script type="text/javascript">
 LABKEY.requiresCss("SecurityAdmin.css");
@@ -57,7 +57,7 @@ var containerPanel = $('bodypanel');
 
 Ext.onReady(function()
 {
-    var cache = new SecurityCache({});
+    var cache = new SecurityCache({project:<%=PageFlowUtil.jsString(project.getId())%>});
     var policyEditor = new PolicyEditor({securityCache:cache, border:false});
     cache.onReady(function(){
         policyEditor.setResource(LABKEY.container.id);
