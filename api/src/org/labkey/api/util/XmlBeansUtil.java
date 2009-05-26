@@ -26,7 +26,7 @@ import java.io.IOException;
  * Date: May 25, 2009
  * Time: 9:26:59 AM
  */
-public class XmlBeanUtil
+public class XmlBeansUtil
 {
     public static void saveDoc(PrintWriter pw, XmlTokenSource doc) throws IOException
     {
