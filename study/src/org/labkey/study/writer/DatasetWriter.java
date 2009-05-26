@@ -15,11 +15,10 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.TSVGridWriter;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.util.VirtualFile;
+import org.labkey.api.util.XmlBeanUtil;
+import org.labkey.api.util.DateUtil;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.Study;
 import org.labkey.study.model.StudyManager;
@@ -27,6 +26,9 @@ import org.labkey.study.model.Cohort;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.xml.DatasetsDocument;
 import org.labkey.study.xml.StudyDocument.Study.Datasets;
+import org.labkey.data.xml.TablesDocument;
+import org.labkey.data.xml.TableType;
+import org.labkey.data.xml.ColumnType;
 import org.apache.log4j.Logger;
 
 import javax.servlet.ServletException;
@@ -45,7 +47,8 @@ public class DatasetWriter implements Writer<Study>
 {
     private static final Logger LOG = Logger.getLogger(DatasetWriter.class);
     private static final String DEFAULT_DIRECTORY = "datasets";
-    private static final String MANIFEST_FILENAME = "datasets.xml";
+    private static final String MANIFEST_FILENAME = "datasets_manifest.xml";
+    private static final String META_DATA_FILENAME = "datasets_meta_data.xml";
 
     public String getSelectionText()
     {
@@ -64,8 +67,12 @@ public class DatasetWriter implements Writer<Study>
 
         DatasetsDocument manifestXml = DatasetsDocument.Factory.newInstance();
         DatasetsDocument.Datasets dsXml = manifestXml.addNewDatasets();
-        dsXml.setDefaultDateFormat(StudyManager.getInstance().getDefaultDateFormatString(ctx.getContainer()));
-        dsXml.setDefaultNumberFormat(StudyManager.getInstance().getDefaultNumberFormatString(ctx.getContainer()));
+        String defaultDateFormat = StudyManager.getInstance().getDefaultDateFormatString(ctx.getContainer());
+        String defaultNumberFormat = StudyManager.getInstance().getDefaultNumberFormatString(ctx.getContainer());
+        if (null != defaultDateFormat)
+            dsXml.setDefaultDateFormat(defaultDateFormat);
+        if (null != defaultNumberFormat)
+            dsXml.setDefaultNumberFormat(defaultNumberFormat);
 
         // Create <categories> element now so it appears first in the file
         DatasetsDocument.Datasets.Categories categoriesXml = dsXml.addNewCategories();
@@ -101,8 +108,6 @@ public class DatasetWriter implements Writer<Study>
         else
             categoriesXml.setCategoryArray(categories.toArray(new String[categories.size()]));
 
-        StudyXmlWriter.saveDoc(fs.getPrintWriter(MANIFEST_FILENAME), manifestXml);
-
         // Write out the schema.tsv file and add reference & attributes to study.xml
         SchemaWriter schemaWriter = new SchemaWriter();
         schemaWriter.write(datasets, ctx, fs);
@@ -134,18 +139,81 @@ public class DatasetWriter implements Writer<Study>
                 "default.importAllMatches=TRUE");
         writer.close();
 
+        // Create dataset metadata file
+        TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
+        TablesDocument.Tables tablesXml = tablesDoc.addNewTables();
+
         for (DataSetDefinition def : datasets)
         {
             TableInfo ti = def.getTableInfo(ctx.getUser());
             List<ColumnInfo> allColumns = ti.getColumns();
             List<ColumnInfo> columns = getColumnsToExport(allColumns, false);
 
+            // Write metadata
+            TableType tableXml = tablesXml.addNewTable();
+            tableXml.setTableName(def.getName());
+            tableXml.setTableDbType("TABLE");
+            TableType.Columns columnsXml = tableXml.addNewColumns();
+
+            if (null == defaultDateFormat)
+                defaultDateFormat = DateUtil.getStandardDateFormatString();
+
+            for (ColumnInfo column : columns)
+            {
+                ColumnType columnXml = columnsXml.addNewColumn();
+                columnXml.setColumnName(column.getColumnName());
+
+                if (null != column.getDescription())
+                    columnXml.setDescription(column.getDescription());
+
+                if (!column.isNullable())
+                    columnXml.setNullable(false);
+
+                String formatString = column.getFormatString();
+
+                // Write only if it's non-null (and in the case of dates, different from the global default)
+                if (null != formatString && (!Date.class.isAssignableFrom(column.getJavaClass()) || !formatString.equals(defaultDateFormat)))
+                    columnXml.setFormatString(formatString);
+
+                if (null != column.getDefaultValue())
+                    columnXml.setDefaultValue(column.getDefaultValue());
+
+                if (null != column.getMvColumnName())
+                    columnXml.setQcColumnName(column.getMvColumnName());  // TODO: Change name in tableinfo.xsd
+
+                ForeignKey fk = column.getFk();
+
+                if (null != fk && null != fk.getLookupColumnName())
+                {
+                    ColumnType.Fk fkXml = columnXml.addNewFk();
+                    TableInfo tinfo = fk.getLookupTableInfo();
+                    fkXml.setFkDbSchema(tinfo.getPublicSchemaName());
+                    fkXml.setFkTable(tinfo.getPublicName());
+                    fkXml.setFkColumnName(fk.getLookupColumnName());
+                }
+
+                // TODO: Field validators?
+                // TODO: Default values
+                // TODO: Lable
+                // TODO: RangeURI
+
+                String autoFill = column.getAutoFillValue();
+
+                if (null != autoFill)
+                    System.out.println(column.getName() + " autofill: " + autoFill);
+            }
+
+            // Write dataset
             ResultSet rs = Table.select(ti, columns, null, null);
             TSVGridWriter tsvWriter = new TSVGridWriter(rs);
             tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.propertyName);
             PrintWriter out = fs.getPrintWriter(def.getFileName());
             tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
         }
+
+        XmlBeanUtil.saveDoc(fs.getPrintWriter(META_DATA_FILENAME), tablesDoc);
+        dsXml.setMetaDataFile(META_DATA_FILENAME);
+        XmlBeanUtil.saveDoc(fs.getPrintWriter(MANIFEST_FILENAME), manifestXml);
     }
 
     private static boolean shouldExport(ColumnInfo column)
@@ -194,5 +262,11 @@ public class DatasetWriter implements Writer<Study>
         }
 
         return outColumns;
+    }
+
+
+    private void writeMetadata()
+    {
+        
     }
 }

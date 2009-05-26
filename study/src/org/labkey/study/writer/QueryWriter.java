@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.VirtualFile;
+import org.labkey.api.util.XmlBeanUtil;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
 import org.labkey.study.model.Study;
@@ -52,7 +53,6 @@ public class QueryWriter implements Writer<Study>
         if (queries.size() > 0)
         {
             ctx.getStudyXml().addNewQueries().setDir(DEFAULT_DIRECTORY);
-            root.makeDir(DEFAULT_DIRECTORY);
             VirtualFile queriesDir = root.getDir(DEFAULT_DIRECTORY);
 
             for (QueryDefinition query : queries)
@@ -75,7 +75,7 @@ public class QueryWriter implements Writer<Study>
                     queryXml.setMetadata(xObj);
                 }
 
-                StudyXmlWriter.saveDoc(queriesDir.getPrintWriter(query.getName() + META_FILE_EXTENSION), qDoc);
+                XmlBeanUtil.saveDoc(queriesDir.getPrintWriter(query.getName() + META_FILE_EXTENSION), qDoc);
             }
         }
     }

@@ -22,12 +22,11 @@ import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.util.Pair;
+import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.queryCustomView.CustomViewDocument;
+import org.labkey.data.xml.queryCustomView.CustomViewType;
 import org.labkey.query.design.*;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.QueryManager;
@@ -37,6 +36,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.*;
+import java.io.IOException;
 
 public class CustomViewImpl implements CustomView
 {
@@ -334,6 +334,22 @@ public class CustomViewImpl implements CustomView
         {
             throw new QueryException("Error", e);
         }
+    }
+
+    public void serialize(VirtualFile dir) throws IOException
+    {
+        CustomViewDocument customViewDoc = CustomViewDocument.Factory.newInstance();
+        CustomViewType customViewXml = customViewDoc.addNewCustomView();
+
+        customViewXml.setName(getName());
+
+        if (isHidden())
+            customViewXml.setHidden(isHidden());
+
+        if (null != getCustomIconUrl())
+            customViewXml.setCustomIconUrl(getCustomIconUrl());
+
+        XmlBeanUtil.saveDoc(dir.getPrintWriter(getName() + ".xml"), customViewDoc);
     }
 
     static public boolean isUnselectable(ColumnInfo column)

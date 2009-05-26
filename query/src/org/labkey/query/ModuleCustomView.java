@@ -21,8 +21,9 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.security.User;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.VirtualFile;
+import org.labkey.api.view.ActionURL;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
@@ -214,4 +215,8 @@ public class ModuleCustomView implements CustomView
         throw new UnsupportedOperationException("Can't delete a module-based custom view!");
     }
 
+    public void serialize(VirtualFile dir)
+    {
+        // Do nothing -- shouldn't export ModuleCustomViews
+    }
 }

@@ -28,6 +28,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.data.xml.TablesDocument;
+import org.labkey.data.xml.TableType;
 import org.springframework.validation.BindException;
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.Nullable;
@@ -70,6 +72,7 @@ public class DatasetImporter
             {
                 List<Integer> orderedIds = null;
                 Map<Integer, DatasetImportProperties> extraProps = null;
+                Map<String, TableType> metaDataMap = null;
 
                 DatasetsDocument.Datasets manifestDatasetsXml = getDatasetsManifest(ctx, root);
 
@@ -91,6 +94,21 @@ public class DatasetImporter
 
                     for (DatasetsDocument.Datasets.Datasets2.Dataset dataset : datasets)
                         orderedIds.add(dataset.getId());
+
+                    String metaDataFileName = manifestDatasetsXml.getMetaDataFile();
+
+                    if (null != metaDataFileName)
+                    {
+                        File metaDataFile = new File(datasetDir, metaDataFileName);
+
+                        TablesDocument tablesDoc = TablesDocument.Factory.parse(metaDataFile);
+                        TablesDocument.Tables tablesXml = tablesDoc.getTables();
+
+                        metaDataMap = new HashMap<String, TableType>(tablesXml.getTableArray().length);
+
+                        for (TableType type : tablesXml.getTableArray())
+                            metaDataMap.put(type.getTableName(), type);
+                    }
                 }
 
                 if (!StudyManager.getInstance().bulkImportTypes(study, schemaFile, ctx.getUser(), labelColumn, typeNameColumn, typeIdColumn, extraProps, errors))

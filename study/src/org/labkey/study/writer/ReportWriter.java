@@ -43,8 +43,6 @@ public class ReportWriter implements Writer<Study>
         {
             StudyDocument.Study.Reports reportsXml = ctx.getStudyXml().addNewReports();
             reportsXml.setDir(DEFAULT_DIRECTORY);
-
-            fs.makeDir(DEFAULT_DIRECTORY);
             VirtualFile reportsDir = fs.getDir(DEFAULT_DIRECTORY);
 
             for (Report report : reports)
