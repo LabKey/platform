@@ -10,6 +10,13 @@ var $dom = Ext.DomHelper;
 var $url = LABKEY.ActionURL.buildURL;
 var S = LABKEY.Security;
 
+function Array_remove(array,item)
+{
+    var i = array.indexOf(item);
+    if (i != -1)
+        array.splice(i,1);
+}
+
 
 var SecurityCacheStore = Ext.extend(LABKEY.ext.Store,{
     constructor : function(config)
@@ -276,22 +283,22 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     },
 
 
-    addMembership : function(userid,groupid,callback)
+    addMembership : function(groupid,userid,callback)
     {
         var success = function()
         {
-            this._addMembership(userid,groupid);
+            this._addMembership(groupid,userid);
             callback.call();
         };
         S.addGroupMembers({groupId:groupid, principalIds:[userid], containerPath:this.projectId, successCallback:success, scope:this});
     },
 
 
-    removeMembership : function(userid,groupid,callback)
+    removeMembership : function(groupid,userid,callback)
     {
         var success = function()
         {
-            this._addMembership(userid,groupid);
+            this._removeMembership(groupid,userid);
             callback.call();
         };
         S.removeGroupMembers({groupId:groupid, principalIds:[userid], containerPath:this.projectId, successCallback:success, scope:this});
@@ -303,7 +310,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     mapPrincipalToGroups : null,
 
     // does not fire events
-    _addMembership : function(userid,groupid)
+    _addMembership : function(groupid,userid)
     {
         if (!this.mapGroupToMembers) return;
 
@@ -319,16 +326,15 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     },
 
     // does not fire events
-    _removeMembership : function(userid,groupid)
+    _removeMembership : function(groupid,userid)
     {
         if (!this.mapGroupToMembers) return;
 
         if (this.mapGroupToMembers[groupid])
-            this.mapGroupToMembers.remove(userid);
+            Array_remove(this.mapGroupToMembers[groupid],userid);
         if (this.mapPrincipalToGroups[userid])
-            this.mapPrincipalToGroups.remove(groupid);
+            Array_remove(this.mapPrincipalToGroups[userid],groupid);
     },
-
 
     _computeMembershipMaps : function()
     {
@@ -601,9 +607,11 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
             html.push("</ul>\n");
         }
 
+        var i, user;
         var id = Ext.id();
         var principalWrapper = null;
-
+        var removeWrapper;
+        
         // users
         if (isGroup)
         {
@@ -626,12 +634,15 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
                     principalWrapper = '$p$' + id;
                     html.push("<tr><td colspan=3 id=" + principalWrapper + "></td></tr>");
                 }                
-                for (var i=0 ; i<users.length ; i++)
+                for (i=0 ; i<users.length ; i++)
                 {
-                    var user = users[i];
+                    user = users[i];
                     html.push("<tr><td width=100>" + $h(user.Name) + "</td>");
                     if (this.canEdit)
-                        html.push("<td>remove</td><td>");
+                    {
+                        removeWrapper = '$remove$' + id + user.UserId;
+                        html.push("<td>[<a href=# id=" + removeWrapper + ">remove</a>]</td><td>");
+                    }
                     html.push(_open('permissions', $url('user','userAccess',this.cache.projectId,{userId:user.UserId})));
                     html.push("</td></tr>");
                 }
@@ -643,13 +654,24 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
         this.body.update(m, false);
 
         // render a principals drop down
-        if (principalWrapper)
+        if (isGroup && this.canEdit)
         {
             this.addPrincipalComboBox = new PrincipalComboBox({cache:this.cache, usersOnly:true});
             this.addPrincipalComboBox.on("select",this.Combo_onSelect,this);
             this.addPrincipalComboBox.render(principalWrapper);
-
+            for (i=0 ; i<users.length ; i++)
+            {
+                user = users[i];
+                removeWrapper = '$remove$' + id + user.UserId;
+                Ext.fly(removeWrapper).dom.onclick = this.Remove_onClick.createDelegate(this,[user.UserId]);
+            }
         }
+    },
+
+    Remove_onClick : function(userid)
+    {
+        var groupid = this.user.UserId;
+        this.cache.removeMembership(groupid,userid,this._redraw.createDelegate(this));
     },
 
     Combo_onSelect : function(combo,record,index)
@@ -658,7 +680,7 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
         {
             var groupid = this.user.UserId;
             var userid = record.data.UserId;
-            this.cache.addMembership(userid,groupid,this._redraw.createDelegate(this));
+            this.cache.addMembership(groupid,userid,this._redraw.createDelegate(this));
         }
         combo.selectText();
     }
