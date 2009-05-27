@@ -20,10 +20,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.study.assay.AssayUrls;
-import org.labkey.api.study.assay.AssayTableMetadata;
+import org.labkey.api.study.assay.*;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.AppBar;
@@ -180,19 +177,19 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         AssayProvider provider = AssayService.get().getProvider(_protocol);
 
         List<Integer> ids;
+        AssayTableMetadata tableMetadata = provider.getTableMetadata();
         if (publishForm.isRunIds())
         {
             // Need to convert the run ids into data row ids
             List<Integer> runIds = getCheckboxIds();
             DataRegionSelection.clearAll(getViewContext(), null);
             // Get the assay results table
-            UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getContainer(), AssayService.ASSAY_SCHEMA_NAME);
+            UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getContainer(), AssaySchema.NAME);
             TableInfo table = schema.getTable(AssayService.get().getResultsTableName(_protocol));
             if (table instanceof ContainerFilterable && publishForm.getContainerFilterName() != null)
             {
                 ((ContainerFilterable)table).setContainerFilter(ContainerFilter.getContainerFilterByName(publishForm.getContainerFilterName(), getViewContext().getUser()));
             }
-            AssayTableMetadata tableMetadata = provider.getTableMetadata();
             ColumnInfo dataRowIdColumn = QueryService.get().getColumns(table, Collections.singleton(tableMetadata.getResultRowIdFieldKey())).get(tableMetadata.getResultRowIdFieldKey());
             assert dataRowIdColumn  != null : "Could not find dataRowId column in assay results table";
             FieldKey runFieldKey = tableMetadata.getRunRowIdFieldKeyFromResults();

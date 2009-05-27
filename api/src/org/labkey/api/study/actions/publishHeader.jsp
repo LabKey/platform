@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.study.actions.PublishConfirmAction" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -33,4 +34,16 @@
     }
     window.onbeforeunload = LABKEY.beforeunload(isTrue);
 </script>
-Note: Participant and <%= bean.isDateBased() ? "Date" : "Visit ID" %> are required for all rows.
+<% if (bean.isMismatched()) { %>
+<p>
+    <strong><span class="labkey-error">Assay/specimen mismatch</span></strong><br/>
+    There are specimens in the target study that have ParticipantIDs and/or <%= bean.isDateBased() ? "Date" : "Visit ID" %>s
+    that do not match the values in the assay data. Mismatched rows are highlighed below in red.
+</p>
+<p>
+    To reshow this form with ParticipantIDs and <%= bean.isDateBased() ? "Date" : "Visit ID" %>s associated with
+    the specimens in the study, click on the Reset with Specimen Data button. To reshow with information from the assay,
+    click on the Reset with Assay Data button.
+</p>
+<% } %>
+    Participant IDs and <%= bean.isDateBased() ? "Date" : "Visit ID" %>s are required for all rows.

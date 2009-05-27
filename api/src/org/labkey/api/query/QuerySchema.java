@@ -16,15 +16,12 @@
 
 package org.labkey.api.query;
 
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.security.User;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.NavTrailConfig;
 
-import java.util.*;
+import java.util.Set;
 
 public interface QuerySchema
 {

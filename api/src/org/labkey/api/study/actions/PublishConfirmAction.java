@@ -24,7 +24,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.TimepointType;
@@ -61,6 +60,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         private String _dataRegionSelectionKey;
         private String _returnURL;
         private String _containerFilterName;
+        private PublishResultsQueryView.DefaultValueSource _defaultValueSource = PublishResultsQueryView.DefaultValueSource.Assay;
 
         public String getReturnURL()
         {
@@ -162,6 +162,21 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         {
             _containerFilterName = containerFilterName;
         }
+
+        public void setDefaultValueSource(String defaultValueSource)
+        {
+            _defaultValueSource = PublishResultsQueryView.DefaultValueSource.valueOf(defaultValueSource);
+        }
+
+        public String getDefaultValueSource()
+        {
+            return _defaultValueSource.toString();
+        }
+
+        public PublishResultsQueryView.DefaultValueSource getDefaultValueSourceEnum()
+        {
+            return _defaultValueSource;
+        }
     }
 
     public ModelAndView getView(PublishConfirmForm publishConfirmForm, BindException errors) throws Exception
@@ -185,123 +200,30 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         }
         Map<Object, String> postedVisits = null;
         Map<Object, String> postedPtids = null;
-        boolean dateBased = AssayPublishService.get().getTimepointType(targetStudy) == TimepointType.DATE;
+        TimepointType timepointType = AssayPublishService.get().getTimepointType(targetStudy);
         _targetStudyName = AssayPublishService.get().getStudyName(targetStudy);
         
         // todo: this isn't a great way to determine if this is our final post, but it'll do for now:
-        if (publishConfirmForm.isAttemptPublish())
+        if (publishConfirmForm.isAttemptPublish() && publishConfirmForm.getDefaultValueSourceEnum() == PublishResultsQueryView.DefaultValueSource.UserSpecified)
         {
             postedVisits = new HashMap<Object, String>();
             postedPtids = new HashMap<Object, String>();
-            Map<Integer, AssayPublishKey> publishData = new LinkedHashMap<Integer, AssayPublishKey>();
-            String[] participantIds = publishConfirmForm.getParticipantId();
-            String[] visitIds = publishConfirmForm.getVisitId();
-            String[] dates = publishConfirmForm.getDate();
-            boolean missingPtid = false;
-            boolean missingVisitId = false;
-            boolean missingDate = false;
-            boolean badVisitIds = false;
-            boolean badDates = false;
-            int index = 0;
-            for (int objectId : allObjects)
-            {
-                // we only want to give errors for selected rows, but we want to compute visits and ptids regardless
-                boolean selected = selectedObjects.contains(objectId);
-
-                String participantId = participantIds != null && participantIds.length > index ? participantIds[index] : null;
-                if (participantId == null || participantId.trim().length() == 0)
-                    missingPtid = true;
-                else
-                    participantId = participantId.trim();
-
-                if (AssayPublishService.get().getTimepointType(targetStudy) == TimepointType.VISIT)
-                {
-                    String visitIdStr = visitIds != null && visitIds.length > index ? visitIds[index] : null;
-                    Float visitId = null;
-                    if (visitIdStr == null || visitIdStr.trim().length() == 0)
-                    {
-                        if (selected)
-                            missingVisitId = true;
-                    }
-                    else
-                    {
-                        visitIdStr = visitIdStr.trim();
-                        try
-                        {
-                            visitId = Float.parseFloat(visitIdStr);
-                        }
-                        catch (NumberFormatException e)
-                        {
-                            if (selected)
-                                badVisitIds = true;
-                        }
-                    }
-                    postedPtids.put(objectId, participantId);
-                    postedVisits.put(objectId, visitIdStr);
-                    if (visitId != null && selected)
-                        publishData.put(objectId, new AssayPublishKey(participantId, visitId.floatValue(), objectId));
-                }
-                else // TimepointType.DATE
-                {
-                    String dateStr = dates != null && dates.length > index ? dates[index] : null;
-                    Date date = null;
-                    if (dateStr == null || dateStr.trim().length() == 0)
-                    {
-                        if (selected)
-                            missingDate = true;
-                    }
-                    else
-                    {
-                        dateStr = dateStr.trim();
-                        try
-                        {
-                            date = (Date) ConvertUtils.convert(dateStr, Date.class);
-                        }
-                        catch (ConversionException e)
-                        {
-                            if (selected)
-                                badDates = true;
-                        }
-                    }
-                    postedPtids.put(objectId, participantId);
-                    postedVisits.put(objectId, dateStr);
-                    if (date != null && selected)
-                        publishData.put(objectId, new AssayPublishKey(participantId, date, objectId));
-                }
-                index++;
-            }
-            if (missingPtid)
-                errors.reject(null, "You must specify a Participant ID for all selected rows.");
-            if (missingVisitId)
-                errors.reject(null, "You must specify a Visit ID for all selected rows.");
-            if (badVisitIds)
-                errors.reject(null, "Visit IDs must be numbers.");
-            if (missingDate || badDates)
-                errors.reject(null, "You must specify a Date for all selected rows.");
-
-            if (errors.getErrorCount() == 0 && !publishConfirmForm.isValidate())
-            {
-                List<String> publishErrors = new ArrayList<String>();
-                ActionURL successURL  = provider.copyToStudy(context.getUser(), _protocol, targetStudy, publishData, publishErrors);
-                if (publishErrors.isEmpty())
-                {
-                    DataRegionSelection.clearAll(getViewContext(), publishConfirmForm.getDataRegionSelectionKey());
-                    HttpView.throwRedirect(successURL);
-                }
-                for (String publishError : publishErrors)
-                {
-                    errors.reject(null, publishError);
-                }
-            }
+            attemptCopy(publishConfirmForm, errors, context, provider, selectedObjects, allObjects, targetStudy, postedVisits, postedPtids, timepointType);
         }
+
+        AssaySchema schema = AssayService.get().createSchema(context.getUser(), getContainer());
+        schema.setTargetStudy(targetStudy);
+
+        boolean mismatched = AssayPublishService.get().hasMismatchedInfo(provider, _protocol, allObjects, schema);
+
+        // Show the form
         String name = AssayService.get().getResultsTableName(_protocol);
-        UserSchema schema = AssayService.get().createSchema(context.getUser(), getContainer());
         QuerySettings settings = new QuerySettings(context, name);
-        settings.setSchemaName(schema.getSchemaName());
+        settings.setSchemaName(AssaySchema.NAME);
         settings.setQueryName(name);
         settings.setAllowChooseView(false);
-        PublishResultsQueryView queryView = new PublishResultsQueryView(_protocol, context, settings,
-                allObjects, targetStudy, postedVisits, postedPtids);
+        PublishResultsQueryView queryView = new PublishResultsQueryView(_protocol, schema, settings,
+                allObjects, targetStudy, postedVisits, postedPtids, publishConfirmForm.getDefaultValueSourceEnum(), mismatched);
 
         if (publishConfirmForm.getContainerFilterName() != null)
             queryView.getSettings().setContainerFilterName(publishConfirmForm.getContainerFilterName());
@@ -319,7 +241,8 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         String script = "window.onbeforeunload = null;"; // Need to prevent a warning if the user clicks on these buttons
 
         ActionURL publishURL = getPublishHandlerURL(_protocol);
-        
+
+        publishURL.replaceParameter("defaultValueSource", PublishResultsQueryView.DefaultValueSource.UserSpecified.toString());
         publishURL.replaceParameter("validate", "false");
         ActionButton publishButton = new ActionButton(publishURL.getLocalURIString(), "Copy to Study");
         publishButton.setScript(script, true);
@@ -330,29 +253,153 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
         validateButton.setScript(script, true);
         buttons.add(validateButton);
 
+        if (mismatched)
+        {
+            publishURL.deleteParameter("validate");
+            publishURL.replaceParameter("defaultValueSource", PublishResultsQueryView.DefaultValueSource.Assay.toString());
+            ActionButton fromAssayButton = new ActionButton(publishURL.getLocalURIString(), "Reset with Assay Data");
+            buttons.add(fromAssayButton);
+
+            publishURL.replaceParameter("defaultValueSource", PublishResultsQueryView.DefaultValueSource.Specimen.toString());
+            ActionButton fromSpecimenButton = new ActionButton(publishURL.getLocalURIString(), "Reset with Specimen Data");
+            buttons.add(fromSpecimenButton);
+        }
 
         ActionButton cancelButton = new ActionButton("Cancel");
         cancelButton.setURL(returnURL);
         cancelButton.setScript(script, true);
         buttons.add(cancelButton);
 
+
         queryView.setButtons(buttons);
         return new VBox(new JspView<PublishConfirmBean>("/org/labkey/api/study/actions/publishHeader.jsp",
-                new PublishConfirmBean(dateBased), errors), queryView);
+                new PublishConfirmBean(timepointType == TimepointType.DATE, mismatched), errors), queryView);
+    }
+
+    private void attemptCopy(PublishConfirmForm publishConfirmForm, BindException errors, ViewContext context, AssayProvider provider, Set<Integer> selectedObjects, List<Integer> allObjects, Container targetStudy, Map<Object, String> postedVisits, Map<Object, String> postedPtids, TimepointType timepointType)
+            throws RedirectException
+    {
+        Map<Integer, AssayPublishKey> publishData = new LinkedHashMap<Integer, AssayPublishKey>();
+        String[] participantIds = publishConfirmForm.getParticipantId();
+        String[] visitIds = publishConfirmForm.getVisitId();
+        String[] dates = publishConfirmForm.getDate();
+        boolean missingPtid = false;
+        boolean missingVisitId = false;
+        boolean missingDate = false;
+        boolean badVisitIds = false;
+        boolean badDates = false;
+        int index = 0;
+        for (int objectId : allObjects)
+        {
+            // we only want to give errors for selected rows, but we want to compute visits and ptids regardless
+            boolean selected = selectedObjects.contains(objectId);
+
+            String participantId = participantIds != null && participantIds.length > index ? participantIds[index] : null;
+            if (participantId == null || participantId.trim().length() == 0)
+                missingPtid = true;
+            else
+                participantId = participantId.trim();
+
+            if (timepointType == TimepointType.VISIT)
+            {
+                String visitIdStr = visitIds != null && visitIds.length > index ? visitIds[index] : null;
+                Float visitId = null;
+                if (visitIdStr == null || visitIdStr.trim().length() == 0)
+                {
+                    if (selected)
+                        missingVisitId = true;
+                }
+                else
+                {
+                    visitIdStr = visitIdStr.trim();
+                    try
+                    {
+                        visitId = Float.parseFloat(visitIdStr);
+                    }
+                    catch (NumberFormatException e)
+                    {
+                        if (selected)
+                            badVisitIds = true;
+                    }
+                }
+                postedPtids.put(objectId, participantId);
+                postedVisits.put(objectId, visitIdStr);
+                if (visitId != null && selected)
+                    publishData.put(objectId, new AssayPublishKey(participantId, visitId.floatValue(), objectId));
+            }
+            else // TimepointType.DATE
+            {
+                String dateStr = dates != null && dates.length > index ? dates[index] : null;
+                Date date = null;
+                if (dateStr == null || dateStr.trim().length() == 0)
+                {
+                    if (selected)
+                        missingDate = true;
+                }
+                else
+                {
+                    dateStr = dateStr.trim();
+                    try
+                    {
+                        date = (Date) ConvertUtils.convert(dateStr, Date.class);
+                    }
+                    catch (ConversionException e)
+                    {
+                        if (selected)
+                            badDates = true;
+                    }
+                }
+                postedPtids.put(objectId, participantId);
+                postedVisits.put(objectId, dateStr);
+                if (date != null && selected)
+                    publishData.put(objectId, new AssayPublishKey(participantId, date, objectId));
+            }
+            index++;
+        }
+        if (missingPtid)
+            errors.reject(null, "You must specify a Participant ID for all selected rows.");
+        if (missingVisitId)
+            errors.reject(null, "You must specify a Visit ID for all selected rows.");
+        if (badVisitIds)
+            errors.reject(null, "Visit IDs must be numbers.");
+        if (missingDate || badDates)
+            errors.reject(null, "You must specify a Date for all selected rows.");
+
+        if (errors.getErrorCount() == 0 && !publishConfirmForm.isValidate())
+        {
+            List<String> publishErrors = new ArrayList<String>();
+            ActionURL successURL  = provider.copyToStudy(context.getUser(), _protocol, targetStudy, publishData, publishErrors);
+            if (publishErrors.isEmpty())
+            {
+                DataRegionSelection.clearAll(getViewContext(), publishConfirmForm.getDataRegionSelectionKey());
+                HttpView.throwRedirect(successURL);
+            }
+            for (String publishError : publishErrors)
+            {
+                errors.reject(null, publishError);
+            }
+        }
     }
 
     public static class PublishConfirmBean
     {
         private boolean _dateBased;
+        private final boolean _mismatched;
 
-        public PublishConfirmBean(boolean dateBased)
+        public PublishConfirmBean(boolean dateBased, boolean mismatched)
         {
             _dateBased = dateBased;
+            _mismatched = mismatched;
         }
 
         public boolean isDateBased()
         {
             return _dateBased;
+        }
+
+        public boolean isMismatched()
+        {
+            return _mismatched;
         }
     }
 

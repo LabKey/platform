@@ -27,7 +27,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.qc.TransformResult;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.actions.AssayRunUploadForm;
@@ -83,9 +82,9 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     ActionURL getImportURL(Container container, ExpProtocol protocol);
 
-    TableInfo createDataTable(UserSchema schema, ExpProtocol protocol);
+    TableInfo createDataTable(AssaySchema schema, ExpProtocol protocol);
 
-    ExpRunTable createRunTable(UserSchema schema, ExpProtocol protocol);
+    ExpRunTable createRunTable(AssaySchema schema, ExpProtocol protocol);
 
     ActionURL copyToStudy(User user, ExpProtocol protocol, Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors);
 

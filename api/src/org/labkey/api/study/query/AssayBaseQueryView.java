@@ -21,8 +21,8 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.view.ViewContext;
 
 /**
  * User: brittp
@@ -34,9 +34,9 @@ public abstract class AssayBaseQueryView extends QueryView
     protected ExpProtocol _protocol;
     protected AssayProvider _provider;
 
-    public AssayBaseQueryView(ExpProtocol protocol, ViewContext context, QuerySettings settings)
+    public AssayBaseQueryView(ExpProtocol protocol, AssaySchema schema, QuerySettings settings)
     {
-        super(AssayService.get().createSchema(context.getUser(), context.getContainer()), settings);
+        super(schema, settings);
         _protocol = protocol;
         _provider = AssayService.get().getProvider(_protocol);
         getSettings().setAllowChooseQuery(false);

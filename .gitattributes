@@ -705,6 +705,7 @@ api/src/org/labkey/api/study/assay/AssayResultsView.java -text
 api/src/org/labkey/api/study/assay/AssayRunType.java -text
 api/src/org/labkey/api/study/assay/AssayRunUploadContext.java -text
 api/src/org/labkey/api/study/assay/AssayRunsView.java -text
+api/src/org/labkey/api/study/assay/AssaySchema.java -text
 api/src/org/labkey/api/study/assay/AssayService.java -text
 api/src/org/labkey/api/study/assay/AssayTableMetadata.java -text
 api/src/org/labkey/api/study/assay/AssayUrls.java -text

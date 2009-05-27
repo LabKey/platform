@@ -16,17 +16,16 @@
 
 package org.labkey.api.study.assay;
 
-import org.labkey.api.data.Container;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ActionButton;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -37,8 +36,6 @@ import java.util.List;
 public class AssayService
 {
     static private Interface INSTANCE;
-
-    public static final String ASSAY_SCHEMA_NAME = "assay";
 
     public static final String RUN_PROPERTIES_COLUMN_NAME = "RunProperties";
     public static final String BATCH_PROPERTIES_COLUMN_NAME = "BatchProperties";
@@ -64,7 +61,7 @@ public class AssayService
 
         ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container);
 
-        public UserSchema createSchema(User user, Container container);
+        public AssaySchema createSchema(User user, Container container);
 
         public String getBatchesTableName(ExpProtocol protocol);
         public String getRunsTableName(ExpProtocol protocol);

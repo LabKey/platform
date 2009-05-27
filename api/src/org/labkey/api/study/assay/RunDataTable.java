@@ -40,7 +40,7 @@ import java.util.Set;
  */
 public class RunDataTable extends FilteredTable
 {
-    public RunDataTable(final QuerySchema schema, final ExpProtocol protocol)
+    public RunDataTable(final AssaySchema schema, final ExpProtocol protocol)
     {
         super(new ProtocolFilteredObjectTable(schema.getContainer(), protocol.getLSID()), schema.getContainer());
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();

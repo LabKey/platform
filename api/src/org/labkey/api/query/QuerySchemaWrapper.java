@@ -67,6 +67,6 @@ public class QuerySchemaWrapper implements QuerySchema
 
     public Set<String> getSchemaNames()
     {
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 }

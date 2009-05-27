@@ -62,6 +62,9 @@ public class AssayPublishService
 
         TimepointType getTimepointType(Container container);
         String getStudyName(Container container);
+
+        /** Checks if the assay and specimen participant/visit/dates don't match based on the specimen id and target study */
+        boolean hasMismatchedInfo(AssayProvider provider, ExpProtocol protocol, List<Integer> allObjects, AssaySchema schema);
     }
 
     public static void register(Service serviceImpl)

@@ -15,17 +15,16 @@
  */
 package org.labkey.api.study.assay;
 
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.view.DataView;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ActionButton;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.data.ButtonBar;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.study.actions.ShowSelectedRunsAction;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
 
 import java.util.List;
 
@@ -37,7 +36,7 @@ public class BatchListQueryView extends QueryView
 {
     private ExpProtocol _protocol;
 
-    public BatchListQueryView(ExpProtocol protocol, UserSchema schema, QuerySettings settings)
+    public BatchListQueryView(ExpProtocol protocol, AssaySchema schema, QuerySettings settings)
     {
         super(schema, settings);
         _protocol = protocol;

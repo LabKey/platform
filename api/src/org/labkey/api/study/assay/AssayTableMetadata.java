@@ -25,13 +25,13 @@ import org.labkey.api.exp.query.ExpRunTable;
  */
 public class AssayTableMetadata
 {
-    private FieldKey _runRowIdFieldKey;
+    private FieldKey _runFieldKey;
     private FieldKey _resultRowIdFieldKey;
     private FieldKey _specimenDetailParentFieldKey;
 
     public AssayTableMetadata(FieldKey specimenDetailParentFieldKey, FieldKey runFieldKey, FieldKey resultRowIdFieldKey)
     {
-        _runRowIdFieldKey = new FieldKey(runFieldKey, ExpRunTable.Column.RowId.toString());
+        _runFieldKey = runFieldKey;
         _resultRowIdFieldKey = resultRowIdFieldKey;
         _specimenDetailParentFieldKey = specimenDetailParentFieldKey;
     }
@@ -67,14 +67,25 @@ public class AssayTableMetadata
         }
     }
 
+    public FieldKey getRunFieldKeyFromResults()
+    {
+        return _runFieldKey;
+    }
+
     /** @return relative to the assay's results table, the FieldKey that gets to the Run table */
     public FieldKey getRunRowIdFieldKeyFromResults()
     {
-        return _runRowIdFieldKey;
+        return new FieldKey(_runFieldKey, ExpRunTable.Column.RowId.toString());
     }
 
     public FieldKey getResultRowIdFieldKey()
     {
         return _resultRowIdFieldKey;
+    }
+
+    /** @return relative to the run object */
+    public FieldKey getTargetStudyFieldKey()
+    {
+        return FieldKey.fromParts(AssayService.BATCH_COLUMN_NAME, AssayService.BATCH_PROPERTIES_COLUMN_NAME, AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
     }
 }

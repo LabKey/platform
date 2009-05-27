@@ -22,10 +22,7 @@ import org.labkey.api.security.ACL;
 import org.labkey.api.study.TimepointType;
 
 import java.sql.Types;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * User: jeckels
@@ -33,15 +30,15 @@ import java.util.Set;
  */
 public class SpecimenForeignKey extends LookupForeignKey
 {
-    private final QuerySchema _schema;
+    private final AssaySchema _schema;
     private final AssayProvider _provider;
     private final ExpProtocol _protocol;
     private final ContainerFilter _studyContainerFilter;
 
-    private static final String TARGET_STUDY_SUFFIX = "$TargetStudyJoin";
-    private static final String SPECIMEN_SUFFIX = "$SpecimenJoin";
+    private static final String ASSAY_SUBQUERY_SUFFIX = "$AssayJoin";
+    private static final String SPECIMEN_SUBQUERY_SUFFIX = "$SpecimenJoin";
 
-    public SpecimenForeignKey(QuerySchema schema, AssayProvider provider, ExpProtocol protocol)
+    public SpecimenForeignKey(AssaySchema schema, AssayProvider provider, ExpProtocol protocol)
     {
         super("RowId");
         _schema = schema;
@@ -58,7 +55,14 @@ public class SpecimenForeignKey extends LookupForeignKey
         {
             if (_ids == null)
             {
-                _ids = ContainerFilter.toIds(AssayPublishService.get().getValidPublishTargets(_schema.getUser(), ACL.PERM_READ).keySet());
+                if (_schema.getTargetStudy() != null)
+                {
+                    _ids = Collections.singleton(_schema.getTargetStudy().getId());
+                }
+                else
+                {
+                    _ids = ContainerFilter.toIds(AssayPublishService.get().getValidPublishTargets(_schema.getUser(), ACL.PERM_READ).keySet());
+                }
             }
             return _ids;
         }
@@ -75,8 +79,8 @@ public class SpecimenForeignKey extends LookupForeignKey
         FilteredTable tableInfo = (FilteredTable)studySchema.getTable("SimpleSpecimen");
         tableInfo.setContainerFilter(_studyContainerFilter);
 
-        String specimenAlias = ExprColumn.STR_TABLE_ALIAS + SPECIMEN_SUFFIX;
-        String targetStudyAlias = ExprColumn.STR_TABLE_ALIAS + TARGET_STUDY_SUFFIX;
+        String specimenAlias = ExprColumn.STR_TABLE_ALIAS + SPECIMEN_SUBQUERY_SUFFIX;
+        String targetStudyAlias = ExprColumn.STR_TABLE_ALIAS + ASSAY_SUBQUERY_SUFFIX;
 
         SQLFragment sql = new SQLFragment();
 
@@ -84,7 +88,8 @@ public class SpecimenForeignKey extends LookupForeignKey
         FieldKey participantFK = tableMetadata.getParticipantIDFieldKey();
         FieldKey visitFK = tableMetadata.getVisitIDFieldKey(TimepointType.VISIT);
         FieldKey dateFK = tableMetadata.getVisitIDFieldKey(TimepointType.DATE);
-        Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(_provider.createDataTable(studySchema, _protocol), Arrays.asList(participantFK, visitFK, dateFK));
+        AssaySchema assaySchema = AssayService.get().createSchema(studySchema.getUser(), studySchema.getContainer());
+        Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(_provider.createDataTable(assaySchema, _protocol), Arrays.asList(participantFK, visitFK, dateFK));
 
         ColumnInfo participantIdCol = columns.get(participantFK);
         ColumnInfo visitIdCol = columns.get(visitFK);
@@ -196,21 +201,29 @@ public class SpecimenForeignKey extends LookupForeignKey
             Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(getParentTable(), Arrays.asList(targetStudyFK, objectIdFK, participantFK, visitFK, dateFK));
 
             ColumnInfo targetStudyCol = columns.get(targetStudyFK);
-            if (targetStudyCol != null)
+            if (targetStudyCol != null || _schema.getTargetStudy() != null)
             {
                 ColumnInfo objectIdCol = columns.get(objectIdFK);
                 SQLFragment targetStudySQL = QueryService.get().getSelectSQL(getParentTable(), columns.values(), null, null, Table.ALL_ROWS, 0);
                 SQLFragment sql = new SQLFragment(" LEFT OUTER JOIN (");
                 sql.append(targetStudySQL);
-                String targetStudyAlias = parentAlias + TARGET_STUDY_SUFFIX;
-                String specimenAlias = parentAlias + SPECIMEN_SUFFIX;
+                String assaySubqueryAlias = parentAlias + ASSAY_SUBQUERY_SUFFIX;
+                String specimenSubqueryAlias = parentAlias + SPECIMEN_SUBQUERY_SUFFIX;
                 ColumnInfo parentKeyCol = foreignKey.getParentTable().getPkColumns().get(0);
-                sql.append(") AS " + targetStudyAlias + " ON " + targetStudyAlias + "." + objectIdCol.getAlias() + " = " + parentAlias + "." + parentKeyCol.getName());
+                sql.append(") AS " + assaySubqueryAlias + " ON " + assaySubqueryAlias + "." + objectIdCol.getAlias() + " = " + parentAlias + "." + parentKeyCol.getName());
                 sql.append(" LEFT OUTER JOIN ");
                 sql.append(" (SELECT specimen.RowId, specimen.GlobalUniqueId, specimen.Container, specimen.PTID AS ParticipantId, specimen.drawtimestamp AS Date, specimen.VisitValue AS Visit, s.DateBased ");
-                sql.append(" FROM study.specimen specimen, study.study s WHERE s.Container = specimen.Container) AS " + specimenAlias);
-                sql.append(" ON " + specimenAlias + ".GlobalUniqueId = " + foreignKey.getValueSql(parentAlias));
-                sql.append(" AND " + targetStudyAlias + "." + targetStudyCol.getAlias() + " = " + specimenAlias + ".Container"); 
+                sql.append(" FROM study.specimen specimen, study.study s WHERE s.Container = specimen.Container) AS " + specimenSubqueryAlias);
+                sql.append(" ON " + specimenSubqueryAlias + ".GlobalUniqueId = " + foreignKey.getValueSql(parentAlias));
+                if (_schema.getTargetStudy() != null)
+                {
+                    sql.append(" AND " + specimenSubqueryAlias + ".Container = ?");
+                    sql.add(_schema.getTargetStudy().getId());
+                }
+                else
+                {
+                    sql.append(" AND " + assaySubqueryAlias + "." + targetStudyCol.getAlias() + " = " + specimenSubqueryAlias + ".Container");
+                }
 
                 sql.append("\n\tLEFT OUTER JOIN ");
 
@@ -228,9 +241,9 @@ public class SpecimenForeignKey extends LookupForeignKey
                 String colTableAlias = getTableAlias();
                 sql.append(" AS ").append(colTableAlias);
                 sql.append(" ON ");
-                sql.append(specimenAlias + ".RowId = " + getTableAlias() + ".RowId");
+                sql.append(specimenSubqueryAlias + ".RowId = " + getTableAlias() + ".RowId");
 
-                map.put(specimenAlias, sql);
+                map.put(specimenSubqueryAlias, sql);
             }
             else
             {

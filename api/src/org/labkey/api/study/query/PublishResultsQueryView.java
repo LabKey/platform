@@ -20,10 +20,10 @@ import org.apache.commons.beanutils.ConversionException;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -35,7 +35,6 @@ import org.labkey.api.study.assay.*;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.DataView;
-import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -52,16 +51,68 @@ public class PublishResultsQueryView extends ResultsQueryView
     private SimpleFilter _filter;
     private List<ActionButton> _buttons;
     private final Container _targetStudyContainer;
+    private final DefaultValueSource _defaultValueSource;
+    private final boolean _mismatched;
     private final TimepointType _timepointType;
     private Map<Object, String> _reshowVisits;
     private Map<Object, String> _reshowPtids;
 
-    public PublishResultsQueryView(ExpProtocol protocol, ViewContext context, QuerySettings settings,
-                                   List<Integer> objectIds, Container targetStudyContainer,
-                                   Map<Object, String> reshowVisits, Map<Object, String> reshowPtids)
+    public enum DefaultValueSource
     {
-        super(protocol, context, settings);
+        Assay
+        {
+            public FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata)
+            {
+                return tableMetadata.getParticipantIDFieldKey();
+            }
+            public FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type)
+            {
+                return tableMetadata.getVisitIDFieldKey(type);
+            }
+        },
+        Specimen
+        {
+            public FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata)
+            {
+                return new FieldKey(tableMetadata.getSpecimenIDFieldKey(), "ParticipantID");
+            }
+            public FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type)
+            {
+                if (type == TimepointType.VISIT)
+                {
+                    return new FieldKey(tableMetadata.getSpecimenIDFieldKey(), "Visit");
+                }
+                else
+                {
+                    return new FieldKey(tableMetadata.getSpecimenIDFieldKey(), "DrawTimestamp");
+                }
+            }
+        },
+        UserSpecified
+        {
+            public FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata)
+            {
+                return null;
+            }
+            public FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type)
+            {
+                return null;
+            }
+        };
+
+        public abstract FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata);
+        public abstract FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type);
+    }
+
+    public PublishResultsQueryView(ExpProtocol protocol, AssaySchema schema, QuerySettings settings,
+                                   List<Integer> objectIds, Container targetStudyContainer,
+                                   Map<Object, String> reshowVisits, Map<Object, String> reshowPtids,
+                                   DefaultValueSource defaultValueSource, boolean mismatched)
+    {
+        super(protocol, schema, settings);
         _targetStudyContainer = targetStudyContainer;
+        _defaultValueSource = defaultValueSource;
+        _mismatched = mismatched;
         _timepointType = AssayPublishService.get().getTimepointType(_targetStudyContainer);
         _filter = new SimpleFilter();
         AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -470,10 +521,11 @@ public class PublishResultsQueryView extends ResultsQueryView
         AssayTableMetadata tableMetadata = provider.getTableMetadata();
         FieldKey runIdFieldKey = tableMetadata.getRunRowIdFieldKeyFromResults();
         FieldKey objectIdFieldKey = tableMetadata.getResultRowIdFieldKey();
-        FieldKey ptidFieldKey = tableMetadata.getParticipantIDFieldKey();
-        FieldKey visitIDFieldKey = tableMetadata.getVisitIDFieldKey(AssayPublishService.get().getTimepointType(_targetStudyContainer));
+        FieldKey ptidFieldKey = _defaultValueSource.getParticipantIDFieldKey(tableMetadata);
+        FieldKey visitIDFieldKey = _defaultValueSource.getVisitIDFieldKey(tableMetadata, _timepointType);
         FieldKey specimenIDFieldKey = tableMetadata.getSpecimenIDFieldKey();
-        Set<FieldKey> fieldKeys = new HashSet<FieldKey>(Arrays.asList(runIdFieldKey, objectIdFieldKey, ptidFieldKey, visitIDFieldKey, specimenIDFieldKey));
+        FieldKey matchFieldKey = new FieldKey(tableMetadata.getSpecimenIDFieldKey(), "AssayMatch");
+        Set<FieldKey> fieldKeys = new HashSet<FieldKey>(Arrays.asList(runIdFieldKey, objectIdFieldKey, ptidFieldKey, visitIDFieldKey, specimenIDFieldKey, matchFieldKey));
 
         // In case the assay definition doesn't have all the fields
         fieldKeys.remove(null);
@@ -503,6 +555,15 @@ public class PublishResultsQueryView extends ResultsQueryView
             columns.add(new VisitIDDataInputColumn(visitCompletionBase, resolverHelper, visitIdCol));
         else
             columns.add(new DateDataInputColumn(null, resolverHelper, visitIdCol));
+
+        if (_mismatched)
+        {
+            ColumnInfo matchColInfo = colInfos.get(matchFieldKey);
+            if (matchColInfo != null)
+            {
+                columns.add(new DataColumn(matchColInfo));
+            }
+        }
 
         return columns;
     }

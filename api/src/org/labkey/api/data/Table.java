@@ -565,7 +565,7 @@ public class Table
             conn = schema.getScope().getConnection();
             rs = _executeQuery(conn, sql, parameters);
             ArrayList<Object> list = new ArrayList<Object>();
-            int i = rs.findColumn(col.getName());
+            int i = rs.findColumn(col.getAlias());
             while (rs.next())
                 list.add(rs.getObject(i));
             return list.toArray((K[]) Array.newInstance(c, list.size()));

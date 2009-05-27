@@ -32,7 +32,6 @@ import org.labkey.api.gwt.client.ui.PropertiesEditor;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.qc.DefaultTransformResult;
-import org.labkey.api.qc.TransformDataHandler;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.security.ACL;
@@ -115,7 +114,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     protected void addStandardRunPublishProperties(User user, Container study, Collection<PropertyDescriptor> types, Map<String, Object> dataMap, ExpRun run,
                                                    CopyToStudyContext context) throws SQLException
     {
-        UserSchema schema = AssayService.get().createSchema(user, run.getContainer());
+        AssaySchema schema = AssayService.get().createSchema(user, run.getContainer());
         TableInfo runTable = schema.getTable(AssayService.get().getRunsTableName(run.getProtocol()));
 
         PropertyDescriptor pd = addProperty(study, "RunName", run.getName(), dataMap, types);
@@ -912,7 +911,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, UploadWizardAction.class);
     }
 
-    public ExpRunTable createRunTable(UserSchema schema, ExpProtocol protocol)
+    public ExpRunTable createRunTable(AssaySchema schema, ExpProtocol protocol)
     {
         final ExpRunTable runTable = new ExpSchema(schema.getUser(), schema.getContainer()).createRunsTable();
         ColumnInfo dataLinkColumn = runTable.getColumn(ExpRunTable.Column.Name);
@@ -1176,7 +1175,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         String name = AssayService.get().getResultsTableName(protocol);
         QuerySettings settings = new QuerySettings(context, name);
-        settings.setSchemaName(AssayService.ASSAY_SCHEMA_NAME);
+        settings.setSchemaName(AssaySchema.NAME);
         settings.setQueryName(name);
         ResultsQueryView queryView = new ResultsQueryView(protocol, context, settings);
 

@@ -46,7 +46,12 @@ public class ResultsQueryView extends AssayBaseQueryView
 {
     public ResultsQueryView(ExpProtocol protocol, ViewContext context, QuerySettings settings)
     {
-        super(protocol, context, settings);
+        this(protocol, AssayService.get().createSchema(context.getUser(), context.getContainer()), settings);
+    }
+
+    public ResultsQueryView(ExpProtocol protocol, AssaySchema schema, QuerySettings settings)
+    {
+        super(protocol, schema, settings);
         setViewItemFilter(new ReportService.ItemFilter() {
             public boolean accept(String type, String label)
             {

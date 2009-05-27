@@ -16,18 +16,20 @@
 
 package org.labkey.api.study.query;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.query.ExpSchema;
-import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.api.*;
+import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.*;
-import org.labkey.api.study.assay.AbstractAssayProvider;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.study.assay.AbstractPlateBasedAssayProvider;
+import org.labkey.api.study.assay.*;
 
 import java.sql.SQLException;
 import java.sql.Types;
@@ -49,7 +51,7 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
     public abstract String getInputMaterialPropertyName();
     public abstract String getDataRowLsidPrefix();
 
-    public PlateBasedAssayRunDataTable(final UserSchema schema, final ExpProtocol protocol)
+    public PlateBasedAssayRunDataTable(final AssaySchema schema, final ExpProtocol protocol)
     {
         super(new ProtocolFilteredObjectTable(schema.getContainer(), protocol.getLSID()), schema.getContainer());
 

@@ -47,7 +47,7 @@ public class ValidParticipantVisitDisplayColumn extends SimpleDisplayColumn
             if (_firstMatch)
             {
                 _firstMatch = false;
-                out.write(PageFlowUtil.helpPopup("Match", "There is a specimen in the target study that matches this row's participant and visit/date"));
+                out.write(PageFlowUtil.helpPopup("Match", "There is a specimen in the target study that matches with this row's current participant and visit/date values"));
             }
         }
         else
@@ -56,7 +56,7 @@ public class ValidParticipantVisitDisplayColumn extends SimpleDisplayColumn
             if (_firstNoMatch)
             {
                 _firstNoMatch = false;
-                out.write(PageFlowUtil.helpPopup("No match", "There are no specimens in the target study that matches this row's participant and visit/date"));
+                out.write(PageFlowUtil.helpPopup("No match", "There are no specimens in the target study that matches this row's current participant and visit/date values"));
             }
         }
     }
