@@ -7,6 +7,7 @@ announcements/src/META-INF/announcements/scripts/postgresql/comm-1.40-1.50.sql -
 announcements/src/META-INF/announcements/scripts/postgresql/comm-1.50-1.60.sql -text
 announcements/src/META-INF/announcements/scripts/postgresql/comm-1.60-1.70.sql -text
 announcements/src/META-INF/announcements/scripts/postgresql/comm-1.70-2.00.sql -text
+announcements/src/META-INF/announcements/scripts/postgresql/comm-9.10-9.11.sql -text
 announcements/src/META-INF/announcements/scripts/postgresql/comm-create.sql -text
 announcements/src/META-INF/announcements/scripts/postgresql/comm-drop.sql -text
 announcements/src/META-INF/announcements/scripts/postgresql/obsolete/comm-0.00-1.00.sql -text
@@ -31,6 +32,7 @@ announcements/src/META-INF/announcements/scripts/sql[!!-~]server/comm-1.40-1.50.
 announcements/src/META-INF/announcements/scripts/sql[!!-~]server/comm-1.50-1.60.sql -text
 announcements/src/META-INF/announcements/scripts/sql[!!-~]server/comm-1.60-1.70.sql -text
 announcements/src/META-INF/announcements/scripts/sql[!!-~]server/comm-1.70-2.00.sql -text
+announcements/src/META-INF/announcements/scripts/sql[!!-~]server/comm-9.10-9.11.sql -text
 announcements/src/META-INF/announcements/scripts/sql[!!-~]server/comm-create.sql -text
 announcements/src/META-INF/announcements/scripts/sql[!!-~]server/comm-drop.sql -text
 announcements/src/META-INF/announcements/scripts/sql[!!-~]server/obsolete/comm-0.00-1.00.sql -text

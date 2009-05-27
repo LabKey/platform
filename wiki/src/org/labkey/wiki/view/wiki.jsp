@@ -154,19 +154,26 @@ else
 {
     out.print(formattedHtml);
 
-    if (null != wiki.getAttachments() && wiki.getAttachments().size() > 0)
+    if (null != wiki.getAttachments() && wiki.getAttachments().size() > 0 && wiki.isShowAttachments())
     {
         %><p/>
-            <table style="width:100%">
-                <tr><td class="labkey-title-area-line"><img height=1 width=1 alt="" src="<%=request.getContextPath()%>/_.gif"/></td></tr>
-                <tr><td style="font-style:italic;">Files attached to this page:</td></tr>
+            <table style="width:100%" cellspacing="0">
+                <tr>
+                    <td style="border-bottom: 1px solid #89A1B4; width:48%">&nbsp;</td>
+                    <td rowspan="2" style="font-style:italic; width:2%;white-space:nowrap; color: #89A1B4;">Files attached to this page</td>
+                    <td style="border-bottom: 1px solid #89A1B4; width:48%">&nbsp;</td>
+                </tr>
+                <tr>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                </tr>
             </table>
         <%
-    }
 
-    for (Attachment a : wiki.getAttachments())
-    {
-        %><a href="<%=PageFlowUtil.filter(a.getDownloadUrl("Wiki"))%>"><img src="<%=request.getContextPath()%><%=PageFlowUtil.filter(a.getFileIcon())%>">&nbsp;<%=PageFlowUtil.filter(a.getName())%></a><br><%
+        for (Attachment a : wiki.getAttachments())
+        {
+            %><a href="<%=PageFlowUtil.filter(a.getDownloadUrl("Wiki"))%>"><img src="<%=request.getContextPath()%><%=PageFlowUtil.filter(a.getFileIcon())%>">&nbsp;<%=PageFlowUtil.filter(a.getName())%></a><br><%
+        }
     }
 }
 %>

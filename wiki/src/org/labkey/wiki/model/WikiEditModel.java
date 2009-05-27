@@ -208,4 +208,9 @@ public class WikiEditModel
             return perms.allowDelete(_wiki);
         }
     }
+
+    public boolean isShowAttachments()
+    {
+        return null == _wiki || _wiki.isShowAttachments();
+    }
 }

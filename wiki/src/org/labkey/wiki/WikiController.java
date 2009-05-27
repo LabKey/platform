@@ -2750,6 +2750,7 @@ public class WikiController extends SpringActionController
         private String _rendererType;
         private String _pageId;
         private int _index = -1;
+        private boolean _showAttachments = true;
 
         public GuidString getEntityId()
         {
@@ -2850,6 +2851,16 @@ public class WikiController extends SpringActionController
         {
             _index = index;
         }
+
+        public boolean isShowAttachments()
+        {
+            return _showAttachments;
+        }
+
+        public void setShowAttachments(boolean showAttachments)
+        {
+            _showAttachments = showAttachments;
+        }
     }
 
     @RequiresPermission(ACL.PERM_READ) //will check below
@@ -2920,6 +2931,7 @@ public class WikiController extends SpringActionController
 
             Wiki wiki = new Wiki(c, wikiname);
             wiki.setParent(form.getParentId());
+            wiki.setShowAttachments(form.isShowAttachments());
 
             WikiVersion wikiversion = new WikiVersion(wikiname);
 
@@ -2970,6 +2982,7 @@ public class WikiController extends SpringActionController
             wikiProps.put("body", wikiversion.getBody()); //CONSIDER: do we really need to return the body here?
             wikiProps.put("rendererType", wikiversion.getRendererType());
             wikiProps.put("parent", wiki.getParent());
+            wikiProps.put("showAttachments", wiki.isShowAttachments());
             return wikiProps;
         }
 
@@ -3004,8 +3017,10 @@ public class WikiController extends SpringActionController
                     wikiversion.getTitle().trim().compareTo(title) != 0 ||
                     wikiversion.getBody().compareTo(form.getBody().trim()) != 0 ||
                     wikiversion.getRendererType().compareTo(currentRendererName) != 0 ||
-                    wikiUpdate.getParent() != form.getParentId())
+                    wikiUpdate.getParent() != form.getParentId() ||
+                    wikiUpdate.isShowAttachments() != form.isShowAttachments())
             {
+                wikiUpdate.setShowAttachments(form.isShowAttachments());
                 wikiUpdate.setName(form.getName());
                 wikiUpdate.setParent(form.getParentId());
                 wikiversion.setTitle(title);

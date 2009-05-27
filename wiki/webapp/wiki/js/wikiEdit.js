@@ -434,7 +434,12 @@ function gatherProps()
     {
         var input = Ext.get(_idPrefix + _editableProps[prop]);
         if(input)
-            ret[_editableProps[prop]] = input.getValue();
+        {
+            if(input.dom.type == "checkbox" || input.dom.type == "radio")
+                ret[_editableProps[prop]] = input.dom.checked;
+            else
+                ret[_editableProps[prop]] = input.getValue();
+        }
     }
 
     return ret;
@@ -461,14 +466,19 @@ function updateControls(wikiProps)
 {
     for(var prop in _editableProps)
         updateControl(_editableProps[prop], wikiProps[_editableProps[prop]]);
-    updateBodyFormatCaption(wikiProps.rendererType)
+    updateBodyFormatCaption(wikiProps.rendererType);
 }
 
 function updateControl(propName, propValue)
 {
-    var elem = Ext.get(_idPrefix + propName)
+    var elem = Ext.get(_idPrefix + propName);
     if(elem)
-        elem.dom.value = null == propValue ? "" : propValue;
+    {
+        if (elem.dom.type == "checkbox" || elem.dom.type == "radio")
+            elem.dom.checked = propValue;
+        else
+            elem.dom.value = null == propValue ? "" : propValue;
+    }
 }
 
 function updateBodyFormatCaption(rendererType)

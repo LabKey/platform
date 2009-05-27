@@ -66,6 +66,7 @@ public class Wiki extends AttachmentParentEntity implements Serializable
 
     private int _depth;
     private List<Wiki> _children;
+    private boolean _showAttachments = true;
 
     protected transient ActionURL url = null;
     protected transient String containerPath = null;
@@ -270,4 +271,13 @@ public class Wiki extends AttachmentParentEntity implements Serializable
         this.pageVersionId = pageVersionId;
     }
 
+    public boolean isShowAttachments()
+    {
+        return _showAttachments;
+    }
+
+    public void setShowAttachments(boolean showAttachments)
+    {
+        _showAttachments = showAttachments;
+    }
 }

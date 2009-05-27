@@ -53,9 +53,10 @@
         rendererType: <%=model.getRendererType()%>,
         pageId: <%=model.getPageId()%>,
         index: <%=model.getIndex()%>,
+        showAttachments: <%=model.isShowAttachments()%>,
         isDirty: false
     };
-    var _editableProps = ['name', 'title', 'body', 'parent']
+    var _editableProps = ['name', 'title', 'body', 'parent', 'showAttachments'];
     var _attachments = [
         <%
         if(model.hasAttachments())
@@ -180,6 +181,12 @@
                 <tr>
                     <td class="labkey-form-label">Files</td>
                     <td width="99%">
+                        <table>
+                            <tr>
+                                <td><input type="checkbox" id="<%=ID_PREFIX%>showAttachments" onchange="setWikiDirty();" onclick="setWikiDirty();"/>
+                                    Show Attached Files</td>
+                            </tr>
+                        </table>
                         <form action="attachFiles.post" method="POST" enctype="multipart/form-data" id="form-files">
                             <table id="wiki-existing-attachments">
                             </table>
