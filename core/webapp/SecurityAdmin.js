@@ -282,6 +282,19 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         return users;
     },
 
+    createGroup : function(project, name, callback)
+    {
+        var me = this;
+        S.createGroup({containerPath:project, groupName:name, successCallback:function(obj,response,options)
+        {
+            var group = {UserId:obj.id, Name:obj.name, Container:project, Type:'g'};
+            var st = me.principalsStore;
+            var record = new st.reader.recordType(group,group.UserId);
+            me._applyPrincipalsSortOrder(record);
+            st.add(record);
+            st.applySort();
+        }});
+    },
 
     addMembership : function(groupid,userid,callback)
     {
@@ -309,31 +322,43 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     mapGroupToMembers : null,
     mapPrincipalToGroups : null,
 
-    // does not fire events
     _addMembership : function(groupid,userid)
     {
-        if (!this.mapGroupToMembers) return;
+        if (this.mapGroupToMembers)
+        {
+            if (!this.mapGroupToMembers[groupid])
+                this.mapGroupToMembers[groupid] = [userid];
+            else if (-1 == this.mapGroupToMembers[groupid].indexOf(userid))
+                this.mapGroupToMembers[groupid].push(userid);
 
-        if (!this.mapGroupToMembers[groupid])
-            this.mapGroupToMembers[groupid] = [userid];
-        else if (-1 == this.mapGroupToMembers[groupid].indexOf(userid))
-            this.mapGroupToMembers[groupid].push(userid);
-
-        if (!this.mapPrincipalToGroups[userid])
-            this.mapPrincipalToGroups[userid] = [groupid];
-        else if (-1 == this.mapPrincipalToGroups[userid].indexOf(groupid))
-            this.mapPrincipalToGroups[userid].push(groupid);
+            if (!this.mapPrincipalToGroups[userid])
+                this.mapPrincipalToGroups[userid] = [groupid];
+            else if (-1 == this.mapPrincipalToGroups[userid].indexOf(groupid))
+                this.mapPrincipalToGroups[userid].push(groupid);
+        }
+        var r = this.principalsStore.getById(groupid);
+        if (r)
+            this.principalsStore.fireEvent("update", this.principalsStore, r, Ext.data.Record.EDIT);
+        r = this.principalsStore.getById(userid);
+        if (r)
+            this.principalsStore.fireEvent("update", this.principalsStore, r, Ext.data.Record.EDIT);
     },
 
-    // does not fire events
     _removeMembership : function(groupid,userid)
     {
-        if (!this.mapGroupToMembers) return;
-
-        if (this.mapGroupToMembers[groupid])
-            Array_remove(this.mapGroupToMembers[groupid],userid);
-        if (this.mapPrincipalToGroups[userid])
-            Array_remove(this.mapPrincipalToGroups[userid],groupid);
+        if (this.mapGroupToMembers)
+        {
+            if (this.mapGroupToMembers[groupid])
+                Array_remove(this.mapGroupToMembers[groupid],userid);
+            if (this.mapPrincipalToGroups[userid])
+                Array_remove(this.mapPrincipalToGroups[userid],groupid);
+        }
+        var r = this.principalsStore.getById(groupid);
+        if (r)
+            this.principalsStore.fireEvent("update", this.principalsStore, r, Ext.data.Record.EDIT);
+        r = this.principalsStore.getById(userid);
+        if (r)
+            this.principalsStore.fireEvent("update", this.principalsStore, r, Ext.data.Record.EDIT);
     },
 
     _computeMembershipMaps : function()
@@ -383,14 +408,17 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     Principals_onReady : function()
     {
         // add a sortOrder field to each principal
-        this.principalsStore.data.each(function(item){
-            var data = item.data;
-            var major = data.Type == 'u' ? '3' : data.Container ? '2' : '1';
-            var minor = data.Name.toLowerCase();
-            data.sortOrder = major + "." + minor;
-        });
+        this.principalsStore.data.each(this._applyPrincipalsSortOrder);
         this.principalsStore.sort('sortOrder');
         this.checkReady();
+    },
+
+    _applyPrincipalsSortOrder : function(item)
+    {
+        var data = item.data;
+        var major = data.Type == 'u' ? '3' : data.Container ? '2' : '1';
+        var minor = data.Name.toLowerCase();
+        data.sortOrder = major + "." + minor;
     },
 
     _errorCallback: function(e,r)
@@ -1001,6 +1029,7 @@ var GroupPicker = Ext.extend(Ext.Panel,{
         this.cache.principalsStore.on("datachanged",this.onDataChanged, this);
         this.cache.principalsStore.on("add",this.onDataChanged, this);
         this.cache.principalsStore.on("remove",this.onDataChanged, this);
+        this.cache.principalsStore.on("update",this.onDataUpdated, this);
 
         this.view = new Ext.DataView({
             tpl: this.tpl,
@@ -1013,7 +1042,13 @@ var GroupPicker = Ext.extend(Ext.Panel,{
     },
 
     selectedGroup : null,
-    
+
+    onDataUpdated : function(s, record, type)
+    {
+        if (this.store && this.view)
+            this.view.refresh(this.body);
+    },
+
     onDataChanged : function()
     {
         this.store = filterPrincipalsStore(this.cache.principalsStore, (this.projectId ? 'project' : 'site'), this.projectId, {});

@@ -157,7 +157,7 @@ Ext.onReady(function()
                     border : false, // border : true, style:{border:'solid 1px red'},
                     height: 400, width:800,
                     items :[
-                            {border:false, html:'<form id="' + formId + '" action="' + action + '" method=POST><input type="text" size="30" name="name"><br><a id="' + (formId + 'Add') + '" class="labkey-button" href="#"" ><span>Create new group</span></a></form>'},
+                            {border:false, html:'<input id="' + (formId + '$input')+ '" type="text" size="30" name="name"><br><a id="' + (formId + '$submit') + '" class="labkey-button" href="#"" ><span>Create new group</span></a>'},
                             groupsList
                         ]
                 });
@@ -178,21 +178,14 @@ Ext.onReady(function()
                 tabPanel.on("activate", groupsPanel._adjustSize, groupsPanel);
 
                 // UNDONE: use security api (Security.js)
-                var formEl = $(formId);
-                var btnEl = $(formId + 'Add');
-                newGroupForm = new Ext.form.BasicForm( formEl );
-                formEl.addKeyListener(13, newGroupForm.submit, newGroupForm);
-                btnEl.on("click", newGroupForm.submit, newGroupForm);
-                newGroupForm.on("actioncomplete", function(f,action){
-                    var json = action.response.responseText;
-                    var resp = eval("(" + json + ")");
-                    // principals cache uses Uppercased names
-                    var group = {UserId:resp.group.UserId, Name:resp.group.name, Container:resp.group.container, Type:resp.group.type};
-                    groupsList.selectedGroup = group;
-                    var st = securityCache.principalsStore;
-                    st.add(new st.reader.recordType(group),group.UserId);
-                    alert('actioncomplete ' + group.Name);
-                });
+                var inputEl = $(formId + '$input');
+                var btnEl = $(formId + '$submit');
+                var submit = function()
+                {
+                    securityCache.createGroup(project, inputEl.getValue());
+                };
+                inputEl.addKeyListener(13, submit);
+                btnEl.on("click", submit);
                 return groupsPanel;
             };
 
