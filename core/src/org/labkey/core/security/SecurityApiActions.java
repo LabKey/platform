@@ -187,7 +187,6 @@ public class SecurityApiActions
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @RequiresLogin
     public static class GetUserPermsAction extends ApiAction<GetUserPermsForm>
     {
         public ApiResponse execute(GetUserPermsForm form, BindException errors) throws Exception
