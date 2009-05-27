@@ -76,7 +76,7 @@ LABKEY.ActionURL = new function()
         getContainer : function()
         {
             var path = window.location.pathname;
-            var start = path.indexOf("/", this.getContextPath().length + 1);
+            var start = path.indexOf("/", LABKEY.contextPath.length + 1);
             var end = path.lastIndexOf("/");
             return path.substring(start, end);
         },
@@ -134,7 +134,7 @@ the container "My Project/My Folder":
             if(containerPath.charAt(containerPath.length - 1) != "/")
                 containerPath = containerPath + "/";
 
-            var newUrl = this.getContextPath() + "/" + controller + containerPath + action;
+            var newUrl = LABKEY.contextPath + "/" + controller + containerPath + action;
             if (-1 == action.indexOf('.'))
                 newUrl += '.view';
             if (parameters)
