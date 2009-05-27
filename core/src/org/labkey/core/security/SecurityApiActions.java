@@ -26,6 +26,7 @@ import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.view.UnauthorizedException;
 import org.springframework.validation.BindException;
 
 import java.util.*;
@@ -87,10 +88,15 @@ public class SecurityApiActions
             if(recurse && container.hasChildren())
             {
                 List<Map<String,Object>> childPerms = new ArrayList<Map<String,Object>>();
-                for(Container child : container.getChildren())
-                    childPerms.add(getContainerPerms(child,
-                            child.isProject() ? org.labkey.api.security.SecurityManager.getGroups(child, true) : groups,
-                            recurse));
+                for (Container child : container.getChildren())
+                {
+                    if (child.hasPermission(getViewContext().getUser(), ReadPermission.class))
+                    {
+                        childPerms.add(getContainerPerms(child,
+                                child.isProject() ? org.labkey.api.security.SecurityManager.getGroups(child, true) : groups,
+                                recurse));
+                    }
+                }
 
                 containerPerms.put("children", childPerms);
             }
@@ -184,6 +190,9 @@ public class SecurityApiActions
     {
         public ApiResponse execute(GetUserPermsForm form, BindException errors) throws Exception
         {
+            User currentUser = getViewContext().getUser();
+            Container container = getViewContext().getContainer();
+
             //if user id and user email is null, assume current user
             User user = null;
             if(null != form.getUserId())
@@ -191,10 +200,14 @@ public class SecurityApiActions
             else if(null != form.getUserEmail())
                 user = UserManager.getUser(new ValidEmail(form.getUserEmail()));
             else
-                user = getViewContext().getUser();
+                user = currentUser;
 
             if(null == user)
                 throw new IllegalArgumentException("No user found that matches specified userId or email address");
+
+            //if user is not current user, current user must have admin perms in container
+            if (!user.equals(currentUser) && !container.hasPermission(currentUser, AdminPermission.class))
+                throw new UnauthorizedException("You may not look at the permissions of users other than the current user.");
 
             ApiSimpleResponse response = new ApiSimpleResponse();
 
@@ -279,7 +292,12 @@ public class SecurityApiActions
             {
                 List<Map<String,Object>> childPerms = new ArrayList<Map<String,Object>>();
                 for(Container child : container.getChildren())
-                    childPerms.add(getContainerPerms(child, user, recurse));
+                {
+                    if (child.hasPermission(getViewContext().getUser(), ReadPermission.class))
+                    {
+                        childPerms.add(getContainerPerms(child, user, recurse));
+                    }
+                }
 
                 permsInfo.put("children", childPerms);
             }
