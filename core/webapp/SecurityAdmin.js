@@ -90,7 +90,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     resourceMap : {},
     
     /*
-     * config just takes a project path/id 
+     * config just takes a project path/id and folder path/id
      *
      * fires "ready" when all the initially requested objects are loaded, subsequent loads
      * are handled with regular callbacks
@@ -100,7 +100,8 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         SecurityCache.superclass.constructor.call(this,config);
         this.addEvents(['ready']);
 
-        this.container = config.project || LABKEY.container.id;
+        this.projectId = config.project || config.folder || LABKEY.container.id;
+        this.folderId = config.folder || config.project || LABKEY.container.id;
 
         this.principalsStore = new SecurityCacheStore(
         {
@@ -126,10 +127,10 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
 
         this.containersStore = new Ext.data.Store({id:'id'}, this.ContainerRecord);
 
-        S.getContainers({containerPath:this.container, includeSubfolders:true, successCallback:this._loadContainersResponse, errorCallback:this._errorCallback, scope:this});
+        S.getContainers({containerPath:this.projectId, includeSubfolders:true, successCallback:this._loadContainersResponse, errorCallback:this._errorCallback, scope:this});
         S.getContainers({containerPath:'/', includeSubfolders:true, depth:1, successCallback:this._loadProjectsResponse, errorCallback:this._errorCallback, scope:this});
 
-        S.getRoles({containerPath:this.container, successCallback:this._loadRolesResponse, errorCallback:this._errorCallback, scope:this});
+        S.getRoles({containerPath:this.folderId, successCallback:this._loadRolesResponse, errorCallback:this._errorCallback, scope:this});
         this.principalsStore.load();
         this.principalsStore.onReady(this.Principals_onReady, this);
         S.getSecurableResources({successCallback:this._loadResourcesResponse, errorCallback:this._errorCallback, scope:this});
@@ -198,8 +199,8 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         if (principal == this.groupGuests || principal == 0) // guest
             return [0, this.groupGuests];
         var set = {};
-        set['-3'] = true;
-        set['-2'] = true;
+        set[this.groupGuests] = true;
+        set[this.groupUsers] = true;
         this._collectGroups([principal], set);
         var ret = [];
         for (var id  in set)
@@ -225,11 +226,13 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     },
 
 
-    // non-recursive
+    // non-recursive, return objects
     getMembersOf : function(principal)
     {
-        if (principal == this.groupUsers || principal == this.groupGuests)
+        if (principal == this.groupUsers)
             return [];
+        if (principal == this.groupGuests)
+            return [{UserId:0, Name:'Guest'}];
         if (!this.mapPrincipalToGroups)
             this._computeMembershipMaps();
         var users = [];
@@ -471,24 +474,35 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
     onRender : function(ct, where)
     {
         UserInfoPopup.superclass.onRender.call(this, ct, where);
+        this._redraw();
+    },
+
+    _redraw : function()
+    {
+        this.body.update('',false);
+
         var isGroup = this.user.Type == 'g';
         
-        var html = ["<h3>" + (isGroup?'Group ':'User ') + this.user.Name + "</h3>"];
+        var html = ["<table width=100%><tr><td align=left valign=middle><h3 style='display:inline'>" + (isGroup?'Group ':'User ') + this.user.Name + "</h3></td><td align=right valign=middle>"];
 
         // links
         if (isGroup)
         {
 
+            if (this.user.UserId == SecurityCache.prototype.groupUsers || this.user.UserId == SecurityCache.prototype.groupGuests)
+                this.canEdit = false;
             if (this.canEdit)
-                html.push(_link('manage group', $url('security','group',this.user.Container||'/',{id:this.user.UserId})));
-            html.push(_link('permissions', $url('security','groupPermission',this.user.Container||'/',{id:this.user.UserId})));
-            html.push("<p/>");
+            {
+                html.push(_link('manage group...', $url('security','group',this.user.Container||'/',{id:this.user.UserId})));
+                html.push('&nbsp;');
+            }
+            html.push(_link('permissions...', $url('security','groupPermission',this.user.Container||'/',{id:this.user.UserId})));
         }
         else
         {
-            html.push(_link('permissions', LABKEY.ActionURL.buildURL('user','userAccess',this.cache.container,{userId:this.user.UserId})));
-            html.push("<p/>");
+            html.push(_link('permissions...', $url('user','userAccess',this.cache.projectId,{userId:this.user.UserId})));
         }
+        html.push("</td></tr></table><p/>");
 
         // groups
         var groups = this.cache.getGroupsFor(this.userId);
@@ -515,7 +529,7 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
             {
                 var role = allRoles[r];
                 if (roles[role.uniqueName])
-                    html.push("<li>" + ((role && role.name) ? role.name : roleName) + "</li>");
+                    html.push("<li>" + ((role && role.name) ? role.name : role.uniqueName) + "</li>");
             }
             html.push("</ul>\n");
         }
@@ -524,9 +538,30 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
         if (isGroup)
         {
             var users = this.cache.getMembersOf(this.userId);
-            html.push("<b>users</b><br><table>");
+            html.push("<b>users</b>");
 
-            html.push("</b>");
+            if (this.userId == SecurityCache.prototype.groupUsers)
+            {
+                html.push("<p/>this is the group of users");
+            }
+            else if (this.userId == SecurityCache.prototype.groupUsers)
+            {
+                html.push("Guest");
+            }
+            else
+            {
+                html.push("<table>");
+                for (var i=0 ; i<users.length ; i++)
+                {
+                    var user = users[i];
+                    html.push("<tr><td width=100>" + $h(user.Name) + "</td>");
+                    if (this.canEdit)
+                        html.push("<td>remove</td><td>");
+                    html.push(_link('permissions...', $url('user','userAccess',this.cache.projectId,{userId:user.UserId})));
+                    html.push("</td></tr>");
+                }
+                html.push("</table>");
+            }
         }
 
         var m = $dom.markup(html);
@@ -734,8 +769,8 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
         var i;
         
         var a = config.excludedPrincipals || [];
-        a.push(-4);//Developers
-        a.push(-1);//Site Admin
+        a.push(SecurityCache.prototype.groupDevelopers);
+        a.push(SecurityCache.prototype.groupAdmin);
         delete config.excludedPrincipals;
         this.excludedPrincipals = {};
         for (i=0 ; i<a.length ; i++)
@@ -745,6 +780,7 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
             store : config.cache.principalsStore,
             mode : 'local',
             minListWidth : 200,
+            style:{display:'inline'},
             triggerAction : 'all',
             forceSelection : true,
             typeAhead : true,
@@ -797,6 +833,12 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
     initComponent : function()
     {
         PrincipalComboBox.superclass.initComponent.call(this);
+    },
+
+    onRender : function(ct,position)
+    {
+        PrincipalComboBox.superclass.onRender.call(this,ct,position);
+        this.el.parent().addStyles({display:'inline'});
     }
 });
 
@@ -812,7 +854,7 @@ var GroupPicker = Ext.extend(Ext.Panel,{
         GroupPicker.superclass.constructor.call(this,config);
     },
 
-    containerId : null,
+    projectId : null,
     view : null,
     cls : 'x-combo-list',
     selectedClass : 'x-combo-selected',
@@ -858,7 +900,7 @@ var GroupPicker = Ext.extend(Ext.Panel,{
     
     onDataChanged : function()
     {
-        this.store = filterPrincipalsStore(this.cache.principalsStore, (this.containerId ? 'project' : 'site'), this.containerId, {});
+        this.store = filterPrincipalsStore(this.cache.principalsStore, (this.projectId ? 'project' : 'site'), this.projectId, {});
         if (this.view)
         {
             this.view.setStore(this.store);
@@ -1056,12 +1098,10 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     },
 
     roleTemplate : new Ext.Template(
-            '<tr class="permissionsTR">'+
-            '<td height=50 width=300 valign=top class="roleTD"><div><h3 class="rn">{name}</h3><div class="rd">{description}</div></div></td>'+
-            '<td valign=top width=100% id="{uniqueName}" class="groupsTD"><span id="$br${uniqueName}"><img height=20 width=1 src="' + Ext.BLANK_IMAGE_URL + '"><br></span></td>'+
+            '<tr id="$tr${uniqueName}" class="permissionsTR">'+
+            '<td><img height=50 width=1 src="' + Ext.BLANK_IMAGE_URL + '"></td><td height=50 width=300 valign=top class="roleTD"><div><h3 class="rn">{name}</h3><div class="rd">{description}</div></div></td>'+
+            '<td class="groupsTD" width=100%><table><tr><td><img height=25 width=1 src="' + Ext.BLANK_IMAGE_URL + '"></td><td valign=top id="$buttons${uniqueName}"><span id="$br${uniqueName}"></span></td></tr><tr><td><img height=25 width=1 src="' + Ext.BLANK_IMAGE_URL + '"></td><td id="$combo${uniqueName}"></td></tr></table></td>'+
             '</tr>\n'),
-
-
 
     _redraw : function()
     {
@@ -1085,7 +1125,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
             var label = "Inherit permissions from " + (this.parentName || 'parent') + "<br>";
             html.push('<table><tr><td id=checkboxTD></td><td>&nbsp;' + label + '</td></tr></table>');
 
-            html.push(['<table cellspacing=0 style="border-collapse:collapse;"><tr><th><h3>Roles<br><img src="' +Ext.BLANK_IMAGE_URL + '" width=300 height=1></h3></th><th><h3>Groups</h3></th></tr>']);
+            html.push(['<table cellspacing=0 style="border-collapse:collapse;"><tr><td></td><th><h3>Roles<br><img src="' +Ext.BLANK_IMAGE_URL + '" width=300 height=1></h3></th><th><h3>Groups</h3></th></tr>']);
             var spacerRow = ''; // '<tr class="spacerTR"><td><img src="' + Ext.BLANK_IMAGE_URL + '"></td></tr>';
             for (r=0 ; r<this.roles.length ; r++)
             {
@@ -1114,14 +1154,13 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
             {
                 // add role combo
                 role = this.roles[r];
-                ct = Ext.fly(role.uniqueName);
                 var c = new PrincipalComboBox({cache:this.cache, id:('$add$'+role.uniqueName), roleId:role.uniqueName, excludedPrincipals:role.excludedPrincipals});
                 c.on("select", this.Combo_onSelect, this);
-                c.render(ct);
+                c.render(Ext.fly('$combo$' + role.uniqueName));
                 this.add(c);
 
                 // DropTarget
-                new Ext.dd.DropTarget(ct.dom.parentNode,
+                new Ext.dd.DropTarget('$tr$' + role.uniqueName,
                 {
                     editor : this,
                     role : role,

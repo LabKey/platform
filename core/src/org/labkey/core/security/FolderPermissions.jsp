@@ -111,15 +111,15 @@ Ext.onReady(function()
         resourceId:LABKEY.container.id});
     policyEditor.render($('permissionsFrame'));
 
-    tabPanel.on("beforetabchange", function(panel, newTab, currentTab)
-    {
-        if (currentTab.contentEl.id != 'permissionsFrame')
-            return true;
-        if (!policyEditor.isDirty())
-            return true;
-        Ext.MessageBox.alert("Save Changes", "Please save changes (refresh page to discard)");
-        return false;
-    });
+//    tabPanel.on("beforetabchange", function(panel, newTab, currentTab)
+//    {
+//        if (currentTab.contentEl.id != 'permissionsFrame')
+//            return true;
+//        if (!policyEditor.isDirty())
+//            return true;
+//        Ext.MessageBox.alert("Save Changes", "Please save changes (refresh page to discard)");
+//        return false;
+//    });
 });
 </script>
 
@@ -144,7 +144,7 @@ Ext.onReady(function()
             function makeGroupsPanel(container)
             {
                 var newGroupForm = null;
-                var groupsList = new GroupPicker({cache:securityCache, width:200, border:false, autoScroll:true, containerId:container});
+                var groupsList = new GroupPicker({cache:securityCache, width:200, border:false, autoScroll:true, projectId:container});
                 groupsList.on("select", function(list,group){
                     window.alert(group.Name);
                 });
