@@ -80,8 +80,15 @@ public class SchemaWriter implements Writer<DataSetDefinition[]>
                 // TODO: ConceptURI?
                 writer.print("\t");
 
-                if (col.getName().equals("autokey"))
-                    writer.print("1\ttrue");
+                if (col.getName().equals(def.getKeyPropertyName()))
+                {
+                    writer.print("1");
+
+                    if (def.isKeyPropertyManaged())
+                        writer.print("\ttrue");
+                }
+
+                // TODO: mvEnabled?  category?
 
                 writer.println();
             }
