@@ -708,6 +708,11 @@ public class AssayPublishManager implements AssayPublishService.Service
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, Collections.singleton(matchFieldKey));
         ColumnInfo matchColumn = columns.get(matchFieldKey);
 
+        if (matchColumn == null)
+        {
+            return false;
+        }
+
         SimpleFilter filter = new SimpleFilter();
         filter.addClause(new SimpleFilter.InClause(tableMetadata.getResultRowIdFieldKey().toString(), allObjects));
 
