@@ -932,14 +932,14 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
         PrincipalComboBox.superclass.constructor.call(this, config);
     },
 
-    tpl : new Ext.XTemplate('<tpl for="."><div class="x-combo-list-item {[this.extraClass(values.Type)]}">{Name}</div></tpl>',
+    tpl : new Ext.XTemplate('<tpl for="."><div class="x-combo-list-item {[this.extraClass(values)]}">{Name}</div></tpl>',
     {
-        extraClass : function(type,container)
+        extraClass : function(values)
         {
             var c = 'pGroup';
-            if (type == 'u')
+            if (values.Type == 'u')
                 c = 'pUser';
-            else if (type == 's')
+            else if (!values.Container)
                 c = 'pSite';
             return c;
         }
@@ -1572,7 +1572,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
 
     save : function(overwrite)
     {
-        Ext.removeNode(document.getElementById('policyRendered'));
+        Ext.removeNode(document.getElementById('policyRendered')); // to aid selenium automation
         
         var policy = this.getPolicy();
         this.disable();
