@@ -276,10 +276,59 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
     },
 
 
+    addMembership : function(userid,groupid,callback)
+    {
+        var success = function()
+        {
+            this._addMembership(userid,groupid);
+            callback.call();
+        };
+        S.addGroupMembers({groupId:groupid, principalIds:[userid], containerPath:this.projectId, successCallback:success, scope:this});
+    },
+
+
+    removeMembership : function(userid,groupid,callback)
+    {
+        var success = function()
+        {
+            this._addMembership(userid,groupid);
+            callback.call();
+        };
+        S.removeGroupMembers({groupId:groupid, principalIds:[userid], containerPath:this.projectId, successCallback:success, scope:this});
+    },
+
 
     // NOT recursive
     mapGroupToMembers : null,
     mapPrincipalToGroups : null,
+
+    // does not fire events
+    _addMembership : function(userid,groupid)
+    {
+        if (!this.mapGroupToMembers) return;
+
+        if (!this.mapGroupToMembers[groupid])
+            this.mapGroupToMembers[groupid] = [userid];
+        else (-1 == this.mapGroupsToMembers[groupid].indexOf(userid))
+            this.mapGroupToMembers[groupid].push(userid);
+
+        if (!this.mapPrincipalToGroups[userid])
+            this.mapPrincipalToGroups[userid] = [groupid];
+        else if (-1 == this.mapPrincipalToGroups[userid].indexOf(groupid))
+            this.mapPrincipalToGroups[userid].push(groupid);
+    },
+
+    // does not fire events
+    _removeMembership : function(userid,groupid)
+    {
+        if (!this.mapGroupToMembers) return;
+
+        if (this.mapGroupToMembers[groupid])
+            this.mapGroupToMembers.remove(userid);
+        if (this.mapPrincipalToGroups[userid])
+            this.mapPrincipalToGroups.remove(groupid);
+    },
+
 
     _computeMembershipMaps : function()
     {
@@ -551,6 +600,10 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
             else
             {
                 html.push("<table>");
+                if (this.canEdit)
+                {
+                    html.push("<tr><td>Add User Form</td></tr>");
+                }                
                 for (var i=0 ; i<users.length ; i++)
                 {
                     var user = users[i];
