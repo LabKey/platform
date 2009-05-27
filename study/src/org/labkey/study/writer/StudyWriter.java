@@ -40,7 +40,7 @@ public class StudyWriter implements Writer<Study>
         new DatasetWriter(),
         new SpecimenArchiveWriter(),
         new QueryWriter(),
-        new CustomViewWriter(),
+//        new CustomViewWriter(),
         new ReportWriter(),
         new StudyXmlWriter()  // Note: Needs to be last of the study writers since it writes out the study.xml file (to which other writers contribute)
     );
