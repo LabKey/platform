@@ -62,7 +62,7 @@
     if (bean.isInsufficientPermissions())
     {
 %>
-<span class="labkey-error"><h4>WARNING: You do not have permissions to publish to one or more of the selected run's associated studies.</h4></span>
+<span class="labkey-error"><h4>WARNING: You do not have permissions to copy to one or more of the selected run's associated studies.</h4></span>
 <%
     }
 %>
@@ -91,12 +91,12 @@
     %>
         <tr>
             <td colspan="2">
-                All data is marked for publication to study <b><%= h(firstStudy.getLabel()) %></b>
+                All data is marked for copying to study <b><%= h(firstStudy.getLabel()) %></b>
                 in folder <b><%= h(firstStudy.getContainer().getPath()) %></b>.<br>
                 <input type="checkbox"
                        onclick="getElementById('targetStudyTitle').style.display = (this.checked ? 'block' : 'none');
                                 getElementById('targetStudyPicker').style.display = (this.checked ? 'block' : 'none');">
-                Publish to a different study
+                Copy to a different study
             </td>
         </tr>
     <%

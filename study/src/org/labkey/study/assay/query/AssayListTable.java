@@ -31,8 +31,8 @@ import java.util.*;
  */
 public class AssayListTable extends FilteredTable
 {
-    protected AssaySchema _schema;
-    public AssayListTable(AssaySchema schema)
+    protected AssaySchemaImpl _schema;
+    public AssayListTable(AssaySchemaImpl schema)
     {
         super(ExperimentService.get().getTinfoProtocol(), schema.getContainer(), new ContainerFilter.CurrentPlusProject(schema.getUser()));
 

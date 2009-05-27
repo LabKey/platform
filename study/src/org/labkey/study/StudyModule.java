@@ -52,7 +52,7 @@ import org.labkey.api.view.*;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.study.assay.*;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
-import org.labkey.study.assay.query.AssaySchema;
+import org.labkey.study.assay.query.AssaySchemaImpl;
 import org.labkey.study.controllers.*;
 import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.controllers.designer.DesignerController;
@@ -135,7 +135,7 @@ public class StudyModule extends DefaultModule
         StudyService.register(StudyServiceImpl.INSTANCE);
         DefaultSchema.registerProvider("study", new StudySchemaProvider());
         DefaultSchema.registerProvider("plate", new PlateSchema.Provider());
-        DefaultSchema.registerProvider("assay", new AssaySchema.Provider());
+        DefaultSchema.registerProvider("assay", new AssaySchemaImpl.Provider());
 
         PropertyService.get().registerDomainKind(new DatasetDomainKind());
         PropertyService.get().registerDomainKind(new AssayDomainKind());

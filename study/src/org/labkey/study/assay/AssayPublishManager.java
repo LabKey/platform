@@ -19,21 +19,21 @@ package org.labkey.study.assay;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.*;
 import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.util.Pair;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.BaseStudyController;
@@ -695,5 +695,37 @@ public class AssayPublishManager implements AssayPublishService.Service
             throw new IllegalArgumentException("No study in container: " + container.getPath());
 
         return study.getLabel();
+    }
+
+    public boolean hasMismatchedInfo(AssayProvider provider, ExpProtocol protocol, List<Integer> allObjects, AssaySchema schema)
+    {
+        TableInfo tableInfo = provider.createDataTable(schema, protocol);
+
+        AssayTableMetadata tableMetadata = provider.getTableMetadata();
+
+        FieldKey matchFieldKey = new FieldKey(tableMetadata.getSpecimenIDFieldKey(), "AssayMatch");
+
+        Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, Collections.singleton(matchFieldKey));
+        ColumnInfo matchColumn = columns.get(matchFieldKey);
+
+        SimpleFilter filter = new SimpleFilter();
+        filter.addClause(new SimpleFilter.InClause(tableMetadata.getResultRowIdFieldKey().toString(), allObjects));
+
+        try
+        {
+            Boolean[] matches = Table.executeArray(tableInfo, matchColumn, filter, null, Boolean.class);
+            for (Boolean match : matches)
+            {
+                if (Boolean.FALSE.equals(match))
+                {
+                    return true;
+                }
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        return false;
     }
 }

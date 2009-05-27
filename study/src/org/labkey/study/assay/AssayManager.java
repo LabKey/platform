@@ -27,21 +27,21 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.pipeline.PipelineService;
 import org.labkey.study.assay.query.AssayListPortalView;
 import org.labkey.study.assay.query.AssayListQueryView;
-import org.labkey.study.assay.query.AssaySchema;
+import org.labkey.study.assay.query.AssaySchemaImpl;
 
 import java.util.*;
 
@@ -104,27 +104,27 @@ public class AssayManager implements AssayService.Interface
 
     public ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container)
     {
-        return (ExpRunTable)new AssaySchema(user, container).getTable(getRunsTableName(protocol));
+        return (ExpRunTable)new AssaySchemaImpl(user, container).getTable(getRunsTableName(protocol));
     }
 
-    public UserSchema createSchema(User user, Container container)
+    public AssaySchema createSchema(User user, Container container)
     {
-        return new AssaySchema(user, container);
+        return new AssaySchemaImpl(user, container);
     }
 
     public String getBatchesTableName(ExpProtocol protocol)
     {
-        return AssaySchema.getBatchesTableName(protocol);
+        return AssaySchemaImpl.getBatchesTableName(protocol);
     }
 
     public String getRunsTableName(ExpProtocol protocol)
     {
-        return AssaySchema.getRunsTableName(protocol);
+        return AssaySchemaImpl.getRunsTableName(protocol);
     }
 
     public String getResultsTableName(ExpProtocol protocol)
     {
-        return AssaySchema.getResultsTableName(protocol);
+        return AssaySchemaImpl.getResultsTableName(protocol);
     }
 
     public List<ExpProtocol> getAssayProtocols(Container container)
@@ -154,7 +154,7 @@ public class AssayManager implements AssayService.Interface
     {
         String name = "AssayList";
         QuerySettings settings = new QuerySettings(context, name);
-        settings.setSchemaName(AssayService.ASSAY_SCHEMA_NAME);
+        settings.setSchemaName(AssaySchema.NAME);
         settings.setQueryName(name);
         if (portalView)
             return new AssayListPortalView(context, settings);

@@ -43,7 +43,7 @@ import java.util.*;
  * Date: Jun 28, 2007
  * Time: 11:07:09 AM
  */
-public class AssaySchema extends UserSchema
+public class AssaySchemaImpl extends AssaySchema
 {
     private List<ExpProtocol> _protocols;
 
@@ -51,13 +51,13 @@ public class AssaySchema extends UserSchema
     {
         public QuerySchema getSchema(DefaultSchema schema)
         {
-            return new AssaySchema(schema.getUser(), schema.getContainer());
+            return new AssaySchemaImpl(schema.getUser(), schema.getContainer());
         }
     }
 
-    public AssaySchema(User user, Container container)
+    public AssaySchemaImpl(User user, Container container)
     {
-        super(AssayService.ASSAY_SCHEMA_NAME, user, container, ExperimentService.get().getSchema());
+        super(NAME, user, container, ExperimentService.get().getSchema());
     }
 
     public Set<String> getTableNames()
@@ -253,7 +253,7 @@ public class AssaySchema extends UserSchema
     {
         public AssayPropertyForeignKey(PropertyDescriptor[] pds)
         {
-            super(pds, AssaySchema.this);
+            super(pds, AssaySchemaImpl.this);
         }
 
         protected ColumnInfo constructColumnInfo(ColumnInfo parent, String name, final PropertyDescriptor pd)

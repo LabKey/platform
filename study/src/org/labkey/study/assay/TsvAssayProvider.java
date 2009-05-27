@@ -27,7 +27,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.assay.*;
@@ -101,7 +100,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return Arrays.asList(new StudyParticipantVisitResolverType(), new ThawListResolverType());
     }
 
-    public TableInfo createDataTable(UserSchema schema, ExpProtocol protocol)
+    public TableInfo createDataTable(AssaySchema schema, ExpProtocol protocol)
     {
         return new RunDataTable(schema, protocol);
     }
