@@ -17,10 +17,7 @@
  package org.labkey.study.query;
 
 import org.labkey.api.data.*;
-import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.ExprColumn;
-import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.query.QueryService;
+import org.labkey.api.query.*;
 import org.labkey.study.StudySchema;
 
 import java.io.IOException;
@@ -32,7 +29,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
 {
     public SpecimenDetailTable(StudyQuerySchema schema)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimenDetail());
+        super(schema, StudySchema.getInstance().getTableInfoSpecimen());
 
         ColumnInfo pvColumn = new ParticipantVisitColumn(
                 "ParticipantVisit",
@@ -51,7 +48,16 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addVolumeAndTypeColumns(true);
 
         addWrapColumn(_rootTable.getColumn("LockedInRequest"));
-        ColumnInfo siteNameColumn = addWrapColumn(_rootTable.getColumn("SiteName"));
+        addWrapColumn(_rootTable.getColumn("Requestable"));
+
+        ColumnInfo siteNameColumn = wrapColumn("SiteName", getRealTable().getColumn("CurrentLocation"));
+        siteNameColumn.setFk(new LookupForeignKey("RowId")
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return StudySchema.getInstance().getTableInfoSite();
+            }
+        });
         siteNameColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -59,11 +65,22 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                 return new SiteNameDisplayColumn(colInfo);
             }
         });
+        addColumn(siteNameColumn);
 
-        addWrapColumn(_rootTable.getColumn("SiteLdmsCode"));
+        ColumnInfo siteLdmsCodeColumn = wrapColumn("SiteLdmsCode", getRealTable().getColumn("CurrentLocation"));
+        siteLdmsCodeColumn.setFk(new LookupForeignKey("RowId", "LdmsLabCode")
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return StudySchema.getInstance().getTableInfoSite();
+            }
+        });
+        addColumn(siteLdmsCodeColumn);
         addWrapColumn(_rootTable.getColumn("AtRepository"));
-        ColumnInfo availableColumn = addWrapColumn(_rootTable.getColumn("Available"));
+
+        ColumnInfo availableColumn = wrapColumn("Available", getRealTable().getColumn("Available"));
         availableColumn.setKeyField(true);
+        addColumn(availableColumn);
 
         String innerSelect = "(SELECT QualityControlFlag FROM " +
                 StudySchema.getInstance().getTableInfoSpecimenComment() +

@@ -142,11 +142,6 @@ public class StudySchema
         return getSchema().getTable("SpecimenEvent");
     }
 
-    public TableInfo getTableInfoSpecimenDetail()
-    {
-        return getSchema().getTable("SpecimenDetail");
-    }
-
     public TableInfo getTableInfoSpecimenSummary()
     {
         return getSchema().getTable("SpecimenSummary");

@@ -16,45 +16,48 @@
 
 package org.labkey.study;
 
+import org.apache.commons.beanutils.PropertyUtils;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.collections.Cache;
+import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.security.ACL;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.util.*;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.query.*;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.collections.Cache;
-import org.labkey.api.collections.CsvSet;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.ActionURL;
 import org.labkey.study.model.*;
+import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.requirements.RequirementProvider;
 import org.labkey.study.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.study.requirements.SpecimenRequestRequirementType;
-import org.labkey.study.samples.report.SpecimenCountSummary;
 import org.labkey.study.samples.SpecimenCommentAuditViewFactory;
-import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.samples.report.SpecimenCountSummary;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
-import org.apache.commons.beanutils.PropertyUtils;
 
 import javax.mail.Address;
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.*;
-import java.lang.reflect.InvocationTargetException;
 
 public class SampleManager
 {
@@ -336,6 +339,75 @@ public class SampleManager
     public void updateRequest(User user, SampleRequest request) throws SQLException
     {
         _requestHelper.update(user, request);
+
+        // update specimen states
+        Specimen[] specimens = request.getSpecimens();
+        if (specimens != null && specimens.length > 0)
+        {
+            updateSpecimenStatus(specimens, user);
+        }
+    }
+
+    public SQLFragment getSpecimenAvailableQuery()
+    {
+        SQLFragment availableSql = new SQLFragment("UPDATE " + StudySchema.getInstance().getTableInfoSpecimen() +
+                " SET Available =" +
+                " CASE Requestable\n" +
+                "   WHEN ? THEN (\n" +
+                "       CASE LockedInRequest\n" +
+                "       WHEN ? THEN ?\n" +
+                "       ELSE ?\n" +
+                "       END)\n" +
+                "   WHEN ? THEN ?\n" +
+                "   ELSE (\n" +
+                "       CASE AtRepository\n" +
+                "       WHEN ? THEN (\n" +
+                "           CASE LockedInRequest\n" +
+                "           WHEN ? THEN ?\n" +
+                "           ELSE ?\n" +
+                "           END)\n" +
+                "       ELSE ?\n" +
+                "       END)\n" +
+                " END");
+        availableSql.addAll(Arrays.asList(Boolean.TRUE, Boolean.TRUE, Boolean.FALSE, Boolean.TRUE, Boolean.FALSE, Boolean.FALSE,
+                Boolean.TRUE, Boolean.TRUE, Boolean.FALSE, Boolean.TRUE, Boolean.FALSE));
+
+        return availableSql;
+    }
+
+    /**
+     * Update the lockedInRequest and available field states for the set of specimens.
+     */
+    private void updateSpecimenStatus(Specimen[] specimens, User user) throws SQLException
+    {
+        List<List<?>> lockedInRequestParams = new ArrayList<List<?>>();
+        List<List<?>> availableParams = new ArrayList<List<?>>();
+
+        String lockedInRequestSql = "UPDATE " + StudySchema.getInstance().getTableInfoSpecimen() +
+                " SET LockedInRequest = " +
+                "   CASE WHEN (GlobalUniqueId IN (SELECT study.LockedSpecimens.GlobalUniqueId FROM study.LockedSpecimens WHERE study.LockedSpecimens.Container = ? )) THEN ?" +
+                "       ELSE ?" +
+                "       END" +
+                " WHERE RowId = ?";
+
+        SQLFragment availableSql = getSpecimenAvailableQuery();
+        availableSql.append(" WHERE RowId = ? AND Container = ?");
+
+        for (Specimen specimen : specimens)
+        {
+            lockedInRequestParams.add(Arrays.asList(specimen.getContainer().getId(), Boolean.TRUE, Boolean.FALSE, specimen.getRowId()));
+
+            List<Object> params = new ArrayList(availableSql.getParams());
+            params.add(specimen.getRowId());
+            params.add(specimen.getContainer().getId());
+
+            availableParams.add(params);
+        }
+
+        if (!lockedInRequestParams.isEmpty())
+            Table.batchExecute(StudySchema.getInstance().getSchema(), lockedInRequestSql, lockedInRequestParams);
+        if (!availableParams.isEmpty())
+            Table.batchExecute(StudySchema.getInstance().getSchema(), availableSql.toString(), availableParams);
     }
 
     public SampleRequestRequirement[] getRequestRequirements(SampleRequest request)
@@ -1307,6 +1379,8 @@ public class SampleManager
 
             if (createRequirements)
                 getRequirementsProvider().generateDefaultRequirements(user, request);
+
+            updateSpecimenStatus(specimens.toArray(new Specimen[specimens.size()]), user);
         }
     }
 
@@ -1379,6 +1453,8 @@ public class SampleManager
             for (String description : descriptions)
                 createRequestEvent(user, request, RequestEventType.SPECIMEN_REMOVED, description, null);
         }
+
+        updateSpecimenStatus(specimens, user);
     }
 
     public Integer[] getRequestIdsForSpecimen(Specimen specimen) throws SQLException
@@ -1417,17 +1493,17 @@ public class SampleManager
             "study.SpecimenAdditive.Additive AS Additive,\n" +
             "study.SpecimenAdditive.RowId AS AdditiveId,\n" +
             "Count(*) AS VialCount\n" +
-            "FROM study.SpecimenDetail\n" +
+            "FROM study.Specimen\n" +
             "LEFT OUTER JOIN study.SpecimenPrimaryType ON\n" +
-            "\tstudy.SpecimenPrimaryType.RowId = study.SpecimenDetail.PrimaryTypeId AND\n" +
-            "\tstudy.SpecimenPrimaryType.Container = study.SpecimenDetail.Container\n" +
+            "\tstudy.SpecimenPrimaryType.RowId = study.Specimen.PrimaryTypeId AND\n" +
+            "\tstudy.SpecimenPrimaryType.Container = study.Specimen.Container\n" +
             "LEFT OUTER JOIN study.SpecimenDerivative ON\n" +
-            "\tstudy.SpecimenDerivative.RowId = study.SpecimenDetail.DerivativeTypeId AND\n" +
-            "\tstudy.SpecimenDerivative.Container = study.SpecimenDetail.Container\n" +
+            "\tstudy.SpecimenDerivative.RowId = study.Specimen.DerivativeTypeId AND\n" +
+            "\tstudy.SpecimenDerivative.Container = study.Specimen.Container\n" +
             "LEFT OUTER JOIN study.SpecimenAdditive ON\n" +
-            "\tstudy.SpecimenAdditive.RowId = study.SpecimenDetail.AdditiveTypeId AND\n" +
-            "\tstudy.SpecimenAdditive.Container = study.SpecimenDetail.Container\n" +
-            "WHERE study.SpecimenDetail.Container = ?\n" +
+            "\tstudy.SpecimenAdditive.RowId = study.Specimen.AdditiveTypeId AND\n" +
+            "\tstudy.SpecimenAdditive.Container = study.Specimen.Container\n" +
+            "WHERE study.Specimen.Container = ?\n" +
             "GROUP BY PrimaryType, study.SpecimenPrimaryType.RowId, \n" +
             "\tDerivative, study.SpecimenDerivative.RowId, \n" +
             "\tAdditive, study.SpecimenAdditive.RowId\n" +
@@ -1610,7 +1686,7 @@ public class SampleManager
         filter.addInClause("SpecimenHash", hashes);
         if (onlyAvailable)
             filter.addCondition("Available", true);
-        SQLFragment sql = new SQLFragment("SELECT * FROM " + StudySchema.getInstance().getTableInfoSpecimenDetail().toString() + " ");
+        SQLFragment sql = new SQLFragment("SELECT * FROM " + StudySchema.getInstance().getTableInfoSpecimen().toString() + " ");
         sql.append(filter.getSQLFragment(StudySchema.getInstance().getSqlDialect()));
 
         Map<String, List<Specimen>> map = new HashMap<String, List<Specimen>>();
@@ -1813,7 +1889,6 @@ public class SampleManager
         _requestStatusHelper.clearCache(c);
         DbCache.clear(StudySchema.getInstance().getTableInfoSpecimen());
         StudyCache.clearCache(StudySchema.getInstance().getTableInfoSpecimenSummary(), c.getId());
-        StudyCache.clearCache(StudySchema.getInstance().getTableInfoSpecimenDetail(), c.getId());
         StudyCache.clearCache(StudySchema.getInstance().getTableInfoSpecimenAdditive(), c.getId());
         StudyCache.clearCache(StudySchema.getInstance().getTableInfoSpecimenDerivative(), c.getId());
         StudyCache.clearCache(StudySchema.getInstance().getTableInfoSpecimenPrimaryType(), c.getId());

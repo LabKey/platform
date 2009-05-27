@@ -16,21 +16,21 @@
 
 package org.labkey.study.importer;
 
-import org.apache.log4j.Logger;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenService;
-import org.labkey.api.util.GUID;
-import org.labkey.api.reader.TabLoader;
-import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.util.CPUTimer;
-import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.CloseableIterator;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
@@ -39,12 +39,12 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.*;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * User: brittp
@@ -731,22 +731,48 @@ public class SpecimenImporter
         logger.info("Complete.");
     }
 
+    private static void setLockedInRequestStatus(Container container, User user, Logger logger) throws SQLException
+    {
+        SQLFragment lockedInRequestSql = new SQLFragment("UPDATE " + StudySchema.getInstance().getTableInfoSpecimen() +
+                " SET LockedInRequest = ? WHERE GlobalUniqueId IN (SELECT study.LockedSpecimens.GlobalUniqueId FROM study.LockedSpecimens" +
+                " WHERE study.LockedSpecimens.Container = ?)");
+
+        lockedInRequestSql.add(Boolean.TRUE);
+        lockedInRequestSql.add(container.getId());
+
+        logger.info("Setting Specimen Locked in Request status...");
+        Table.execute(StudySchema.getInstance().getSchema(), lockedInRequestSql);
+        logger.info("Complete.");
+    }
+
+    private static void setAvailableStatus(Container container, User user, Logger logger) throws SQLException
+    {
+        SQLFragment availableSql = SampleManager.getInstance().getSpecimenAvailableQuery();
+        logger.info("Setting Specimen Available status...");
+        Table.execute(StudySchema.getInstance().getSchema(), availableSql);
+        logger.info("Complete.");
+    }
+
     private static void updateCalculatedSpecimenData(Container container, User user, Logger logger) throws SQLException
     {
         // delete unnecessary comments and create placeholders for newly discovered errors:
         prepareQCComments(container, user, logger);
 
         markOrphanedRequestVials(container, user, logger);
+        setLockedInRequestStatus(container, user, logger);
 
         // clear caches before determining current sites:
         SimpleFilter containerFilter = new SimpleFilter("Container", container.getId());
         SampleManager.getInstance().clearCaches(container);
         Specimen[] specimens;
         int offset = 0;
+        Map<Integer, Site> siteMap = new HashMap<Integer, Site>();
         String currentLocationSql = "UPDATE " + StudySchema.getInstance().getTableInfoSpecimen() +
                 " SET CurrentLocation = CAST(? AS INTEGER), SpecimenHash = ? WHERE RowId = ?";
         String commentSql = "UPDATE " + StudySchema.getInstance().getTableInfoSpecimenComment() +
                 " SET SpecimenHash = ?, QualityControlComments = ? WHERE GlobalUniqueId = ?";
+        String atRepositorySql = "UPDATE " + StudySchema.getInstance().getTableInfoSpecimen() +
+                " SET AtRepository = ? WHERE RowId = ?";
         do
         {
             if (logger != null)
@@ -755,6 +781,8 @@ public class SpecimenImporter
                     containerFilter, null, Specimen.class, CURRENT_SITE_UPDATE_SIZE, offset);
             List<List<?>> currentLocationParams = new ArrayList<List<?>>();
             List<List<?>> commentParams = new ArrayList<List<?>>();
+            List<List<?>> atRepositoryParams = new ArrayList<List<?>>();
+
             for (Specimen specimen : specimens)
             {
                 Integer currentLocation = SampleManager.getInstance().getCurrentSiteId(specimen);
@@ -765,6 +793,21 @@ public class SpecimenImporter
                     currentLocationParams.add(Arrays.asList(currentLocation, specimenHash, specimen.getRowId()));
                 }
 
+                if (currentLocation != null)
+                {
+                    Site site;
+                    if (!siteMap.containsKey(currentLocation))
+                    {
+                        site = StudyManager.getInstance().getSite(specimen.getContainer(), currentLocation.intValue());
+                        if (site != null)
+                            siteMap.put(currentLocation, site);
+                    }
+                    else
+                        site = siteMap.get(currentLocation);
+
+                    if (site != null && site.isRepository())
+                        atRepositoryParams.add(Arrays.asList(Boolean.TRUE, specimen.getRowId()));
+                }
                 SpecimenComment comment = SampleManager.getInstance().getSpecimenCommentForVial(specimen);
                 if (comment != null)
                 {
@@ -793,9 +836,13 @@ public class SpecimenImporter
                 Table.batchExecute(StudySchema.getInstance().getSchema(), currentLocationSql, currentLocationParams);
             if (!commentParams.isEmpty())
                 Table.batchExecute(StudySchema.getInstance().getSchema(), commentSql, commentParams);
+            if (!atRepositoryParams.isEmpty())
+                Table.batchExecute(StudySchema.getInstance().getSchema(), atRepositorySql, atRepositoryParams);
             offset += CURRENT_SITE_UPDATE_SIZE;
         }
         while (specimens.length > 0);
+
+        setAvailableStatus(container, user, logger);
     }
     
     private static String getSpecimenHash(Specimen specimen)
