@@ -124,11 +124,16 @@ LABKEY.Security = new function()
          *                  <li>id: the group id</li>
          *                  <li>name: the group's name</li>
          *                  <li>type: the group's type ('g' for group, 'r' for role, 'm' for module-specific)</li>
-         *                  <li>roleLabel: a description of the group's permission role. This will correspond
+         *                  <li>roleLabel: (DEPRECATED) a description of the group's permission role. This will correspond
          *                      to the visible labels shown on the permissions page (e.g., 'Admin (all permissions)'.</li>
-         *                  <li>role: the group's role value (e.g., 'ADMIN'). Use this property for programmatic checks.</li>
-         *                  <li>permissions: The group's effective permissions as a bit mask.
+         *                  <li>role: (DEPRECATED) the group's role value (e.g., 'ADMIN'). Use this property for programmatic checks.</li>
+         *                  <li>permissions: (DEPRECATED) The group's effective permissions as a bit mask.
          *                          Use this with the hasPermission() method to test for specific permissions.</li>
+         *                  <li>roles: An array of role unique names that this group is playing in the container. This replaces the
+         *                              existing roleLabel, role and permissions properties. Groups may now play multiple roles in a container
+         *                              and each role grants the user a set of permissions. Use the getRoles() method to retrieve information
+         *                              about the roles, including which permissions are granted by each role.
+         *                  </li>
          *              </ul>
          *          </li>
          *          <li>children: if includeSubfolders was true, this will contain an array of objects, each of
@@ -211,20 +216,30 @@ LABKEY.Security = new function()
          *          <li>id: the container id</li>
          *          <li>name: the container name</li>
          *          <li>path: the container path</li>
-         *          <li>roleLabel: a description of the user's permission role in this container. This will correspond
+         *          <li>roleLabel: (DEPRECATED) a description of the user's permission role in this container. This will correspond
          *               to the visible labels shown on the permissions page (e.g., 'Admin (all permissions)'.</li>
-         *          <li>role: the user's role value (e.g., 'ADMIN'). Use this property for programmatic checks.</li>
-         *          <li>permissions: The user's effective permissions in this container as a bit mask.
+         *          <li>role: (DEPRECATED) the user's role value (e.g., 'ADMIN'). Use this property for programmatic checks.</li>
+         *          <li>permissions: (DEPRECATED) The user's effective permissions in this container as a bit mask.
          *               Use this with the hasPermission() method to test for specific permissions.</li>
+         *          <li>roles: An array of role unique names that this user is playing in the container. This replaces the
+         *               existing roleLabel, role and permissions properties. Users may now play multiple roles in a container
+         *               and each role grants the user a set of permissions. Use the getRoles() method to retrieve information
+         *               about the roles, including which permissions are granted by each role.
+         *          </li>
          *          <li>groups: an array of group objects to which the user belongs, each of which will have the following properties:
          *              <ul>
          *                  <li>id: the group id</li>
          *                  <li>name: the group's name</li>
-         *                  <li>roleLabel: a description of the group's permission role. This will correspond
+         *                  <li>roleLabel: (DEPRECATED) a description of the group's permission role. This will correspond
          *                      to the visible labels shown on the permissions page (e.g., 'Admin (all permissions)'.</li>
-         *                  <li>role: the group's role value (e.g., 'ADMIN'). Use this property for programmatic checks.</li>
-         *                  <li>permissions: The group's effective permissions as a bit mask.
+         *                  <li>role: (DEPRECATED) the group's role value (e.g., 'ADMIN'). Use this property for programmatic checks.</li>
+         *                  <li>permissions: (DEPRECATED) The group's effective permissions as a bit mask.
          *                          Use this with the hasPermission() method to test for specific permissions.</li>
+         *                  <li>roles: An array of role unique names that this group is playing in the container. This replaces the
+         *                              existing roleLabel, role and permissions properties. Groups may now play multiple roles in a container
+         *                              and each role grants the user a set of permissions. Use the getRoles() method to retrieve information
+         *                              about the roles, including which permissions are granted by each role.
+         *                  </li>
          *              </ul>
          *          </li>
          *          <li>children: if includeSubfolders was true, this will contain an array of objects, each of
