@@ -1875,7 +1875,6 @@ public class SampleManager
 
         // Views
         assert set.add(StudySchema.getInstance().getSchema().getTable("LockedSpecimens"));
-        assert set.add(StudySchema.getInstance().getSchema().getTable("SpecimenDetail"));
         assert set.add(StudySchema.getInstance().getSchema().getTable("SpecimenSummary"));
     }
 

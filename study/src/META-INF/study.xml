@@ -339,6 +339,9 @@
       <ns:column columnName="ProcessingTime"/>
       <ns:column columnName="PrimaryVolume"/>
       <ns:column columnName="PrimaryVolumeUnits"/>
+      <ns:column columnName="AtRepository"/>
+      <ns:column columnName="LockedInRequest"/>
+      <ns:column columnName="Available"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenSummary" tableDbType="VIEW">
@@ -397,70 +400,6 @@
           <ns:fkDbSchema>study</ns:fkDbSchema>
         </ns:fk>
       </ns:column>
-      <ns:column columnName="PrimaryVolume"/>
-      <ns:column columnName="PrimaryVolumeUnits"/>
-    </ns:columns>
-  </ns:table>
-  <ns:table tableName="SpecimenDetail" tableDbType="VIEW">
-    <ns:columns>
-      <ns:column columnName="RowId"/>
-      <ns:column columnName="Container"/>
-      <ns:column columnName="GlobalUniqueId"/>
-      <ns:column columnName="Ptid"/>
-      <ns:column columnName="DrawTimestamp">
-        <ns:formatString>DateTime</ns:formatString>
-      </ns:column>
-      <ns:column columnName="SalReceiptDate"/>
-      <ns:column columnName="SpecimenHash"/>
-      <ns:column columnName="ClassId"/>
-      <ns:column columnName="VisitValue">
-        <ns:formatString>0.####</ns:formatString>
-      </ns:column>
-      <ns:column columnName="ProtocolNumber"/>
-      <ns:column columnName="VisitDescription"/>
-      <ns:column columnName="Volume">
-        <ns:formatString>#,##0.0#</ns:formatString>
-      </ns:column>
-      <ns:column columnName="SiteName"/>
-      <ns:column columnName="SiteLdmsCode"/>
-      <ns:column columnName="AtRepository"/>
-      <ns:column columnName="Available"/>
-      <ns:column columnName="VolumeUnits"/>
-      <ns:column columnName="SubAdditiveDerivative"/>
-      <ns:column columnName="PrimaryTypeId">
-        <ns:fk>
-          <ns:fkColumnName>RowId</ns:fkColumnName>
-          <ns:fkTable>SpecimenPrimaryType</ns:fkTable>
-          <ns:fkDbSchema>study</ns:fkDbSchema>
-        </ns:fk>
-      </ns:column>
-      <ns:column columnName="DerivativeTypeId">
-        <ns:fk>
-          <ns:fkColumnName>RowId</ns:fkColumnName>
-          <ns:fkTable>SpecimenDerivative</ns:fkTable>
-          <ns:fkDbSchema>study</ns:fkDbSchema>
-        </ns:fk>
-      </ns:column>
-      <ns:column columnName="AdditiveTypeId">
-        <ns:fk>
-          <ns:fkColumnName>RowId</ns:fkColumnName>
-          <ns:fkTable>SpecimenAdditive</ns:fkTable>
-          <ns:fkDbSchema>study</ns:fkDbSchema>
-        </ns:fk>
-      </ns:column>
-      <ns:column columnName="lockedinrequest"/>
-      <ns:column columnName="originatinglocationid"/>
-      <ns:column columnName="requestable"/>
-      <ns:column columnName="CurrentLocation" />
-      <ns:column columnName="DerivativeTypeId2">
-        <ns:fk>
-          <ns:fkColumnName>RowId</ns:fkColumnName>
-          <ns:fkTable>SpecimenDerivative</ns:fkTable>
-          <ns:fkDbSchema>study</ns:fkDbSchema>
-        </ns:fk>
-      </ns:column>
-      <ns:column columnName="FrozenTime"/>
-      <ns:column columnName="ProcessingTime"/>
       <ns:column columnName="PrimaryVolume"/>
       <ns:column columnName="PrimaryVolumeUnits"/>
     </ns:columns>
