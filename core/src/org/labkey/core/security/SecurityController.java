@@ -144,6 +144,7 @@ public class SecurityController extends SpringActionController
         }
     }
     
+
     private static void ensureGroupInContainer(String group, Container c)
         throws ServletException
     {
@@ -242,6 +243,7 @@ public class SecurityController extends SpringActionController
             return group;
         }
 
+        // validates that group is visible from container c
         public Group getGroupFor(Container c) throws ServletException
         {
             if (id == Integer.MIN_VALUE)
@@ -252,8 +254,12 @@ public class SecurityController extends SpringActionController
                 id = gid.intValue();
             }
             Group group = SecurityManager.getGroup(id);
-            if (null != c)
-                ensureGroupInContainer(group, c);
+            Container p = c == null ? null : c.getProject();
+            if (null != p)
+            {
+                if (group.getContainer() != null && !p.getId().equals(group.getContainer()))
+                    HttpView.throwUnauthorized();
+            }
             return group;
         }
     }
@@ -266,6 +272,7 @@ public class SecurityController extends SpringActionController
         public boolean handlePost(GroupForm form, BindException errors) throws Exception
         {
             Group group = form.getGroupFor(getContainer());
+            ensureGroupInContainer(group,getContainer());
             if (group != null)
             {
                 SecurityManager.deleteGroup(group);
@@ -654,6 +661,7 @@ public class SecurityController extends SpringActionController
                 container = container.getProject();
 
             _group = form.getGroupFor(getContainer());
+            ensureGroupInContainer(_group,container);
 
             List<String> messages = new ArrayList<String>();
 

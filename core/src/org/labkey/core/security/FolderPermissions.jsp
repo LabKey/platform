@@ -146,7 +146,9 @@ Ext.onReady(function()
                 var newGroupForm = null;
                 var groupsList = new GroupPicker({cache:securityCache, width:200, border:false, autoScroll:true, projectId:project});
                 groupsList.on("select", function(list,group){
-                    window.alert(group.Name);
+                    var canEdit = !group.Container && isSiteAdmin || group.Container && isProjectAdmin;
+                    var w = new UserInfoPopup({userId:group.UserId, cache:this.cache, policy:null, modal:true, canEdit:canEdit});
+                    w.show();
                 });
 
                 var formId = 'newGroupForm' + (project?'':'Site');

@@ -309,7 +309,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
 
         if (!this.mapGroupToMembers[groupid])
             this.mapGroupToMembers[groupid] = [userid];
-        else (-1 == this.mapGroupsToMembers[groupid].indexOf(userid))
+        else if (-1 == this.mapGroupToMembers[groupid].indexOf(userid))
             this.mapGroupToMembers[groupid].push(userid);
 
         if (!this.mapPrincipalToGroups[userid])
@@ -376,8 +376,6 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
 
     Principals_onReady : function()
     {
-//        this.principalsStore.removeById(this.groupDevelopers);
-//        this.principalsStore.removeById(this.groupAdministrators);
         // add a sortOrder field to each principal
         this.principalsStore.data.each(function(item){
             var data = item.data;
@@ -495,6 +493,18 @@ function _link(text,href)
         "]"];
     return $dom.markup(html);
 }
+function $open(href)
+{
+    window.open(href+'&_print=1','_blank','width=500,height=500');    
+}
+function _open(text,href)
+{
+    var html = ["[",
+        {tag:'a', href:'#', onclick:$h("$open('" + href + "')"), children:$h(text)},
+        "]"];
+    return $dom.markup(html);
+}
+
 
 /* config: cache, user or userId, policy, canEdit */
 
@@ -520,17 +530,25 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
         UserInfoPopup.superclass.constructor.call(this, config);
     },
 
+    addPrincipalComboBox : null,
+
     onRender : function(ct, where)
     {
         UserInfoPopup.superclass.onRender.call(this, ct, where);
         this._redraw();
     },
 
+    onDestroy : function()
+    {
+        UserInfoPopup.superclass.onDestroy.call(this);
+        this.addPrincipalComboBox.destroy();
+    },
+
     _redraw : function()
     {
         this.body.update('',false);
 
-        var isGroup = this.user.Type == 'g';
+        var isGroup = this.user.Type == 'g' || this.user.Type == 'r';
         
         var html = ["<table width=100%><tr><td align=left valign=middle><h3 style='display:inline'>" + (isGroup?'Group ':'User ') + this.user.Name + "</h3></td><td align=right valign=middle>"];
 
@@ -545,11 +563,11 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
                 html.push(_link('manage group...', $url('security','group',this.user.Container||'/',{id:this.user.UserId})));
                 html.push('&nbsp;');
             }
-            html.push(_link('permissions...', $url('security','groupPermission',this.user.Container||'/',{id:this.user.UserId})));
+            html.push(_open('permissions', $url('security','groupPermission',this.cache.projectId,{id:this.user.UserId})));
         }
         else
         {
-            html.push(_link('permissions...', $url('user','userAccess',this.cache.projectId,{userId:this.user.UserId})));
+            html.push(_open('permissions', $url('user','userAccess',this.cache.projectId,{userId:this.user.UserId})));
         }
         html.push("</td></tr></table><p/>");
 
@@ -583,6 +601,9 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
             html.push("</ul>\n");
         }
 
+        var id = Ext.id();
+        var principalWrapper = null;
+
         // users
         if (isGroup)
         {
@@ -602,7 +623,8 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
                 html.push("<table>");
                 if (this.canEdit)
                 {
-                    html.push("<tr><td>Add User Form</td></tr>");
+                    principalWrapper = '$p$' + id;
+                    html.push("<tr><td colspan=3 id=" + principalWrapper + "></td></tr>");
                 }                
                 for (var i=0 ; i<users.length ; i++)
                 {
@@ -610,7 +632,7 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
                     html.push("<tr><td width=100>" + $h(user.Name) + "</td>");
                     if (this.canEdit)
                         html.push("<td>remove</td><td>");
-                    html.push(_link('permissions...', $url('user','userAccess',this.cache.projectId,{userId:user.UserId})));
+                    html.push(_open('permissions', $url('user','userAccess',this.cache.projectId,{userId:user.UserId})));
                     html.push("</td></tr>");
                 }
                 html.push("</table>");
@@ -619,11 +641,28 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
 
         var m = $dom.markup(html);
         this.body.update(m, false);
+
+        // render a principals drop down
+        if (principalWrapper)
+        {
+            this.addPrincipalComboBox = new PrincipalComboBox({cache:this.cache, usersOnly:true});
+            this.addPrincipalComboBox.on("select",this.Combo_onSelect,this);
+            this.addPrincipalComboBox.render(principalWrapper);
+
+        }
+    },
+
+    Combo_onSelect : function(combo,record,index)
+    {
+        if (record)
+        {
+            var groupid = this.user.UserId;
+            var userid = record.data.UserId;
+            this.cache.addMembership(userid,groupid,this._redraw.createDelegate(this));
+        }
+        combo.selectText();
     }
 });
-
-
-
 
 
 
@@ -801,9 +840,9 @@ function filterPrincipalsStore(store, type, container, excludedPrincipals)
         switch (type)
         {
         case 'users': if (d.Type != 'u') continue; break;
-        case 'groups': if (d.Type != 'g') continue; break;
+        case 'groups': if (d.Type != 'g' && d.Type != 'r') continue; break;
         case 'project' : if (d.Type != 'g' || d.Container != container) continue; break;
-        case 'site' : if (d.Type != 'g' || d.Container) continue; break;
+        case 'site' : if ((d.Type != 'g' && d.Type != 'r') || d.Container) continue; break;
         }
         data.push(d);
     }
@@ -838,7 +877,7 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
             forceSelection : true,
             typeAhead : true,
             displayField : 'Name',
-            emptyText : config.groupsOnly ? 'Add group...' : 'Add user or group...'
+            emptyText : config.groupsOnly ? 'Add group...' : config.usersOnly ? 'Add user...' : 'Add user or group...'
         });
         PrincipalComboBox.superclass.constructor.call(this, config);
     },
@@ -905,6 +944,7 @@ var GroupPicker = Ext.extend(Ext.Panel,{
             borders : false
         });
         GroupPicker.superclass.constructor.call(this,config);
+        this.tpl.cache = this.cache;
     },
 
     projectId : null,
@@ -925,7 +965,8 @@ var GroupPicker = Ext.extend(Ext.Panel,{
         },
         count : function(values)
         {
-            return 14;    
+            var m = this.cache.getMembersOf(values.UserId);
+            return m.length;
         }
     }),
     
@@ -978,7 +1019,8 @@ var GroupPicker = Ext.extend(Ext.Panel,{
     {   
         GroupPicker.superclass.onRender.call(this,ct,position);
         this.view.render(this.body);
-        this.onDataChanged();
+        if (this.cache.principalsStore.ready)
+            this.onDataChanged();
     }
 });
 
