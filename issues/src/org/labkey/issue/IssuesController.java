@@ -28,6 +28,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.*;
 import org.labkey.api.security.*;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -243,8 +244,18 @@ public class IssuesController extends SpringActionController
     @RequiresPermission(ACL.PERM_READ)
     public class ListAction extends SimpleViewAction<ListForm>
     {
+
+        public ListAction() {}
+
+        public ListAction(ViewContext ctx)
+        {
+            setViewContext(ctx);
+        }
+
         public ModelAndView getView(ListForm form, BindException errors) throws Exception
         {
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+
             // convert AssignedTo/Email to AssignedTo/DisplayName: old bookmarks
             // reference Email, which is no longer displayed.
             ActionURL url = getViewContext().cloneActionURL();
@@ -256,14 +267,15 @@ public class IssuesController extends SpringActionController
                 return HttpView.redirect(url);
             }
 
-            getPageConfig().setRssProperties(new RssAction().getUrl(), "Issues");
+            getPageConfig().setRssProperties(new RssAction().getUrl(), names.pluralName.toString());
             HttpView view = getIssuesView();
             return view;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Issues List", getURL());
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            return root.addChild(names.pluralName + " List", getURL());
         }
 
         public ActionURL getURL()
@@ -306,9 +318,10 @@ public class IssuesController extends SpringActionController
         {
         }
 
-        public DetailsAction(Issue issue)
+        public DetailsAction(Issue issue, ViewContext context)
         {
             _issue = issue;
+            setViewContext(context);
         }
 
         public ModelAndView getView(IssueIdForm form, BindException errors) throws Exception
@@ -316,9 +329,10 @@ public class IssuesController extends SpringActionController
             int issueId = form.getIssueId();
             _issue = getIssue(issueId);
 
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
             if (null == _issue)
             {
-                HttpView.throwNotFound("Unable to find issue " + form.getIssueId());
+                HttpView.throwNotFound("Unable to find " + names.singularName + " " + form.getIssueId());
                 return null;
             }
 
@@ -338,7 +352,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return new ListAction().appendNavTrail(root)
+            return new ListAction(getViewContext()).appendNavTrail(root)
                     .addChild("Detail -- " + _issue.getIssueId(), getURL());
         }
 
@@ -408,7 +422,8 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return new ListAction().appendNavTrail(root).addChild("Issue Details");
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            return new ListAction(getViewContext()).appendNavTrail(root).addChild(names.singularName + " Details");
         }
     }
 
@@ -504,7 +519,7 @@ public class IssuesController extends SpringActionController
                     scope.closeConnection();
             }
 
-            ActionURL url = new DetailsAction(_issue).getURL();
+            ActionURL url = new DetailsAction(_issue, getViewContext()).getURL();
 
             final String assignedTo = UserManager.getDisplayName(_issue.getAssignedTo(), getViewContext());
             if (assignedTo != null)
@@ -525,14 +540,15 @@ public class IssuesController extends SpringActionController
                 return url;
             }
             
-            ActionURL forwardURL = new DetailsAction(_issue).getURL();
+            ActionURL forwardURL = new DetailsAction(_issue, getViewContext()).getURL();
             return forwardURL;
         }
 
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return new ListAction().appendNavTrail(root).addChild("Insert New Issue");
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            return new ListAction(getViewContext()).appendNavTrail(root).addChild("Insert New " + names.singularName);
         }
     }
 
@@ -573,7 +589,7 @@ public class IssuesController extends SpringActionController
             {
                 if (ownsTransaction)
                     scope.beginTransaction();
-                detailsUrl = new DetailsAction(issue).getURL();
+                detailsUrl = new DetailsAction(issue, getViewContext()).getURL();
 
                 if ("resolve".equals(form.getAction()))
                     issue.Resolve(user);
@@ -729,7 +745,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return new DetailsAction(_issue).appendNavTrail(root)
+            return new DetailsAction(_issue, getViewContext()).appendNavTrail(root)
                     .addChild("(update) " + _issue.getTitle().getSource());
         }
     }
@@ -807,7 +823,8 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return (new DetailsAction(_issue).appendNavTrail(root)).addChild("Resolve Issue");
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Resolve " + names.singularName);
         }
     }
 
@@ -845,7 +862,8 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return (new DetailsAction(_issue).appendNavTrail(root)).addChild("Close Issue");
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Close " + names.singularName);
         }
     }
 
@@ -883,7 +901,8 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return (new DetailsAction(_issue).appendNavTrail(root)).addChild("Reopen Issue");
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Reopen " + names.singularName);
         }
     }
 
@@ -1160,7 +1179,7 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return (new BeginAction()).appendNavTrail(root).addChild("Email preferences");
+            return (new ListAction(getViewContext())).appendNavTrail(root).addChild("Email preferences");
         }
 
 
@@ -1201,7 +1220,8 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return (new BeginAction()).appendNavTrail(root).addChild("Issues Admin Page", getUrl());
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            return (new ListAction(getViewContext())).appendNavTrail(root).addChild(names.pluralName + " Admin Page", getUrl());
         }
 
         public ActionURL getUrl()
@@ -1261,6 +1281,66 @@ public class IssuesController extends SpringActionController
         {
             IssueManager.clearKeywordDefault(getContainer(), form.getType());
             return true;
+        }
+    }
+
+    public static class EntryTypeNamesForm
+    {
+        public static enum ParamNames
+        {
+            entrySingularName,
+            entryPluralName
+        }
+
+        private HString _entrySingularName;
+        private HString _entryPluralName;
+
+        public HString getEntrySingularName()
+        {
+            return _entrySingularName;
+        }
+
+        public void setEntrySingularName(HString entrySingularName)
+        {
+            _entrySingularName = entrySingularName;
+        }
+
+        public HString getEntryPluralName()
+        {
+            return _entryPluralName;
+        }
+
+        public void setEntryPluralName(HString entryPluralName)
+        {
+            _entryPluralName = entryPluralName;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class SetEntryTypeNames extends FormHandlerAction<EntryTypeNamesForm>
+    {
+        public void validateCommand(EntryTypeNamesForm form, Errors errors)
+        {
+            if (form.getEntrySingularName().trimToEmpty().length() == 0)
+                errors.reject(EntryTypeNamesForm.ParamNames.entrySingularName.name(), "You must specify a value for the entry type singular name!");
+            if (form.getEntryPluralName().trimToEmpty().length() == 0)
+                errors.reject(EntryTypeNamesForm.ParamNames.entryPluralName.name(), "You must specify a value for the entry type plural name!");
+        }
+
+        public boolean handlePost(EntryTypeNamesForm form, BindException errors) throws Exception
+        {
+            IssueManager.EntryTypeNames names = new IssueManager.EntryTypeNames();
+            
+            names.singularName = form.getEntrySingularName();
+            names.pluralName = form.getEntryPluralName();
+
+            IssueManager.saveEntryTypeNames(getViewContext().getContainer(), names);
+            return true;
+        }
+
+        public ActionURL getSuccessURL(EntryTypeNamesForm form)
+        {
+            return issueURL("admin");
         }
     }
 
@@ -1398,13 +1478,13 @@ public class IssuesController extends SpringActionController
 
             getPageConfig().setHelpTopic(new HelpTopic("search", HelpTopic.Area.DEFAULT));
 
-            HttpView results = new Search.SearchResultsView(c, Collections.singletonList(IssueSearch.getInstance()), searchTerm, new ActionURL("issues", "search", c), getUser(), false, false);
+            HttpView results = new Search.SearchResultsView(c, Collections.singletonList(IssueSearch.getInstance(c)), searchTerm, new ActionURL("issues", "search", c), getUser(), false, false);
             return results;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return new ListAction().appendNavTrail(root).addChild("Search Results");
+            return new ListAction(getViewContext()).appendNavTrail(root).addChild("Search Results");
         }
     }
 
@@ -1532,7 +1612,7 @@ public class IssuesController extends SpringActionController
             bean.ccc = ccc;
             bean.keywordView = keywordView;
             bean.requiredFieldsView = new JspView<IssuesPreference>("/org/labkey/issue/requiredFields.jsp", ipb);
-
+            bean.entryTypeNames = IssueManager.getEntryTypeNames(c);
             setModelBean(bean);
         }
     }
@@ -1543,6 +1623,7 @@ public class IssuesController extends SpringActionController
         public IssueManager.CustomColumnConfiguration ccc;
         public KeywordAdminView keywordView;
         public JspView<IssuesPreference> requiredFieldsView;
+        public IssueManager.EntryTypeNames entryTypeNames;
     }
 
 

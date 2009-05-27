@@ -77,13 +77,7 @@ public class Study extends ExtensibleStudyEntity<Study>
     {
         List<SecurableResource> ret = new ArrayList<SecurableResource>();
 
-        //add all datasets the user has admin perms on
-        for(DataSetDefinition dsDef : getDataSets())
-        {
-            SecurityPolicy policy = SecurityManager.getPolicy(dsDef);
-            if(policy.hasPermission(user, AdminPermission.class))
-                ret.add(dsDef);
-        }
+        ret.addAll(Arrays.asList(getDataSets()));
 
         return ret;
     }

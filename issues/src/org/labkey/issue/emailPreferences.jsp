@@ -26,6 +26,7 @@
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<IssuesController.EmailPrefsBean> me = (JspView<IssuesController.EmailPrefsBean>)HttpView.currentView();
@@ -35,6 +36,20 @@
     BindException errors = bean.getErrors();
     String message = bean.getMessage();
     int issueId = bean.getIssueId();
+    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(context.getContainer());
+    String indefArticle;
+    switch(names.singularName.toLowerCase().charAt(0))
+    {
+        case 'a':
+        case 'e':
+        case 'i':
+        case 'o':
+        case 'u':
+            indefArticle = "an";
+            break;
+        default:
+            indefArticle = "a";
+    }
 
     if (message != null)
     {
@@ -51,19 +66,19 @@
 %>
 <form action="emailPrefs.post" method="post">
     <input type="checkbox" value="1" name="emailPreference" <%=(emailPrefs & IssueManager.NOTIFY_ASSIGNEDTO_OPEN) != 0 ? " checked" : ""%>>
-    Send me email when an issue is opened and assigned to me<br>
+    Send me email when <%=indefArticle%> <%=names.singularName%> is opened and assigned to me<br>
     <input type="checkbox" value="2" name="emailPreference" <%=(emailPrefs & IssueManager.NOTIFY_ASSIGNEDTO_UPDATE) != 0 ? " checked" : ""%>>
-    Send me email when an issue that's assigned to me is modified<br>
+    Send me email when <%=indefArticle%> <%=names.singularName%> that's assigned to me is modified<br>
     <input type="checkbox" value="4" name="emailPreference" <%=(emailPrefs & IssueManager.NOTIFY_CREATED_UPDATE) != 0 ? " checked" : ""%>>
-    Send me email when an issue I opened is modified<br>
+    Send me email when <%=indefArticle%> <%=names.singularName%> I opened is modified<br>
     <hr/>
     <input type="checkbox" value="8" name="emailPreference" <%=(emailPrefs & IssueManager.NOTIFY_SELF_SPAM) != 0 ? " checked" : ""%>>
-    Send me email notifications when I enter/edit an issue<br>
+    Send me email notifications when I enter/edit <%=indefArticle%> <%=names.singularName%><br>
     <br>
     <%=PageFlowUtil.generateSubmitButton("Update")%><%
     if (issueId > 0)
     {
-        %><%= generateButton("Back to Issue", IssuesController.issueURL(context.getContainer(), "details").addParameter("issueId", bean.getIssueId())) %><%
+        %><%= generateButton("Back to " + names.singularName, IssuesController.issueURL(context.getContainer(), "details").addParameter("issueId", bean.getIssueId())) %><%
     }
     else
     {

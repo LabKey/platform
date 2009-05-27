@@ -55,4 +55,35 @@
     </table>
     </form>
 </td>
-</tr></table>
+</tr>
+    <tr>
+        <th class="labkey-form-label">Entry Type Names</th>
+    </tr>
+    <tr>
+        <td>
+            <table>
+                <form name="entryTypeNames" action="setEntryTypeNames.post" method="POST">
+                <tr>
+                    <td>
+                        <table>
+                            <tr>
+                                <td>Singular</td>
+                                <td><input type="text" name="<%=IssuesController.EntryTypeNamesForm.ParamNames.entrySingularName.name()%>"
+                                           value="<%=h(bean.entryTypeNames.singularName)%>" size="20"/></td>
+                            </tr>
+                            <tr>
+                                <td>Plural</td>
+                                <td><input type="text" name="<%=IssuesController.EntryTypeNamesForm.ParamNames.entryPluralName.name()%>"
+                                           value="<%=h(bean.entryTypeNames.pluralName)%>" size="20"/></td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td><%=PageFlowUtil.generateSubmitButton("Update Entry Type Names")%></td>
+                </tr>
+                </form>
+            </table>
+        </td>
+    </tr>
+</table>

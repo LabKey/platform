@@ -58,6 +58,10 @@ public class IssueManager
     private static final String ISSUES_PREF_MAP = "IssuesPreferencesMap";
     private static final String ISSUES_REQUIRED_FIELDS = "IssuesRequiredFields";
 
+    private static final String CAT_ENTRY_TYPE_NAMES = "issueEntryTypeNames";
+    private static final String PROP_ENTRY_TYPE_NAME_SINGULAR = "issueEntryTypeNameSingular";
+    private static final String PROP_ENTRY_TYPE_NAME_PLURAL = "issueEntryTypeNamePlural";
+
     private IssueManager()
     {
     }
@@ -417,6 +421,31 @@ public class IssueManager
             return DEFAULT_EMAIL_PREFS;
         }
         return emailPreference[0].intValue();
+    }
+
+    public static class EntryTypeNames
+    {
+        public HString singularName = new HString("Issue", false);
+        public HString pluralName = new HString("Issues", false);
+    }
+
+    public static EntryTypeNames getEntryTypeNames(Container container)
+    {
+        Map<String,String> props = PropertyManager.getProperties(container.getId(), CAT_ENTRY_TYPE_NAMES, false);
+        EntryTypeNames ret = new EntryTypeNames();
+        if(null != props && props.containsKey(PROP_ENTRY_TYPE_NAME_SINGULAR))
+            ret.singularName = new HString(props.get(PROP_ENTRY_TYPE_NAME_SINGULAR));
+        if(null != props && props.containsKey(PROP_ENTRY_TYPE_NAME_PLURAL))
+            ret.pluralName = new HString(props.get(PROP_ENTRY_TYPE_NAME_PLURAL));
+        return ret;
+    }
+
+    public static void saveEntryTypeNames(Container container, EntryTypeNames names)
+    {
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(container.getId(), CAT_ENTRY_TYPE_NAMES, true);
+        props.put(PROP_ENTRY_TYPE_NAME_SINGULAR, names.singularName.getSource());
+        props.put(PROP_ENTRY_TYPE_NAME_PLURAL, names.pluralName.getSource());
+        PropertyManager.saveProperties(props);
     }
 
     public static void setUserEmailPreferences(Container c, int userId, int emailPrefs, int currentUser)

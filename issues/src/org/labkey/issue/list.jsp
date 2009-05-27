@@ -19,10 +19,12 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.ViewContext"%>
+<%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
     ViewContext context = HttpView.getRootContext();
+    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
 
     if (request.getParameter("error") != null)
     {
@@ -36,12 +38,12 @@
     <%
     if (context.getContainer().hasPermission(context.getUser(), ACL.PERM_INSERT))
 	{
-	%><td><%=PageFlowUtil.generateButton("New Issue", "insert.view")%></td><td>&nbsp;</td><%
+	%><td><%=PageFlowUtil.generateButton("New " + names.singularName, "insert.view")%></td><td>&nbsp;</td><%
 	}
     %>
     <td nowrap><form name="jumpToIssue" action="jumpToIssue.view" method="get">
         <input type="text" size="5" name="issueId"/>
-        <%=PageFlowUtil.generateSubmitButton("Jump to issue", "", "align=\"top\" vspace=\"2\"")%></form></td>
+        <%=PageFlowUtil.generateSubmitButton("Jump to " + names.singularName, "", "align=\"top\" vspace=\"2\"")%></form></td>
     <td width=100%>&nbsp;</td>
     <td align="right" nowrap><form action="search.view" method="get">
         <input type="text" size="30" name="search" value="">

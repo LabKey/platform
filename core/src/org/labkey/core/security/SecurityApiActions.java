@@ -56,7 +56,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermissionClass(ReadPermission.class)
     public static class GetGroupPermsAction extends ApiAction<GetGroupPermsForm>
     {
         public ApiResponse execute(GetGroupPermsForm form, BindException errors) throws Exception
@@ -126,6 +126,15 @@ public class SecurityApiActions
                     groupPerms.put("roleLabel", role.getLabel());
                 }
 
+                //add effective roles array
+                Set<Role> effectiveRoles = policy.getEffectiveRoles(group);
+                ArrayList<String> effectiveRoleList = new ArrayList<String>();
+                for (Role effectiveRole : effectiveRoles)
+                {
+                    effectiveRoleList.add(effectiveRole.getUniqueName());
+                }
+                groupPerms.put("roles", effectiveRoleList);
+
                 groupsPerms.add(groupPerms);
             }
 
@@ -170,20 +179,19 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermissionClass(ReadPermission.class)
     public static class GetUserPermsAction extends ApiAction<GetUserPermsForm>
     {
         public ApiResponse execute(GetUserPermsForm form, BindException errors) throws Exception
         {
-            //need either userid or user email name
-            if(null == form.getUserId() && null == form.getUserEmail())
-                throw new IllegalArgumentException("You must provide either a userId or a userEmail parameter!");
-
+            //if user id and user email is null, assume current user
             User user = null;
             if(null != form.getUserId())
                 user = UserManager.getUser(form.getUserId().intValue());
-            if(null == user)
+            else if(null != form.getUserEmail())
                 user = UserManager.getUser(new ValidEmail(form.getUserEmail()));
+            else
+                user = getViewContext().getUser();
 
             if(null == user)
                 throw new IllegalArgumentException("No user found that matches specified userId or email address");
@@ -226,6 +234,14 @@ public class SecurityApiActions
                 permsInfo.put("roleLabel", "(Mixed)");
             }
 
+            //effective roles
+            List<String> effectiveRoles = new ArrayList<String>();
+            for(Role effectiveRole : policy.getEffectiveRoles(user))
+            {
+                effectiveRoles.add(effectiveRole.getUniqueName());
+            }
+            permsInfo.put("roles", effectiveRoles);
+
             //add all groups the user belongs to in this container
             List<Group> groups = SecurityManager.getGroups(container, user);
             List<Map<String,Object>> groupsInfo = new ArrayList<Map<String,Object>>();
@@ -245,6 +261,15 @@ public class SecurityApiActions
                     groupInfo.put("roleLabel", groupRole.getLabel());
                 }
 
+                //effective roles
+                List<String> groupEffectiveRoles = new ArrayList<String>();
+                for(Role effectiveRole : policy.getEffectiveRoles(group))
+                {
+                    groupEffectiveRoles.add(effectiveRole.getUniqueName());
+                }
+                groupInfo.put("roles", groupEffectiveRoles);
+
+
                 groupsInfo.add(groupInfo);
             }
             permsInfo.put("groups", groupsInfo);
@@ -263,7 +288,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermissionClass(ReadPermission.class)
     public static class GetGroupsForCurrentUserAction extends ApiAction
     {
         public ApiResponse execute(Object o, BindException errors) throws Exception
@@ -311,7 +336,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermissionClass(ReadPermission.class)
     public static class GetRolesAction extends ApiAction
     {
         private Set<Permission> _allPermissions = new HashSet<Permission>();
@@ -393,7 +418,7 @@ public class SecurityApiActions
         }
     }
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermissionClass(ReadPermission.class)
     public static class GetSecurableResourcesAction extends ApiAction<GetSecurableResourcesForm>
     {
         private boolean _includeSubfolders = false;
@@ -538,6 +563,10 @@ public class SecurityApiActions
             if(null == resource)
                 throw new IllegalArgumentException("No resource with the id '" + resourceId + "' was found in this container!");
 
+            //ensure that user has admin permission on resource
+            if (!SecurityManager.getPolicy(resource).hasPermission(user, AdminPermission.class))
+                throw new IllegalArgumentException("You do not have permission to modify the security policy for this resource!");
+
             //get the existing policy so we can audit how it's changed
             SecurityPolicy oldPolicy = SecurityManager.getPolicy(resource);
 
@@ -678,6 +707,10 @@ public class SecurityApiActions
             SecurableResource resource = container.findSecurableResource(resourceId, user);
             if(null == resource)
                 throw new IllegalArgumentException("No resource with the id '" + resourceId + "' was found in this container!");
+
+            //ensure that user has admin permission on resource
+            if (!SecurityManager.getPolicy(resource).hasPermission(user, AdminPermission.class))
+                throw new IllegalArgumentException("You do not have permission to delete the security policy for this resource!");
 
             SecurityManager.deletePolicy(resource);
 

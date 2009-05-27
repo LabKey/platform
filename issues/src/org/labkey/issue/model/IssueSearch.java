@@ -27,9 +27,7 @@ import org.labkey.issue.IssuesController;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Set;
-import java.util.ArrayList;
+import java.util.*;
 
 /**
  * User: adam
@@ -42,15 +40,37 @@ public class IssueSearch implements Searchable
     private static final String SEARCH_RESULT_TYPE = "labkey/issue";
     private static final String SEARCH_RESULT_TYPE_DESCR = "Issues";
 
-    private static final Searchable _instance = new IssueSearch();
+    private static final Map<Container,Searchable> _instances = new HashMap<Container,Searchable>();
+    static
+    {
+        _instances.put(null, new IssueSearch());
+    }
+
+    private IssueManager.EntryTypeNames _names;
 
     private IssueSearch()
     {
     }
 
+    private IssueSearch(Container c)
+    {
+        _names = IssueManager.getEntryTypeNames(c);
+    }
+
     public static Searchable getInstance()
     {
-        return _instance;
+        return _instances.get(null);
+    }
+
+    public static synchronized Searchable getInstance(Container c)
+    {
+        Searchable ret = _instances.get(c);
+        if(null == ret)
+        {
+            ret = new IssueSearch(c);
+            _instances.put(c, ret);
+        }
+        return ret;
     }
 
     public void search(SearchTermParser parser, Set<Container> containers, List<SearchHit> hits, User user)
@@ -61,6 +81,7 @@ public class IssueSearch implements Searchable
         String from = schema.getTableInfoIssues() + " i LEFT OUTER JOIN " + schema.getTableInfoComments() + " c ON i.IssueId = c.IssueId";
         SQLFragment searchSql = Search.getSQLFragment("Container, Title, IssueId", "Container, Title, i.IssueId", from, "Container", null, containers, issueTermProvider, dialect, "Comment"); // No need to search title since it ends up in the comment
         ResultSet rs = null;
+        Map<Container, IssueManager.EntryTypeNames> entryNamesMap = new HashMap<Container, IssueManager.EntryTypeNames>();
 
         try
         {
@@ -71,12 +92,19 @@ public class IssueSearch implements Searchable
                 String containerId = rs.getString(1);
                 Container c = ContainerManager.getForId(containerId);
 
+                IssueManager.EntryTypeNames names = entryNamesMap.get(c);
+                if (null == names)
+                {
+                    names = IssueManager.getEntryTypeNames(c);
+                    entryNamesMap.put(c, names);
+                }
+
                 ActionURL url = IssuesController.issueURL(c, "details");
                 url.addParameter("issueId", rs.getString(3));
 
                 SimpleSearchHit hit = new SimpleSearchHit(SEARCH_DOMAIN, c.getPath(), rs.getString(2),
                         url.getLocalURIString(), SEARCH_RESULT_TYPE,
-                        SEARCH_RESULT_TYPE_DESCR);
+                        names.pluralName.toString());
 
                 hits.add(hit);
             }
@@ -93,7 +121,7 @@ public class IssueSearch implements Searchable
 
     public String getSearchResultNamePlural()
     {
-        return SEARCH_RESULT_TYPE_DESCR;
+        return null == _names ? SEARCH_RESULT_TYPE_DESCR : _names.pluralName.toString();
     }
 
     public String getDomainName()

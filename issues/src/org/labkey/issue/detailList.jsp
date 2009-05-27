@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.data.DataRegionSelection" %>
 <%@ page import="org.labkey.api.util.HString" %>
+<%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
@@ -38,6 +39,7 @@
     final Container c = context.getContainer();
     Issue issue = null;
     String issueId = null;
+    IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c);
 
     ActionURL printLink = context.cloneActionURL().replaceParameter("_print", "1");
     if (bean.getDataRegionSelectionKey() != null)
@@ -46,10 +48,10 @@
 
 <form name="jumpToIssue" action="jumpToIssue.view" method="get">
 <table><tr>
-    <td><%= textLink("new issue", IssuesController.issueURL(context.getContainer(), "insert").addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
+    <td><%= textLink("new " + names.singularName.toLowerCase(), IssuesController.issueURL(context.getContainer(), "insert").addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
     <td><%= textLink("view grid", IssuesController.issueURL(context.getContainer(), "list").addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
     <td><%= textLink("print", printLink)%></td>
-    <td>&nbsp;&nbsp;&nbsp;Jump to issue: <input type="text" size="5" name="issueId"/></td>
+    <td>&nbsp;&nbsp;&nbsp;Jump to <%=names.singularName%>: <input type="text" size="5" name="issueId"/></td>
 </tr></table>
 </form>
 

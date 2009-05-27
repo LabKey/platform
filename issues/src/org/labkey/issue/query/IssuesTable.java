@@ -54,6 +54,8 @@ public class IssuesTable extends FilteredTable
 
     private void addAllColumns()
     {
+        IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
+
         ColumnInfo issueIdColumn = wrapColumn(_rootTable.getColumn("IssueId"));
         issueIdColumn.setFk(new RowIdForeignKey(issueIdColumn)
         {
@@ -66,6 +68,7 @@ public class IssuesTable extends FilteredTable
         });
 
         issueIdColumn.setKeyField(true);
+        issueIdColumn.setCaption(names.singularName.toString() + " ID");
         addColumn(issueIdColumn);
         addWrapColumn(_rootTable.getColumn("Type"));
         addWrapColumn(_rootTable.getColumn("Area"));
