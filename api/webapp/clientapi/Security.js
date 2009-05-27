@@ -105,8 +105,7 @@ LABKEY.Security = new function()
 
         /**
          * Get the effective permissions for all groups within the container, optionally
-         * recursing down the container hierarchy. This may be called only by
-         * users who have administrator permissions in the given container.
+         * recursing down the container hierarchy.
          * @param config A configuration object with the following properties:
          * @param {function} config.successCallback A reference to a function to call with the API results. This
          * function will be passed the following parameters:
@@ -196,13 +195,12 @@ LABKEY.Security = new function()
         },
 
         /**
-         * Returns information about a specific user's permissions within a container. This may be called only by
-         * users who have administrator permissions in the given container. To get the current user's permissions
-         * in a given container, use the getContainers() method instead.
+         * Returns information about a user's permissions within a container. If you don't specify a user id, this
+         * will return information about the current user.
          * @param config A configuration object containing the following properties
-         * @param {integer} config.userId The id of the user.
-         * @param {string} config.userEmail The email address (user name) of the user (specify only userId or userEmail, not both)
-         * @param {function} config.successCallback A reference to a function to call with the API results. This
+         * @param {Integer} config.userId The id of the user. Omit to get the current user's information
+         * @param {String} config.userEmail The email address (user name) of the user (specify only userId or userEmail, not both)
+         * @param {Function} config.successCallback A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
          * <li><b>userPermsInfo:</b> an object containing properties about the user's permissions.

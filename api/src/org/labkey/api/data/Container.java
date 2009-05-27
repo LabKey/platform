@@ -329,8 +329,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         List<SecurableResource> ret = new ArrayList<SecurableResource>();
 
-        //add all sub-containers the user is allowed to admin
-        ret.addAll(ContainerManager.getChildren(this, user, AdminPermission.class));
+        //add all sub-containers the user is allowed to read
+        ret.addAll(ContainerManager.getChildren(this, user, ReadPermission.class));
 
         //add resources from study
         ret.addAll(StudyService.get().getSecurableResources(this, user));
@@ -366,8 +366,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     /**
      * Finds a securable resource within this container or child containers with the same id
-     * as the given resource id. Note that the user must have admin permission on the
-     * resource in order to find it.
+     * as the given resource id.
      * @param resourceId The resource id to find
      * @param user The current user (searches only reousrces that user can see)
      * @return The resource or null if not found
@@ -390,8 +389,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
         //recurse down child containers
         for(Container child : getChildren())
         {
-            //only look in child containers where the user has admin perm
-            if(child.hasPermission(user, AdminPermission.class))
+            //only look in child containers where the user has read perm
+            if(child.hasPermission(user, ReadPermission.class))
             {
                 SecurableResource resource = child.findSecurableResource(resourceId, user);
 
