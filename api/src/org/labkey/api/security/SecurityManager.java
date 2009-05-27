@@ -1714,7 +1714,7 @@ public class SecurityManager
                         new Sort("UserId"), RoleAssignment.class);
 
                 policy = new SecurityPolicy(resource, assignments, null != policyBean ? policyBean.getModified() : new Date());
-                DbCache.put(core.getTableInfoRoleAssignments(), cacheName, policy);
+                DbCache.put(table, cacheName, policy);
             }
             catch(SQLException e)
             {
@@ -1823,9 +1823,6 @@ public class SecurityManager
             //remove the resource-oriented policy from cache
             DbCache.remove(table, cacheName(resource));
 
-            //clear the cache for the role assignments table,
-            //since we don't know which users might be affected
-            DbCache.clear(table);
             notifyPolicyChange(resource.getResourceId());
         }
         catch(SQLException e)
