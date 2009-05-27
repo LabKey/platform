@@ -432,6 +432,11 @@ public abstract class SpringActionController implements Controller, HasViewConte
             case Framed:
             case Print:
             {
+                NavTree root = new NavTree();
+                appendNavTrail(action, root);
+                NavTree[] children = root.getChildren();
+                if (children.length > 0 && page.getTitle() == null)
+                    page.setTitle(children[children.length-1].getKey());
                 PrintTemplate template = new PrintTemplate(mv, page);
                 return template;
             }
