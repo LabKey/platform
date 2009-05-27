@@ -58,6 +58,7 @@ public class SecurityApiActions
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @RequiresLogin
     public static class GetGroupPermsAction extends ApiAction<GetGroupPermsForm>
     {
         public ApiResponse execute(GetGroupPermsForm form, BindException errors) throws Exception
@@ -186,6 +187,7 @@ public class SecurityApiActions
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @RequiresLogin
     public static class GetUserPermsAction extends ApiAction<GetUserPermsForm>
     {
         public ApiResponse execute(GetUserPermsForm form, BindException errors) throws Exception
