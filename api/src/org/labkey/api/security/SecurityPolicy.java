@@ -31,7 +31,7 @@ import java.util.*;
 */
 public class SecurityPolicy
 {
-    SortedSet<RoleAssignment> _assignments = new TreeSet<RoleAssignment>();
+    private final SortedSet<RoleAssignment> _assignments = new TreeSet<RoleAssignment>();
     private SecurableResource _resource;
     private Date _modified;
 
@@ -150,7 +150,10 @@ public class SecurityPolicy
             if(assignment.getUserId() == principal.getUserId())
                 toRemove.add(assignment);
         }
-        _assignments.removeAll(toRemove);
+        synchronized (_assignments)
+        {
+            _assignments.removeAll(toRemove);
+        }
     }
 
     @NotNull
@@ -296,7 +299,10 @@ public class SecurityPolicy
 
     protected void addAssignment(RoleAssignment assignment)
     {
-        _assignments.add(assignment);
+        synchronized (_assignments)
+        {
+            _assignments.add(assignment);
+        }
     }
 
     /**
@@ -442,21 +448,24 @@ public class SecurityPolicy
         if (isEmpty())
             return;
 
-        //remove all NoPermissionsRole assignments
-        Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
-        Iterator<RoleAssignment> iter = _assignments.iterator();
-        while (iter.hasNext())
+        synchronized (_assignments)
         {
-            RoleAssignment ra = iter.next();
-            if(noPermsRole.equals(ra.getRole()))
-                iter.remove();
-        }
+            //remove all NoPermissionsRole assignments
+            Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
+            Iterator<RoleAssignment> iter = _assignments.iterator();
+            while (iter.hasNext())
+            {
+                RoleAssignment ra = iter.next();
+                if(noPermsRole.equals(ra.getRole()))
+                    iter.remove();
+            }
 
-        //if we are now empty, we need to add a no perms role assignment for guests to keep the Policy from
-        //getting ignored. Otherwise, the SecurityManager will return the parent policy and potentially
-        //grant users access who did not have access before
-        if (isEmpty())
-            addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), noPermsRole);
+            //if we are now empty, we need to add a no perms role assignment for guests to keep the Policy from
+            //getting ignored. Otherwise, the SecurityManager will return the parent policy and potentially
+            //grant users access who did not have access before
+            if (isEmpty())
+                addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), noPermsRole);
+        }
     }
 
 }
