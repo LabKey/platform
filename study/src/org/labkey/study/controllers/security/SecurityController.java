@@ -394,7 +394,7 @@ public class SecurityController extends SpringActionController
 
         public String getSecurityString()
         {
-            return _securityType.name();
+            return _securityType == null ? null : _securityType.name();
         }
     }
 
