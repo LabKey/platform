@@ -25,28 +25,30 @@ import java.util.Date;
 // TODO: Consider getting rid of this, adding the xsd: to PropertyType instead
 public enum Type
 {
-    StringType("Text (String)", "xsd:string", String.class),
-    IntType("Integer", "xsd:int", Integer.class, Integer.TYPE),
-    DoubleType("Number (Double)", "xsd:double", Double.class, Double.TYPE), // Double.TYPE is here because manually created datasets with required doubles return Double.TYPE as Class
-    DateTimeType("DateTime", "xsd:dateTime", Date.class),
-    BooleanType("Boolean", "xsd:boolean", Boolean.class, Boolean.TYPE);
+    StringType("Text (String)", "xsd:string", "varchar", String.class),
+    IntType("Integer", "xsd:int", "integer", Integer.class, Integer.TYPE),
+    DoubleType("Number (Double)", "xsd:double", "double", Double.class, Double.TYPE), // Double.TYPE is here because manually created datasets with required doubles return Double.TYPE as Class
+    DateTimeType("DateTime", "xsd:dateTime", "timestamp", Date.class),
+    BooleanType("Boolean", "xsd:boolean", "boolean", Boolean.class, Boolean.TYPE);
 
     private String label;
     private String xsd;
     private Class clazz;
     private Class type;
+    private String sqlTypeName;
 
-    Type(String label, String xsd, Class clazz)
+    Type(String label, String xsd, String sqlTypeName, Class clazz)
     {
-        this(label, xsd, clazz, null);
+        this(label, xsd, sqlTypeName,clazz,  null);
     }
 
-    Type(String label, String xsd, Class clazz, Class type)
+    Type(String label, String xsd, String sqlTypeName, Class clazz, Class type)
     {
         this.label = label;
         this.xsd = xsd;
         this.clazz = clazz;
         this.type = type;
+        this.sqlTypeName = sqlTypeName;
     }
 
     public String getLabel()
@@ -67,6 +69,11 @@ public enum Type
     public Class getJavaType()
     {
         return type;
+    }
+
+    public String getSqlTypeName()
+    {
+        return sqlTypeName;
     }
 
     public static Type getTypeByLabel(String label)
@@ -100,6 +107,16 @@ public enum Type
 
             // Double.TYPE is supported because manually created datasets with required doubles return Double.TYPE as Class
             if (null != typeClass && typeClass.equals(clazz))
+                return type;
+        }
+        return null;
+    }
+
+    public static Type getTypeBySqlTypeName(String sqlTypeName)
+    {
+        for (Type type : values())
+        {
+            if (type.getSqlTypeName().equals(sqlTypeName))
                 return type;
         }
         return null;
