@@ -302,7 +302,7 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         if (group && group.Type == 'g')
         {
             var me = this;
-            S.deleteGroup({groupId:groupid, successCallback:function()
+            S.deleteGroup({groupId:groupid, containerPath:(group.Container||'/'), successCallback:function()
             {
                 me.principalsStore.removeById(groupid);
                 callback.call();
@@ -312,23 +312,31 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
 
     addMembership : function(groupid,userid,callback)
     {
-        var success = function()
+        var group = this.getPrincipal(groupid);
+        if (group && (group.Type == 'g' || group.Type == 'r'))
         {
-            this._addMembership(groupid,userid);
-            callback.call();
-        };
-        S.addGroupMembers({groupId:groupid, principalIds:[userid], containerPath:this.projectId, successCallback:success, scope:this});
+            var success = function()
+            {
+                this._addMembership(groupid,userid);
+                callback.call();
+            };
+            S.addGroupMembers({groupId:groupid, principalIds:[userid], containerPath:(group.Container||'/'), successCallback:success, scope:this});
+        }
     },
-
 
     removeMembership : function(groupid,userid,callback)
     {
-        var success = function()
+        var group = this.getPrincipal(groupid);
+        if (group && (group.Type == 'g' || group.Type == 'r'))
         {
-            this._removeMembership(groupid,userid);
-            callback.call();
-        };
-        S.removeGroupMembers({groupId:groupid, principalIds:[userid], containerPath:this.projectId, successCallback:success, scope:this});
+            var success = function()
+            {
+                this._removeMembership(groupid,userid);
+                callback.call();
+            };
+            // find the container for the group
+            S.removeGroupMembers({groupId:groupid, principalIds:[userid], containerPath:(group.Container||'/'), successCallback:success, scope:this});
+        }
     },
 
 
@@ -589,7 +597,8 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
     onDestroy : function()
     {
         UserInfoPopup.superclass.onDestroy.call(this);
-        this.addPrincipalComboBox.destroy();
+        if (this.addPrincipalComboBox)
+            this.addPrincipalComboBox.destroy();
     },
 
     _redraw : function()
@@ -663,7 +672,7 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
 
             if (this.userId == SecurityCache.prototype.groupUsers)
             {
-                html.push("<p/>this is the group of users");
+                html.push("<p/>Site Users represents all signed-in users.");
             }
             else if (this.userId == SecurityCache.prototype.groupUsers)
             {
@@ -676,7 +685,7 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
                 {
                     principalWrapper = '$p$' + id;
                     html.push("<tr><td colspan=3 id=" + principalWrapper + "></td></tr>");
-                    if (users.length == 0)
+                    if (users.length == 0 && this.userId > 0)
                     {
                         deleteGroup = '$delete$' + id;
                         html.push('<tr><td colspan=3><a id="' + deleteGroup + '" class="labkey-button" href="#"" ><span>Delete Empty Group</span></a></td></tr>');
@@ -705,7 +714,7 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
         if (isGroup && this.canEdit)
         {
             if (deleteGroup)
-                Ext.fly(deleteGroup).dom.onclick = this.Delete_onClick.createDelegate(this);
+                Ext.fly(deleteGroup).dom.onclick = this.DeleteGroup_onClick.createDelegate(this);
             this.addPrincipalComboBox = new PrincipalComboBox({cache:this.cache, usersOnly:true});
             this.addPrincipalComboBox.on("select",this.Combo_onSelect,this);
             this.addPrincipalComboBox.render(principalWrapper);
@@ -713,18 +722,18 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
             {
                 user = users[i];
                 removeWrapper = '$remove$' + id + user.UserId;
-                Ext.fly(removeWrapper).dom.onclick = this.Remove_onClick.createDelegate(this,[user.UserId]);
+                Ext.fly(removeWrapper).dom.onclick = this.RemoveMember_onClick.createDelegate(this,[user.UserId]);
             }
         }
     },
 
-    Delete_onClick : function()
+    DeleteGroup_onClick : function()
     {
         var groupid = this.user.UserId;
         this.cache.deleteGroup(groupid, this.close.createDelegate(this));
     },
 
-    Remove_onClick : function(userid)
+    RemoveMember_onClick : function(userid)
     {
         var groupid = this.user.UserId;
         this.cache.removeMembership(groupid,userid,this._redraw.createDelegate(this));

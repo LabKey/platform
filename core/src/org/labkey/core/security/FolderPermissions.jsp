@@ -136,86 +136,70 @@ Ext.onReady(function()
         else
             title = "Groups for project " + c.getProject().getName();
 
-        if (1==1)
+        %><div id="groupsFrame"></div>
+        <div id="siteGroupsFrame"></div>
+        <script type="text/javascript">
+        function makeGroupsPanel(project,ct)
         {
-            %><div id="groupsFrame"></div>
-            <div id="siteGroupsFrame"></div>
-            <script type="text/javascript">
-            function makeGroupsPanel(project,ct)
-            {
-                var newGroupForm = null;
-                var groupsList = new GroupPicker({cache:securityCache, width:200, border:false, autoScroll:true, projectId:project});
-                groupsList.on("select", function(list,group){
-                    var canEdit = !group.Container && isSiteAdmin || group.Container && isProjectAdmin;
-                    var w = new UserInfoPopup({userId:group.UserId, cache:this.cache, policy:null, modal:true, canEdit:canEdit});
-                    w.show();
-                });
-
-                var formId = 'newGroupForm' + (project?'':'Site');
-                var action = LABKEY.ActionURL.buildURL('security','newGroupExt.post',project);
-                var groupsPanel = new Ext.Panel({
-                    border : false, // border : true, style:{border:'solid 1px red'},
-                    height: 400, width:800,
-                    items :[
-                            {border:false, html:'<input id="' + (formId + '$input')+ '" type="text" size="30" name="name"><br><a id="' + (formId + '$submit') + '" class="labkey-button" href="#"" ><span>Create new group</span></a>'},
-                            groupsList
-                        ]
-                });
-                groupsPanel._adjustSize = function()
-                {
-                    if (this.rendered)
-                    {
-                        var sz = tabPanel.body.getSize();
-                        this.setSize(sz.width-10,sz.height-10);
-                        var btm = sz.height + tabPanel.body.getX();
-                        groupsList.setSize(200,btm-groupsList.el.getX());
-                        this.doLayout();
-                    }
-                };
-                groupsPanel.render(ct);
-                groupsPanel._adjustSize();
-                tabPanel.on("bodyresize", groupsPanel._adjustSize, groupsPanel);
-                tabPanel.on("activate", groupsPanel._adjustSize, groupsPanel);
-
-                // UNDONE: use security api (Security.js)
-                var inputEl = $(formId + '$input');
-                var btnEl = $(formId + '$submit');
-                var submit = function()
-                {
-                    securityCache.createGroup(project, inputEl.getValue());
-                };
-                inputEl.addKeyListener(13, submit);
-                btnEl.on("click", submit);
-                return groupsPanel;
-            };
-
-
-            tabItems.push({contentEl:'groupsFrame', title:<%=PageFlowUtil.jsString(title)%>, autoHeight:true});
-            if (isSiteAdmin)
-                tabItems.push({contentEl:'siteGroupsFrame', title:'Site Groups', autoHeight:true});
-
-            Ext.onReady(function()
-            {
-                var groupsPanel = makeGroupsPanel(<%=PageFlowUtil.jsString(project.getId())%>, 'groupsFrame');
-                if (isSiteAdmin)
-                    var sitePanel = makeGroupsPanel(null, 'siteGroupsFrame');
+            var newGroupForm = null;
+            var groupsList = new GroupPicker({cache:securityCache, width:200, border:false, autoScroll:true, projectId:project});
+            groupsList.on("select", function(list,group){
+                var canEdit = !group.Container && isSiteAdmin || group.Container && isProjectAdmin;
+                var w = new UserInfoPopup({userId:group.UserId, cache:this.cache, policy:null, modal:true, canEdit:canEdit});
+                w.show();
             });
-            
-            </script><%
-        }
-        else // groups.jsp 
+
+            var formId = 'newGroupForm' + (project?'':'Site');
+            var action = LABKEY.ActionURL.buildURL('security','newGroupExt.post',project);
+            var groupsPanel = new Ext.Panel({
+                border : false, // border : true, style:{border:'solid 1px red'},
+                height: 400, width:800,
+                items :[
+                        {border:false, html:'<input id="' + (formId + '$input')+ '" type="text" size="30" name="name"><br><a id="' + (formId + '$submit') + '" class="labkey-button" href="#"" ><span>Create new group</span></a>'},
+                        groupsList
+                    ]
+            });
+            groupsPanel._adjustSize = function()
+            {
+                if (this.rendered)
+                {
+                    var sz = tabPanel.body.getSize();
+                    this.setSize(sz.width-10,sz.height-10);
+                    var btm = sz.height + tabPanel.body.getX();
+                    groupsList.setSize(200,btm-groupsList.el.getX());
+                    this.doLayout();
+                }
+            };
+            groupsPanel.render(ct);
+            groupsPanel._adjustSize();
+            tabPanel.on("bodyresize", groupsPanel._adjustSize, groupsPanel);
+            tabPanel.on("activate", groupsPanel._adjustSize, groupsPanel);
+
+            // UNDONE: use security api (Security.js)
+            var inputEl = $(formId + '$input');
+            var btnEl = $(formId + '$submit');
+            var submit = function()
+            {
+                securityCache.createGroup((project||'/'), inputEl.getValue());
+            };
+            inputEl.addKeyListener(13, submit);
+            btnEl.on("click", submit);
+            return groupsPanel;
+        };
+
+
+        tabItems.push({contentEl:'groupsFrame', title:<%=PageFlowUtil.jsString(title)%>, autoHeight:true});
+        if (isSiteAdmin)
+            tabItems.push({contentEl:'siteGroupsFrame', title:'Site Groups', autoHeight:true});
+
+        Ext.onReady(function()
         {
-            // UNDONE: support expanding specified group
-            JspView<SecurityController.GroupsBean> groupsView = new JspView<SecurityController.GroupsBean>("/org/labkey/core/security/groups.jsp",
-                    new SecurityController.GroupsBean(getViewContext(), null, null), null);
-            %><script type="text/javascript">
-            tabItems.push({contentEl:'groupsFrame', title:<%=PageFlowUtil.jsString(title)%>, autoHeight:true});
-            </script>
-            <div id="groupsFrame"><%
-            groupsView.setFrame(WebPartView.FrameType.NONE);
-            me.include(groupsView,out);
-            %></div><%
-        }
+            var groupsPanel = makeGroupsPanel(<%=PageFlowUtil.jsString(project.getId())%>, 'groupsFrame');
+            if (isSiteAdmin)
+                var sitePanel = makeGroupsPanel(null, 'siteGroupsFrame');
+        });
+
+        </script><%
     }
 %>
 
