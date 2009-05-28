@@ -429,6 +429,9 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
 
     Principals_onReady : function()
     {
+        var admin = this.principalsStore.getById(this.groupAdministrators);
+        if (admin)
+            admin.data.Name = 'Site Administrators';
         // add a sortOrder field to each principal
         this.principalsStore.data.each(this._applyPrincipalsSortOrder);
         this.principalsStore.sort('sortOrder');
@@ -1018,6 +1021,11 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
     {
         PrincipalComboBox.superclass.onRender.call(this,ct,position);
         this.el.parent().addStyles({display:'inline'});
+        this.el.on("blur",this.Input_onBlur,this);
+    },
+
+    Input_onBlur : function()
+    {
     }
 });
 
@@ -1469,6 +1477,8 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
 
     Inherited_onChange : function(checkbox)
     {
+        Ext.removeNode(document.getElementById('policyRendered')); // to aid selenium automation
+
         var inh = this.inheritedCheckbox.getValue();
         if (inh && !this.inheritedPolicy)
         {
@@ -1490,10 +1500,13 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
             group = this.cache.getPrincipal(group);
         var groupName = group.Name;
         var groupId = group.UserId;
-        var roleId = role; 
+        var roleId = role;
+        var roleName = '';
         if (typeof role == 'object')
+        {
             roleId = role.uniqueName;
-
+            roleName = role.name;
+        }
         var style = 'pGroup';
         if (group.Type == 'u')
             style = 'pUser';
@@ -1526,10 +1539,11 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         }
 
         // really add the button
+        var tooltip = (group.Type == 'u' ? 'User: ' : group.Container ? 'Group: ' : 'Site group: ') + group.Name;
         var ct = Ext.fly(roleId);
-        b = new CloseButton({text:groupName, id:btnId, groupId:groupId, roleId:roleId, closeTooltip:'Remove ' + groupName + ' from role'});
+        b = new CloseButton({text:groupName, id:btnId, groupId:groupId, roleId:roleId, tooltip:tooltip, closeTooltip:'Remove ' + groupName + ' from' + (roleName ? (' ' + roleName) : '') + ' role'});
         b.addClass(style);
-        b.on("close", this.Button_onClose, this);
+        b.on("close", this.Button_onClose, this);                                       
         b.on("click", this.Button_onClick, this);
         b.render(ct, br);
         br.insertHtml("beforebegin"," ");

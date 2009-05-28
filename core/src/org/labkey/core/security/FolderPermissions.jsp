@@ -1,6 +1,4 @@
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.security.ACL" %>
 <%@ page import="org.labkey.core.user.UserController" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -8,6 +6,9 @@
 <%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.security.roles.FolderAdminRole" %>
+<%@ page import="org.labkey.api.security.*" %>
+<%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.security.SecurityManager" %>
 <%
 /*
  * Copyright (c) 2009 LabKey Corporation
@@ -150,7 +151,6 @@ Ext.onReady(function()
             });
 
             var formId = 'newGroupForm' + (project?'':'Site');
-            var action = LABKEY.ActionURL.buildURL('security','newGroupExt.post',project);
             var groupsPanel = new Ext.Panel({
                 border : false, // border : true, style:{border:'solid 1px red'},
                 height: 400, width:800,
@@ -222,5 +222,32 @@ Ext.onReady(function()
             %></div><%
         }
     }
+%>
+
+
+<%--
+    MODULE SECURITY
+--%>
+
+<%
+        List<SecurityManager.ViewFactory> factories = SecurityManager.getViewFactories();
+
+        int counter = 0;
+        for (SecurityManager.ViewFactory factory : factories)
+        {
+            WebPartView view = (WebPartView)factory.createView(getViewContext());
+            if (null == view)
+                continue;
+            counter++;
+            String id = "moduleSecurityView" + counter;
+            %><div id=<%=id%>><%
+            view.setFrame(WebPartView.FrameType.NONE);
+            me.include(view,out);
+            %></div>
+            <script type="text/javascript">
+                tabItems.push({contentEl:<%=PageFlowUtil.jsString(id)%>, title:<%=PageFlowUtil.jsString(view.getTitle())%>, autoHeight:true});
+            </script>
+            <%
+        }
 %>
 </div>
